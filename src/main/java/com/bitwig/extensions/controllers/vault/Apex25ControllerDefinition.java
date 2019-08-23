@@ -1,4 +1,4 @@
-package com.bitiwg.extensions.controllers.devine;
+package com.bitwig.extensions.controllers.vault;
 
 import java.util.UUID;
 
@@ -8,18 +8,18 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class EzCreatorFadeDefinition extends ControllerExtensionDefinition
+public class Apex25ControllerDefinition extends ControllerExtensionDefinition
 {
    @Override
    public String getHardwareVendor()
    {
-      return "Devine";
+      return "Vault";
    }
 
    @Override
    public String getHardwareModel()
    {
-      return "EZ-Creator Fade";
+      return "Apex 25";
    }
 
    @Override
@@ -41,15 +41,15 @@ public class EzCreatorFadeDefinition extends ControllerExtensionDefinition
       switch (platformType)
       {
          case LINUX:
-            list.add(new String[] {"EZ-Creator Fade MIDI 1"}, new String[] {"EZ-Creator Fade MIDI 1"});
+            list.add(new String[] {"Apex 25 MIDI 1"}, new String[] {"Apex 25 MIDI 1"});
             break;
 
          case WINDOWS:
-            list.add(new String[] {"EZ-Creator Fade"}, new String[] {"EZ-Creator Fade"});
+            list.add(new String[] {"Apex 25"}, new String[] {"Apex 25"});
             break;
 
          case MAC:
-            list.add(new String[] {"EZ-Creator Fade"}, new String[] {"EZ-Creator Fade"});
+            list.add(new String[] {"Apex 25"}, new String[] {"Apex 25"});
             break;
       }
    }
@@ -57,7 +57,7 @@ public class EzCreatorFadeDefinition extends ControllerExtensionDefinition
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new EzCreatorFade(this, host);
+      return new ApexControllerExtension(this, host, false);
    }
 
    @Override
@@ -90,18 +90,18 @@ public class EzCreatorFadeDefinition extends ControllerExtensionDefinition
       return 7;
    }
 
-   public static EzCreatorFadeDefinition getInstance()
+   @Override
+   public String getHelpFilePath()
+   {
+      return "Controllers/Vault/Apex.html";
+   }
+
+   public static Apex25ControllerDefinition getInstance()
    {
       return INSTANCE;
    }
 
-   @Override
-   public String getHelpFilePath()
-   {
-      return "Controllers/Devine/Ez-Creator Fade.html";
-   }
+   private static final Apex25ControllerDefinition INSTANCE = new Apex25ControllerDefinition();
 
-   private static final EzCreatorFadeDefinition INSTANCE = new EzCreatorFadeDefinition();
-
-   private static final UUID EXTENSION_UUID = UUID.fromString("bd5afaf4-b4a1-4637-9100-930dc67e9af1");
+   private static final UUID EXTENSION_UUID = UUID.fromString("f739a976-64bb-4ce7-8ded-a2783fea89a7");
 }

@@ -1,4 +1,4 @@
-package com.bitiwg.extensions.controllers.devine;
+package com.bitwig.extensions.controllers.devine;
 
 public class EzCreatorCommon
 {

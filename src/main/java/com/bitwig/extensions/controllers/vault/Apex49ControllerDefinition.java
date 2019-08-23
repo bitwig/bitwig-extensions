@@ -1,4 +1,4 @@
-package com.bitiwg.extensions.controllers.devine;
+package com.bitwig.extensions.controllers.vault;
 
 import java.util.UUID;
 
@@ -8,18 +8,18 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class EzCreatorPlusDefinition extends ControllerExtensionDefinition
+public class Apex49ControllerDefinition extends ControllerExtensionDefinition
 {
    @Override
    public String getHardwareVendor()
    {
-      return "Devine";
+      return "Vault";
    }
 
    @Override
    public String getHardwareModel()
    {
-      return "EZ-Creator Plus";
+      return "Apex 49";
    }
 
    @Override
@@ -41,15 +41,15 @@ public class EzCreatorPlusDefinition extends ControllerExtensionDefinition
       switch (platformType)
       {
          case LINUX:
-            list.add(new String[] {"EZ-Creator Plus MIDI 1"}, new String[] {"EZ-Creator Plus MIDI 1"});
+            list.add(new String[] {"Apex 49 MIDI 1"}, new String[] {"Apex 49 MIDI 1"});
             break;
 
          case WINDOWS:
-            list.add(new String[] {"EZ-Creator Plus"}, new String[] {"EZ-Creator Plus"});
+            list.add(new String[] {"Apex 49"}, new String[] {"Apex 49"});
             break;
 
          case MAC:
-            list.add(new String[] {"EZ-Creator Plus"}, new String[] {"EZ-Creator Plus"});
+            list.add(new String[] {"Apex 49"}, new String[] {"Apex 49"});
             break;
       }
    }
@@ -57,7 +57,7 @@ public class EzCreatorPlusDefinition extends ControllerExtensionDefinition
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new EzCreatorPlus(this, host);
+      return new ApexControllerExtension(this, host, true);
    }
 
    @Override
@@ -90,18 +90,18 @@ public class EzCreatorPlusDefinition extends ControllerExtensionDefinition
       return 7;
    }
 
-   public static EzCreatorPlusDefinition getInstance()
+   @Override
+   public String getHelpFilePath()
+   {
+      return "Controllers/Vault/Apex.html";
+   }
+
+   public static Apex49ControllerDefinition getInstance()
    {
       return INSTANCE;
    }
 
-   @Override
-   public String getHelpFilePath()
-   {
-      return "Controllers/Devine/Ez-Creator Plus.html";
-   }
+   private static final Apex49ControllerDefinition INSTANCE = new Apex49ControllerDefinition();
 
-   private static final EzCreatorPlusDefinition INSTANCE = new EzCreatorPlusDefinition();
-
-   private static final UUID EXTENSION_UUID = UUID.fromString("3be22ab5-b159-4bd4-b88b-1c0fe6ce56fb");
+   private static final UUID EXTENSION_UUID = UUID.fromString("f311ed46-8f80-406c-abf2-9d172d762dac");
 }

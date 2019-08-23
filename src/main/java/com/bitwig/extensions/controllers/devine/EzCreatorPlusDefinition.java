@@ -1,4 +1,4 @@
-package com.bitiwg.extensions.controllers.devine;
+package com.bitwig.extensions.controllers.devine;
 
 import java.util.UUID;
 
@@ -8,7 +8,7 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class EzCreatorKeyDefinition extends ControllerExtensionDefinition
+public class EzCreatorPlusDefinition extends ControllerExtensionDefinition
 {
    @Override
    public String getHardwareVendor()
@@ -19,7 +19,7 @@ public class EzCreatorKeyDefinition extends ControllerExtensionDefinition
    @Override
    public String getHardwareModel()
    {
-      return "EZ-Creator Key";
+      return "EZ-Creator Plus";
    }
 
    @Override
@@ -41,15 +41,15 @@ public class EzCreatorKeyDefinition extends ControllerExtensionDefinition
       switch (platformType)
       {
          case LINUX:
-            list.add(new String[] {"EZ-Creator Key MIDI 1"}, new String[] {"EZ-Creator Key MIDI 1"});
+            list.add(new String[] {"EZ-Creator Plus MIDI 1"}, new String[] {"EZ-Creator Plus MIDI 1"});
             break;
 
          case WINDOWS:
-            list.add(new String[] {"EZ-Creator Key"}, new String[] {"EZ-Creator Key"});
+            list.add(new String[] {"EZ-Creator Plus"}, new String[] {"EZ-Creator Plus"});
             break;
 
          case MAC:
-            list.add(new String[] {"EZ-Creator Key"}, new String[] {"EZ-Creator Key"});
+            list.add(new String[] {"EZ-Creator Plus"}, new String[] {"EZ-Creator Plus"});
             break;
       }
    }
@@ -57,7 +57,7 @@ public class EzCreatorKeyDefinition extends ControllerExtensionDefinition
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new EzCreatorKey(this, host);
+      return new EzCreatorPlus(this, host);
    }
 
    @Override
@@ -90,7 +90,7 @@ public class EzCreatorKeyDefinition extends ControllerExtensionDefinition
       return 7;
    }
 
-   public static EzCreatorKeyDefinition getInstance()
+   public static EzCreatorPlusDefinition getInstance()
    {
       return INSTANCE;
    }
@@ -98,10 +98,10 @@ public class EzCreatorKeyDefinition extends ControllerExtensionDefinition
    @Override
    public String getHelpFilePath()
    {
-      return "Controllers/Devine/Ez-Creator Keys.html";
+      return "Controllers/Devine/Ez-Creator Plus.html";
    }
 
-   private static final EzCreatorKeyDefinition INSTANCE = new EzCreatorKeyDefinition();
+   private static final EzCreatorPlusDefinition INSTANCE = new EzCreatorPlusDefinition();
 
    private static final UUID EXTENSION_UUID = UUID.fromString("3be22ab5-b159-4bd4-b88b-1c0fe6ce56fb");
 }
