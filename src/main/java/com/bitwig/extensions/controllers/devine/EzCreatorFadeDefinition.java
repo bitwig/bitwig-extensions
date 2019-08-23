@@ -98,7 +98,7 @@ public class EzCreatorFadeDefinition extends ControllerExtensionDefinition
    @Override
    public String getHelpFilePath()
    {
-      return "Controllers/Devine/Ez-Creator Fade.html";
+      return "Documentation/Controllers/Devine/Ez-Creator Fade.html";
    }
 
    private static final EzCreatorFadeDefinition INSTANCE = new EzCreatorFadeDefinition();

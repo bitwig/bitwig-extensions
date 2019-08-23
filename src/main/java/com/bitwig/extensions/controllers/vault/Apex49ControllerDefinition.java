@@ -93,7 +93,7 @@ public class Apex49ControllerDefinition extends ControllerExtensionDefinition
    @Override
    public String getHelpFilePath()
    {
-      return "Controllers/Vault/Apex.html";
+      return "Documentation/Controllers/Vault/Apex.html";
    }
 
    public static Apex49ControllerDefinition getInstance()

@@ -98,7 +98,7 @@ public class EzCreatorKeyDefinition extends ControllerExtensionDefinition
    @Override
    public String getHelpFilePath()
    {
-      return "Controllers/Devine/Ez-Creator Keys.html";
+      return "Documentation/Controllers/Devine/Ez-Creator Keys.html";
    }
 
    private static final EzCreatorKeyDefinition INSTANCE = new EzCreatorKeyDefinition();

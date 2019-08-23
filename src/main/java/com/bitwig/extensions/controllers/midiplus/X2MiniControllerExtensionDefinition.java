@@ -104,7 +104,7 @@ public class X2MiniControllerExtensionDefinition extends ControllerExtensionDefi
    @Override
    public String getHelpFilePath()
    {
-      return "Controllers/MIDIPLUS/Xmini Keyboards.html";
+      return "Documentation/Controllers/MIDIPLUS/Xmini Keyboards.html";
    }
 
    final private static X2MiniControllerExtensionDefinition INSTANCE = new X2MiniControllerExtensionDefinition();

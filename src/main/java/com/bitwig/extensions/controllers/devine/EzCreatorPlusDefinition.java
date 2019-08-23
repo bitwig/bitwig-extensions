@@ -98,7 +98,7 @@ public class EzCreatorPlusDefinition extends ControllerExtensionDefinition
    @Override
    public String getHelpFilePath()
    {
-      return "Controllers/Devine/Ez-Creator Plus.html";
+      return "Documentation/Controllers/Devine/Ez-Creator Plus.html";
    }
 
    private static final EzCreatorPlusDefinition INSTANCE = new EzCreatorPlusDefinition();
