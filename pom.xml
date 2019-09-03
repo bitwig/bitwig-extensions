@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.bitiwg.extensions</groupId>
@@ -9,36 +10,28 @@
 	<version>1</version>
 
 	<repositories>
-       <repository>
-         <id>bitwig</id>
-         <name>Bitwig Maven Repository</name>
-         <url>https://maven.bitwig.com</url>
-       </repository>
-   </repositories>
-
-	<dependencies>
-		<dependency>
-			<groupId>com.bitwig</groupId>
-			<artifactId>extension-api</artifactId>
-			<version>[9,)</version>
-		</dependency>
-	</dependencies>
+		<repository>
+			<id>bitwig</id>
+			<name>Bitwig Maven Repository</name>
+			<url>https://maven.bitwig.com</url>
+		</repository>
+	</repositories>
 
 	<build>
 		<plugins>
-		   <plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-               <artifactId>maven-compiler-plugin</artifactId>
-               <version>3.5.1</version>
-               <configuration>
-                  <optimize>true</optimize>
-                  <fork>true</fork>
-                  <source>1.8</source>
-                  <target>1.8</target>
-                  <encoding>UTF-8</encoding>
-                  <maxmem>1024m</maxmem>
-               </configuration>
-         </plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.5.1</version>
+				<configuration>
+					<optimize>true</optimize>
+					<fork>true</fork>
+					<source>1.8</source>
+					<target>1.8</target>
+					<encoding>UTF-8</encoding>
+					<maxmem>1024m</maxmem>
+				</configuration>
+			</plugin>
 
 			<plugin>
 				<groupId>com.coderplus.maven.plugins</groupId>
@@ -60,6 +53,39 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>use-local-bitwig-extension-api</id>
+			<activation>
+				<file>
+					<exists>../is-buliding-bitwig.txt</exists>
+				</file>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>com.bitwig</groupId>
+					<artifactId>base-extensions-api</artifactId>
+					<version>LOCAL</version>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>use-published-extension-api</id>
+			<activation>
+				<file>
+					<missing>../is-buliding-bitwig.txt</missing>
+				</file>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>com.bitwig</groupId>
+					<artifactId>extension-api</artifactId>
+					<version>[9,)</version>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
 
 </project>
 
