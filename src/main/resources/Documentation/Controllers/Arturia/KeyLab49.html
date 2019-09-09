@@ -1,0 +1,257 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Bitwig Studio | Arturia KeyLab 49</title>
+    <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="Content-Language" content="en-us"/>
+    <meta http-equiv="imagetoolbar" content="no"/>
+    <meta name="MSSmartTagsPreventParsing" content="true"/>
+    <meta name="description" content="Using an Arturia KeyLab 49 controller in Bitwig Studio."/>
+    <meta name="keywords" content="bitwig studio arturia keylab 49"/>
+    <meta name="author" content="Bitwig GmbH"/>
+    <style type="text/css" media="all">@import "../doc/bitwig.css";</style>
+</head>
+
+<body>
+<div id="page-container">
+<div id="header">
+    <div id="logo">
+    </div>
+    <div id="title">
+        <h1>ARTURIA &#x2013; KEYLAB 49</h1>
+    </div>
+</div>
+<div id="illustration">
+    <img src="KeyLab49.png" width="866" height="343" alt="KeyLab 49" border="0"/>
+</div>
+<div id="legend">
+    <div id="global" class="legend-section">
+        <div id="global" class="legend-column">
+            <table class="legend-column">
+                <tbody>
+                <tr>
+                    <th class="legend-control-column"></th>
+                    <th class="legend-explanation-column">GLOBAL</th>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Sound</td>
+                    <td class="legend-explanation-column">Sound mode.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Multi</td>
+                    <td class="legend-explanation-column">Mix/Multi mode.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Bank 1</td>
+                    <td class="legend-explanation-column">Bitwig mode.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Bank 2</td>
+                    <td class="legend-explanation-column">Arturia mode (CC).</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Volume</td>
+                    <td class="legend-explanation-column">Cursor track volume.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Param</td>
+                    <td class="legend-explanation-column">Cursor Track navigation</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Value</td>
+                    <td class="legend-explanation-column">Cursor device navigation</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Value (press)</td>
+                    <td class="legend-explanation-column">Start browsing.</td>
+                </tr>
+                <tr>
+                    <th class="legend-control-column"></th>
+                    <th class="legend-explanation-column"><br/>BROWSER</th>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Param</td>
+                    <td class="legend-explanation-column">Select category</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Param (press)</td>
+                    <td class="legend-explanation-column">Cancel browser session.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Value</td>
+                    <td class="legend-explanation-column">Select item (preset)</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Value (press)</td>
+                    <td class="legend-explanation-column">Commit browser session.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="transport" class="legend-column">
+            <table class="legend-column">
+                <tbody>
+                <tr>
+                    <th class="legend-control-column"></th>
+                    <th class="legend-explanation-column">TRANSPORT</th>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">«</td>
+                    <td class="legend-explanation-column">Transport rewind.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">»</td>
+                    <td class="legend-explanation-column">Transport fast forward.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Stop</td>
+                    <td class="legend-explanation-column">Transport stop.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Play</td>
+                    <td class="legend-explanation-column">Transport play.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Rec</td>
+                    <td class="legend-explanation-column">Transport record.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">Loop</td>
+                    <td class="legend-explanation-column">Transport toggle loop.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div id="banks" class="legend-section">
+        <div id="bank-1-sound" class="legend-column">
+            <table class="legend-column">
+                <tbody>
+                <tr>
+                    <th class="legend-control-column"></th>
+                    <th class="legend-explanation-column">BANK 1 / SOUND</th>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S1-10</td>
+                    <td class="legend-explanation-column">Remote Controls page.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">P1-4 + P6-9</td>
+                    <td class="legend-explanation-column">Remote Controls.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">P5, P10</td>
+                    <td class="legend-explanation-column">Cursor track Sends 1-2</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">F1-9</td>
+                    <td class="legend-explanation-column">Envelope/drawbar device parameters.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="bank-1-multi" class="legend-column">
+            <table class="legend-column">
+                <tbody>
+                <tr>
+                    <th class="legend-control-column"></th>
+                    <th class="legend-explanation-column">BANK 1 / MULTI</th>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">P1</td>
+                    <td class="legend-explanation-column">Cursor track pan.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">P2-5</td>
+                    <td class="legend-explanation-column">Cursor track sends 1-4.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">P6</td>
+                    <td class="legend-explanation-column">Current time.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">P7+8</td>
+                    <td class="legend-explanation-column">Loop start + end.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">P9</td>
+                    <td class="legend-explanation-column">Project tempo.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">P10</td>
+                    <td class="legend-explanation-column">Track window.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">F1-8</td>
+                    <td class="legend-explanation-column">Track volume.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">F9</td>
+                    <td class="legend-explanation-column">Master volume.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S1</td>
+                    <td class="legend-explanation-column">Toggle inspector.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S2</td>
+                    <td class="legend-explanation-column">Note editor.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S3</td>
+                    <td class="legend-explanation-column">Automation editor.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S4</td>
+                    <td class="legend-explanation-column">Device chain.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S5</td>
+                    <td class="legend-explanation-column">Mixer.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S6</td>
+                    <td class="legend-explanation-column">Toggle browser.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S7</td>
+                    <td class="legend-explanation-column">Next perspective.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S8</td>
+                    <td class="legend-explanation-column">Next project.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S9</td>
+                    <td class="legend-explanation-column">Shift tracks to previous page.</td>
+                </tr>
+                <tr>
+                    <td class="legend-control-column">S10</td>
+                    <td class="legend-explanation-column">Shift tracks to next page.</td>
+                </tr></tbody>
+            </table>
+        </div>
+        <div id="bank-2" class="legend-column">
+            <table class="legend-column">
+                <tbody>
+                <tr>
+                    <th class="legend-control-column"></th>
+                    <th class="legend-explanation-column">BANK 2</th>
+                </tr>
+                <tr>
+                    <td class="legend-control-column"></td>
+                    <td class="legend-explanation-column">Control Arturia Analog Lab / Mini V via CCs.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div id="footer">
+    Version Nr: 2.3 | Made by: Bitwig, Berlin, Germany | Contact: <a
+        href="mailto:contact@bitwig.com">contact@bitwig.com</a>, <a href="http://www.bitwig.com/">www.bitwig.com</a> |
+    Package: Bitwig Factory Scripts
+</div>
+</div>
+</body>
+</html>

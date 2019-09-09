@@ -1,3 +1,10 @@
+com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab25ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab49ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab61ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab88ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylabEssential49ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylabEssential61ControllerExtensionDefinition
+
 com.bitwig.extensions.controllers.bajaao.EDrumControllerExtensionDefinition
 
 com.bitwig.extensions.controllers.devine.EzCreatorFadeDefinition
