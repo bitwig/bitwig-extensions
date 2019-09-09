@@ -5,6 +5,8 @@ import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
+import com.bitwig.extension.controller.api.Action;
+import com.bitwig.extension.controller.api.ActionCategory;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.BrowserFilterItem;
 import com.bitwig.extension.controller.api.BrowserResultsItem;
@@ -20,8 +22,7 @@ import com.bitwig.extension.controller.api.Transport;
 
 // TODO
 // add mode to switch pads between pages and drum pads
-// 9th encoder should control track volume, or 9th fader?
-// save button doesn't work
+// 9th encoder should control track volume
 
 public class ArturiaKeylabEssentialControllerExtension extends ControllerExtension
 {
@@ -295,6 +296,15 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
          else if (key == 0x50) // Save
          {
             setLED(0x50, on);
+
+            if (on)
+            {
+               Action saveAction = mApplication.getAction("Save");
+               if (saveAction != null)
+               {
+                  saveAction.invoke();
+               }
+            }
          }
          else if (key == 0x57 && !on) // Punch
          {
