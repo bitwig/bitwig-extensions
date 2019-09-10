@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.arturia.keylab;
 
+import java.util.Arrays;
+
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
@@ -55,15 +57,24 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
    {
       final ControllerHost host = getHost();
 
+      Arrays.fill(mLastLEDState, true);
+
       mTransport = host.createTransport();
       mTransport.isPlaying().markInterested();
       mTransport.isArrangerRecordEnabled().markInterested();
       mTransport.isArrangerLoopEnabled().markInterested();
+      mTransport.isArrangerAutomationWriteEnabled().markInterested();
       mTransport.isPunchInEnabled().markInterested();
+      mTransport.isPunchOutEnabled().markInterested();
       mTransport.isMetronomeEnabled().markInterested();
       mCursorTrack = host.createCursorTrack(4, 0);
       mCursorTrack.volume().setIndication(true);
+      mCursorTrack.solo().markInterested();
+      mCursorTrack.mute().markInterested();
+      mCursorTrack.arm().markInterested();
       mCursorTrack.exists().markInterested();
+      mCursorTrack.hasNext().markInterested();
+      mCursorTrack.hasPrevious().markInterested();
       mDevice = mCursorTrack.createCursorDevice();
       mDevice.exists().markInterested();
       mDevice.hasNext().markInterested();
@@ -196,38 +207,6 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
 
    private void onNotePortMidi(final ShortMidiMessage data)
    {
-      if (data.isNoteOn() && data.getChannel() == 9)
-      {
-         final int key = data.getData1();
-
-         switch (key)
-         {
-         case 36:
-            mRemoteControls.selectNextPageMatching("preset", true);
-            break;
-         case 37:
-            mRemoteControls.selectNextPageMatching("overview", true);
-            break;
-         case 38:
-            mRemoteControls.selectNextPageMatching("lfo", true);
-            break;
-         case 39:
-            mRemoteControls.selectNextPageMatching("fx", true);
-            break;
-         case 40:
-            mRemoteControls.selectNextPageMatching("oscillator", true);
-            break;
-         case 41:
-            mRemoteControls.selectNextPageMatching("mix", true);
-            break;
-         case 42:
-            mRemoteControls.selectNextPageMatching("filter", true);
-            break;
-         case 43:
-            mRemoteControls.selectNextPageMatching("envelope", true);
-            break;
-         }
-      }
    }
 
    private void onDAWPortMidi(final ShortMidiMessage data)
@@ -237,50 +216,50 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
          final boolean on = data.getData2() >= 64;
          final int key = data.getData1();
 
-         if (key == 0x5B) // REWIND
+         if (key == CC_REWIND) // REWIND
          {
             mIsTransportDown[0] = on;
             repeatRewind();
-            setLED(0x5B, on);
+            setLED(CC_REWIND, on);
          }
-         else if (key == 0x5C) // FWD
+         else if (key == CC_FORWARD) // FWD
          {
             mIsTransportDown[1] = on;
             repeatForward();
             setLED(0x5C, on);
          }
-         else if (key == 0x5D) // Stop
+         else if (key == CC_STOP) // Stop
          {
             if (on) mTransport.stop();
-            setLED(0x5D, on);
+            setLED(CC_STOP, on);
          }
-         else if (key == 0x5E && on) // Play
+         else if (key == CC_PLAY && on) // Play
          {
             mTransport.play();
          }
-         else if (key == 0x5F && !on) // Rec
+         else if (key == CC_REC && !on) // Rec
          {
             mTransport.record();
          }
-         else if (key == 0x56 && !on) // ReLoop/Cycle
+         else if (key == CC_LOOP && !on) // ReLoop/Cycle
          {
             mTransport.isArrangerLoopEnabled().toggle();
          }
-         else if (key == 0x59 && !on) // Metronome
+         else if (key == CC_METRONOME && !on) // Metronome
          {
             mTransport.isMetronomeEnabled().toggle();
          }
-         else if (key == 0x51) // Undo
+         else if (key == CC_UNDO) // Undo
          {
             if (!on)
             {
                mApplication.undo();
             }
-            setLED(0x51, on);
+            setLED(CC_UNDO, on);
          }
-         else if (key == 0x50) // Save
+         else if (key == CC_SAVE) // Save
          {
-            setLED(0x50, on);
+            setLED(CC_SAVE, on);
 
             if (on)
             {
@@ -291,15 +270,66 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
                }
             }
          }
-         else if (key == 0x57 && !on) // Punch
+         else if (key == CC_PUNCH_IN && !on) // Punch-in
          {
             mTransport.isPunchInEnabled().toggle();
-            mTransport.isPunchOutEnabled().set(!mTransport.isPunchInEnabled().get());
+         }
+         else if (key == CC_PUNCH_OUT && !on) // Punch
+         {
+            mTransport.isPunchOutEnabled().toggle();
+         }
+         else if (key == CC_ARM && on)
+         {
+            mCursorTrack.arm().toggle();
+         }
+         else if (key == CC_SOLO && on)
+         {
+            mCursorTrack.solo().toggle();
+         }
+         else if (key == CC_MUTE && on)
+         {
+            mCursorTrack.mute().toggle();
+         }
+         else if (key == CC_WRITE_AUTOMATION && on)
+         {
+            mTransport.toggleWriteArrangerAutomation();
+         }
+         else if (key == 24 && on)
+         {
+            mRemoteControls.selectNextPageMatching("preset", true);
+         }
+         else if (key == 25 && on)
+         {
+            mRemoteControls.selectNextPageMatching("overview", true);
+         }
+         else if (key == 26 && on)
+         {
+            mRemoteControls.selectNextPageMatching("oscillator", true);
+         }
+         else if (key == 27 && on)
+         {
+            mRemoteControls.selectNextPageMatching("mix", true);
+         }
+         else if (key == 28 && on)
+         {
+            mRemoteControls.selectNextPageMatching("filter", true);
+         }
+         else if (key == 29 && on)
+         {
+            mRemoteControls.selectNextPageMatching("lfo", true);
+         }
+         else if (key == 30 && on)
+         {
+            mRemoteControls.selectNextPageMatching("envelope", true);
+         }
+         else if (key == 31 && on)
+         {
+            mRemoteControls.selectNextPageMatching("fx", true);
          }
 
          // Wheel section
 
-         if (key == 0x62) // Prev
+         if (key == CC_WHEEL_PREV) // Prev
          {
             if (!on)
             {
@@ -312,10 +342,8 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
                   mCursorTrack.selectPrevious();
                }
             }
-
-            setLED(0x62, on);
          }
-         else if (key == 0x63) // Next
+         else if (key == CC_WHEEL_NEXT) // Next
          {
             if (!on)
             {
@@ -328,10 +356,8 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
                   mCursorTrack.selectNext();
                }
             }
-
-            setLED(0x63, on);
          }
-         else if (key == 0x65 && !on) // Cat/Char
+         else if (key == CC_CATEGORY && !on) // Cat/Char
          {
             if (mDisplayMode == DisplayMode.BROWSER || mDisplayMode == DisplayMode.BROWSER_CREATOR)
             {
@@ -342,7 +368,7 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
                setDisplayMode(DisplayMode.BROWSER_CREATOR);
             }
          }
-         else if (key == 0x64 && !on) // Preset
+         else if (key == CC_PRESET && !on) // Preset
          {
             if (mDisplayMode == DisplayMode.BROWSER_CATEGORY || mDisplayMode == DisplayMode.BROWSER_CREATOR)
             {
@@ -353,7 +379,7 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
                startPresetBrowsing();
             }
          }
-         else if (key == 0x54 && on) // Wheel click
+         else if (key == CC_WHEEL_CLICK && on) // Wheel click
          {
             mLastText = null;
 
@@ -370,11 +396,11 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
 
          // Encoder / Fader section
 
-         if (key == 0x31 && !on) // Next
+         if (key == CC_NEXT_BUTTON && !on) // Next
          {
             mRemoteControls.selectNext();
          }
-         else if (key == 0x30 && !on) // Next
+         else if (key == CC_PREV_BUTTON && !on) // Next
          {
             mRemoteControls.selectPrevious();
          }
@@ -389,6 +415,10 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
          if (encoderIndex >= 0 && encoderIndex < 8)
          {
             mRemoteControls.getParameter(encoderIndex).inc(increment, 101);
+         }
+         else if (CC == 24) // 9th encoder
+         {
+            mCursorTrack.volume().inc(increment, 101);
          }
          else if (CC == 0x3C) // Wheel
          {
@@ -504,14 +534,25 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
          mLowerTextToSend = null;
       }
 
-      setLED(0x5E, mTransport.isPlaying().get());
-      setLED(0x56, mTransport.isArrangerLoopEnabled().get());
-      setLED(0x5F, mTransport.isArrangerRecordEnabled().get());
-      setLED(0x57, mTransport.isPunchInEnabled().get());
-      setLED(0x59, mTransport.isMetronomeEnabled().get());
+      setLED(CC_PLAY, mTransport.isPlaying().get());
+      setLED(CC_LOOP, mTransport.isArrangerLoopEnabled().get());
+      setLED(CC_REC, mTransport.isArrangerRecordEnabled().get());
+      setLED(CC_WRITE_AUTOMATION, mTransport.isArrangerAutomationWriteEnabled().get());
+      setLED(CC_PUNCH_IN, mTransport.isPunchInEnabled().get());
+      setLED(CC_PUNCH_OUT, mTransport.isPunchOutEnabled().get());
+      setLED(CC_METRONOME, mTransport.isMetronomeEnabled().get());
+      setLED(CC_SOLO, mCursorTrack.solo().get());
+      setLED(CC_MUTE, mCursorTrack.mute().get());
+      setLED(CC_ARM, mCursorTrack.arm().get());
 
-      setLED(0x65, mDisplayMode == DisplayMode.BROWSER_CATEGORY || mDisplayMode == DisplayMode.BROWSER_CREATOR);
-      setLED(0x64, mDisplayMode == DisplayMode.BROWSER);
+      if (mDisplayMode == null)
+      {
+         setLED(CC_WHEEL_PREV, mCursorTrack.hasPrevious().get());
+         setLED(CC_WHEEL_NEXT, mCursorTrack.hasNext().get());
+      }
+
+      setLED(CC_CATEGORY, mDisplayMode == DisplayMode.BROWSER_CATEGORY || mDisplayMode == DisplayMode.BROWSER_CREATOR);
+      setLED(CC_PRESET, mDisplayMode == DisplayMode.BROWSER);
    }
 
    private void doSendTextToKeylab(final String upper, final String lower)
@@ -563,4 +604,27 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
    private Application mApplication;
    private boolean[] mIsTransportDown;
    private long mLastDisplayTimeStamp;
+
+   private final static int CC_REWIND = 0x5B;
+   private final static int CC_FORWARD = 0x5C;
+   private final static int CC_STOP = 0x5D;
+   private final static int CC_PLAY = 0x5E;
+   private final static int CC_REC = 0x5F;
+   private final static int CC_LOOP = 0x56;
+   private final static int CC_METRONOME = 0x59;
+   private final static int CC_UNDO = 0x51;
+   private final static int CC_SAVE = 0x50;
+   private final static int CC_PUNCH_IN = 0x57;
+   private final static int CC_PUNCH_OUT = 0x58;
+   private final static int CC_ARM = 0;
+   private final static int CC_SOLO = 8;
+   private final static int CC_MUTE = 16;
+   private final static int CC_WRITE_AUTOMATION = 75;
+   private final static int CC_WHEEL_PREV = 0x62;
+   private final static int CC_WHEEL_NEXT = 0x63;
+   private final static int CC_CATEGORY = 0x65;
+   private final static int CC_PRESET = 0x64;
+   private final static int CC_WHEEL_CLICK = 0x54;
+   private final static int CC_NEXT_BUTTON = 0x31;
+   private final static int CC_PREV_BUTTON = 0x30;
 }
