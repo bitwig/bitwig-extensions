@@ -22,8 +22,9 @@ import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Transport;
 
 // TODO
-// add mode to switch pads between pages and drum pads
-// 9th encoder should control track volume
+// Multi (mixer) mode
+// Figure out how to control the lights, category/preset buttons
+// Stuck notes?
 
 public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
 {
