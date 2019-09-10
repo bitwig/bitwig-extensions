@@ -13,12 +13,6 @@ public class ArturiaKeylabEssential61ControllerExtensionDefinition extends Artur
    }
 
    @Override
-   public boolean hasDrumPads()
-   {
-      return true;
-   }
-
-   @Override
    public UUID getId()
    {
       return ID;

@@ -6,7 +6,7 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extends ControllerExtensionDefinition
+public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends ControllerExtensionDefinition
 {
    public abstract int getNumberOfKeys();
 
@@ -25,7 +25,7 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
    @Override
    public String getName()
    {
-      return "Keylab Essential " + getNumberOfKeys();
+      return "Keylab " + getNumberOfKeys() + " mkII";
    }
 
    @Override
@@ -43,13 +43,13 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
    @Override
    public String getHardwareModel()
    {
-      return "KeyLab Essential " + getNumberOfKeys();
+      return "KeyLab " + getNumberOfKeys() + " mkII";
    }
 
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Arturia/KeyLab Essential " + getNumberOfKeys() + ".html";
+      return "Documentation/Controllers/Arturia/KeyLab " + getNumberOfKeys() + " mkII.html";
    }
 
    @Override
@@ -67,7 +67,7 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new ArturiaKeylabEssentialControllerExtension(this, host);
+      return new ArturiaKeylabMkIIControllerExtension(this, host);
    }
 
    @Override
@@ -76,17 +76,17 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
    {
       if (platformType == PlatformType.WINDOWS)
       {
-         final String name = "Arturia KeyLab Essential " + getNumberOfKeys();
+         final String name = "KeyLab mkII " + getNumberOfKeys();
 
-         final String in2 = "MIDIIN2 (Arturia KeyLab Essenti";
-         final String out2 = "MIDIOUT2 (Arturia KeyLab Essent";
+         final String in2 = "MIDIIN2 (KeyLab mkII " + getNumberOfKeys() + ")";
+         final String out2 = "MIDIOUT2 (KeyLab mkII " + getNumberOfKeys() + ")";
 
          list.add(new String[] {name, in2}, new String[] {name, out2});
 
       }
       else if (platformType == PlatformType.MAC)
       {
-         final String name = "Arturia KeyLab Essential " + getNumberOfKeys();
+         final String name = "KeyLab mkII " + getNumberOfKeys();
 
          list.add(
             new String[] {name + " MIDI In", name + " DAW In"},

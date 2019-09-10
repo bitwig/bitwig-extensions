@@ -6,7 +6,6 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.Action;
-import com.bitwig.extension.controller.api.ActionCategory;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.BrowserFilterItem;
 import com.bitwig.extension.controller.api.BrowserResultsItem;
@@ -24,7 +23,7 @@ import com.bitwig.extension.controller.api.Transport;
 // add mode to switch pads between pages and drum pads
 // 9th encoder should control track volume
 
-public class ArturiaKeylabEssentialControllerExtension extends ControllerExtension
+public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
 {
    DisplayMode mDisplayMode = null;
 
@@ -42,8 +41,8 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       mLastDisplayTimeStamp = System.currentTimeMillis();
    }
 
-   public ArturiaKeylabEssentialControllerExtension(
-      final ArturiaKeylabEssentialControllerExtensionDefinition definition,
+   public ArturiaKeylabMkIIControllerExtension(
+      final ArturiaKeylabMkIIControllerExtensionDefinition definition,
       final ControllerHost host)
    {
       super(definition, host);
@@ -115,10 +114,7 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       mNoteInput = host.getMidiInPort(0).createNoteInput("Keys", "?0????", "?1????", "?2????", "?3????", "?4????", "?5????", "?6????", "?7????", "?8????");
       mNoteInput.setShouldConsumeEvents(true);
 
-      {
-         /*final NoteInput drumPadsInput = host.getMidiInPort(0).createNoteInput("Pads", "?9????");
-         drumPadsInput.setShouldConsumeEvents(false);*/
-      }
+      final NoteInput drumPadsInput = host.getMidiInPort(0).createNoteInput("Pads", "?9????");
 
       mCursorTrack.name().markInterested();
       mDevice.name().markInterested();
@@ -133,18 +129,9 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
 
       final ControllerExtensionDefinition definition = getExtensionDefinition();
 
-      sendSysex("F0 00 20 6B 7F 42 02 00 40 51 00 F7");  // Init DAW preset in mackie mode
+      sendSysex("F0 00 20 6B 7F 42 02 00 40 52 00 F7"); // Init DAW preset in Default MCU mode
 
       sendSysex("F0 00 20 6B 7F 42 05 02 F7"); // Set to DAW mode
-
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 70 09 F7");  // Setup pads to be on channel 10
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 71 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 72 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 73 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 74 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 75 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 76 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 77 09 F7");
 
       sendTextToKeyLab(
          definition.getHardwareVendor(),
