@@ -5,7 +5,6 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
@@ -25,7 +24,7 @@ import com.bitwig.extension.controller.api.PlayingNote;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.Transport;
 
-public class PresonusAtomControllerExtension extends ControllerExtension
+public class PresonusAtom extends ControllerExtension
 {
    final static int CC_ENCODER_1 = 0x0E;
    final static int CC_ENCODER_2 = 0x0F;
@@ -53,8 +52,8 @@ public class PresonusAtomControllerExtension extends ControllerExtension
    final static int CC_PLAY_LOOP_TOGGLE = 0x6D;
    final static int CC_STOP_UNDO = 0x6F;
 
-   public PresonusAtomControllerExtension(
-      final PresonusAtomControllerExtensionDefinition definition,
+   public PresonusAtom(
+      final PresonusAtomDefinition definition,
       final ControllerHost host)
    {
       super(definition, host);
@@ -261,7 +260,7 @@ public class PresonusAtomControllerExtension extends ControllerExtension
    {
       for (Flushable flushable : mFlushables)
       {
-         flushable.flush();
+         flushable.flush(mMidiOut);
       }
    }
 

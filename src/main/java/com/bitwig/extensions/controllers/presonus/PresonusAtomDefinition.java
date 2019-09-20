@@ -8,14 +8,14 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class PresonusAtomControllerExtensionDefinition extends ControllerExtensionDefinition
+public class PresonusAtomDefinition extends ControllerExtensionDefinition
 {
    private final static UUID ID = UUID.fromString("474bba86-c116-4d4a-a3c3-4c230ab4d012");
 
    @Override
    public String getHardwareVendor()
    {
-      return "Presonus";
+      return "PreSonus";
    }
 
    @Override
@@ -48,7 +48,7 @@ public class PresonusAtomControllerExtensionDefinition extends ControllerExtensi
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new PresonusAtomControllerExtension(this, host);
+      return new PresonusAtom(this, host);
    }
 
    @Override

@@ -41,7 +41,7 @@ public class AtomPad implements ColorSettable, Flushable
    }
 
    @Override
-   public void flush()
+   public void flush(final MidiOut midiOut)
    {
       final int[] values = new int[4];
       values[0] = mHasChain ? 127 : 0;
