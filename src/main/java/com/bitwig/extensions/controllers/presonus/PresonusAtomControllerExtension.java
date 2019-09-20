@@ -5,9 +5,11 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
@@ -105,7 +107,9 @@ public class PresonusAtomControllerExtension extends ControllerExtension
          DrumPad drumPad = mDrumPadBank.getItemAt(padIndex);
          SettableColorValue color = drumPad.color();
          color.addValueObserver((r,g,b) -> pads[padIndex].setColor(r,g,b));
+         drumPad.exists().addValueObserver(e -> pads[padIndex].setHasChain(e));
          pads[padIndex].setColor(color.red(), color.green(), color.blue());
+         mFlushables.add(pads[padIndex]);
       }
 
       mCursorTrack.playingNotes().addValueObserver(notes ->
@@ -150,13 +154,14 @@ public class PresonusAtomControllerExtension extends ControllerExtension
       mTransport.isArrangerRecordEnabled().addValueObserver(r -> record.setState(
          r ? AtomButton.State.ON : AtomButton.State.OFF));
 
-      initButton(CC_UP, mApplication::arrowKeyUp);
-      initButton(CC_DOWN, mApplication::arrowKeyDown);
-      initButton(CC_LEFT, mApplication::arrowKeyLeft);
-      initButton(CC_RIGHT, mApplication::arrowKeyRight);
+      initButton(CC_UP, mCursorTrack::selectPrevious, mCursorTrack.hasPrevious());
+      initButton(CC_DOWN, mCursorTrack::selectNext, mCursorTrack.hasNext());
+      initButton(CC_LEFT, mCursorDevice::selectPrevious, mCursorDevice.hasPrevious());
+      initButton(CC_RIGHT, mCursorDevice::selectNext, mCursorDevice.hasNext());
       final AtomRGBButton selectButton =
          initRGBButton(CC_SELECT, mApplication::enter);
-      initButton(CC_ZOOM, mApplication::zoomToFit);
+
+      initButton(CC_ZOOM, mApplication::zoomIn, mApplication::zoomOut);
    }
 
    private AtomButton initButton(int data1, Consumer<Boolean> booleanConsumer)
@@ -173,6 +178,19 @@ public class PresonusAtomControllerExtension extends ControllerExtension
       {
          if (b) runnable.run();
       });
+
+      mButtons.add(button);
+      return button;
+   }
+
+   private AtomButton initButton(int data1, Runnable runnable, BooleanValue shouldBeOn)
+   {
+      AtomButton button = new AtomButton(mMidiOut, data1, (b) ->
+      {
+         if (b) runnable.run();
+      });
+
+      shouldBeOn.addValueObserver(on -> button.setState(on ? AtomButton.State.ON : AtomButton.State.OFF));
 
       mButtons.add(button);
       return button;
@@ -199,6 +217,7 @@ public class PresonusAtomControllerExtension extends ControllerExtension
       mButtons.add(button);
       return button;
    }
+
 
    private AtomRGBButton initRGBButton(int data1, Runnable runnable, Runnable shiftRunnable)
    {
@@ -240,6 +259,10 @@ public class PresonusAtomControllerExtension extends ControllerExtension
    @Override
    public void flush()
    {
+      for (Flushable flushable : mFlushables)
+      {
+         flushable.flush();
+      }
    }
 
    /* API Objects */
@@ -254,4 +277,5 @@ public class PresonusAtomControllerExtension extends ControllerExtension
    private boolean mShift;
    private NoteInput mNoteInput;
    private AtomButton mMetronomeButton;
+   private List<Flushable> mFlushables = new ArrayList<>();
 }
