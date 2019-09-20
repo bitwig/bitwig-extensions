@@ -2,19 +2,22 @@ package com.bitwig.extensions.controllers.presonus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
+import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 
@@ -54,18 +57,60 @@ public class PresonusFaderPort extends ControllerExtension
 
       for(int c=0; c<mChannelCount; c++)
       {
-         Fader fader = new Fader(c);
-         Parameter volume = mTrackBank.getItemAt(c).volume();
+         final Channel channel = new Channel(c);
+         final Track track = mTrackBank.getItemAt(c);
+         final Parameter volume = track.volume();
          volume.markInterested();
+         track.mute().markInterested();
+         track.solo().markInterested();
 
-         fader.setTarget(volume);
-         mFaders.add(fader);
+         channel.setTarget(track);
+
+         channel.getSelect().setBooleanValue(mCursorTrack.createEqualsValue(track));
+
+         mChannels.add(channel);
       }
 
-      mFlushables.addAll(mFaders);
-      mMidiReceivers.addAll(mFaders);
+      addSimpleToggleButton(0x5e, mTransport.isPlaying());
+      addSimpleToggleButton(0x38, mTransport.isMetronomeEnabled());
+      addSimpleToggleButton(0x2E, mTrackBank.canScrollBackwards(), mTrackBank::scrollBackwards);
+      addSimpleToggleButton(0x2F, mTrackBank.canScrollForwards(), mTrackBank::scrollForwards);
+
+      mFlushables.addAll(mChannels);
+      mMidiReceivers.addAll(mChannels);
    }
 
+   private void addSimpleToggleButton(final int ID, final SettableBooleanValue value)
+   {
+      final ToggleButton button = new ToggleButton(ID);
+      button.setBooleanValue(value);
+      button.setRunnable(value::toggle);
+      value.markInterested();
+
+      mFlushables.add(button);
+      mMidiReceivers.add(button);
+   }
+
+   private void addSimpleToggleButton(final int ID, final BooleanValue value, final Runnable runnable)
+   {
+      final ToggleButton button = new ToggleButton(ID);
+      button.setBooleanValue(value);
+      button.setRunnable(runnable);
+      value.markInterested();
+
+      mFlushables.add(button);
+      mMidiReceivers.add(button);
+   }
+
+   private void addSimpleToggleButton(final int ID, final BooleanSupplier value, final Runnable runnable)
+   {
+      final ToggleButton button = new ToggleButton(ID);
+      button.setBooleanSupplier(value);
+      button.setRunnable(runnable);
+
+      mFlushables.add(button);
+      mMidiReceivers.add(button);
+   }
 
    @Override
    public void exit()
@@ -96,7 +141,6 @@ public class PresonusFaderPort extends ControllerExtension
    private Transport mTransport;
    private MidiOut mMidiOut;
    private Application mApplication;
-   private DrumPadBank mDrumPadBank;
    private List<AtomButton> mButtons = new ArrayList<>();
    private boolean mShift;
    private NoteInput mNoteInput;
@@ -105,5 +149,5 @@ public class PresonusFaderPort extends ControllerExtension
    private List<MidiReceiver> mMidiReceivers = new ArrayList<>();
    private final int mChannelCount;
    private TrackBank mTrackBank;
-   private List<Fader> mFaders = new ArrayList<>();
+   private List<Channel> mChannels = new ArrayList<>();
 }
