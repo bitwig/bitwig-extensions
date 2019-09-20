@@ -29,7 +29,7 @@ public class AtomButton
             mMidiOut.sendMidi(0xB0, mData1, 0);
             break;
          case DIMMED:
-            mMidiOut.sendMidi(0xB0, mData1, 0x20);
+            mMidiOut.sendMidi(0xB0, mData1, 0x02);
             break;
          case ON:
             mMidiOut.sendMidi(0xB0, mData1, 127);

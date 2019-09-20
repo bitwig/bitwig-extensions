@@ -20,6 +20,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.PlayingNote;
+import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.Transport;
 
 public class PresonusAtomControllerExtension extends ControllerExtension
@@ -76,10 +77,6 @@ public class PresonusAtomControllerExtension extends ControllerExtension
       mCursorDevice =
          mCursorTrack.createCursorDevice("ATOM", "Atom", 0, CursorDeviceFollowMode.FIRST_INSTRUMENT);
 
-      initPads();
-
-      initButtons();
-
       mRemoteControls = mCursorDevice.createCursorRemoteControlsPage(4);
       mRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 4);
       for (int i = 0; i < 4; ++i)
@@ -87,11 +84,9 @@ public class PresonusAtomControllerExtension extends ControllerExtension
 
       mTransport = host.createTransport();
 
-      mTransport.isPlaying().addValueObserver(isPlaying -> mPlayButton.setState(
-         isPlaying ? AtomButton.State.ON : AtomButton.State.DIMMED));
+      initPads();
 
-      mTransport.isArrangerRecordEnabled().addValueObserver(record -> mRecordingButton.setState(
-         record ? AtomButton.State.ON : AtomButton.State.DIMMED));
+      initButtons();
 
       // Turn on Native Mode
       mMidiOut.sendMidi(0x8f, 0, 127);
@@ -100,12 +95,17 @@ public class PresonusAtomControllerExtension extends ControllerExtension
    private void initPads()
    {
       mDrumPadBank = mCursorDevice.createDrumPadBank(16);
+
+      AtomPad[] pads = new AtomPad[16];
+
       for(int i=0; i<16; i++)
       {
          final int padIndex = i;
-         mPads[padIndex] = new AtomPad(mMidiOut, padIndex);
-         DrumPad drumPad = mDrumPadBank.getItemAt(0);
-         drumPad.color().addValueObserver((r,g,b) -> mPads[padIndex].setColor(r,g,b));
+         pads[padIndex] = new AtomPad(mMidiOut, padIndex);
+         DrumPad drumPad = mDrumPadBank.getItemAt(padIndex);
+         SettableColorValue color = drumPad.color();
+         color.addValueObserver((r,g,b) -> pads[padIndex].setColor(r,g,b));
+         pads[padIndex].setColor(color.red(), color.green(), color.blue());
       }
 
       mCursorTrack.playingNotes().addValueObserver(notes ->
@@ -118,7 +118,7 @@ public class PresonusAtomControllerExtension extends ControllerExtension
 
          for(int i=0; i<16; i++)
          {
-            mPads[i].setOn(playing.get(36 + i));
+            pads[i].setOn(playing.get(36 + i));
          }
       });
    }
@@ -126,10 +126,19 @@ public class PresonusAtomControllerExtension extends ControllerExtension
    private void initButtons()
    {
       initButton(CC_SHIFT, b -> mShift = b);
-      initButton(CC_CLICK_COUNT_IN, mTransport.isMetronomeEnabled()::toggle);
-      mPlayButton = initRGBButton(CC_PLAY_LOOP_TOGGLE, mTransport::togglePlay, mTransport.isArrangerLoopEnabled()::toggle);
+
+      final AtomButton metronome = initButton(CC_CLICK_COUNT_IN, mTransport.isMetronomeEnabled()::toggle);
+      mTransport.isMetronomeEnabled().addValueObserver(record -> metronome.setState(
+         record ? AtomButton.State.ON : AtomButton.State.OFF));
+
+      final AtomRGBButton playButton =
+         initRGBButton(CC_PLAY_LOOP_TOGGLE, mTransport::togglePlay, mTransport.isArrangerLoopEnabled()::toggle);
+      mTransport.isPlaying().addValueObserver(isPlaying -> playButton.setState(
+         isPlaying ? AtomButton.State.ON : AtomButton.State.OFF));
+
       initButton(CC_STOP_UNDO, mTransport::stop, mApplication::undo);
-      mRecordingButton = initButton(CC_RECORD_SAVE, mTransport::record, () ->
+
+      final AtomButton record = initButton(CC_RECORD_SAVE, mTransport::record, () ->
       {
          Action saveAction = mApplication.getAction("Save");
          if (saveAction != null)
@@ -138,17 +147,23 @@ public class PresonusAtomControllerExtension extends ControllerExtension
          }
       });
 
+      mTransport.isArrangerRecordEnabled().addValueObserver(r -> record.setState(
+         r ? AtomButton.State.ON : AtomButton.State.OFF));
+
       initButton(CC_UP, mApplication::arrowKeyUp);
       initButton(CC_DOWN, mApplication::arrowKeyDown);
       initButton(CC_LEFT, mApplication::arrowKeyLeft);
       initButton(CC_RIGHT, mApplication::arrowKeyRight);
-      mSelectButton = initRGBButton(CC_SELECT, mApplication::enter);
+      final AtomRGBButton selectButton =
+         initRGBButton(CC_SELECT, mApplication::enter);
       initButton(CC_ZOOM, mApplication::zoomToFit);
    }
 
    private AtomButton initButton(int data1, Consumer<Boolean> booleanConsumer)
    {
       AtomButton button = new AtomButton(mMidiOut, data1, booleanConsumer);
+
+      mButtons.add(button);
       return button;
    }
 
@@ -158,6 +173,8 @@ public class PresonusAtomControllerExtension extends ControllerExtension
       {
          if (b) runnable.run();
       });
+
+      mButtons.add(button);
       return button;
    }
 
@@ -167,6 +184,8 @@ public class PresonusAtomControllerExtension extends ControllerExtension
       {
          if (b) runnable.run();
       });
+
+      mButtons.add(button);
       return button;
    }
 
@@ -176,6 +195,8 @@ public class PresonusAtomControllerExtension extends ControllerExtension
       {
          if (b) (mShift ? shiftRunnable : runnable).run();
       });
+
+      mButtons.add(button);
       return button;
    }
 
@@ -185,6 +206,8 @@ public class PresonusAtomControllerExtension extends ControllerExtension
       {
          if (b) (mShift ? shiftRunnable : runnable).run();
       });
+
+      mButtons.add(button);
       return button;
    }
 
@@ -227,11 +250,8 @@ public class PresonusAtomControllerExtension extends ControllerExtension
    private MidiOut mMidiOut;
    private Application mApplication;
    private DrumPadBank mDrumPadBank;
-   private AtomPad[] mPads = new AtomPad[16];
    private List<AtomButton> mButtons = new ArrayList<>();
    private boolean mShift;
-   private AtomButton mRecordingButton;
-   private AtomRGBButton mPlayButton;
-   private AtomRGBButton mSelectButton;
    private NoteInput mNoteInput;
+   private AtomButton mMetronomeButton;
 }
