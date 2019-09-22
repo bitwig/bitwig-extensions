@@ -1,6 +1,8 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.atom;
 
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extensions.controllers.presonus.ColorSettable;
+import com.bitwig.extensions.controllers.presonus.Flushable;
 
 public class AtomPad implements ColorSettable, Flushable
 {

@@ -4,5 +4,5 @@ import com.bitwig.extension.controller.api.MidiOut;
 
 public interface Flushable
 {
-   void flush(final MidiOut midiOut);
+   void flush(final Mode mode, final MidiOut midiOut);
 }

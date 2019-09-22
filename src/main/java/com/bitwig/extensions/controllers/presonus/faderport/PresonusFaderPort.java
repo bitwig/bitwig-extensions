@@ -20,6 +20,7 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.controllers.presonus.atom.AtomButton;
 
 public class PresonusFaderPort extends ControllerExtension
 {

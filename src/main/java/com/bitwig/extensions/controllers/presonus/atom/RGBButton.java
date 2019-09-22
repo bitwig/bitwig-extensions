@@ -1,8 +1,9 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.atom;
 
 import java.util.function.Consumer;
 
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extensions.controllers.presonus.ColorSettable;
 
 public class AtomRGBButton extends AtomButton implements ColorSettable
 {
