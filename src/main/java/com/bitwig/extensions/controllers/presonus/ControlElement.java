@@ -1,14 +1,10 @@
 package com.bitwig.extensions.controllers.presonus;
 
-public abstract class ControlElement<T extends Target> implements MidiReceiver
-{
-   protected T getEffectiveTarget(Mode mode)
-   {
-      if (mode != null)
-      {
-         return mode.getTarget(this);
-      }
+import com.bitwig.extension.controller.api.MidiOut;
 
-      return null;
-   }
+public interface ControlElement<T extends Target>
+{
+   void onMidi(final T target, final int status, final int data1, final int data2);
+
+   void flush(final T target, final MidiOut midiOut);
 }

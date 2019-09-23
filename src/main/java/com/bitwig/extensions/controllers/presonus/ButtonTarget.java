@@ -2,9 +2,7 @@ package com.bitwig.extensions.controllers.presonus;
 
 public interface ButtonTarget extends Target
 {
-   boolean isOn(boolean isPressed);
+   boolean get();
 
-   void press();
-
-   void release();
+   void set(boolean pressed);
 }

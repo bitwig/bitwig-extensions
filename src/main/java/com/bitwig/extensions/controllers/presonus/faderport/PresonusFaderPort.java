@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.faderport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +20,7 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.presonus.atom.AtomButton;
+//import com.bitwig.extensions.controllers.presonus.atom.AtomButton;
 
 public class PresonusFaderPort extends ControllerExtension
 {
@@ -77,8 +77,8 @@ public class PresonusFaderPort extends ControllerExtension
       addSimpleToggleButton(0x2E, mTrackBank.canScrollBackwards(), mTrackBank::scrollBackwards);
       addSimpleToggleButton(0x2F, mTrackBank.canScrollForwards(), mTrackBank::scrollForwards);
 
-      mFlushables.addAll(mChannels);
-      mMidiReceivers.addAll(mChannels);
+      /*mFlushables.addAll(mChannels);
+      mMidiReceivers.addAll(mChannels);*/
    }
 
    private void addSimpleToggleButton(final int ID, final SettableBooleanValue value)
@@ -88,8 +88,8 @@ public class PresonusFaderPort extends ControllerExtension
       button.setRunnable(value::toggle);
       value.markInterested();
 
-      mFlushables.add(button);
-      mMidiReceivers.add(button);
+      /*mFlushables.add(button);
+      mMidiReceivers.add(button);*/
    }
 
    private void addSimpleToggleButton(final int ID, final BooleanValue value, final Runnable runnable)
@@ -99,8 +99,8 @@ public class PresonusFaderPort extends ControllerExtension
       button.setRunnable(runnable);
       value.markInterested();
 
-      mFlushables.add(button);
-      mMidiReceivers.add(button);
+      //mFlushables.add(button);
+      //mMidiReceivers.add(button);
    }
 
    private void addSimpleToggleButton(final int ID, final BooleanSupplier value, final Runnable runnable)
@@ -109,8 +109,8 @@ public class PresonusFaderPort extends ControllerExtension
       button.setBooleanSupplier(value);
       button.setRunnable(runnable);
 
-      mFlushables.add(button);
-      mMidiReceivers.add(button);
+      //mFlushables.add(button);
+      //mMidiReceivers.add(button);
    }
 
    @Override
@@ -120,19 +120,19 @@ public class PresonusFaderPort extends ControllerExtension
 
    private void onMidi(final int status, final int data1, final int data2)
    {
-      for (MidiReceiver midiReceiver : mMidiReceivers)
+      /*for (MidiReceiver midiReceiver : mMidiReceivers)
       {
          midiReceiver.onMidi(status, data1, data2);
-      }
+      }*/
    }
 
    @Override
    public void flush()
    {
-      for (Flushable flushable : mFlushables)
+      /*for (Flushable flushable : mFlushables)
       {
          flushable.flush(mMidiOut);
-      }
+      }*/
    }
 
    /* API Objects */
@@ -142,12 +142,12 @@ public class PresonusFaderPort extends ControllerExtension
    private Transport mTransport;
    private MidiOut mMidiOut;
    private Application mApplication;
-   private List<AtomButton> mButtons = new ArrayList<>();
+   //private List<AtomButton> mButtons = new ArrayList<>();
    private boolean mShift;
    private NoteInput mNoteInput;
-   private AtomButton mMetronomeButton;
+   /*private AtomButton mMetronomeButton;
    private List<Flushable> mFlushables = new ArrayList<>();
-   private List<MidiReceiver> mMidiReceivers = new ArrayList<>();
+   private List<MidiReceiver> mMidiReceivers = new ArrayList<>();*/
    private final int mChannelCount;
    private TrackBank mTrackBank;
    private List<Channel> mChannels = new ArrayList<>();

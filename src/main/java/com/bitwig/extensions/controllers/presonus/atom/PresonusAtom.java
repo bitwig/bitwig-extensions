@@ -1,14 +1,10 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.atom;
 
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
-import java.util.function.Consumer;
 
-import com.bitwig.extension.controller.ControllerExtension;
-import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
-import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
@@ -23,8 +19,10 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.PlayingNote;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.controllers.presonus.ButtonTarget;
+import com.bitwig.extensions.controllers.presonus.ControllerExtensionWithModes;
 
-public class PresonusAtom extends ControllerExtension
+public class PresonusAtom extends ControllerExtensionWithModes
 {
    final static int CC_ENCODER_1 = 0x0E;
    final static int CC_ENCODER_2 = 0x0F;
@@ -93,22 +91,35 @@ public class PresonusAtom extends ControllerExtension
       mMidiOut.sendMidi(0x8f, 0, 127);
    }
 
+   @Override
+   public void exit()
+   {
+      // Turn off Native Mode
+      mMidiOut.sendMidi(0x8f, 0, 0);
+   }
+
+   @Override
+   protected MidiOut getMidiOut()
+   {
+      return mMidiOut;
+   }
+
    private void initPads()
    {
       mDrumPadBank = mCursorDevice.createDrumPadBank(16);
 
-      AtomPad[] pads = new AtomPad[16];
+      Pad[] pads = new Pad[16];
 
       for(int i=0; i<16; i++)
       {
          final int padIndex = i;
-         pads[padIndex] = new AtomPad(mMidiOut, padIndex);
+         pads[padIndex] = new Pad(mMidiOut, padIndex);
          DrumPad drumPad = mDrumPadBank.getItemAt(padIndex);
          SettableColorValue color = drumPad.color();
          color.addValueObserver((r,g,b) -> pads[padIndex].setColor(r,g,b));
          drumPad.exists().addValueObserver(e -> pads[padIndex].setHasChain(e));
          pads[padIndex].setColor(color.red(), color.green(), color.blue());
-         mFlushables.add(pads[padIndex]);
+         //mFlushables.add(pads[padIndex]);
       }
 
       mCursorTrack.playingNotes().addValueObserver(notes ->
@@ -128,20 +139,71 @@ public class PresonusAtom extends ControllerExtension
 
    private void initButtons()
    {
-      initButton(CC_SHIFT, b -> mShift = b);
+      mTransport.isPlaying().markInterested();
 
-      final AtomButton metronome = initButton(CC_CLICK_COUNT_IN, mTransport.isMetronomeEnabled()::toggle);
+      Button shiftButton = addElement(new Button(CC_SHIFT));
+      bind(shiftButton, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return mShift;
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            mShift = pressed;
+         }
+      });
+
+      Button clickToggle = addElement(new Button(CC_CLICK_COUNT_IN));
+      bindToggle(clickToggle, mTransport.isMetronomeEnabled());
+
+      Button playButton = addElement(new Button(CC_PLAY_LOOP_TOGGLE));
+      bindPressedRunnable(playButton, mTransport.isPlaying(), () ->
+      {
+         if (mShift) mTransport.isArrangerLoopEnabled().toggle();
+         else mTransport.togglePlay();
+      });
+
+      Button stopButton = addElement(new Button(CC_STOP_UNDO));
+      bind(stopButton, new ButtonTarget()
+         {
+            @Override
+            public boolean get()
+            {
+               return !mTransport.isPlaying().get();
+            }
+
+            @Override
+            public void set(final boolean pressed)
+            {
+               if (pressed)
+               {
+                  if (mShift)
+                     mApplication.undo();
+                  else
+                     mTransport.stop();
+               }
+            }
+         });
+
+
+            //initButton(CC_SHIFT, b -> mShift = b);
+/*
+      final Button metronome = initButton(CC_CLICK_COUNT_IN, mTransport.isMetronomeEnabled()::toggle);
       mTransport.isMetronomeEnabled().addValueObserver(record -> metronome.setState(
-         record ? AtomButton.State.ON : AtomButton.State.OFF));
+         record ? Button.State.ON : Button.State.OFF));
 
-      final AtomRGBButton playButton =
+      final RGBButton playButton =
          initRGBButton(CC_PLAY_LOOP_TOGGLE, mTransport::togglePlay, mTransport.isArrangerLoopEnabled()::toggle);
       mTransport.isPlaying().addValueObserver(isPlaying -> playButton.setState(
-         isPlaying ? AtomButton.State.ON : AtomButton.State.OFF));
+         isPlaying ? Button.State.ON : Button.State.OFF));
 
       initButton(CC_STOP_UNDO, mTransport::stop, mApplication::undo);
 
-      final AtomButton record = initButton(CC_RECORD_SAVE, mTransport::record, () ->
+      final Button record = initButton(CC_RECORD_SAVE, mTransport::record, () ->
       {
          Action saveAction = mApplication.getAction("Save");
          if (saveAction != null)
@@ -151,29 +213,29 @@ public class PresonusAtom extends ControllerExtension
       });
 
       mTransport.isArrangerRecordEnabled().addValueObserver(r -> record.setState(
-         r ? AtomButton.State.ON : AtomButton.State.OFF));
+         r ? Button.State.ON : Button.State.OFF));
 
       initButton(CC_UP, mCursorTrack::selectPrevious, mCursorTrack.hasPrevious());
       initButton(CC_DOWN, mCursorTrack::selectNext, mCursorTrack.hasNext());
       initButton(CC_LEFT, mCursorDevice::selectPrevious, mCursorDevice.hasPrevious());
       initButton(CC_RIGHT, mCursorDevice::selectNext, mCursorDevice.hasNext());
-      final AtomRGBButton selectButton =
+      final RGBButton selectButton =
          initRGBButton(CC_SELECT, mApplication::enter);
 
-      initButton(CC_ZOOM, mApplication::zoomIn, mApplication::zoomOut);
+      initButton(CC_ZOOM, mApplication::zoomIn, mApplication::zoomOut);*/
    }
-
-   private AtomButton initButton(int data1, Consumer<Boolean> booleanConsumer)
+/*
+   private Button initButton(int data1, Consumer<Boolean> booleanConsumer)
    {
-      AtomButton button = new AtomButton(mMidiOut, data1, booleanConsumer);
+      Button button = new Button(mMidiOut, data1, booleanConsumer);
 
       mButtons.add(button);
       return button;
    }
 
-   private AtomButton initButton(int data1, Runnable runnable)
+   private Button initButton(int data1, Runnable runnable)
    {
-      AtomButton button = new AtomButton(mMidiOut, data1, (b) ->
+      Button button = new Button(mMidiOut, data1, (b) ->
       {
          if (b) runnable.run();
       });
@@ -182,22 +244,22 @@ public class PresonusAtom extends ControllerExtension
       return button;
    }
 
-   private AtomButton initButton(int data1, Runnable runnable, BooleanValue shouldBeOn)
+   private Button initButton(int data1, Runnable runnable, BooleanValue shouldBeOn)
    {
-      AtomButton button = new AtomButton(mMidiOut, data1, (b) ->
+      Button button = new Button(mMidiOut, data1, (b) ->
       {
          if (b) runnable.run();
       });
 
-      shouldBeOn.addValueObserver(on -> button.setState(on ? AtomButton.State.ON : AtomButton.State.OFF));
+      shouldBeOn.addValueObserver(on -> button.setState(on ? Button.State.ON : Button.State.OFF));
 
       mButtons.add(button);
       return button;
    }
 
-   private AtomRGBButton initRGBButton(int data1, Runnable runnable)
+   private RGBButton initRGBButton(int data1, Runnable runnable)
    {
-      AtomRGBButton button = new AtomRGBButton(mMidiOut, data1, (b) ->
+      RGBButton button = new RGBButton(mMidiOut, data1, (b) ->
       {
          if (b) runnable.run();
       });
@@ -206,9 +268,9 @@ public class PresonusAtom extends ControllerExtension
       return button;
    }
 
-   private AtomButton initButton(int data1, Runnable runnable, Runnable shiftRunnable)
+   private Button initButton(int data1, Runnable runnable, Runnable shiftRunnable)
    {
-      AtomButton button = new AtomButton(mMidiOut, data1, (b) ->
+      Button button = new Button(mMidiOut, data1, (b) ->
       {
          if (b) (mShift ? shiftRunnable : runnable).run();
       });
@@ -218,31 +280,19 @@ public class PresonusAtom extends ControllerExtension
    }
 
 
-   private AtomRGBButton initRGBButton(int data1, Runnable runnable, Runnable shiftRunnable)
+   private RGBButton initRGBButton(int data1, Runnable runnable, Runnable shiftRunnable)
    {
-      AtomRGBButton button = new AtomRGBButton(mMidiOut, data1, (b) ->
+      RGBButton button = new RGBButton(mMidiOut, data1, (b) ->
       {
          if (b) (mShift ? shiftRunnable : runnable).run();
       });
 
       mButtons.add(button);
       return button;
-   }
+   }*/
 
-   @Override
-   public void exit()
+   /*protected void onMidi(final int status, final int data1, final int data2)
    {
-      // Turn off Native Mode
-      mMidiOut.sendMidi(0x8f, 0, 0);
-   }
-
-   private void onMidi(final int status, final int data1, final int data2)
-   {
-      for (AtomButton button : mButtons)
-      {
-         button.onMidi(status, data1, data2);
-      }
-
       if (status == 176)
       {
          if (data1 >= CC_ENCODER_1 && data1 <= CC_ENCODER_4)
@@ -253,16 +303,7 @@ public class PresonusAtom extends ControllerExtension
             mRemoteControls.getParameter(index).inc(diff, 101);
          }
       }
-   }
-
-   @Override
-   public void flush()
-   {
-      for (Flushable flushable : mFlushables)
-      {
-         flushable.flush(mMidiOut);
-      }
-   }
+   }*/
 
    /* API Objects */
    private CursorTrack mCursorTrack;
@@ -272,9 +313,7 @@ public class PresonusAtom extends ControllerExtension
    private MidiOut mMidiOut;
    private Application mApplication;
    private DrumPadBank mDrumPadBank;
-   private List<AtomButton> mButtons = new ArrayList<>();
    private boolean mShift;
    private NoteInput mNoteInput;
-   private AtomButton mMetronomeButton;
-   private List<Flushable> mFlushables = new ArrayList<>();
+   private Button mMetronomeButton;
 }

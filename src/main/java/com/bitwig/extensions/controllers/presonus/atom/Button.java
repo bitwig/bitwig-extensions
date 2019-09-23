@@ -4,9 +4,9 @@ import java.util.function.Consumer;
 
 import com.bitwig.extension.controller.api.MidiOut;
 
-public class AtomButton
+public class Button
 {
-   public AtomButton(
+   public Button(
       final MidiOut midiOut, final int data1, final Consumer<Boolean> booleanConsumer)
    {
       mMidiOut = midiOut;

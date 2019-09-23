@@ -2,11 +2,12 @@ package com.bitwig.extensions.controllers.presonus.atom;
 
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.presonus.ColorSettable;
-import com.bitwig.extensions.controllers.presonus.Flushable;
+import com.bitwig.extensions.controllers.presonus.ControlElement;
+import com.bitwig.extensions.controllers.presonus.Target;
 
-public class AtomPad implements ColorSettable, Flushable
+public class Pad implements ControlElement<Target>, ColorSettable
 {
-   public AtomPad(final MidiOut midiOut, final int index)
+   public Pad(final MidiOut midiOut, final int index)
    {
       mMidiOut = midiOut;
       mIndex = index;
@@ -43,7 +44,13 @@ public class AtomPad implements ColorSettable, Flushable
    }
 
    @Override
-   public void flush(final MidiOut midiOut)
+   public void onMidi(final Target target, final int status, final int data1, final int data2)
+   {
+   }
+
+   @Override
+   public void flush(
+      final Target target, final MidiOut midiOut)
    {
       final int[] values = new int[4];
       values[0] = mHasChain ? 127 : 0;

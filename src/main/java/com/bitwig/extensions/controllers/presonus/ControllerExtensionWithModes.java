@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
@@ -21,12 +22,15 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
    public void flush()
    {
       final Mode mode = getMode();
+      final MidiOut midiOut = getMidiOut();
 
       for (ControlElement element : mElements)
       {
-         if (element instanceof Flushable)
+         final Target target = mode.getTarget(element);
+
+         if (target != null)
          {
-            ((Flushable) element).flush(mode, getMidiOut());
+            element.flush(target, midiOut);
          }
       }
    }
@@ -35,9 +39,14 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
    {
       final Mode mode = getMode();
 
-      for (MidiReceiver midiReceiver : mElements)
+      for (ControlElement element : mElements)
       {
-         midiReceiver.onMidi(mode, status, data1, data2);
+         final Target target = mode.getTarget(element);
+
+         if (target != null)
+         {
+            element.onMidi(target, status, data1, data2);
+         }
       }
    }
 
@@ -46,9 +55,11 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
       return mDefaultMode;
    }
 
-   public void addElement(ControlElement element)
+   public <T extends ControlElement> T addElement(T element)
    {
       mElements.add(element);
+
+      return (T)element;
    }
 
    @Override
@@ -63,40 +74,52 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
 
    }
 
-   protected void bind(ControlElement element, Target target)
+   protected void bind(ButtonControlElement element, Target target)
    {
       mDefaultMode.bind(element, target);
    }
 
-   protected void bindToggle(ControlElement element, SettableBooleanValue target)
+   protected void bindToggle(ButtonControlElement element, SettableBooleanValue target)
    {
       target.markInterested();
 
       mDefaultMode.bind(element, new ButtonTarget()
       {
          @Override
-         public boolean isOn(final boolean isPressed)
+         public boolean get()
          {
             return target.get();
          }
 
          @Override
-         public void press()
+         public void set(final boolean pressed)
          {
-            target.toggle();
+            if (pressed) target.toggle();
+         }
+      });
+   }
+
+   protected void bindPressedRunnable(ButtonControlElement element, BooleanValue ledValue, final Runnable runnable)
+   {
+      ledValue.markInterested();
+      mDefaultMode.bind(element, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return ledValue != null ? ledValue.get() : false;
          }
 
          @Override
-         public void release()
+         public void set(final boolean pressed)
          {
-
+            if (pressed) runnable.run();
          }
       });
    }
 
    protected abstract MidiOut getMidiOut();
 
-   private List<Flushable> mFlushables = new ArrayList<>();
    private List<ControlElement> mElements = new ArrayList<>();
    private Mode mDefaultMode = new Mode();
 

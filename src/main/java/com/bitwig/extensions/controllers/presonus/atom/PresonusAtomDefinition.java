@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.atom;
 
 import java.util.UUID;
 

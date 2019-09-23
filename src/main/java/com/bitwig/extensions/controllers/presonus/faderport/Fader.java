@@ -1,9 +1,10 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.faderport;
 
+import com.bitwig.extensions.controllers.presonus.*;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.Parameter;
 
-public class Fader implements Flushable, MidiReceiver
+public class Fader //implements Flushable, MidiReceiver
 {
    public Fader(final int channel)
    {
@@ -14,9 +15,9 @@ public class Fader implements Flushable, MidiReceiver
    {
       mTarget = target;
    }
-
+/*
    @Override
-   public void onMidi(final int status, final int data1, final int data2)
+   public void onMidi(final Target, final int status, final int data1, final int data2)
    {
       final int channel = status & 0xf;
       final int msg = (status >> 4) & 0xf;
@@ -48,7 +49,7 @@ public class Fader implements Flushable, MidiReceiver
          mLastSentValue = value;
       }
    }
-
+*/
    Parameter mTarget;
    int mLastSentValue = -1;
    private final int mChannel;

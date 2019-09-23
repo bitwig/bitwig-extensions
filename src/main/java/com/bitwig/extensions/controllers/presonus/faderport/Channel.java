@@ -1,9 +1,10 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.faderport;
 
+import com.bitwig.extensions.controllers.presonus.*;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.Track;
 
-public class Channel implements MidiReceiver, Flushable
+public class Channel
 {
    public Channel(final int index)
    {
@@ -17,22 +18,20 @@ public class Channel implements MidiReceiver, Flushable
       mSelect = new ToggleButton(selectId[index]);
    }
 
-   @Override
-   public void flush(final MidiOut midiOut)
+   public void flush(final Target target, final MidiOut midiOut)
    {
-      mFader.flush(midiOut);
-      mSolo.flush(midiOut);
-      mMute.flush(midiOut);
-      mSelect.flush(midiOut);
+      /*mFader.flush(target, midiOut);
+      mSolo.flush(target, midiOut);
+      mMute.flush(target, midiOut);
+      mSelect.flush(target, midiOut);*/
    }
 
-   @Override
-   public void onMidi(final int status, final int data1, final int data2)
+   public void onMidi(final Target target, final int status, final int data1, final int data2)
    {
-      mFader.onMidi(status, data1, data2);
-      mSolo.onMidi(status, data1, data2);
-      mMute.onMidi(status, data1, data2);
-      mSelect.onMidi(status, data1, data2);
+      /*mFader.onMidi(target, status, data1, data2);
+      mSolo.onMidi(target, status, data1, data2);
+      mMute.onMidi(target, status, data1, data2);
+      mSelect.onMidi(target, status, data1, data2);*/
    }
 
    public Fader getFader()

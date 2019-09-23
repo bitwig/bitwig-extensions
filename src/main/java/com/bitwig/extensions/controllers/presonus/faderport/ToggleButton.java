@@ -1,17 +1,17 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.faderport;
 
 import java.util.function.BooleanSupplier;
 
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.MidiOut;
 
-public class ToggleButton implements Flushable, MidiReceiver
+public class ToggleButton //implements Flushable, MidiReceiver
 {
    public ToggleButton(final int ID)
    {
       mID = ID;
    }
-
+/*
    @Override
    public void flush(final MidiOut midiOut)
    {
@@ -35,7 +35,7 @@ public class ToggleButton implements Flushable, MidiReceiver
          mRunnable.run();
       }
    }
-
+*/
    public void setBooleanValue(final BooleanValue value)
    {
       mBooleanSupplier = () -> value.get();
