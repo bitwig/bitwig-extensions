@@ -18,7 +18,10 @@ public class Pad implements RGBButtonControlElement
    @Override
    public void onMidi(final RGBButtonTarget target, final int status, final int data1, final int data2)
    {
-      target.set(data2 > 0);
+      if (status == 0x90 && data1 == (0x24 + mIndex))
+      {
+         target.set(data2 > 0);
+      }
    }
 
    @Override
@@ -42,6 +45,6 @@ public class Pad implements RGBButtonControlElement
       }
    }
 
-   private int[] mLastSent = new int[4];
+   private int[] mLastSent = new int[] {-1, -1, -1, -1};
    private final int mIndex;
 }

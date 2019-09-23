@@ -64,12 +64,25 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
    {
       if (mode != mMode)
       {
-         if (mMode != null)
+         mMode = mode;
+
+         if (mode != null)
          {
-            mMode.selected();
+            mode.selected();
          }
 
-         mMode = mode;
+      }
+   }
+
+   protected void setOrResetMode(Mode mode)
+   {
+      if (mode != mMode)
+      {
+         setMode(mode);
+      }
+      else
+      {
+         setMode(null);
       }
    }
 
@@ -107,9 +120,15 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
 
    }
 
+   protected Mode createDefaultMode()
+   {
+      return new Mode();
+   }
+
    protected abstract MidiOut getMidiOut();
 
    private List<ControlElement> mElements = new ArrayList<>();
-   private Mode mDefaultMode = new Mode();
+   private Mode mDefaultMode = createDefaultMode();
+
    private Mode mMode;
 }

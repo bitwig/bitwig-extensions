@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.presonus.atom;
 
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
@@ -22,6 +23,7 @@ import com.bitwig.extensions.controllers.presonus.ControllerExtensionWithModes;
 import com.bitwig.extensions.controllers.presonus.EncoderTarget;
 import com.bitwig.extensions.controllers.presonus.Mode;
 import com.bitwig.extensions.controllers.presonus.RGBButtonTarget;
+import com.bitwig.extensions.controllers.presonus.util.NoteInputUtils;
 
 public class PresonusAtom extends ControllerExtensionWithModes
 {
@@ -84,6 +86,11 @@ public class PresonusAtom extends ControllerExtensionWithModes
 
       mTransport = host.createTransport();
 
+      mStepsMode = createStepsMode();
+
+      mCursorClip = host.createLauncherCursorClip(16, 1);
+      mCursorClip.color().markInterested();
+
       initPads();
       initButtons();
       initEncoders();
@@ -97,6 +104,39 @@ public class PresonusAtom extends ControllerExtensionWithModes
    {
       // Turn off Native Mode
       mMidiOut.sendMidi(0x8f, 0, 0);
+   }
+
+   @Override
+   protected Mode createDefaultMode()
+   {
+      return new Mode()
+      {
+         @Override
+         public void selected()
+         {
+            mNoteInput.setShouldConsumeEvents(true);
+            mNoteInput.setKeyTranslationTable(NoteInputUtils.ALL_NOTES);
+
+            for(int i=0; i<4; i++) mRemoteControls.getParameter(i).setIndication(true);
+         }
+      };
+   }
+
+   private Mode createStepsMode()
+   {
+      return new Mode()
+      {
+         @Override
+         public void selected()
+         {
+            mNoteInput.setShouldConsumeEvents(false);
+            mNoteInput.setKeyTranslationTable(NoteInputUtils.NO_NOTES);
+            mCursorClip.scrollToKey(36 + mCurrentPadForSteps & 0x15);
+            mCursorClip.scrollToStep(0);
+
+            for(int i=0; i<4; i++) mRemoteControls.getParameter(i).setIndication(false);
+         }
+      };
    }
 
    @Override
@@ -179,8 +219,69 @@ public class PresonusAtom extends ControllerExtensionWithModes
          mDrumPadColors[padIndex][0] = color.red() * darken;
          mDrumPadColors[padIndex][1] = color.green() * darken;
          mDrumPadColors[padIndex][2] = color.blue() * darken;
-      }
 
+         mStepsMode.bind(pad, new RGBButtonTarget()
+         {
+            @Override
+            public float[] getRGB()
+            {
+               float[] WHITE = {1,1,1};
+
+               if (mShift)
+               {
+                  if (mCurrentPadForSteps == padIndex)
+                  {
+                     return WHITE;
+                  }
+
+                  return clipColor(0.3f);
+               }
+
+               if (mPlayingStep == padIndex)
+               {
+                  return WHITE;
+               }
+
+               boolean hasData = mStepData[padIndex] > 0;
+
+               return clipColor(hasData ? 1.f : 0.3f);
+            }
+
+            private float[] clipColor(float scale)
+            {
+               float[] color = new float[3];
+               SettableColorValue c = mCursorClip.color();
+               color[0] = c.red() * scale;
+               color[1] = c.green() * scale;
+               color[2] = c.blue() * scale;
+               return color;
+            }
+
+            @Override
+            public boolean get()
+            {
+               return true;
+            }
+
+            @Override
+            public void set(final boolean pressed)
+            {
+               if (pressed)
+               {
+                  if (mShift)
+                  {
+                     mCursorClip.scrollToKey(36 + padIndex);
+                     mCurrentPadForSteps = padIndex;
+                  }
+                  else mCursorClip.toggleStep(padIndex, 0, 100);
+               }
+            }
+         });
+
+      }
+      mCursorClip.playingStep().addValueObserver(s -> mPlayingStep = s, -1);
+      mCursorClip.scrollToKey(36);
+      mCursorClip.addStepDataObserver((x, y, state) -> mStepData[x] = state);
       mCursorTrack.playingNotes().addValueObserver(notes -> mPlayingNotes = notes);
    }
 
@@ -247,12 +348,16 @@ public class PresonusAtom extends ControllerExtensionWithModes
 
       Button upButton = addElement(new Button(CC_UP));
       defaultMode.bindPressedRunnable(upButton, mCursorTrack.hasPrevious(), mCursorTrack::selectPrevious);
+      mStepsMode.bindPressedRunnable(upButton, mCursorClip.canScrollKeysUp(), mCursorClip::scrollKeysStepUp);
       Button downButton = addElement(new Button(CC_DOWN));
       defaultMode.bindPressedRunnable(downButton, mCursorTrack.hasNext(), mCursorTrack::selectNext);
+      mStepsMode.bindPressedRunnable(downButton, mCursorClip.canScrollKeysDown(), mCursorClip::scrollKeysStepDown);
       Button leftButton = addElement(new Button(CC_LEFT));
       defaultMode.bindPressedRunnable(leftButton, mCursorDevice.hasPrevious(), mCursorDevice::selectPrevious);
-      Button rightButton = addElement(new Button(CC_UP));
+      mStepsMode.bindPressedRunnable(leftButton, mCursorClip.canScrollStepsBackwards(), mCursorClip::scrollStepsPageBackwards);
+      Button rightButton = addElement(new Button(CC_RIGHT));
       defaultMode.bindPressedRunnable(rightButton, mCursorDevice.hasNext(), mCursorDevice::selectNext);
+      mStepsMode.bindPressedRunnable(rightButton, mCursorClip.canScrollStepsForwards(), mCursorClip::scrollStepsPageForward);
 
       Button selectButton = addElement(new Button(CC_SELECT));
       defaultMode.bindPressedRunnable(selectButton, null, mApplication::enter);
@@ -261,6 +366,25 @@ public class PresonusAtom extends ControllerExtensionWithModes
       {
          if (mShift) mApplication.zoomOut();
          else mApplication.zoomIn();
+      });
+
+      Button editorToggle = addElement(new Button(CC_EDITOR));
+      defaultMode.bind(editorToggle, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return getMode() == mStepsMode;
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed)
+            {
+               setOrResetMode(mStepsMode);
+            }
+         }
       });
    }
 
@@ -302,4 +426,11 @@ public class PresonusAtom extends ControllerExtensionWithModes
    private NoteInput mNoteInput;
    private PlayingNote[] mPlayingNotes;
    private float[][] mDrumPadColors;
+
+   /* Steps mode */
+   private Mode mStepsMode;
+   private Clip mCursorClip;
+   private int mPlayingStep;
+   private int[] mStepData = new int[16];
+   private int mCurrentPadForSteps;
 }
