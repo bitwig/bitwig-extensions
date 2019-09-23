@@ -1,10 +1,5 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BooleanSupplier;
-
-import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -13,16 +8,18 @@ import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
-import com.bitwig.extension.controller.api.SettableBooleanValue;
+import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-//import com.bitwig.extensions.controllers.presonus.atom.AtomButton;
+import com.bitwig.extensions.controllers.presonus.framework.ButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.ControllerExtensionWithModes;
+import com.bitwig.extensions.controllers.presonus.framework.Mode;
+import com.bitwig.extensions.controllers.presonus.framework.RGBButtonTarget;
 
-public class PresonusFaderPort extends ControllerExtension
+public class PresonusFaderPort extends ControllerExtensionWithModes
 {
    public PresonusFaderPort(
       final PresonusFaderPortDefinition definition,
@@ -56,61 +53,221 @@ public class PresonusFaderPort extends ControllerExtension
 
       mTransport = host.createTransport();
 
-      for(int c=0; c<mChannelCount; c++)
+      Mode defaultMode = getDefaultMode();
+
+      Button arm = addElement(new Button(0x00));
+      defaultMode.bind(arm, new ButtonTarget()
       {
-         final Channel channel = new Channel(c);
+         @Override
+         public boolean get()
+         {
+            return mArm;
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed) mArm = !mArm;
+         }
+      });
+
+      for(int channelIndex=0; channelIndex<mChannelCount; channelIndex++)
+      {
+         int c = channelIndex;
          final Track track = mTrackBank.getItemAt(c);
+         track.color().markInterested();
          final Parameter volume = track.volume();
          volume.markInterested();
          track.mute().markInterested();
          track.solo().markInterested();
+         track.arm().markInterested();
+         track.exists().markInterested();
 
-         channel.setTarget(track);
+         final Button solo = addElement(new Button((c >= 8 ? 0x48 : 0x08) + c));
+         defaultMode.bindToggle(solo, track.solo());
+         final Button mute = addElement(new Button((c >= 8 ? 0x70 : 0x10) + c));
+         defaultMode.bindToggle(mute, track.mute());
 
-         channel.getSelect().setBooleanValue(mCursorTrack.createEqualsValue(track));
+         int[] selectId = {0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1d, 0x1e, 0x1f, 0x7, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27};
+         final RGBButton select = addElement(new RGBButton(selectId[c]));
+         final BooleanValue isSelected = mCursorTrack.createEqualsValue(track);
 
-         mChannels.add(channel);
+         defaultMode.bind(select, new RGBButtonTarget()
+         {
+            @Override
+            public boolean get()
+            {
+               return track.exists().get();
+            }
+
+            @Override
+            public float[] getRGB()
+            {
+               float[] WHITE = new float[] {1.f, 1.f, 1.f};
+               float[] BLACK = new float[] {0.f, 0.f, 0.f};
+
+               if (get())
+               {
+                  if (mArm)
+                  {
+                     float[] LOW = new float[] {0.2f, 0.0f, 0.0f};
+                     float[] HIGH = new float[] {1.0f, 0.0f, 0.0f};
+                     return track.arm().get() ? HIGH : LOW;
+                  }
+                  else
+                  {
+                     if (isSelected.get())
+                        return WHITE;
+
+                     SettableColorValue c = track.color();
+                     float[] trackColor = new float[] {c.red(), c.green(), c.blue()};
+                     return trackColor;
+                  }
+               }
+               return BLACK;
+            }
+
+            @Override
+            public void set(final boolean pressed)
+            {
+               if (pressed)
+               {
+                  if (mArm)
+                     track.arm().toggle();
+                  else
+                     track.selectInEditor();
+               }
+            }
+         });
+
+         Fader fader = addElement(new Fader(c));
+         defaultMode.bind(fader, volume);
       }
 
-      addSimpleToggleButton(0x5e, mTransport.isPlaying());
-      addSimpleToggleButton(0x38, mTransport.isMetronomeEnabled());
-      addSimpleToggleButton(0x2E, mTrackBank.canScrollBackwards(), mTrackBank::scrollBackwards);
-      addSimpleToggleButton(0x2F, mTrackBank.canScrollForwards(), mTrackBank::scrollForwards);
+      Button shiftLeft = addElement(new Button(0x06));
+      Button shiftRight = addElement(new Button(0x46));
+      ButtonTarget shiftTarget = new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return mShift;
+         }
 
-      /*mFlushables.addAll(mChannels);
-      mMidiReceivers.addAll(mChannels);*/
-   }
+         @Override
+         public void set(final boolean pressed)
+         {
+            mShift = pressed;
+         }
+      };
+      defaultMode.bind(shiftLeft, shiftTarget);
+      defaultMode.bind(shiftRight, shiftTarget);
 
-   private void addSimpleToggleButton(final int ID, final SettableBooleanValue value)
-   {
-      final ToggleButton button = new ToggleButton(ID);
-      button.setBooleanValue(value);
-      button.setRunnable(value::toggle);
-      value.markInterested();
+      Button playButton = addElement(new Button(0x5e));
+      defaultMode.bindPressedRunnable(playButton, mTransport.isPlaying(), mTransport::togglePlay);
 
-      /*mFlushables.add(button);
-      mMidiReceivers.add(button);*/
-   }
+      Button stopButton = addElement(new Button(0x5d));
+      defaultMode.bind(stopButton, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return !mTransport.isPlaying().get();
+         }
 
-   private void addSimpleToggleButton(final int ID, final BooleanValue value, final Runnable runnable)
-   {
-      final ToggleButton button = new ToggleButton(ID);
-      button.setBooleanValue(value);
-      button.setRunnable(runnable);
-      value.markInterested();
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed) mTransport.stop();
+         }
+      });
 
-      //mFlushables.add(button);
-      //mMidiReceivers.add(button);
-   }
+      Button record = addElement(new Button(0x5f));
+      defaultMode.bindPressedRunnable(record, mTransport.isArrangerRecordEnabled(), mTransport::record);
 
-   private void addSimpleToggleButton(final int ID, final BooleanSupplier value, final Runnable runnable)
-   {
-      final ToggleButton button = new ToggleButton(ID);
-      button.setBooleanSupplier(value);
-      button.setRunnable(runnable);
+      Button metronome = addElement(new Button(0x3B));
+      defaultMode.bindToggle(metronome, mTransport.isMetronomeEnabled());
 
-      //mFlushables.add(button);
-      //mMidiReceivers.add(button);
+      Button loop = addElement(new Button(0x56));
+      defaultMode.bindToggle(loop, mTransport.isArrangerLoopEnabled());
+
+      Button rewind = addElement(new Button(0x5B));
+      Button fastForward = addElement(new Button(0x5C));
+
+      Button scrollLeft = addElement(new Button(0x2E));
+      defaultMode.bindPressedRunnable(scrollLeft, mTrackBank.canScrollBackwards(), mTrackBank::scrollBackwards);
+      Button scrollRight = addElement(new Button(0x2F));
+      defaultMode.bindPressedRunnable(scrollRight, mTrackBank.canScrollForwards(), mTrackBank::scrollForwards);
+
+      // Automation Write Modes
+      Button automationOff = addElement(new Button(0x4F));
+      mTransport.isArrangerAutomationWriteEnabled().markInterested();
+      mTransport.automationWriteMode().markInterested();
+      defaultMode.bind(automationOff, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return !mTransport.isArrangerAutomationWriteEnabled().get();
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            mTransport.isArrangerAutomationWriteEnabled().set(false);
+         }
+      });
+
+      Button automationLatch = addElement(new Button(0x4E));
+      defaultMode.bind(automationLatch, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return mTransport.isArrangerAutomationWriteEnabled().get() && mTransport.automationWriteMode().get().equals("latch");
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            mTransport.isArrangerAutomationWriteEnabled().set(true);
+            mTransport.automationWriteMode().set("latch");
+         }
+      });
+
+      Button automationWrite = addElement(new Button(0x4B));
+      defaultMode.bind(automationWrite, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return mTransport.isArrangerAutomationWriteEnabled().get() && mTransport.automationWriteMode().get().equals("write");
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            mTransport.isArrangerAutomationWriteEnabled().set(true);
+            mTransport.automationWriteMode().set("write");
+         }
+      });
+
+      Button automationTouch = addElement(new Button(0x4D));
+      defaultMode.bind(automationTouch, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return mTransport.isArrangerAutomationWriteEnabled().get() && mTransport.automationWriteMode().get().equals("touch");
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            mTransport.isArrangerAutomationWriteEnabled().set(true);
+            mTransport.automationWriteMode().set("touch");
+         }
+      });
    }
 
    @Override
@@ -118,21 +275,35 @@ public class PresonusFaderPort extends ControllerExtension
    {
    }
 
-   private void onMidi(final int status, final int data1, final int data2)
+   @Override
+   protected Mode createDefaultMode()
    {
-      /*for (MidiReceiver midiReceiver : mMidiReceivers)
+      return new Mode()
       {
-         midiReceiver.onMidi(status, data1, data2);
-      }*/
+         @Override
+         public void selected()
+         {
+            super.selected();
+
+            updateIndications();
+         }
+      };
+   }
+
+   private void updateIndications()
+   {
+      for(int c=0; c<mChannelCount; c++)
+      {
+         final Track track = mTrackBank.getItemAt(c);
+         final Parameter volume = track.volume();
+         volume.setIndication(getMode() == getDefaultMode());
+      }
    }
 
    @Override
-   public void flush()
+   protected MidiOut getMidiOut()
    {
-      /*for (Flushable flushable : mFlushables)
-      {
-         flushable.flush(mMidiOut);
-      }*/
+      return mMidiOut;
    }
 
    /* API Objects */
@@ -142,13 +313,8 @@ public class PresonusFaderPort extends ControllerExtension
    private Transport mTransport;
    private MidiOut mMidiOut;
    private Application mApplication;
-   //private List<AtomButton> mButtons = new ArrayList<>();
    private boolean mShift;
-   private NoteInput mNoteInput;
-   /*private AtomButton mMetronomeButton;
-   private List<Flushable> mFlushables = new ArrayList<>();
-   private List<MidiReceiver> mMidiReceivers = new ArrayList<>();*/
    private final int mChannelCount;
    private TrackBank mTrackBank;
-   private List<Channel> mChannels = new ArrayList<>();
+   private boolean mArm;
 }

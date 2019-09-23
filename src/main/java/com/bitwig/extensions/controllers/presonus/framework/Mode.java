@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 
 public class Mode
@@ -58,6 +59,16 @@ public class Mode
             if (pressed) runnable.run();
          }
       });
+   }
+
+   public void bind(ControlElement<MotorFaderTarget> element, Parameter parameter)
+   {
+      if (parameter != null)
+      {
+         parameter.markInterested();
+      }
+
+      bind(element, new MotorFaderParameterTarget(parameter));
    }
 
    public <T extends Target> T getTarget(final ControlElement element)
