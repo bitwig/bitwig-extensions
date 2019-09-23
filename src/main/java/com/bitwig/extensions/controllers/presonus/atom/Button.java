@@ -1,52 +1,36 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
-import java.util.function.Consumer;
-
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extensions.controllers.presonus.ButtonControlElement;
+import com.bitwig.extensions.controllers.presonus.ButtonTarget;
 
-public class Button
+public class Button implements ButtonControlElement
 {
-   public Button(
-      final MidiOut midiOut, final int data1, final Consumer<Boolean> booleanConsumer)
+   public Button(final int data1)
    {
-      mMidiOut = midiOut;
       mData1 = data1;
-      mBooleanConsumer = booleanConsumer;
    }
 
-   enum State
+   @Override
+   public void flush(final ButtonTarget target, final MidiOut midiOut)
    {
-      OFF,
-      DIMMED,
-      ON,
-   }
-
-   void setState(State state)
-   {
-      switch (state)
+      boolean value = target.get();
+      if (value != mLastValue)
       {
-         case OFF:
-            mMidiOut.sendMidi(0xB0, mData1, 0);
-            break;
-         case DIMMED:
-            mMidiOut.sendMidi(0xB0, mData1, 0x02);
-            break;
-         case ON:
-            mMidiOut.sendMidi(0xB0, mData1, 127);
-            break;
+         mLastValue = value;
+         midiOut.sendMidi(0xB0, mData1, value ? 127 : 0);
       }
-
    }
 
-   protected final MidiOut mMidiOut;
-   protected final int mData1;
-   private final Consumer<Boolean> mBooleanConsumer;
-
-   public void onMidi(final int status, final int data1, final int data2)
+   @Override
+   public void onMidi(final ButtonTarget target, final int status, final int data1, final int data2)
    {
       if (status == 176 && data1 == mData1)
       {
-         mBooleanConsumer.accept(data2 > 0);
+         target.set(data2 > 0);
       }
    }
+
+   protected final int mData1;
+   private boolean mLastValue;
 }

@@ -1,9 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-
+import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
@@ -18,9 +15,13 @@ import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.PlayingNote;
 import com.bitwig.extension.controller.api.SettableColorValue;
+import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.presonus.ButtonTarget;
 import com.bitwig.extensions.controllers.presonus.ControllerExtensionWithModes;
+import com.bitwig.extensions.controllers.presonus.EncoderTarget;
+import com.bitwig.extensions.controllers.presonus.Mode;
+import com.bitwig.extensions.controllers.presonus.RGBButtonTarget;
 
 public class PresonusAtom extends ControllerExtensionWithModes
 {
@@ -77,15 +78,15 @@ public class PresonusAtom extends ControllerExtensionWithModes
          mCursorTrack.createCursorDevice("ATOM", "Atom", 0, CursorDeviceFollowMode.FIRST_INSTRUMENT);
 
       mRemoteControls = mCursorDevice.createCursorRemoteControlsPage(4);
-      mRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 4);
+      mRemoteControls.setHardwareLayout(HardwareControlType.ENCODER, 4);
       for (int i = 0; i < 4; ++i)
          mRemoteControls.getParameter(i).setIndication(true);
 
       mTransport = host.createTransport();
 
       initPads();
-
       initButtons();
+      initEncoders();
 
       // Turn on Native Mode
       mMidiOut.sendMidi(0x8f, 0, 127);
@@ -108,41 +109,89 @@ public class PresonusAtom extends ControllerExtensionWithModes
    {
       mDrumPadBank = mCursorDevice.createDrumPadBank(16);
 
+      Mode defaultMode = getDefaultMode();
+
+      mDrumPadColors = new float[16][3];
+
       Pad[] pads = new Pad[16];
+      final float darken = 0.7f;
 
       for(int i=0; i<16; i++)
       {
          final int padIndex = i;
-         pads[padIndex] = new Pad(mMidiOut, padIndex);
+         Pad pad = addElement(new Pad(padIndex));
+         pads[padIndex] = pad;
          DrumPad drumPad = mDrumPadBank.getItemAt(padIndex);
+         drumPad.exists().markInterested();
          SettableColorValue color = drumPad.color();
-         color.addValueObserver((r,g,b) -> pads[padIndex].setColor(r,g,b));
-         drumPad.exists().addValueObserver(e -> pads[padIndex].setHasChain(e));
-         pads[padIndex].setColor(color.red(), color.green(), color.blue());
-         //mFlushables.add(pads[padIndex]);
+         color.addValueObserver((r,g,b) ->
+            {
+               mDrumPadColors[padIndex][0] = r * darken;
+               mDrumPadColors[padIndex][1] = g * darken;
+               mDrumPadColors[padIndex][2] = b * darken;
+            });
+
+         defaultMode.bind(pad, new RGBButtonTarget()
+         {
+            private int isPlaying()
+            {
+               if (mPlayingNotes != null)
+               {
+                  for (PlayingNote playingNote : mPlayingNotes)
+                  {
+                     if (playingNote.pitch() == 36 + padIndex)
+                     {
+                        return playingNote.velocity();
+                     }
+                  }
+               }
+
+               return 0;
+            }
+
+            @Override
+            public float[] getRGB()
+            {
+               int playing = isPlaying();
+               if (playing > 0)
+               {
+                  float velocity = playing / 127.f;
+                  float[] mixed = new float[3];
+                  for (int i=0; i<3; i++)
+                     mixed[i] = mDrumPadColors[padIndex][i] * (1-velocity) + velocity;
+
+                  return mixed;
+               }
+               return mDrumPadColors[padIndex];
+            }
+
+            @Override
+            public boolean get()
+            {
+               return drumPad.exists().get();
+            }
+
+            @Override
+            public void set(final boolean pressed)
+            {
+            }
+         });
+         mDrumPadColors[padIndex][0] = color.red() * darken;
+         mDrumPadColors[padIndex][1] = color.green() * darken;
+         mDrumPadColors[padIndex][2] = color.blue() * darken;
       }
 
-      mCursorTrack.playingNotes().addValueObserver(notes ->
-      {
-         BitSet playing = new BitSet(128);
-         for (PlayingNote note : notes)
-         {
-            playing.set(note.pitch());
-         }
-
-         for(int i=0; i<16; i++)
-         {
-            pads[i].setOn(playing.get(36 + i));
-         }
-      });
+      mCursorTrack.playingNotes().addValueObserver(notes -> mPlayingNotes = notes);
    }
 
    private void initButtons()
    {
       mTransport.isPlaying().markInterested();
 
+      Mode defaultMode = getDefaultMode();
+
       Button shiftButton = addElement(new Button(CC_SHIFT));
-      bind(shiftButton, new ButtonTarget()
+      defaultMode.bind(shiftButton, new ButtonTarget()
       {
          @Override
          public boolean get()
@@ -158,17 +207,17 @@ public class PresonusAtom extends ControllerExtensionWithModes
       });
 
       Button clickToggle = addElement(new Button(CC_CLICK_COUNT_IN));
-      bindToggle(clickToggle, mTransport.isMetronomeEnabled());
+      defaultMode.bindToggle(clickToggle, mTransport.isMetronomeEnabled());
 
       Button playButton = addElement(new Button(CC_PLAY_LOOP_TOGGLE));
-      bindPressedRunnable(playButton, mTransport.isPlaying(), () ->
+      defaultMode.bindPressedRunnable(playButton, mTransport.isPlaying(), () ->
       {
          if (mShift) mTransport.isArrangerLoopEnabled().toggle();
          else mTransport.togglePlay();
       });
 
       Button stopButton = addElement(new Button(CC_STOP_UNDO));
-      bind(stopButton, new ButtonTarget()
+      defaultMode.bind(stopButton, new ButtonTarget()
          {
             @Override
             public boolean get()
@@ -189,121 +238,57 @@ public class PresonusAtom extends ControllerExtensionWithModes
             }
          });
 
-
-            //initButton(CC_SHIFT, b -> mShift = b);
-/*
-      final Button metronome = initButton(CC_CLICK_COUNT_IN, mTransport.isMetronomeEnabled()::toggle);
-      mTransport.isMetronomeEnabled().addValueObserver(record -> metronome.setState(
-         record ? Button.State.ON : Button.State.OFF));
-
-      final RGBButton playButton =
-         initRGBButton(CC_PLAY_LOOP_TOGGLE, mTransport::togglePlay, mTransport.isArrangerLoopEnabled()::toggle);
-      mTransport.isPlaying().addValueObserver(isPlaying -> playButton.setState(
-         isPlaying ? Button.State.ON : Button.State.OFF));
-
-      initButton(CC_STOP_UNDO, mTransport::stop, mApplication::undo);
-
-      final Button record = initButton(CC_RECORD_SAVE, mTransport::record, () ->
+      Button recordButton = addElement(new Button(CC_RECORD_SAVE));
+      defaultMode.bindPressedRunnable(recordButton, mTransport.isArrangerRecordEnabled(), () ->
       {
-         Action saveAction = mApplication.getAction("Save");
-         if (saveAction != null)
+         if (mShift) save();
+         else mTransport.isArrangerRecordEnabled().toggle();
+      });
+
+      Button upButton = addElement(new Button(CC_UP));
+      defaultMode.bindPressedRunnable(upButton, mCursorTrack.hasPrevious(), mCursorTrack::selectPrevious);
+      Button downButton = addElement(new Button(CC_DOWN));
+      defaultMode.bindPressedRunnable(downButton, mCursorTrack.hasNext(), mCursorTrack::selectNext);
+      Button leftButton = addElement(new Button(CC_LEFT));
+      defaultMode.bindPressedRunnable(leftButton, mCursorDevice.hasPrevious(), mCursorDevice::selectPrevious);
+      Button rightButton = addElement(new Button(CC_UP));
+      defaultMode.bindPressedRunnable(rightButton, mCursorDevice.hasNext(), mCursorDevice::selectNext);
+
+      Button selectButton = addElement(new Button(CC_SELECT));
+      defaultMode.bindPressedRunnable(selectButton, null, mApplication::enter);
+      Button zoomButton = addElement(new Button(CC_ZOOM));
+      defaultMode.bindPressedRunnable(zoomButton, null, () ->
+      {
+         if (mShift) mApplication.zoomOut();
+         else mApplication.zoomIn();
+      });
+   }
+
+   private void initEncoders()
+   {
+      for(int i=0; i<4; i++)
+      {
+         SettableRangedValue parameterValue = mRemoteControls.getParameter(i).value();
+         Encoder encoder = addElement(new Encoder(CC_ENCODER_1 + i));
+         getDefaultMode().bind(encoder, new EncoderTarget()
          {
-            saveAction.invoke();
-         }
-      });
-
-      mTransport.isArrangerRecordEnabled().addValueObserver(r -> record.setState(
-         r ? Button.State.ON : Button.State.OFF));
-
-      initButton(CC_UP, mCursorTrack::selectPrevious, mCursorTrack.hasPrevious());
-      initButton(CC_DOWN, mCursorTrack::selectNext, mCursorTrack.hasNext());
-      initButton(CC_LEFT, mCursorDevice::selectPrevious, mCursorDevice.hasPrevious());
-      initButton(CC_RIGHT, mCursorDevice::selectNext, mCursorDevice.hasNext());
-      final RGBButton selectButton =
-         initRGBButton(CC_SELECT, mApplication::enter);
-
-      initButton(CC_ZOOM, mApplication::zoomIn, mApplication::zoomOut);*/
-   }
-/*
-   private Button initButton(int data1, Consumer<Boolean> booleanConsumer)
-   {
-      Button button = new Button(mMidiOut, data1, booleanConsumer);
-
-      mButtons.add(button);
-      return button;
-   }
-
-   private Button initButton(int data1, Runnable runnable)
-   {
-      Button button = new Button(mMidiOut, data1, (b) ->
-      {
-         if (b) runnable.run();
-      });
-
-      mButtons.add(button);
-      return button;
-   }
-
-   private Button initButton(int data1, Runnable runnable, BooleanValue shouldBeOn)
-   {
-      Button button = new Button(mMidiOut, data1, (b) ->
-      {
-         if (b) runnable.run();
-      });
-
-      shouldBeOn.addValueObserver(on -> button.setState(on ? Button.State.ON : Button.State.OFF));
-
-      mButtons.add(button);
-      return button;
-   }
-
-   private RGBButton initRGBButton(int data1, Runnable runnable)
-   {
-      RGBButton button = new RGBButton(mMidiOut, data1, (b) ->
-      {
-         if (b) runnable.run();
-      });
-
-      mButtons.add(button);
-      return button;
-   }
-
-   private Button initButton(int data1, Runnable runnable, Runnable shiftRunnable)
-   {
-      Button button = new Button(mMidiOut, data1, (b) ->
-      {
-         if (b) (mShift ? shiftRunnable : runnable).run();
-      });
-
-      mButtons.add(button);
-      return button;
-   }
-
-
-   private RGBButton initRGBButton(int data1, Runnable runnable, Runnable shiftRunnable)
-   {
-      RGBButton button = new RGBButton(mMidiOut, data1, (b) ->
-      {
-         if (b) (mShift ? shiftRunnable : runnable).run();
-      });
-
-      mButtons.add(button);
-      return button;
-   }*/
-
-   /*protected void onMidi(final int status, final int data1, final int data2)
-   {
-      if (status == 176)
-      {
-         if (data1 >= CC_ENCODER_1 && data1 <= CC_ENCODER_4)
-         {
-            int index = data1 - CC_ENCODER_1;
-            int diff = data2 & 0x3f;
-            if( (data2 & 0x40) != 0) diff = -diff;
-            mRemoteControls.getParameter(index).inc(diff, 101);
-         }
+            @Override
+            public void inc(final int steps)
+            {
+               parameterValue.inc(steps, mShift ? 1010 : 101);
+            }
+         });
       }
-   }*/
+   }
+
+   private void save()
+   {
+      Action saveAction = mApplication.getAction("Save");
+      if (saveAction != null)
+      {
+         saveAction.invoke();
+      }
+   }
 
    /* API Objects */
    private CursorTrack mCursorTrack;
@@ -315,5 +300,6 @@ public class PresonusAtom extends ControllerExtensionWithModes
    private DrumPadBank mDrumPadBank;
    private boolean mShift;
    private NoteInput mNoteInput;
-   private Button mMetronomeButton;
+   private PlayingNote[] mPlayingNotes;
+   private float[][] mDrumPadColors;
 }

@@ -5,10 +5,8 @@ import java.util.List;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
-import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.SettableBooleanValue;
 
 public abstract class ControllerExtensionWithModes extends ControllerExtension
 {
@@ -26,7 +24,7 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
 
       for (ControlElement element : mElements)
       {
-         final Target target = mode.getTarget(element);
+         final Target target = getTarget(element);
 
          if (target != null)
          {
@@ -35,13 +33,25 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
       }
    }
 
+   private Target getTarget(final ControlElement element)
+   {
+      if (mMode != null)
+      {
+         Target target = mMode.getTarget(element);
+
+         if (target != null) return target;
+      }
+
+      return mDefaultMode.getTarget(element);
+   }
+
    protected void onMidi(final int status, final int data1, final int data2)
    {
       final Mode mode = getMode();
 
       for (ControlElement element : mElements)
       {
-         final Target target = mode.getTarget(element);
+         final Target target = getTarget(element);
 
          if (target != null)
          {
@@ -50,7 +60,30 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
       }
    }
 
+   protected void setMode(Mode mode)
+   {
+      if (mode != mMode)
+      {
+         if (mMode != null)
+         {
+            mMode.selected();
+         }
+
+         mMode = mode;
+      }
+   }
+
    protected Mode getMode()
+   {
+      if (mMode != null)
+      {
+         return mMode;
+      }
+
+      return mDefaultMode;
+   }
+
+   public Mode getDefaultMode()
    {
       return mDefaultMode;
    }
@@ -74,53 +107,9 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
 
    }
 
-   protected void bind(ButtonControlElement element, Target target)
-   {
-      mDefaultMode.bind(element, target);
-   }
-
-   protected void bindToggle(ButtonControlElement element, SettableBooleanValue target)
-   {
-      target.markInterested();
-
-      mDefaultMode.bind(element, new ButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return target.get();
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed) target.toggle();
-         }
-      });
-   }
-
-   protected void bindPressedRunnable(ButtonControlElement element, BooleanValue ledValue, final Runnable runnable)
-   {
-      ledValue.markInterested();
-      mDefaultMode.bind(element, new ButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return ledValue != null ? ledValue.get() : false;
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed) runnable.run();
-         }
-      });
-   }
-
    protected abstract MidiOut getMidiOut();
 
    private List<ControlElement> mElements = new ArrayList<>();
    private Mode mDefaultMode = new Mode();
-
+   private Mode mMode;
 }
