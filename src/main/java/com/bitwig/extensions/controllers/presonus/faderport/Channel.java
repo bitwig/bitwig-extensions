@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
-import com.bitwig.extensions.controllers.presonus.*;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.Track;
+import com.bitwig.extensions.controllers.presonus.framework.Target;
 
 public class Channel
 {

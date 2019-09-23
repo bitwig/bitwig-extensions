@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.framework;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -18,11 +18,11 @@ import com.bitwig.extension.controller.api.PlayingNote;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.presonus.ButtonTarget;
-import com.bitwig.extensions.controllers.presonus.ControllerExtensionWithModes;
-import com.bitwig.extensions.controllers.presonus.EncoderTarget;
-import com.bitwig.extensions.controllers.presonus.Mode;
-import com.bitwig.extensions.controllers.presonus.RGBButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.ButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.ControllerExtensionWithModes;
+import com.bitwig.extensions.controllers.presonus.framework.EncoderTarget;
+import com.bitwig.extensions.controllers.presonus.framework.Mode;
+import com.bitwig.extensions.controllers.presonus.framework.RGBButtonTarget;
 import com.bitwig.extensions.controllers.presonus.util.NoteInputUtils;
 
 public class PresonusAtom extends ControllerExtensionWithModes

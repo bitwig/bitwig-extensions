@@ -1,9 +1,8 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extensions.controllers.presonus.EncoderControlElement;
-import com.bitwig.extensions.controllers.presonus.EncoderTarget;
+import com.bitwig.extensions.controllers.presonus.framework.EncoderControlElement;
+import com.bitwig.extensions.controllers.presonus.framework.EncoderTarget;
 
 public class Encoder implements EncoderControlElement
 {

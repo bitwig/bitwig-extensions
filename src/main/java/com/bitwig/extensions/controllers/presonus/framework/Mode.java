@@ -1,11 +1,10 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.framework;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
-import com.bitwig.extension.controller.api.SettableRangedValue;
 
 public class Mode
 {
