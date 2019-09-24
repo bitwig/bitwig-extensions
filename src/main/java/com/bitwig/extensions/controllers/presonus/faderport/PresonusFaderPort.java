@@ -16,11 +16,11 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.presonus.framework.ButtonTarget;
 import com.bitwig.extensions.controllers.presonus.framework.ClickEncoderTarget;
-import com.bitwig.extensions.controllers.presonus.framework.ControllerExtensionWithModes;
-import com.bitwig.extensions.controllers.presonus.framework.Mode;
+import com.bitwig.extensions.controllers.presonus.framework.ControllerExtensionWithLayers;
+import com.bitwig.extensions.controllers.presonus.framework.Layer;
 import com.bitwig.extensions.controllers.presonus.framework.RGBButtonTarget;
 
-public class PresonusFaderPort extends ControllerExtensionWithModes
+public class PresonusFaderPort extends ControllerExtensionWithLayers
 {
    static float[] WHITE = new float[] {1.f, 1.f, 1.f};
    static float[] BLACK = new float[] {0.f, 0.f, 0.f};
@@ -64,12 +64,10 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
 
       mTransport = host.createTransport();
 
-      Mode defaultMode = getDefaultMode();
-
       ClickEncoder displayEncoder = addElement(new ClickEncoder(0x20, 0x10));
       ClickEncoder transportEncoder = addElement(new ClickEncoder(0x53, 0x3C));
 
-      defaultMode.bind(displayEncoder, new ClickEncoderTarget()
+      mDefaultLayer.bind(displayEncoder, new ClickEncoderTarget()
       {
          @Override
          public void click(final boolean b)
@@ -83,7 +81,7 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
          }
       });
 
-      defaultMode.bind(transportEncoder, new ClickEncoderTarget()
+      mDefaultLayer.bind(transportEncoder, new ClickEncoderTarget()
       {
          @Override
          public void click(final boolean b)
@@ -101,7 +99,7 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
       });
 
       Button arm = addElement(new Button(0x00));
-      defaultMode.bind(arm, new ButtonTarget()
+      mDefaultLayer.bind(arm, new ButtonTarget()
       {
          @Override
          public boolean get()
@@ -122,144 +120,7 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
 
          final Track track = mTrackBank.getItemAt(c);
 
-         bindTrack(defaultMode, channelIndex, track);
-
-         track.position().markInterested();
-         track.name().markInterested();
-         track.color().markInterested();
-         final Parameter volume = track.volume();
-         volume.markInterested();
-         volume.displayedValue().markInterested();
-         track.mute().markInterested();
-         track.solo().markInterested();
-         track.arm().markInterested();
-         track.exists().markInterested();
-         track.pan().markInterested();
-
-         final Button solo = addElement(new Button(SOLOD_IDS[c]));
-         defaultMode.bindToggle(solo, track.solo());
-         final Button mute = addElement(new Button((c >= 8 ? 0x70 : 0x10) + c));
-         defaultMode.bindToggle(mute, track.mute());
-
-         final RGBButton select = addElement(new RGBButton(SELECT_IDS[c]));
-         final BooleanValue isSelected = mCursorTrack.createEqualsValue(track);
-
-         MotorFader motorFader = addElement(new MotorFader(c));
-         defaultMode.bind(motorFader, volume);
-
-         defaultMode.bind(select, new RGBButtonTarget()
-         {
-            @Override
-            public boolean get()
-            {
-               return track.exists().get();
-            }
-
-            @Override
-            public float[] getRGB()
-            {
-               if (get())
-               {
-                  if (mArm)
-                  {
-                     return track.arm().get() ? ARM_HIGH : ARM_LOW;
-                  }
-                  else
-                  {
-                     if (isSelected.get())
-                        return WHITE;
-
-                     SettableColorValue c = track.color();
-                     float[] trackColor = new float[] {c.red(), c.green(), c.blue()};
-                     return trackColor;
-                  }
-               }
-               return BLACK;
-            }
-
-            @Override
-            public void set(final boolean pressed)
-            {
-               if (pressed)
-               {
-                  if (mArm)
-                     track.arm().toggle();
-                  else
-                     track.selectInEditor();
-               }
-            }
-         });
-
-         Display display = addElement(new Display(c, mSysexHeader));
-         defaultMode.bind(display, new DisplayTarget()
-         {
-            @Override
-            public ValueBarMode getValueBarMode()
-            {
-               if (!track.exists().get()) return ValueBarMode.Off;
-
-               return ValueBarMode.Bipolar;
-            }
-
-            @Override
-            public int getBarValue()
-            {
-               double pan = track.pan().get();
-               return Math.max(0, Math.min(127, (int)(pan * 127.0)));
-            }
-
-            @Override
-            public DisplayMode getMode()
-            {
-               return DisplayMode.MixedText;
-            }
-
-            @Override
-            public boolean isTextInverted(final int line)
-            {
-               if (isSelected.get() && line == 1 && track.exists().get())
-               {
-                  return true;
-               }
-
-               return false;
-            }
-
-            @Override
-            public String getText(final int line)
-            {
-               if (!track.exists().get()) return "";
-
-               String trackNumber = Integer.toString(track.position().get() + 1);
-
-               if (line == 0)
-               {
-                  String fullname = track.name().get();
-
-                  if (fullname.endsWith(trackNumber))
-                     return track.name().getLimited(8+trackNumber.length()).replace(trackNumber, "");
-
-                  String limited = track.name().getLimited(8);
-
-                  return limited;
-               }
-
-               if (line == 1)
-               {
-                  return trackNumber;
-               }
-
-               if (line == 2)
-               {
-                  if (motorFader.isBeingTouched())
-                     return track.volume().displayedValue().getLimited(10);
-
-                  return "Pan";
-               }
-
-               return "";
-            }
-         });
+         bindTrack(mDefaultLayer, channelIndex, track);
       }
 
       Button shiftLeft = addElement(new Button(0x06));
@@ -278,14 +139,14 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
             mShift = pressed;
          }
       };
-      defaultMode.bind(shiftLeft, shiftTarget);
-      defaultMode.bind(shiftRight, shiftTarget);
+      mDefaultLayer.bind(shiftLeft, shiftTarget);
+      mDefaultLayer.bind(shiftRight, shiftTarget);
 
       Button playButton = addElement(new Button(0x5e));
-      defaultMode.bindPressedRunnable(playButton, mTransport.isPlaying(), mTransport::togglePlay);
+      mDefaultLayer.bindPressedRunnable(playButton, mTransport.isPlaying(), mTransport::togglePlay);
 
       Button stopButton = addElement(new Button(0x5d));
-      defaultMode.bind(stopButton, new ButtonTarget()
+      mDefaultLayer.bind(stopButton, new ButtonTarget()
       {
          @Override
          public boolean get()
@@ -301,27 +162,27 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
       });
 
       Button record = addElement(new Button(0x5f));
-      defaultMode.bindPressedRunnable(record, mTransport.isArrangerRecordEnabled(), mTransport::record);
+      mDefaultLayer.bindPressedRunnable(record, mTransport.isArrangerRecordEnabled(), mTransport::record);
 
       Button metronome = addElement(new Button(0x3B));
-      defaultMode.bindToggle(metronome, mTransport.isMetronomeEnabled());
+      mDefaultLayer.bindToggle(metronome, mTransport.isMetronomeEnabled());
 
       Button loop = addElement(new Button(0x56));
-      defaultMode.bindToggle(loop, mTransport.isArrangerLoopEnabled());
+      mDefaultLayer.bindToggle(loop, mTransport.isArrangerLoopEnabled());
 
       Button rewind = addElement(new Button(0x5B));
       Button fastForward = addElement(new Button(0x5C));
 
       Button scrollLeft = addElement(new Button(0x2E));
-      defaultMode.bindPressedRunnable(scrollLeft, mTrackBank.canScrollBackwards(), mTrackBank::scrollBackwards);
+      mDefaultLayer.bindPressedRunnable(scrollLeft, mTrackBank.canScrollBackwards(), mTrackBank::scrollBackwards);
       Button scrollRight = addElement(new Button(0x2F));
-      defaultMode.bindPressedRunnable(scrollRight, mTrackBank.canScrollForwards(), mTrackBank::scrollForwards);
+      mDefaultLayer.bindPressedRunnable(scrollRight, mTrackBank.canScrollForwards(), mTrackBank::scrollForwards);
 
       // Automation Write Modes
       Button automationOff = addElement(new Button(0x4F));
       mTransport.isArrangerAutomationWriteEnabled().markInterested();
       mTransport.automationWriteMode().markInterested();
-      defaultMode.bind(automationOff, new ButtonTarget()
+      mDefaultLayer.bind(automationOff, new ButtonTarget()
       {
          @Override
          public boolean get()
@@ -337,7 +198,7 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
       });
 
       Button automationLatch = addElement(new Button(0x4E));
-      defaultMode.bind(automationLatch, new ButtonTarget()
+      mDefaultLayer.bind(automationLatch, new ButtonTarget()
       {
          @Override
          public boolean get()
@@ -354,7 +215,7 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
       });
 
       Button automationWrite = addElement(new Button(0x4B));
-      defaultMode.bind(automationWrite, new ButtonTarget()
+      mDefaultLayer.bind(automationWrite, new ButtonTarget()
       {
          @Override
          public boolean get()
@@ -371,7 +232,7 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
       });
 
       Button automationTouch = addElement(new Button(0x4D));
-      defaultMode.bind(automationTouch, new ButtonTarget()
+      mDefaultLayer.bind(automationTouch, new ButtonTarget()
       {
          @Override
          public boolean get()
@@ -387,12 +248,165 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
          }
       });
 
+      activateLayer(mDefaultLayer);
+      activateLayer(mTrackLayer);
+
+      Button trackMode = addElement(new Button(0x28));
+      Button pluginMode = addElement(new Button(0x2B));
+      Button sendsMode = addElement(new Button(0x29));
+      Button panMode = addElement(new Button(0x2A));
+
+      Layer[] faderGroup = {mTrackLayer, mDeviceLayer, mSendsLayer, mPanLayer};
+
+      mDefaultLayer.bindLayerInGroup(this, trackMode, mTrackLayer, faderGroup);
+      mDefaultLayer.bindLayerInGroup(this, pluginMode, mDeviceLayer, faderGroup);
+      mDefaultLayer.bindLayerInGroup(this, sendsMode, mSendsLayer, faderGroup);
+      mDefaultLayer.bindLayerInGroup(this, panMode, mPanLayer, faderGroup);
+
       runningStatusTimer();
    }
 
-   private void bindTrack(final Mode mode, final int index, final Track track)
+   private void bindTrack(final Layer mode, final int index, final Track track)
    {
+      track.position().markInterested();
+      track.name().markInterested();
+      track.color().markInterested();
+      final Parameter volume = track.volume();
+      volume.markInterested();
+      volume.displayedValue().markInterested();
+      track.mute().markInterested();
+      track.solo().markInterested();
+      track.arm().markInterested();
+      track.exists().markInterested();
+      track.pan().markInterested();
 
+      final Button solo = addElement(new Button(SOLOD_IDS[index]));
+      mode.bindToggle(solo, track.solo());
+      final Button mute = addElement(new Button((index >= 8 ? 0x70 : 0x10) + index));
+      mode.bindToggle(mute, track.mute());
+
+      final RGBButton select = addElement(new RGBButton(SELECT_IDS[index]));
+      final BooleanValue isSelected = mCursorTrack.createEqualsValue(track);
+
+      MotorFader motorFader = addElement(new MotorFader(index));
+
+      mTrackLayer.bind(motorFader, volume);
+      mPanLayer.bind(motorFader, track.pan());
+      mSendsLayer.bind(motorFader, track.sendBank().getItemAt(0));
+
+      mode.bind(select, new RGBButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return track.exists().get();
+         }
+
+         @Override
+         public float[] getRGB()
+         {
+            if (get())
+            {
+               if (mArm)
+               {
+                  return track.arm().get() ? ARM_HIGH : ARM_LOW;
+               }
+               else
+               {
+                  if (isSelected.get())
+                     return WHITE;
+
+                  SettableColorValue c = track.color();
+                  float[] trackColor = new float[] {c.red(), c.green(), c.blue()};
+                  return trackColor;
+               }
+            }
+            return BLACK;
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed)
+            {
+               if (mArm)
+                  track.arm().toggle();
+               else
+                  track.selectInEditor();
+            }
+         }
+      });
+
+      Display display = addElement(new Display(index, mSysexHeader));
+      mode.bind(display, new DisplayTarget()
+      {
+         @Override
+         public ValueBarMode getValueBarMode()
+         {
+            if (!track.exists().get()) return ValueBarMode.Off;
+
+            return ValueBarMode.Bipolar;
+         }
+
+         @Override
+         public int getBarValue()
+         {
+            double pan = track.pan().get();
+            return Math.max(0, Math.min(127, (int)(pan * 127.0)));
+         }
+
+         @Override
+         public DisplayMode getMode()
+         {
+            return DisplayMode.MixedText;
+         }
+
+         @Override
+         public boolean isTextInverted(final int line)
+         {
+            if (isSelected.get() && line == 1 && track.exists().get())
+            {
+               return true;
+            }
+
+            return false;
+         }
+
+         @Override
+         public String getText(final int line)
+         {
+            if (!track.exists().get()) return "";
+
+            String trackNumber = Integer.toString(track.position().get() + 1);
+
+            if (line == 0)
+            {
+               String fullname = track.name().get();
+
+               if (fullname.endsWith(trackNumber))
+                  return track.name().getLimited(8+trackNumber.length()).replace(trackNumber, "");
+
+               String limited = track.name().getLimited(8);
+
+               return limited;
+            }
+
+            if (line == 1)
+            {
+               return trackNumber;
+            }
+
+            if (line == 2)
+            {
+               if (motorFader.isBeingTouched())
+                  return track.volume().displayedValue().getLimited(10).replace(" dB", "");
+
+               return "Pan";
+            }
+
+            return "";
+         }
+      });
    }
 
    private void runningStatusTimer()
@@ -407,28 +421,21 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
    {
    }
 
-   @Override
-   protected Mode createDefaultMode()
+   class FPLayer extends Layer
    {
-      return new Mode()
+      @Override
+      public void setActivate(final boolean active)
       {
-         @Override
-         public void selected()
-         {
-            super.selected();
+         super.setActivate(active);
 
-            updateIndications();
-         }
-      };
-   }
+         if (active) updateIndications();
+      }
+   };
 
    private void updateIndications()
    {
       for(int c=0; c<mChannelCount; c++)
       {
-         final Track track = mTrackBank.getItemAt(c);
-         final Parameter volume = track.volume();
-         volume.setIndication(getMode() == getDefaultMode());
       }
    }
 
@@ -450,4 +457,12 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
    private TrackBank mTrackBank;
    private boolean mArm;
    private final String mSysexHeader;
+   private ChannelMode mChannelMode = ChannelMode.Track;
+
+   private Layer mDefaultLayer = new FPLayer();
+   private Layer mTrackLayer = new FPLayer();
+   private Layer mDeviceLayer = new FPLayer();
+   private Layer mSendsLayer = new FPLayer();
+   private Layer mPanLayer = new FPLayer();
+
 }

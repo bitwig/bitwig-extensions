@@ -8,9 +8,9 @@ import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiOut;
 
-public abstract class ControllerExtensionWithModes extends ControllerExtension
+public abstract class ControllerExtensionWithLayers extends ControllerExtension
 {
-   protected ControllerExtensionWithModes(
+   protected ControllerExtensionWithLayers(
       final ControllerExtensionDefinition definition, final ControllerHost host)
    {
       super(definition, host);
@@ -19,7 +19,6 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
    @Override
    public void flush()
    {
-      final Mode mode = getMode();
       final MidiOut midiOut = getMidiOut();
 
       for (ControlElement element : mElements)
@@ -35,20 +34,18 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
 
    private Target getTarget(final ControlElement element)
    {
-      if (mMode != null)
+      for (Layer layer : mActiveLayers)
       {
-         Target target = mMode.getTarget(element);
+         Target target = layer.getTarget(element);
 
          if (target != null) return target;
       }
 
-      return mDefaultMode.getTarget(element);
+      return null;
    }
 
    protected void onMidi(final int status, final int data1, final int data2)
    {
-      final Mode mode = getMode();
-
       for (ControlElement element : mElements)
       {
          final Target target = getTarget(element);
@@ -60,45 +57,52 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
       }
    }
 
-   protected void setMode(Mode mode)
+   protected void toggleLayer(Layer layer)
    {
-      if (mode != mMode)
+      if (isLayerActive(layer))
       {
-         mMode = mode;
-
-         if (mode != null)
-         {
-            mode.selected();
-         }
-
-      }
-   }
-
-   protected void setOrResetMode(Mode mode)
-   {
-      if (mode != mMode)
-      {
-         setMode(mode);
+         deactivateLayer(layer);
       }
       else
       {
-         setMode(null);
+         activateLayer(layer);
       }
    }
 
-   protected Mode getMode()
+   protected void activateLayer(Layer layer)
    {
-      if (mMode != null)
+      if (!mActiveLayers.contains(layer))
       {
-         return mMode;
+         mActiveLayers.add(0, layer);
+         layer.setActivate(true);
       }
-
-      return mDefaultMode;
    }
 
-   public Mode getDefaultMode()
+   protected void activateLayerInGroup(Layer layer, Layer... layerGroup)
    {
-      return mDefaultMode;
+      for (Layer l : layerGroup)
+      {
+         if (l != layer && isLayerActive(l))
+         {
+            deactivateLayer(l);
+         }
+      }
+
+      activateLayer(layer);
+   }
+
+   protected void deactivateLayer(Layer layer)
+   {
+      if (mActiveLayers.contains(layer))
+      {
+         mActiveLayers.remove(layer);
+         layer.setActivate(false);
+      }
+   }
+
+   protected boolean isLayerActive(Layer layer)
+   {
+      return mActiveLayers.contains(layer);
    }
 
    public <T extends ControlElement> T addElement(T element)
@@ -120,15 +124,9 @@ public abstract class ControllerExtensionWithModes extends ControllerExtension
 
    }
 
-   protected Mode createDefaultMode()
-   {
-      return new Mode();
-   }
-
    protected abstract MidiOut getMidiOut();
 
    private List<ControlElement> mElements = new ArrayList<>();
-   private Mode mDefaultMode = createDefaultMode();
 
-   private Mode mMode;
+   private List<Layer> mActiveLayers = new ArrayList<>();
 }

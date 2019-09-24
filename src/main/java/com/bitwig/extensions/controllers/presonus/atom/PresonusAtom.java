@@ -19,13 +19,13 @@ import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.presonus.framework.ButtonTarget;
-import com.bitwig.extensions.controllers.presonus.framework.ControllerExtensionWithModes;
+import com.bitwig.extensions.controllers.presonus.framework.ControllerExtensionWithLayers;
 import com.bitwig.extensions.controllers.presonus.framework.EncoderTarget;
-import com.bitwig.extensions.controllers.presonus.framework.Mode;
+import com.bitwig.extensions.controllers.presonus.framework.Layer;
 import com.bitwig.extensions.controllers.presonus.framework.RGBButtonTarget;
 import com.bitwig.extensions.controllers.presonus.util.NoteInputUtils;
 
-public class PresonusAtom extends ControllerExtensionWithModes
+public class PresonusAtom extends ControllerExtensionWithLayers
 {
    final static int CC_ENCODER_1 = 0x0E;
    final static int CC_ENCODER_2 = 0x0F;
@@ -86,7 +86,7 @@ public class PresonusAtom extends ControllerExtensionWithModes
 
       mTransport = host.createTransport();
 
-      mStepsMode = createStepsMode();
+      mStepsLayer = createStepsMode();
 
       mCursorClip = host.createLauncherCursorClip(16, 1);
       mCursorClip.color().markInterested();
@@ -106,35 +106,36 @@ public class PresonusAtom extends ControllerExtensionWithModes
       mMidiOut.sendMidi(0x8f, 0, 0);
    }
 
-   @Override
-   protected Mode createDefaultMode()
+   private Layer createStepsMode()
    {
-      return new Mode()
+      return new Layer()
       {
          @Override
-         public void selected()
+         public void setActivate(final boolean active)
          {
-            mNoteInput.setShouldConsumeEvents(true);
-            mNoteInput.setKeyTranslationTable(NoteInputUtils.ALL_NOTES);
-
-            for(int i=0; i<4; i++) mRemoteControls.getParameter(i).setIndication(true);
+            if (active)
+            {
+               mNoteInput.setShouldConsumeEvents(false);
+               mNoteInput.setKeyTranslationTable(NoteInputUtils.NO_NOTES);
+               mCursorClip.scrollToKey(36 + mCurrentPadForSteps & 0x15);
+               mCursorClip.scrollToStep(0);
+            }
          }
       };
    }
 
-   private Mode createStepsMode()
+   private Layer createBaseLayer()
    {
-      return new Mode()
+      return new Layer()
       {
          @Override
-         public void selected()
+         public void setActivate(final boolean active)
          {
-            mNoteInput.setShouldConsumeEvents(false);
-            mNoteInput.setKeyTranslationTable(NoteInputUtils.NO_NOTES);
-            mCursorClip.scrollToKey(36 + mCurrentPadForSteps & 0x15);
-            mCursorClip.scrollToStep(0);
-
-            for(int i=0; i<4; i++) mRemoteControls.getParameter(i).setIndication(false);
+            if (active)
+            {
+               mNoteInput.setShouldConsumeEvents(true);
+               mNoteInput.setKeyTranslationTable(NoteInputUtils.ALL_NOTES);
+            }
          }
       };
    }
@@ -148,8 +149,6 @@ public class PresonusAtom extends ControllerExtensionWithModes
    private void initPads()
    {
       mDrumPadBank = mCursorDevice.createDrumPadBank(16);
-
-      Mode defaultMode = getDefaultMode();
 
       mDrumPadColors = new float[16][3];
 
@@ -171,7 +170,7 @@ public class PresonusAtom extends ControllerExtensionWithModes
                mDrumPadColors[padIndex][2] = b * darken;
             });
 
-         defaultMode.bind(pad, new RGBButtonTarget()
+         mBaseLayer.bind(pad, new RGBButtonTarget()
          {
             private int isPlaying()
             {
@@ -220,7 +219,7 @@ public class PresonusAtom extends ControllerExtensionWithModes
          mDrumPadColors[padIndex][1] = color.green() * darken;
          mDrumPadColors[padIndex][2] = color.blue() * darken;
 
-         mStepsMode.bind(pad, new RGBButtonTarget()
+         mStepsLayer.bind(pad, new RGBButtonTarget()
          {
             @Override
             public float[] getRGB()
@@ -289,10 +288,8 @@ public class PresonusAtom extends ControllerExtensionWithModes
    {
       mTransport.isPlaying().markInterested();
 
-      Mode defaultMode = getDefaultMode();
-
       Button shiftButton = addElement(new Button(CC_SHIFT));
-      defaultMode.bind(shiftButton, new ButtonTarget()
+      mBaseLayer.bind(shiftButton, new ButtonTarget()
       {
          @Override
          public boolean get()
@@ -308,17 +305,17 @@ public class PresonusAtom extends ControllerExtensionWithModes
       });
 
       Button clickToggle = addElement(new Button(CC_CLICK_COUNT_IN));
-      defaultMode.bindToggle(clickToggle, mTransport.isMetronomeEnabled());
+      mBaseLayer.bindToggle(clickToggle, mTransport.isMetronomeEnabled());
 
       Button playButton = addElement(new Button(CC_PLAY_LOOP_TOGGLE));
-      defaultMode.bindPressedRunnable(playButton, mTransport.isPlaying(), () ->
+      mBaseLayer.bindPressedRunnable(playButton, mTransport.isPlaying(), () ->
       {
          if (mShift) mTransport.isArrangerLoopEnabled().toggle();
          else mTransport.togglePlay();
       });
 
       Button stopButton = addElement(new Button(CC_STOP_UNDO));
-      defaultMode.bind(stopButton, new ButtonTarget()
+      mBaseLayer.bind(stopButton, new ButtonTarget()
          {
             @Override
             public boolean get()
@@ -340,41 +337,41 @@ public class PresonusAtom extends ControllerExtensionWithModes
          });
 
       Button recordButton = addElement(new Button(CC_RECORD_SAVE));
-      defaultMode.bindPressedRunnable(recordButton, mTransport.isArrangerRecordEnabled(), () ->
+      mBaseLayer.bindPressedRunnable(recordButton, mTransport.isArrangerRecordEnabled(), () ->
       {
          if (mShift) save();
          else mTransport.isArrangerRecordEnabled().toggle();
       });
 
       Button upButton = addElement(new Button(CC_UP));
-      defaultMode.bindPressedRunnable(upButton, mCursorTrack.hasPrevious(), mCursorTrack::selectPrevious);
-      mStepsMode.bindPressedRunnable(upButton, mCursorClip.canScrollKeysUp(), mCursorClip::scrollKeysStepUp);
+      mBaseLayer.bindPressedRunnable(upButton, mCursorTrack.hasPrevious(), mCursorTrack::selectPrevious);
+      mStepsLayer.bindPressedRunnable(upButton, mCursorClip.canScrollKeysUp(), mCursorClip::scrollKeysStepUp);
       Button downButton = addElement(new Button(CC_DOWN));
-      defaultMode.bindPressedRunnable(downButton, mCursorTrack.hasNext(), mCursorTrack::selectNext);
-      mStepsMode.bindPressedRunnable(downButton, mCursorClip.canScrollKeysDown(), mCursorClip::scrollKeysStepDown);
+      mBaseLayer.bindPressedRunnable(downButton, mCursorTrack.hasNext(), mCursorTrack::selectNext);
+      mStepsLayer.bindPressedRunnable(downButton, mCursorClip.canScrollKeysDown(), mCursorClip::scrollKeysStepDown);
       Button leftButton = addElement(new Button(CC_LEFT));
-      defaultMode.bindPressedRunnable(leftButton, mCursorDevice.hasPrevious(), mCursorDevice::selectPrevious);
-      mStepsMode.bindPressedRunnable(leftButton, mCursorClip.canScrollStepsBackwards(), mCursorClip::scrollStepsPageBackwards);
+      mBaseLayer.bindPressedRunnable(leftButton, mCursorDevice.hasPrevious(), mCursorDevice::selectPrevious);
+      mStepsLayer.bindPressedRunnable(leftButton, mCursorClip.canScrollStepsBackwards(), mCursorClip::scrollStepsPageBackwards);
       Button rightButton = addElement(new Button(CC_RIGHT));
-      defaultMode.bindPressedRunnable(rightButton, mCursorDevice.hasNext(), mCursorDevice::selectNext);
-      mStepsMode.bindPressedRunnable(rightButton, mCursorClip.canScrollStepsForwards(), mCursorClip::scrollStepsPageForward);
+      mBaseLayer.bindPressedRunnable(rightButton, mCursorDevice.hasNext(), mCursorDevice::selectNext);
+      mStepsLayer.bindPressedRunnable(rightButton, mCursorClip.canScrollStepsForwards(), mCursorClip::scrollStepsPageForward);
 
       Button selectButton = addElement(new Button(CC_SELECT));
-      defaultMode.bindPressedRunnable(selectButton, null, mApplication::enter);
+      mBaseLayer.bindPressedRunnable(selectButton, null, mApplication::enter);
       Button zoomButton = addElement(new Button(CC_ZOOM));
-      defaultMode.bindPressedRunnable(zoomButton, null, () ->
+      mBaseLayer.bindPressedRunnable(zoomButton, null, () ->
       {
          if (mShift) mApplication.zoomOut();
          else mApplication.zoomIn();
       });
 
       Button editorToggle = addElement(new Button(CC_EDITOR));
-      defaultMode.bind(editorToggle, new ButtonTarget()
+      mBaseLayer.bind(editorToggle, new ButtonTarget()
       {
          @Override
          public boolean get()
          {
-            return getMode() == mStepsMode;
+            return isLayerActive(mStepsLayer);
          }
 
          @Override
@@ -382,7 +379,7 @@ public class PresonusAtom extends ControllerExtensionWithModes
          {
             if (pressed)
             {
-               setOrResetMode(mStepsMode);
+               toggleLayer(mStepsLayer);
             }
          }
       });
@@ -394,7 +391,7 @@ public class PresonusAtom extends ControllerExtensionWithModes
       {
          SettableRangedValue parameterValue = mRemoteControls.getParameter(i).value();
          Encoder encoder = addElement(new Encoder(CC_ENCODER_1 + i));
-         getDefaultMode().bind(encoder, new EncoderTarget()
+         mBaseLayer.bind(encoder, new EncoderTarget()
          {
             @Override
             public void inc(final int steps)
@@ -428,9 +425,10 @@ public class PresonusAtom extends ControllerExtensionWithModes
    private float[][] mDrumPadColors;
 
    /* Steps mode */
-   private Mode mStepsMode;
+   private Layer mStepsLayer;
    private Clip mCursorClip;
    private int mPlayingStep;
    private int[] mStepData = new int[16];
    private int mCurrentPadForSteps;
+   private Layer mBaseLayer = createBaseLayer();
 }

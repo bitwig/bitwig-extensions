@@ -7,14 +7,14 @@ import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 
-public class Mode
+public class Layer
 {
    public void bind(ControlElement element, Target target)
    {
       mMap.put(element, target);
    }
 
-   public void selected()
+   public void setActivate(final boolean active)
    {
    }
 
@@ -57,6 +57,24 @@ public class Mode
          public void set(final boolean pressed)
          {
             if (pressed) runnable.run();
+         }
+      });
+   }
+
+   public void bindLayerInGroup(ControllerExtensionWithLayers host, ControlElement<ButtonTarget> element, Layer layer, Layer... layerGroup)
+   {
+      bind(element, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return host.isLayerActive(layer);
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed) host.activateLayerInGroup(layer, layerGroup);
          }
       });
    }
