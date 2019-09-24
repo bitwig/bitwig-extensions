@@ -6,6 +6,10 @@ import java.util.Map;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
+import com.bitwig.extensions.controllers.presonus.framework.target.ButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.target.FaderParameterTarget;
+import com.bitwig.extensions.controllers.presonus.framework.target.Target;
+import com.bitwig.extensions.controllers.presonus.framework.target.TouchFaderTarget;
 
 public class Layer
 {
@@ -61,7 +65,7 @@ public class Layer
       });
    }
 
-   public void bindLayerInGroup(ControllerExtensionWithLayers host, ControlElement<ButtonTarget> element, Layer layer, Layer... layerGroup)
+   public void bindLayerInGroup(LayeredControllerExtension host, ControlElement<ButtonTarget> element, Layer layer, Layer... layerGroup)
    {
       bind(element, new ButtonTarget()
       {

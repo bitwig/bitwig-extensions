@@ -18,14 +18,14 @@ import com.bitwig.extension.controller.api.PlayingNote;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.presonus.framework.ButtonTarget;
-import com.bitwig.extensions.controllers.presonus.framework.ControllerExtensionWithLayers;
-import com.bitwig.extensions.controllers.presonus.framework.EncoderTarget;
+import com.bitwig.extensions.controllers.presonus.framework.target.ButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.LayeredControllerExtension;
+import com.bitwig.extensions.controllers.presonus.framework.target.EncoderTarget;
 import com.bitwig.extensions.controllers.presonus.framework.Layer;
-import com.bitwig.extensions.controllers.presonus.framework.RGBButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.target.RGBButtonTarget;
 import com.bitwig.extensions.controllers.presonus.util.NoteInputUtils;
 
-public class PresonusAtom extends ControllerExtensionWithLayers
+public class PresonusAtom extends LayeredControllerExtension
 {
    final static int CC_ENCODER_1 = 0x0E;
    final static int CC_ENCODER_2 = 0x0F;

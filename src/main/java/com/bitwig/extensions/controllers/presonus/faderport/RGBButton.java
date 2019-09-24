@@ -1,11 +1,10 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.presonus.framework.ButtonTarget;
-import com.bitwig.extensions.controllers.presonus.framework.RGBButtonControlElement;
-import com.bitwig.extensions.controllers.presonus.framework.RGBButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.ControlElement;
+import com.bitwig.extensions.controllers.presonus.framework.target.RGBButtonTarget;
 
-public class RGBButton implements RGBButtonControlElement
+public class RGBButton implements ControlElement<RGBButtonTarget>
 {
    public RGBButton(final int data1)
    {

@@ -1,10 +1,10 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.presonus.framework.RGBButtonControlElement;
-import com.bitwig.extensions.controllers.presonus.framework.RGBButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.ControlElement;
+import com.bitwig.extensions.controllers.presonus.framework.target.RGBButtonTarget;
 
-public class Pad implements RGBButtonControlElement
+public class Pad implements ControlElement<RGBButtonTarget>
 {
    public Pad(final int index)
    {

@@ -7,10 +7,11 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extensions.controllers.presonus.framework.target.Target;
 
-public abstract class ControllerExtensionWithLayers extends ControllerExtension
+public abstract class LayeredControllerExtension extends ControllerExtension
 {
-   protected ControllerExtensionWithLayers(
+   protected LayeredControllerExtension(
       final ControllerExtensionDefinition definition, final ControllerHost host)
    {
       super(definition, host);
