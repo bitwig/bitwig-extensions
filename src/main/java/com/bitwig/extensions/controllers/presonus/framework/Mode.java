@@ -61,14 +61,14 @@ public class Mode
       });
    }
 
-   public void bind(ControlElement<MotorFaderTarget> element, Parameter parameter)
+   public void bind(ControlElement<TouchFaderTarget> element, Parameter parameter)
    {
       if (parameter != null)
       {
          parameter.markInterested();
       }
 
-      bind(element, new MotorFaderParameterTarget(parameter));
+      bind(element, new FaderParameterTarget(parameter));
    }
 
    public <T extends Target> T getTarget(final ControlElement element)

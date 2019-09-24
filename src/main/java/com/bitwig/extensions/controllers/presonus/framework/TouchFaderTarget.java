@@ -1,6 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.framework;
 
-public interface MotorFaderTarget extends Target
+public interface TouchFaderTarget extends Target
 {
    float get();
 

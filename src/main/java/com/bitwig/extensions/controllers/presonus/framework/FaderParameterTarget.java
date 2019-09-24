@@ -2,9 +2,9 @@ package com.bitwig.extensions.controllers.presonus.framework;
 
 import com.bitwig.extension.controller.api.Parameter;
 
-public class MotorFaderParameterTarget implements MotorFaderTarget
+public class FaderParameterTarget implements TouchFaderTarget
 {
-   public MotorFaderParameterTarget(final Parameter parameter)
+   public FaderParameterTarget(final Parameter parameter)
    {
       mParameter = parameter;
    }

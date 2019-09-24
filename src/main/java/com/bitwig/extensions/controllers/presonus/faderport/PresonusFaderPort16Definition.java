@@ -19,8 +19,8 @@ public class PresonusFaderPort16Definition extends PresonusFaderPortDefinition
    }
 
    @Override
-   int sysexDeviceID()
+   String sysexDeviceID()
    {
-      return 16;
+      return "16";
    }
 }

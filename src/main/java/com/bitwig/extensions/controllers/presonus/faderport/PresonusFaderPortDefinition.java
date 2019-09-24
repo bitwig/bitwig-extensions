@@ -22,7 +22,7 @@ public abstract class PresonusFaderPortDefinition extends ControllerExtensionDef
 
    abstract int channelCount();
 
-   abstract int sysexDeviceID();
+   abstract String sysexDeviceID();
 
    @Override
    public int getNumMidiInPorts()

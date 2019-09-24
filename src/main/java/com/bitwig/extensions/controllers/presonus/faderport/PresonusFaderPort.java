@@ -15,12 +15,21 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.presonus.framework.ButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.ClickEncoderTarget;
 import com.bitwig.extensions.controllers.presonus.framework.ControllerExtensionWithModes;
 import com.bitwig.extensions.controllers.presonus.framework.Mode;
 import com.bitwig.extensions.controllers.presonus.framework.RGBButtonTarget;
 
 public class PresonusFaderPort extends ControllerExtensionWithModes
 {
+   static float[] WHITE = new float[] {1.f, 1.f, 1.f};
+   static float[] BLACK = new float[] {0.f, 0.f, 0.f};
+   static float[] ARM_LOW = new float[] {0.1f, 0.0f, 0.0f};
+   static float[] ARM_HIGH = new float[] {1.0f, 0.0f, 0.0f};
+
+   static int[] SELECT_IDS = {0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x7, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27};
+   static int[] SOLOD_IDS = {0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x50, 0x51, 0x52, 0x58, 0x54, 0x55, 0x59, 0x57};
+
    public PresonusFaderPort(
       final PresonusFaderPortDefinition definition,
       final ControllerHost host)
@@ -28,11 +37,13 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
       super(definition, host);
 
       mChannelCount = definition.channelCount();
+      mSysexHeader = "F0 00 01 06 " + definition.sysexDeviceID();
    }
 
    @Override
    public void init()
    {
+
       final ControllerHost host = getHost();
       mApplication = host.createApplication();
 
@@ -49,11 +60,45 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
       mCursorDevice =
          mCursorTrack.createCursorDevice("main", "Main", 0, CursorDeviceFollowMode.FOLLOW_SELECTION);
 
-      mRemoteControls = mCursorDevice.createCursorRemoteControlsPage(4);
+      mRemoteControls = mCursorDevice.createCursorRemoteControlsPage(mChannelCount);
 
       mTransport = host.createTransport();
 
       Mode defaultMode = getDefaultMode();
+
+      ClickEncoder displayEncoder = addElement(new ClickEncoder(0x20, 0x10));
+      ClickEncoder transportEncoder = addElement(new ClickEncoder(0x53, 0x3C));
+
+      defaultMode.bind(displayEncoder, new ClickEncoderTarget()
+      {
+         @Override
+         public void click(final boolean b)
+         {
+         }
+
+         @Override
+         public void inc(final int steps)
+         {
+            mCursorTrack.pan().inc(steps, mShift ? 1010 : 101);
+         }
+      });
+
+      defaultMode.bind(transportEncoder, new ClickEncoderTarget()
+      {
+         @Override
+         public void click(final boolean b)
+         {
+         }
+
+         @Override
+         public void inc(final int steps)
+         {
+            if (steps > 0)
+               mCursorTrack.selectNext();
+            else
+               mCursorTrack.selectPrevious();
+         }
+      });
 
       Button arm = addElement(new Button(0x00));
       defaultMode.bind(arm, new ButtonTarget()
@@ -74,23 +119,33 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
       for(int channelIndex=0; channelIndex<mChannelCount; channelIndex++)
       {
          int c = channelIndex;
+
          final Track track = mTrackBank.getItemAt(c);
+
+         bindTrack(defaultMode, channelIndex, track);
+
+         track.position().markInterested();
+         track.name().markInterested();
          track.color().markInterested();
          final Parameter volume = track.volume();
          volume.markInterested();
+         volume.displayedValue().markInterested();
          track.mute().markInterested();
          track.solo().markInterested();
          track.arm().markInterested();
          track.exists().markInterested();
+         track.pan().markInterested();
 
-         final Button solo = addElement(new Button((c >= 8 ? 0x48 : 0x08) + c));
+         final Button solo = addElement(new Button(SOLOD_IDS[c]));
          defaultMode.bindToggle(solo, track.solo());
          final Button mute = addElement(new Button((c >= 8 ? 0x70 : 0x10) + c));
          defaultMode.bindToggle(mute, track.mute());
 
-         int[] selectId = {0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1d, 0x1e, 0x1f, 0x7, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27};
-         final RGBButton select = addElement(new RGBButton(selectId[c]));
+         final RGBButton select = addElement(new RGBButton(SELECT_IDS[c]));
          final BooleanValue isSelected = mCursorTrack.createEqualsValue(track);
+
+         MotorFader motorFader = addElement(new MotorFader(c));
+         defaultMode.bind(motorFader, volume);
 
          defaultMode.bind(select, new RGBButtonTarget()
          {
@@ -103,16 +158,11 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
             @Override
             public float[] getRGB()
             {
-               float[] WHITE = new float[] {1.f, 1.f, 1.f};
-               float[] BLACK = new float[] {0.f, 0.f, 0.f};
-
                if (get())
                {
                   if (mArm)
                   {
-                     float[] LOW = new float[] {0.2f, 0.0f, 0.0f};
-                     float[] HIGH = new float[] {1.0f, 0.0f, 0.0f};
-                     return track.arm().get() ? HIGH : LOW;
+                     return track.arm().get() ? ARM_HIGH : ARM_LOW;
                   }
                   else
                   {
@@ -140,8 +190,76 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
             }
          });
 
-         Fader fader = addElement(new Fader(c));
-         defaultMode.bind(fader, volume);
+         Display display = addElement(new Display(c, mSysexHeader));
+         defaultMode.bind(display, new DisplayTarget()
+         {
+            @Override
+            public ValueBarMode getValueBarMode()
+            {
+               if (!track.exists().get()) return ValueBarMode.Off;
+
+               return ValueBarMode.Bipolar;
+            }
+
+            @Override
+            public int getBarValue()
+            {
+               double pan = track.pan().get();
+               return Math.max(0, Math.min(127, (int)(pan * 127.0)));
+            }
+
+            @Override
+            public DisplayMode getMode()
+            {
+               return DisplayMode.MixedText;
+            }
+
+            @Override
+            public boolean isTextInverted(final int line)
+            {
+               if (isSelected.get() && line == 1 && track.exists().get())
+               {
+                  return true;
+               }
+
+               return false;
+            }
+
+            @Override
+            public String getText(final int line)
+            {
+               if (!track.exists().get()) return "";
+
+               String trackNumber = Integer.toString(track.position().get() + 1);
+
+               if (line == 0)
+               {
+                  String fullname = track.name().get();
+
+                  if (fullname.endsWith(trackNumber))
+                     return track.name().getLimited(8+trackNumber.length()).replace(trackNumber, "");
+
+                  String limited = track.name().getLimited(8);
+
+                  return limited;
+               }
+
+               if (line == 1)
+               {
+                  return trackNumber;
+               }
+
+               if (line == 2)
+               {
+                  if (motorFader.isBeingTouched())
+                     return track.volume().displayedValue().getLimited(10);
+
+                  return "Pan";
+               }
+
+               return "";
+            }
+         });
       }
 
       Button shiftLeft = addElement(new Button(0x06));
@@ -268,6 +386,20 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
             mTransport.automationWriteMode().set("touch");
          }
       });
+
+      runningStatusTimer();
+   }
+
+   private void bindTrack(final Mode mode, final int index, final Track track)
+   {
+
+   }
+
+   private void runningStatusTimer()
+   {
+      getMidiOut().sendMidi(0xA0, 0, 0);
+
+      getHost().scheduleTask(this::runningStatusTimer, 1000);
    }
 
    @Override
@@ -317,4 +449,5 @@ public class PresonusFaderPort extends ControllerExtensionWithModes
    private final int mChannelCount;
    private TrackBank mTrackBank;
    private boolean mArm;
+   private final String mSysexHeader;
 }
