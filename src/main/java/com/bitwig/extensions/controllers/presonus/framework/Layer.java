@@ -6,10 +6,10 @@ import java.util.Map;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
-import com.bitwig.extensions.controllers.presonus.framework.target.ButtonTarget;
-import com.bitwig.extensions.controllers.presonus.framework.target.FaderParameterTarget;
-import com.bitwig.extensions.controllers.presonus.framework.target.Target;
-import com.bitwig.extensions.controllers.presonus.framework.target.TouchFaderTarget;
+import com.bitwig.extensions.controllers.presonus.framework.targets.ButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.targets.FaderParameterTarget;
+import com.bitwig.extensions.controllers.presonus.framework.targets.Target;
+import com.bitwig.extensions.controllers.presonus.framework.targets.TouchFaderTarget;
 
 public class Layer
 {

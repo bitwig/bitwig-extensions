@@ -2,7 +2,7 @@ package com.bitwig.extensions.controllers.presonus.atom;
 
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.presonus.framework.ControlElement;
-import com.bitwig.extensions.controllers.presonus.framework.target.RGBButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.targets.RGBButtonTarget;
 
 public class Pad implements ControlElement<RGBButtonTarget>
 {

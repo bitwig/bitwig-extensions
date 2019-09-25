@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.presonus.framework.target.ButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.targets.ButtonTarget;
 import com.bitwig.extensions.controllers.presonus.framework.ControlElement;
 
 public class Button implements ControlElement<ButtonTarget>

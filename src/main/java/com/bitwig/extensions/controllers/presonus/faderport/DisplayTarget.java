@@ -1,6 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
-import com.bitwig.extensions.controllers.presonus.framework.target.Target;
+import com.bitwig.extensions.controllers.presonus.framework.targets.Target;
 
 public interface DisplayTarget extends Target
 {

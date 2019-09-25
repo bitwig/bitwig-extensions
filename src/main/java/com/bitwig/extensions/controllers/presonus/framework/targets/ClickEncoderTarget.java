@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.presonus.framework.target;
+package com.bitwig.extensions.controllers.presonus.framework.targets;
 
 public interface ClickEncoderTarget extends EncoderTarget
 {
