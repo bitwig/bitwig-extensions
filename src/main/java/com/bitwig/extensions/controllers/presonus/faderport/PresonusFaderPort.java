@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
+import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arranger;
 import com.bitwig.extension.controller.api.BooleanValue;
@@ -72,6 +73,9 @@ public class PresonusFaderPort extends LayeredControllerExtension
       mRemoteControls = mCursorDevice.createCursorRemoteControlsPage(mChannelCount);
 
       mTransport = host.createTransport();
+
+      mClearMute = mApplication.getAction("clear_mute");
+      mClearSolo = mApplication.getAction("clear_solo");
 
       ClickEncoder displayEncoder = addElement(new ClickEncoder(0x20, 0x10));
 
@@ -214,6 +218,12 @@ public class PresonusFaderPort extends LayeredControllerExtension
       mDefaultLayer.bindPressedRunnable(rewind, null, mTransport::rewind);
       Button fastForward = addElement(new Button(0x5C));
       mDefaultLayer.bindPressedRunnable(fastForward, null, mTransport::fastForward);
+
+      Button clearSolo = addElement(new Button(0x01));
+      mDefaultLayer.bindPressedRunnable(clearSolo, mClearSolo.isEnabled(), mClearSolo::invoke);
+
+      Button clearMute = addElement(new Button(0x02));
+      mDefaultLayer.bindPressedRunnable(clearMute, mClearMute.isEnabled(), mClearMute::invoke);
 
       // Automation Write Modes
       RGBButton automationOff = addElement(new RGBButton(0x4F));
@@ -663,4 +673,6 @@ public class PresonusFaderPort extends LayeredControllerExtension
    private MasterTrack mMasterTrack;
    private Arranger mArranger;
    private CueMarkerBank mCueMarkerBank;
+   private Action mClearMute;
+   private Action mClearSolo;
 }
