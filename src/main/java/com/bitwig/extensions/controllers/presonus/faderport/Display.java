@@ -53,6 +53,7 @@ public class Display implements ControlElement<DisplayTarget>
       for(int line = 0; line< TEXT_LINES; line++)
       {
          String text = target.getText(line);
+         if (text == null) text = "";
          int flags = target.getTextAlignment(line);
 
          if (target.isTextInverted(line))

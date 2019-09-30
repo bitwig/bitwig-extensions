@@ -14,8 +14,10 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.SettableColorValue;
+import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -24,11 +26,13 @@ import com.bitwig.extensions.controllers.presonus.framework.targets.ClickEncoder
 import com.bitwig.extensions.controllers.presonus.framework.LayeredControllerExtension;
 import com.bitwig.extensions.controllers.presonus.framework.Layer;
 import com.bitwig.extensions.controllers.presonus.framework.targets.RGBButtonTarget;
+import com.bitwig.extensions.controllers.presonus.util.ValueUtils;
 
 public class PresonusFaderPort extends LayeredControllerExtension
 {
    static float[] WHITE = new float[] {1.f, 1.f, 1.f};
    static float[] DIM_WHITE = new float[] {0.1f, 0.1f, 0.1f};
+   static float[] HALF_WHITE = new float[] {0.3f, 0.3f, 0.3f};
    static float[] BLACK = new float[] {0.f, 0.f, 0.f};
    static float[] ARM_LOW = new float[] {0.1f, 0.0f, 0.0f};
    static float[] ARM_HIGH = new float[] {1.0f, 0.0f, 0.0f};
@@ -70,7 +74,10 @@ public class PresonusFaderPort extends LayeredControllerExtension
       mCursorDevice =
          mCursorTrack.createCursorDevice("main", "Main", 0, CursorDeviceFollowMode.FOLLOW_SELECTION);
 
-      mRemoteControls = mCursorDevice.createCursorRemoteControlsPage(mChannelCount);
+      mRemoteControls = mCursorDevice.createCursorRemoteControlsPage(8);
+
+      if (mChannelCount > 8)
+         mRemoteControls2 = mCursorDevice.createCursorRemoteControlsPage("right", 8, "");
 
       mTransport = host.createTransport();
 
@@ -94,6 +101,13 @@ public class PresonusFaderPort extends LayeredControllerExtension
       });
 
       initTransportEncoder();
+
+      // Link all send positions to the first
+      mTrackBank.getItemAt(0).sendBank().scrollPosition().addValueObserver(p ->
+      {
+         for(int i=1; i<mChannelCount; i++)
+            mTrackBank.getItemAt(i).sendBank().scrollPosition().set(p);
+      });
 
       mSendsLayer.bind(displayEncoder, new ClickEncoderTarget()
       {
@@ -336,6 +350,142 @@ public class PresonusFaderPort extends LayeredControllerExtension
       mDefaultLayer.bindLayerInGroup(this, panMode, mPanLayer, faderGroup);
 
       runningStatusTimer();
+
+      initDeviceMode();
+   }
+
+   private SettableIntegerValue getPageIndex()
+   {
+      if (mShift && mRemoteControls2 != null)
+      {
+         return mRemoteControls2.selectedPageIndex();
+      }
+      return mRemoteControls.selectedPageIndex();
+   }
+
+   private void initDeviceMode()
+   {
+      mRemoteControls.pageNames().markInterested();
+      mRemoteControls.selectedPageIndex().markInterested();
+
+      if (mRemoteControls2 != null)
+      {
+         mRemoteControls2.selectedPageIndex().markInterested();
+      }
+
+      for(int c = 0; c < mChannelCount; c++)
+      {
+         final int channelIndex = c;
+         final int indexInGroup = c & 0x7;
+
+         final RemoteControl parameter = c >= 8
+            ? mRemoteControls2.getParameter(indexInGroup)
+            : mRemoteControls.getParameter(indexInGroup);
+
+         parameter.name().markInterested();
+         parameter.displayedValue().markInterested();
+
+         Channel channel = mChannels[c];
+
+         mDeviceLayer.bind(channel.motorFader, parameter);
+
+         mDeviceLayer.bindPressedRunnable(channel.mute, null, parameter::reset);
+
+         mDeviceLayer.bind(channel.select, new RGBButtonTarget()
+         {
+            @Override
+            public float[] getRGB()
+            {
+               if (getPageIndex().get() == channelIndex)
+               {
+                  return WHITE;
+               }
+
+               if (mRemoteControls2 != null)
+               {
+                  if (mRemoteControls.selectedPageIndex().get() == channelIndex
+                     || mRemoteControls2.selectedPageIndex().get() == channelIndex)
+                  {
+                     return HALF_WHITE;
+                  }
+               }
+
+               return DIM_WHITE;
+            }
+
+            @Override
+            public boolean get()
+            {
+               return channelIndex < mRemoteControls.pageNames().get().length;
+            }
+
+            @Override
+            public void set(final boolean pressed)
+            {
+               getPageIndex().set(channelIndex);
+            }
+         });
+
+         mDeviceLayer.bind(channel.display, new DisplayTarget()
+         {
+            @Override
+            public int getBarValue()
+            {
+               if (channelIndex < 8)
+               {
+                  return ValueUtils.doubleToUnsigned7(parameter.value().get());
+               }
+               return 0;
+            }
+
+            @Override
+            public String getText(final int line)
+            {
+               if (line == 0)
+               {
+                  final String[] pageNames = mRemoteControls.pageNames().get();
+
+                  if (channelIndex == 15)
+                  {
+                     int rightIndex = mRemoteControls2.selectedPageIndex().get();
+                     return rightIndex < pageNames.length ? pageNames[rightIndex] : "";
+                  }
+
+                  if (channelIndex < pageNames.length)
+                  {
+                     return pageNames[channelIndex];
+                  }
+               }
+
+               if (line == 2) return parameter.name().getLimited(7);
+               if (line == 3) return parameter.displayedValue().getLimited(7);
+
+               return null;
+            }
+
+            @Override
+            public DisplayMode getMode()
+            {
+               return DisplayMode.SmallText;
+            }
+
+            @Override
+            public boolean isTextInverted(final int line)
+            {
+               if (line == 0 && getPageIndex().get() == channelIndex)
+               {
+                  return true;
+               }
+
+               if (line == 0 && channelIndex == 15)
+               {
+                  return true;
+               }
+
+               return false;
+            }
+         });
+      }
    }
 
    private void initTransportEncoder()
@@ -675,4 +825,5 @@ public class PresonusFaderPort extends LayeredControllerExtension
    private CueMarkerBank mCueMarkerBank;
    private Action mClearMute;
    private Action mClearSolo;
+   private CursorRemoteControlsPage mRemoteControls2;
 }
