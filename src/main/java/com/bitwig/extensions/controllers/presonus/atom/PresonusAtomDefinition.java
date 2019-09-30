@@ -78,6 +78,6 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
    @Override
    public int getRequiredAPIVersion()
    {
-      return 8;
+      return 10;
    }
 }
