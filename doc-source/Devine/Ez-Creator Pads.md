@@ -10,7 +10,7 @@ The transport buttons are working as expected.
 
 ## Fader
 
-The motorFader controls the first remote control of the selected device.
+The fader controls the first remote control of the selected device.
 
 ## Bank button
 

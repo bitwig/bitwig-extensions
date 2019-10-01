@@ -18,4 +18,4 @@ The knobs are mapped to the remote controls of the selected device.
 
 ## Faders
 
-The faders control the track volume. The last motorFader controls the master track volume.
+The faders control the track volume. The last fader controls the master track volume.
