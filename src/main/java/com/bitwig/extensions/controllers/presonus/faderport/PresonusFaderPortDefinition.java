@@ -1,6 +1,4 @@
-package com.bitwig.extensions.controllers.presonus;
-
-import java.util.UUID;
+package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
@@ -8,10 +6,8 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class PresonusAtomDefinition extends ControllerExtensionDefinition
+public abstract class PresonusFaderPortDefinition extends ControllerExtensionDefinition
 {
-   private final static UUID ID = UUID.fromString("474bba86-c116-4d4a-a3c3-4c230ab4d012");
-
    @Override
    public String getHardwareVendor()
    {
@@ -21,8 +17,12 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
    @Override
    public String getHardwareModel()
    {
-      return "ATOM";
+      return "Faderport " + channelCount();
    }
+
+   abstract int channelCount();
+
+   abstract String sysexDeviceID();
 
    @Override
    public int getNumMidiInPorts()
@@ -40,7 +40,7 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
    public void listAutoDetectionMidiPortNames(
       final AutoDetectionMidiPortNamesList list, final PlatformType platformType)
    {
-      String[] midiNameList = {"ATOM"};
+      String[] midiNameList = {"PreSonus FP" + channelCount()};
 
       list.add(midiNameList, midiNameList);
    }
@@ -48,13 +48,13 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new PresonusAtom(this, host);
+      return new PresonusFaderPort(this, host);
    }
 
    @Override
    public String getName()
    {
-      return "Presonus ATOM";
+      return getHardwareVendor() + " " + getHardwareModel();
    }
 
    @Override
@@ -70,14 +70,8 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
    }
 
    @Override
-   public UUID getId()
-   {
-      return ID;
-   }
-
-   @Override
    public int getRequiredAPIVersion()
    {
-      return 8;
+      return 10;
    }
 }

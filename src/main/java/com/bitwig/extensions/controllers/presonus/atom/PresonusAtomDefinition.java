@@ -1,4 +1,6 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.atom;
+
+import java.util.UUID;
 
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
@@ -6,8 +8,10 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public abstract class PresonusFaderPortDefinition extends ControllerExtensionDefinition
+public class PresonusAtomDefinition extends ControllerExtensionDefinition
 {
+   private final static UUID ID = UUID.fromString("474bba86-c116-4d4a-a3c3-4c230ab4d012");
+
    @Override
    public String getHardwareVendor()
    {
@@ -17,12 +21,8 @@ public abstract class PresonusFaderPortDefinition extends ControllerExtensionDef
    @Override
    public String getHardwareModel()
    {
-      return "Faderport " + channelCount();
+      return "ATOM";
    }
-
-   abstract int channelCount();
-
-   abstract int sysexDeviceID();
 
    @Override
    public int getNumMidiInPorts()
@@ -40,7 +40,7 @@ public abstract class PresonusFaderPortDefinition extends ControllerExtensionDef
    public void listAutoDetectionMidiPortNames(
       final AutoDetectionMidiPortNamesList list, final PlatformType platformType)
    {
-      String[] midiNameList = {"PreSonus FP" + channelCount()};
+      String[] midiNameList = {"ATOM"};
 
       list.add(midiNameList, midiNameList);
    }
@@ -48,13 +48,13 @@ public abstract class PresonusFaderPortDefinition extends ControllerExtensionDef
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new PresonusFaderPort(this, host);
+      return new PresonusAtom(this, host);
    }
 
    @Override
    public String getName()
    {
-      return getHardwareVendor() + " " + getHardwareModel();
+      return "Presonus ATOM";
    }
 
    @Override
@@ -70,8 +70,14 @@ public abstract class PresonusFaderPortDefinition extends ControllerExtensionDef
    }
 
    @Override
+   public UUID getId()
+   {
+      return ID;
+   }
+
+   @Override
    public int getRequiredAPIVersion()
    {
-      return 8;
+      return 10;
    }
 }

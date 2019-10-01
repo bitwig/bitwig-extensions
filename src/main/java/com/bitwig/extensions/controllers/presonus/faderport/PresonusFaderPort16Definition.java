@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.presonus;
+package com.bitwig.extensions.controllers.presonus.faderport;
 
 import java.util.UUID;
 
@@ -19,8 +19,8 @@ public class PresonusFaderPort16Definition extends PresonusFaderPortDefinition
    }
 
    @Override
-   int sysexDeviceID()
+   String sysexDeviceID()
    {
-      return 16;
+      return "16";
    }
 }
