@@ -53,6 +53,10 @@ public class PresonusAtom extends LayeredControllerExtension
    final static int CC_PLAY_LOOP_TOGGLE = 0x6D;
    final static int CC_STOP_UNDO = 0x6F;
 
+   float[] WHITE = {1,1,1};
+   float[] DIM_WHITE = {0.3f,0.3f,0.3f};
+
+
    public PresonusAtom(
       final PresonusAtomDefinition definition,
       final ControllerHost host)
@@ -146,9 +150,27 @@ public class PresonusAtom extends LayeredControllerExtension
       return mMidiOut;
    }
 
+   private int velocityForPlayingNote(int padIndex)
+   {
+      if (mPlayingNotes != null)
+      {
+         for (PlayingNote playingNote : mPlayingNotes)
+         {
+            if (playingNote.pitch() == 36 + padIndex)
+            {
+               return playingNote.velocity();
+            }
+         }
+      }
+
+      return 0;
+   }
+
    private void initPads()
    {
       mDrumPadBank = mCursorDevice.createDrumPadBank(16);
+      mDrumPadBank.exists().markInterested();
+      mCursorTrack.color().markInterested();
 
       mDrumPadColors = new float[16][3];
 
@@ -172,42 +194,29 @@ public class PresonusAtom extends LayeredControllerExtension
 
          mBaseLayer.bind(pad, new RGBButtonTarget()
          {
-            private int isPlaying()
-            {
-               if (mPlayingNotes != null)
-               {
-                  for (PlayingNote playingNote : mPlayingNotes)
-                  {
-                     if (playingNote.pitch() == 36 + padIndex)
-                     {
-                        return playingNote.velocity();
-                     }
-                  }
-               }
-
-               return 0;
-            }
-
             @Override
             public float[] getRGB()
             {
-               int playing = isPlaying();
+               float[] drumPadColor = mDrumPadColors[padIndex];
+
+               if (!mDrumPadBank.exists().get())
+               {
+                  SettableColorValue c = mCursorTrack.color();
+                  drumPadColor = new float[] { c.red(), c.green(), c.blue() };
+               }
+
+               int playing = velocityForPlayingNote(padIndex);
                if (playing > 0)
                {
-                  float velocity = playing / 127.f;
-                  float[] mixed = new float[3];
-                  for (int i=0; i<3; i++)
-                     mixed[i] = mDrumPadColors[padIndex][i] * (1-velocity) + velocity;
-
-                  return mixed;
+                  return mixColorWithWhite(drumPadColor, playing);
                }
-               return mDrumPadColors[padIndex];
+               return drumPadColor;
             }
 
             @Override
             public boolean get()
             {
-               return drumPad.exists().get();
+               return mDrumPadBank.exists().get() ? drumPad.exists().get() : true;
             }
 
             @Override
@@ -224,7 +233,6 @@ public class PresonusAtom extends LayeredControllerExtension
             @Override
             public float[] getRGB()
             {
-               float[] WHITE = {1,1,1};
 
                if (mShift)
                {
@@ -232,6 +240,14 @@ public class PresonusAtom extends LayeredControllerExtension
                   {
                      return WHITE;
                   }
+
+                  int playingNote = velocityForPlayingNote(padIndex);
+
+                  if (playingNote > 0)
+                  {
+                     return mixColorWithWhite(clipColor(0.3f), playingNote);
+                  }
+
 
                   return clipColor(0.3f);
                }
@@ -271,6 +287,7 @@ public class PresonusAtom extends LayeredControllerExtension
                   {
                      mCursorClip.scrollToKey(36 + padIndex);
                      mCurrentPadForSteps = padIndex;
+                     mCursorTrack.playNote(36 + padIndex, 100);
                   }
                   else mCursorClip.toggleStep(padIndex, 0, 100);
                }
@@ -282,6 +299,16 @@ public class PresonusAtom extends LayeredControllerExtension
       mCursorClip.scrollToKey(36);
       mCursorClip.addStepDataObserver((x, y, state) -> mStepData[x] = state);
       mCursorTrack.playingNotes().addValueObserver(notes -> mPlayingNotes = notes);
+   }
+
+   private float[] mixColorWithWhite(final float[] color, final int velocity)
+   {
+      float x = velocity / 127.f;
+      float[] mixed = new float[3];
+      for (int i=0; i<3; i++)
+         mixed[i] = color[i] * (1-x) + x;
+
+      return mixed;
    }
 
    private void initButtons()
@@ -357,7 +384,7 @@ public class PresonusAtom extends LayeredControllerExtension
       mStepsLayer.bindPressedRunnable(rightButton, mCursorClip.canScrollStepsForwards(), mCursorClip::scrollStepsPageForward);
 
       Button selectButton = addElement(new Button(CC_SELECT));
-      mBaseLayer.bindPressedRunnable(selectButton, null, mApplication::enter);
+      mBaseLayer.bindToggle(selectButton, mCursorTrack.isPinned());
       Button zoomButton = addElement(new Button(CC_ZOOM));
       mBaseLayer.bindPressedRunnable(zoomButton, null, () ->
       {
@@ -383,6 +410,8 @@ public class PresonusAtom extends LayeredControllerExtension
             }
          }
       });
+
+      activateLayer(mBaseLayer);
    }
 
    private void initEncoders()
