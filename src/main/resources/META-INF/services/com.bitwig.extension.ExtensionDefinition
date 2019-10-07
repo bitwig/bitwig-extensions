@@ -14,6 +14,8 @@ com.bitwig.extensions.controllers.devine.EzCreatorKeyDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorPadDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorPlusDefinition
 
+com.bitwig.extensions.controllers.keith_mcmillen.QuNexusDefinition
+
 com.bitwig.extensions.controllers.midiplus.X2MiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X3MiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X4MiniControllerExtensionDefinition
