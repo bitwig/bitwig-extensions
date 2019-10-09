@@ -1,3 +1,6 @@
+com.bitwig.extensions.controllers.akai.advance.AdvanceControllerExtensionDefinition
+com.bitwig.extensions.controllers.akai.apc40_mkii.APC40MKIIControllerExtensionDefinition
+
 com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab25ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab49MkIIControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab49ControllerExtensionDefinition
