@@ -300,6 +300,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
          arpeggiator.period().set(period);
          arpeggiator.usePressureToVelocity().set(true);
          arpeggiator.shuffle().set(true);
+         arpeggiator.mode().set("all"); // that's the note repeat way
          arpeggiator.isEnabled().set(true);
 
          mNoteRepeatStack.add(new Coord(x, y));
@@ -310,7 +311,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       if (y == 3)
          return 1.0 / 8.0 * (1 << x);
-      if (x != 0)
+      if (y == 2 && x > 0)
          return 1.0 / 6.0 * (1 << (x - 1));
       return 0.25;
    }
