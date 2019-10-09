@@ -1,0 +1,281 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <title>Bitwig Studio controller documentation</title>
+  <style type="text/css">
+      BODY {
+        background-color: white;
+        color: black;
+        margin: 0;
+        padding: 0;
+        float: none;
+        font: 12pt "Source Sans Pro", sans-serif;
+      }
+
+      DIV.world {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      DIV.header {
+        background-color: #1c1c1c;
+        color: #f6f6f6;
+        height: 50px;
+        position: relative;
+        top: 0;
+        left: 0;
+        width: 100%;
+        float: none;
+      }
+
+      DIV.logo {
+        width: 200px;
+        height: 100%;
+        background: url(https://www.bitwig.com/dms/bitwig/img/bitwig-logo-dots.png) no-repeat 0;
+        top: 0;
+        left: 20px;
+        position: absolute;
+      }
+
+      DIV.title {
+        position: absolute;
+        left: 220px;
+        width: 400px;
+        bottom: 12px;
+        font: 16pt "Source Sans Pro", sans-serif;
+      }
+
+      DIV.content {
+        padding: 20px;
+        margin-left: 200px;
+        color: black;
+        position: relative;
+      }
+
+      H1 {
+        margin: 20;
+        padding: 0;
+        position: relative;
+        font: 300 26pt 'Montserrat', sans-serif;
+      }
+
+      H2 {
+        color: #d66900;
+        margin-top: 40px;
+        margin-bottom: 10px;
+		font: bold 16pt "Source Sans Pro", sans-serif;
+      }
+
+      P {
+        color: black;
+      }
+
+      UL {
+        text-shadow: 0 0;
+        padding-left: 18px;
+      }
+
+      LI {
+        display: list-item;
+		padding: 4pt;
+      }
+    </style>
+</head>
+  <body>
+    <div class="world">
+      <div class="header">
+        <div class="logo"></div>
+        <div class="title">Controller documentation</div>
+      </div>
+      <div class="content">
+<h1 id="launchpad-pro">LaunchPad PRO</h1>
+<p>This controller extension brings the following features to the controller: - Clip launcher via session mode - Keyboard and Drum play - Selection of modes and root key - Drum sequencer - Step sequencer - Basic mixer controls - Arm/Solo/Mute and Track select - Volume/Pan/Sends control</p>
+<h2 id="global-functions">Global Functions</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Toggle Metronome</td>
+<td>Press <strong>Click</strong></td>
+</tr>
+<tr class="even">
+<td>Tap Tempo</td>
+<td>Hold <strong>Shift</strong> and tap <strong>Click</strong></td>
+</tr>
+<tr class="odd">
+<td>Stop all clips</td>
+<td>Hold <strong>Shift</strong> and press <strong>Stop Clip</strong></td>
+</tr>
+<tr class="even">
+<td>Toggle Play</td>
+<td>Press <strong>Double</strong></td>
+</tr>
+<tr class="odd">
+<td>Toggle Arranger Record</td>
+<td>Hold <strong>Shift</strong> and press <strong>Double</strong></td>
+</tr>
+<tr class="even">
+<td>Duplicate</td>
+<td>Press <strong>Duplicate</strong></td>
+</tr>
+<tr class="odd">
+<td>Undo</td>
+<td>Press <strong>Undo</strong></td>
+</tr>
+<tr class="even">
+<td>Redo</td>
+<td>Press <strong>Redo</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="session-mode">Session Mode</h2>
+<p>To activate the session mode, press <strong>Session</strong>. Then you’ll see the clips on the pads and the scenes launchers on the right. Note that if you change the color of a scene, it will update the scene launcher button accordingly.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Shortcut</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Launch a clip</td>
+<td>Press the pad</td>
+</tr>
+<tr class="even">
+<td>Launch a scene</td>
+<td>Press the scene button</td>
+</tr>
+<tr class="odd">
+<td>Stop a clip</td>
+<td>Press <strong>Stop Clip</strong> and choose the track to stop in the bottom row</td>
+</tr>
+<tr class="even">
+<td>Stop all clips</td>
+<td>Hold <strong>Shift</strong> and press <strong>Stop Clip</strong></td>
+</tr>
+<tr class="odd">
+<td>move the clip launcher window</td>
+<td>Use the arrows on top left, hold <strong>Shift</strong> to scroll by page</td>
+</tr>
+<tr class="even">
+<td>select a clip</td>
+<td>hold <strong>Shift</strong> and press the pad</td>
+</tr>
+<tr class="odd">
+<td>delete a clip</td>
+<td>hold <strong>Delete</strong> and press the pad</td>
+</tr>
+<tr class="even">
+<td>quantize a clip</td>
+<td>hold <strong>Quantize</strong> and press the pad</td>
+</tr>
+</tbody>
+</table>
+<h2 id="play-mode">Play Mode</h2>
+<p>Activate the <em>Play Mode</em> by pressing the <strong>Note</strong> button.</p>
+<p>The <em>Play Mode</em> lets you play notes via a few different layouts. You can select the different layouts by pressing a scene buttons.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Index</th>
+<th>Layout Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Guitar</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Line/3</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Line/7</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Piano</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Root Key and Mode chooser</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>64 Drums</td>
+</tr>
+</tbody>
+</table>
+<h2 id="drum-sequencer-mode">Drum Sequencer Mode</h2>
+<p>Activate the Drum Sequencer Mode by pressing the <strong>Device</strong> button.</p>
+<p>The <em>Drum Sequencer</em> needs a clip to be selected first; also make sure that the track owning the clip is selected as well.</p>
+<p>The grid is divided in two parts, the 32 upper pads are for the steps, while the 32 others are for drums, performances and data.</p>
+<h3 id="steps">Steps</h3>
+<p>The 32 pads displays 32 steps. The four scenes on the right lets you edit up to 8 bars, each scene buttons will display 2 bars: [1,2], [3,4], [5,6], [7,8].</p>
+<p>To set the length of the clip, you can hold <strong>Shift</strong> and press one of the 8 scenes, or a step.</p>
+<h3 id="minor-modes">Minor Modes</h3>
+<p>To select a minor mode, press one of the scene button on the bottom right. There are four minor modes:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Index</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Play drums, perform select/solo/mute of a pad and note repeat</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Play drums, performance macros and scenes macros</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Edit Velocity, Note Length and Pan <strong>per step</strong></td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>Edit Micro Tuning, Timbre and Pressure <strong>per step</strong></td>
+</tr>
+</tbody>
+</table>
+<h4 id="play-drums-and-basic-actions">1. Play drums and basic actions</h4>
+<p>On the bottom left you’ll see a 4x4 grid of pads which you can play. Playing a pad will select the given drum pad in the sequencer above. You can select a pad without playing it by pressing <strong>Shift</strong> + <strong>Pad</strong>.</p>
+<p>On the bottom right, there will be a bunch of <em>action</em> pads. They work by holding them, and then pressing a pad. You’ll have a various different note repeat speed at the top and <em>Drum Pad Select</em>, <em>Mute</em> and <em>Solo</em> at the bottom. You can unmute all drum pads by doing <strong>Shift</strong> + <strong>Mute Pad</strong>. You can unsolo all drum pads by doing <strong>Shift</strong> + <strong>Solo Pad</strong>.</p>
+<h4 id="drum-performances-and-scenes">2. Drum Performances and Scenes</h4>
+<p>To use this minor mode, add two remote control pages to your drum kit: - One page with 8 Knobs, and add the tag <em>drum-perfs</em> - One page with 8 buttons, and add the tag <em>drum-scenes</em></p>
+<h2 id="step-sequencer-mode">Step Sequencer Mode</h2>
+<p>Activate the <em>Step Sequencer Mode</em> by pressing the <strong>User</strong> button.</p>
+<p>This mode is very similar to the <em>Drum Sequencer Mode</em> except that it is intended to sequence notes. To enter a step, hold the steps and press the pitches.</p>
+<h2 id="volume-mode">Volume Mode</h2>
+<p>Activate the <em>Volume Mode</em> by pressing the <strong>Volume</strong> button.</p>
+<h2 id="pan-mode">Pan Mode</h2>
+<p>Activate the <em>Pan Mode</em> by pressing the <strong>Pan</strong> button.</p>
+<h2 id="sends-mode">Sends Mode</h2>
+<p>Activate the <em>Sends Mode</em> by pressing the <strong>Sends</strong> button.</p>
+</div>
+</div>
+</body>
+</html>
