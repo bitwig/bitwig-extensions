@@ -2,11 +2,13 @@ package com.bitwig.extensions.controllers.presonus.framework;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extensions.controllers.presonus.framework.targets.ButtonTarget;
+import com.bitwig.extensions.controllers.presonus.framework.targets.EncoderTarget;
 import com.bitwig.extensions.controllers.presonus.framework.targets.FaderParameterTarget;
 import com.bitwig.extensions.controllers.presonus.framework.targets.Target;
 import com.bitwig.extensions.controllers.presonus.framework.targets.TouchFaderTarget;
@@ -65,6 +67,29 @@ public class Layer
       });
    }
 
+   public void bindButton(ControlElement<ButtonTarget> element, BooleanValue ledValue, final Consumer<Boolean> consumer)
+   {
+      if (ledValue != null)
+      {
+         ledValue.markInterested();
+      }
+
+      bind(element, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return ledValue != null ? ledValue.get() : false;
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            consumer.accept(pressed);
+         }
+      });
+   }
+
    public void bindLayerInGroup(LayeredControllerExtension host, ControlElement<ButtonTarget> element, Layer layer, Layer... layerGroup)
    {
       bind(element, new ButtonTarget()
@@ -92,6 +117,24 @@ public class Layer
 
       bind(element, new FaderParameterTarget(parameter));
    }
+
+   public void bindEncoder(ControlElement<EncoderTarget> element, Parameter parameter, final int resolution)
+   {
+      if (parameter != null)
+      {
+         parameter.markInterested();
+      }
+
+      bind(element, new EncoderTarget()
+      {
+         @Override
+         public void inc(final int steps)
+         {
+            parameter.inc(steps, resolution);
+         }
+      });
+   }
+
 
    public <T extends Target> T getTarget(final ControlElement element)
    {

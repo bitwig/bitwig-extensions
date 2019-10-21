@@ -2,6 +2,8 @@ package com.bitwig.extensions.controllers.arturia.keylab;
 
 import java.util.UUID;
 
+import com.bitwig.extensions.controllers.arturia.keylab.mkii.ArturiaKeylabMkIIControllerExtensionDefinition;
+
 public class ArturiaKeylab49MkIIControllerExtensionDefinition extends ArturiaKeylabMkIIControllerExtensionDefinition
 {
    private final static UUID ID = UUID.fromString("006b42e9-d4af-499e-89ba-e6df0fc36a46");

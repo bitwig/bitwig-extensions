@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.arturia.keylab;
+package com.bitwig.extensions.controllers.arturia.keylab.mkii;
 
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
@@ -67,7 +67,7 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new ArturiaKeylabMkIIControllerExtension(this, host);
+      return new ArturiaKeylabMkII(this, host);
    }
 
    @Override
