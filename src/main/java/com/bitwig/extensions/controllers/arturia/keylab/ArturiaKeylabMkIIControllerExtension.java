@@ -85,6 +85,7 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
       mDeviceEnvelopes.setHardwareLayout(HardwareControlType.SLIDER, 9);
 
       mApplication = getHost().createApplication();
+      mSaveAction = mApplication.getAction("Save");
 
       mPopupBrowser = host.createPopupBrowser();
       mPopupBrowser.exists().markInterested();
@@ -122,6 +123,8 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
       mRemoteControls.getParameter(5).setLabel("E6");
       mRemoteControls.getParameter(6).setLabel("E7");
       mRemoteControls.getParameter(7).setLabel("E8");
+
+      mRemoteControls.selectedPageIndex().markInterested();
 
       mNoteInput = host.getMidiInPort(0).createNoteInput("Keys", "?0????", "?1????", "?2????", "?3????", "?4????", "?5????", "?6????", "?7????", "?8????");
       mNoteInput.setShouldConsumeEvents(true);
@@ -170,6 +173,24 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
          mTransport.fastForward();
          getHost().scheduleTask(this::repeatForward, 100);
       }
+   }
+
+   private void setRGBLed(ArturiaKeylabMKIIButton button, final int red, final int green, final int blue)
+   {
+      SysexBuilder sb = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 16");
+      sb.addByte(button.getID());
+      sb.addByte(red);
+      sb.addByte(green);
+      sb.addByte(blue);
+      sendSysex(sb.terminate());
+   }
+
+   private void setMonochromeLed(ArturiaKeylabMKIIButton button, final int intensity)
+   {
+      SysexBuilder sb = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 10");
+      sb.addByte(button.getID());
+      sb.addByte(intensity);
+      sendSysex(sb.terminate());
    }
 
    // Keep checking the display for mode changes
@@ -264,11 +285,7 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
 
             if (on)
             {
-               Action saveAction = mApplication.getAction("Save");
-               if (saveAction != null)
-               {
-                  saveAction.invoke();
-               }
+               mSaveAction.invoke();
             }
          }
          else if (key == CC_PUNCH_IN && !on) // Punch-in
@@ -628,4 +645,5 @@ public class ArturiaKeylabMkIIControllerExtension extends ControllerExtension
    private final static int CC_WHEEL_CLICK = 0x54;
    private final static int CC_NEXT_BUTTON = 0x31;
    private final static int CC_PREV_BUTTON = 0x30;
+   private Action mSaveAction;
 }
