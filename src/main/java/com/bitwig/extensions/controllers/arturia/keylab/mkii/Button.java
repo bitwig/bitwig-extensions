@@ -2,8 +2,8 @@ package com.bitwig.extensions.controllers.arturia.keylab.mkii;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.presonus.framework.ControlElement;
-import com.bitwig.extensions.controllers.presonus.framework.targets.ButtonTarget;
+import com.bitwig.extensions.framework.ControlElement;
+import com.bitwig.extensions.framework.targets.ButtonTarget;
 
 public class Button implements ControlElement<ButtonTarget>
 {

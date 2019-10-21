@@ -2,9 +2,8 @@ package com.bitwig.extensions.controllers.arturia.keylab.mkii;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.presonus.framework.ControlElement;
-import com.bitwig.extensions.controllers.presonus.framework.targets.FaderParameterTarget;
-import com.bitwig.extensions.controllers.presonus.framework.targets.TouchFaderTarget;
+import com.bitwig.extensions.framework.ControlElement;
+import com.bitwig.extensions.framework.targets.TouchFaderTarget;
 
 public class Fader implements ControlElement<TouchFaderTarget>
 {

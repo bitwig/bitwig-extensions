@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.presonus.framework;
+package com.bitwig.extensions.framework;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,7 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.presonus.framework.targets.Target;
+import com.bitwig.extensions.framework.targets.Target;
 
 public abstract class LayeredControllerExtension extends ControllerExtension
 {

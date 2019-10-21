@@ -1,7 +1,7 @@
-package com.bitwig.extensions.controllers.presonus.framework;
+package com.bitwig.extensions.framework;
 
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.presonus.framework.targets.Target;
+import com.bitwig.extensions.framework.targets.Target;
 
 public interface ControlElement<T extends Target>
 {

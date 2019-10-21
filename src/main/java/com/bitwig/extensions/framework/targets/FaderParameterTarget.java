@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.presonus.framework.targets;
+package com.bitwig.extensions.framework.targets;
 
 import com.bitwig.extension.controller.api.Parameter;
 

@@ -1,8 +1,5 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mkii;
 
-import java.util.Arrays;
-
-import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.Action;
@@ -18,10 +15,10 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.presonus.framework.Layer;
-import com.bitwig.extensions.controllers.presonus.framework.LayeredControllerExtension;
-import com.bitwig.extensions.controllers.presonus.framework.targets.ButtonTarget;
-import com.bitwig.extensions.controllers.presonus.framework.targets.EncoderTarget;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
+import com.bitwig.extensions.framework.targets.ButtonTarget;
+import com.bitwig.extensions.framework.targets.EncoderTarget;
 
 // TODO
 // Multi (mixer) mode

@@ -2,7 +2,7 @@ package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.presonus.framework.ControlElement;
+import com.bitwig.extensions.framework.ControlElement;
 
 public class Display implements ControlElement<DisplayTarget>
 {

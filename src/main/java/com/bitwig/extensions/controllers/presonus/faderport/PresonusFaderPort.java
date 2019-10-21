@@ -21,11 +21,11 @@ import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.presonus.framework.targets.ButtonTarget;
-import com.bitwig.extensions.controllers.presonus.framework.targets.ClickEncoderTarget;
-import com.bitwig.extensions.controllers.presonus.framework.LayeredControllerExtension;
-import com.bitwig.extensions.controllers.presonus.framework.Layer;
-import com.bitwig.extensions.controllers.presonus.framework.targets.RGBButtonTarget;
+import com.bitwig.extensions.framework.targets.ButtonTarget;
+import com.bitwig.extensions.framework.targets.ClickEncoderTarget;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.targets.RGBButtonTarget;
 import com.bitwig.extensions.controllers.presonus.util.ValueUtils;
 
 public class PresonusFaderPort extends LayeredControllerExtension
