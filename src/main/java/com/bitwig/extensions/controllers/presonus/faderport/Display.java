@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
+import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.ControlElement;
@@ -14,7 +15,7 @@ public class Display implements ControlElement<DisplayTarget>
    }
 
    @Override
-   public void onMidi(final DisplayTarget target, final int status, final int data1, final int data2)
+   public void onMidi(final DisplayTarget target, final ShortMidiMessage data)
    {
    }
 

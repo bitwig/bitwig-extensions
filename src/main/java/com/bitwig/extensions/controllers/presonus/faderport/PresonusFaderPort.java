@@ -62,7 +62,7 @@ public class PresonusFaderPort extends LayeredControllerExtension
 
       final MidiIn midiIn = host.getMidiInPort(0);
 
-      midiIn.setMidiCallback(this::onMidi);
+      midiIn.setMidiCallback(getMidiCallbackToUseForLayers());
 
       mMidiOut = host.getMidiOutPort(0);
 

@@ -1,6 +1,8 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mkii;
 
 import com.bitwig.extension.api.util.midi.SysexBuilder;
+import com.bitwig.extension.callback.ShortMidiDataReceivedCallback;
+import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
@@ -132,7 +134,7 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       mDevice.presetCategory().markInterested();
       mDevice.presetCreator().markInterested();
 
-      host.getMidiInPort(1).setMidiCallback(this::onMidi);
+      host.getMidiInPort(1).setMidiCallback(getMidiCallbackToUseForLayers());
 
       mIsTransportDown = new boolean[5];
 

@@ -13,10 +13,8 @@ public class Fader implements ControlElement<TouchFaderTarget>
    }
 
    @Override
-   public void onMidi(final TouchFaderTarget target, final int status, final int data1, final int data2)
+   public void onMidi(final TouchFaderTarget target, final ShortMidiMessage data)
    {
-      ShortMidiMessage data = new ShortMidiMessage(status, data1, data2);
-
       if (data.isPitchBend() && data.getChannel() == mChannel)
       {
          int value = data.getData2() << 7 | data.getData1();

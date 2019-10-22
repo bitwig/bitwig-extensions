@@ -1,32 +1,14 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mkii;
 
-import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.ControlElement;
 import com.bitwig.extensions.framework.targets.ButtonTarget;
 
-public class Button implements ControlElement<ButtonTarget>
+public class Button extends AbstractButton implements ControlElement<ButtonTarget>
 {
    public Button(final Buttons buttonID)
    {
-      mButtonID = buttonID;
-   }
-
-   @Override
-   public void onMidi(final ButtonTarget target, final int status, final int data1, final int data2)
-   {
-      ShortMidiMessage data = new ShortMidiMessage(status, data1, data2);
-
-      if (data.isNoteOn() && data.getChannel() == 0)
-      {
-         final boolean on = data.getData2() >= 64;
-         final int key = data.getData1();
-
-         if (key == mButtonID.getKey())
-         {
-            target.set(on);
-         }
-      }
+      super(buttonID);
    }
 
    @Override
@@ -41,6 +23,5 @@ public class Button implements ControlElement<ButtonTarget>
       }
    }
 
-   private final Buttons mButtonID;
    private int mLastButtonState = -1;
 }

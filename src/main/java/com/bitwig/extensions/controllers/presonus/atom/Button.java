@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
+import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.targets.ButtonTarget;
 import com.bitwig.extensions.framework.ControlElement;
@@ -23,11 +24,11 @@ public class Button implements ControlElement<ButtonTarget>
    }
 
    @Override
-   public void onMidi(final ButtonTarget target, final int status, final int data1, final int data2)
+   public void onMidi(final ButtonTarget target, final ShortMidiMessage data)
    {
-      if (status == 176 && data1 == mData1)
+      if (data.getStatusByte() == 176 && data.getData1() == mData1)
       {
-         target.set(data2 > 0);
+         target.set(data.getData2() > 0);
       }
    }
 

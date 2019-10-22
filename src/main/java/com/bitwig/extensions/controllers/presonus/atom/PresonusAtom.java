@@ -72,7 +72,7 @@ public class PresonusAtom extends LayeredControllerExtension
 
       final MidiIn midiIn = host.getMidiInPort(0);
 
-      midiIn.setMidiCallback(this::onMidi);
+      midiIn.setMidiCallback(getMidiCallbackToUseForLayers());
       mNoteInput = midiIn.createNoteInput("Pads", "80????", "90????", "a0????");
       mNoteInput.setShouldConsumeEvents(true);
 

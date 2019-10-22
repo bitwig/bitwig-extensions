@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
+import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.ControlElement;
 import com.bitwig.extensions.framework.targets.TouchFaderTarget;
@@ -13,12 +14,13 @@ public class MotorFader implements ControlElement<TouchFaderTarget>
 
    @Override
    public void onMidi(
-      final TouchFaderTarget target, final int status, final int data1, final int data2)
+      final TouchFaderTarget target, final ShortMidiMessage data)
    {
-      final int channel = status & 0xf;
-      final int msg = (status >> 4) & 0xf;
+      final int status = data.getStatusByte();
+      final int data1 = data.getData1();
+      final int data2 = data.getData2();
 
-      if (channel == mChannel && msg == 0xE)
+      if (data.getChannel() == mChannel && data.isPitchBend())
       {
          int value = data1 | (data2 << 7);
          target.set(value, 16384);

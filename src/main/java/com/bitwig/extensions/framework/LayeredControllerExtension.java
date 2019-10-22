@@ -3,6 +3,9 @@ package com.bitwig.extensions.framework;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.bitwig.extension.api.util.midi.ShortMidiMessage;
+import com.bitwig.extension.callback.ShortMidiDataReceivedCallback;
+import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -45,7 +48,12 @@ public abstract class LayeredControllerExtension extends ControllerExtension
       return null;
    }
 
-   protected void onMidi(final int status, final int data1, final int data2)
+   protected ShortMidiDataReceivedCallback getMidiCallbackToUseForLayers()
+   {
+      return (ShortMidiMessageReceivedCallback)this::onMidi;
+   }
+
+   protected void onMidi(final ShortMidiMessage data)
    {
       for (ControlElement element : mElements)
       {
@@ -53,7 +61,7 @@ public abstract class LayeredControllerExtension extends ControllerExtension
 
          if (target != null)
          {
-            element.onMidi(target, status, data1, data2);
+            element.onMidi(target, data);
          }
       }
    }
