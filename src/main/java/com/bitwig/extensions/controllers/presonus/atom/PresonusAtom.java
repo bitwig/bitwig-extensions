@@ -125,7 +125,7 @@ public class PresonusAtom extends LayeredControllerExtension
          @Override
          public void setActivate(final boolean active)
          {
-            final boolean shouldPlayDrums = !isLayerActive(mStepsLayer) && !isLayerActive(mNoteRepeatLayer);
+            final boolean shouldPlayDrums = !isLayerActive(mStepsLayer) && !isLayerActive(mNoteRepeatShiftLayer);
 
             mNoteInput.setShouldConsumeEvents(shouldPlayDrums);
             mNoteInput.setKeyTranslationTable(shouldPlayDrums ? NoteInputUtils.ALL_NOTES : NoteInputUtils.NO_NOTES);
@@ -284,7 +284,7 @@ public class PresonusAtom extends LayeredControllerExtension
       {
          final double timing = timings[i];
 
-         mNoteRepeatLayer.bind(pads[i], new RGBButtonTarget()
+         mNoteRepeatShiftLayer.bind(pads[i], new RGBButtonTarget()
          {
             @Override
             public float[] getRGB()
@@ -305,7 +305,7 @@ public class PresonusAtom extends LayeredControllerExtension
             }
          });
 
-         mNoteRepeatLayer.bind(pads[i + 8], new RGBButtonTarget()
+         mNoteRepeatShiftLayer.bind(pads[i + 8], new RGBButtonTarget()
          {
             @Override
             public float[] getRGB()
@@ -348,7 +348,7 @@ public class PresonusAtom extends LayeredControllerExtension
       mTransport.isPlaying().markInterested();
 
       Button shiftButton = addElement(new Button(CC_SHIFT));
-      mBaseLayer.bind(shiftButton, new ButtonTarget()
+      ButtonTarget shiftTarget = new ButtonTarget()
       {
          @Override
          public boolean get()
@@ -361,7 +361,9 @@ public class PresonusAtom extends LayeredControllerExtension
          {
             mShift = pressed;
          }
-      });
+      };
+      mBaseLayer.bind(shiftButton, shiftTarget);
+      mStepsLayer.bind(shiftButton, shiftTarget);
 
       Button clickToggle = addElement(new Button(CC_CLICK_COUNT_IN));
       mBaseLayer.bindToggle(clickToggle, mTransport.isMetronomeEnabled());
@@ -455,33 +457,30 @@ public class PresonusAtom extends LayeredControllerExtension
          @Override
          public boolean get()
          {
-            return isLayerActive(mNoteRepeatLayer) || mArpeggiator.isEnabled().get();
+            return mArpeggiator.isEnabled().get();
          }
 
          @Override
          public void set(final boolean pressed)
          {
-            if (pressed)
+            if (!pressed)
             {
-               activateLayer(mNoteRepeatLayer);
-
                mArpeggiator.mode().set("all");
                mArpeggiator.usePressureToVelocity().set(true);
-               mPressedTimeStamp = System.currentTimeMillis();
-            }
-            else
-            {
-               deactivateLayer(mNoteRepeatLayer);
 
-               long delta = System.currentTimeMillis() - mPressedTimeStamp;
+               toggleLayer(mNoteRepeatLayer);
 
-               if (delta < 150 || !mArpeggiator.isEnabled().get())
-                  mArpeggiator.isEnabled().toggle();
+               boolean wasEnabled = mArpeggiator.isEnabled().get();
+
+               mArpeggiator.isEnabled().set(!wasEnabled);
+
+               if (wasEnabled) deactivateLayer(mNoteRepeatLayer);
+               else activateLayer(mNoteRepeatLayer);
             }
          }
-
-         private long mPressedTimeStamp;
       });
+
+      mNoteRepeatLayer.bindLayerGate(this, shiftButton, mNoteRepeatShiftLayer);
 
       Button fullVelocity = addElement(new Button(CC_FULL_LEVEL));
       mBaseLayer.bind(fullVelocity, new ButtonTarget()
@@ -557,5 +556,6 @@ public class PresonusAtom extends LayeredControllerExtension
    private int mCurrentPadForSteps;
    private Layer mBaseLayer = createLayer();
    private Layer mNoteRepeatLayer = createLayer();
+   private Layer mNoteRepeatShiftLayer = createLayer();
    private Arpeggiator mArpeggiator;
 }
