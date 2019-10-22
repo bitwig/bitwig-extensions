@@ -14,12 +14,12 @@ import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.MasterTrack;
-import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.framework.ControlElement;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.ButtonTarget;
@@ -148,7 +148,7 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       mDevice.presetCreator().markInterested();
 
       host.getMidiInPort(1).setMidiCallback(getMidiCallbackToUseForLayers());
-      host.getMidiInPort(1).setSysexCallback(this::onSysex1);
+      host.getMidiInPort(1).setSysexCallback(this::onSysex);
 
       final ControllerExtensionDefinition definition = getExtensionDefinition();
 
@@ -270,11 +270,20 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       });
    }
 
-   private void onSysex1(final String s)
+   private void onSysex(final String s)
    {
       if (s.equals("f000206b7f420200001500f7"))
       {
-         getHost().scheduleTask(mDisplay::reset, 50);
+         getHost().scheduleTask(() ->
+         {
+            for (ControlElement element : getElements())
+            {
+               if (element instanceof Resetable)
+               {
+                  ((Resetable)element).reset();
+               }
+            }
+         }, 150);
       }
    }
 

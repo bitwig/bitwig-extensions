@@ -7,7 +7,7 @@ import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extensions.framework.ControlElement;
 import com.bitwig.extensions.framework.LayeredControllerExtension;
 
-public class Display implements ControlElement<DisplayTarget>
+public class Display implements ControlElement<DisplayTarget>, Resetable
 {
    @Override
    public void onMidi(final DisplayTarget target, final ShortMidiMessage data)
@@ -35,6 +35,7 @@ public class Display implements ControlElement<DisplayTarget>
    }
    private byte[] mLastData;
 
+   @Override
    public void reset()
    {
       mLastData = null;

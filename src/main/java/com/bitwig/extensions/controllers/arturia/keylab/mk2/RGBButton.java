@@ -18,12 +18,6 @@ public class RGBButton extends AbstractButton implements ControlElement<RGBButto
    @Override
    public void flush(final RGBButtonTarget target, final LayeredControllerExtension extension)
    {
-      if (mLastButtonState != 127)
-      {
-         extension.getMidiOutPort(0).sendMidi(0x90, mButtonID.getKey(), 127);
-         mLastButtonState = 127;
-      }
-
       float[] RGB = target.getRGB();
       int red = fromFloat(RGB[0]);
       int green = fromFloat(RGB[1]);
@@ -52,6 +46,4 @@ public class RGBButton extends AbstractButton implements ControlElement<RGBButto
    {
       return Math.max(0, Math.min((int)(31.0 * x), 31));
    }
-
-   private byte[] mLastSysex;
 }

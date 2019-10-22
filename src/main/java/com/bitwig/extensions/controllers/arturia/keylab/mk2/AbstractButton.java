@@ -27,4 +27,6 @@ public abstract class AbstractButton
 
    protected final Buttons mButtonID;
    protected int mLastButtonState = -1;
+   protected byte[] mLastSysex;
+
 }

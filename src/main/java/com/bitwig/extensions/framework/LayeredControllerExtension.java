@@ -119,6 +119,11 @@ public abstract class LayeredControllerExtension extends ControllerExtension
       return (T)element;
    }
 
+   public List<ControlElement> getElements()
+   {
+      return mElements;
+   }
+
    @Override
    public void init()
    {

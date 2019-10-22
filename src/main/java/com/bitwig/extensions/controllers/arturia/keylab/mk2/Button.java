@@ -1,10 +1,13 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
+import java.util.Arrays;
+
+import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extensions.framework.ControlElement;
 import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.ButtonTarget;
 
-public class Button extends AbstractButton implements ControlElement<ButtonTarget>
+public class Button extends AbstractButton implements ControlElement<ButtonTarget>, Resetable
 {
    public Button(final Buttons buttonID)
    {
@@ -14,12 +17,22 @@ public class Button extends AbstractButton implements ControlElement<ButtonTarge
    @Override
    public void flush(final ButtonTarget target, final LayeredControllerExtension extension)
    {
-      int newState = target.get() ? 127 : 0;
+      int intensity = target.get() ? 0x7f : 0x10;
 
-      if (mLastButtonState != newState)
+      byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 10")
+         .addByte(mButtonID.getSysexID())
+         .addByte(intensity).terminate();
+
+      if (mLastSysex == null || !Arrays.equals(mLastSysex, sysex))
       {
-         extension.getMidiOutPort(1).sendMidi(0x90, mButtonID.getKey(), newState);
-         mLastButtonState = newState;
+         extension.getMidiOutPort(1).sendSysex(sysex);
+         mLastSysex = sysex;
       }
+   }
+
+   @Override
+   public void reset()
+   {
+      mLastSysex = null;
    }
 }
