@@ -8,6 +8,7 @@ import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.BrowserFilterItem;
 import com.bitwig.extension.controller.api.BrowserResultsItem;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.CursorBrowserFilterItem;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
@@ -34,8 +35,11 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
 {
    float[] GREY = {0.2f, 0.2f, 0.2f};
    float[] WHITE = {1.f, 1.f, 1.f};
+   float[] BLACK = {0.f, 0.f, 0.f};
    float[] ORANGE = {1.f, 0.5f, 0.f};
    float[] BLUEY = {0.f, 0.5f, 1.f};
+   float[] GREEN = {0.f, 1.0f, 0.f};
+   float[] RED = {1.f, 0.0f, 0.f};
 
    public ArturiaKeylabMkII(
       final ArturiaKeylabMkIIControllerExtensionDefinition definition,
@@ -114,6 +118,7 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       mRemoteControls.getParameter(5).setLabel("E6");
       mRemoteControls.getParameter(6).setLabel("E7");
       mRemoteControls.getParameter(7).setLabel("E8");
+      mRemoteControls.pageCount().markInterested();
 
       mRemoteControls.selectedPageIndex().markInterested();
 
@@ -240,6 +245,27 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
          public void set(final boolean pressed)
          {
             if (pressed) toggleLayer(mMultiLayer);
+         }
+      });
+
+      mBrowserLayer.bind(multi, new RGBButtonTarget()
+      {
+         @Override
+         public float[] getRGB()
+         {
+            return WHITE;
+         }
+
+         @Override
+         public boolean get()
+         {
+            return false;
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed) mPopupBrowser.cancel();
          }
       });
    }
@@ -411,22 +437,35 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       mBaseLayer.bindPressedRunnable(next, null, mRemoteControls::selectNext);
       mMultiLayer.bindPressedRunnable(next, mTrackBank.canScrollForwards(), mTrackBank::scrollForwards);
 
-      addPageButtonMapping(0, Buttons.SELECT1);
-      addPageButtonMapping(1, Buttons.SELECT2);
-      addPageButtonMapping(2, Buttons.SELECT3);
-      addPageButtonMapping(3, Buttons.SELECT4);
-      addPageButtonMapping(4, Buttons.SELECT5);
-      addPageButtonMapping(5, Buttons.SELECT6);
-      addPageButtonMapping(6, Buttons.SELECT7);
-      addPageButtonMapping(7, Buttons.SELECT8);
+      final RGBButton select1 = addPageButtonMapping(0, Buttons.SELECT1);
+      final RGBButton select2 = addPageButtonMapping(1, Buttons.SELECT2);
+      final RGBButton select3 = addPageButtonMapping(2, Buttons.SELECT3);
+      final RGBButton select4 = addPageButtonMapping(3, Buttons.SELECT4);
+      final RGBButton select5 = addPageButtonMapping(4, Buttons.SELECT5);
+      final RGBButton select6 = addPageButtonMapping(5, Buttons.SELECT6);
+      final RGBButton select7 = addPageButtonMapping(6, Buttons.SELECT7);
+      final RGBButton select8 = addPageButtonMapping(7, Buttons.SELECT8);
+
+      mBrowserLayer.bindPressedRunnable(select1, ORANGE, () -> mPopupBrowser.selectedContentTypeIndex().set(0));
+      mBrowserLayer.bindPressedRunnable(select2, ORANGE, () -> mPopupBrowser.selectedContentTypeIndex().set(1));
+      mBrowserLayer.bindPressedRunnable(select3, ORANGE, () -> mPopupBrowser.selectedContentTypeIndex().set(2));
+      mBrowserLayer.bindPressedRunnable(select4, ORANGE, () -> mPopupBrowser.selectedContentTypeIndex().set(3));
+
+      CursorBrowserFilterItem categories = (CursorBrowserFilterItem)mPopupBrowser.categoryColumn().createCursorItem();
+      CursorBrowserFilterItem creators = (CursorBrowserFilterItem)mPopupBrowser.creatorColumn().createCursorItem();
+
+      mBrowserLayer.bindPressedRunnable(select5, GREEN, () -> categories.selectPrevious());
+      mBrowserLayer.bindPressedRunnable(select6, GREEN, () -> categories.selectNext());
+      mBrowserLayer.bindPressedRunnable(select7, RED, () -> creators.selectPrevious());
+      mBrowserLayer.bindPressedRunnable(select8, RED, () -> creators.selectNext());
 
       Button presetPrev = addElement(new Button(Buttons.PRESET_PREVIOUS));
       mBaseLayer.bindPressedRunnable(presetPrev, mCursorTrack.hasPrevious(), mCursorTrack::selectPrevious);
-      mBrowserLayer.bindPressedRunnable(presetPrev, mCursorTrack.hasPrevious(), mPopupBrowser::cancel);
+      mBrowserLayer.bindPressedRunnable(presetPrev, null, mPopupBrowser::cancel);
 
       Button presetNext = addElement(new Button(Buttons.PRESET_NEXT));
       mBaseLayer.bindPressedRunnable(presetNext, mCursorTrack.hasNext(), mCursorTrack::selectNext);
-      mBrowserLayer.bindPressedRunnable(presetNext, mCursorTrack.hasPrevious(), mPopupBrowser::commit);
+      mBrowserLayer.bindPressedRunnable(presetNext, null, mPopupBrowser::commit);
 
       Button wheelClick = addElement(new Button(Buttons.WHEEL_CLICK));
       mBaseLayer.bindPressedRunnable(wheelClick, null, () ->
@@ -441,7 +480,7 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       mBrowserLayer.bindPressedRunnable(wheelClick, mCursorTrack.hasPrevious(), mPopupBrowser::commit);
    }
 
-   private void addPageButtonMapping(final int number, final Buttons id)
+   private RGBButton addPageButtonMapping(final int number, final Buttons id)
    {
       RGBButton button = addElement(new RGBButton(id));
       mBaseLayer.bind(button, new RGBButtonTarget()
@@ -449,6 +488,8 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
          @Override
          public float[] getRGB()
          {
+            if (number >= mRemoteControls.pageCount().get()) return BLACK;
+
             boolean isActive = mRemoteControls.selectedPageIndex().get() == number;
             return isActive ? WHITE : GREY;
          }
@@ -492,6 +533,8 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
             mTrackBank.getItemAt(number).selectInMixer();
          }
       });
+
+      return button;
    }
 
    private void initControls()

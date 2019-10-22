@@ -10,6 +10,7 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extensions.framework.targets.ButtonTarget;
 import com.bitwig.extensions.framework.targets.EncoderTarget;
 import com.bitwig.extensions.framework.targets.FaderParameterTarget;
+import com.bitwig.extensions.framework.targets.RGBButtonTarget;
 import com.bitwig.extensions.framework.targets.Target;
 import com.bitwig.extensions.framework.targets.TouchFaderTarget;
 
@@ -57,6 +58,30 @@ public class Layer
          public boolean get()
          {
             return ledValue != null ? ledValue.get() : false;
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed) runnable.run();
+         }
+      });
+   }
+
+   public void bindPressedRunnable(ControlElement<RGBButtonTarget> element, float[] RGB, final Runnable runnable)
+   {
+      bind(element, new RGBButtonTarget()
+      {
+         @Override
+         public float[] getRGB()
+         {
+            return RGB;
+         }
+
+         @Override
+         public boolean get()
+         {
+            return true;
          }
 
          @Override
