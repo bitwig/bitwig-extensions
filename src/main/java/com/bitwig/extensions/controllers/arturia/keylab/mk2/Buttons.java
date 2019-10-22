@@ -75,6 +75,31 @@ public enum Buttons
       mKey = noteOrCC;
    }
 
+   public static Buttons drumPad(int index)
+   {
+      switch (index)
+      {
+         case 0: return PAD1;
+         case 1: return PAD2;
+         case 2: return PAD3;
+         case 3: return PAD4;
+         case 4: return PAD5;
+         case 5: return PAD6;
+         case 6: return PAD7;
+         case 7: return PAD8;
+         case 8: return PAD9;
+         case 9: return PAD10;
+         case 10: return PAD11;
+         case 11: return PAD12;
+         case 12: return PAD13;
+         case 13: return PAD14;
+         case 14: return PAD15;
+         case 15: return PAD16;
+      }
+
+      return null;
+   }
+
    public int getSysexID()
    {
       return mSysexId;

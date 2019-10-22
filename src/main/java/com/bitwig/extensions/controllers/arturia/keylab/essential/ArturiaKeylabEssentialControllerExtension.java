@@ -1,5 +1,9 @@
 package com.bitwig.extensions.controllers.arturia.keylab.essential;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
@@ -19,6 +23,7 @@ import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.arturia.keylab.mk1.KeylabSysex;
+import com.bitwig.extensions.controllers.arturia.keylab.mk2.Buttons;
 
 // TODO
 // add mode to switch pads between pages and drum pads
@@ -70,10 +75,13 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       mDevice.hasNext().markInterested();
       mRemoteControls = mDevice.createCursorRemoteControlsPage(8);
       mRemoteControls.setHardwareLayout(HardwareControlType.ENCODER, 8);
+      mRemoteControls.pageCount().markInterested();
+      mRemoteControls.selectedPageIndex().markInterested();
       mDeviceEnvelopes = mDevice.createCursorRemoteControlsPage("envelope", 9, "envelope");
       mDeviceEnvelopes.setHardwareLayout(HardwareControlType.SLIDER, 9);
 
       mApplication = getHost().createApplication();
+      mSaveAction = mApplication.getAction("Save");
 
       mPopupBrowser = host.createPopupBrowser();
       mPopupBrowser.exists().markInterested();
@@ -134,17 +142,9 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       final ControllerExtensionDefinition definition = getExtensionDefinition();
 
       sendSysex("F0 00 20 6B 7F 42 02 00 40 51 00 F7");  // Init DAW preset in mackie mode
-
       sendSysex("F0 00 20 6B 7F 42 05 02 F7"); // Set to DAW mode
 
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 70 09 F7");  // Setup pads to be on channel 10
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 71 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 72 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 73 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 74 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 75 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 76 09 F7");
-      sendSysex("F0 00 20 6B 7F 42 02 04 02 77 09 F7");
+      //setupPads();
 
       sendTextToKeyLab(
          definition.getHardwareVendor(),
@@ -153,6 +153,34 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       updateIndications();
 
       host.scheduleTask(this::displayRefreshTimer, 1000);
+
+      reset();
+   }
+
+   private void setupPads()
+   {
+      String header = "F0 00 20 6B 7F 42 02 00";
+
+      for(int i=0; i<8; i++)
+      {
+         int padID = 0x70 + i;
+         int mode = 0x8; // CC
+         int CC = 36 + i;
+         int channel = 0x7F;
+
+         sendSysex(SysexBuilder.fromHex(header).addByte(0x1).addByte(padID).addByte(mode).terminate());
+         sendSysex(SysexBuilder.fromHex(header).addByte(0x2).addByte(padID).addByte(channel).terminate());
+         sendSysex(SysexBuilder.fromHex(header).addByte(0x3).addByte(padID).addByte(CC).terminate());
+         sendSysex(SysexBuilder.fromHex(header).addByte(0x4).addByte(padID).addByte(0).terminate());
+         sendSysex(SysexBuilder.fromHex(header).addByte(0x5).addByte(padID).addByte(0x7F).terminate());
+         sendSysex(SysexBuilder.fromHex(header).addByte(0x6).addByte(padID).addByte(0x1).terminate());
+      }
+   }
+
+   private void reset()
+   {
+      Arrays.fill(mLastLEDState, -1);
+      mLastColor.clear();
    }
 
    private void repeatRewind()
@@ -209,38 +237,23 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
 
    private void onNotePortMidi(final ShortMidiMessage data)
    {
-      if (data.isNoteOn() && data.getChannel() == 9)
+      /*if (data.getChannel() == 14)
       {
          final int key = data.getData1();
+         final int data2 = data.getData2();
 
-         switch (key)
+         if (key >= 36 && key <= 43 && data.isControlChange())
          {
-         case 36:
-            mRemoteControls.selectNextPageMatching("preset", true);
-            break;
-         case 37:
-            mRemoteControls.selectNextPageMatching("overview", true);
-            break;
-         case 38:
-            mRemoteControls.selectNextPageMatching("lfo", true);
-            break;
-         case 39:
-            mRemoteControls.selectNextPageMatching("fx", true);
-            break;
-         case 40:
-            mRemoteControls.selectNextPageMatching("oscillator", true);
-            break;
-         case 41:
-            mRemoteControls.selectNextPageMatching("mix", true);
-            break;
-         case 42:
-            mRemoteControls.selectNextPageMatching("filter", true);
-            break;
-         case 43:
-            mRemoteControls.selectNextPageMatching("envelope", true);
-            break;
+            int index = key - 36;
+
+            if (data2 >= 64)
+            {
+               mRemoteControls.selectedPageIndex().set(index);
+            }
+
+            mLastColor.remove(Buttons.drumPad(index));
          }
-      }
+      }*/
    }
 
    private void onDAWPortMidi(final ShortMidiMessage data)
@@ -297,11 +310,7 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
 
             if (on)
             {
-               Action saveAction = mApplication.getAction("Save");
-               if (saveAction != null)
-               {
-                  saveAction.invoke();
-               }
+               mSaveAction.invoke();
             }
          }
          else if (key == 0x57 && !on) // Punch
@@ -497,9 +506,14 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       }
       else if (isInBrowser())
       {
+         BrowserFilterItem upperField = mDisplayMode == DisplayMode.BROWSER_CREATOR ? mBrowserCreator : mBrowserCategory;
+
+         String U = mDisplayMode != DisplayMode.BROWSER ? ">" : " ";
+         String L = mDisplayMode == DisplayMode.BROWSER ? ">" : " ";
+
          sendTextToKeyLab(
-            mBrowserCategory.name().getLimited(16),
-            mBrowserResult.name().getLimited(16));
+            U + upperField.name().getLimited(15),
+            L + mBrowserResult.name().getLimited(15));
       }
 
       if (mUpperTextToSend != null)
@@ -525,6 +539,69 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
 
       setLED(0x65, mDisplayMode == DisplayMode.BROWSER_CATEGORY || mDisplayMode == DisplayMode.BROWSER_CREATOR);
       setLED(0x64, mDisplayMode == DisplayMode.BROWSER);
+
+      /*float[] BLACK = {0.f, 0.0f, 0.f};
+      float[] SELECTED_PAGE = {0.f, 0.3f, 1.f};
+      float[] UNSELECTED_PAGE = {0.f, 0.06f, 0.2f};
+
+      int pageIndex = mRemoteControls.selectedPageIndex().get();
+      int numPages = mDevice.exists().get() ? mRemoteControls.pageCount().get() : 0;
+
+      for(int i=0; i<8; i++)
+      {
+         float[] color = BLACK;
+
+         if (i < numPages)
+         {
+            color = (pageIndex == i) ? SELECTED_PAGE : UNSELECTED_PAGE;
+         }
+
+         setRGB(Buttons.drumPad(i), color);
+      }*/
+   }
+
+   private void setRGB(final Buttons b, final float[] RGB)
+   {
+      int red = fromFloat(RGB[0]);
+      int green = fromFloat(RGB[1]);
+      int blue = fromFloat(RGB[2]);
+
+      byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 16")
+         .addByte(b.getSysexID())
+         .addByte(red)
+         .addByte(green)
+         .addByte(blue).terminate();
+
+      byte[] previous = mLastColor.get(b);
+
+      if (previous == null || !Arrays.equals(sysex, previous))
+      {
+         mLastColor.put(b, sysex);
+         sendSysex(sysex);
+      }
+   }
+
+   private void setMono(final Buttons b, final int intensity)
+   {
+      byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 10")
+         .addByte(b.getSysexID())
+         .addByte(intensity)
+         .terminate();
+
+      byte[] previous = mLastColor.get(b);
+
+      if (previous == null || !Arrays.equals(sysex, previous))
+      {
+         mLastColor.put(b, sysex);
+         sendSysex(sysex);
+      }
+   }
+
+   Map<Buttons, byte[]> mLastColor = new HashMap<>();
+
+   private int fromFloat(float x)
+   {
+      return Math.max(0, Math.min((int)(31.0 * x), 31));
    }
 
    private void doSendTextToKeylab(final String upper, final String lower)
@@ -551,14 +628,15 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
 
    public void setLED(final int note, final boolean state)
    {
-      if (mLastLEDState[note] != state)
+      int i = state ? 1 : 0;
+      if (mLastLEDState[note] != i)
       {
          getHost().getMidiOutPort(1).sendMidi(0x90, note, state ? 127 : 0);
-         mLastLEDState[note] = state;
+         mLastLEDState[note] = i;
       }
    }
 
-   private boolean[] mLastLEDState = new boolean[128];
+   private int[] mLastLEDState = new int[128];
    private NoteInput mNoteInput;
    private final int mNumberOfKeys;
    private Transport mTransport;
@@ -576,4 +654,5 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
    private Application mApplication;
    private boolean[] mIsTransportDown;
    private long mLastDisplayTimeStamp;
+   private Action mSaveAction;
 }
