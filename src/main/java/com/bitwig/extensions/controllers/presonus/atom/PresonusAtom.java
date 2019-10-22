@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.presonus.atom;
 
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.Arpeggiator;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
@@ -55,6 +56,10 @@ public class PresonusAtom extends LayeredControllerExtension
 
    float[] WHITE = {1,1,1};
    float[] DIM_WHITE = {0.3f,0.3f,0.3f};
+   float[] BLACK = {0,0,0};
+
+   float[] RED = {1,0,0};
+   float[] DIM_RED = {0.3f,0.0f,0.0f};
 
 
    public PresonusAtom(
@@ -75,6 +80,11 @@ public class PresonusAtom extends LayeredControllerExtension
       midiIn.setMidiCallback(getMidiCallbackToUseForLayers());
       mNoteInput = midiIn.createNoteInput("Pads", "80????", "90????", "a0????");
       mNoteInput.setShouldConsumeEvents(true);
+      mArpeggiator = mNoteInput.arpeggiator();
+      mArpeggiator.isEnabled().markInterested();
+      mArpeggiator.period().markInterested();
+      mArpeggiator.shuffle().markInterested();
+      mArpeggiator.usePressureToVelocity().set(true);
 
       mMidiOut = host.getMidiOutPort(0);
 
@@ -89,8 +99,6 @@ public class PresonusAtom extends LayeredControllerExtension
          mRemoteControls.getParameter(i).setIndication(true);
 
       mTransport = host.createTransport();
-
-      mStepsLayer = createStepsMode();
 
       mCursorClip = host.createLauncherCursorClip(16, 1);
       mCursorClip.color().markInterested();
@@ -110,36 +118,17 @@ public class PresonusAtom extends LayeredControllerExtension
       mMidiOut.sendMidi(0x8f, 0, 0);
    }
 
-   private Layer createStepsMode()
+   private Layer createLayer()
    {
       return new Layer()
       {
          @Override
          public void setActivate(final boolean active)
          {
-            if (active)
-            {
-               mNoteInput.setShouldConsumeEvents(false);
-               mNoteInput.setKeyTranslationTable(NoteInputUtils.NO_NOTES);
-               mCursorClip.scrollToKey(36 + mCurrentPadForSteps & 0x15);
-               mCursorClip.scrollToStep(0);
-            }
-         }
-      };
-   }
+            final boolean shouldPlayDrums = !isLayerActive(mStepsLayer) && !isLayerActive(mNoteRepeatLayer);
 
-   private Layer createBaseLayer()
-   {
-      return new Layer()
-      {
-         @Override
-         public void setActivate(final boolean active)
-         {
-            if (active)
-            {
-               mNoteInput.setShouldConsumeEvents(true);
-               mNoteInput.setKeyTranslationTable(NoteInputUtils.ALL_NOTES);
-            }
+            mNoteInput.setShouldConsumeEvents(shouldPlayDrums);
+            mNoteInput.setKeyTranslationTable(shouldPlayDrums ? NoteInputUtils.ALL_NOTES : NoteInputUtils.NO_NOTES);
          }
       };
    }
@@ -242,7 +231,6 @@ public class PresonusAtom extends LayeredControllerExtension
                      return mixColorWithWhite(clipColor(0.3f), playingNote);
                   }
 
-
                   return clipColor(0.3f);
                }
 
@@ -289,6 +277,56 @@ public class PresonusAtom extends LayeredControllerExtension
          });
 
       }
+
+      double timings[] = {1, 1.0/2, 1.0/4, 1.0/8, 3.0/4.0, 3.0/8.0, 3.0/16.0, 3.0/32.0};
+
+      for(int i=0; i<8; i++)
+      {
+         final double timing = timings[i];
+
+         mNoteRepeatLayer.bind(pads[i], new RGBButtonTarget()
+         {
+            @Override
+            public float[] getRGB()
+            {
+               return mArpeggiator.period().get() == timing ? RED : DIM_RED;
+            }
+
+            @Override
+            public boolean get()
+            {
+               return true;
+            }
+
+            @Override
+            public void set(final boolean pressed)
+            {
+               if (pressed) mArpeggiator.period().set(timing);
+            }
+         });
+
+         mNoteRepeatLayer.bind(pads[i + 8], new RGBButtonTarget()
+         {
+            @Override
+            public float[] getRGB()
+            {
+               return BLACK;
+            }
+
+            @Override
+            public boolean get()
+            {
+               return false;
+            }
+
+            @Override
+            public void set(final boolean pressed)
+            {
+
+            }
+         });
+      }
+
       mCursorClip.playingStep().addValueObserver(s -> mPlayingStep = s, -1);
       mCursorClip.scrollToKey(36);
       mCursorClip.addStepDataObserver((x, y, state) -> mStepData[x] = state);
@@ -401,8 +439,72 @@ public class PresonusAtom extends LayeredControllerExtension
             if (pressed)
             {
                toggleLayer(mStepsLayer);
+
+               if (isLayerActive(mStepsLayer))
+               {
+                  mCursorClip.scrollToKey(36 + mCurrentPadForSteps & 0x15);
+                  mCursorClip.scrollToStep(0);
+               }
             }
          }
+      });
+
+      Button noteRepeat = addElement(new Button(CC_NOTE_REPEAT));
+      mBaseLayer.bind(noteRepeat, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return isLayerActive(mNoteRepeatLayer) || mArpeggiator.isEnabled().get();
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed)
+            {
+               activateLayer(mNoteRepeatLayer);
+
+               mArpeggiator.mode().set("all");
+               mArpeggiator.usePressureToVelocity().set(true);
+               mPressedTimeStamp = System.currentTimeMillis();
+            }
+            else
+            {
+               deactivateLayer(mNoteRepeatLayer);
+
+               long delta = System.currentTimeMillis() - mPressedTimeStamp;
+
+               if (delta < 150 || !mArpeggiator.isEnabled().get())
+                  mArpeggiator.isEnabled().toggle();
+            }
+         }
+
+         private long mPressedTimeStamp;
+      });
+
+      Button fullVelocity = addElement(new Button(CC_FULL_LEVEL));
+      mBaseLayer.bind(fullVelocity, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return mIsOn;
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed)
+            {
+               mIsOn = !mIsOn;
+               mNoteInput.setVelocityTranslationTable(mIsOn
+                  ? NoteInputUtils.FULL_VELOCITY
+                  : NoteInputUtils.NORMAL_VELOCITY);
+            }
+         }
+
+         private boolean mIsOn;
       });
 
       activateLayer(mBaseLayer);
@@ -448,10 +550,12 @@ public class PresonusAtom extends LayeredControllerExtension
    private float[][] mDrumPadColors;
 
    /* Steps mode */
-   private Layer mStepsLayer;
+   private Layer mStepsLayer = createLayer();
    private Clip mCursorClip;
    private int mPlayingStep;
    private int[] mStepData = new int[16];
    private int mCurrentPadForSteps;
-   private Layer mBaseLayer = createBaseLayer();
+   private Layer mBaseLayer = createLayer();
+   private Layer mNoteRepeatLayer = createLayer();
+   private Arpeggiator mArpeggiator;
 }
