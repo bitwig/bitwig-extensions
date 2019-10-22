@@ -20,9 +20,11 @@ public abstract class AbstractButton
          if (key == mButtonID.getKey())
          {
             target.set(on);
+            mLastButtonState = -1;
          }
       }
    }
 
    protected final Buttons mButtonID;
+   protected int mLastButtonState = -1;
 }

@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.ControlElement;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.EncoderTarget;
 
 public class Encoder implements ControlElement<EncoderTarget>
@@ -30,7 +30,7 @@ public class Encoder implements ControlElement<EncoderTarget>
 
    @Override
    public void flush(
-      final EncoderTarget target, final MidiOut midiOut)
+      final EncoderTarget target, final LayeredControllerExtension extension)
    {
    }
 

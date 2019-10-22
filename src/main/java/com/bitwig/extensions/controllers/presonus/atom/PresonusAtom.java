@@ -23,7 +23,7 @@ import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.EncoderTarget;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.targets.RGBButtonTarget;
-import com.bitwig.extensions.controllers.presonus.util.NoteInputUtils;
+import com.bitwig.extensions.util.NoteInputUtils;
 
 public class PresonusAtom extends LayeredControllerExtension
 {
@@ -142,12 +142,6 @@ public class PresonusAtom extends LayeredControllerExtension
             }
          }
       };
-   }
-
-   @Override
-   protected MidiOut getMidiOutToUseForLayers()
-   {
-      return mMidiOut;
    }
 
    private int velocityForPlayingNote(int padIndex)

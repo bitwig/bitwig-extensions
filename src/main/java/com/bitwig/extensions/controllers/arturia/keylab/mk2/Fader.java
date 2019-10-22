@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.ControlElement;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.TouchFaderTarget;
 
 public class Fader implements ControlElement<TouchFaderTarget>
@@ -24,7 +24,7 @@ public class Fader implements ControlElement<TouchFaderTarget>
    }
 
    @Override
-   public void flush(final TouchFaderTarget target, final MidiOut midiOut)
+   public void flush(final TouchFaderTarget target, final LayeredControllerExtension extension)
    {
 
    }

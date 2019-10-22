@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.ClickEncoderTarget;
 import com.bitwig.extensions.framework.ControlElement;
 
@@ -35,7 +35,7 @@ public class ClickEncoder implements ControlElement<ClickEncoderTarget>
 
    @Override
    public void flush(
-      final ClickEncoderTarget target, final MidiOut midiOut)
+      final ClickEncoderTarget target, final LayeredControllerExtension extension)
    {
    }
 

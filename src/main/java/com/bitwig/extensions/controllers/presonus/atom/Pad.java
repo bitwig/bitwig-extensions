@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.ControlElement;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.RGBButtonTarget;
 
 public class Pad implements ControlElement<RGBButtonTarget>
@@ -31,7 +31,7 @@ public class Pad implements ControlElement<RGBButtonTarget>
 
    @Override
    public void flush(
-      final RGBButtonTarget target, final MidiOut midiOut)
+      final RGBButtonTarget target, final LayeredControllerExtension extension)
    {
       float[] RGB = target.getRGB();
       final int[] values = new int[4];
@@ -44,7 +44,7 @@ public class Pad implements ControlElement<RGBButtonTarget>
       {
          if (values[i] != mLastSent[i])
          {
-            midiOut.sendMidi(0x90 + i, 0x24 + mIndex, values[i]);
+            extension.getMidiOutPort(0).sendMidi(0x90 + i, 0x24 + mIndex, values[i]);
             mLastSent[i] = values[i];
          }
       }

@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
-import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.ControlElement;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
 
 public class Display implements ControlElement<DisplayTarget>
 {
@@ -15,7 +15,7 @@ public class Display implements ControlElement<DisplayTarget>
    }
 
    @Override
-   public void flush(final DisplayTarget target, final MidiOut midiOut)
+   public void flush(final DisplayTarget target, final LayeredControllerExtension extension)
    {
       String upper = target.getUpperText();
       String lower = target.getLowerText();
@@ -27,10 +27,10 @@ public class Display implements ControlElement<DisplayTarget>
          .addHex(" 00")
          .terminate();
 
-      if (mLastData == null || Arrays.equals(data, mLastData))
+      if (mLastData == null || !Arrays.equals(data, mLastData))
       {
          mLastData = data;
-         midiOut.sendSysex(data);
+         extension.getMidiOutPort(1).sendSysex(data);
       }
    }
    private byte[] mLastData;

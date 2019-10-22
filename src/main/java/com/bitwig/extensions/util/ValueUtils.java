@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.presonus.util;
+package com.bitwig.extensions.util;
 
 public class ValueUtils
 {

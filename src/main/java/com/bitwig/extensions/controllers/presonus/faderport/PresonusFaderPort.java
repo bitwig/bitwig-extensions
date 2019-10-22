@@ -26,7 +26,7 @@ import com.bitwig.extensions.framework.targets.ClickEncoderTarget;
 import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.targets.RGBButtonTarget;
-import com.bitwig.extensions.controllers.presonus.util.ValueUtils;
+import com.bitwig.extensions.util.ValueUtils;
 
 public class PresonusFaderPort extends LayeredControllerExtension
 {
@@ -723,7 +723,7 @@ public class PresonusFaderPort extends LayeredControllerExtension
 
    private void runningStatusTimer()
    {
-      getMidiOutToUseForLayers().sendMidi(0xA0, 0, 0);
+      getMidiOutPort(0).sendMidi(0xA0, 0, 0);
 
       getHost().scheduleTask(this::runningStatusTimer, 1000);
    }
@@ -749,12 +749,6 @@ public class PresonusFaderPort extends LayeredControllerExtension
       for(int c=0; c<mChannelCount; c++)
       {
       }
-   }
-
-   @Override
-   protected MidiOut getMidiOutToUseForLayers()
-   {
-      return mMidiOut;
    }
 
    /* API Objects */

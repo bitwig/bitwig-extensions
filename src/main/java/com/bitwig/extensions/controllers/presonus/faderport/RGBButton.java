@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.ControlElement;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.RGBButtonTarget;
 
 public class RGBButton implements ControlElement<RGBButtonTarget>
@@ -19,7 +19,7 @@ public class RGBButton implements ControlElement<RGBButtonTarget>
 
    @Override
    public void flush(
-      final RGBButtonTarget target, final MidiOut midiOut)
+      final RGBButtonTarget target, final LayeredControllerExtension extension)
    {
       float[] RGB = target.getRGB();
       final int[] values = new int[4];
@@ -32,7 +32,7 @@ public class RGBButton implements ControlElement<RGBButtonTarget>
       {
          if (values[i] != mLastSent[i])
          {
-            midiOut.sendMidi(0x90 + i, mData1, values[i]);
+            extension.getMidiOutPort(0).sendMidi(0x90 + i, mData1, values[i]);
             mLastSent[i] = values[i];
          }
       }

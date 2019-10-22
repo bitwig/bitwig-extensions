@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.ControlElement;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.TouchFaderTarget;
 
 public class MotorFader implements ControlElement<TouchFaderTarget>
@@ -34,13 +34,13 @@ public class MotorFader implements ControlElement<TouchFaderTarget>
    }
 
    @Override
-   public void flush(final TouchFaderTarget target, final MidiOut midiOut)
+   public void flush(final TouchFaderTarget target, final LayeredControllerExtension extension)
    {
       int value = Math.max(0, Math.min(16383, (int)(target.get() * 16384.0)));
 
       if (mLastSentValue != value)
       {
-         midiOut.sendMidi(0xE0 | mChannel, value & 0x7f, value >> 7);
+         extension.getMidiOutPort(0).sendMidi(0xE0 | mChannel, value & 0x7f, value >> 7);
          mLastSentValue = value;
       }
    }

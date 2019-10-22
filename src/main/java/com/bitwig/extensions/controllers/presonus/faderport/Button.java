@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.ButtonTarget;
 import com.bitwig.extensions.framework.ControlElement;
 
@@ -13,13 +13,13 @@ public class Button implements ControlElement<ButtonTarget>
    }
 
    @Override
-   public void flush(final ButtonTarget target, final MidiOut midiOut)
+   public void flush(final ButtonTarget target, final LayeredControllerExtension extension)
    {
       int value = target.get() ? 127 : 0;
       if (value != mLastValue)
       {
          mLastValue = value;
-         midiOut.sendMidi(0x90, mData1, value);
+         extension.getMidiOutPort(0).sendMidi(0x90, mData1, value);
       }
    }
 

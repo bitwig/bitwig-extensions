@@ -4,6 +4,7 @@ import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.framework.ControlElement;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
 
 public class Display implements ControlElement<DisplayTarget>
 {
@@ -20,22 +21,23 @@ public class Display implements ControlElement<DisplayTarget>
    }
 
    @Override
-   public void flush(final DisplayTarget target, final MidiOut midiOut)
+   public void flush(final DisplayTarget target, final LayeredControllerExtension extension)
    {
       int barValue = target.getBarValue();
       ValueBarMode valueBarMode = target.getValueBarMode();
 
+      MidiOut midiOutPort = extension.getMidiOutPort(0);
       if (valueBarMode != mLastValueBarMode || barValue != mLastBarValue)
       {
          if (mChannel >= 8)
          {
-            midiOut.sendMidi(0xB0, 0x40 + mChannel - 8, barValue);
-            midiOut.sendMidi(0xB0, 0x48 + mChannel - 8, valueBarMode.ordinal());
+            midiOutPort.sendMidi(0xB0, 0x40 + mChannel - 8, barValue);
+            midiOutPort.sendMidi(0xB0, 0x48 + mChannel - 8, valueBarMode.ordinal());
          }
          else
          {
-            midiOut.sendMidi(0xB0, 0x30 + mChannel, barValue);
-            midiOut.sendMidi(0xB0, 0x38 + mChannel, valueBarMode.ordinal());
+            midiOutPort.sendMidi(0xB0, 0x30 + mChannel, barValue);
+            midiOutPort.sendMidi(0xB0, 0x38 + mChannel, valueBarMode.ordinal());
          }
       }
 
@@ -48,7 +50,7 @@ public class Display implements ControlElement<DisplayTarget>
          sb.addByte(mChannel);
          int m = mode.ordinal() & 0xF;
          sb.addByte(m);
-         midiOut.sendSysex(sb.terminate());
+         midiOutPort.sendSysex(sb.terminate());
       }
 
       for(int line = 0; line< TEXT_LINES; line++)
@@ -74,7 +76,7 @@ public class Display implements ControlElement<DisplayTarget>
             sb.addByte(flags);
             sb.addString(text, Math.min(7, text.length()));
 
-            midiOut.sendSysex(sb.terminate());
+            midiOutPort.sendSysex(sb.terminate());
          }
       }
 
