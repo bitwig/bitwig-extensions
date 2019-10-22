@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.arturia.keylab;
+package com.bitwig.extensions.controllers.arturia.keylab.essential;
 
 import java.util.UUID;
 

@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.arturia.keylab.mkii;
+package com.bitwig.extensions.controllers.arturia.keylab.mk1;
 
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
@@ -6,14 +6,16 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends ControllerExtensionDefinition
+public abstract class ArturiaKeylabControllerExtensionDefinition extends ControllerExtensionDefinition
 {
    public abstract int getNumberOfKeys();
+
+   public abstract boolean hasDrumPads();
 
    @Override
    public String getVersion()
    {
-      return "3.0";
+      return "2.3";
    }
 
    @Override
@@ -25,13 +27,13 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    @Override
    public String getName()
    {
-      return "Keylab " + getNumberOfKeys() + " mkII";
+      return "Keylab " + getNumberOfKeys();
    }
 
    @Override
    public int getRequiredAPIVersion()
    {
-      return 8;
+      return 7;
    }
 
    @Override
@@ -43,55 +45,42 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    @Override
    public String getHardwareModel()
    {
-      return "KeyLab " + getNumberOfKeys() + " mkII";
+      return "KeyLab " + getNumberOfKeys();
    }
 
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Arturia/KeyLab " + getNumberOfKeys() + " mkII.html";
+      return "Documentation/Controllers/Arturia/KeyLab" + Math.min(61, getNumberOfKeys()) + ".html";
    }
 
    @Override
    public int getNumMidiInPorts()
    {
-      return 2;
+      return 1;
    }
 
    @Override
    public int getNumMidiOutPorts()
    {
-      return 2;
+      return 1;
    }
 
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new ArturiaKeylabMkII(this, host);
+      return new ArturiaKeylabControllerExtension(this, host);
    }
 
    @Override
    public void listAutoDetectionMidiPortNames(
       final AutoDetectionMidiPortNamesList list, final PlatformType platformType)
    {
-      if (platformType == PlatformType.WINDOWS)
-      {
-         final String name = "KeyLab mkII " + getNumberOfKeys();
+      final String name1 = "KeyLab " + getNumberOfKeys();
+      final String name2 = "KeyLab " + getNumberOfKeys() + " MIDI 1";
 
-         final String in2 = "MIDIIN2 (KeyLab mkII " + getNumberOfKeys() + ")";
-         final String out2 = "MIDIOUT2 (KeyLab mkII " + getNumberOfKeys() + ")";
-
-         list.add(new String[] {name, in2}, new String[] {name, out2});
-
-      }
-      else if (platformType == PlatformType.MAC)
-      {
-         final String name = "KeyLab mkII " + getNumberOfKeys();
-
-         list.add(
-            new String[] {name + " MIDI In", name + " DAW In"},
-            new String[] {name + " MIDI Out", name + " DAW Out"});
-      }
+      list.add(new String[] {name1}, new String[] {name1});
+      list.add(new String[] {name2}, new String[] {name2});
    }
 
    @Override

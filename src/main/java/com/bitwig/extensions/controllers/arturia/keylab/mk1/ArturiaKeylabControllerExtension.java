@@ -1,6 +1,6 @@
-package com.bitwig.extensions.controllers.arturia.keylab;
+package com.bitwig.extensions.controllers.arturia.keylab.mk1;
 
-import static com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylabControllerExtension
+import static com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylabControllerExtension
    .DisplayMode.MESSAGE;
 
 import java.util.ArrayList;
@@ -32,11 +32,11 @@ import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import static com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylabControllerExtension.DisplayMode.BROWSER;
+import static com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylabControllerExtension.DisplayMode.BROWSER;
 
-import static com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylabControllerExtension
+import static com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylabControllerExtension
    .DisplayMode.PARAMETER;
-import static com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylabControllerExtension.DisplayMode.PARAMETER_PAGE;
+import static com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylabControllerExtension.DisplayMode.PARAMETER_PAGE;
 
 public class ArturiaKeylabControllerExtension extends ControllerExtension
 {

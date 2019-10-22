@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.arturia.keylab;
+package com.bitwig.extensions.controllers.arturia.keylab.essential;
 
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;

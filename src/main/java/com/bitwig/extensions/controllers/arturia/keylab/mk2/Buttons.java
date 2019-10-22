@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.arturia.keylab.mkii;
+package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
 public enum Buttons
 {

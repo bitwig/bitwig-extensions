@@ -723,7 +723,7 @@ public class PresonusFaderPort extends LayeredControllerExtension
 
    private void runningStatusTimer()
    {
-      getMidiOut().sendMidi(0xA0, 0, 0);
+      getMidiOutToUseForLayers().sendMidi(0xA0, 0, 0);
 
       getHost().scheduleTask(this::runningStatusTimer, 1000);
    }
@@ -752,7 +752,7 @@ public class PresonusFaderPort extends LayeredControllerExtension
    }
 
    @Override
-   protected MidiOut getMidiOut()
+   protected MidiOut getMidiOutToUseForLayers()
    {
       return mMidiOut;
    }

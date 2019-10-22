@@ -145,7 +145,7 @@ public class PresonusAtom extends LayeredControllerExtension
    }
 
    @Override
-   protected MidiOut getMidiOut()
+   protected MidiOut getMidiOutToUseForLayers()
    {
       return mMidiOut;
    }

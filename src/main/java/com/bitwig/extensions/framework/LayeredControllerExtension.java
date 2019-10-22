@@ -23,7 +23,7 @@ public abstract class LayeredControllerExtension extends ControllerExtension
    @Override
    public void flush()
    {
-      final MidiOut midiOut = getMidiOut();
+      final MidiOut midiOut = getMidiOutToUseForLayers();
 
       for (ControlElement element : mElements)
       {
@@ -52,6 +52,8 @@ public abstract class LayeredControllerExtension extends ControllerExtension
    {
       return (ShortMidiMessageReceivedCallback)this::onMidi;
    }
+
+   protected abstract MidiOut getMidiOutToUseForLayers();
 
    protected void onMidi(final ShortMidiMessage data)
    {
@@ -132,8 +134,6 @@ public abstract class LayeredControllerExtension extends ControllerExtension
    {
 
    }
-
-   protected abstract MidiOut getMidiOut();
 
    private List<ControlElement> mElements = new ArrayList<>();
 

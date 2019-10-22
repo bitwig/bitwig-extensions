@@ -1,8 +1,6 @@
-package com.bitwig.extensions.controllers.arturia.keylab;
+package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
 import java.util.UUID;
-
-import com.bitwig.extensions.controllers.arturia.keylab.mkii.ArturiaKeylabMkIIControllerExtensionDefinition;
 
 public class ArturiaKeylab49MkIIControllerExtensionDefinition extends ArturiaKeylabMkIIControllerExtensionDefinition
 {

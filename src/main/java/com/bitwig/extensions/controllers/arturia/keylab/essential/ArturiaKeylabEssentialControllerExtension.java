@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.arturia.keylab;
+package com.bitwig.extensions.controllers.arturia.keylab.essential;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
@@ -6,7 +6,6 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.Action;
-import com.bitwig.extension.controller.api.ActionCategory;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.BrowserFilterItem;
 import com.bitwig.extension.controller.api.BrowserResultsItem;
@@ -19,6 +18,7 @@ import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.controllers.arturia.keylab.mk1.KeylabSysex;
 
 // TODO
 // add mode to switch pads between pages and drum pads

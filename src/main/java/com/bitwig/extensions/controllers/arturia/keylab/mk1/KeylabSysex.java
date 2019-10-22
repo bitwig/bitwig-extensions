@@ -1,8 +1,8 @@
-package com.bitwig.extensions.controllers.arturia.keylab;
+package com.bitwig.extensions.controllers.arturia.keylab.mk1;
 
 import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.controller.api.MidiOut;
-import static com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylabControllerExtension.*;
+import static com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylabControllerExtension.*;
 
 public class KeylabSysex
 {
@@ -120,7 +120,7 @@ public class KeylabSysex
          : "F0 00 20 6B 7F 42 02 00 40 0D 01 F7");
    }
 
-   static void resetToAbsoluteMode(final MidiOut midiOut)
+   public static void resetToAbsoluteMode(final MidiOut midiOut)
    {
       // Set Encoders back to absolute:
       for(int i = 0; i < 10; i++)

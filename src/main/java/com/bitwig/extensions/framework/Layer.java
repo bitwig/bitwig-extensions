@@ -90,6 +90,24 @@ public class Layer
       });
    }
 
+   public void bindLayerToggle(LayeredControllerExtension host, ControlElement<ButtonTarget> element, Layer layer)
+   {
+      bind(element, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return host.isLayerActive(layer);
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed) host.toggleLayer(layer);
+         }
+      });
+   }
+
    public void bindLayerInGroup(LayeredControllerExtension host, ControlElement<ButtonTarget> element, Layer layer, Layer... layerGroup)
    {
       bind(element, new ButtonTarget()

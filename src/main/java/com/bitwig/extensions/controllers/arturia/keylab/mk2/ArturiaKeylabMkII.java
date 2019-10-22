@@ -1,8 +1,6 @@
-package com.bitwig.extensions.controllers.arturia.keylab.mkii;
+package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
 import com.bitwig.extension.api.util.midi.SysexBuilder;
-import com.bitwig.extension.callback.ShortMidiDataReceivedCallback;
-import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
@@ -13,9 +11,11 @@ import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareControlType;
+import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PopupBrowser;
+import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.LayeredControllerExtension;
@@ -29,20 +29,6 @@ import com.bitwig.extensions.framework.targets.EncoderTarget;
 
 public class ArturiaKeylabMkII extends LayeredControllerExtension
 {
-   DisplayMode mDisplayMode = null;
-
-   enum DisplayMode
-   {
-      BROWSER,
-   }
-
-   void setDisplayMode(final DisplayMode displayMode)
-   {
-      mDisplayMode = displayMode;
-
-      mLastDisplayTimeStamp = System.currentTimeMillis();
-   }
-
    public ArturiaKeylabMkII(
       final ArturiaKeylabMkIIControllerExtensionDefinition definition,
       final ControllerHost host)
@@ -123,6 +109,9 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
 
       mRemoteControls.selectedPageIndex().markInterested();
 
+      mTrackBank = host.createTrackBank(8, 0, 0);
+      mMasterTrack = host.createMasterTrack(0);
+
       mNoteInput = host.getMidiInPort(0).createNoteInput("Keys", "?0????", "?1????", "?2????", "?3????", "?4????", "?5????", "?6????", "?7????", "?8????");
       mNoteInput.setShouldConsumeEvents(true);
 
@@ -144,17 +133,52 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
 
       sendSysex("F0 00 20 6B 7F 42 05 02 F7"); // Set to DAW mode
 
-      sendTextToKeyLab(
-         definition.getHardwareVendor(),
-         definition.getHardwareModel() + " " + definition.getVersion());
-
       updateIndications();
 
       initButtons();
       initControls();
+      mDisplay = addElement(new Display());
       activateLayer(mBaseLayer);
 
-      host.scheduleTask(this::displayRefreshTimer, 1000);
+      mBaseLayer.bind(mDisplay, new DisplayTarget()
+      {
+         @Override
+         public String getUpperText()
+         {
+            return mCursorTrack.name().getLimited(16);
+         }
+
+         @Override
+         public String getLowerText()
+         {
+            return mCursorTrack.exists().get()
+               ? mDevice.exists().get() ? (mDevice.name().getLimited(16)) : "No Device"
+               : "";
+         }
+      });
+
+      mPopupBrowser.exists().addValueObserver(exists -> {
+         if (exists) activateLayer(mBrowserLayer);
+         else deactivateLayer(mBrowserLayer);
+      });
+
+      mBrowserLayer.bind(mDisplay, new DisplayTarget()
+      {
+         @Override
+         public String getUpperText()
+         {
+            return mBrowserCategory.name().getLimited(16);
+         }
+
+         @Override
+         public String getLowerText()
+         {
+            return mBrowserResult.name().getLimited(16);
+         }
+      });
+
+      Button multi = addElement(new Button(Buttons.SELECT_MULTI));
+      mBaseLayer.bindLayerToggle(this, multi, mMultiLayer);
    }
 
    private void repeatRewind()
@@ -175,48 +199,12 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       }
    }
 
-   private void setRGBLed(Buttons button, final int red, final int green, final int blue)
-   {
-      SysexBuilder sb = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 16");
-      sb.addByte(button.getSysexID());
-      sb.addByte(red);
-      sb.addByte(green);
-      sb.addByte(blue);
-      sendSysex(sb.terminate());
-   }
-
    private void setMonochromeLed(Buttons button, final int intensity)
    {
       SysexBuilder sb = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 10");
       sb.addByte(button.getSysexID());
       sb.addByte(intensity);
       sendSysex(sb.terminate());
-   }
-
-   // Keep checking the display for mode changes
-   private void displayRefreshTimer()
-   {
-      if (mDisplayMode != null)
-      {
-         switch (mDisplayMode)
-         {
-            case BROWSER:
-               if (!mPopupBrowser.exists().get())
-               {
-                  setDisplayMode(null);
-               }
-               break;
-         }
-      }
-      else
-      {
-         if (mPopupBrowser.exists().get())
-         {
-            setDisplayMode(DisplayMode.BROWSER);
-         }
-      }
-
-      getHost().scheduleTask(this::displayRefreshTimer, 100);
    }
 
    private void updateIndications()
@@ -313,46 +301,21 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       addPageButtonMapping(Buttons.SELECT8, "fx");
 
       Button presetPrev = addElement(new Button(Buttons.PRESET_PREVIOUS));
-      mBaseLayer.bindPressedRunnable(presetPrev, mCursorTrack.hasPrevious(), () ->
-      {
-         if (isInBrowser())
-         {
-            mPopupBrowser.cancel();
-         }
-         else if (mDisplayMode == null)
-         {
-            mCursorTrack.selectPrevious();
-         }
-      });
+      mBaseLayer.bindPressedRunnable(presetPrev, mCursorTrack.hasPrevious(), mCursorTrack::selectPrevious);
+      mBrowserLayer.bindPressedRunnable(presetPrev, mCursorTrack.hasPrevious(), mPopupBrowser::cancel);
 
       Button presetNext = addElement(new Button(Buttons.PRESET_NEXT));
-      mBaseLayer.bindPressedRunnable(presetNext, mCursorTrack.hasNext(), () ->
-      {
-         if (isInBrowser())
-         {
-            mPopupBrowser.commit();
-         }
-         else if (mDisplayMode == null)
-         {
-            mCursorTrack.selectNext();
-         }
-      });
+      mBaseLayer.bindPressedRunnable(presetNext, mCursorTrack.hasNext(), mCursorTrack::selectNext);
+      mBrowserLayer.bindPressedRunnable(presetNext, mCursorTrack.hasPrevious(), mPopupBrowser::commit);
 
       Button wheelClick = addElement(new Button(Buttons.WHEEL_CLICK));
       mBaseLayer.bindPressedRunnable(wheelClick, null, () ->
       {
-         mLastText = null;
-
-         if (isInBrowser())
-         {
-            mPopupBrowser.commit();
-            setDisplayMode(null);
-         }
-         else
-         {
-            startPresetBrowsing();
-         }
+         mDisplay.reset();
+         startPresetBrowsing();
       });
+
+      mBrowserLayer.bindPressedRunnable(wheelClick, mCursorTrack.hasPrevious(), mPopupBrowser::commit);
    }
 
    private void addPageButtonMapping(final Buttons id, final String group)
@@ -362,7 +325,7 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
    }
 
    @Override
-   protected MidiOut getMidiOut()
+   protected MidiOut getMidiOutToUseForLayers()
    {
       return getMidiOutPort(1);
    }
@@ -378,41 +341,36 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
          Encoder encoder = addElement(new Encoder(0x10 + i));
 
          mBaseLayer.bindEncoder(encoder, mRemoteControls.getParameter(i), 101);
+         mMultiLayer.bindEncoder(encoder, mTrackBank.getItemAt(i).pan(), 101);
       }
 
       Encoder wheel = addElement(new Encoder(0x3C));
       mBaseLayer.bind(wheel, (EncoderTarget) steps ->
       {
-         boolean next = steps > 0;
+         if (steps > 0) mDevice.selectNext();
+         else mDevice.selectPrevious();
+      });
 
-         if (mDisplayMode == DisplayMode.BROWSER)
-         {
-            if (next) mPopupBrowser.selectNextFile();
-            else mPopupBrowser.selectPreviousFile();
-         }
-         else if (mDisplayMode == null)
-         {
-            if (next) mDevice.selectNext();
-            else mDevice.selectPrevious();
-         }
+      mBrowserLayer.bind(wheel, (EncoderTarget) steps ->
+      {
+         if (steps > 0) mPopupBrowser.selectNextFile();
+         else mPopupBrowser.selectPreviousFile();
       });
 
       for(int i=0; i<9; i++)
       {
          Fader fader = addElement(new Fader(i));
          mBaseLayer.bind(fader, mDeviceEnvelopes.getParameter(i));
-      }
-   }
 
-   private boolean isInBrowser()
-   {
-      return mDisplayMode == DisplayMode.BROWSER;
+         if (i == 8)
+            mMultiLayer.bind(fader, mMasterTrack.volume());
+         else
+            mMultiLayer.bind(fader, mTrackBank.getItemAt(i).volume());
+      }
    }
 
    private void startPresetBrowsing()
    {
-      setDisplayMode(DisplayMode.BROWSER);
-
       if (mDevice.exists().get())
       {
          mDevice.replaceDeviceInsertionPoint().browse();
@@ -423,62 +381,9 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       }
    }
 
-   private void sendTextToKeyLab(final String upper, final String lower)
-   {
-      mUpperTextToSend = upper;
-      mLowerTextToSend = lower;
-   }
-
    @Override
    public void exit()
    {
-   }
-
-   @Override
-   public void flush()
-   {
-      super.flush();
-
-      if (mDisplayMode == null)
-      {
-         final String track = mCursorTrack.name().getLimited(16);
-         final String device = mCursorTrack.exists().get() ? mDevice.exists().get() ? (mDevice.name().getLimited(16)) : "No Device" : "";
-
-         sendTextToKeyLab(track, device);
-      }
-      else if (isInBrowser())
-      {
-         sendTextToKeyLab(
-            mBrowserCategory.name().getLimited(16),
-            mBrowserResult.name().getLimited(16));
-      }
-
-      if (mUpperTextToSend != null)
-      {
-         final String total = mUpperTextToSend + mLowerTextToSend;
-
-         if (mLastText == null || !total.equals(mLastText))
-         {
-            mLastText = total;
-
-            doSendTextToKeylab(mUpperTextToSend, mLowerTextToSend);
-         }
-
-         mUpperTextToSend = null;
-         mLowerTextToSend = null;
-      }
-   }
-
-   private void doSendTextToKeylab(final String upper, final String lower)
-   {
-      final byte[] data = SysexBuilder.fromHex("F0 00 20 6B 7F 42 04 00 60 01 ")
-         .addString(upper, 16)
-         .addHex("00 02")
-         .addString(lower, 16)
-         .addHex(" 00 F7")
-         .array();
-
-      sendSysex(data);
    }
 
    public void sendSysex(final byte[] data)
@@ -498,17 +403,18 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
    private CursorDevice mDevice;
    private CursorRemoteControlsPage mRemoteControls;
    private CursorRemoteControlsPage mDeviceEnvelopes;
-   private String mUpperTextToSend;
-   private String mLowerTextToSend;
-   private String mLastText;
    private PopupBrowser mPopupBrowser;
    private BrowserResultsItem mBrowserResult;
    private BrowserFilterItem mBrowserCategory;
    private BrowserFilterItem mBrowserCreator;
    private Application mApplication;
    private boolean[] mIsTransportDown;
-   private long mLastDisplayTimeStamp;
+   private Display mDisplay;
 
    private Action mSaveAction;
    private Layer mBaseLayer = new Layer();
+   private Layer mBrowserLayer = new Layer();
+   private Layer mMultiLayer = new Layer();
+   private TrackBank mTrackBank;
+   private MasterTrack mMasterTrack;
 }
