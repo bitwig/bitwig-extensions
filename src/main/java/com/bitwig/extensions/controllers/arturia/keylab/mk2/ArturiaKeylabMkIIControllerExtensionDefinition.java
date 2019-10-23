@@ -31,7 +31,7 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    @Override
    public int getRequiredAPIVersion()
    {
-      return 8;
+      return 10;
    }
 
    @Override

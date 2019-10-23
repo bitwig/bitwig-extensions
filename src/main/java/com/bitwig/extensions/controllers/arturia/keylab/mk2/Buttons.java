@@ -10,22 +10,22 @@ public enum Buttons
    CHORD_MEMORY(0x16),
    CHORD_TRANSPOSE(0x15),
    MIDI_CH(0x14),
-   PAD1(0x70),
-   PAD2(0x71),
-   PAD3(0x72),
-   PAD4(0x73),
-   PAD5(0x74),
-   PAD6(0x75),
-   PAD7(0x76),
-   PAD8(0x77),
-   PAD9(0x78),
-   PAD10(0x79),
-   PAD11(0x7A),
-   PAD12(0x7B),
-   PAD13(0x7C),
-   PAD14(0x7D),
-   PAD15(0x7E),
-   PAD16(0x7F),
+   PAD1(0x70, 36, 9),
+   PAD2(0x71, 37, 9),
+   PAD3(0x72, 38, 9),
+   PAD4(0x73, 39, 9),
+   PAD5(0x74, 40, 9),
+   PAD6(0x75, 41, 9),
+   PAD7(0x76, 42, 9),
+   PAD8(0x77, 43, 9),
+   PAD9(0x78, 44, 9),
+   PAD10(0x79, 45, 9),
+   PAD11(0x7A, 46, 9),
+   PAD12(0x7B, 47, 9),
+   PAD13(0x7C, 48, 9),
+   PAD14(0x7D, 49, 9),
+   PAD15(0x7E, 50, 9),
+   PAD16(0x7F, 51, 9),
    SOLO(0x60, 0x08),
    MUTE(0x61, 0x10),
    RECORD_ARM(0x62, 0x00),
@@ -67,12 +67,21 @@ public enum Buttons
    {
       mSysexId = SysexId;
       mKey = 0;
+      mChannel = 0;
    }
 
    Buttons(final int SysexId, final int noteOrCC)
    {
       mSysexId = SysexId;
       mKey = noteOrCC;
+      mChannel = 0;
+   }
+
+   Buttons(final int SysexId, final int noteOrCC, final int channel)
+   {
+      mSysexId = SysexId;
+      mKey = noteOrCC;
+      mChannel = channel;
    }
 
    public static Buttons drumPad(int index)
@@ -110,7 +119,13 @@ public enum Buttons
       return mKey;
    }
 
+   public int getChannel()
+   {
+      return mChannel;
+   }
+
    private final int mSysexId;
 
    private final int mKey;
+   private final int mChannel;
 }

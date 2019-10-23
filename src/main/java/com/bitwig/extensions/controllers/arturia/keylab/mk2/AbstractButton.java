@@ -12,7 +12,7 @@ public abstract class AbstractButton
 
    public void onMidi(final ButtonTarget target, final ShortMidiMessage data)
    {
-      if (data.isNoteOn() && data.getChannel() == 0)
+      if (data.isNoteOn() && data.getChannel() == mButtonID.getChannel())
       {
          final boolean on = data.getData2() >= 64;
          final int key = data.getData1();

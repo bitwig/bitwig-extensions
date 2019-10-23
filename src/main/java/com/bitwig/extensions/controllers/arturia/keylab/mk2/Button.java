@@ -17,7 +17,7 @@ public class Button extends AbstractButton implements ControlElement<ButtonTarge
    @Override
    public void flush(final ButtonTarget target, final LayeredControllerExtension extension)
    {
-      int intensity = target.get() ? 0x7f : 0x10;
+      int intensity = target.get() ? 0x7f : 0x04;
 
       byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 10")
          .addByte(mButtonID.getSysexID())

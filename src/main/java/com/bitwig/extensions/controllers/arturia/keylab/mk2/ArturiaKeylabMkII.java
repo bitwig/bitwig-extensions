@@ -7,6 +7,7 @@ import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.BrowserFilterItem;
 import com.bitwig.extension.controller.api.BrowserResultsItem;
+import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorBrowserFilterItem;
 import com.bitwig.extension.controller.api.CursorDevice;
@@ -41,6 +42,9 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
    float[] GREEN = {0.f, 1.0f, 0.f};
    float[] RED = {1.f, 0.0f, 0.f};
 
+   final int LAUNCHER_TRACKS = 8;
+   final int LAUNCHER_SLOTS = 2;
+
    public ArturiaKeylabMkII(
       final ArturiaKeylabMkIIControllerExtensionDefinition definition,
       final ControllerHost host)
@@ -63,6 +67,7 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       mTransport.isPunchInEnabled().markInterested();
       mTransport.isPunchOutEnabled().markInterested();
       mTransport.isMetronomeEnabled().markInterested();
+      mTransport.getPosition().markInterested();
       mCursorTrack = host.createCursorTrack(4, 0);
       mCursorTrack.volume().setIndication(true);
       mCursorTrack.solo().markInterested();
@@ -122,20 +127,29 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
 
       mRemoteControls.selectedPageIndex().markInterested();
 
-      mTrackBank = host.createTrackBank(8, 0, 0);
+      mTrackBank = host.createTrackBank(8, 0, LAUNCHER_SLOTS);
 
       for(int i=0; i<8; i++)
       {
          Track track = mTrackBank.getItemAt(i);
          track.color().markInterested();
+
+         for(int s = 0; s < LAUNCHER_SLOTS; s++)
+         {
+            ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(s);
+            slot.color().markInterested();
+            slot.isPlaying().markInterested();
+            slot.isRecording().markInterested();
+            slot.isPlaybackQueued().markInterested();
+            slot.isRecordingQueued().markInterested();
+            slot.hasContent().markInterested();
+         }
       }
 
       mMasterTrack = host.createMasterTrack(0);
 
-      mNoteInput = host.getMidiInPort(0).createNoteInput("Keys", "?0????", "?1????", "?2????", "?3????", "?4????", "?5????", "?6????", "?7????", "?8????");
+      mNoteInput = host.getMidiInPort(0).createNoteInput("Keys", "??????");
       mNoteInput.setShouldConsumeEvents(true);
-
-      final NoteInput drumPadsInput = host.getMidiInPort(0).createNoteInput("Pads", "?9????");
 
       mCursorTrack.name().markInterested();
       mCursorTrack.volume().displayedValue().markInterested();
@@ -150,8 +164,6 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       host.getMidiInPort(1).setMidiCallback(getMidiCallbackToUseForLayers());
       host.getMidiInPort(1).setSysexCallback(this::onSysex);
 
-      final ControllerExtensionDefinition definition = getExtensionDefinition();
-
       sendSysex(SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 40 52")
          .addByte(DAWMode.Live.getID()).terminate());
       // Init DAW preset in Live mode
@@ -162,6 +174,7 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
 
       initButtons();
       initControls();
+      initPadsForCLipLauncher();
       mDisplay = addElement(new Display());
       activateLayer(mBaseLayer);
 
@@ -272,43 +285,38 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
 
    private void onSysex(final String s)
    {
-      if (s.equals("f000206b7f420200001500f7"))
+      final String ENTER_DAW_MODE = "f000206b7f420200001500f7";
+      final String EXIT_DAW_MODE = "f000206b7f42020000157ff7";
+
+      if (s.equals(ENTER_DAW_MODE))
       {
+         mDawMode = true;
+
+         activateLayer(mBaseLayer);
+
          getHost().scheduleTask(() ->
          {
-            for (ControlElement element : getElements())
-            {
-               if (element instanceof Resetable)
-               {
-                  ((Resetable)element).reset();
-               }
-            }
+            reset();
          }, 150);
       }
+      else if (s.equals(EXIT_DAW_MODE))
+      {
+         mDawMode = false;
+         deactivateLayer(mBaseLayer);
+      }
+
+      updateIndications();
    }
 
-   private void initButton(final Buttons b)
+   private void reset()
    {
-      int sysexID = b.getSysexID();
-      setSysexParameter(0x1, sysexID, 0x9);
-      //setSysexParameter(0x11, sysexID, 0x8); // R
-      //setSysexParameter(0x12, sysexID, 0x8); // G
-      //setSysexParameter(0x13, sysexID, 0x8); // B
-      setSysexParameter(0x2, sysexID, 0x0);        // channel
-      setSysexParameter(0x3, sysexID, b.getKey()); // controller
-      setSysexParameter(0x4, sysexID, 0x00);       // low
-      setSysexParameter(0x5, sysexID, 0x7f);       // high
-      setSysexParameter(0x6, sysexID, 0x1);
-   }
-
-   private void setSysexParameter(final int parameterID, final int controlID, final int value)
-   {
-      sendSysex(
-         SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 03")
-            .addByte(parameterID)
-            .addByte(controlID)
-            .addByte(value)
-            .terminate());
+      for (ControlElement element : getElements())
+      {
+         if (element instanceof Resetable)
+         {
+            ((Resetable)element).reset();
+         }
+      }
    }
 
    private void repeatRewind()
@@ -329,14 +337,6 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       }
    }
 
-   private void setMonochromeLed(Buttons button, final int intensity)
-   {
-      SysexBuilder sb = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 10");
-      sb.addByte(button.getSysexID());
-      sb.addByte(intensity);
-      sendSysex(sb.terminate());
-   }
-
    @Override
    protected void toggleLayer(final Layer layer)
    {
@@ -345,24 +345,35 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
 
    private void updateIndications()
    {
-      mCursorTrack.volume().setIndication(true);
+      mCursorTrack.volume().setIndication(mDawMode);
 
       boolean isMixer = isLayerActive(mMultiLayer);
 
-      mDevice.setIsSubscribed(!isMixer);
-      mCursorTrack.setIsSubscribed(true);
+      mDevice.setIsSubscribed(!isMixer && mDawMode);
+      mCursorTrack.setIsSubscribed(mDawMode);
 
       for(int i=0; i<8; i++)
       {
-         mRemoteControls.getParameter(i).setIndication(!isMixer);
+         mRemoteControls.getParameter(i).setIndication(!isMixer && mDawMode);
          Track track = mTrackBank.getItemAt(i);
-         track.volume().setIndication(isMixer);
-         track.pan().setIndication(isMixer);
+         track.volume().setIndication(isMixer && mDawMode);
+         track.pan().setIndication(isMixer && mDawMode);
       }
 
       for(int i=0; i<9; i++)
       {
-         mDeviceEnvelopes.getParameter(i).setIndication(!isMixer);
+         mDeviceEnvelopes.getParameter(i).setIndication(!isMixer && mDawMode);
+      }
+
+      for(int i=0; i<LAUNCHER_TRACKS; i++)
+      {
+         Track track = mTrackBank.getItemAt(i);
+
+         for(int s = 0; s < LAUNCHER_SLOTS; s++)
+         {
+            ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(s);
+            slot.setIndication(mDawMode);
+         }
       }
    }
 
@@ -487,6 +498,79 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       });
 
       mBrowserLayer.bindPressedRunnable(wheelClick, mCursorTrack.hasPrevious(), mPopupBrowser::commit);
+   }
+
+   private void initPadsForCLipLauncher()
+   {
+      for(int p=0; p<16; p++)
+      {
+         final int row = p >> 2;
+         final int column = p & 0x3;
+         final int track = column + ((row >= 2) ? 4 : 0);
+         final int slot = row & 1;
+
+         RGBButton pad = addElement(new RGBButton(Buttons.drumPad(p)));
+         mBaseLayer.bind(pad, new RGBButtonTarget()
+         {
+            @Override
+            public float[] getRGB()
+            {
+               ClipLauncherSlot s = getSlot();
+
+               if (s.isRecordingQueued().get())
+               {
+                  return RGBButtonTarget.mix(RED, BLACK, getTransportPulse(1.0, 1));
+               }
+               else if (s.isRecording().get())
+               {
+                  return RED;
+               }
+               else if (s.hasContent().get())
+               {
+                  if (s.isPlaybackQueued().get())
+                  {
+                     return RGBButtonTarget.mixWithValue(s.color(), WHITE, 1 - getTransportPulse(1.0, 1));
+                  }
+                  else if (s.isPlaying().get())
+                  {
+                     return RGBButtonTarget.mixWithValue(s.color(), BLACK, getTransportPulse(1.0, 0.66));
+                  }
+
+                  return RGBButtonTarget.mixWithValue(s.color(), BLACK, 0.66f);
+               }
+
+               return BLACK;
+            }
+
+            private float getTransportPulse(final double multiplier, final double amount)
+            {
+               double p = mTransport.getPosition().get() * multiplier;
+               return (float) ((0.5 + 0.5 * Math.cos(p * 2 * Math.PI + Math.PI)) * amount);
+            }
+
+            private ClipLauncherSlot getSlot()
+            {
+               return getTrack().clipLauncherSlotBank().getItemAt(slot);
+            }
+
+            private Track getTrack()
+            {
+               return mTrackBank.getItemAt(track);
+            }
+
+            @Override
+            public boolean get()
+            {
+               return getSlot().hasContent().get();
+            }
+
+            @Override
+            public void set(final boolean pressed)
+            {
+               getSlot().launch();
+            }
+         });
+      }
    }
 
    private RGBButton addPageButtonMapping(final int number, final Buttons id)
@@ -652,4 +736,5 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
    private Layer mBrowserLayer = new Layer();
    private TrackBank mTrackBank;
    private MasterTrack mMasterTrack;
+   private boolean mDawMode = true;
 }
