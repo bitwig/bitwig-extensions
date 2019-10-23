@@ -13,7 +13,7 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
    @Override
    public String getVersion()
    {
-      return "3.0";
+      return "3.1";
    }
 
    @Override
@@ -25,13 +25,13 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
    @Override
    public String getName()
    {
-      return "Keylab Essential " + getNumberOfKeys();
+      return "KeyLab Essential " + getNumberOfKeys();
    }
 
    @Override
    public int getRequiredAPIVersion()
    {
-      return 8;
+      return 10;
    }
 
    @Override
@@ -49,7 +49,7 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Arturia/KeyLab Essential " + getNumberOfKeys() + ".html";
+      return "Documentation/Controllers/Arturia/KeyLab Essential.pdf";
    }
 
    @Override

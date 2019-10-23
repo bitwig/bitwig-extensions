@@ -331,7 +331,7 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
                }
                else if (mDisplayMode == null)
                {
-                  mCursorTrack.selectPrevious();
+                  mDevice.selectPrevious();
                }
             }
 
@@ -347,7 +347,7 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
                }
                else if (mDisplayMode == null)
                {
-                  mCursorTrack.selectNext();
+                  mDevice.selectNext();
                }
             }
 
@@ -435,8 +435,8 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
             }
             else if (mDisplayMode == null)
             {
-               if (next) mDevice.selectNext();
-               else mDevice.selectPrevious();
+               if (next) mCursorTrack.selectNext();
+               else mCursorTrack.selectPrevious();
             }
          }
       }
