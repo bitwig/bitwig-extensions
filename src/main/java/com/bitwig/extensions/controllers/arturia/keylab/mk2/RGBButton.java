@@ -8,7 +8,7 @@ import com.bitwig.extensions.framework.ControlElement;
 import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.RGBButtonTarget;
 
-public class RGBButton extends AbstractButton implements ControlElement<RGBButtonTarget>
+public class RGBButton extends AbstractButton implements ControlElement<RGBButtonTarget>, Resetable
 {
    public RGBButton(final Buttons buttonID)
    {
@@ -34,6 +34,12 @@ public class RGBButton extends AbstractButton implements ControlElement<RGBButto
          extension.getMidiOutPort(1).sendSysex(sysex);
          mLastSysex = sysex;
       }
+   }
+
+   @Override
+   public void reset()
+   {
+      mLastSysex = null;
    }
 
    @Override

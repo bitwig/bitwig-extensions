@@ -1,13 +1,13 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
 import com.bitwig.extension.api.util.midi.SysexBuilder;
-import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.BrowserFilterItem;
 import com.bitwig.extension.controller.api.BrowserResultsItem;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
+import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorBrowserFilterItem;
 import com.bitwig.extension.controller.api.CursorDevice;
@@ -17,6 +17,8 @@ import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PopupBrowser;
+import com.bitwig.extension.controller.api.Scene;
+import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -26,11 +28,6 @@ import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.ButtonTarget;
 import com.bitwig.extensions.framework.targets.EncoderTarget;
 import com.bitwig.extensions.framework.targets.RGBButtonTarget;
-
-// TODO
-// Multi (mixer) mode
-// Figure out how to control the lights, category/preset buttons
-// Stuck notes?
 
 public class ArturiaKeylabMkII extends LayeredControllerExtension
 {
@@ -42,8 +39,7 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
    float[] GREEN = {0.f, 1.0f, 0.f};
    float[] RED = {1.f, 0.0f, 0.f};
 
-   final int LAUNCHER_TRACKS = 8;
-   final int LAUNCHER_SLOTS = 2;
+   final int LAUNCHER_SCENES = 8;
 
    public ArturiaKeylabMkII(
       final ArturiaKeylabMkIIControllerExtensionDefinition definition,
@@ -68,7 +64,8 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       mTransport.isPunchOutEnabled().markInterested();
       mTransport.isMetronomeEnabled().markInterested();
       mTransport.getPosition().markInterested();
-      mCursorTrack = host.createCursorTrack(4, 0);
+      mCursorTrack = host.createCursorTrack(0, LAUNCHER_SCENES);
+      mSceneBank = host.createSceneBank(LAUNCHER_SCENES);
       mCursorTrack.volume().setIndication(true);
       mCursorTrack.solo().markInterested();
       mCursorTrack.mute().markInterested();
@@ -127,23 +124,27 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
 
       mRemoteControls.selectedPageIndex().markInterested();
 
-      mTrackBank = host.createTrackBank(8, 0, LAUNCHER_SLOTS);
+      mTrackBank = host.createTrackBank(8, 0, LAUNCHER_SCENES);
 
       for(int i=0; i<8; i++)
       {
          Track track = mTrackBank.getItemAt(i);
          track.color().markInterested();
+      }
 
-         for(int s = 0; s < LAUNCHER_SLOTS; s++)
-         {
-            ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(s);
-            slot.color().markInterested();
-            slot.isPlaying().markInterested();
-            slot.isRecording().markInterested();
-            slot.isPlaybackQueued().markInterested();
-            slot.isRecordingQueued().markInterested();
-            slot.hasContent().markInterested();
-         }
+      for(int s = 0; s < LAUNCHER_SCENES; s++)
+      {
+         ClipLauncherSlot slot = mCursorTrack.clipLauncherSlotBank().getItemAt(s);
+         slot.color().markInterested();
+         slot.isPlaying().markInterested();
+         slot.isRecording().markInterested();
+         slot.isPlaybackQueued().markInterested();
+         slot.isRecordingQueued().markInterested();
+         slot.hasContent().markInterested();
+
+         Scene scene = mSceneBank.getScene(s);
+         scene.color().markInterested();
+         scene.exists().markInterested();
       }
 
       mMasterTrack = host.createMasterTrack(0);
@@ -365,15 +366,11 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
          mDeviceEnvelopes.getParameter(i).setIndication(!isMixer && mDawMode);
       }
 
-      for(int i=0; i<LAUNCHER_TRACKS; i++)
+      for(int s = 0; s < LAUNCHER_SCENES; s++)
       {
-         Track track = mTrackBank.getItemAt(i);
-
-         for(int s = 0; s < LAUNCHER_SLOTS; s++)
-         {
-            ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(s);
-            slot.setIndication(mDawMode);
-         }
+         ClipLauncherSlot slot = mCursorTrack.clipLauncherSlotBank().getItemAt(s);
+         slot.setIndication(mDawMode);
+         mSceneBank.getScene(s).setIndication(mDawMode);
       }
    }
 
@@ -450,6 +447,9 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       Button write = addElement(new Button(Buttons.WRITE));
       mBaseLayer.bindToggle(write, mTransport.isArrangerAutomationWriteEnabled());
 
+      Button read = addElement(new Button(Buttons.READ));
+      mBaseLayer.bindToggle(read, mTransport.isClipLauncherOverdubEnabled());
+
       Button prev = addElement(new Button(Buttons.PREVIOUS));
       mBaseLayer.bindPressedRunnable(prev, null, mRemoteControls::selectPrevious);
       mMultiLayer.bindPressedRunnable(prev, mTrackBank.canScrollBackwards(), mTrackBank::scrollBackwards);
@@ -480,11 +480,26 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       mBrowserLayer.bindPressedRunnable(select8, RED, () -> creators.selectNext());
 
       Button presetPrev = addElement(new Button(Buttons.PRESET_PREVIOUS));
-      mBaseLayer.bindPressedRunnable(presetPrev, mCursorTrack.hasPrevious(), mCursorTrack::selectPrevious);
+      mBaseLayer.bindPressedRunnable(presetPrev, mDevice.hasPrevious(), mDevice::selectPrevious);
+      ClipLauncherSlotBank cursorTrackSlots = mCursorTrack.clipLauncherSlotBank();
+      cursorTrackSlots.scrollPosition().markInterested();
+
+      mMultiLayer.bindPressedRunnable(presetPrev, cursorTrackSlots.canScrollBackwards(), () ->
+      {
+         final int current = cursorTrackSlots.scrollPosition().get();
+         cursorTrackSlots.scrollPosition().set(current-1);
+         mSceneBank.scrollPosition().set(current-1);
+      });
       mBrowserLayer.bindPressedRunnable(presetPrev, null, mPopupBrowser::cancel);
 
       Button presetNext = addElement(new Button(Buttons.PRESET_NEXT));
-      mBaseLayer.bindPressedRunnable(presetNext, mCursorTrack.hasNext(), mCursorTrack::selectNext);
+      mBaseLayer.bindPressedRunnable(presetNext, mDevice.hasNext(), mDevice::selectNext);
+      mMultiLayer.bindPressedRunnable(presetNext, cursorTrackSlots.canScrollForwards(), () ->
+      {
+         final int current = cursorTrackSlots.scrollPosition().get();
+         cursorTrackSlots.scrollPosition().set(current+1);
+         mSceneBank.scrollPosition().set(current+1);
+      });
       mBrowserLayer.bindPressedRunnable(presetNext, null, mPopupBrowser::commit);
 
       Button wheelClick = addElement(new Button(Buttons.WHEEL_CLICK));
@@ -504,72 +519,108 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
    {
       for(int p=0; p<16; p++)
       {
-         final int row = p >> 2;
-         final int column = p & 0x3;
-         final int track = column + ((row >= 2) ? 4 : 0);
-         final int slot = row & 1;
+         final int slot = p & 0x7;
+         final boolean isScene = p >= 8;
 
          RGBButton pad = addElement(new RGBButton(Buttons.drumPad(p)));
-         mBaseLayer.bind(pad, new RGBButtonTarget()
+
+         if (isScene)
          {
-            @Override
-            public float[] getRGB()
+            mBaseLayer.bind(pad, new RGBButtonTarget()
             {
-               ClipLauncherSlot s = getSlot();
+               @Override
+               public float[] getRGB()
+               {
+                  final Scene scene = getScene();
 
-               if (s.isRecordingQueued().get())
-               {
-                  return RGBButtonTarget.mix(RED, BLACK, getTransportPulse(1.0, 1));
-               }
-               else if (s.isRecording().get())
-               {
-                  return RED;
-               }
-               else if (s.hasContent().get())
-               {
-                  if (s.isPlaybackQueued().get())
+                  if (scene.exists().get())
                   {
-                     return RGBButtonTarget.mixWithValue(s.color(), WHITE, 1 - getTransportPulse(1.0, 1));
-                  }
-                  else if (s.isPlaying().get())
-                  {
-                     return RGBButtonTarget.mixWithValue(s.color(), BLACK, getTransportPulse(1.0, 0.66));
+                     return RGBButtonTarget.mixWithValue(scene.color(), BLACK, 0.66f);
                   }
 
-                  return RGBButtonTarget.mixWithValue(s.color(), BLACK, 0.66f);
+                  return BLACK;
                }
 
-               return BLACK;
-            }
+               private Scene getScene()
+               {
+                  return mSceneBank.getScene(slot);
+               }
 
-            private float getTransportPulse(final double multiplier, final double amount)
-            {
-               double p = mTransport.getPosition().get() * multiplier;
-               return (float) ((0.5 + 0.5 * Math.cos(p * 2 * Math.PI + Math.PI)) * amount);
-            }
+               @Override
+               public boolean get()
+               {
+                  return true;
+               }
 
-            private ClipLauncherSlot getSlot()
+               @Override
+               public void set(final boolean pressed)
+               {
+                  getScene().launch();
+               }
+            });
+         }
+         else
+         {
+            mBaseLayer.bind(pad, new RGBButtonTarget()
             {
-               return getTrack().clipLauncherSlotBank().getItemAt(slot);
-            }
+               @Override
+               public float[] getRGB()
+               {
+                  ClipLauncherSlot s = getSlot();
 
-            private Track getTrack()
-            {
-               return mTrackBank.getItemAt(track);
-            }
+                  if (s.isRecordingQueued().get())
+                  {
+                     return RGBButtonTarget.mix(RED, BLACK, getTransportPulse(1.0, 1));
+                  }
+                  else if (s.hasContent().get())
+                  {
+                     if (s.isPlaybackQueued().get())
+                     {
+                        return RGBButtonTarget.mixWithValue(s.color(), WHITE, 1 - getTransportPulse(1.0, 1));
+                     }
+                     else if (s.isRecording().get())
+                     {
+                        return RED;
+                     }
+                     else if (s.isPlaying().get())
+                     {
+                        return RGBButtonTarget.getFromValue(s.color());
+                     }
 
-            @Override
-            public boolean get()
-            {
-               return getSlot().hasContent().get();
-            }
+                     return RGBButtonTarget.mixWithValue(s.color(), BLACK, 0.66f);
+                  }
+                  else if (mCursorTrack.arm().get())
+                  {
+                     return RGBButtonTarget.mix(BLACK, RED, 0.1f);
+                  }
 
-            @Override
-            public void set(final boolean pressed)
-            {
-               getSlot().launch();
-            }
-         });
+                  return BLACK;
+               }
+
+               private float getTransportPulse(final double multiplier, final double amount)
+               {
+                  double p = mTransport.getPosition().get() * multiplier;
+                  return (float) ((0.5 + 0.5 * Math.cos(p * 2 * Math.PI)) * amount);
+               }
+
+               private ClipLauncherSlot getSlot()
+               {
+                  return mCursorTrack.clipLauncherSlotBank().getItemAt(slot);
+               }
+
+               @Override
+               public boolean get()
+               {
+                  return getSlot().hasContent().get();
+               }
+
+               @Override
+               public void set(final boolean pressed)
+               {
+                  getSlot().launch();
+               }
+            });
+         }
       }
    }
 
@@ -647,22 +698,16 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
       Encoder wheel = addElement(new Encoder(0x3C));
       mBaseLayer.bind(wheel, (EncoderTarget) steps ->
       {
-         if (steps > 0) mDevice.selectNext();
-         else mDevice.selectPrevious();
+         if (steps > 0) mCursorTrack.selectNext();
+         else mCursorTrack.selectPrevious();
+         mCursorTrack.makeVisibleInMixer();
+         mTrackBank.scrollIntoView(mCursorTrack.position().get());
       });
 
       mBrowserLayer.bind(wheel, (EncoderTarget) steps ->
       {
          if (steps > 0) mPopupBrowser.selectNextFile();
          else mPopupBrowser.selectPreviousFile();
-      });
-
-      mMultiLayer.bind(wheel, (EncoderTarget) steps ->
-      {
-         if (steps > 0) mCursorTrack.selectNext();
-         else mCursorTrack.selectPrevious();
-         mCursorTrack.makeVisibleInMixer();
-         mTrackBank.scrollIntoView(mCursorTrack.position().get());
       });
 
       for(int i=0; i<9; i++)
@@ -737,4 +782,5 @@ public class ArturiaKeylabMkII extends LayeredControllerExtension
    private TrackBank mTrackBank;
    private MasterTrack mMasterTrack;
    private boolean mDawMode = true;
+   private SceneBank mSceneBank;
 }
