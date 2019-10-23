@@ -13,7 +13,7 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    @Override
    public String getVersion()
    {
-      return "3.0";
+      return "3.1";
    }
 
    @Override
@@ -25,7 +25,7 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    @Override
    public String getName()
    {
-      return "Keylab " + getNumberOfKeys() + " mkII";
+      return "KeyLab " + getNumberOfKeys() + " mkII";
    }
 
    @Override
@@ -49,7 +49,7 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Arturia/KeyLab " + getNumberOfKeys() + " mkII.html";
+      return "Documentation/Controllers/Arturia/KeyLab mkII.pdf";
    }
 
    @Override
