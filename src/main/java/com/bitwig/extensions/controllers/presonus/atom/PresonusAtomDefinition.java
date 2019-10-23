@@ -54,7 +54,13 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
    @Override
    public String getName()
    {
-      return "Presonus ATOM";
+      return "PreSonus ATOM";
+   }
+
+   @Override
+   public String getHelpFilePath()
+   {
+      return "Documentation/Controllers/PreSonus/ATOM.pdf";
    }
 
    @Override
