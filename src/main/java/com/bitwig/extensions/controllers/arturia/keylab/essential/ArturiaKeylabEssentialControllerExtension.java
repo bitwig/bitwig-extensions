@@ -11,7 +11,9 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.BrowserFilterItem;
+import com.bitwig.extension.controller.api.BrowserFilterItemBank;
 import com.bitwig.extension.controller.api.BrowserResultsItem;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorBrowserFilterItem;
@@ -21,6 +23,7 @@ import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PopupBrowser;
+import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.arturia.keylab.mk1.KeylabSysex;
 import com.bitwig.extensions.controllers.arturia.keylab.mk2.Buttons;
@@ -85,10 +88,14 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
 
       mPopupBrowser = host.createPopupBrowser();
       mPopupBrowser.exists().markInterested();
+      mPopupBrowser.selectedContentTypeIndex().markInterested();
 
       mBrowserResult = mPopupBrowser.resultsColumn().createCursorItem();
-      mBrowserCategory = mPopupBrowser.categoryColumn().createCursorItem();
-      mBrowserCreator = mPopupBrowser.creatorColumn().createCursorItem();
+      mBrowserCategory = (CursorBrowserFilterItem)mPopupBrowser.categoryColumn().createCursorItem();
+      mBrowserCreator = (CursorBrowserFilterItem)mPopupBrowser.creatorColumn().createCursorItem();
+      mBrowserDeviceTypeBank = mPopupBrowser.deviceTypeColumn().createItemBank(1);
+      mBrowserDeviceTypeCursor = (CursorBrowserFilterItem)mPopupBrowser.deviceTypeColumn().createCursorItem();
+      mBrowserDeviceTypeCursor.hasNext().markInterested();
       mBrowserResult.name().markInterested();
       mBrowserCategory.name().markInterested();
       mBrowserCreator.name().markInterested();
@@ -392,13 +399,39 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
 
          // Encoder / Fader section
 
+         final int CONTENT_DEVICES = 0;
+         final int CONTENT_PRESETS = 1;
+
+         SettableIntegerValue contentTypeIndex = mPopupBrowser.selectedContentTypeIndex();
+
          if (key == 0x31 && !on) // Next
          {
-            mRemoteControls.selectNext();
+            if (mPopupBrowser.exists().get())
+            {
+               if (contentTypeIndex.get() == CONTENT_DEVICES)
+               {
+                  cycleBrowserDeviceType();
+               }
+               else
+               {
+                  contentTypeIndex.set(CONTENT_DEVICES);
+               }
+            }
+            else
+            {
+               mRemoteControls.selectNext();
+            }
          }
          else if (key == 0x30 && !on) // Next
          {
-            mRemoteControls.selectPrevious();
+            if (mPopupBrowser.exists().get())
+            {
+               contentTypeIndex.set(CONTENT_PRESETS);
+            }
+            else
+            {
+               mRemoteControls.selectPrevious();
+            }
          }
       }
 
@@ -453,6 +486,12 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       }
 
       mLastText = null;
+   }
+
+   private void cycleBrowserDeviceType()
+   {
+      if (!mBrowserDeviceTypeCursor.hasNext().get()) mBrowserDeviceTypeCursor.selectFirst();
+      else mBrowserDeviceTypeCursor.selectNext();
    }
 
    private boolean isInBrowser()
@@ -539,25 +578,6 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
 
       setLED(0x65, mDisplayMode == DisplayMode.BROWSER_CATEGORY || mDisplayMode == DisplayMode.BROWSER_CREATOR);
       setLED(0x64, mDisplayMode == DisplayMode.BROWSER);
-
-      /*float[] BLACK = {0.f, 0.0f, 0.f};
-      float[] SELECTED_PAGE = {0.f, 0.3f, 1.f};
-      float[] UNSELECTED_PAGE = {0.f, 0.06f, 0.2f};
-
-      int pageIndex = mRemoteControls.selectedPageIndex().get();
-      int numPages = mDevice.exists().get() ? mRemoteControls.pageCount().get() : 0;
-
-      for(int i=0; i<8; i++)
-      {
-         float[] color = BLACK;
-
-         if (i < numPages)
-         {
-            color = (pageIndex == i) ? SELECTED_PAGE : UNSELECTED_PAGE;
-         }
-
-         setRGB(Buttons.drumPad(i), color);
-      }*/
    }
 
    private void setRGB(final Buttons b, final float[] RGB)
@@ -649,10 +669,13 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
    private String mLastText;
    private PopupBrowser mPopupBrowser;
    private BrowserResultsItem mBrowserResult;
-   private BrowserFilterItem mBrowserCategory;
-   private BrowserFilterItem mBrowserCreator;
+   private CursorBrowserFilterItem mBrowserCategory;
+   private CursorBrowserFilterItem mBrowserCreator;
+   private BrowserFilterItemBank mBrowserDeviceTypeBank;
    private Application mApplication;
    private boolean[] mIsTransportDown;
    private long mLastDisplayTimeStamp;
    private Action mSaveAction;
+   private CursorBrowserFilterItem mBrowserDeviceTypeCursor;
+   private BooleanValue mBrowserDeviceTypeIsFirst;
 }
