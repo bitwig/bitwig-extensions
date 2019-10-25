@@ -8,4 +8,9 @@ public interface ControlElement<T extends Target>
    void onMidi(final T target, final ShortMidiMessage data);
 
    void flush(final T target, final LayeredControllerExtension extension);
+
+   default void setTarget(final T target)
+   {
+
+   }
 }

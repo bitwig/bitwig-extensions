@@ -16,16 +16,26 @@ import com.bitwig.extensions.framework.targets.TouchFaderTarget;
 
 public class Layer
 {
-   public void bind(ControlElement element, Target target)
+   public void bind(final ControlElement element, final Target target)
    {
       mMap.put(element, target);
    }
 
    public void setActivate(final boolean active)
    {
+      if (active)
+      {
+         for (final Map.Entry<ControlElement, Target> entry : mMap.entrySet())
+         {
+            final ControlElement controlElement = entry.getKey();
+            final Target target = entry.getValue();
+
+            controlElement.setTarget(target);
+         }
+      }
    }
 
-   public void bindToggle(ControlElement<ButtonTarget> element, SettableBooleanValue target)
+   public void bindToggle(final ControlElement<ButtonTarget> element, final SettableBooleanValue target)
    {
       target.markInterested();
 
@@ -45,7 +55,7 @@ public class Layer
       });
    }
 
-   public void bindPressedRunnable(ControlElement<ButtonTarget> element, BooleanValue ledValue, final Runnable runnable)
+   public void bindPressedRunnable(final ControlElement<ButtonTarget> element, final BooleanValue ledValue, final Runnable runnable)
    {
       if (ledValue != null)
       {
@@ -68,7 +78,7 @@ public class Layer
       });
    }
 
-   public void bindPressedRunnable(ControlElement<RGBButtonTarget> element, float[] RGB, final Runnable runnable)
+   public void bindPressedRunnable(final ControlElement<RGBButtonTarget> element, final float[] RGB, final Runnable runnable)
    {
       bind(element, new RGBButtonTarget()
       {
@@ -92,7 +102,7 @@ public class Layer
       });
    }
 
-   public void bindButton(ControlElement<ButtonTarget> element, BooleanValue ledValue, final Consumer<Boolean> consumer)
+   public void bindButton(final ControlElement<ButtonTarget> element, final BooleanValue ledValue, final Consumer<Boolean> consumer)
    {
       if (ledValue != null)
       {
@@ -115,7 +125,7 @@ public class Layer
       });
    }
 
-   public void bindLayerToggle(LayeredControllerExtension host, ControlElement<ButtonTarget> element, Layer layer)
+   public void bindLayerToggle(final LayeredControllerExtension host, final ControlElement<ButtonTarget> element, final Layer layer)
    {
       bind(element, new ButtonTarget()
       {
@@ -133,7 +143,7 @@ public class Layer
       });
    }
 
-   public void bindLayerGate(LayeredControllerExtension host, ControlElement<ButtonTarget> element, Layer layer)
+   public void bindLayerGate(final LayeredControllerExtension host, final ControlElement<ButtonTarget> element, final Layer layer)
    {
       bind(element, new ButtonTarget()
       {
@@ -152,7 +162,7 @@ public class Layer
       });
    }
 
-   public void bindLayerInGroup(LayeredControllerExtension host, ControlElement<ButtonTarget> element, Layer layer, Layer... layerGroup)
+   public void bindLayerInGroup(final LayeredControllerExtension host, final ControlElement<ButtonTarget> element, final Layer layer, final Layer... layerGroup)
    {
       bind(element, new ButtonTarget()
       {
@@ -170,7 +180,7 @@ public class Layer
       });
    }
 
-   public void bind(ControlElement<TouchFaderTarget> element, Parameter parameter)
+   public void bind(final ControlElement<TouchFaderTarget> element, final Parameter parameter)
    {
       if (parameter != null)
       {
@@ -180,7 +190,7 @@ public class Layer
       bind(element, new FaderParameterTarget(parameter));
    }
 
-   public void bindEncoder(ControlElement<EncoderTarget> element, Parameter parameter, final int resolution)
+   public void bindEncoder(final ControlElement<EncoderTarget> element, final Parameter parameter, final int resolution)
    {
       if (parameter != null)
       {

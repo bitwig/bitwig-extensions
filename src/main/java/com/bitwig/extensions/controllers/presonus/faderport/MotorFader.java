@@ -1,15 +1,23 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
+import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extensions.framework.ControlElement;
 import com.bitwig.extensions.framework.LayeredControllerExtension;
 import com.bitwig.extensions.framework.targets.TouchFaderTarget;
 
 public class MotorFader implements ControlElement<TouchFaderTarget>
 {
-   public MotorFader(final int channel)
+   public MotorFader(final int channel, final AbsoluteHardwareControl hardwareControl)
    {
       mChannel = channel;
+      mHardwareControl = hardwareControl;
+   }
+
+   @Override
+   public void setTarget(final TouchFaderTarget target)
+   {
+      target.assignToHardwareControl(mHardwareControl);
    }
 
    @Override
@@ -22,7 +30,7 @@ public class MotorFader implements ControlElement<TouchFaderTarget>
 
       if (data.getChannel() == mChannel && data.isPitchBend())
       {
-         int value = data1 | (data2 << 7);
+         final int value = data1 | (data2 << 7);
          target.set(value, 16384);
       }
 
@@ -36,7 +44,7 @@ public class MotorFader implements ControlElement<TouchFaderTarget>
    @Override
    public void flush(final TouchFaderTarget target, final LayeredControllerExtension extension)
    {
-      int value = Math.max(0, Math.min(16383, (int)(target.get() * 16384.0)));
+      final int value = Math.max(0, Math.min(16383, (int)(target.get() * 16384.0)));
 
       if (mLastSentValue != value)
       {
@@ -53,4 +61,6 @@ public class MotorFader implements ControlElement<TouchFaderTarget>
    int mLastSentValue = -1;
    private final int mChannel;
    private boolean mIsBeingTouched;
+
+   private final AbsoluteHardwareControl mHardwareControl;
 }
