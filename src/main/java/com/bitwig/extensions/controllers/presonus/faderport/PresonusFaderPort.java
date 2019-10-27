@@ -157,9 +157,9 @@ public class PresonusFaderPort extends LayeredControllerExtension
          final AbsoluteHardwareControl faderControl = host.createAbsoluteHardwareControl();
          faderControl.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(index));
          faderControl
-            .setBeginTouchActionMatcher(midiIn.createActionMatcher(0xFF7F7F, 0x90007F | (0x68 + index) << 8));
+            .setBeginTouchActionMatcher(midiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + index) + " && data2 == " + 0x7f));
          faderControl
-            .setEndTouchActionMatcher(midiIn.createActionMatcher(0xFF7F7F, 0x900000 | (0x68 + index) << 8));
+            .setEndTouchActionMatcher(midiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + index) + " && data2 == 0"));
 
          channel.solo = addElement(new Button(SOLOD_IDS[index]));
          channel.mute = addElement(new Button((index >= 8 ? 0x70 : 0x10) + index));
