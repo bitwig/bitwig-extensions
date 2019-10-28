@@ -4,6 +4,7 @@ import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arpeggiator;
 import com.bitwig.extension.controller.api.Clip;
+import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
@@ -17,6 +18,8 @@ import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.PlayingNote;
+import com.bitwig.extension.controller.api.Scene;
+import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.Transport;
@@ -55,6 +58,8 @@ public class PresonusAtom extends LayeredControllerExtension
    final static int CC_PLAY_LOOP_TOGGLE = 0x6D;
    final static int CC_STOP_UNDO = 0x6F;
 
+   final static int LAUNCHER_SCENES = 16;
+
    float[] WHITE = {1,1,1};
    float[] DIM_WHITE = {0.3f,0.3f,0.3f};
    float[] BLACK = {0,0,0};
@@ -89,7 +94,24 @@ public class PresonusAtom extends LayeredControllerExtension
 
       mMidiOut = host.getMidiOutPort(0);
 
-      mCursorTrack = host.createCursorTrack(0, 0);
+      mCursorTrack = host.createCursorTrack(0, LAUNCHER_SCENES);
+      mCursorTrack.arm().markInterested();
+      mSceneBank = host.createSceneBank(LAUNCHER_SCENES);
+
+      for(int s = 0; s < LAUNCHER_SCENES; s++)
+      {
+         ClipLauncherSlot slot = mCursorTrack.clipLauncherSlotBank().getItemAt(s);
+         slot.color().markInterested();
+         slot.isPlaying().markInterested();
+         slot.isRecording().markInterested();
+         slot.isPlaybackQueued().markInterested();
+         slot.isRecordingQueued().markInterested();
+         slot.hasContent().markInterested();
+
+         Scene scene = mSceneBank.getScene(s);
+         scene.color().markInterested();
+         scene.exists().markInterested();
+      }
 
       mCursorDevice =
          mCursorTrack.createCursorDevice("ATOM", "Atom", 0, CursorDeviceFollowMode.FIRST_INSTRUMENT);
@@ -100,6 +122,8 @@ public class PresonusAtom extends LayeredControllerExtension
          mRemoteControls.getParameter(i).setIndication(true);
 
       mTransport = host.createTransport();
+      mTransport.isPlaying().markInterested();
+      mTransport.getPosition().markInterested();
 
       mCursorClip = host.createLauncherCursorClip(16, 1);
       mCursorClip.color().markInterested();
@@ -126,7 +150,11 @@ public class PresonusAtom extends LayeredControllerExtension
          @Override
          public void setActivate(final boolean active)
          {
-            final boolean shouldPlayDrums = !isLayerActive(mStepsLayer) && !isLayerActive(mNoteRepeatShiftLayer);
+            final boolean shouldPlayDrums =
+               !isLayerActive(mStepsLayer)
+                  && !isLayerActive(mNoteRepeatShiftLayer)
+                  && !isLayerActive(mLauncherClipsLayer)
+                  && !isLayerActive(mLauncherScenesLayer);
 
             mNoteInput.setKeyTranslationTable(shouldPlayDrums ? NoteInputUtils.ALL_NOTES : NoteInputUtils.NO_NOTES);
          }
@@ -287,6 +315,100 @@ public class PresonusAtom extends LayeredControllerExtension
             }
          });
 
+         mLauncherClipsLayer.bind(pad, new RGBButtonTarget()
+         {
+            private ClipLauncherSlot getSlot()
+            {
+               return mCursorTrack.clipLauncherSlotBank().getItemAt(padIndex);
+            }
+
+            @Override
+            public float[] getRGB()
+            {
+               ClipLauncherSlot s = getSlot();
+
+               if (s.isRecordingQueued().get())
+               {
+                  return RGBButtonTarget.mix(RED, BLACK, getTransportPulse(1.0, 1));
+               }
+               else if (s.hasContent().get())
+               {
+                  if (s.isPlaybackQueued().get())
+                  {
+                     return RGBButtonTarget.mixWithValue(s.color(), WHITE, 1 - getTransportPulse(1.0, 1));
+                  }
+                  else if (s.isRecording().get())
+                  {
+                     return RED;
+                  }
+                  else if (s.isPlaying().get())
+                  {
+                     return RGBButtonTarget.getFromValue(s.color());
+                  }
+
+                  return RGBButtonTarget.mixWithValue(s.color(), BLACK, 0.66f);
+               }
+               else if (mCursorTrack.arm().get())
+               {
+                  return RGBButtonTarget.mix(BLACK, RED, 0.1f);
+               }
+
+               return BLACK;
+            }
+
+
+            private float getTransportPulse(final double multiplier, final double amount)
+            {
+               double p = mTransport.getPosition().get() * multiplier;
+               return (float) ((0.5 + 0.5 * Math.cos(p * 2 * Math.PI)) * amount);
+            }
+
+            @Override
+            public boolean get()
+            {
+               return getSlot().hasContent().get();
+            }
+
+            @Override
+            public void set(final boolean pressed)
+            {
+               getSlot().select();
+               getSlot().launch();
+            }
+         });
+
+         mLauncherScenesLayer.bind(pad, new RGBButtonTarget()
+         {
+            @Override
+            public float[] getRGB()
+            {
+               final Scene scene = getScene();
+
+               if (scene.exists().get())
+               {
+                  return RGBButtonTarget.mixWithValue(scene.color(), BLACK, 0.66f);
+               }
+
+               return BLACK;
+            }
+
+            private Scene getScene()
+            {
+               return mSceneBank.getScene(padIndex);
+            }
+
+            @Override
+            public boolean get()
+            {
+               return true;
+            }
+
+            @Override
+            public void set(final boolean pressed)
+            {
+               getScene().launch();
+            }
+         });
       }
 
       double timings[] = {1, 1.0/2, 1.0/4, 1.0/8, 3.0/4.0, 3.0/8.0, 3.0/16.0, 3.0/32.0};
@@ -450,6 +572,12 @@ public class PresonusAtom extends LayeredControllerExtension
          else mApplication.zoomIn();
       });
 
+      Button clipsGateButton = addElement(new Button(CC_SETUP));
+      mBaseLayer.bindLayerGate(this, clipsGateButton, mLauncherClipsLayer);
+
+      Button scenesGateButton = addElement(new Button(CC_SET_LOOP));
+      mBaseLayer.bindLayerGate(this, scenesGateButton, mLauncherScenesLayer);
+
       Button editorToggle = addElement(new Button(CC_EDITOR));
       mBaseLayer.bind(editorToggle, new ButtonTarget()
       {
@@ -574,6 +702,8 @@ public class PresonusAtom extends LayeredControllerExtension
 
    /* Steps mode */
    private Layer mStepsLayer = createLayer();
+   private Layer mLauncherClipsLayer = createLayer();
+   private Layer mLauncherScenesLayer = createLayer();
    private Clip mCursorClip;
    private int mPlayingStep;
    private int[] mStepData = new int[16];
@@ -582,4 +712,5 @@ public class PresonusAtom extends LayeredControllerExtension
    private Layer mNoteRepeatLayer = createLayer();
    private Layer mNoteRepeatShiftLayer = createLayer();
    private Arpeggiator mArpeggiator;
+   private SceneBank mSceneBank;
 }
