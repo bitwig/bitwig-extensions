@@ -14,6 +14,7 @@ import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.PlayingNote;
 import com.bitwig.extension.controller.api.SettableColorValue;
@@ -79,7 +80,7 @@ public class PresonusAtom extends LayeredControllerExtension
 
       midiIn.setMidiCallback(getMidiCallbackToUseForLayers());
       mNoteInput = midiIn.createNoteInput("Pads", "80????", "90????", "a0????");
-      mNoteInput.setShouldConsumeEvents(true);
+      mNoteInput.setShouldConsumeEvents(false);
       mArpeggiator = mNoteInput.arpeggiator();
       mArpeggiator.isEnabled().markInterested();
       mArpeggiator.period().markInterested();
@@ -127,7 +128,6 @@ public class PresonusAtom extends LayeredControllerExtension
          {
             final boolean shouldPlayDrums = !isLayerActive(mStepsLayer) && !isLayerActive(mNoteRepeatShiftLayer);
 
-            mNoteInput.setShouldConsumeEvents(shouldPlayDrums);
             mNoteInput.setKeyTranslationTable(shouldPlayDrums ? NoteInputUtils.ALL_NOTES : NoteInputUtils.NO_NOTES);
          }
       };
@@ -205,6 +205,11 @@ public class PresonusAtom extends LayeredControllerExtension
             @Override
             public void set(final boolean pressed)
             {
+               if (pressed)
+               {
+                  mCursorClip.scrollToKey(36 + padIndex);
+                  mCurrentPadForSteps = padIndex;
+               }
             }
          });
          mDrumPadColors[padIndex][0] = color.red() * darken;
@@ -239,9 +244,15 @@ public class PresonusAtom extends LayeredControllerExtension
                   return WHITE;
                }
 
+               boolean isNewNote = mStepData[padIndex] == 2;
                boolean hasData = mStepData[padIndex] > 0;
 
-               return clipColor(hasData ? 1.f : 0.3f);
+               if (isNewNote)
+                  return RGBButtonTarget.mixWithValue(mCursorClip.color(), WHITE, 0.5f);
+               else if (hasData)
+                  return RGBButtonTarget.getFromValue(mCursorClip.color());
+               else
+                  return RGBButtonTarget.mixWithValue(mCursorClip.color(), BLACK, 0.8f);
             }
 
             private float[] clipColor(float scale)
@@ -329,7 +340,20 @@ public class PresonusAtom extends LayeredControllerExtension
 
       mCursorClip.playingStep().addValueObserver(s -> mPlayingStep = s, -1);
       mCursorClip.scrollToKey(36);
-      mCursorClip.addStepDataObserver((x, y, state) -> mStepData[x] = state);
+      mCursorClip.addNoteStepObserver(d ->
+      {
+         final int x = d.x();
+         final int y = d.y();
+
+         if (y == 0 && x >= 0 && x < mStepData.length)
+         {
+            final NoteStep.State state = d.state();
+
+            if (state == NoteStep.State.NoteOn) mStepData[x] = 2;
+            else if (state == NoteStep.State.NoteSustain) mStepData[x] = 1;
+            else mStepData[x] = 0;
+         }
+      });
       mCursorTrack.playingNotes().addValueObserver(notes -> mPlayingNotes = notes);
    }
 
@@ -444,7 +468,7 @@ public class PresonusAtom extends LayeredControllerExtension
 
                if (isLayerActive(mStepsLayer))
                {
-                  mCursorClip.scrollToKey(36 + mCurrentPadForSteps & 0x15);
+                  //mCursorClip.scrollToKey(36 + (mCurrentPadForSteps & 0x15));
                   mCursorClip.scrollToStep(0);
                }
             }

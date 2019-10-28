@@ -123,7 +123,7 @@ public class ArturiaKeylabControllerExtension extends ControllerExtension
             final int CC = mIndexToCC != null ? mIndexToCC[index] : data.getData1();
             mNoteInput.sendRawMidiEvent(data.getStatusByte(), CC, mValues[index]);
          }
-      }a
+      }
 
       private final int[] mValues;
       private final int[] mIndexToCC;
