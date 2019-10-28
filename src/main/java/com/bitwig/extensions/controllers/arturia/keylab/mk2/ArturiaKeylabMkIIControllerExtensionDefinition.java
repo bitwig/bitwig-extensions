@@ -89,8 +89,8 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
          final String name = "KeyLab mkII " + getNumberOfKeys();
 
          list.add(
-            new String[] {name + " MIDI In", name + " DAW In"},
-            new String[] {name + " MIDI Out", name + " DAW Out"});
+            new String[] {name + " MIDI", name + " DAW"},
+            new String[] {name + " MIDI", name + " DAW"});
       }
    }
 

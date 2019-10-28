@@ -21,7 +21,7 @@ public class AdvanceControllerExtensionDefinition extends ControllerExtensionDef
    @Override
    public String getHardwareModel()
    {
-      return "Advance Keyboard Serie";
+      return "ADVANCE 25/49/61";
    }
 
    @Override
@@ -55,9 +55,9 @@ public class AdvanceControllerExtensionDefinition extends ControllerExtensionDef
             break;
 
          case MAC:
-            list.add(new String[]{"ADVANCE25"}, new String[]{"ADVANCE25"});
-            list.add(new String[]{"ADVANCE49"}, new String[]{"ADVANCE49"});
-            list.add(new String[]{"ADVANCE61"}, new String[]{"ADVANCE61"});
+            list.add(new String[]{"ADVANCE25 Port 1"}, new String[]{"ADVANCE25 Port 1"});
+            list.add(new String[]{"ADVANCE49 Port 1"}, new String[]{"ADVANCE49 Port 1"});
+            list.add(new String[]{"ADVANCE61 Port 1"}, new String[]{"ADVANCE61 Port 1"});
             break;
       }
    }
@@ -83,7 +83,7 @@ public class AdvanceControllerExtensionDefinition extends ControllerExtensionDef
    @Override
    public String getVersion()
    {
-      return "1.0 Alpha 1";
+      return "1.0";
    }
 
    @Override
@@ -106,7 +106,7 @@ public class AdvanceControllerExtensionDefinition extends ControllerExtensionDef
    @Override
    public String getHelpFilePath()
    {
-      return "Controllers/Akai/Advance Keyboards.html";
+      return "Documentation/Controllers/Akai/Advance Keyboards.html";
    }
 
    private static AdvanceControllerExtensionDefinition mInstance = new AdvanceControllerExtensionDefinition();
