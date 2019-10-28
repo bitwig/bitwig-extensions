@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
-import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arranger;
@@ -19,6 +18,7 @@ import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
+import com.bitwig.extension.controller.api.SliderHardwareControl;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -154,12 +154,12 @@ public class PresonusFaderPort extends LayeredControllerExtension
       {
          final Channel channel = new Channel();
 
-         final AbsoluteHardwareControl faderControl = host.createAbsoluteHardwareControl();
+         final SliderHardwareControl faderControl = host.createSliderHardwareControl();
          faderControl.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(index));
-         faderControl
-            .setBeginTouchActionMatcher(midiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + index) + " && data2 == " + 0x7f));
-         faderControl
-            .setEndTouchActionMatcher(midiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + index) + " && data2 == 0"));
+         faderControl.beginTouchAction().setActionMatcher(midiIn
+            .createActionMatcher("status == 0x90 && data1 == " + (0x68 + index) + " && data2 == " + 0x7f));
+         faderControl.endTouchAction().setActionMatcher(
+            midiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + index) + " && data2 == 0"));
 
          channel.solo = addElement(new Button(SOLOD_IDS[index]));
          channel.mute = addElement(new Button((index >= 8 ? 0x70 : 0x10) + index));

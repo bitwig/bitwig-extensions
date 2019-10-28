@@ -1,5 +1,6 @@
 package com.bitwig.extensions.framework.targets;
 
+import com.bitwig.extension.controller.api.ContinuousHardwareControl;
 import com.bitwig.extension.controller.api.HardwareControl;
 import com.bitwig.extension.controller.api.Parameter;
 
@@ -18,7 +19,8 @@ public class FaderParameterTarget implements TouchFaderTarget
    @Override
    public void assignToHardwareControl(final HardwareControl hardwareControl)
    {
-      hardwareControl.setMapping(mParameter);
+      if (hardwareControl instanceof ContinuousHardwareControl)
+         ((ContinuousHardwareControl)hardwareControl).setMapping(mParameter);
    }
 
    @Override
