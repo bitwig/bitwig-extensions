@@ -9,6 +9,7 @@ import com.bitwig.extension.controller.api.CueMarkerBank;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -18,7 +19,6 @@ import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
-import com.bitwig.extension.controller.api.SliderHardwareControl;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -154,7 +154,7 @@ public class PresonusFaderPort extends LayeredControllerExtension
       {
          final Channel channel = new Channel();
 
-         final SliderHardwareControl faderControl = host.createSliderHardwareControl();
+         final HardwareSlider faderControl = host.createHardwareSlider();
          faderControl.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(index));
          faderControl.beginTouchAction().setActionMatcher(midiIn
             .createActionMatcher("status == 0x90 && data1 == " + (0x68 + index) + " && data2 == " + 0x7f));
