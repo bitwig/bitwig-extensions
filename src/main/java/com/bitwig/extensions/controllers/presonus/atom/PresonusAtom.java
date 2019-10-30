@@ -20,14 +20,14 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.PlayingNote;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
-import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.framework.targets.ButtonTarget;
-import com.bitwig.extensions.framework.LayeredControllerExtension;
-import com.bitwig.extensions.framework.targets.EncoderTarget;
+import com.bitwig.extensions.controllers.presonus.faderport.RGBButton;
 import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.LayeredControllerExtension;
+import com.bitwig.extensions.framework.targets.ButtonTarget;
+import com.bitwig.extensions.framework.targets.EncoderTarget;
 import com.bitwig.extensions.framework.targets.RGBButtonTarget;
 import com.bitwig.extensions.util.NoteInputUtils;
 

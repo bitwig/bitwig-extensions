@@ -21,9 +21,9 @@ public class FaderParameterTarget implements TouchFaderTarget
    public void assignToHardwareControl(final HardwareControl hardwareControl)
    {
       if (hardwareControl instanceof AbsoluteHardwareControl)
-         mParameter.bindToAbsoluteHardwareControl((AbsoluteHardwareControl)hardwareControl);
+         mParameter.bind((AbsoluteHardwareControl)hardwareControl);
       else if (hardwareControl instanceof RelativeHardwareControl)
-         mParameter.bindToRelativeHardwareControl((RelativeHardwareControl)hardwareControl);
+         mParameter.bind((RelativeHardwareControl)hardwareControl);
    }
 
    @Override
