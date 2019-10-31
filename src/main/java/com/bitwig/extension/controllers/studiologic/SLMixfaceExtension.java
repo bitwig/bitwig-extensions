@@ -34,13 +34,13 @@ public class SLMixfaceExtension extends ControllerExtension
 
       defineHardwareControls(host, midiIn);
 
-      mTransport.playAction().bind(mPlayButton.pressedAction());
-      mTransport.recordAction().bind(mRecordButton.pressedAction());
+      mTransport.playAction().addBinding(mPlayButton.pressedAction());
+      mTransport.recordAction().addBinding(mRecordButton.pressedAction());
 
       for (int i = 0; i < 8; i++)
       {
          AbsoluteHardwareControlToRangedValueBinding binding = mTrackBank.getItemAt(i).volume()
-            .bind(mVolumeSliders[i]);
+            .addBinding(mVolumeSliders[i]);
       }
    }
 
