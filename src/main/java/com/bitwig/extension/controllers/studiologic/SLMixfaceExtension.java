@@ -119,6 +119,12 @@ public class SLMixfaceExtension extends ControllerExtension
       mRecordButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
       mRecordButton.pressedAction().onAction(() -> host.println("Rec pressed"));
       mRecordButton.releasedAction().onAction(() -> host.println("Rec released"));
+      HardwareLight recordLight = host.createHardwareLight();
+      recordLight.isOn().set(mTransport.isArrangerRecordEnabled());
+      recordLight.isOn().onUpdateHardware(value -> {
+         sendCC(15, 34, value ? 127 : 0);
+      });
+      mRecordButton.setBackgroundLight(recordLight);
    }
 
    private void sendMidi(int status, int data1, int data2)
