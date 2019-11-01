@@ -30,11 +30,11 @@ public class SLMixfaceExtension extends ControllerExtension
       mTransport.isPlaying().markInterested();
       mTrackBank = host.createTrackBank(8, 0, 0);
 
-      MidiIn midiIn = host.getMidiInPort(0);
+      final MidiIn midiIn = host.getMidiInPort(0);
       mMidiOut = host.getMidiOutPort(0);
 
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
-      midiIn.setSysexCallback((String data) -> onSysex0(data));
+      midiIn.setSysexCallback((final String data) -> onSysex0(data));
 
       defineHardwareControls(host, midiIn);
 
@@ -48,43 +48,43 @@ public class SLMixfaceExtension extends ControllerExtension
 
       for (int i = 0; i < 8; i++)
       {
-         Track track = mTrackBank.getItemAt(i);
+         final Track track = mTrackBank.getItemAt(i);
          mVolumeSliders[i].setBinding(track.volume());
 
-         HardwareButton armButton = mArmButtons[i];
+         final HardwareButton armButton = mArmButtons[i];
 
          armButton.pressedAction().setBinding(track.arm());
          armButton.backgroundLight().isOn().set(track.arm());
       }
    }
 
-   private void defineHardwareControls(final ControllerHost host, MidiIn midiIn)
+   private void defineHardwareControls(final ControllerHost host, final MidiIn midiIn)
    {
       for (int i = 0; i < 8; i++)
       {
-         AbsoluteHardwareKnob panKnob = host.createAbsoluteHardwareKnob();
+         final AbsoluteHardwareKnob panKnob = host.createAbsoluteHardwareKnob();
          panKnob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 2 + i));
-         String panLabel = "Pan" + (i + 1);
+         final String panLabel = "Pan" + (i + 1);
          panKnob.setLabel(panLabel);
          panKnob.value().addValueObserver(value -> host.println(panLabel + ": " + value));
          mPanKnobs[i] = panKnob;
 
-         HardwareSlider slider = host.createHardwareSlider();
+         final HardwareSlider slider = host.createHardwareSlider();
          slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 16 + i));
-         String volLabel = "Volume " + (i + 1);
+         final String volLabel = "Volume " + (i + 1);
          slider.setLabel(panLabel);
          slider.value().addValueObserver(value -> host.println(volLabel + ": " + value));
          mVolumeSliders[i] = slider;
 
-         HardwareButton armButton = host.createHardwareButton();
+         final HardwareButton armButton = host.createHardwareButton();
          final int armCC = 48 + i;
          armButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 127));
          armButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 0));
-         String armLabel = "Arm " + (i + 1);
+         final String armLabel = "Arm " + (i + 1);
          armButton.setLabel(armLabel);
          armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
          armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
-         HardwareLight armBackgroundLight = host.createHardwareLight();
+         final HardwareLight armBackgroundLight = host.createHardwareLight();
 
          armBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, armCC, value ? 127 : 0);
@@ -102,11 +102,13 @@ public class SLMixfaceExtension extends ControllerExtension
 
       mPlayButton = host.createHardwareButton();
       mPlayButton.setLabel("Play");
-      mPlayButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 32));
+      final String playPressedExpression = midiIn.createIsCCExpression(15, 32) + " || "
+         + midiIn.createIsCCExpression(15, 33);
+      mPlayButton.pressedAction().setActionMatcher(midiIn.createActionMatcher(playPressedExpression));
       mPlayButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 45, 0));
       mPlayButton.pressedAction().onAction(() -> host.println("Play pressed"));
       mPlayButton.releasedAction().onAction(() -> host.println("Play released"));
-      HardwareLight playLight = host.createHardwareLight();
+      final HardwareLight playLight = host.createHardwareLight();
       playLight.isOn().set(mTransport.isPlaying());
       playLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 32, value ? 127 : 0);
@@ -119,7 +121,7 @@ public class SLMixfaceExtension extends ControllerExtension
       mRecordButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
       mRecordButton.pressedAction().onAction(() -> host.println("Rec pressed"));
       mRecordButton.releasedAction().onAction(() -> host.println("Rec released"));
-      HardwareLight recordLight = host.createHardwareLight();
+      final HardwareLight recordLight = host.createHardwareLight();
       recordLight.isOn().set(mTransport.isArrangerRecordEnabled());
       recordLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 34, value ? 127 : 0);
@@ -127,12 +129,12 @@ public class SLMixfaceExtension extends ControllerExtension
       mRecordButton.setBackgroundLight(recordLight);
    }
 
-   private void sendMidi(int status, int data1, int data2)
+   private void sendMidi(final int status, final int data1, final int data2)
    {
       mMidiOut.sendMidi(status, data1, data2);
    }
 
-   private void sendCC(int channel, int cc, int value)
+   private void sendCC(final int channel, final int cc, final int value)
    {
       sendMidi(0xb0 | channel, cc, value);
    }
@@ -152,7 +154,7 @@ public class SLMixfaceExtension extends ControllerExtension
    }
 
    /** Called when we receive short MIDI message on port 0. */
-   private void onMidi0(ShortMidiMessage msg)
+   private void onMidi0(final ShortMidiMessage msg)
    {
       // TODO: Implement your MIDI input handling code here.
 
