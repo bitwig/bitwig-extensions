@@ -3,7 +3,6 @@ package com.bitwig.extension.controllers.studiologic;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
-import com.bitwig.extension.controller.api.AbsoluteHardwareControlToRangedValueBinding;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareButton;
@@ -11,6 +10,7 @@ import com.bitwig.extension.controller.api.HardwareLight;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 
@@ -38,13 +38,23 @@ public class SLMixfaceExtension extends ControllerExtension
 
       defineHardwareControls(host, midiIn);
 
-      mTransport.playAction().addBinding(mPlayButton.pressedAction());
-      mTransport.recordAction().addBinding(mRecordButton.pressedAction());
+      updateBindings();
+   }
+
+   private void updateBindings()
+   {
+      mPlayButton.pressedAction().setBinding(mTransport.playAction());
+      mRecordButton.pressedAction().setBinding(mTransport.recordAction());
 
       for (int i = 0; i < 8; i++)
       {
-         AbsoluteHardwareControlToRangedValueBinding binding = mTrackBank.getItemAt(i).volume()
-            .addBinding(mVolumeSliders[i]);
+         Track track = mTrackBank.getItemAt(i);
+         mVolumeSliders[i].setBinding(track.volume());
+
+         HardwareButton armButton = mArmButtons[i];
+
+         armButton.pressedAction().setBinding(track.arm());
+         armButton.backgroundLight().isOn().set(track.arm());
       }
    }
 
@@ -67,8 +77,9 @@ public class SLMixfaceExtension extends ControllerExtension
          mVolumeSliders[i] = slider;
 
          HardwareButton armButton = host.createHardwareButton();
-         armButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 48, 127));
-         armButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 48, 0));
+         final int armCC = 48 + i;
+         armButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 127));
+         armButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 0));
          String armLabel = "Arm " + (i + 1);
          armButton.setLabel(armLabel);
          armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
@@ -76,7 +87,7 @@ public class SLMixfaceExtension extends ControllerExtension
          HardwareLight armBackgroundLight = host.createHardwareLight();
 
          armBackgroundLight.isOn().onUpdateHardware(value -> {
-            sendCC(15, 48, value ? 127 : 0);
+            sendCC(15, armCC, value ? 127 : 0);
          });
 
          armButton.setBackgroundLight(armBackgroundLight);
