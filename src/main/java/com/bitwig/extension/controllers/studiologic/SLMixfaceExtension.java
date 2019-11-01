@@ -7,8 +7,10 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareControlToRangedValueB
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.HardwareLight;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 
@@ -25,9 +27,11 @@ public class SLMixfaceExtension extends ControllerExtension
       final ControllerHost host = getHost();
 
       mTransport = host.createTransport();
+      mTransport.isPlaying().markInterested();
       mTrackBank = host.createTrackBank(8, 0, 0);
 
       MidiIn midiIn = host.getMidiInPort(0);
+      mMidiOut = host.getMidiOutPort(0);
 
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
       midiIn.setSysexCallback((String data) -> onSysex0(data));
@@ -69,6 +73,14 @@ public class SLMixfaceExtension extends ControllerExtension
          armButton.setLabel(armLabel);
          armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
          armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
+         HardwareLight armBackgroundLight = host.createHardwareLight();
+
+         armBackgroundLight.isOn().onUpdateHardware(value -> {
+            sendCC(15, 48, value ? 127 : 0);
+         });
+
+         armButton.setBackgroundLight(armBackgroundLight);
+
          mArmButtons[i] = armButton;
       }
 
@@ -83,6 +95,12 @@ public class SLMixfaceExtension extends ControllerExtension
       mPlayButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 45, 0));
       mPlayButton.pressedAction().onAction(() -> host.println("Play pressed"));
       mPlayButton.releasedAction().onAction(() -> host.println("Play released"));
+      HardwareLight playLight = host.createHardwareLight();
+      playLight.isOn().set(mTransport.isPlaying());
+      playLight.isOn().onUpdateHardware(value -> {
+         sendCC(15, 32, value ? 127 : 0);
+      });
+      mPlayButton.setBackgroundLight(playLight);
 
       mRecordButton = host.createHardwareButton();
       mRecordButton.setLabel("Record");
@@ -90,6 +108,16 @@ public class SLMixfaceExtension extends ControllerExtension
       mRecordButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
       mRecordButton.pressedAction().onAction(() -> host.println("Rec pressed"));
       mRecordButton.releasedAction().onAction(() -> host.println("Rec released"));
+   }
+
+   private void sendMidi(int status, int data1, int data2)
+   {
+      mMidiOut.sendMidi(status, data1, data2);
+   }
+
+   private void sendCC(int channel, int cc, int value)
+   {
+      sendMidi(0xb0 | channel, cc, value);
    }
 
    @Override
@@ -103,7 +131,7 @@ public class SLMixfaceExtension extends ControllerExtension
    @Override
    public void flush()
    {
-      // TODO Send any updates you need here.
+      getHost().updateHardware();
    }
 
    /** Called when we receive short MIDI message on port 0. */
@@ -143,4 +171,6 @@ public class SLMixfaceExtension extends ControllerExtension
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton;
 
    private TrackBank mTrackBank;
+
+   private MidiOut mMidiOut;
 }
