@@ -102,8 +102,8 @@ public class SLMixfaceExtension extends ControllerExtension
 
       mPlayButton = host.createHardwareButton();
       mPlayButton.setLabel("Play");
-      final String playPressedExpression = midiIn.createIsCCExpression(15, 32) + " || "
-         + midiIn.createIsCCExpression(15, 33);
+      final String playPressedExpression = midiIn.createIsCCValueExpression(15, 32, 127) + " || "
+         + midiIn.createIsCCValueExpression(15, 33, 127);
       mPlayButton.pressedAction().setActionMatcher(midiIn.createActionMatcher(playPressedExpression));
       mPlayButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 45, 0));
       mPlayButton.pressedAction().onAction(() -> host.println("Play pressed"));
