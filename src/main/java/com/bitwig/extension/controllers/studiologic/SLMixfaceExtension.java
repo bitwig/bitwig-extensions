@@ -57,6 +57,11 @@ public class SLMixfaceExtension extends ControllerExtension
 
          armButton.pressedAction().setBinding(track.arm());
          armButton.backgroundLight().isOn().set(track.arm());
+
+         final HardwareButton muteButton = mMuteButtons[i];
+
+         muteButton.pressedAction().setBinding(track.mute());
+         muteButton.backgroundLight().isOn().set(track.mute());
       }
 
       mMasterVolumeSlider.setBinding(mMasterTrack.volume());
@@ -80,6 +85,8 @@ public class SLMixfaceExtension extends ControllerExtension
          slider.value().addValueObserver(value -> host.println(volLabel + ": " + value));
          mVolumeSliders[i] = slider;
 
+         // Create the arm button
+
          final HardwareButton armButton = host.createHardwareButton();
          final int armCC = 48 + i;
          armButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 127));
@@ -97,12 +104,32 @@ public class SLMixfaceExtension extends ControllerExtension
          armButton.setBackgroundLight(armBackgroundLight);
 
          mArmButtons[i] = armButton;
+
+      // Create the mute button
+
+         final HardwareButton muteButton = host.createHardwareButton();
+         final int muteCC = 64 + i;
+         muteButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, muteCC, 127));
+         muteButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, muteCC, 0));
+         final String muteLabel = "Mute " + (i + 1);
+         muteButton.setLabel(muteLabel);
+//         armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
+//         armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
+         final HardwareLight muteBackgroundLight = host.createHardwareLight();
+
+         muteBackgroundLight.isOn().onUpdateHardware(value -> {
+            sendCC(15, muteCC, value ? 127 : 0);
+         });
+
+         muteButton.setBackgroundLight(muteBackgroundLight);
+
+         mMuteButtons[i] = muteButton;
       }
 
       mMasterVolumeSlider = host.createHardwareSlider();
       mMasterVolumeSlider.setLabel("Master Volume");
       mMasterVolumeSlider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 24));
-      mMasterVolumeSlider.value().addValueObserver(value -> host.println("Master Volume " + value));
+//      mMasterVolumeSlider.value().addValueObserver(value -> host.println("Master Volume " + value));
 
       mPlayButton = host.createHardwareButton();
       mPlayButton.setLabel("Play");
@@ -187,6 +214,8 @@ public class SLMixfaceExtension extends ControllerExtension
    private HardwareSlider mMasterVolumeSlider;
 
    private final HardwareButton[] mArmButtons = new HardwareButton[8];
+
+   private final HardwareButton[] mMuteButtons = new HardwareButton[8];
 
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton;
 
