@@ -62,6 +62,11 @@ public class SLMixfaceExtension extends ControllerExtension
 
          muteButton.pressedAction().setBinding(track.mute());
          muteButton.backgroundLight().isOn().set(track.mute());
+
+         final HardwareButton soloButton = mSoloButtons[i];
+
+         soloButton.pressedAction().setBinding(track.solo());
+         soloButton.backgroundLight().isOn().set(track.solo());
       }
 
       mMasterVolumeSlider.setBinding(mMasterTrack.volume());
@@ -124,6 +129,26 @@ public class SLMixfaceExtension extends ControllerExtension
          muteButton.setBackgroundLight(muteBackgroundLight);
 
          mMuteButtons[i] = muteButton;
+
+      // Create the solo button
+
+         final HardwareButton soloButton = host.createHardwareButton();
+         final int soloCC = 80 + i;
+         soloButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, soloCC, 127));
+         soloButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, soloCC, 0));
+         final String soloLabel = "Solo " + (i + 1);
+         soloButton.setLabel(soloLabel);
+//         armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
+//         armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
+         final HardwareLight soloBackgroundLight = host.createHardwareLight();
+
+         soloBackgroundLight.isOn().onUpdateHardware(value -> {
+            sendCC(15, soloCC, value ? 127 : 0);
+         });
+
+         soloButton.setBackgroundLight(soloBackgroundLight);
+
+         mSoloButtons[i] = soloButton;
       }
 
       mMasterVolumeSlider = host.createHardwareSlider();
@@ -216,6 +241,8 @@ public class SLMixfaceExtension extends ControllerExtension
    private final HardwareButton[] mArmButtons = new HardwareButton[8];
 
    private final HardwareButton[] mMuteButtons = new HardwareButton[8];
+
+   private final HardwareButton[] mSoloButtons = new HardwareButton[8];
 
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton;
 
