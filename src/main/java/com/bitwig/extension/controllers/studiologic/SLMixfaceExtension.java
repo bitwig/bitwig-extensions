@@ -29,6 +29,7 @@ public class SLMixfaceExtension extends ControllerExtension
       mTransport = host.createTransport();
       mTransport.isPlaying().markInterested();
       mTrackBank = host.createTrackBank(8, 0, 0);
+      mMasterTrack = host.createMasterTrack(0);
 
       final MidiIn midiIn = host.getMidiInPort(0);
       mMidiOut = host.getMidiOutPort(0);
@@ -57,6 +58,8 @@ public class SLMixfaceExtension extends ControllerExtension
          armButton.pressedAction().setBinding(track.arm());
          armButton.backgroundLight().isOn().set(track.arm());
       }
+
+      mMasterVolumeSlider.setBinding(mMasterTrack.volume());
    }
 
    private void defineHardwareControls(final ControllerHost host, final MidiIn midiIn)
@@ -83,8 +86,8 @@ public class SLMixfaceExtension extends ControllerExtension
          armButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 0));
          final String armLabel = "Arm " + (i + 1);
          armButton.setLabel(armLabel);
-         armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
-         armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
+//         armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
+//         armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
          final HardwareLight armBackgroundLight = host.createHardwareLight();
 
          armBackgroundLight.isOn().onUpdateHardware(value -> {
@@ -107,8 +110,8 @@ public class SLMixfaceExtension extends ControllerExtension
          + midiIn.createIsCCValueExpression(15, 33, 127);
       mPlayButton.pressedAction().setActionMatcher(midiIn.createActionMatcher(playPressedExpression));
       mPlayButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 45, 0));
-      mPlayButton.pressedAction().onAction(() -> host.println("Play pressed"));
-      mPlayButton.releasedAction().onAction(() -> host.println("Play released"));
+//      mPlayButton.pressedAction().onAction(() -> host.println("Play pressed"));
+//      mPlayButton.releasedAction().onAction(() -> host.println("Play released"));
       final HardwareLight playLight = host.createHardwareLight();
       playLight.isOn().set(mTransport.isPlaying());
       playLight.isOn().onUpdateHardware(value -> {
@@ -120,8 +123,8 @@ public class SLMixfaceExtension extends ControllerExtension
       mRecordButton.setLabel("Record");
       mRecordButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 127));
       mRecordButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
-      mRecordButton.pressedAction().onAction(() -> host.println("Rec pressed"));
-      mRecordButton.releasedAction().onAction(() -> host.println("Rec released"));
+//      mRecordButton.pressedAction().onAction(() -> host.println("Rec pressed"));
+//      mRecordButton.releasedAction().onAction(() -> host.println("Rec released"));
       final HardwareLight recordLight = host.createHardwareLight();
       recordLight.isOn().set(mTransport.isArrangerRecordEnabled());
       recordLight.isOn().onUpdateHardware(value -> {
@@ -143,9 +146,6 @@ public class SLMixfaceExtension extends ControllerExtension
    @Override
    public void exit()
    {
-      // TODO: Perform any cleanup once the driver exits
-      // For now just show a popup notification for verification that it is no longer running.
-      getHost().showPopupNotification("SL Mixface Exited");
    }
 
    @Override
@@ -191,6 +191,8 @@ public class SLMixfaceExtension extends ControllerExtension
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton;
 
    private TrackBank mTrackBank;
+
+   private Track mMasterTrack;
 
    private MidiOut mMidiOut;
 }
