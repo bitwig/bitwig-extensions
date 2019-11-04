@@ -111,7 +111,7 @@ public class SLMixfaceExtension extends ControllerExtension
       final HardwareLight playLight = host.createHardwareLight();
       playLight.isOn().set(mTransport.isPlaying());
       playLight.isOn().onUpdateHardware(value -> {
-         sendCC(15, 32, value ? 127 : 0);
+         sendCC(15, 33, value ? 127 : 0);
       });
       mPlayButton.setBackgroundLight(playLight);
 
