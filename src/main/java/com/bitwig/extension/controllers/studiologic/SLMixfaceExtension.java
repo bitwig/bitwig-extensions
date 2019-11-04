@@ -50,6 +50,7 @@ public class SLMixfaceExtension extends ControllerExtension
       {
          final Track track = mTrackBank.getItemAt(i);
          mVolumeSliders[i].setBinding(track.volume());
+         mPanKnobs[i].setBinding(track.pan());
 
          final HardwareButton armButton = mArmButtons[i];
 
