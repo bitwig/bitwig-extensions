@@ -80,14 +80,14 @@ public class SLMixfaceExtension extends ControllerExtension
          panKnob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 2 + i));
          final String panLabel = "Pan" + (i + 1);
          panKnob.setLabel(panLabel);
-         panKnob.value().addValueObserver(value -> host.println(panLabel + ": " + value));
+//         panKnob.value().addValueObserver(value -> host.println(panLabel + ": " + value));
          mPanKnobs[i] = panKnob;
 
          final HardwareSlider slider = host.createHardwareSlider();
          slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 16 + i));
          final String volLabel = "Volume " + (i + 1);
          slider.setLabel(panLabel);
-         slider.value().addValueObserver(value -> host.println(volLabel + ": " + value));
+//         slider.value().addValueObserver(value -> host.println(volLabel + ": " + value));
          mVolumeSliders[i] = slider;
 
          // Create the arm button
