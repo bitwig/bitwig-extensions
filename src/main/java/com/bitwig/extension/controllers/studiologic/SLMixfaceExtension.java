@@ -37,6 +37,7 @@ public class SLMixfaceExtension extends ControllerExtension
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
       midiIn.setSysexCallback((final String data) -> onSysex0(data));
 
+      host.setPhysicalSize(262, 130);
       defineHardwareControls(host, midiIn);
 
       updateBindings();
