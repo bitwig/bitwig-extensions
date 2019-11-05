@@ -155,6 +155,11 @@ public class Layer
       }
    }
 
+   public void toggleIsActive()
+   {
+      setIsActive(!mIsActive);
+   }
+
    private boolean mIsActive;
 
    private final Layers mLayers;

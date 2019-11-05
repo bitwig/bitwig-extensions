@@ -64,6 +64,8 @@ public class SLMixfaceExtension extends ControllerExtension
    {
       final Layer layer = mLayers.addLayer("Track");
 
+      layer.bind(mModeButton, () -> mDeviceLayer.toggleIsActive());
+
       layer.bind(mPlayButton, mTransport.playAction());
       layer.bind(mTransport.isPlaying(), mPlayButton);
 
@@ -222,6 +224,18 @@ public class SLMixfaceExtension extends ControllerExtension
          sendCC(15, 34, value ? 127 : 0);
       });
       mRecordButton.setBackgroundLight(recordLight);
+
+      mModeButton = host.createHardwareButton();
+      mModeButton.setLabel("Mode");
+      mModeButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 39, 127));
+      //mModeButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
+//      mModeButton.pressedAction().onAction(() -> host.println("Rec pressed"));
+//      mModeButton.releasedAction().onAction(() -> host.println("Rec released"));
+      final HardwareLight modeLight = host.createHardwareLight();
+      modeLight.isOn().onUpdateHardware(value -> {
+         sendCC(15, 34, value ? 127 : 0);
+      });
+      mModeButton.setBackgroundLight(modeLight);
    }
 
    private void sendMidi(final int status, final int data1, final int data2)
@@ -295,7 +309,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
    private final HardwareButton[] mSoloButtons = new HardwareButton[8];
 
-   private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton;
+   private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton, mModeButton;
 
    private final Layers mLayers = new Layers();
 

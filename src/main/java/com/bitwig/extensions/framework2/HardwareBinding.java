@@ -7,7 +7,7 @@ public abstract class HardwareBinding<SourceType extends HardwareBindingSource, 
    extends Binding<SourceType, TargetType>
 {
 
-   protected HardwareBinding(SourceType source, TargetType target)
+   protected HardwareBinding(final SourceType source, final TargetType target)
    {
       super(source, target);
    }
@@ -28,6 +28,7 @@ public abstract class HardwareBinding<SourceType extends HardwareBindingSource, 
       assert mHardwareBinding != null;
 
       mHardwareBinding.removeBinding();
+      mHardwareBinding = null;
    }
 
    protected HardwareBindingType getHardwareBinding()
