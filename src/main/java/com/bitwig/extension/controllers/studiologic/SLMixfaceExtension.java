@@ -8,6 +8,7 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
+import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareLight;
@@ -15,7 +16,6 @@ import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.RemoteControlsPage;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -69,6 +69,9 @@ public class SLMixfaceExtension extends ControllerExtension
       layer.bind(mModeButton, () -> mDeviceLayer.toggleIsActive());
       layer.bind((BooleanSupplier)(() -> mDeviceLayer.isActive()), mModeButton);
 
+      layer.bind(mScrollForwardsButton, mTrackBank::scrollPageForwards);
+      layer.bind(mScrollBackwardsButton, mTrackBank::scrollPageBackwards);
+
       layer.bind(mPlayButton, mTransport.playAction());
       layer.bind(mTransport.isPlaying(), mPlayButton);
 
@@ -106,6 +109,9 @@ public class SLMixfaceExtension extends ControllerExtension
    private Layer createDeviceLayer()
    {
       final Layer layer = mLayers.addLayer("Device");
+
+      layer.bind(mScrollForwardsButton, mRemoteControlsPage::selectNext);
+      layer.bind(mScrollBackwardsButton, mRemoteControlsPage::selectPrevious);
 
       for (int i = 0; i < 8; i++)
       {
@@ -239,6 +245,16 @@ public class SLMixfaceExtension extends ControllerExtension
          sendCC(15, 39, value ? 127 : 0);
       });
       mModeButton.setBackgroundLight(modeLight);
+
+      mScrollForwardsButton = host.createHardwareButton();
+      mScrollForwardsButton.setLabel("ScrollForwards");
+      mScrollForwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 127));
+      mScrollForwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 0));
+
+      mScrollBackwardsButton = host.createHardwareButton();
+      mScrollBackwardsButton.setLabel("ScrollBackwards");
+      mScrollBackwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 127));
+      mScrollBackwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 0));
    }
 
    private void sendMidi(final int status, final int data1, final int data2)
@@ -298,7 +314,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
    private CursorDevice mCursorDevice;
 
-   private RemoteControlsPage mRemoteControlsPage;
+   private CursorRemoteControlsPage mRemoteControlsPage;
 
    private final AbsoluteHardwareKnob[] mPanKnobs = new AbsoluteHardwareKnob[8];
 
@@ -312,7 +328,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
    private final HardwareButton[] mSoloButtons = new HardwareButton[8];
 
-   private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton, mModeButton;
+   private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton, mModeButton, mScrollForwardsButton, mScrollBackwardsButton;
 
    private final Layers mLayers = new Layers();
 
