@@ -17,6 +17,8 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.RelativeHardwareValueMatcher;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -55,98 +57,6 @@ public class SLMixfaceExtension extends ControllerExtension
       defineLayers();
 
       mTrackLayer.setIsActive(true);
-   }
-
-   private void defineLayers()
-   {
-      mCommonLayer = createCommonLayer();
-      mTrackLayer = createTrackLayer();
-      mDeviceLayer = createDeviceLayer();
-   }
-
-   private void toggleDeviceLayer()
-   {
-      final boolean isDeviceLayerActive = mDeviceLayer.isActive();
-
-      mTrackLayer.setIsActive(isDeviceLayerActive);
-      mDeviceLayer.setIsActive(!isDeviceLayerActive);
-   }
-
-   private Layer createCommonLayer()
-   {
-      final Layer layer = mLayers.addLayer("Common");
-
-      layer.bind(mModeButton, this::toggleDeviceLayer);
-      layer.bind((BooleanSupplier)(() -> mDeviceLayer.isActive()), mModeButton);
-
-      layer.bind(mPlayButton, mTransport.playAction());
-      layer.bind(mTransport.isPlaying(), mPlayButton);
-
-      layer.bind(mRecordButton, mTransport.recordAction());
-      layer.bind(mTransport.isArrangerRecordEnabled(), mRecordButton);
-
-      layer.bind(mMasterVolumeSlider, mMasterTrack.volume());
-
-      layer.setIsActive(true);
-
-      return layer;
-   }
-
-   private Layer createTrackLayer()
-   {
-      final Layer layer = mLayers.addLayer("Track");
-
-      layer.bind(mScrollBankForwardsButton, mTrackBank.scrollPageForwardsAction());
-      layer.bind(mScrollBankBackwardsButton, mTrackBank.scrollPageBackwardsAction());
-
-      for (int i = 0; i < 8; i++)
-      {
-         final Track track = mTrackBank.getItemAt(i);
-
-         layer.bind(mVolumeSliders[i], track.volume());
-         layer.bind(mPanKnobs[i], track.pan());
-
-         final HardwareButton armButton = mArmButtons[i];
-
-         layer.bind(armButton, track.arm());
-         layer.bind(track.arm(), armButton);
-
-         final HardwareButton muteButton = mMuteButtons[i];
-
-         layer.bind(muteButton, track.mute());
-         layer.bind(track.mute(), muteButton);
-
-         final HardwareButton soloButton = mSoloButtons[i];
-
-         layer.bind(soloButton, track.solo());
-         layer.bind(track.solo(), soloButton);
-      }
-
-      layer.bind(mNextButton, mCursorTrack.selectNextAction());
-      layer.bind(mPreviousButton, mCursorTrack.selectPreviousAction());
-
-      layer.setIsActive(true);
-
-      return layer;
-   }
-
-   private Layer createDeviceLayer()
-   {
-      final Layer layer = mLayers.addLayer("Device");
-
-      layer.bind(mScrollBankForwardsButton, mMainRemoteControlsPage.selectNextAction());
-      layer.bind(mScrollBankBackwardsButton, mMainRemoteControlsPage.selectPreviousAction());
-
-      for (int i = 0; i < 8; i++)
-      {
-         layer.bind(mPanKnobs[i], mMainRemoteControlsPage.getParameter(i));
-         layer.bind(mVolumeSliders[i], mSlidersRemoteControlsPage.getParameter(i));
-      }
-
-      layer.bind(mNextButton, mCursorDevice.selectNextAction());
-      layer.bind(mPreviousButton, mCursorDevice.selectPreviousAction());
-
-      return layer;
    }
 
    private void defineHardwareControls(final ControllerHost host, final MidiIn midiIn)
@@ -288,13 +198,115 @@ public class SLMixfaceExtension extends ControllerExtension
       mScrollBankBackwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 127));
       mScrollBankBackwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 0));
 
-      mNextButton = surface.createHardwareButton();
-      mNextButton.setLabel("Next");
-      mNextButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 43, 127));
+      // mNextButton = surface.createHardwareButton();
+      // mNextButton.setLabel("Next");
+      // mNextButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 43, 127));
+      //
+      // mPreviousButton = surface.createHardwareButton();
+      // mPreviousButton.setLabel("Prev");
+      // mPreviousButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 44, 127));
 
-      mPreviousButton = surface.createHardwareButton();
-      mPreviousButton.setLabel("Prev");
-      mPreviousButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 44, 127));
+      mNavigationDial = surface.createRelativeHardwareKnob();
+
+      final RelativeHardwareValueMatcher adjustUpMatcher = midiIn
+         .createRelativeValueMatcher(midiExpressions.createIsCCValueExpression(15, 43, 127), 0.1);
+
+      final RelativeHardwareValueMatcher adjustDownMatcher = midiIn
+         .createRelativeValueMatcher(midiExpressions.createIsCCValueExpression(15, 44, 127), -0.1);
+
+      mNavigationDial.setAdjustValueMatcher(host.createOrRelativeValueMatcher(adjustUpMatcher, adjustDownMatcher));
+   }
+
+   private void defineLayers()
+   {
+      mCommonLayer = createCommonLayer();
+      mTrackLayer = createTrackLayer();
+      mDeviceLayer = createDeviceLayer();
+   }
+
+   private void toggleDeviceLayer()
+   {
+      final boolean isDeviceLayerActive = mDeviceLayer.isActive();
+
+      mTrackLayer.setIsActive(isDeviceLayerActive);
+      mDeviceLayer.setIsActive(!isDeviceLayerActive);
+   }
+
+   private Layer createCommonLayer()
+   {
+      final Layer layer = mLayers.addLayer("Common");
+
+      layer.bind(mModeButton, this::toggleDeviceLayer);
+      layer.bind((BooleanSupplier)(() -> mDeviceLayer.isActive()), mModeButton);
+
+      layer.bind(mPlayButton, mTransport.playAction());
+      layer.bind(mTransport.isPlaying(), mPlayButton);
+
+      layer.bind(mRecordButton, mTransport.recordAction());
+      layer.bind(mTransport.isArrangerRecordEnabled(), mRecordButton);
+
+      layer.bind(mMasterVolumeSlider, mMasterTrack.volume());
+
+      layer.setIsActive(true);
+
+      return layer;
+   }
+
+   private Layer createTrackLayer()
+   {
+      final Layer layer = mLayers.addLayer("Track");
+
+      layer.bind(mScrollBankForwardsButton, mTrackBank.scrollPageForwardsAction());
+      layer.bind(mScrollBankBackwardsButton, mTrackBank.scrollPageBackwardsAction());
+
+      for (int i = 0; i < 8; i++)
+      {
+         final Track track = mTrackBank.getItemAt(i);
+
+         layer.bind(mVolumeSliders[i], track.volume());
+         layer.bind(mPanKnobs[i], track.pan());
+
+         final HardwareButton armButton = mArmButtons[i];
+
+         layer.bind(armButton, track.arm());
+         layer.bind(track.arm(), armButton);
+
+         final HardwareButton muteButton = mMuteButtons[i];
+
+         layer.bind(muteButton, track.mute());
+         layer.bind(track.mute(), muteButton);
+
+         final HardwareButton soloButton = mSoloButtons[i];
+
+         layer.bind(soloButton, track.solo());
+         layer.bind(track.solo(), soloButton);
+      }
+
+      // layer.bind(mNextButton, mCursorTrack.selectNextAction());
+      // layer.bind(mPreviousButton, mCursorTrack.selectPreviousAction());
+
+      layer.setIsActive(true);
+
+      return layer;
+   }
+
+   private Layer createDeviceLayer()
+   {
+      final Layer layer = mLayers.addLayer("Device");
+
+      layer.bind(mScrollBankForwardsButton, mMainRemoteControlsPage.selectNextAction());
+      layer.bind(mScrollBankBackwardsButton, mMainRemoteControlsPage.selectPreviousAction());
+
+      for (int i = 0; i < 8; i++)
+      {
+         layer.bind(mPanKnobs[i], mMainRemoteControlsPage.getParameter(i));
+         layer.bind(mVolumeSliders[i], mSlidersRemoteControlsPage.getParameter(i));
+      }
+
+      // layer.bind(mNextButton, mCursorDevice.selectNextAction());
+      // layer.bind(mPreviousButton, mCursorDevice.selectPreviousAction());
+
+      return layer;
    }
 
    private void sendMidi(final int status, final int data1, final int data2)
@@ -371,7 +383,9 @@ public class SLMixfaceExtension extends ControllerExtension
    private final HardwareButton[] mSoloButtons = new HardwareButton[8];
 
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton, mModeButton,
-      mScrollBankForwardsButton, mScrollBankBackwardsButton, mNextButton, mPreviousButton;
+      mScrollBankForwardsButton, mScrollBankBackwardsButton;// , mNextButton, mPreviousButton;
+
+   private RelativeHardwareKnob mNavigationDial;
 
    private final Layers mLayers = new Layers();
 
