@@ -71,8 +71,8 @@ public class SLMixfaceExtension extends ControllerExtension
       layer.bind(mModeButton, () -> mDeviceLayer.toggleIsActive());
       layer.bind((BooleanSupplier)(() -> mDeviceLayer.isActive()), mModeButton);
 
-      layer.bind(mScrollForwardsButton, mTrackBank::scrollPageForwards);
-      layer.bind(mScrollBackwardsButton, mTrackBank::scrollPageBackwards);
+      layer.bind(mScrollForwardsButton, mTrackBank.scrollForwardsAction());
+      layer.bind(mScrollBackwardsButton, mTrackBank.scrollBackwardsAction());
 
       layer.bind(mPlayButton, mTransport.playAction());
       layer.bind(mTransport.isPlaying(), mPlayButton);
@@ -112,8 +112,8 @@ public class SLMixfaceExtension extends ControllerExtension
    {
       final Layer layer = mLayers.addLayer("Device");
 
-      layer.bind(mScrollForwardsButton, mRemoteControlsPage::selectNext);
-      layer.bind(mScrollBackwardsButton, mRemoteControlsPage::selectPrevious);
+      layer.bind(mScrollForwardsButton, mRemoteControlsPage.selectNextPageAction());
+      layer.bind(mScrollBackwardsButton, mRemoteControlsPage.selectPreviousPageAction());
 
       for (int i = 0; i < 8; i++)
       {
