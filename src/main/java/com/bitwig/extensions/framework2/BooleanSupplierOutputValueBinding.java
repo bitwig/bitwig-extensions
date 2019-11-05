@@ -1,4 +1,4 @@
-package com.bitwig.extension.controllers.studiologic;
+package com.bitwig.extensions.framework2;
 
 import java.util.function.BooleanSupplier;
 

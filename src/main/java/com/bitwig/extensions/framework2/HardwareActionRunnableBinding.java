@@ -1,4 +1,4 @@
-package com.bitwig.extension.controllers.studiologic;
+package com.bitwig.extensions.framework2;
 
 import com.bitwig.extension.controller.api.HardwareAction;
 

@@ -1,4 +1,4 @@
-package com.bitwig.extension.controllers.studiologic;
+package com.bitwig.extensions.framework2;
 
 /** A binding defines a connection between a source and a target. */
 

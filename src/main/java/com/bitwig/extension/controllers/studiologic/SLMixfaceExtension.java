@@ -16,6 +16,8 @@ import com.bitwig.extension.controller.api.RemoteControlsPage;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.framework2.Layer;
+import com.bitwig.extensions.framework2.Layers;
 
 public class SLMixfaceExtension extends ControllerExtension
 {
@@ -62,7 +64,10 @@ public class SLMixfaceExtension extends ControllerExtension
       final Layer layer = mLayers.addLayer("Track");
 
       layer.bind(mPlayButton, mTransport.playAction());
+      layer.bind(mTransport.isPlaying(), mPlayButton);
+
       layer.bind(mRecordButton, mTransport.recordAction());
+      layer.bind(mTransport.isArrangerRecordEnabled(), mRecordButton);
 
       for (int i = 0; i < 8; i++)
       {
@@ -197,7 +202,6 @@ public class SLMixfaceExtension extends ControllerExtension
 //      mPlayButton.pressedAction().onAction(() -> host.println("Play pressed"));
 //      mPlayButton.releasedAction().onAction(() -> host.println("Play released"));
       final HardwareLight playLight = host.createHardwareLight();
-      playLight.isOn().set(mTransport.isPlaying());
       playLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 33, value ? 127 : 0);
       });
@@ -210,7 +214,6 @@ public class SLMixfaceExtension extends ControllerExtension
 //      mRecordButton.pressedAction().onAction(() -> host.println("Rec pressed"));
 //      mRecordButton.releasedAction().onAction(() -> host.println("Rec released"));
       final HardwareLight recordLight = host.createHardwareLight();
-      recordLight.isOn().set(mTransport.isArrangerRecordEnabled());
       recordLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 34, value ? 127 : 0);
       });

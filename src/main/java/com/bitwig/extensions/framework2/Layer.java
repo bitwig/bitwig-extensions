@@ -1,7 +1,6 @@
-package com.bitwig.extension.controllers.studiologic;
+package com.bitwig.extensions.framework2;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 
@@ -36,6 +35,7 @@ public class Layer
       return mName;
    }
 
+   @SuppressWarnings("rawtypes")
    public void addBinding(final Binding binding)
    {
       assert !mBindings.contains(binding);
@@ -138,11 +138,6 @@ public class Layer
       final HardwareControl hardwareControl)
    {
       return bind(source, hardwareControl.backgroundLight());
-   }
-
-   public List<Binding> getBindings()
-   {
-      return Collections.unmodifiableList(mBindings);
    }
 
    public boolean isActive()
