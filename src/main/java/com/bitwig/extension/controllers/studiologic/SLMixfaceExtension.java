@@ -71,8 +71,8 @@ public class SLMixfaceExtension extends ControllerExtension
       layer.bind(mModeButton, () -> mDeviceLayer.toggleIsActive());
       layer.bind((BooleanSupplier)(() -> mDeviceLayer.isActive()), mModeButton);
 
-      layer.bind(mScrollForwardsButton, mTrackBank.scrollForwardsAction());
-      layer.bind(mScrollBackwardsButton, mTrackBank.scrollBackwardsAction());
+      layer.bind(mScrollForwardsButton, mTrackBank.scrollPageForwardsAction());
+      layer.bind(mScrollBackwardsButton, mTrackBank.scrollPageBackwardsAction());
 
       layer.bind(mPlayButton, mTransport.playAction());
       layer.bind(mTransport.isPlaying(), mPlayButton);
