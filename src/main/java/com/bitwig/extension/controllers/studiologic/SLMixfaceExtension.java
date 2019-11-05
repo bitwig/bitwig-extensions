@@ -96,8 +96,8 @@ public class SLMixfaceExtension extends ControllerExtension
    {
       final Layer layer = mLayers.addLayer("Track");
 
-      layer.bind(mScrollForwardsButton, mTrackBank.scrollPageForwardsAction());
-      layer.bind(mScrollBackwardsButton, mTrackBank.scrollPageBackwardsAction());
+      layer.bind(mScrollBankForwardsButton, mTrackBank.scrollPageForwardsAction());
+      layer.bind(mScrollBankBackwardsButton, mTrackBank.scrollPageBackwardsAction());
 
       for (int i = 0; i < 8; i++)
       {
@@ -122,6 +122,9 @@ public class SLMixfaceExtension extends ControllerExtension
          layer.bind(track.solo(), soloButton);
       }
 
+      layer.bind(mNextButton, mCursorTrack.selectNextAction());
+      layer.bind(mPreviousButton, mCursorTrack.selectPreviousAction());
+
       layer.setIsActive(true);
 
       return layer;
@@ -131,14 +134,17 @@ public class SLMixfaceExtension extends ControllerExtension
    {
       final Layer layer = mLayers.addLayer("Device");
 
-      layer.bind(mScrollForwardsButton, mMainRemoteControlsPage.selectNextPageAction());
-      layer.bind(mScrollBackwardsButton, mMainRemoteControlsPage.selectPreviousPageAction());
+      layer.bind(mScrollBankForwardsButton, mMainRemoteControlsPage.selectNextAction());
+      layer.bind(mScrollBankBackwardsButton, mMainRemoteControlsPage.selectPreviousAction());
 
       for (int i = 0; i < 8; i++)
       {
          layer.bind(mPanKnobs[i], mMainRemoteControlsPage.getParameter(i));
          layer.bind(mVolumeSliders[i], mSlidersRemoteControlsPage.getParameter(i));
       }
+
+      layer.bind(mNextButton, mCursorDevice.selectNextAction());
+      layer.bind(mPreviousButton, mCursorDevice.selectPreviousAction());
 
       return layer;
    }
@@ -272,15 +278,23 @@ public class SLMixfaceExtension extends ControllerExtension
       });
       mModeButton.setBackgroundLight(modeLight);
 
-      mScrollForwardsButton = surface.createHardwareButton();
-      mScrollForwardsButton.setLabel("ScrollForwards");
-      mScrollForwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 127));
-      mScrollForwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 0));
+      mScrollBankForwardsButton = surface.createHardwareButton();
+      mScrollBankForwardsButton.setLabel("ScrollForwards");
+      mScrollBankForwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 127));
+      mScrollBankForwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 0));
 
-      mScrollBackwardsButton = surface.createHardwareButton();
-      mScrollBackwardsButton.setLabel("ScrollBackwards");
-      mScrollBackwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 127));
-      mScrollBackwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 0));
+      mScrollBankBackwardsButton = surface.createHardwareButton();
+      mScrollBankBackwardsButton.setLabel("ScrollBackwards");
+      mScrollBankBackwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 127));
+      mScrollBankBackwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 0));
+
+      mNextButton = surface.createHardwareButton();
+      mNextButton.setLabel("Next");
+      mNextButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 43, 127));
+
+      mPreviousButton = surface.createHardwareButton();
+      mPreviousButton.setLabel("Prev");
+      mPreviousButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 44, 127));
    }
 
    private void sendMidi(final int status, final int data1, final int data2)
@@ -357,7 +371,7 @@ public class SLMixfaceExtension extends ControllerExtension
    private final HardwareButton[] mSoloButtons = new HardwareButton[8];
 
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton, mModeButton,
-      mScrollForwardsButton, mScrollBackwardsButton;
+      mScrollBankForwardsButton, mScrollBankBackwardsButton, mNextButton, mPreviousButton;
 
    private final Layers mLayers = new Layers();
 
