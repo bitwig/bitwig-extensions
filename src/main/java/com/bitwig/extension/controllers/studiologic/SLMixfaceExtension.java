@@ -17,8 +17,7 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.RelativeHardwareKnob;
-import com.bitwig.extension.controller.api.RelativeHardwareValueMatcher;
+import com.bitwig.extension.controller.api.RelativeHardwareStepClickingKnob;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -206,15 +205,11 @@ public class SLMixfaceExtension extends ControllerExtension
       // mPreviousButton.setLabel("Prev");
       // mPreviousButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 44, 127));
 
-      mNavigationDial = surface.createRelativeHardwareKnob();
+      mNavigationDial = surface.createRelativeHardwareStepClickingKnob();
 
-      final RelativeHardwareValueMatcher adjustUpMatcher = midiIn
-         .createRelativeValueMatcher(midiExpressions.createIsCCValueExpression(15, 43, 127), 0.1);
-
-      final RelativeHardwareValueMatcher adjustDownMatcher = midiIn
-         .createRelativeValueMatcher(midiExpressions.createIsCCValueExpression(15, 44, 127), -0.1);
-
-      mNavigationDial.setAdjustValueMatcher(host.createOrRelativeValueMatcher(adjustUpMatcher, adjustDownMatcher));
+      mNavigationDial.stepLeftAction().setActionMatcher(midiIn.createCCActionMatcher(15, 44, 127));
+      mNavigationDial.stepRightAction().setActionMatcher(midiIn.createCCActionMatcher(15, 43, 127));
+      mNavigationDial.setStepAdjustmentAmount(0.1);
    }
 
    private void defineLayers()
@@ -385,7 +380,7 @@ public class SLMixfaceExtension extends ControllerExtension
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton, mModeButton,
       mScrollBankForwardsButton, mScrollBankBackwardsButton;// , mNextButton, mPreviousButton;
 
-   private RelativeHardwareKnob mNavigationDial;
+   private RelativeHardwareStepClickingKnob mNavigationDial;
 
    private final Layers mLayers = new Layers();
 
