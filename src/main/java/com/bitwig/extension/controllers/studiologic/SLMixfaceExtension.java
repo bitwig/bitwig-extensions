@@ -5,11 +5,14 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.CursorDevice;
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareLight;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.RemoteControlsPage;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -30,6 +33,9 @@ public class SLMixfaceExtension extends ControllerExtension
       mTransport.isPlaying().markInterested();
       mTrackBank = host.createTrackBank(8, 0, 0);
       mMasterTrack = host.createMasterTrack(0);
+      mCursorTrack = host.createCursorTrack(0, 0);
+      mCursorDevice = mCursorTrack.createCursorDevice();
+      mRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage(8);
 
       final MidiIn midiIn = host.getMidiInPort(0);
       mMidiOut = host.getMidiOutPort(0);
@@ -48,6 +54,7 @@ public class SLMixfaceExtension extends ControllerExtension
    private void defineLayers()
    {
       mTrackLayer = createTrackLayer();
+      mDeviceLayer = createDeviceLayer();
    }
 
    private Layer createTrackLayer()
@@ -81,6 +88,18 @@ public class SLMixfaceExtension extends ControllerExtension
       }
 
       layer.bind(mMasterVolumeSlider, mMasterTrack.volume());
+
+      return layer;
+   }
+
+   private Layer createDeviceLayer()
+   {
+      final Layer layer = mLayers.addLayer("Device");
+
+      for (int i = 0; i < 8; i++)
+      {
+         layer.bind(mPanKnobs[i], mRemoteControlsPage.getParameter(i));
+      }
 
       return layer;
    }
@@ -245,6 +264,18 @@ public class SLMixfaceExtension extends ControllerExtension
 
    private Transport mTransport;
 
+   private TrackBank mTrackBank;
+
+   private Track mMasterTrack;
+
+   private MidiOut mMidiOut;
+
+   private CursorTrack mCursorTrack;
+
+   private CursorDevice mCursorDevice;
+
+   private RemoteControlsPage mRemoteControlsPage;
+
    private final AbsoluteHardwareKnob[] mPanKnobs = new AbsoluteHardwareKnob[8];
 
    private final HardwareSlider[] mVolumeSliders = new HardwareSlider[8];
@@ -259,13 +290,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton;
 
-   private TrackBank mTrackBank;
-
-   private Track mMasterTrack;
-
-   private MidiOut mMidiOut;
-
    private final Layers mLayers = new Layers();
 
-   private Layer mTrackLayer;
+   private Layer mTrackLayer, mDeviceLayer;
 }
