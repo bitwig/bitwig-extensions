@@ -1,5 +1,7 @@
 package com.bitwig.extension.controllers.studiologic;
 
+import java.util.function.BooleanSupplier;
+
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
@@ -65,6 +67,7 @@ public class SLMixfaceExtension extends ControllerExtension
       final Layer layer = mLayers.addLayer("Track");
 
       layer.bind(mModeButton, () -> mDeviceLayer.toggleIsActive());
+      layer.bind((BooleanSupplier)(() -> mDeviceLayer.isActive()), mModeButton);
 
       layer.bind(mPlayButton, mTransport.playAction());
       layer.bind(mTransport.isPlaying(), mPlayButton);
@@ -233,7 +236,7 @@ public class SLMixfaceExtension extends ControllerExtension
 //      mModeButton.releasedAction().onAction(() -> host.println("Rec released"));
       final HardwareLight modeLight = host.createHardwareLight();
       modeLight.isOn().onUpdateHardware(value -> {
-         sendCC(15, 34, value ? 127 : 0);
+         sendCC(15, 39, value ? 127 : 0);
       });
       mModeButton.setBackgroundLight(modeLight);
    }

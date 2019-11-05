@@ -119,6 +119,20 @@ public class Layer
       return binding;
    }
 
+   public BooleanSupplierOutputValueBinding bind(
+      final BooleanSupplier source,
+      final HardwareLight target)
+   {
+      return bind(source, target.isOn());
+   }
+
+   public BooleanSupplierOutputValueBinding bind(
+      final BooleanSupplier source,
+      final HardwareControl target)
+   {
+      return bind(source, target.backgroundLight());
+   }
+
    public BooleanValueOutputValueBinding bind(final BooleanValue source, final BoolHardwareOutputValue target)
    {
       final BooleanValueOutputValueBinding binding = new BooleanValueOutputValueBinding(source, target);
