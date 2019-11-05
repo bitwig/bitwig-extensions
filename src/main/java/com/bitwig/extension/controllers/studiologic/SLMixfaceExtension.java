@@ -10,6 +10,7 @@ import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareLight;
 import com.bitwig.extension.controller.api.HardwareSlider;
+import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.RemoteControlsPage;
@@ -111,6 +112,8 @@ public class SLMixfaceExtension extends ControllerExtension
 
    private void defineHardwareControls(final ControllerHost host, final MidiIn midiIn)
    {
+      final MidiExpressions midiExpressions = host.midiExpressions();
+
       for (int i = 0; i < 8; i++)
       {
          final AbsoluteHardwareKnob panKnob = host.createAbsoluteHardwareKnob();
@@ -195,8 +198,9 @@ public class SLMixfaceExtension extends ControllerExtension
 
       mPlayButton = host.createHardwareButton();
       mPlayButton.setLabel("Play");
-      final String playPressedExpression = midiIn.createIsCCValueExpression(15, 32, 127) + " || "
-         + midiIn.createIsCCValueExpression(15, 33, 127);
+
+      final String playPressedExpression = midiExpressions.createIsCCValueExpression(15, 32, 127) + " || "
+         + midiExpressions.createIsCCValueExpression(15, 33, 127);
       mPlayButton.pressedAction().setActionMatcher(midiIn.createActionMatcher(playPressedExpression));
       mPlayButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 45, 0));
 //      mPlayButton.pressedAction().onAction(() -> host.println("Play pressed"));
