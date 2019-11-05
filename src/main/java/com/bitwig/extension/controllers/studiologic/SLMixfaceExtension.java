@@ -13,6 +13,7 @@ import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareLight;
 import com.bitwig.extension.controller.api.HardwareSlider;
+import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -48,7 +49,8 @@ public class SLMixfaceExtension extends ControllerExtension
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
       midiIn.setSysexCallback((final String data) -> onSysex0(data));
 
-      host.setPhysicalSize(262, 130);
+
+
       defineHardwareControls(host, midiIn);
 
       defineLayers();
@@ -124,17 +126,21 @@ public class SLMixfaceExtension extends ControllerExtension
    private void defineHardwareControls(final ControllerHost host, final MidiIn midiIn)
    {
       final MidiExpressions midiExpressions = host.midiExpressions();
+      final HardwareSurface surface = host.createHardwareSurface();
+      mHardwareSurface = surface;
+
+      surface.setPhysicalSize(262, 130);
 
       for (int i = 0; i < 8; i++)
       {
-         final AbsoluteHardwareKnob panKnob = host.createAbsoluteHardwareKnob();
+         final AbsoluteHardwareKnob panKnob = surface.createAbsoluteHardwareKnob();
          panKnob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 2 + i));
          final String panLabel = "Pan" + (i + 1);
          panKnob.setLabel(panLabel);
 //         panKnob.value().addValueObserver(value -> host.println(panLabel + ": " + value));
          mPanKnobs[i] = panKnob;
 
-         final HardwareSlider slider = host.createHardwareSlider();
+         final HardwareSlider slider = surface.createHardwareSlider();
          slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 16 + i));
          final String volLabel = "Volume " + (i + 1);
          slider.setLabel(panLabel);
@@ -143,7 +149,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
          // Create the arm button
 
-         final HardwareButton armButton = host.createHardwareButton();
+         final HardwareButton armButton = surface.createHardwareButton();
          final int armCC = 48 + i;
          armButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 127));
          armButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 0));
@@ -151,7 +157,7 @@ public class SLMixfaceExtension extends ControllerExtension
          armButton.setLabel(armLabel);
 //         armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
 //         armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
-         final HardwareLight armBackgroundLight = host.createHardwareLight();
+         final HardwareLight armBackgroundLight = surface.createHardwareLight();
 
          armBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, armCC, value ? 127 : 0);
@@ -163,7 +169,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
       // Create the mute button
 
-         final HardwareButton muteButton = host.createHardwareButton();
+         final HardwareButton muteButton = surface.createHardwareButton();
          final int muteCC = 64 + i;
          muteButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, muteCC, 127));
          muteButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, muteCC, 0));
@@ -171,7 +177,7 @@ public class SLMixfaceExtension extends ControllerExtension
          muteButton.setLabel(muteLabel);
 //         armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
 //         armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
-         final HardwareLight muteBackgroundLight = host.createHardwareLight();
+         final HardwareLight muteBackgroundLight = surface.createHardwareLight();
 
          muteBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, muteCC, value ? 127 : 0);
@@ -183,7 +189,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
       // Create the solo button
 
-         final HardwareButton soloButton = host.createHardwareButton();
+         final HardwareButton soloButton = surface.createHardwareButton();
          final int soloCC = 80 + i;
          soloButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, soloCC, 127));
          soloButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, soloCC, 0));
@@ -191,7 +197,7 @@ public class SLMixfaceExtension extends ControllerExtension
          soloButton.setLabel(soloLabel);
 //         armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
 //         armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
-         final HardwareLight soloBackgroundLight = host.createHardwareLight();
+         final HardwareLight soloBackgroundLight = surface.createHardwareLight();
 
          soloBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, soloCC, value ? 127 : 0);
@@ -202,12 +208,12 @@ public class SLMixfaceExtension extends ControllerExtension
          mSoloButtons[i] = soloButton;
       }
 
-      mMasterVolumeSlider = host.createHardwareSlider();
+      mMasterVolumeSlider = surface.createHardwareSlider();
       mMasterVolumeSlider.setLabel("Master Volume");
       mMasterVolumeSlider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 24));
 //      mMasterVolumeSlider.value().addValueObserver(value -> host.println("Master Volume " + value));
 
-      mPlayButton = host.createHardwareButton();
+      mPlayButton = surface.createHardwareButton();
       mPlayButton.setLabel("Play");
 
       final String playPressedExpression = midiExpressions.createIsCCValueExpression(15, 32, 127) + " || "
@@ -216,42 +222,42 @@ public class SLMixfaceExtension extends ControllerExtension
       mPlayButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 45, 0));
 //      mPlayButton.pressedAction().onAction(() -> host.println("Play pressed"));
 //      mPlayButton.releasedAction().onAction(() -> host.println("Play released"));
-      final HardwareLight playLight = host.createHardwareLight();
+      final HardwareLight playLight = surface.createHardwareLight();
       playLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 33, value ? 127 : 0);
       });
       mPlayButton.setBackgroundLight(playLight);
 
-      mRecordButton = host.createHardwareButton();
+      mRecordButton = surface.createHardwareButton();
       mRecordButton.setLabel("Record");
       mRecordButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 127));
       mRecordButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
 //      mRecordButton.pressedAction().onAction(() -> host.println("Rec pressed"));
 //      mRecordButton.releasedAction().onAction(() -> host.println("Rec released"));
-      final HardwareLight recordLight = host.createHardwareLight();
+      final HardwareLight recordLight = surface.createHardwareLight();
       recordLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 34, value ? 127 : 0);
       });
       mRecordButton.setBackgroundLight(recordLight);
 
-      mModeButton = host.createHardwareButton();
+      mModeButton = surface.createHardwareButton();
       mModeButton.setLabel("Mode");
       mModeButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 39, 127));
       //mModeButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
 //      mModeButton.pressedAction().onAction(() -> host.println("Rec pressed"));
 //      mModeButton.releasedAction().onAction(() -> host.println("Rec released"));
-      final HardwareLight modeLight = host.createHardwareLight();
+      final HardwareLight modeLight = surface.createHardwareLight();
       modeLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 39, value ? 127 : 0);
       });
       mModeButton.setBackgroundLight(modeLight);
 
-      mScrollForwardsButton = host.createHardwareButton();
+      mScrollForwardsButton = surface.createHardwareButton();
       mScrollForwardsButton.setLabel("ScrollForwards");
       mScrollForwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 127));
       mScrollForwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 0));
 
-      mScrollBackwardsButton = host.createHardwareButton();
+      mScrollBackwardsButton = surface.createHardwareButton();
       mScrollBackwardsButton.setLabel("ScrollBackwards");
       mScrollBackwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 127));
       mScrollBackwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 0));
@@ -275,7 +281,7 @@ public class SLMixfaceExtension extends ControllerExtension
    @Override
    public void flush()
    {
-      getHost().updateHardware();
+      mHardwareSurface.updateHardware();
    }
 
    /** Called when we receive short MIDI message on port 0. */
@@ -315,6 +321,8 @@ public class SLMixfaceExtension extends ControllerExtension
    private CursorDevice mCursorDevice;
 
    private CursorRemoteControlsPage mRemoteControlsPage;
+
+   private HardwareSurface mHardwareSurface;
 
    private final AbsoluteHardwareKnob[] mPanKnobs = new AbsoluteHardwareKnob[8];
 
