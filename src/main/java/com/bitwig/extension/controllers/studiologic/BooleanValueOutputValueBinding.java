@@ -3,9 +3,9 @@ package com.bitwig.extension.controllers.studiologic;
 import com.bitwig.extension.controller.api.BoolHardwareOutputValue;
 import com.bitwig.extension.controller.api.BooleanValue;
 
-public class BoolOutputValueBinding extends Binding<BooleanValue, BoolHardwareOutputValue>
+public class BooleanValueOutputValueBinding extends Binding<BooleanValue, BoolHardwareOutputValue>
 {
-   public BoolOutputValueBinding(final BooleanValue source, final BoolHardwareOutputValue target)
+   public BooleanValueOutputValueBinding(final BooleanValue source, final BoolHardwareOutputValue target)
    {
       super(source, target);
    }
@@ -13,13 +13,13 @@ public class BoolOutputValueBinding extends Binding<BooleanValue, BoolHardwareOu
    @Override
    protected void deactivate()
    {
-      getTarget().set(null);
+      getTarget().setValue(false);
    }
 
    @Override
    protected void activate()
    {
-      getTarget().set(getSource());
+      getTarget().setSourceValue(getSource());
    }
 
 }

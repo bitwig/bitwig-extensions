@@ -3,6 +3,7 @@ package com.bitwig.extension.controllers.studiologic;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 import com.bitwig.extension.controller.api.AbsoluteHardwarControlBindable;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
@@ -81,21 +82,30 @@ public class Layer
       return bind(button.pressedAction(), target);
    }
 
-   public BoolOutputValueBinding bind(final BooleanValue source, final BoolHardwareOutputValue target)
+   public BooleanSupplierOutputValueBinding bind(final BooleanSupplier source, final BoolHardwareOutputValue target)
    {
-      final BoolOutputValueBinding binding = new BoolOutputValueBinding(source, target);
+      final BooleanSupplierOutputValueBinding binding = new BooleanSupplierOutputValueBinding(source, target);
 
       addBinding(binding);
 
       return binding;
    }
 
-   public BoolOutputValueBinding bind(final BooleanValue source, final HardwareLight light)
+   public BooleanValueOutputValueBinding bind(final BooleanValue source, final BoolHardwareOutputValue target)
+   {
+      final BooleanValueOutputValueBinding binding = new BooleanValueOutputValueBinding(source, target);
+
+      addBinding(binding);
+
+      return binding;
+   }
+
+   public BooleanValueOutputValueBinding bind(final BooleanValue source, final HardwareLight light)
    {
       return bind(source, light.isOn());
    }
 
-   public BoolOutputValueBinding bind(final BooleanValue source, final HardwareControl hardwareControl)
+   public BooleanValueOutputValueBinding bind(final BooleanValue source, final HardwareControl hardwareControl)
    {
       return bind(source, hardwareControl.backgroundLight());
    }
