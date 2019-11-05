@@ -40,37 +40,49 @@ public class SLMixfaceExtension extends ControllerExtension
       host.setPhysicalSize(262, 130);
       defineHardwareControls(host, midiIn);
 
-      updateBindings();
+      defineLayers();
+
+      mTrackLayer.setIsActive(true);
    }
 
-   private void updateBindings()
+   private void defineLayers()
    {
-      mPlayButton.pressedAction().setBinding(mTransport.playAction());
-      mRecordButton.pressedAction().setBinding(mTransport.recordAction());
+      mTrackLayer = createTrackLayer();
+   }
+
+   private Layer createTrackLayer()
+   {
+      final Layer layer = mLayers.addLayer("Track");
+
+      layer.bind(mPlayButton, mTransport.playAction());
+      layer.bind(mRecordButton, mTransport.recordAction());
 
       for (int i = 0; i < 8; i++)
       {
          final Track track = mTrackBank.getItemAt(i);
-         mVolumeSliders[i].setBinding(track.volume());
-         mPanKnobs[i].setBinding(track.pan());
+
+         layer.bind(mVolumeSliders[i], track.volume());
+         layer.bind(mPanKnobs[i], track.pan());
 
          final HardwareButton armButton = mArmButtons[i];
 
-         armButton.pressedAction().setBinding(track.arm());
-         armButton.backgroundLight().isOn().set(track.arm());
+         layer.bind(armButton, track.arm());
+         layer.bind(track.arm(), armButton);
 
          final HardwareButton muteButton = mMuteButtons[i];
 
-         muteButton.pressedAction().setBinding(track.mute());
-         muteButton.backgroundLight().isOn().set(track.mute());
+         layer.bind(muteButton, track.mute());
+         layer.bind(track.mute(), muteButton);
 
          final HardwareButton soloButton = mSoloButtons[i];
 
-         soloButton.pressedAction().setBinding(track.solo());
-         soloButton.backgroundLight().isOn().set(track.solo());
+         layer.bind(soloButton, track.solo());
+         layer.bind(track.solo(), soloButton);
       }
 
-      mMasterVolumeSlider.setBinding(mMasterTrack.volume());
+      layer.bind(mMasterVolumeSlider, mMasterTrack.volume());
+
+      return layer;
    }
 
    private void defineHardwareControls(final ControllerHost host, final MidiIn midiIn)
@@ -252,4 +264,8 @@ public class SLMixfaceExtension extends ControllerExtension
    private Track mMasterTrack;
 
    private MidiOut mMidiOut;
+
+   private final Layers mLayers = new Layers();
+
+   private Layer mTrackLayer;
 }
