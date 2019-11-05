@@ -41,7 +41,9 @@ public class SLMixfaceExtension extends ControllerExtension
       mMasterTrack = host.createMasterTrack(0);
       mCursorTrack = host.createCursorTrack(0, 0);
       mCursorDevice = mCursorTrack.createCursorDevice();
-      mRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage(8);
+      mMainRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage(8);
+      mSlidersRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage("sliders", 8, "envelope");
+
 
       final MidiIn midiIn = host.getMidiInPort(0);
       mMidiOut = host.getMidiOutPort(0);
@@ -112,12 +114,13 @@ public class SLMixfaceExtension extends ControllerExtension
    {
       final Layer layer = mLayers.addLayer("Device");
 
-      layer.bind(mScrollForwardsButton, mRemoteControlsPage.selectNextPageAction());
-      layer.bind(mScrollBackwardsButton, mRemoteControlsPage.selectPreviousPageAction());
+      layer.bind(mScrollForwardsButton, mMainRemoteControlsPage.selectNextPageAction());
+      layer.bind(mScrollBackwardsButton, mMainRemoteControlsPage.selectPreviousPageAction());
 
       for (int i = 0; i < 8; i++)
       {
-         layer.bind(mPanKnobs[i], mRemoteControlsPage.getParameter(i));
+         layer.bind(mPanKnobs[i], mMainRemoteControlsPage.getParameter(i));
+         layer.bind(mVolumeSliders[i], mSlidersRemoteControlsPage.getParameter(i));
       }
 
       return layer;
@@ -320,7 +323,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
    private CursorDevice mCursorDevice;
 
-   private CursorRemoteControlsPage mRemoteControlsPage;
+   private CursorRemoteControlsPage mMainRemoteControlsPage, mSlidersRemoteControlsPage;
 
    private HardwareSurface mHardwareSurface;
 
