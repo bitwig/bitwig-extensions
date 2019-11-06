@@ -5,6 +5,7 @@ import com.bitwig.extension.controller.api.SettableRangedValue;
 
 public class RelativeHardwareControlToRangedValueBinding extends
    HardwareBinding<RelativeHardwareControl, SettableRangedValue, com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueBinding>
+   implements BindingWithSensitivity
 {
    public RelativeHardwareControlToRangedValueBinding(
       final RelativeHardwareControl source,
@@ -69,11 +70,13 @@ public class RelativeHardwareControlToRangedValueBinding extends
       return this;
    }
 
+   @Override
    public double getSensitivity()
    {
       return mSensitivity;
    }
 
+   @Override
    public RelativeHardwareControlToRangedValueBinding setSensitivity(final double sensitivity)
    {
       if (sensitivity != mSensitivity)

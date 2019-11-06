@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
+import java.util.List;
+
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Action;
@@ -28,6 +30,8 @@ import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.framework.Binding;
+import com.bitwig.extensions.framework.BindingWithSensitivity;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
@@ -285,14 +289,14 @@ public class PresonusAtom extends ControllerExtension
 
          mBaseLayer.bind(encoder, parameter);
 
-//         mBaseLayer.bind(encoder, new EncoderTarget()
-//         {
-//            @Override
-//            public void inc(final int steps)
-//            {
-//               parameterValue.inc(steps, mShift ? 1010 : 101);
-//            }
-//         });
+         // mBaseLayer.bind(encoder, new EncoderTarget()
+         // {
+         // @Override
+         // public void inc(final int steps)
+         // {
+         // parameterValue.inc(steps, mShift ? 1010 : 101);
+         // }
+         // });
       }
 
       mBaseLayer.activate();
@@ -300,7 +304,21 @@ public class PresonusAtom extends ControllerExtension
 
    private void setIsShiftPressed(final boolean value)
    {
-      mShift = value;
+      if (value != mShift)
+      {
+         mShift = value;
+
+         final List<Binding> activeBindings = mLayers.getActiveBindings();
+
+         for (final Binding binding : activeBindings)
+         {
+            if (binding instanceof BindingWithSensitivity)
+            {
+               final BindingWithSensitivity bindingWithSensitivity = (BindingWithSensitivity)binding;
+               bindingWithSensitivity.setSensitivity(value ? 0.1 : 1);
+            }
+         }
+      }
    }
 
    private Layer createLayer(final String name)
@@ -384,8 +402,7 @@ public class PresonusAtom extends ControllerExtension
    private void createEncoder(final int index)
    {
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
-      encoder
-         .setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index));
+      encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index));
 
       encoder.setAdjustedCallback(value -> getHost().println("Encoder " + (index + 1) + ": " + value));
 

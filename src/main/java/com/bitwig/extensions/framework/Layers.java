@@ -83,6 +83,11 @@ public class Layers
       updateActiveBindings();
    }
 
+   public List<Binding> getActiveBindings()
+   {
+      return Collections.unmodifiableList(mActiveBindings);
+   }
+
    private final List<Layer> mLayers = new ArrayList<>(4);
 
    @SuppressWarnings("rawtypes")
