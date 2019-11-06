@@ -227,6 +227,16 @@ public class Layer
       setIsActive(!mIsActive);
    }
 
+   public void activate()
+   {
+      setIsActive(true);
+   }
+
+   public void deactivate()
+   {
+      setIsActive(false);
+   }
+
    private boolean mIsActive;
 
    private final Layers mLayers;
