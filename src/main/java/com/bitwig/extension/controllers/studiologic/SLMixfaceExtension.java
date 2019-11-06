@@ -6,6 +6,8 @@ import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+import com.bitwig.extension.controller.api.ClipLauncherSlot;
+import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
@@ -21,6 +23,7 @@ import com.bitwig.extension.controller.api.RelativeHardwareStepClickingKnob;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extension.controller.api.TriggerAction;
 import com.bitwig.extensions.framework2.Layer;
 import com.bitwig.extensions.framework2.Layers;
 
@@ -40,7 +43,7 @@ public class SLMixfaceExtension extends ControllerExtension
       mTransport.isPlaying().markInterested();
       mTrackBank = host.createTrackBank(8, 0, 0);
       mMasterTrack = host.createMasterTrack(0);
-      mCursorTrack = host.createCursorTrack(0, 0);
+      mCursorTrack = host.createCursorTrack(0, 8);
       mCursorDevice = mCursorTrack.createCursorDevice();
       mMainRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage(8);
       mSlidersRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage("sliders", 8, "envelope");
@@ -294,6 +297,26 @@ public class SLMixfaceExtension extends ControllerExtension
       {
          layer.bind(mPanKnobs[i], mMainRemoteControlsPage.getParameter(i));
          layer.bind(mVolumeSliders[i], mSlidersRemoteControlsPage.getParameter(i));
+
+         final HardwareButton armButton = mArmButtons[i];
+
+         final ClipLauncherSlotBank slots = mCursorTrack.clipLauncherSlotBank();
+         final ClipLauncherSlot slot = slots.getItemAt(i);
+
+         final TriggerAction launchAction = slot.launchAction();
+
+         layer.bind(armButton, launchAction);
+         layer.bind(slot.hasContent(), armButton);
+
+         final HardwareButton muteButton = mMuteButtons[i];
+
+         layer.bind(muteButton, launchAction);
+         layer.bind(slot.isPlaying(), muteButton);
+
+         final HardwareButton soloButton = mSoloButtons[i];
+
+         layer.bind(soloButton, launchAction);
+         layer.bind(slot.hasContent(), soloButton);
       }
 
       layer.bind(mNavigationDial, mCursorDevice);

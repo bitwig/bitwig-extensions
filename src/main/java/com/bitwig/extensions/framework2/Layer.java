@@ -159,6 +159,8 @@ public class Layer
 
    public BooleanValueOutputValueBinding bind(final BooleanValue source, final BoolHardwareOutputValue target)
    {
+      source.markInterested();
+
       final BooleanValueOutputValueBinding binding = new BooleanValueOutputValueBinding(source, target);
 
       addBinding(binding);
