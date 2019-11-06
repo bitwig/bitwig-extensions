@@ -8,10 +8,12 @@ import com.bitwig.extension.controller.api.AbsoluteHardwarControlBindable;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.BooleanHardwareOutputValue;
 import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.HardwareAction;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControl;
+import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
@@ -178,6 +180,15 @@ public class Layer
       final HardwareControl hardwareControl)
    {
       return bind(source, (OnOffHardwareLight)hardwareControl.backgroundLight());
+   }
+
+   public Binding bind(final ColorValue sourceColor, final MultiStateHardwareLight light)
+   {
+      final LightColorOutputBinding binding = new LightColorOutputBinding(sourceColor, light);
+
+      addBinding(binding);
+
+      return binding;
    }
 
    public boolean isActive()
