@@ -242,6 +242,13 @@ public class PresonusAtom extends ControllerExtension
       mBaseLayer.bindIsPressed(mShiftButton, this::setIsShiftPressed);
       mBaseLayer.bindToggle(mClickCountInButton, mTransport.isMetronomeEnabled());
 
+      mBaseLayer.bindPressed(mPlayLoopButton, () ->
+      {
+         if (mShift) mTransport.isArrangerLoopEnabled().toggle();
+         else mTransport.togglePlay();
+      });
+      mBaseLayer.bind(mTransport.isPlaying(), mPlayLoopButton);
+
       mBaseLayer.activate();
    }
 
