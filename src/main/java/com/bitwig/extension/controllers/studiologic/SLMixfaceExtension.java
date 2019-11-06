@@ -206,7 +206,6 @@ public class SLMixfaceExtension extends ControllerExtension
       // mPreviousButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 44, 127));
 
       mNavigationDial = surface.createRelativeHardwareStepClickingKnob();
-
       mNavigationDial.stepLeftAction().setActionMatcher(midiIn.createCCActionMatcher(15, 44, 127));
       mNavigationDial.stepRightAction().setActionMatcher(midiIn.createCCActionMatcher(15, 43, 127));
       mNavigationDial.setStepAdjustmentAmount(0.1);
@@ -277,8 +276,7 @@ public class SLMixfaceExtension extends ControllerExtension
          layer.bind(track.solo(), soloButton);
       }
 
-      // layer.bind(mNextButton, mCursorTrack.selectNextAction());
-      // layer.bind(mPreviousButton, mCursorTrack.selectPreviousAction());
+      layer.bind(mNavigationDial, mCursorTrack);
 
       layer.setIsActive(true);
 
@@ -298,8 +296,7 @@ public class SLMixfaceExtension extends ControllerExtension
          layer.bind(mVolumeSliders[i], mSlidersRemoteControlsPage.getParameter(i));
       }
 
-      // layer.bind(mNextButton, mCursorDevice.selectNextAction());
-      // layer.bind(mPreviousButton, mCursorDevice.selectPreviousAction());
+      layer.bind(mNavigationDial, mCursorDevice);
 
       return layer;
    }
@@ -378,7 +375,7 @@ public class SLMixfaceExtension extends ControllerExtension
    private final HardwareButton[] mSoloButtons = new HardwareButton[8];
 
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton, mModeButton,
-      mScrollBankForwardsButton, mScrollBankBackwardsButton;// , mNextButton, mPreviousButton;
+      mScrollBankForwardsButton, mScrollBankBackwardsButton;
 
    private RelativeHardwareStepClickingKnob mNavigationDial;
 
