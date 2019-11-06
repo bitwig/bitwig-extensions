@@ -13,12 +13,12 @@ import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
-import com.bitwig.extension.controller.api.HardwareLight;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RelativeHardwareValueMatcher;
 import com.bitwig.extension.controller.api.Track;
@@ -97,7 +97,7 @@ public class SLMixfaceExtension extends ControllerExtension
          armButton.setLabel(armLabel);
          // armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
          // armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
-         final HardwareLight armBackgroundLight = surface.createHardwareLight();
+         final OnOffHardwareLight armBackgroundLight = surface.createOnOffHardwareLight();
 
          armBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, armCC, value ? 127 : 0);
@@ -117,7 +117,7 @@ public class SLMixfaceExtension extends ControllerExtension
          muteButton.setLabel(muteLabel);
          // armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
          // armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
-         final HardwareLight muteBackgroundLight = surface.createHardwareLight();
+         final OnOffHardwareLight muteBackgroundLight = surface.createOnOffHardwareLight();
 
          muteBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, muteCC, value ? 127 : 0);
@@ -137,7 +137,7 @@ public class SLMixfaceExtension extends ControllerExtension
          soloButton.setLabel(soloLabel);
          // armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
          // armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
-         final HardwareLight soloBackgroundLight = surface.createHardwareLight();
+         final OnOffHardwareLight soloBackgroundLight = surface.createOnOffHardwareLight();
 
          soloBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, soloCC, value ? 127 : 0);
@@ -157,7 +157,7 @@ public class SLMixfaceExtension extends ControllerExtension
          selectButton.setLabel(selectLabel);
          // armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
          // armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
-         final HardwareLight selectBackgroundLight = surface.createHardwareLight();
+         final OnOffHardwareLight selectBackgroundLight = surface.createOnOffHardwareLight();
 
          selectBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, selectCC, value ? 127 : 0);
@@ -182,7 +182,7 @@ public class SLMixfaceExtension extends ControllerExtension
       mPlayButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 45, 0));
       // mPlayButton.pressedAction().onAction(() -> host.println("Play pressed"));
       // mPlayButton.releasedAction().onAction(() -> host.println("Play released"));
-      final HardwareLight playLight = surface.createHardwareLight();
+      final OnOffHardwareLight playLight = surface.createOnOffHardwareLight();
       playLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 33, value ? 127 : 0);
       });
@@ -194,7 +194,7 @@ public class SLMixfaceExtension extends ControllerExtension
       mRecordButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
       // mRecordButton.pressedAction().onAction(() -> host.println("Rec pressed"));
       // mRecordButton.releasedAction().onAction(() -> host.println("Rec released"));
-      final HardwareLight recordLight = surface.createHardwareLight();
+      final OnOffHardwareLight recordLight = surface.createOnOffHardwareLight();
       recordLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 34, value ? 127 : 0);
       });
@@ -206,7 +206,7 @@ public class SLMixfaceExtension extends ControllerExtension
       // mModeButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
       // mModeButton.pressedAction().onAction(() -> host.println("Rec pressed"));
       // mModeButton.releasedAction().onAction(() -> host.println("Rec released"));
-      final HardwareLight modeLight = surface.createHardwareLight();
+      final OnOffHardwareLight modeLight = surface.createOnOffHardwareLight();
       modeLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 39, value ? 127 : 0);
       });

@@ -6,13 +6,13 @@ import java.util.function.BooleanSupplier;
 
 import com.bitwig.extension.controller.api.AbsoluteHardwarControlBindable;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
-import com.bitwig.extension.controller.api.BoolHardwareOutputValue;
+import com.bitwig.extension.controller.api.BooleanHardwareOutputValue;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.HardwareAction;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControl;
-import com.bitwig.extension.controller.api.HardwareLight;
+import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.SettableRangedValue;
@@ -138,7 +138,7 @@ public class Layer
 
    public Binding bind(
       final BooleanSupplier source,
-      final BoolHardwareOutputValue target)
+      final BooleanHardwareOutputValue target)
    {
       final BooleanSupplierOutputValueBinding binding = new BooleanSupplierOutputValueBinding(source, target);
 
@@ -147,17 +147,17 @@ public class Layer
       return binding;
    }
 
-   public Binding bind(final BooleanSupplier source, final HardwareLight target)
+   public Binding bind(final BooleanSupplier source, final OnOffHardwareLight target)
    {
       return bind(source, target.isOn());
    }
 
    public Binding bind(final BooleanSupplier source, final HardwareControl target)
    {
-      return bind(source, target.backgroundLight());
+      return bind(source, (OnOffHardwareLight)target.backgroundLight());
    }
 
-   public Binding bind(final BooleanValue source, final BoolHardwareOutputValue target)
+   public Binding bind(final BooleanValue source, final BooleanHardwareOutputValue target)
    {
       source.markInterested();
 
@@ -168,7 +168,7 @@ public class Layer
       return binding;
    }
 
-   public Binding bind(final BooleanValue source, final HardwareLight light)
+   public Binding bind(final BooleanValue source, final OnOffHardwareLight light)
    {
       return bind(source, light.isOn());
    }
@@ -177,7 +177,7 @@ public class Layer
       final BooleanValue source,
       final HardwareControl hardwareControl)
    {
-      return bind(source, hardwareControl.backgroundLight());
+      return bind(source, (OnOffHardwareLight)hardwareControl.backgroundLight());
    }
 
    public boolean isActive()
