@@ -21,6 +21,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
+import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.PlayingNote;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
@@ -277,6 +278,23 @@ public class PresonusAtom extends ControllerExtension
       });
       mBaseLayer.bind(mTransport.isPlaying(), mPlayLoopButton);
 
+      for (int i = 0; i < 4; i++)
+      {
+         final Parameter parameter = mRemoteControls.getParameter(i);
+         final RelativeHardwareKnob encoder = mEncoders[i];
+
+         mBaseLayer.bind(encoder, parameter);
+
+//         mBaseLayer.bind(encoder, new EncoderTarget()
+//         {
+//            @Override
+//            public void inc(final int steps)
+//            {
+//               parameterValue.inc(steps, mShift ? 1010 : 101);
+//            }
+//         });
+      }
+
       mBaseLayer.activate();
    }
 
@@ -367,7 +385,7 @@ public class PresonusAtom extends ControllerExtension
    {
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
       encoder
-         .setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_ENCODER_1 + index));
+         .setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index));
 
       encoder.setAdjustedCallback(value -> getHost().println("Encoder " + (index + 1) + ": " + value));
 
