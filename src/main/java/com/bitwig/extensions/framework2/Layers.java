@@ -1,6 +1,7 @@
 package com.bitwig.extensions.framework2;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -29,6 +30,11 @@ public class Layers
       return layer;
    }
 
+   public List<Layer> getLayers()
+   {
+      return Collections.unmodifiableList(mLayers);
+   }
+
    @SuppressWarnings("rawtypes")
    private void updateActiveBindings()
    {
@@ -40,13 +46,13 @@ public class Layers
          {
             for (final Binding binding : layer.mBindings)
             {
-               final Object source = binding.getExclusiveSource();
+               final Object source = binding.getExclusivityObject();
 
                for (final Iterator<Binding> i = mActiveBindings.iterator(); i.hasNext();)
                {
                   final Binding activeBinding = i.next();
 
-                  if (Objects.equals(activeBinding.getExclusiveSource(), source) && activeBinding.getLayer() != layer)
+                  if (Objects.equals(activeBinding.getExclusivityObject(), source) && activeBinding.getLayer() != layer)
                   {
                      i.remove();
                      activeBinding.setIsActive(false);

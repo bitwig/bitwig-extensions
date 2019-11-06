@@ -2,7 +2,7 @@ package com.bitwig.extensions.framework2;
 
 import com.bitwig.extension.controller.api.HardwareAction;
 
-public class HardwareActionRunnableBinding extends Binding<HardwareAction, Runnable>
+class HardwareActionRunnableBinding extends Binding<HardwareAction, Runnable>
 {
    public HardwareActionRunnableBinding(final HardwareAction source, final Runnable target)
    {

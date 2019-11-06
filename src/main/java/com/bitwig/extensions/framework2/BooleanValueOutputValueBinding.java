@@ -3,11 +3,11 @@ package com.bitwig.extensions.framework2;
 import com.bitwig.extension.controller.api.BoolHardwareOutputValue;
 import com.bitwig.extension.controller.api.BooleanValue;
 
-public class BooleanValueOutputValueBinding extends Binding<BooleanValue, BoolHardwareOutputValue>
+class BooleanValueOutputValueBinding extends Binding<BooleanValue, BoolHardwareOutputValue>
 {
    public BooleanValueOutputValueBinding(final BooleanValue source, final BoolHardwareOutputValue target)
    {
-      super(source, target);
+      super(target, source, target);
    }
 
    @Override

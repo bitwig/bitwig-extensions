@@ -18,10 +18,10 @@ public abstract class Binding<SourceType, TargetType>
    }
 
    /**
-    * Object that represents an exclusive source for binding purposes. If 2 layers use the same exclusive
-    * source for a binding then all bindings in the lower layer for that source will be inactive.
+    * Object that represents an exclusive source for binding purposes. If 2 layers use the same exclusivity
+    * object for a binding then all bindings in the lower layer with that object will be inactive.
     */
-   public Object getExclusiveSource()
+   public Object getExclusivityObject()
    {
       return mExclusiveSource;
    }

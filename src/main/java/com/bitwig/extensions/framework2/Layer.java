@@ -108,7 +108,7 @@ public class Layer
       return bind(source, target);
    }
 
-   public HarwareActionBinding bind(final Object actionOwner, final HardwareAction source, final HardwareActionBindable target)
+   public Binding bind(final Object actionOwner, final HardwareAction source, final HardwareActionBindable target)
    {
       final HarwareActionBinding binding = new HarwareActionBinding(actionOwner, source, target);
 
@@ -117,7 +117,7 @@ public class Layer
       return binding;
    }
 
-   public HardwareActionRunnableBinding bind(final Object actionOwner, final HardwareAction source, final Runnable target)
+   public Binding bind(final Object actionOwner, final HardwareAction source, final Runnable target)
    {
       final HardwareActionRunnableBinding binding = new HardwareActionRunnableBinding(source, target);
 
@@ -126,17 +126,17 @@ public class Layer
       return binding;
    }
 
-   public HardwareActionRunnableBinding bind(final HardwareButton button, final Runnable target)
+   public Binding bind(final HardwareButton button, final Runnable target)
    {
       return bind(button, button.pressedAction(), target);
    }
 
-   public HarwareActionBinding bind(final HardwareButton button, final HardwareActionBindable target)
+   public Binding bind(final HardwareButton button, final HardwareActionBindable target)
    {
       return bind(button, button.pressedAction(), target);
    }
 
-   public BooleanSupplierOutputValueBinding bind(
+   public Binding bind(
       final BooleanSupplier source,
       final BoolHardwareOutputValue target)
    {
@@ -147,17 +147,17 @@ public class Layer
       return binding;
    }
 
-   public BooleanSupplierOutputValueBinding bind(final BooleanSupplier source, final HardwareLight target)
+   public Binding bind(final BooleanSupplier source, final HardwareLight target)
    {
       return bind(source, target.isOn());
    }
 
-   public BooleanSupplierOutputValueBinding bind(final BooleanSupplier source, final HardwareControl target)
+   public Binding bind(final BooleanSupplier source, final HardwareControl target)
    {
       return bind(source, target.backgroundLight());
    }
 
-   public BooleanValueOutputValueBinding bind(final BooleanValue source, final BoolHardwareOutputValue target)
+   public Binding bind(final BooleanValue source, final BoolHardwareOutputValue target)
    {
       source.markInterested();
 
@@ -168,12 +168,12 @@ public class Layer
       return binding;
    }
 
-   public BooleanValueOutputValueBinding bind(final BooleanValue source, final HardwareLight light)
+   public Binding bind(final BooleanValue source, final HardwareLight light)
    {
       return bind(source, light.isOn());
    }
 
-   public BooleanValueOutputValueBinding bind(
+   public Binding bind(
       final BooleanValue source,
       final HardwareControl hardwareControl)
    {
