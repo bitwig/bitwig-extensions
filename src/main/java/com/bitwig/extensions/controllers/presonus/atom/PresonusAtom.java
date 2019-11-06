@@ -194,36 +194,57 @@ public class PresonusAtom extends ControllerExtension
       surface.setPhysicalSize(202, 195);
 
       mShiftButton = createCCButton(CC_SHIFT);
+      mShiftButton.setLabel("Shift");
 
       // NAV section
       mUpButton = createCCButton(CC_UP);
+      mUpButton.setLabel("Up");
       mDownButton = createCCButton(CC_DOWN);
+      mDownButton.setLabel("Down");
       mLeftButton = createCCButton(CC_LEFT);
+      mLeftButton.setLabel("Left");
       mRightButton = createCCButton(CC_RIGHT);
+      mRightButton.setLabel("Right");
+      mSelectButton = createCCButton(CC_SELECT);
+      mSelectButton.setLabel("Select");
       mZoomButton = createCCButton(CC_ZOOM);
+      mZoomButton.setLabel("Zoom");
 
       // TRANS section
       mClickCountInButton = createCCButton(CC_CLICK_COUNT_IN);
+      mClickCountInButton.setLabel("Click\nCount in");
       mRecordSaveButton = createCCButton(CC_RECORD_SAVE);
+      mRecordSaveButton.setLabel("Record\nSave");
       mPlayLoopButton = createCCButton(CC_PLAY_LOOP_TOGGLE);
+      mPlayLoopButton.setLabel("Play\nLoop");
       mStopUndoButton = createCCButton(CC_STOP_UNDO);
+      mStopUndoButton.setLabel("Stop\nUndo");
 
       // SONG section
       mSetupButton = createCCButton(CC_SETUP);
+      mSetupButton.setLabel("Setup");
       mSetLoopButton = createCCButton(CC_SET_LOOP);
+      mSetLoopButton.setLabel("Set Loop");
 
       // EVENT section
       mEditorButton = createCCButton(CC_EDITOR);
+      mEditorButton.setLabel("Editor");
       mNudgeQuantizeButton = createCCButton(CC_NUDGE_QUANTIZE);
+      mNudgeQuantizeButton.setLabel("Nudge\nQuantize");
 
       // INST section
       mShowHideButton = createCCButton(CC_SHOW_HIDE);
+      mShowHideButton.setLabel("Show/\nHide");
       mPresetPadSelectButton = createCCButton(CC_PRESET_PAD_SELECT);
+      mPresetPadSelectButton.setLabel("Preset +-\nFocus");
       mBankButton = createCCButton(CC_BANK_TRANSPOSE);
+      mBankButton.setLabel("Bank");
 
       // MODE section
       mFullLevelButton = createCCButton(CC_FULL_LEVEL);
+      mFullLevelButton.setLabel("Full Level");
       mNoteRepeatButton = createCCButton(CC_NOTE_REPEAT);
+      mNoteRepeatButton.setLabel("Note\nRepeat");
 
       // Pads
       for (int i = 0; i < 16; i++)
