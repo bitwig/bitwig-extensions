@@ -274,17 +274,17 @@ public class SLMixfaceExtension extends ControllerExtension
    {
       final Layer layer = mLayers.addLayer("Common");
 
-      layer.bind(mModeButton, this::toggleDeviceLayer);
+      layer.bindPressed(mModeButton, this::toggleDeviceLayer);
       layer.bind((BooleanSupplier)(() -> mDeviceLayer.isActive()), mModeButton);
 
-      layer.bind(mPlayButton, mTransport.playAction());
+      layer.bindPressed(mPlayButton, mTransport.playAction());
       layer.bind(mTransport.isPlaying(), mPlayButton);
 
-      layer.bind(mRecordButton, mTransport.recordAction());
+      layer.bindPressed(mRecordButton, mTransport.recordAction());
       layer.bind(mTransport.isArrangerRecordEnabled(), mRecordButton);
 
-      layer.bind(mFastForwardButton, mTransport.fastForwardAction());
-      layer.bind(mRewindButton, mTransport.rewindAction());
+      layer.bindPressed(mFastForwardButton, mTransport.fastForwardAction());
+      layer.bindPressed(mRewindButton, mTransport.rewindAction());
 
       layer.bind(mMasterVolumeSlider, mMasterTrack.volume());
 
@@ -297,8 +297,8 @@ public class SLMixfaceExtension extends ControllerExtension
    {
       final Layer layer = mLayers.addLayer("Track");
 
-      layer.bind(mScrollBankForwardsButton, mTrackBank.scrollPageForwardsAction());
-      layer.bind(mScrollBankBackwardsButton, mTrackBank.scrollPageBackwardsAction());
+      layer.bindPressed(mScrollBankForwardsButton, mTrackBank.scrollPageForwardsAction());
+      layer.bindPressed(mScrollBankBackwardsButton, mTrackBank.scrollPageBackwardsAction());
 
       for (int i = 0; i < 8; i++)
       {
@@ -309,22 +309,22 @@ public class SLMixfaceExtension extends ControllerExtension
 
          final HardwareButton armButton = mArmButtons[i];
 
-         layer.bind(armButton, track.arm());
+         layer.bindPressed(armButton, track.arm());
          layer.bind(track.arm(), armButton);
 
          final HardwareButton muteButton = mMuteButtons[i];
 
-         layer.bind(muteButton, track.mute());
+         layer.bindPressed(muteButton, track.mute());
          layer.bind(track.mute(), muteButton);
 
          final HardwareButton soloButton = mSoloButtons[i];
 
-         layer.bind(soloButton, track.solo());
+         layer.bindPressed(soloButton, track.solo());
          layer.bind(track.solo(), soloButton);
 
          final HardwareButton selectButton = mSelectButtons[i];
 
-         layer.bind(selectButton, () -> mCursorTrack.selectChannel(track));
+         layer.bindPressed(selectButton, () -> mCursorTrack.selectChannel(track));
       }
 
       layer.bind(mNavigationDial, mCursorTrack);
@@ -338,8 +338,8 @@ public class SLMixfaceExtension extends ControllerExtension
    {
       final Layer layer = mLayers.addLayer("Device");
 
-      layer.bind(mScrollBankForwardsButton, mMainRemoteControlsPage.selectNextAction());
-      layer.bind(mScrollBankBackwardsButton, mMainRemoteControlsPage.selectPreviousAction());
+      layer.bindPressed(mScrollBankForwardsButton, mMainRemoteControlsPage.selectNextAction());
+      layer.bindPressed(mScrollBankBackwardsButton, mMainRemoteControlsPage.selectPreviousAction());
 
       for (int i = 0; i < 8; i++)
       {
@@ -353,17 +353,17 @@ public class SLMixfaceExtension extends ControllerExtension
 
          final TriggerAction launchAction = slot.launchAction();
 
-         layer.bind(armButton, launchAction);
+         layer.bindPressed(armButton, launchAction);
          layer.bind(slot.hasContent(), armButton);
 
          final HardwareButton muteButton = mMuteButtons[i];
 
-         layer.bind(muteButton, launchAction);
+         layer.bindPressed(muteButton, launchAction);
          layer.bind(slot.isPlaying(), muteButton);
 
          final HardwareButton soloButton = mSoloButtons[i];
 
-         layer.bind(soloButton, launchAction);
+         layer.bindPressed(soloButton, launchAction);
          layer.bind(slot.hasContent(), soloButton);
       }
 

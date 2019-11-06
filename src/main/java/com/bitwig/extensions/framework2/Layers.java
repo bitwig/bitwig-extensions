@@ -21,18 +21,14 @@ public class Layers
       return mControllerExtension;
    }
 
-   public void addLayer(final Layer layer)
+   void addLayer(final Layer layer)
    {
       mLayers.add(layer);
    }
 
    public Layer addLayer(final String name)
    {
-      final Layer layer = new Layer(this, name);
-
-      addLayer(layer);
-
-      return layer;
+      return new Layer(this, name);
    }
 
    public List<Layer> getLayers()

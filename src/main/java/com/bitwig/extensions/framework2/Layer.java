@@ -33,6 +33,8 @@ public class Layer
       super();
       mLayers = layers;
       mName = name;
+
+      layers.addLayer(this);
    }
 
    public String getName()
@@ -130,12 +132,12 @@ public class Layer
       return binding;
    }
 
-   public Binding bind(final HardwareButton button, final Runnable pressedRunnable)
+   public Binding bindPressed(final HardwareButton button, final Runnable pressedRunnable)
    {
       return bind(button, button.pressedAction(), pressedRunnable);
    }
 
-   public Binding bind(final HardwareButton button, final HardwareActionBindable target)
+   public Binding bindPressed(final HardwareButton button, final HardwareActionBindable target)
    {
       return bind(button, button.pressedAction(), target);
    }
