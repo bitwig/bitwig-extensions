@@ -40,7 +40,7 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
    public void listAutoDetectionMidiPortNames(
       final AutoDetectionMidiPortNamesList list, final PlatformType platformType)
    {
-      String[] midiNameList = {"ATOM"};
+      final String[] midiNameList = {"ATOM"};
 
       list.add(midiNameList, midiNameList);
    }
@@ -48,7 +48,7 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new PresonusAtom(this, host);
+      return new PresonusAtom2(this, host);
    }
 
    @Override
