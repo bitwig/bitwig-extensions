@@ -20,6 +20,7 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.PlayingNote;
 import com.bitwig.extension.controller.api.Scene;
@@ -229,7 +230,6 @@ public class PresonusAtom extends ControllerExtension
       {
          createPadButton(i);
       }
-
    }
 
    private void initLayers()
@@ -239,25 +239,20 @@ public class PresonusAtom extends ControllerExtension
 
    private void initBaseLayer()
    {
-      // TODO Auto-generated method stub
+      mBaseLayer.bindIsPressed(mShiftButton, this::setIsShiftPressed);
+      mBaseLayer.bindToggle(mClickCountInButton, mTransport.isMetronomeEnabled());
 
+      mBaseLayer.activate();
+   }
+
+   private void setIsShiftPressed(final boolean value)
+   {
+      mShift = value;
    }
 
    private Layer createLayer(final String name)
    {
-      return new Layer(mLayers, name)
-      {
-         @Override
-         public void setIsActive(final boolean active)
-         {
-            final boolean shouldPlayDrums = !mStepsLayer.isActive() && !mNoteRepeatShiftLayer.isActive()
-               && !mLauncherClipsLayer.isActive() && !mStepsZoomLayer.isActive()
-               && !mStepsSetupLoopLayer.isActive();
-
-            mNoteInput
-               .setKeyTranslationTable(shouldPlayDrums ? NoteInputUtils.ALL_NOTES : NoteInputUtils.NO_NOTES);
-         }
-      };
+      return new Layer(mLayers, name);
    }
 
    private int velocityForPlayingNote(final int padIndex)
@@ -300,6 +295,13 @@ public class PresonusAtom extends ControllerExtension
          .createActionMatcher(midiExpressions.createIsCCExpression(0, controlNumber) + " && data2 > 0"));
       button.releasedAction().setActionMatcher(mMidiIn.createCCActionMatcher(0, controlNumber, 0));
 
+      final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight();
+      button.setBackgroundLight(light);
+
+      light.isOn().onUpdateHardware(value -> {
+         mMidiOut.sendMidi(0xB0, controlNumber, value ? 127 : 0);
+      });
+
       return button;
    }
 
@@ -315,7 +317,8 @@ public class PresonusAtom extends ControllerExtension
 
       mPadButtons[index] = button;
 
-      final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight(PresonusAtom::padLightStateToColor);
+      final MultiStateHardwareLight light = mHardwareSurface
+         .createMultiStateHardwareLight(PresonusAtom::padLightStateToColor);
 
       button.setBackgroundLight(light);
 
@@ -438,14 +441,28 @@ public class PresonusAtom extends ControllerExtension
 
    private HardwareButton mShiftButton, mUpButton, mDownButton, mLeftButton, mRightButton, mSelectButton,
       mZoomButton, mClickCountInButton, mRecordSaveButton, mPlayLoopButton, mStopUndoButton, mSetupButton,
-      mSetLoopButton, mEditorButton, mNudgeQuantizeButton, mShowHideButton, mPresetPadSelectButton, mBankButton,
-      mFullLevelButton, mNoteRepeatButton;
+      mSetLoopButton, mEditorButton, mNudgeQuantizeButton, mShowHideButton, mPresetPadSelectButton,
+      mBankButton, mFullLevelButton, mNoteRepeatButton;
 
    private HardwareButton[] mPadButtons = new HardwareButton[16];
 
    private MultiStateHardwareLight[] mPadLights = new MultiStateHardwareLight[16];
 
-   private final Layers mLayers = new Layers(this);
+   private final Layers mLayers = new Layers(this)
+   {
+      @Override
+      protected void activeLayersChanged()
+      {
+         super.activeLayersChanged();
+
+         final boolean shouldPlayDrums = !mStepsLayer.isActive() && !mNoteRepeatShiftLayer.isActive()
+            && !mLauncherClipsLayer.isActive() && !mStepsZoomLayer.isActive()
+            && !mStepsSetupLoopLayer.isActive();
+
+         mNoteInput
+            .setKeyTranslationTable(shouldPlayDrums ? NoteInputUtils.ALL_NOTES : NoteInputUtils.NO_NOTES);
+      }
+   };
 
    private Layer mStepsLayer = createLayer("Steps");
 

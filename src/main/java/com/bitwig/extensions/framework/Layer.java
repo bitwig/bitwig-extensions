@@ -14,6 +14,7 @@ import com.bitwig.extension.controller.api.HardwareAction;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControl;
+import com.bitwig.extension.controller.api.HardwareLight;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
@@ -114,7 +115,10 @@ public class Layer
       return bind(source, target);
    }
 
-   public Binding bind(final Object actionOwner, final HardwareAction source, final HardwareActionBindable target)
+   public Binding bind(
+      final Object actionOwner,
+      final HardwareAction source,
+      final HardwareActionBindable target)
    {
       final HarwareActionBinding binding = new HarwareActionBinding(actionOwner, source, target);
 
@@ -125,7 +129,8 @@ public class Layer
 
    public Binding bind(final Object actionOwner, final HardwareAction source, final Runnable target)
    {
-      final HardwareActionRunnableBinding binding = new HardwareActionRunnableBinding(actionOwner, source, target);
+      final HardwareActionRunnableBinding binding = new HardwareActionRunnableBinding(actionOwner, source,
+         target);
 
       addBinding(binding);
 
@@ -146,6 +151,7 @@ public class Layer
    {
       bind(button, button.pressedAction(), target.setToTrueAction());
       bind(button, button.releasedAction(), target.setToFalseAction());
+
    }
 
    public void bindIsPressed(final HardwareButton button, final Consumer<Boolean> target)
@@ -154,9 +160,21 @@ public class Layer
       bind(button, button.releasedAction(), () -> target.accept(false));
    }
 
-   public Binding bind(
-      final BooleanSupplier source,
-      final BooleanHardwareOutputValue target)
+   /**
+    * Binds pressing of the supplied button to toggling of the target. If the button has an on/off light it
+    * will also reflect the value of the target.
+    */
+   public void bindToggle(final HardwareButton button, final SettableBooleanValue target)
+   {
+      bind(button, button.pressedAction(), target.toggleAction());
+
+      final HardwareLight backgroundLight = button.backgroundLight();
+
+      if (backgroundLight instanceof OnOffHardwareLight)
+         bind(target, (OnOffHardwareLight)button.backgroundLight());
+   }
+
+   public Binding bind(final BooleanSupplier source, final BooleanHardwareOutputValue target)
    {
       final BooleanSupplierOutputValueBinding binding = new BooleanSupplierOutputValueBinding(source, target);
 
@@ -191,9 +209,7 @@ public class Layer
       return bind(source, light.isOn());
    }
 
-   public Binding bind(
-      final BooleanValue source,
-      final HardwareControl hardwareControl)
+   public Binding bind(final BooleanValue source, final HardwareControl hardwareControl)
    {
       return bind(source, (OnOffHardwareLight)hardwareControl.backgroundLight());
    }
@@ -218,7 +234,7 @@ public class Layer
       {
          mIsActive = isActive;
 
-         mLayers.invalidateBindings();
+         mLayers.activeLayersChanged();
       }
    }
 

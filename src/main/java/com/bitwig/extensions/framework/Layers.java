@@ -78,7 +78,7 @@ public class Layers
       }
    }
 
-   void invalidateBindings()
+   protected void activeLayersChanged()
    {
       updateActiveBindings();
    }
