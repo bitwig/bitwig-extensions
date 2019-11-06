@@ -47,6 +47,7 @@ public class SLMixfaceExtension extends ControllerExtension
       mCursorDevice = mCursorTrack.createCursorDevice();
       mMainRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage(8);
       mSlidersRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage("sliders", 8, "envelope");
+      mTrackBank.followCursorTrack(mCursorTrack);
 
       final MidiIn midiIn = host.getMidiInPort(0);
       mMidiOut = host.getMidiOutPort(0);
@@ -144,6 +145,26 @@ public class SLMixfaceExtension extends ControllerExtension
          soloButton.setBackgroundLight(soloBackgroundLight);
 
          mSoloButtons[i] = soloButton;
+
+      // Create the select button
+
+         final HardwareButton selectButton = surface.createHardwareButton();
+         final int selectCC = 96 + i;
+         selectButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, selectCC, 127));
+         selectButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, selectCC, 0));
+         final String selectLabel = "Select " + (i + 1);
+         selectButton.setLabel(selectLabel);
+         // armButton.pressedAction().onAction(() -> host.println(armLabel + " presesd"));
+         // armButton.releasedAction().onAction(() -> host.println(armLabel + " released"));
+         final HardwareLight selectBackgroundLight = surface.createHardwareLight();
+
+         selectBackgroundLight.isOn().onUpdateHardware(value -> {
+            sendCC(15, selectCC, value ? 127 : 0);
+         });
+
+         selectButton.setBackgroundLight(selectBackgroundLight);
+
+         mSelectButtons[i] = selectButton;
       }
 
       mMasterVolumeSlider = surface.createHardwareSlider();
@@ -191,14 +212,24 @@ public class SLMixfaceExtension extends ControllerExtension
       mModeButton.setBackgroundLight(modeLight);
 
       mScrollBankForwardsButton = surface.createHardwareButton();
-      mScrollBankForwardsButton.setLabel("ScrollForwards");
+      mScrollBankForwardsButton.setLabel("Scroll Forwards");
       mScrollBankForwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 127));
       mScrollBankForwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 0));
 
       mScrollBankBackwardsButton = surface.createHardwareButton();
-      mScrollBankBackwardsButton.setLabel("ScrollBackwards");
+      mScrollBankBackwardsButton.setLabel("Scroll Backwards");
       mScrollBankBackwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 127));
       mScrollBankBackwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 0));
+
+      mFastForwardButton = surface.createHardwareButton();
+      mFastForwardButton.setLabel("Fast Forward");
+      mFastForwardButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 36, 127));
+      mFastForwardButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 36, 0));
+
+      mRewindButton = surface.createHardwareButton();
+      mRewindButton.setLabel("Rewind");
+      mRewindButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 35, 127));
+      mRewindButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 35, 0));
 
       // mNextButton = surface.createHardwareButton();
       // mNextButton.setLabel("Next");
@@ -242,6 +273,9 @@ public class SLMixfaceExtension extends ControllerExtension
       layer.bind(mRecordButton, mTransport.recordAction());
       layer.bind(mTransport.isArrangerRecordEnabled(), mRecordButton);
 
+      layer.bind(mFastForwardButton, mTransport.fastForwardAction());
+      layer.bind(mRewindButton, mTransport.rewindAction());
+
       layer.bind(mMasterVolumeSlider, mMasterTrack.volume());
 
       layer.setIsActive(true);
@@ -277,6 +311,10 @@ public class SLMixfaceExtension extends ControllerExtension
 
          layer.bind(soloButton, track.solo());
          layer.bind(track.solo(), soloButton);
+
+         final HardwareButton selectButton = mSelectButtons[i];
+
+         layer.bind(selectButton, () -> mCursorTrack.selectChannel(track));
       }
 
       layer.bind(mNavigationDial, mCursorTrack);
@@ -396,6 +434,8 @@ public class SLMixfaceExtension extends ControllerExtension
    private final HardwareButton[] mMuteButtons = new HardwareButton[8];
 
    private final HardwareButton[] mSoloButtons = new HardwareButton[8];
+
+   private final HardwareButton[] mSelectButtons = new HardwareButton[8];
 
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton, mModeButton,
       mScrollBankForwardsButton, mScrollBankBackwardsButton;
