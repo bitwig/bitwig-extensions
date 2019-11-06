@@ -3,6 +3,7 @@ package com.bitwig.extensions.framework2;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 import com.bitwig.extension.controller.api.AbsoluteHardwarControlBindable;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
@@ -17,6 +18,7 @@ import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.TriggerAction;
 
@@ -26,7 +28,7 @@ import com.bitwig.extension.controller.api.TriggerAction;
  */
 public class Layer
 {
-   Layer(final Layers layers, final String name)
+   public Layer(final Layers layers, final String name)
    {
       super();
       mLayers = layers;
@@ -128,14 +130,26 @@ public class Layer
       return binding;
    }
 
-   public Binding bind(final HardwareButton button, final Runnable target)
+   public Binding bind(final HardwareButton button, final Runnable pressedRunnable)
    {
-      return bind(button, button.pressedAction(), target);
+      return bind(button, button.pressedAction(), pressedRunnable);
    }
 
    public Binding bind(final HardwareButton button, final HardwareActionBindable target)
    {
       return bind(button, button.pressedAction(), target);
+   }
+
+   public void bindIsPressed(final HardwareButton button, final SettableBooleanValue target)
+   {
+      bind(button, button.pressedAction(), target.setToTrueAction());
+      bind(button, button.releasedAction(), target.setToFalseAction());
+   }
+
+   public void bindIsPressed(final HardwareButton button, final Consumer<Boolean> target)
+   {
+      bind(button, button.pressedAction(), () -> target.accept(true));
+      bind(button, button.releasedAction(), () -> target.accept(false));
    }
 
    public Binding bind(
