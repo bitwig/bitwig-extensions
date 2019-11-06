@@ -121,7 +121,7 @@ public class Layer
 
    public Binding bind(final Object actionOwner, final HardwareAction source, final Runnable target)
    {
-      final HardwareActionRunnableBinding binding = new HardwareActionRunnableBinding(source, target);
+      final HardwareActionRunnableBinding binding = new HardwareActionRunnableBinding(actionOwner, source, target);
 
       addBinding(binding);
 
