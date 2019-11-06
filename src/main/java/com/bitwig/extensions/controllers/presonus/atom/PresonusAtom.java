@@ -337,6 +337,9 @@ public class PresonusAtom extends ControllerExtension
          mMidiOut.sendMidi(0xB0, controlNumber, value ? 127 : 0);
       });
 
+      button.pressedAction().setActionCallback(() -> getHost().println(button.getLabel() + " pressed"));
+      button.releasedAction().setActionCallback(() -> getHost().println(button.getLabel() + " released"));
+
       return button;
    }
 
