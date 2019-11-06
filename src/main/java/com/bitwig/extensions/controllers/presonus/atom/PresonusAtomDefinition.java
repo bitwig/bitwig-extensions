@@ -38,11 +38,21 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
 
    @Override
    public void listAutoDetectionMidiPortNames(
-      final AutoDetectionMidiPortNamesList list, final PlatformType platformType)
+      final AutoDetectionMidiPortNamesList list,
+      final PlatformType platformType)
    {
-      final String[] midiNameList = {"ATOM"};
+      if (platformType == PlatformType.WINDOWS)
+      {
+         final String[] midiNameList = { "ATOM" };
 
-      list.add(midiNameList, midiNameList);
+         list.add(midiNameList, midiNameList);
+      }
+      else if (platformType == PlatformType.LINUX)
+      {
+         final String[] midiNameList = { "ATOM MIDI 1" };
+
+         list.add(midiNameList, midiNameList);
+      }
    }
 
    @Override
