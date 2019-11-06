@@ -153,6 +153,16 @@ public class Layer
       return bind(button, button.pressedAction(), target);
    }
 
+   public Binding bindReleased(final HardwareButton button, final Runnable releasedRunnable)
+   {
+      return bind(button, button.releasedAction(), releasedRunnable);
+   }
+
+   public Binding bindReleased(final HardwareButton button, final HardwareActionBindable target)
+   {
+      return bind(button, button.releasedAction(), target);
+   }
+
    public void bindIsPressed(final HardwareButton button, final SettableBooleanValue target)
    {
       bind(button, button.pressedAction(), target.setToTrueAction());

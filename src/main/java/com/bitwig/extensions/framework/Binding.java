@@ -4,10 +4,10 @@ package com.bitwig.extensions.framework;
 
 public abstract class Binding<SourceType, TargetType>
 {
-   protected Binding(final Object exclusiveSource, final SourceType source, final TargetType target)
+   protected Binding(final Object exclusivityObject, final SourceType source, final TargetType target)
    {
       super();
-      mExclusiveSource = exclusiveSource;
+      mExclusivityObject = exclusivityObject;
       mSource = source;
       mTarget = target;
    }
@@ -23,7 +23,7 @@ public abstract class Binding<SourceType, TargetType>
     */
    public Object getExclusivityObject()
    {
-      return mExclusiveSource;
+      return mExclusivityObject;
    }
 
    public SourceType getSource()
@@ -72,7 +72,7 @@ public abstract class Binding<SourceType, TargetType>
 
    protected abstract void activate();
 
-   private final Object mExclusiveSource;
+   private final Object mExclusivityObject;
 
    private final SourceType mSource;
 

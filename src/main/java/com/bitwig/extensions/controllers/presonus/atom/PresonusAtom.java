@@ -32,6 +32,7 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.Binding;
 import com.bitwig.extensions.framework.BindingWithSensitivity;
+import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
@@ -267,6 +268,9 @@ public class PresonusAtom extends ControllerExtension
    private void initLayers()
    {
       initBaseLayer();
+
+      mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+      //mDebugLayer.activate();
    }
 
    private void initBaseLayer()
@@ -553,6 +557,8 @@ public class PresonusAtom extends ControllerExtension
    private Layer mStepsZoomLayer = createLayer("Steps Zoom");
 
    private Layer mStepsSetupLoopLayer = createLayer("Steps Setup Loop");
+
+   private Layer mDebugLayer;
 
    private Arpeggiator mArpeggiator;
 
