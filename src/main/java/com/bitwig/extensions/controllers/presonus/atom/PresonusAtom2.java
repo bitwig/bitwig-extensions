@@ -165,6 +165,8 @@ public class PresonusAtom2 extends ControllerExtension
 
       createHardwareSurface();
 
+      initLayers();
+
       initPads();
       initButtons();
       initEncoders();
@@ -225,6 +227,17 @@ public class PresonusAtom2 extends ControllerExtension
       // MODE section
       mFullLevelButton = createCCButton(CC_FULL_LEVEL);
       mNoteRepeatButton = createCCButton(CC_NOTE_REPEAT);
+   }
+
+   private void initLayers()
+   {
+      initBaseLayer();
+   }
+
+   private void initBaseLayer()
+   {
+      // TODO Auto-generated method stub
+
    }
 
    private Layer createLayer(final String name)
