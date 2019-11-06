@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 
 import com.bitwig.extension.controller.api.AbsoluteHardwarControlBindable;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
@@ -117,6 +118,16 @@ public class Layer
    {
       final RelativeHardwarControlBindable target = getLayers().getControllerExtension().getHost()
          .createRelativeHardwareControlStepTarget(stepForwardsAction, stepBackwardsAction);
+
+      return bind(source, target);
+   }
+
+   public RelativeHardwareControlBinding bind(
+      final RelativeHardwareControl source,
+      DoubleConsumer adjustmentConsumer)
+   {
+      final RelativeHardwarControlBindable target = getLayers().getControllerExtension().getHost()
+         .createRelativeHardwareControlAdjustmentTarget(adjustmentConsumer);
 
       return bind(source, target);
    }

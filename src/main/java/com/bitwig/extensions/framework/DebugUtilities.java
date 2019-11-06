@@ -44,8 +44,7 @@ public class DebugUtilities
          {
             RelativeHardwareControl relControl = (RelativeHardwareControl)control;
 
-            layer.bind(relControl, host.createRelativeHardwareControlAdjustmentTarget(
-               amount -> host.println(prefix + " adjusted " + amount)));
+            layer.bind(relControl, amount -> host.println(prefix + " adjusted " + amount));
          }
       }
 
