@@ -108,16 +108,16 @@ public class Layer
       return bind(source, target);
    }
 
-   public HarwareActionBinding bind(final HardwareAction source, final HardwareActionBindable target)
+   public HarwareActionBinding bind(final Object actionOwner, final HardwareAction source, final HardwareActionBindable target)
    {
-      final HarwareActionBinding binding = new HarwareActionBinding(source, target);
+      final HarwareActionBinding binding = new HarwareActionBinding(actionOwner, source, target);
 
       addBinding(binding);
 
       return binding;
    }
 
-   public HardwareActionRunnableBinding bind(final HardwareAction source, final Runnable target)
+   public HardwareActionRunnableBinding bind(final Object actionOwner, final HardwareAction source, final Runnable target)
    {
       final HardwareActionRunnableBinding binding = new HardwareActionRunnableBinding(source, target);
 
@@ -126,14 +126,14 @@ public class Layer
       return binding;
    }
 
-   public HardwareActionRunnableBinding bind(final HardwareButton source, final Runnable target)
+   public HardwareActionRunnableBinding bind(final HardwareButton button, final Runnable target)
    {
-      return bind(source.pressedAction(), target);
+      return bind(button, button.pressedAction(), target);
    }
 
    public HarwareActionBinding bind(final HardwareButton button, final HardwareActionBindable target)
    {
-      return bind(button.pressedAction(), target);
+      return bind(button, button.pressedAction(), target);
    }
 
    public BooleanSupplierOutputValueBinding bind(

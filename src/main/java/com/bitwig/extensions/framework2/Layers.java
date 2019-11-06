@@ -3,6 +3,7 @@ package com.bitwig.extensions.framework2;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import com.bitwig.extension.controller.ControllerExtension;
 
@@ -39,13 +40,13 @@ public class Layers
          {
             for (final Binding binding : layer.mBindings)
             {
-               final Object source = binding.getSource();
+               final Object source = binding.getExclusiveSource();
 
                for (final Iterator<Binding> i = mActiveBindings.iterator(); i.hasNext();)
                {
                   final Binding activeBinding = i.next();
 
-                  if (activeBinding.getSource() == source && activeBinding.getLayer() != layer)
+                  if (Objects.equals(activeBinding.getExclusiveSource(), source) && activeBinding.getLayer() != layer)
                   {
                      i.remove();
                      activeBinding.setIsActive(false);

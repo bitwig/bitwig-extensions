@@ -10,7 +10,7 @@ public class AbsoluteHardwareControlBinding extends
       final AbsoluteHardwareControl source,
       final AbsoluteHardwarControlBindable target)
    {
-      super(source, target);
+      super(source, source, target);
    }
 
    @Override

@@ -7,9 +7,9 @@ import com.bitwig.extension.controller.api.HardwareActionBinding;
 public class HarwareActionBinding extends
    HardwareBinding<HardwareAction, HardwareActionBindable, com.bitwig.extension.controller.api.HardwareActionBinding>
 {
-   public HarwareActionBinding(final HardwareAction source, final HardwareActionBindable target)
+   public HarwareActionBinding(final Object exclusiveSource, final HardwareAction source, final HardwareActionBindable target)
    {
-      super(source, target);
+      super(exclusiveSource, source, target);
    }
 
    @Override

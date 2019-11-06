@@ -4,11 +4,26 @@ package com.bitwig.extensions.framework2;
 
 public abstract class Binding<SourceType, TargetType>
 {
-   protected Binding(final SourceType source, final TargetType target)
+   protected Binding(final Object exclusiveSource, final SourceType source, final TargetType target)
    {
       super();
+      mExclusiveSource = exclusiveSource;
       mSource = source;
       mTarget = target;
+   }
+
+   protected Binding(final SourceType source, final TargetType target)
+   {
+      this(source, source, target);
+   }
+
+   /**
+    * Object that represents an exclusive source for binding purposes. If 2 layers use the same exclusive
+    * source for a binding then all bindings in the lower layer for that source will be inactive.
+    */
+   public Object getExclusiveSource()
+   {
+      return mExclusiveSource;
    }
 
    public SourceType getSource()
@@ -56,6 +71,8 @@ public abstract class Binding<SourceType, TargetType>
    protected abstract void deactivate();
 
    protected abstract void activate();
+
+   private final Object mExclusiveSource;
 
    private final SourceType mSource;
 
