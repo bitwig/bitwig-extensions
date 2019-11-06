@@ -23,6 +23,7 @@ import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.PlayingNote;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -251,6 +252,11 @@ public class PresonusAtom extends ControllerExtension
       {
          createPadButton(i);
       }
+
+      for (int i = 0; i < 4; i++)
+      {
+         createEncoder(i);
+      }
    }
 
    private void initLayers()
@@ -263,10 +269,11 @@ public class PresonusAtom extends ControllerExtension
       mBaseLayer.bindIsPressed(mShiftButton, this::setIsShiftPressed);
       mBaseLayer.bindToggle(mClickCountInButton, mTransport.isMetronomeEnabled());
 
-      mBaseLayer.bindPressed(mPlayLoopButton, () ->
-      {
-         if (mShift) mTransport.isArrangerLoopEnabled().toggle();
-         else mTransport.togglePlay();
+      mBaseLayer.bindPressed(mPlayLoopButton, () -> {
+         if (mShift)
+            mTransport.isArrangerLoopEnabled().toggle();
+         else
+            mTransport.togglePlay();
       });
       mBaseLayer.bind(mTransport.isPlaying(), mPlayLoopButton);
 
@@ -351,6 +358,17 @@ public class PresonusAtom extends ControllerExtension
       button.setBackgroundLight(light);
 
       mPadLights[index] = light;
+   }
+
+   private void createEncoder(final int index)
+   {
+      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
+      encoder
+         .setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_ENCODER_1 + index));
+
+      encoder.setAdjustedCallback(value -> getHost().println("Encoder " + (index + 1) + ": " + value));
+
+      mEncoders[index] = encoder;
    }
 
    private static Color padLightStateToColor(final int padState)
@@ -475,6 +493,8 @@ public class PresonusAtom extends ControllerExtension
    private HardwareButton[] mPadButtons = new HardwareButton[16];
 
    private MultiStateHardwareLight[] mPadLights = new MultiStateHardwareLight[16];
+
+   private RelativeHardwareKnob[] mEncoders = new RelativeHardwareKnob[4];
 
    private final Layers mLayers = new Layers(this)
    {
