@@ -309,18 +309,15 @@ public class SLMixfaceExtension extends ControllerExtension
 
          final HardwareButton armButton = mArmButtons[i];
 
-         layer.bindPressed(armButton, track.arm());
-         layer.bind(track.arm(), armButton);
+         layer.bindToggle(armButton, track.arm());
 
          final HardwareButton muteButton = mMuteButtons[i];
 
-         layer.bindPressed(muteButton, track.mute());
-         layer.bind(track.mute(), muteButton);
+         layer.bindToggle(muteButton, track.mute());
 
          final HardwareButton soloButton = mSoloButtons[i];
 
-         layer.bindPressed(soloButton, track.solo());
-         layer.bind(track.solo(), soloButton);
+         layer.bindToggle(soloButton, track.solo());
 
          final HardwareButton selectButton = mSelectButtons[i];
 
