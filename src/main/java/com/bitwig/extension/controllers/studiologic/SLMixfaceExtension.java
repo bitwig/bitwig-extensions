@@ -379,7 +379,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
    private RelativeHardwareStepClickingKnob mNavigationDial;
 
-   private final Layers mLayers = new Layers();
+   private final Layers mLayers = new Layers(this);
 
    private Layer mCommonLayer, mTrackLayer, mDeviceLayer;
 }
