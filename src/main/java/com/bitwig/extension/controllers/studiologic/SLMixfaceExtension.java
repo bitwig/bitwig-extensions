@@ -19,7 +19,8 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.RelativeHardwareStepClickingKnob;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.RelativeHardwareValueMatcher;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -146,7 +147,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
          mSoloButtons[i] = soloButton;
 
-      // Create the select button
+         // Create the select button
 
          final HardwareButton selectButton = surface.createHardwareButton();
          final int selectCC = 96 + i;
@@ -239,10 +240,19 @@ public class SLMixfaceExtension extends ControllerExtension
       // mPreviousButton.setLabel("Prev");
       // mPreviousButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 44, 127));
 
-      mNavigationDial = surface.createRelativeHardwareStepClickingKnob();
-      mNavigationDial.stepLeftAction().setActionMatcher(midiIn.createCCActionMatcher(15, 44, 127));
-      mNavigationDial.stepRightAction().setActionMatcher(midiIn.createCCActionMatcher(15, 43, 127));
-      mNavigationDial.setStepAdjustmentAmount(0.1);
+      mNavigationDial = surface.createRelativeHardwareKnob();
+
+      final double stepSize = 1 / 16.0;
+
+      final RelativeHardwareValueMatcher stepDownMatcher = midiIn
+         .createRelativeValueMatcher(midiExpressions.createIsCCValueExpression(15, 44, 127), -stepSize);
+      final RelativeHardwareValueMatcher stepUpMatcher = midiIn
+         .createRelativeValueMatcher(midiExpressions.createIsCCValueExpression(15, 43, 127), stepSize);
+      final RelativeHardwareValueMatcher valueMatcher = host
+         .createOrRelativeHardwareValueMatcher(stepDownMatcher, stepUpMatcher);
+
+      mNavigationDial.setAdjustValueMatcher(valueMatcher);
+      mNavigationDial.setStepSize(stepSize);
    }
 
    private void defineLayers()
@@ -440,7 +450,7 @@ public class SLMixfaceExtension extends ControllerExtension
    private HardwareButton mPlayButton, mRecordButton, mFastForwardButton, mRewindButton, mModeButton,
       mScrollBankForwardsButton, mScrollBankBackwardsButton;
 
-   private RelativeHardwareStepClickingKnob mNavigationDial;
+   private RelativeHardwareKnob mNavigationDial;
 
    private final Layers mLayers = new Layers(this);
 
