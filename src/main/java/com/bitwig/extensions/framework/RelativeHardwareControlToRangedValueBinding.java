@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 
 public class RelativeHardwareControlToRangedValueBinding extends
-   HardwareBinding<RelativeHardwareControl, SettableRangedValue, com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueBinding>
+   AbstractRelativeHardwareControlBinding<SettableRangedValue, com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueBinding>
    implements BindingWithSensitivity
 {
    public RelativeHardwareControlToRangedValueBinding(
@@ -15,9 +15,10 @@ public class RelativeHardwareControlToRangedValueBinding extends
    }
 
    @Override
-   protected com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueBinding addHardwareBinding()
+   protected com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueBinding addHardwareBinding(double sensitivity)
    {
-      return getTarget().addBindingWithRangeAndSensitivity(getSource(), mMin, mMax, mSensitivity);
+      return getTarget().addBindingWithRangeAndSensitivity(getSource(), mMin, mMax,
+         sensitivity);
    }
 
    public double getMin()
@@ -70,27 +71,5 @@ public class RelativeHardwareControlToRangedValueBinding extends
       return this;
    }
 
-   @Override
-   public double getSensitivity()
-   {
-      return mSensitivity;
-   }
-
-   @Override
-   public RelativeHardwareControlToRangedValueBinding setSensitivity(final double sensitivity)
-   {
-      if (sensitivity != mSensitivity)
-      {
-         mSensitivity = sensitivity;
-
-         if (isActive())
-            getHardwareBinding().setSensitivity(sensitivity);
-      }
-
-      return this;
-   }
-
    private double mMin = 0, mMax = 1;
-
-   private double mSensitivity = 1;
 }

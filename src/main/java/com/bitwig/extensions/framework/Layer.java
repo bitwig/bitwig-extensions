@@ -1,6 +1,7 @@
 package com.bitwig.extensions.framework;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -46,6 +47,11 @@ public class Layer
    public Layers getLayers()
    {
       return mLayers;
+   }
+
+   public List<Binding> getBindings()
+   {
+      return Collections.unmodifiableList(mBindings);
    }
 
    @SuppressWarnings("rawtypes")

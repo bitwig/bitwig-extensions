@@ -60,7 +60,7 @@ public abstract class Binding<SourceType, TargetType>
       return mLayer;
    }
 
-   void setLayer(final Layer layer)
+   protected void setLayer(final Layer layer)
    {
       assert mLayer == null;
       assert layer != null;

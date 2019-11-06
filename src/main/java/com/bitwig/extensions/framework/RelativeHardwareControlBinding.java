@@ -4,8 +4,7 @@ import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 
 public class RelativeHardwareControlBinding extends
-   HardwareBinding<RelativeHardwareControl, RelativeHardwarControlBindable, com.bitwig.extension.controller.api.RelativeHardwareControlBinding>
-   implements BindingWithSensitivity
+   AbstractRelativeHardwareControlBinding<RelativeHardwarControlBindable, com.bitwig.extension.controller.api.RelativeHardwareControlBinding>
 {
    public RelativeHardwareControlBinding(
       final RelativeHardwareControl source,
@@ -15,30 +14,10 @@ public class RelativeHardwareControlBinding extends
    }
 
    @Override
-   protected com.bitwig.extension.controller.api.RelativeHardwareControlBinding addHardwareBinding()
+   protected com.bitwig.extension.controller.api.RelativeHardwareControlBinding addHardwareBinding(
+      double sensitivity)
    {
-      return getTarget().addBindingWithSensitivity(getSource(), mSensitivity);
+      return getTarget().addBindingWithSensitivity(getSource(), sensitivity);
    }
 
-   @Override
-   public double getSensitivity()
-   {
-      return mSensitivity;
-   }
-
-   @Override
-   public RelativeHardwareControlBinding setSensitivity(final double sensitivity)
-   {
-      if (sensitivity != mSensitivity)
-      {
-         mSensitivity = sensitivity;
-
-         if (isActive())
-            getHardwareBinding().setSensitivity(sensitivity);
-      }
-
-      return this;
-   }
-
-   private double mSensitivity = 1;
 }

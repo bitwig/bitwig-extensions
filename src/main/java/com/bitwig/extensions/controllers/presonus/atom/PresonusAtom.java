@@ -307,17 +307,7 @@ public class PresonusAtom extends ControllerExtension
       if (value != mShift)
       {
          mShift = value;
-
-         final List<Binding> activeBindings = mLayers.getActiveBindings();
-
-         for (final Binding binding : activeBindings)
-         {
-            if (binding instanceof BindingWithSensitivity)
-            {
-               final BindingWithSensitivity bindingWithSensitivity = (BindingWithSensitivity)binding;
-               bindingWithSensitivity.setSensitivity(value ? 0.1 : 1);
-            }
-         }
+         mLayers.setGlobalSensitivity(value ? 0.1 : 1);
       }
    }
 
