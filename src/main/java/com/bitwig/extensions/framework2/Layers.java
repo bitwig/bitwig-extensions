@@ -4,8 +4,21 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.bitwig.extension.controller.ControllerExtension;
+
 public class Layers
 {
+   public Layers(final ControllerExtension controllerExtension)
+   {
+      super();
+      mControllerExtension = controllerExtension;
+   }
+
+   public ControllerExtension getControllerExtension()
+   {
+      return mControllerExtension;
+   }
+
    public Layer addLayer(final String name)
    {
       final Layer layer = new Layer(this, name);
@@ -66,4 +79,6 @@ public class Layers
 
    @SuppressWarnings("rawtypes")
    private final List<Binding> mActiveBindings = new ArrayList<>();
+
+   private final ControllerExtension mControllerExtension;
 }

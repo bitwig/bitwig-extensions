@@ -16,6 +16,7 @@ import com.bitwig.extension.controller.api.HardwareLight;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.SettableRangedValue;
+import com.bitwig.extension.controller.api.TriggerAction;
 
 /**
  * A layer defines a number of bindings between a source object and a target that should be active when the
@@ -33,6 +34,11 @@ public class Layer
    public String getName()
    {
       return mName;
+   }
+
+   public Layers getLayers()
+   {
+      return mLayers;
    }
 
    @SuppressWarnings("rawtypes")
@@ -80,6 +86,28 @@ public class Layer
       return binding;
    }
 
+   public RelativeHardwareControlBinding bind(
+      final RelativeHardwareControl source,
+      final Runnable stepForwardsRunnable,
+      final Runnable stepBackwardsRunnable)
+   {
+      final RelativeHardwarControlBindable target = getLayers().getControllerExtension().getHost()
+         .createRelativeHardwareControlStepTarget(stepForwardsRunnable, stepBackwardsRunnable);
+
+      return bind(source, target);
+   }
+
+   public RelativeHardwareControlBinding bind(
+      final RelativeHardwareControl source,
+      final TriggerAction stepForwardsAction,
+      final TriggerAction stepBackwardsAction)
+   {
+      final RelativeHardwarControlBindable target = getLayers().getControllerExtension().getHost()
+         .createRelativeHardwareControlStepTarget(stepForwardsAction, stepBackwardsAction);
+
+      return bind(source, target);
+   }
+
    public HarwareActionBinding bind(final HardwareAction source, final HardwareActionBindable target)
    {
       final HarwareActionBinding binding = new HarwareActionBinding(source, target);
@@ -119,16 +147,12 @@ public class Layer
       return binding;
    }
 
-   public BooleanSupplierOutputValueBinding bind(
-      final BooleanSupplier source,
-      final HardwareLight target)
+   public BooleanSupplierOutputValueBinding bind(final BooleanSupplier source, final HardwareLight target)
    {
       return bind(source, target.isOn());
    }
 
-   public BooleanSupplierOutputValueBinding bind(
-      final BooleanSupplier source,
-      final HardwareControl target)
+   public BooleanSupplierOutputValueBinding bind(final BooleanSupplier source, final HardwareControl target)
    {
       return bind(source, target.backgroundLight());
    }
