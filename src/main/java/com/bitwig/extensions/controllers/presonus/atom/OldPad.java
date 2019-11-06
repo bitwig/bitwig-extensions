@@ -5,9 +5,9 @@ import com.bitwig.extensions.oldframework.ControlElement;
 import com.bitwig.extensions.oldframework.LayeredControllerExtension;
 import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 
-public class Pad implements ControlElement<RGBButtonTarget>
+public class OldPad implements ControlElement<RGBButtonTarget>
 {
-   public Pad(final int index)
+   public OldPad(final int index)
    {
       mIndex = index;
    }

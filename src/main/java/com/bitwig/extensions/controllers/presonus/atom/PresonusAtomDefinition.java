@@ -48,7 +48,7 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
    @Override
    public ControllerExtension createInstance(final ControllerHost host)
    {
-      return new PresonusAtom2(this, host);
+      return new PresonusAtom(this, host);
    }
 
    @Override
