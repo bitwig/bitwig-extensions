@@ -22,12 +22,12 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.framework.ControlElement;
-import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.framework.LayeredControllerExtension;
-import com.bitwig.extensions.framework.targets.ButtonTarget;
-import com.bitwig.extensions.framework.targets.EncoderTarget;
-import com.bitwig.extensions.framework.targets.RGBButtonTarget;
+import com.bitwig.extensions.oldframework.ControlElement;
+import com.bitwig.extensions.oldframework.Layer;
+import com.bitwig.extensions.oldframework.LayeredControllerExtension;
+import com.bitwig.extensions.oldframework.targets.ButtonTarget;
+import com.bitwig.extensions.oldframework.targets.EncoderTarget;
+import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 
 public class ArturiaKeylabMkII extends LayeredControllerExtension
 {

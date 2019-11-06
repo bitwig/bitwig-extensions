@@ -1,9 +1,9 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extensions.framework.LayeredControllerExtension;
-import com.bitwig.extensions.framework.targets.ClickEncoderTarget;
-import com.bitwig.extensions.framework.ControlElement;
+import com.bitwig.extensions.oldframework.ControlElement;
+import com.bitwig.extensions.oldframework.LayeredControllerExtension;
+import com.bitwig.extensions.oldframework.targets.ClickEncoderTarget;
 
 public class ClickEncoder implements ControlElement<ClickEncoderTarget>
 {

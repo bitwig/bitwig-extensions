@@ -1,4 +1,4 @@
-package com.bitwig.extensions.framework.targets;
+package com.bitwig.extensions.oldframework.targets;
 
 public interface ClickEncoderTarget extends EncoderTarget
 {

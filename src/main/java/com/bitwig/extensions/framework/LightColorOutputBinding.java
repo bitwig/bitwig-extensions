@@ -1,4 +1,4 @@
-package com.bitwig.extensions.framework2;
+package com.bitwig.extensions.framework;
 
 import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;

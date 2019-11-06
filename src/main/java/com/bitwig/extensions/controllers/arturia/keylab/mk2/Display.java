@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
-import com.bitwig.extensions.framework.ControlElement;
-import com.bitwig.extensions.framework.LayeredControllerExtension;
+import com.bitwig.extensions.oldframework.ControlElement;
+import com.bitwig.extensions.oldframework.LayeredControllerExtension;
 
 public class Display implements ControlElement<DisplayTarget>, Resetable
 {

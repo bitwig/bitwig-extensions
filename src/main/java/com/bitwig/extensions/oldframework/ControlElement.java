@@ -1,7 +1,7 @@
-package com.bitwig.extensions.framework;
+package com.bitwig.extensions.oldframework;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extensions.framework.targets.Target;
+import com.bitwig.extensions.oldframework.targets.Target;
 
 public interface ControlElement<T extends Target>
 {

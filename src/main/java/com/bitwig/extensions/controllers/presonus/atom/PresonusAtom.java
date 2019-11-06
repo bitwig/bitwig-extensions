@@ -24,11 +24,11 @@ import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.framework.targets.ButtonTarget;
-import com.bitwig.extensions.framework.LayeredControllerExtension;
-import com.bitwig.extensions.framework.targets.EncoderTarget;
-import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.framework.targets.RGBButtonTarget;
+import com.bitwig.extensions.oldframework.Layer;
+import com.bitwig.extensions.oldframework.LayeredControllerExtension;
+import com.bitwig.extensions.oldframework.targets.ButtonTarget;
+import com.bitwig.extensions.oldframework.targets.EncoderTarget;
+import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 import com.bitwig.extensions.util.NoteInputUtils;
 
 public class PresonusAtom extends LayeredControllerExtension

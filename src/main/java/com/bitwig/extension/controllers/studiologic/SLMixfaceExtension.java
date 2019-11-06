@@ -25,8 +25,8 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extension.controller.api.TriggerAction;
-import com.bitwig.extensions.framework2.Layer;
-import com.bitwig.extensions.framework2.Layers;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
 
 public class SLMixfaceExtension extends ControllerExtension
 {

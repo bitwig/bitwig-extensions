@@ -1,4 +1,4 @@
-package com.bitwig.extensions.framework2;
+package com.bitwig.extensions.framework;
 
 import java.util.ArrayList;
 import java.util.Collections;

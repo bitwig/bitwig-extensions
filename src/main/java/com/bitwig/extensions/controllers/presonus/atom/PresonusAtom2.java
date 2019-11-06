@@ -27,11 +27,11 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.framework.targets.ButtonTarget;
-import com.bitwig.extensions.framework.targets.EncoderTarget;
-import com.bitwig.extensions.framework.targets.RGBButtonTarget;
-import com.bitwig.extensions.framework2.Layer;
-import com.bitwig.extensions.framework2.Layers;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.oldframework.targets.ButtonTarget;
+import com.bitwig.extensions.oldframework.targets.EncoderTarget;
+import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 import com.bitwig.extensions.util.NoteInputUtils;
 
 public class PresonusAtom2 extends ControllerExtension

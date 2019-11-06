@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extensions.framework.targets.ButtonTarget;
+import com.bitwig.extensions.oldframework.targets.ButtonTarget;
 
 public abstract class AbstractButton
 {

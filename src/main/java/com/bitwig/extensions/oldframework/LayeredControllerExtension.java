@@ -1,4 +1,4 @@
-package com.bitwig.extensions.framework;
+package com.bitwig.extensions.oldframework;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.framework.targets.Target;
+import com.bitwig.extensions.oldframework.targets.Target;
 
 public abstract class LayeredControllerExtension extends ControllerExtension
 {

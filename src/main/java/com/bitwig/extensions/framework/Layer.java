@@ -1,207 +1,247 @@
 package com.bitwig.extensions.framework;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
+import com.bitwig.extension.controller.api.AbsoluteHardwarControlBindable;
+import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
+import com.bitwig.extension.controller.api.BooleanHardwareOutputValue;
 import com.bitwig.extension.controller.api.BooleanValue;
-import com.bitwig.extension.controller.api.Parameter;
+import com.bitwig.extension.controller.api.ColorValue;
+import com.bitwig.extension.controller.api.HardwareAction;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.HardwareControl;
+import com.bitwig.extension.controller.api.MultiStateHardwareLight;
+import com.bitwig.extension.controller.api.OnOffHardwareLight;
+import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
+import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
-import com.bitwig.extensions.framework.targets.ButtonTarget;
-import com.bitwig.extensions.framework.targets.EncoderTarget;
-import com.bitwig.extensions.framework.targets.FaderParameterTarget;
-import com.bitwig.extensions.framework.targets.RGBButtonTarget;
-import com.bitwig.extensions.framework.targets.Target;
-import com.bitwig.extensions.framework.targets.TouchFaderTarget;
+import com.bitwig.extension.controller.api.SettableRangedValue;
+import com.bitwig.extension.controller.api.TriggerAction;
 
+/**
+ * A layer defines a number of bindings between a source object and a target that should be active when the
+ * layer is active. A layer on tap will override bindings from a lower layer.
+ */
 public class Layer
 {
-   public void bind(ControlElement element, Target target)
+   public Layer(final Layers layers, final String name)
    {
-      mMap.put(element, target);
+      super();
+      mLayers = layers;
+      mName = name;
+
+      layers.addLayer(this);
    }
 
-   public void setActivate(final boolean active)
+   public String getName()
    {
+      return mName;
    }
 
-   public void bindToggle(ControlElement<ButtonTarget> element, SettableBooleanValue target)
+   public Layers getLayers()
    {
-      target.markInterested();
+      return mLayers;
+   }
 
-      bind(element, new ButtonTarget()
+   @SuppressWarnings("rawtypes")
+   public void addBinding(final Binding binding)
+   {
+      assert !mBindings.contains(binding);
+      assert !isActive();
+
+      mBindings.add(binding);
+
+      binding.setLayer(this);
+   }
+
+   public AbsoluteHardwareControlBinding bind(
+      final AbsoluteHardwareControl source,
+      final AbsoluteHardwarControlBindable target)
+   {
+      final AbsoluteHardwareControlBinding binding = new AbsoluteHardwareControlBinding(source, target);
+
+      addBinding(binding);
+
+      return binding;
+   }
+
+   public RelativeHardwareControlToRangedValueBinding bind(
+      final RelativeHardwareControl source,
+      final SettableRangedValue target)
+   {
+      final RelativeHardwareControlToRangedValueBinding binding = new RelativeHardwareControlToRangedValueBinding(
+         source, target);
+
+      addBinding(binding);
+
+      return binding;
+   }
+
+   public RelativeHardwareControlBinding bind(
+      final RelativeHardwareControl source,
+      final RelativeHardwarControlBindable target)
+   {
+      final RelativeHardwareControlBinding binding = new RelativeHardwareControlBinding(source, target);
+
+      addBinding(binding);
+
+      return binding;
+   }
+
+   public RelativeHardwareControlBinding bind(
+      final RelativeHardwareControl source,
+      final Runnable stepForwardsRunnable,
+      final Runnable stepBackwardsRunnable)
+   {
+      final RelativeHardwarControlBindable target = getLayers().getControllerExtension().getHost()
+         .createRelativeHardwareControlStepTarget(stepForwardsRunnable, stepBackwardsRunnable);
+
+      return bind(source, target);
+   }
+
+   public RelativeHardwareControlBinding bind(
+      final RelativeHardwareControl source,
+      final TriggerAction stepForwardsAction,
+      final TriggerAction stepBackwardsAction)
+   {
+      final RelativeHardwarControlBindable target = getLayers().getControllerExtension().getHost()
+         .createRelativeHardwareControlStepTarget(stepForwardsAction, stepBackwardsAction);
+
+      return bind(source, target);
+   }
+
+   public Binding bind(final Object actionOwner, final HardwareAction source, final HardwareActionBindable target)
+   {
+      final HarwareActionBinding binding = new HarwareActionBinding(actionOwner, source, target);
+
+      addBinding(binding);
+
+      return binding;
+   }
+
+   public Binding bind(final Object actionOwner, final HardwareAction source, final Runnable target)
+   {
+      final HardwareActionRunnableBinding binding = new HardwareActionRunnableBinding(actionOwner, source, target);
+
+      addBinding(binding);
+
+      return binding;
+   }
+
+   public Binding bindPressed(final HardwareButton button, final Runnable pressedRunnable)
+   {
+      return bind(button, button.pressedAction(), pressedRunnable);
+   }
+
+   public Binding bindPressed(final HardwareButton button, final HardwareActionBindable target)
+   {
+      return bind(button, button.pressedAction(), target);
+   }
+
+   public void bindIsPressed(final HardwareButton button, final SettableBooleanValue target)
+   {
+      bind(button, button.pressedAction(), target.setToTrueAction());
+      bind(button, button.releasedAction(), target.setToFalseAction());
+   }
+
+   public void bindIsPressed(final HardwareButton button, final Consumer<Boolean> target)
+   {
+      bind(button, button.pressedAction(), () -> target.accept(true));
+      bind(button, button.releasedAction(), () -> target.accept(false));
+   }
+
+   public Binding bind(
+      final BooleanSupplier source,
+      final BooleanHardwareOutputValue target)
+   {
+      final BooleanSupplierOutputValueBinding binding = new BooleanSupplierOutputValueBinding(source, target);
+
+      addBinding(binding);
+
+      return binding;
+   }
+
+   public Binding bind(final BooleanSupplier source, final OnOffHardwareLight target)
+   {
+      return bind(source, target.isOn());
+   }
+
+   public Binding bind(final BooleanSupplier source, final HardwareControl target)
+   {
+      return bind(source, (OnOffHardwareLight)target.backgroundLight());
+   }
+
+   public Binding bind(final BooleanValue source, final BooleanHardwareOutputValue target)
+   {
+      source.markInterested();
+
+      final BooleanValueOutputValueBinding binding = new BooleanValueOutputValueBinding(source, target);
+
+      addBinding(binding);
+
+      return binding;
+   }
+
+   public Binding bind(final BooleanValue source, final OnOffHardwareLight light)
+   {
+      return bind(source, light.isOn());
+   }
+
+   public Binding bind(
+      final BooleanValue source,
+      final HardwareControl hardwareControl)
+   {
+      return bind(source, (OnOffHardwareLight)hardwareControl.backgroundLight());
+   }
+
+   public Binding bind(final ColorValue sourceColor, final MultiStateHardwareLight light)
+   {
+      final LightColorOutputBinding binding = new LightColorOutputBinding(sourceColor, light);
+
+      addBinding(binding);
+
+      return binding;
+   }
+
+   public boolean isActive()
+   {
+      return mIsActive;
+   }
+
+   public void setIsActive(final boolean isActive)
+   {
+      if (isActive != mIsActive)
       {
-         @Override
-         public boolean get()
-         {
-            return target.get();
-         }
+         mIsActive = isActive;
 
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed) target.toggle();
-         }
-      });
-   }
-
-   public void bindPressedRunnable(ControlElement<ButtonTarget> element, BooleanValue ledValue, final Runnable runnable)
-   {
-      if (ledValue != null)
-      {
-         ledValue.markInterested();
+         mLayers.invalidateBindings();
       }
-
-      bind(element, new ButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return ledValue != null ? ledValue.get() : false;
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed) runnable.run();
-         }
-      });
    }
 
-   public void bindPressedRunnable(ControlElement<RGBButtonTarget> element, float[] RGB, final Runnable runnable)
+   public void toggleIsActive()
    {
-      bind(element, new RGBButtonTarget()
-      {
-         @Override
-         public float[] getRGB()
-         {
-            return RGB;
-         }
-
-         @Override
-         public boolean get()
-         {
-            return true;
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed) runnable.run();
-         }
-      });
+      setIsActive(!mIsActive);
    }
 
-   public void bindButton(ControlElement<ButtonTarget> element, BooleanValue ledValue, final Consumer<Boolean> consumer)
+   public void activate()
    {
-      if (ledValue != null)
-      {
-         ledValue.markInterested();
-      }
-
-      bind(element, new ButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return ledValue != null ? ledValue.get() : false;
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            consumer.accept(pressed);
-         }
-      });
+      setIsActive(true);
    }
 
-   public void bindLayerToggle(LayeredControllerExtension host, ControlElement<ButtonTarget> element, Layer layer)
+   public void deactivate()
    {
-      bind(element, new ButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return host.isLayerActive(layer);
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed) host.toggleLayer(layer);
-         }
-      });
+      setIsActive(false);
    }
 
-   public void bindLayerGate(LayeredControllerExtension host, ControlElement<ButtonTarget> element, Layer layer)
-   {
-      bind(element, new ButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return host.isLayerActive(layer);
-         }
+   private boolean mIsActive;
 
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed) host.activateLayer(layer);
-            else host.deactivateLayer(layer);
-         }
-      });
-   }
+   private final Layers mLayers;
 
-   public void bindLayerInGroup(LayeredControllerExtension host, ControlElement<ButtonTarget> element, Layer layer, Layer... layerGroup)
-   {
-      bind(element, new ButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return host.isLayerActive(layer);
-         }
+   final List<Binding> mBindings = new ArrayList<Binding>();
 
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed) host.activateLayerInGroup(layer, layerGroup);
-         }
-      });
-   }
-
-   public void bind(ControlElement<TouchFaderTarget> element, Parameter parameter)
-   {
-      if (parameter != null)
-      {
-         parameter.markInterested();
-      }
-
-      bind(element, new FaderParameterTarget(parameter));
-   }
-
-   public void bindEncoder(ControlElement<EncoderTarget> element, Parameter parameter, final int resolution)
-   {
-      if (parameter != null)
-      {
-         parameter.markInterested();
-      }
-
-      bind(element, new EncoderTarget()
-      {
-         @Override
-         public void inc(final int steps)
-         {
-            parameter.inc(steps, resolution);
-         }
-      });
-   }
-
-
-   public <T extends Target> T getTarget(final ControlElement element)
-   {
-      return (T) mMap.get(element);
-   }
-
-   Map<ControlElement, Target> mMap = new HashMap<>();
+   private final String mName;
 }

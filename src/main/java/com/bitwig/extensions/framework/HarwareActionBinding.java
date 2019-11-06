@@ -1,4 +1,4 @@
-package com.bitwig.extensions.framework2;
+package com.bitwig.extensions.framework;
 
 import com.bitwig.extension.controller.api.HardwareAction;
 import com.bitwig.extension.controller.api.HardwareActionBindable;

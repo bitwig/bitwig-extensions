@@ -3,9 +3,9 @@ package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 import java.util.Arrays;
 
 import com.bitwig.extension.api.util.midi.SysexBuilder;
-import com.bitwig.extensions.framework.ControlElement;
-import com.bitwig.extensions.framework.LayeredControllerExtension;
-import com.bitwig.extensions.framework.targets.ButtonTarget;
+import com.bitwig.extensions.oldframework.ControlElement;
+import com.bitwig.extensions.oldframework.LayeredControllerExtension;
+import com.bitwig.extensions.oldframework.targets.ButtonTarget;
 
 public class Button extends AbstractButton implements ControlElement<ButtonTarget>, Resetable
 {

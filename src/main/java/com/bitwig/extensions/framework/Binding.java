@@ -1,4 +1,4 @@
-package com.bitwig.extensions.framework2;
+package com.bitwig.extensions.framework;
 
 /** A binding defines a connection between a source and a target. */
 

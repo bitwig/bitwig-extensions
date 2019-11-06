@@ -1,9 +1,9 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extensions.framework.ControlElement;
-import com.bitwig.extensions.framework.LayeredControllerExtension;
-import com.bitwig.extensions.framework.targets.TouchFaderTarget;
+import com.bitwig.extensions.oldframework.ControlElement;
+import com.bitwig.extensions.oldframework.LayeredControllerExtension;
+import com.bitwig.extensions.oldframework.targets.TouchFaderTarget;
 
 public class Fader implements ControlElement<TouchFaderTarget>
 {

@@ -1,4 +1,4 @@
-package com.bitwig.extensions.framework.targets;
+package com.bitwig.extensions.oldframework.targets;
 
 import com.bitwig.extension.controller.api.Parameter;
 
