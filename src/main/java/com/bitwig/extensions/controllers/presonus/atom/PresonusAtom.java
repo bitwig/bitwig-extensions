@@ -35,7 +35,6 @@ import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.BooleanObject;
-import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.util.NoteInputUtils;
@@ -291,6 +290,14 @@ public class PresonusAtom extends ControllerExtension
 
    private void initLayers()
    {
+      mBaseLayer = createLayer("Base");
+      mStepsLayer = createLayer("Steps");
+      mStepsZoomLayer = createLayer("Steps Zoom");
+      mStepsSetupLoopLayer = createLayer("Steps Setup Loop");
+      mLauncherClipsLayer = createLayer("Launcher Clips");
+      mNoteRepeatLayer = createLayer("Note Repeat");
+      mNoteRepeatShiftLayer = createLayer("Note Repeat Shift");
+
       initBaseLayer();
       initStepsLayer();
       initStepsZoomLayer();
@@ -299,8 +306,8 @@ public class PresonusAtom extends ControllerExtension
       initNoteRepeatLayer();
       initNoteRepeatShiftLayer();
 
-      mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-      // mDebugLayer.activate();
+//      Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+//      debugLayer.activate();
    }
 
    private void initBaseLayer()
@@ -499,7 +506,8 @@ public class PresonusAtom extends ControllerExtension
    {
       final double timings[] = { 1, 1.0 / 2, 1.0 / 4, 1.0 / 8, 3.0 / 4.0, 3.0 / 8.0, 3.0 / 16.0, 3.0 / 32.0 };
 
-      final Runnable doNothing = () -> {};
+      final Runnable doNothing = () -> {
+      };
       final Supplier<Color> noColor = () -> null;
 
       for (int i = 0; i < 8; i++)
@@ -940,21 +948,8 @@ public class PresonusAtom extends ControllerExtension
       }
    };
 
-   private Layer mBaseLayer = createLayer("Base");
-
-   private Layer mStepsLayer = createLayer("Steps");
-
-   private Layer mLauncherClipsLayer = createLayer("Launcher Clips");
-
-   private Layer mNoteRepeatLayer = createLayer("Note Repeat");
-
-   private Layer mNoteRepeatShiftLayer = createLayer("Note Repeat Shift");
-
-   private Layer mStepsZoomLayer = createLayer("Steps Zoom");
-
-   private Layer mStepsSetupLoopLayer = createLayer("Steps Setup Loop");
-
-   private Layer mDebugLayer;
+   private Layer mBaseLayer, mStepsLayer, mLauncherClipsLayer, mNoteRepeatLayer, mNoteRepeatShiftLayer,
+      mStepsZoomLayer, mStepsSetupLoopLayer;
 
    private Arpeggiator mArpeggiator;
 
