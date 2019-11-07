@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
-import java.util.function.Supplier;
-
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
@@ -394,45 +392,47 @@ public class PresonusAtom extends ControllerExtension
             mCurrentPadForSteps = padIndex;
          });
 
-         mBaseLayer.bind((Supplier<Color>)() -> {
-
-            final DrumPad drumPad = mDrumPadBank.getItemAt(padIndex);
-            final boolean padBankExists = mDrumPadBank.exists().get();
-            final boolean isOn = padBankExists ? drumPad.exists().get() : true;
-
-            if (!isOn)
-               return null;
-
-            final double darken = 0.7;
-
-            Color drumPadColor;
-
-            if (!padBankExists)
-            {
-               drumPadColor = mCursorTrack.color().get();
-            }
-            else
-            {
-               final Color sourceDrumPadColor = drumPad.color().get();
-               final double red = sourceDrumPadColor.getRed() * darken;
-               final double green = sourceDrumPadColor.getGreen() * darken;
-               final double blue = sourceDrumPadColor.getBlue() * darken;
-
-               drumPadColor = Color.fromRGB(red, green, blue);
-            }
-
-            final int playing = velocityForPlayingNote(padIndex);
-
-            if (playing > 0)
-            {
-               return mixColorWithWhite(drumPadColor, playing);
-            }
-
-            return drumPadColor;
-         }, padButton);
+         mBaseLayer.bind(() -> getDrumPadColor(padIndex), padButton);
       }
 
       mBaseLayer.activate();
+   }
+
+   private Color getDrumPadColor(final int padIndex)
+   {
+      final DrumPad drumPad = mDrumPadBank.getItemAt(padIndex);
+      final boolean padBankExists = mDrumPadBank.exists().get();
+      final boolean isOn = padBankExists ? drumPad.exists().get() : true;
+
+      if (!isOn)
+         return null;
+
+      final double darken = 0.7;
+
+      Color drumPadColor;
+
+      if (!padBankExists)
+      {
+         drumPadColor = mCursorTrack.color().get();
+      }
+      else
+      {
+         final Color sourceDrumPadColor = drumPad.color().get();
+         final double red = sourceDrumPadColor.getRed() * darken;
+         final double green = sourceDrumPadColor.getGreen() * darken;
+         final double blue = sourceDrumPadColor.getBlue() * darken;
+
+         drumPadColor = Color.fromRGB(red, green, blue);
+      }
+
+      final int playing = velocityForPlayingNote(padIndex);
+
+      if (playing > 0)
+      {
+         return mixColorWithWhite(drumPadColor, playing);
+      }
+
+      return drumPadColor;
    }
 
    private void setIsShiftPressed(final boolean value)
