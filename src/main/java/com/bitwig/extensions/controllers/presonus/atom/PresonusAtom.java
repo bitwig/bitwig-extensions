@@ -297,6 +297,8 @@ public class PresonusAtom extends ControllerExtension
    private void initLayers()
    {
       initBaseLayer();
+      initStepsLayer();
+      initLauncherClipsLayer();
 
       mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
       // mDebugLayer.activate();
@@ -368,9 +370,8 @@ public class PresonusAtom extends ControllerExtension
       mBaseLayer.bindToggle(mFullLevelButton, () -> {
          fullLevelIsOn.toggle();
 
-         mNoteInput.setVelocityTranslationTable(fullLevelIsOn.getAsBoolean()
-            ? NoteInputUtils.FULL_VELOCITY
-            : NoteInputUtils.NORMAL_VELOCITY);
+         mNoteInput.setVelocityTranslationTable(
+            fullLevelIsOn.getAsBoolean() ? NoteInputUtils.FULL_VELOCITY : NoteInputUtils.NORMAL_VELOCITY);
       }, fullLevelIsOn);
 
       for (int i = 0; i < 4; i++)
@@ -396,6 +397,91 @@ public class PresonusAtom extends ControllerExtension
       }
 
       mBaseLayer.activate();
+   }
+
+   private void initStepsLayer()
+   {
+      mStepsLayer.bindToggle(mUpButton, () -> scrollKeys(1), mCursorClip.canScrollKeysUp());
+
+      for (int i = 0; i < 16; i++)
+      {
+         final HardwareButton padButton = mPadButtons[i];
+
+         final int padIndex = i;
+
+         mStepsLayer.bindPressed(padButton, () -> {
+            if (mShift)
+            {
+               mCursorClip.scrollToKey(36 + padIndex);
+               mCurrentPadForSteps = padIndex;
+               mCursorTrack.playNote(36 + padIndex, 100);
+            }
+            else
+               mCursorClip.toggleStep(padIndex, 0, 100);
+         });
+         mStepsLayer.bind(() -> getStepsPadColor(padIndex), padButton);
+      }
+   }
+
+   private void initLauncherClipsLayer()
+   {
+      for (int i = 0; i < 16; i++)
+      {
+         final HardwareButton padButton = mPadButtons[i];
+
+         final int padIndex = i;
+
+         final ClipLauncherSlot slot = mCursorTrack.clipLauncherSlotBank().getItemAt(padIndex);
+
+         mLauncherClipsLayer.bindPressed(padButton, () -> {
+            slot.select();
+            slot.launch();
+         });
+         mLauncherClipsLayer.bind(() -> slot.hasContent().get() ? getClipColor(slot) : (Color)null,
+            padButton);
+      }
+   }
+
+   private Color getStepsPadColor(final int padIndex)
+   {
+      if (mShift)
+      {
+         if (mCurrentPadForSteps == padIndex)
+         {
+            return WHITE;
+         }
+
+         final int playingNote = velocityForPlayingNote(padIndex);
+
+         if (playingNote > 0)
+         {
+            return mixColorWithWhite(clipColor(0.3f), playingNote);
+         }
+
+         return clipColor(0.3f);
+      }
+
+      if (mPlayingStep == padIndex + mCurrentPageForSteps * 16)
+      {
+         return WHITE;
+      }
+
+      final boolean isNewNote = mStepData[padIndex] == 2;
+      final boolean hasData = mStepData[padIndex] > 0;
+
+      if (isNewNote)
+         return Color.mix(mCursorClip.color().get(), WHITE, 0.5f);
+      else if (hasData)
+         return mCursorClip.color().get();
+      else
+         return Color.mix(mCursorClip.color().get(), BLACK, 0.8f);
+   }
+
+   private Color clipColor(final float scale)
+   {
+      final Color c = mCursorClip.color().get();
+
+      return Color.fromRGB(c.getRed() * scale, c.getGreen() * scale, c.getBlue() * scale);
    }
 
    private Color getDrumPadColor(final int padIndex)
@@ -734,11 +820,11 @@ public class PresonusAtom extends ControllerExtension
       }
    };
 
+   private Layer mBaseLayer = createLayer("Base");
+
    private Layer mStepsLayer = createLayer("Steps");
 
    private Layer mLauncherClipsLayer = createLayer("Launcher Clips");
-
-   private Layer mBaseLayer = createLayer("Base");
 
    private Layer mNoteRepeatLayer = createLayer("Note Repeat");
 
