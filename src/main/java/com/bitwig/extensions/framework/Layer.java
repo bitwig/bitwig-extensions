@@ -234,11 +234,7 @@ public class Layer
    {
       source.markInterested();
 
-      final BooleanValueOutputValueBinding binding = new BooleanValueOutputValueBinding(source, target);
-
-      addBinding(binding);
-
-      return binding;
+      return bind((BooleanSupplier)source, target);
    }
 
    public Binding bind(final BooleanValue source, final OnOffHardwareLight light)
