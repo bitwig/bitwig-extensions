@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
-import java.util.List;
-
 import com.bitwig.extension.api.Color;
+import com.bitwig.extension.api.util.midi.ShortMidiMessage;
+import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
@@ -30,8 +30,6 @@ import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.framework.Binding;
-import com.bitwig.extensions.framework.BindingWithSensitivity;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -113,7 +111,7 @@ public class PresonusAtom extends ControllerExtension
 
       final MidiIn midiIn = host.getMidiInPort(0);
 
-      // midiIn.setMidiCallback(getMidiCallbackToUseForLayers());
+      midiIn.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
       mNoteInput = midiIn.createNoteInput("Pads", "80????", "90????", "a0????");
       mNoteInput.setShouldConsumeEvents(false);
       mArpeggiator = mNoteInput.arpeggiator();
@@ -190,6 +188,12 @@ public class PresonusAtom extends ControllerExtension
    {
       // Turn off Native Mode
       mMidiOut.sendMidi(0x8f, 0, 0);
+   }
+
+   /** Called when we receive short MIDI message on port 0. */
+   private void onMidi0(final ShortMidiMessage msg)
+   {
+      getHost().println(msg.toString());
    }
 
    private void createHardwareSurface()
@@ -270,7 +274,7 @@ public class PresonusAtom extends ControllerExtension
       initBaseLayer();
 
       mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-      //mDebugLayer.activate();
+      mDebugLayer.activate();
    }
 
    private void initBaseLayer()
@@ -301,6 +305,18 @@ public class PresonusAtom extends ControllerExtension
          // parameterValue.inc(steps, mShift ? 1010 : 101);
          // }
          // });
+      }
+
+      for (int i = 0; i < 16; i++)
+      {
+         final HardwareButton pad = mPadButtons[i];
+
+         final int padIndex = i;
+
+         mBaseLayer.bindPressed(pad, () -> {
+            mCursorClip.scrollToKey(36 + padIndex);
+            mCurrentPadForSteps = padIndex;
+         });
       }
 
       mBaseLayer.activate();
@@ -375,20 +391,19 @@ public class PresonusAtom extends ControllerExtension
 
    private void createPadButton(final int index)
    {
-      final HardwareButton button = mHardwareSurface.createHardwareButton();
+      final HardwareButton pad = mHardwareSurface.createHardwareButton();
+      pad.setLabel("Pad " + (index + 1));
 
-      final String pressedExpression = "status == 0x90 && data1 == " + (0x24 + index) + " && data2 > 0";
-      button.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(pressedExpression));
+      int note = 0x24 + index;
+      pad.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
+      pad.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
-      final String releasedExpression = "status == 0x90 && data1 == " + (0x24 + index) + " && data2 == 0";
-      button.releasedAction().setActionMatcher(mMidiIn.createActionMatcher(releasedExpression));
-
-      mPadButtons[index] = button;
+      mPadButtons[index] = pad;
 
       final MultiStateHardwareLight light = mHardwareSurface
          .createMultiStateHardwareLight(PresonusAtom::padLightStateToColor);
 
-      button.setBackgroundLight(light);
+      pad.setBackgroundLight(light);
 
       mPadLights[index] = light;
    }
@@ -397,8 +412,6 @@ public class PresonusAtom extends ControllerExtension
    {
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
       encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index));
-
-      encoder.setAdjustedCallback(value -> getHost().println("Encoder " + (index + 1) + ": " + value));
 
       mEncoders[index] = encoder;
    }
