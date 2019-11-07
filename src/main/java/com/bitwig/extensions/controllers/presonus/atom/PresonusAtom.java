@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
+import java.util.function.Supplier;
+
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
@@ -298,7 +300,11 @@ public class PresonusAtom extends ControllerExtension
    {
       initBaseLayer();
       initStepsLayer();
+      initStepsZoomLayer();
+      initStepsSetupLoopLayer();
       initLauncherClipsLayer();
+      initNoteRepeatLayer();
+      initNoteRepeatShiftLayer();
 
       mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
       // mDebugLayer.activate();
@@ -346,7 +352,7 @@ public class PresonusAtom extends ControllerExtension
       mBaseLayer.bindReleased(mSelectButton, mLauncherClipsLayer::deactivate);
       mBaseLayer.bind(() -> getClipColor(mCursorClip.clipLauncherSlot()), mSelectButton);
 
-      mBaseLayer.bindToggle(mEditorButton, mStepsLayer::toggleIsActive, mStepsLayer::isActive);
+      mBaseLayer.bindToggle(mEditorButton, mStepsLayer);
 
       mBaseLayer.bindReleased(mNoteRepeatButton, () -> {
          mArpeggiator.mode().set("all");
@@ -402,7 +408,7 @@ public class PresonusAtom extends ControllerExtension
    private void initStepsLayer()
    {
       mStepsLayer.bindToggle(mUpButton, () -> scrollKeys(1), mCursorClip.canScrollKeysUp());
-      mStepsLayer.bindToggle(mDownButton,  () -> scrollKeys(-1), mCursorClip.canScrollKeysDown());
+      mStepsLayer.bindToggle(mDownButton, () -> scrollKeys(-1), mCursorClip.canScrollKeysDown());
       mStepsLayer.bindToggle(mLeftButton, () -> scrollPage(-1), mCursorClip.canScrollStepsBackwards());
       mStepsLayer.bindToggle(mRightButton, () -> scrollPage(1), mCursorClip.canScrollStepsForwards());
 
@@ -429,6 +435,49 @@ public class PresonusAtom extends ControllerExtension
       }
    }
 
+   private void initStepsZoomLayer()
+   {
+      for (int i = 0; i < 16; i++)
+      {
+         final HardwareButton padButton = mPadButtons[i];
+
+         final int padIndex = i;
+
+         mStepsZoomLayer.bindPressed(padButton, () -> {
+            mCurrentPageForSteps = padIndex;
+            mCursorClip.scrollToStep(16 * mCurrentPageForSteps);
+         });
+         mStepsZoomLayer.bind(() -> getStepsZoomPadColor(padIndex), padButton);
+      }
+   }
+
+   private void initStepsSetupLoopLayer()
+   {
+      for (int i = 0; i < 16; i++)
+      {
+         final HardwareButton padButton = mPadButtons[i];
+
+         final int padIndex = i;
+
+         mStepsSetupLoopLayer.bindPressed(padButton, () -> {
+            if (padIndex == 14)
+            {
+               mCursorClip.getLoopLength().set(Math.max(getPageLengthInBeatTime(),
+                  mCursorClip.getLoopLength().get() - getPageLengthInBeatTime()));
+            }
+            else if (padIndex == 15)
+            {
+               mCursorClip.getLoopLength().set(mCursorClip.getLoopLength().get() + getPageLengthInBeatTime());
+            }
+            else
+            {
+               // mCursorClip.getLoopStart().set(padIndex * getPageLengthInBeatTime());
+            }
+         });
+         mStepsZoomLayer.bind(() -> getStepsSetupLoopPadColor(padIndex), padButton);
+      }
+   }
+
    private void initLauncherClipsLayer()
    {
       for (int i = 0; i < 16; i++)
@@ -446,6 +495,78 @@ public class PresonusAtom extends ControllerExtension
          mLauncherClipsLayer.bind(() -> slot.hasContent().get() ? getClipColor(slot) : (Color)null,
             padButton);
       }
+   }
+
+   private void initNoteRepeatLayer()
+   {
+      mNoteRepeatLayer.bindToggle(mShiftButton, mNoteRepeatShiftLayer);
+   }
+
+   private void initNoteRepeatShiftLayer()
+   {
+      final double timings[] = { 1, 1.0 / 2, 1.0 / 4, 1.0 / 8, 3.0 / 4.0, 3.0 / 8.0, 3.0 / 16.0, 3.0 / 32.0 };
+
+      final Runnable doNothing = () -> {};
+      final Supplier<Color> noColor = () -> null;
+
+      for (int i = 0; i < 8; i++)
+      {
+         final double timing = timings[i];
+
+         final HardwareButton padButton = mPadButtons[i];
+
+         mNoteRepeatShiftLayer.bindPressed(padButton, () -> mArpeggiator.period().set(timing));
+         mNoteRepeatShiftLayer.bind(() -> mArpeggiator.period().get() == timing ? RED : DIM_RED, padButton);
+
+         mNoteRepeatShiftLayer.bindPressed(mPadButtons[i + 8], doNothing);
+         mNoteRepeatShiftLayer.bind(noColor, mPadButtons[i + 8]);
+      }
+   }
+
+   private Color getStepsZoomPadColor(final int padIndex)
+   {
+      final int numStepPages = getNumStepPages();
+
+      final int playingPage = mCursorClip.playingStep().get() / 16;
+
+      if (padIndex < numStepPages)
+      {
+         Color clipColor = mCursorClip.color().get();
+
+         if (padIndex != mCurrentPageForSteps)
+            clipColor = Color.mix(clipColor, BLACK, 0.5f);
+
+         if (padIndex == playingPage)
+            return Color.mix(clipColor, WHITE, 1 - getTransportPulse(1.0, 1));
+
+         return clipColor;
+      }
+
+      return BLACK;
+   }
+
+   private Color getStepsSetupLoopPadColor(final int padIndex)
+   {
+      if (padIndex == 14 || padIndex == 15)
+      {
+         return WHITE;
+      }
+
+      final int numStepPages = getNumStepPages();
+
+      final int playingPage = mCursorClip.playingStep().get() / 16;
+
+      if (padIndex < numStepPages)
+      {
+         final Color clipColor = mCursorClip.color().get();
+
+         if (padIndex == playingPage)
+            return Color.mix(clipColor, WHITE, 1 - getTransportPulse(1.0, 1));
+
+         return clipColor;
+      }
+
+      return BLACK;
    }
 
    private Color getStepsPadColor(final int padIndex)
