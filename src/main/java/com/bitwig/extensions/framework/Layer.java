@@ -14,6 +14,7 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.BooleanHardwareOutputValue;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ColorValue;
+import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareAction;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
@@ -38,6 +39,10 @@ public class Layer
       super();
       mLayers = layers;
       mName = name;
+      final ControllerHost host = layers.getControllerExtension().getHost();
+      mToggleAction = host.createAction(this::toggleIsActive, () -> "Toggle " + name);
+      mActivateAction = host.createAction(this::activate, () -> "Activate " + name);
+      mDeactivateAction = host.createAction(this::deactivate, () -> "Deactivate " + name);
 
       layers.addLayer(this);
    }
@@ -55,6 +60,21 @@ public class Layer
    public List<Binding> getBindings()
    {
       return Collections.unmodifiableList(mBindings);
+   }
+
+   public TriggerAction getToggleAction()
+   {
+      return mToggleAction;
+   }
+
+   public TriggerAction getActivateAction()
+   {
+      return mActivateAction;
+   }
+
+   public TriggerAction getDeactivateAction()
+   {
+      return mDeactivateAction;
    }
 
    @SuppressWarnings("rawtypes")
@@ -202,13 +222,19 @@ public class Layer
          bind(target, (OnOffHardwareLight)button.backgroundLight());
    }
 
-   public void bindToggle(final HardwareButton button, final Runnable pressedRunnable, final BooleanSupplier isLightOnOffSupplier)
+   public void bindToggle(
+      final HardwareButton button,
+      final Runnable pressedRunnable,
+      final BooleanSupplier isLightOnOffSupplier)
    {
       bindPressed(button, pressedRunnable);
       bind(isLightOnOffSupplier, button);
    }
 
-   public void bindToggle(final HardwareButton button, final TriggerAction pressedAction, final BooleanSupplier isLightOnOffSupplier)
+   public void bindToggle(
+      final HardwareButton button,
+      final TriggerAction pressedAction,
+      final BooleanSupplier isLightOnOffSupplier)
    {
       bindPressed(button, pressedAction);
       bind(isLightOnOffSupplier, button);
@@ -303,4 +329,6 @@ public class Layer
    final List<Binding> mBindings = new ArrayList<Binding>();
 
    private final String mName;
+
+   private final TriggerAction mToggleAction, mActivateAction, mDeactivateAction;
 }

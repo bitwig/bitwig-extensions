@@ -342,7 +342,7 @@ public class PresonusAtom extends ControllerExtension
          else
             mLauncherClipsLayer.activate();
       });
-      mBaseLayer.bindReleased(mSelectButton, mLauncherClipsLayer::deactivate);
+      mBaseLayer.bindReleased(mSelectButton, mLauncherClipsLayer.getDeactivateAction());
       mBaseLayer.bind(() -> getClipColor(mCursorClip.clipLauncherSlot()), mSelectButton);
 
       mBaseLayer.bindToggle(mEditorButton, mStepsLayer);
