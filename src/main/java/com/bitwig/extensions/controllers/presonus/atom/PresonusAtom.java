@@ -41,59 +41,51 @@ import com.bitwig.extensions.util.NoteInputUtils;
 
 public class PresonusAtom extends ControllerExtension
 {
-   final static int CC_ENCODER_1 = 0x0E;
+   private final static int CC_ENCODER_1 = 0x0E;
 
-   final static int CC_ENCODER_2 = 0x0F;
+   private final static int CC_SHIFT = 0x20;
 
-   final static int CC_ENCODER_3 = 0x10;
+   private final static int CC_NOTE_REPEAT = 0x18;
 
-   final static int CC_ENCODER_4 = 0x11;
+   private final static int CC_FULL_LEVEL = 0x19;
 
-   final static int CC_SHIFT = 0x20;
+   private final static int CC_BANK_TRANSPOSE = 0x1A;
 
-   final static int CC_NOTE_REPEAT = 0x18;
+   private final static int CC_PRESET_PAD_SELECT = 0x1B;
 
-   final static int CC_FULL_LEVEL = 0x19;
+   private final static int CC_SHOW_HIDE = 0x1D;
 
-   final static int CC_BANK_TRANSPOSE = 0x1A;
+   private final static int CC_NUDGE_QUANTIZE = 0x1E;
 
-   final static int CC_PRESET_PAD_SELECT = 0x1B;
+   private final static int CC_EDITOR = 0x1F;
 
-   final static int CC_SHOW_HIDE = 0x1D;
+   private final static int CC_SET_LOOP = 0x55;
 
-   final static int CC_NUDGE_QUANTIZE = 0x1E;
+   private final static int CC_SETUP = 0x56;
 
-   final static int CC_EDITOR = 0x1F;
+   private final static int CC_UP = 0x57;
 
-   final static int CC_SET_LOOP = 0x55;
+   private final static int CC_DOWN = 0x59;
 
-   final static int CC_SETUP = 0x56;
+   private final static int CC_LEFT = 0x5A;
 
-   final static int CC_UP = 0x57;
+   private final static int CC_RIGHT = 0x66;
 
-   final static int CC_DOWN = 0x59;
+   private final static int CC_SELECT = 0x67;
 
-   final static int CC_LEFT = 0x5A;
+   private final static int CC_ZOOM = 0x68;
 
-   final static int CC_RIGHT = 0x66;
+   private final static int CC_CLICK_COUNT_IN = 0x69;
 
-   final static int CC_SELECT = 0x67;
+   private final static int CC_RECORD_SAVE = 0x6B;
 
-   final static int CC_ZOOM = 0x68;
+   private final static int CC_PLAY_LOOP_TOGGLE = 0x6D;
 
-   final static int CC_CLICK_COUNT_IN = 0x69;
+   private final static int CC_STOP_UNDO = 0x6F;
 
-   final static int CC_RECORD_SAVE = 0x6B;
-
-   final static int CC_PLAY_LOOP_TOGGLE = 0x6D;
-
-   final static int CC_STOP_UNDO = 0x6F;
-
-   final static int LAUNCHER_SCENES = 16;
+   private final static int LAUNCHER_SCENES = 16;
 
    private static final Color WHITE = Color.fromRGB(1, 1, 1);
-
-   private static final Color DIM_WHITE = Color.fromRGB(0.3, 0.3, 0.3);
 
    private static final Color BLACK = Color.fromRGB(0, 0, 0);
 
