@@ -346,6 +346,35 @@ public class PresonusAtom extends ControllerExtension
       mBaseLayer.bindReleased(mSelectButton, mLauncherClipsLayer::deactivate);
       mBaseLayer.bind(() -> getClipColor(mCursorClip.clipLauncherSlot()), mSelectButton);
 
+      mBaseLayer.bindToggle(mEditorButton, mStepsLayer::toggleIsActive, mStepsLayer::isActive);
+
+      mBaseLayer.bindReleased(mNoteRepeatButton, () -> {
+         mArpeggiator.mode().set("all");
+         mArpeggiator.usePressureToVelocity().set(true);
+
+         mNoteRepeatLayer.toggleIsActive();
+
+         final boolean wasEnabled = mArpeggiator.isEnabled().get();
+
+         mArpeggiator.isEnabled().set(!wasEnabled);
+
+         if (wasEnabled)
+            mNoteRepeatLayer.deactivate();
+         else
+            mNoteRepeatLayer.activate();
+      });
+      mBaseLayer.bind(mArpeggiator.isEnabled(), mNoteRepeatButton);
+
+      final BooleanObject fullLevelIsOn = new BooleanObject();
+
+      mBaseLayer.bindToggle(mFullLevelButton, () -> {
+         fullLevelIsOn.toggle();
+
+         mNoteInput.setVelocityTranslationTable(fullLevelIsOn.getAsBoolean()
+            ? NoteInputUtils.FULL_VELOCITY
+            : NoteInputUtils.NORMAL_VELOCITY);
+      }, fullLevelIsOn);
+
       for (int i = 0; i < 4; i++)
       {
          final Parameter parameter = mRemoteControls.getParameter(i);
