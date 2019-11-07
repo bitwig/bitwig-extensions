@@ -37,6 +37,7 @@ import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.oldframework.targets.ButtonTarget;
 import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 import com.bitwig.extensions.util.NoteInputUtils;
 
@@ -170,8 +171,7 @@ public class PresonusAtom extends ControllerExtension
       mCursorClip.getLoopStart().markInterested();
       mCursorClip.playingStep().addValueObserver(s -> mPlayingStep = s, -1);
       mCursorClip.scrollToKey(36);
-      mCursorClip.addNoteStepObserver(d ->
-      {
+      mCursorClip.addNoteStepObserver(d -> {
          final int x = d.x();
          final int y = d.y();
 
@@ -179,9 +179,12 @@ public class PresonusAtom extends ControllerExtension
          {
             final NoteStep.State state = d.state();
 
-            if (state == NoteStep.State.NoteOn) mStepData[x] = 2;
-            else if (state == NoteStep.State.NoteSustain) mStepData[x] = 1;
-            else mStepData[x] = 0;
+            if (state == NoteStep.State.NoteOn)
+               mStepData[x] = 2;
+            else if (state == NoteStep.State.NoteSustain)
+               mStepData[x] = 1;
+            else
+               mStepData[x] = 0;
          }
       });
       mCursorTrack.playingNotes().addValueObserver(notes -> mPlayingNotes = notes);
@@ -280,8 +283,6 @@ public class PresonusAtom extends ControllerExtension
 
       // Pads
 
-      final float darken = 0.7f;
-
       for (int i = 0; i < 16; i++)
       {
          final DrumPad drumPad = mDrumPadBank.getItemAt(i);
@@ -310,13 +311,29 @@ public class PresonusAtom extends ControllerExtension
       mBaseLayer.bindIsPressed(mShiftButton, this::setIsShiftPressed);
       mBaseLayer.bindToggle(mClickCountInButton, mTransport.isMetronomeEnabled());
 
-      mBaseLayer.bindPressed(mPlayLoopButton, () -> {
+      mBaseLayer.bindToggle(mPlayLoopButton, () -> {
          if (mShift)
             mTransport.isArrangerLoopEnabled().toggle();
          else
             mTransport.togglePlay();
-      });
-      mBaseLayer.bind(mTransport.isPlaying(), mPlayLoopButton);
+      }, mTransport.isPlaying());
+
+      mBaseLayer.bindToggle(mStopUndoButton, () -> {
+         if (mShift)
+            mApplication.undo();
+         else
+            mTransport.stop();
+      }, () -> !mTransport.isPlaying().get());
+
+      mBaseLayer.bindToggle(mRecordSaveButton, () -> {
+         if (mShift)
+            save();
+         else
+            mTransport.isArrangerRecordEnabled().toggle();
+      }, mTransport.isArrangerRecordEnabled());
+
+      mBaseLayer.bindToggle(mUpButton, mCursorTrack.selectPreviousAction(), mCursorTrack.hasPrevious());
+      mBaseLayer.bindToggle(mDownButton, mCursorTrack.selectNextAction(), mCursorTrack.hasNext());
 
       for (int i = 0; i < 4; i++)
       {
@@ -504,7 +521,7 @@ public class PresonusAtom extends ControllerExtension
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
       encoder.setLabel(String.valueOf(index + 1));
       encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index));
-      encoder.setSensitivity(2);
+      encoder.setSensitivity(2.5);
 
       mEncoders[index] = encoder;
    }

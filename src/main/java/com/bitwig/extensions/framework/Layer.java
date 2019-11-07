@@ -213,6 +213,18 @@ public class Layer
          bind(target, (OnOffHardwareLight)button.backgroundLight());
    }
 
+   public void bindToggle(final HardwareButton button, Runnable pressedRunnable, BooleanSupplier isLightOnOffSupplier)
+   {
+      bindPressed(button, pressedRunnable);
+      bind(isLightOnOffSupplier, button);
+   }
+
+   public void bindToggle(final HardwareButton button, TriggerAction pressedAction, BooleanSupplier isLightOnOffSupplier)
+   {
+      bindPressed(button, pressedAction);
+      bind(isLightOnOffSupplier, button);
+   }
+
    public Binding bind(final BooleanSupplier source, final BooleanHardwareOutputValue target)
    {
       if (source instanceof BooleanValue)
