@@ -334,6 +334,18 @@ public class PresonusAtom extends ControllerExtension
 
       mBaseLayer.bindToggle(mUpButton, mCursorTrack.selectPreviousAction(), mCursorTrack.hasPrevious());
       mBaseLayer.bindToggle(mDownButton, mCursorTrack.selectNextAction(), mCursorTrack.hasNext());
+      mBaseLayer.bindToggle(mLeftButton, mCursorDevice.selectPreviousAction(), mCursorDevice.hasPrevious());
+      mBaseLayer.bindToggle(mRightButton, mCursorDevice.selectNextAction(), mCursorDevice.hasNext());
+
+      mBaseLayer.bindPressed(mSelectButton, () -> {
+         if (mCursorClip.clipLauncherSlot().isRecording().get())
+         {
+            mCursorClip.clipLauncherSlot().launch();
+         }
+         else
+            mLauncherClipsLayer.activate();
+      });
+      mBaseLayer.bindReleased(mSelectButton, mLauncherClipsLayer::deactivate);
 
       for (int i = 0; i < 4; i++)
       {
