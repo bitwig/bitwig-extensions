@@ -37,7 +37,6 @@ import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 import com.bitwig.extensions.util.NoteInputUtils;
 
 public class PresonusAtom extends ControllerExtension
@@ -92,15 +91,15 @@ public class PresonusAtom extends ControllerExtension
 
    final static int LAUNCHER_SCENES = 16;
 
-   float[] WHITE = { 1, 1, 1 };
+   private static final Color WHITE = Color.fromRGB(1, 1, 1);
 
-   float[] DIM_WHITE = { 0.3f, 0.3f, 0.3f };
+   private static final Color DIM_WHITE = Color.fromRGB(0.3, 0.3, 0.3);
 
-   float[] BLACK = { 0, 0, 0 };
+   private static final Color BLACK = Color.fromRGB(0, 0, 0);
 
-   float[] RED = { 1, 0, 0 };
+   private static final Color RED = Color.fromRGB(1, 0, 0);
 
-   float[] DIM_RED = { 0.3f, 0.0f, 0.0f };
+   private static final Color DIM_RED = Color.fromRGB(0.3, 0.0, 0.0);
 
    public PresonusAtom(final PresonusAtomDefinition definition, final ControllerHost host)
    {
@@ -227,57 +226,57 @@ public class PresonusAtom extends ControllerExtension
 
       surface.setPhysicalSize(202, 195);
 
-      mShiftButton = createCCButton(CC_SHIFT);
+      mShiftButton = createToggleButton(CC_SHIFT);
       mShiftButton.setLabel("Shift");
 
       // NAV section
-      mUpButton = createCCButton(CC_UP);
+      mUpButton = createToggleButton(CC_UP);
       mUpButton.setLabel("Up");
-      mDownButton = createCCButton(CC_DOWN);
+      mDownButton = createToggleButton(CC_DOWN);
       mDownButton.setLabel("Down");
-      mLeftButton = createCCButton(CC_LEFT);
+      mLeftButton = createToggleButton(CC_LEFT);
       mLeftButton.setLabel("Left");
-      mRightButton = createCCButton(CC_RIGHT);
+      mRightButton = createToggleButton(CC_RIGHT);
       mRightButton.setLabel("Right");
-      mSelectButton = createCCButton(CC_SELECT);
+      mSelectButton = createRGBButton(CC_SELECT);
       mSelectButton.setLabel("Select");
-      mZoomButton = createCCButton(CC_ZOOM);
+      mZoomButton = createToggleButton(CC_ZOOM);
       mZoomButton.setLabel("Zoom");
 
       // TRANS section
-      mClickCountInButton = createCCButton(CC_CLICK_COUNT_IN);
+      mClickCountInButton = createToggleButton(CC_CLICK_COUNT_IN);
       mClickCountInButton.setLabel("Click\nCount in");
-      mRecordSaveButton = createCCButton(CC_RECORD_SAVE);
+      mRecordSaveButton = createToggleButton(CC_RECORD_SAVE);
       mRecordSaveButton.setLabel("Record\nSave");
-      mPlayLoopButton = createCCButton(CC_PLAY_LOOP_TOGGLE);
+      mPlayLoopButton = createToggleButton(CC_PLAY_LOOP_TOGGLE);
       mPlayLoopButton.setLabel("Play\nLoop");
-      mStopUndoButton = createCCButton(CC_STOP_UNDO);
+      mStopUndoButton = createToggleButton(CC_STOP_UNDO);
       mStopUndoButton.setLabel("Stop\nUndo");
 
       // SONG section
-      mSetupButton = createCCButton(CC_SETUP);
+      mSetupButton = createToggleButton(CC_SETUP);
       mSetupButton.setLabel("Setup");
-      mSetLoopButton = createCCButton(CC_SET_LOOP);
+      mSetLoopButton = createToggleButton(CC_SET_LOOP);
       mSetLoopButton.setLabel("Set Loop");
 
       // EVENT section
-      mEditorButton = createCCButton(CC_EDITOR);
+      mEditorButton = createToggleButton(CC_EDITOR);
       mEditorButton.setLabel("Editor");
-      mNudgeQuantizeButton = createCCButton(CC_NUDGE_QUANTIZE);
+      mNudgeQuantizeButton = createToggleButton(CC_NUDGE_QUANTIZE);
       mNudgeQuantizeButton.setLabel("Nudge\nQuantize");
 
       // INST section
-      mShowHideButton = createCCButton(CC_SHOW_HIDE);
+      mShowHideButton = createToggleButton(CC_SHOW_HIDE);
       mShowHideButton.setLabel("Show/\nHide");
-      mPresetPadSelectButton = createCCButton(CC_PRESET_PAD_SELECT);
+      mPresetPadSelectButton = createToggleButton(CC_PRESET_PAD_SELECT);
       mPresetPadSelectButton.setLabel("Preset +-\nFocus");
-      mBankButton = createCCButton(CC_BANK_TRANSPOSE);
+      mBankButton = createToggleButton(CC_BANK_TRANSPOSE);
       mBankButton.setLabel("Bank");
 
       // MODE section
-      mFullLevelButton = createCCButton(CC_FULL_LEVEL);
+      mFullLevelButton = createToggleButton(CC_FULL_LEVEL);
       mFullLevelButton.setLabel("Full Level");
-      mNoteRepeatButton = createCCButton(CC_NOTE_REPEAT);
+      mNoteRepeatButton = createToggleButton(CC_NOTE_REPEAT);
       mNoteRepeatButton.setLabel("Note\nRepeat");
 
       // Pads
@@ -345,6 +344,7 @@ public class PresonusAtom extends ControllerExtension
             mLauncherClipsLayer.activate();
       });
       mBaseLayer.bindReleased(mSelectButton, mLauncherClipsLayer::deactivate);
+      mBaseLayer.bind(() -> getClipColor(mCursorClip.clipLauncherSlot()), mSelectButton);
 
       for (int i = 0; i < 4; i++)
       {
@@ -451,15 +451,9 @@ public class PresonusAtom extends ControllerExtension
       return Color.fromRGB(red, green, blue);
    }
 
-   private HardwareButton createCCButton(final int controlNumber)
+   private HardwareButton createToggleButton(final int controlNumber)
    {
-      final HardwareButton button = mHardwareSurface.createHardwareButton();
-      final MidiExpressions midiExpressions = getHost().midiExpressions();
-
-      button.pressedAction().setActionMatcher(mMidiIn
-         .createActionMatcher(midiExpressions.createIsCCExpression(0, controlNumber) + " && data2 > 0"));
-      button.releasedAction().setActionMatcher(mMidiIn.createCCActionMatcher(0, controlNumber, 0));
-
+      final HardwareButton button = createButton(controlNumber);
       final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight();
       button.setBackgroundLight(light);
 
@@ -467,8 +461,33 @@ public class PresonusAtom extends ControllerExtension
          mMidiOut.sendMidi(0xB0, controlNumber, value ? 127 : 0);
       });
 
-      button.pressedAction().setActionCallback(() -> getHost().println(button.getLabel() + " pressed"));
-      button.releasedAction().setActionCallback(() -> getHost().println(button.getLabel() + " released"));
+      return button;
+   }
+
+   private HardwareButton createRGBButton(final int controlNumber)
+   {
+      final HardwareButton button = createButton(controlNumber);
+
+      final MultiStateHardwareLight light = mHardwareSurface
+         .createMultiStateHardwareLight(PresonusAtom::lightStateToColor);
+
+      light.state().onUpdateHardware(state -> sendLightState(0xB0, controlNumber, state));
+
+      light.setColorToStateFunction(PresonusAtom::lightColorToState);
+
+      button.setBackgroundLight(light);
+
+      return button;
+   }
+
+   private HardwareButton createButton(final int controlNumber)
+   {
+      final HardwareButton button = mHardwareSurface.createHardwareButton();
+      final MidiExpressions midiExpressions = getHost().midiExpressions();
+
+      button.pressedAction().setActionMatcher(mMidiIn
+         .createActionMatcher(midiExpressions.createIsCCExpression(0, controlNumber) + " && data2 > 0"));
+      button.releasedAction().setActionMatcher(mMidiIn.createCCActionMatcher(0, controlNumber, 0));
 
       return button;
    }
@@ -485,38 +504,40 @@ public class PresonusAtom extends ControllerExtension
       mPadButtons[index] = pad;
 
       final MultiStateHardwareLight light = mHardwareSurface
-         .createMultiStateHardwareLight(PresonusAtom::padLightStateToColor);
+         .createMultiStateHardwareLight(PresonusAtom::lightStateToColor);
 
-      light.state().onUpdateHardware(state -> {
+      light.state().onUpdateHardware(state -> sendLightState(0x90, 0x24 + index, state));
 
-         final int red = (state & 0x7F0000) >> 16;
-         final int green = (state & 0x7F00) >> 8;
-         final int blue = state & 0x7F;
-
-         final int[] values = new int[4];
-         values[0] = (state & 0x7F000000) >> 24;
-         values[1] = red;
-         values[2] = green;
-         values[3] = blue;
-
-         for (int i = 0; i < 4; i++)
-         {
-            // if (values[i] != mLastSent[i])
-            {
-               mMidiOut.sendMidi(0x90 + i, 0x24 + index, values[i]);
-               // mLastSent[i] = values[i];
-            }
-         }
-      });
-
-      light.setColorToStateFunction(PresonusAtom::padColorToState);
+      light.setColorToStateFunction(PresonusAtom::lightColorToState);
 
       pad.setBackgroundLight(light);
 
       mPadLights[index] = light;
    }
 
-   private static int padColorToState(final Color color)
+   private void sendLightState(final int statusStart, final int data1, final int state)
+   {
+      final int red = (state & 0x7F0000) >> 16;
+      final int green = (state & 0x7F00) >> 8;
+      final int blue = state & 0x7F;
+
+      final int[] values = new int[4];
+      values[0] = (state & 0x7F000000) >> 24;
+      values[1] = red;
+      values[2] = green;
+      values[3] = blue;
+
+      for (int i = 0; i < 4; i++)
+      {
+         // if (values[i] != mLastSent[i])
+         {
+            mMidiOut.sendMidi(statusStart + i, data1, values[i]);
+            // mLastSent[i] = values[i];
+         }
+      }
+   }
+
+   private static int lightColorToState(final Color color)
    {
       if (color == null)
          return 0;
@@ -543,7 +564,7 @@ public class PresonusAtom extends ControllerExtension
       mEncoders[index] = encoder;
    }
 
-   private static Color padLightStateToColor(final int padState)
+   private static Color lightStateToColor(final int padState)
    {
       final int red = (padState & 0xFF0000) >> 16;
       final int green = (padState & 0xFF00) >> 8;
@@ -585,17 +606,17 @@ public class PresonusAtom extends ControllerExtension
       }
    }
 
-   float[] getClipColor(final ClipLauncherSlot s)
+   private Color getClipColor(final ClipLauncherSlot s)
    {
       if (s.isRecordingQueued().get())
       {
-         return RGBButtonTarget.mix(RED, BLACK, getTransportPulse(1.0, 1));
+         return Color.mix(RED, BLACK, getTransportPulse(1.0, 1));
       }
       else if (s.hasContent().get())
       {
          if (s.isPlaybackQueued().get())
          {
-            return RGBButtonTarget.mixWithValue(s.color(), WHITE, 1 - getTransportPulse(4.0, 1));
+            return Color.mix(s.color().get(), WHITE, 1 - getTransportPulse(4.0, 1));
          }
          else if (s.isRecording().get())
          {
@@ -603,14 +624,14 @@ public class PresonusAtom extends ControllerExtension
          }
          else if (s.isPlaying().get() && mTransport.isPlaying().get())
          {
-            return RGBButtonTarget.mixWithValue(s.color(), WHITE, 1 - getTransportPulse(1.0, 1));
+            return Color.mix(s.color().get(), WHITE, 1 - getTransportPulse(1.0, 1));
          }
 
-         return RGBButtonTarget.getFromValue(s.color());
+         return s.color().get();
       }
       else if (mCursorTrack.arm().get())
       {
-         return RGBButtonTarget.mix(BLACK, RED, 0.1f);
+         return Color.mix(BLACK, RED, 0.1f);
       }
 
       return BLACK;
