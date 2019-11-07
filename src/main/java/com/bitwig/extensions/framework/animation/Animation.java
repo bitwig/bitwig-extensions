@@ -1,5 +1,9 @@
 package com.bitwig.extensions.framework.animation;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -34,7 +38,7 @@ public abstract class Animation<ValueType> implements Supplier<ValueType>
 
             mAnimationStartTime = System.currentTimeMillis();
 
-            pumpFlush();
+            startedAnimation(this);
          }
          else
          {
@@ -52,20 +56,54 @@ public abstract class Animation<ValueType> implements Supplier<ValueType>
             // Animation stopped
 
             mAnimationStartTime = -1;
+
+            stoppedAnimation(this);
          }
 
          return mOffValueSupplier.get();
       }
    }
 
-   private void pumpFlush()
+   private static void startedAnimation(final Animation animation)
    {
-      final ControllerHost host = mControllerExtension.getHost();
+      final ControllerHost host = animation.mControllerExtension.getHost();
 
+      List<Animation> runningAnimations = HOST_TO_RUNNING_ANIMATIONS_MAP.get(host);
+
+      if (runningAnimations == null)
+      {
+         runningAnimations = new ArrayList<>();
+         HOST_TO_RUNNING_ANIMATIONS_MAP.put(host, runningAnimations);
+      }
+
+      runningAnimations.add(animation);
+
+      if (runningAnimations.size() == 1)
+      {
+         // Start pumping the animations for this host.
+
+         pumpFlush(host, runningAnimations);
+      }
+   }
+
+   private static void stoppedAnimation(final Animation animation)
+   {
+      final ControllerHost host = animation.mControllerExtension.getHost();
+
+      final List<Animation> runningAnimations = HOST_TO_RUNNING_ANIMATIONS_MAP.get(host);
+
+      assert runningAnimations != null;
+      assert runningAnimations.contains(animation);
+
+      runningAnimations.remove(animation);
+   }
+
+   private static void pumpFlush(final ControllerHost host, final List<Animation> runningAnimations)
+   {
       host.requestFlush();
 
-      if (mIsOnSupplier.getAsBoolean())
-         host.scheduleTask(this::pumpFlush, 50);
+      if (!runningAnimations.isEmpty())
+         host.scheduleTask(() -> pumpFlush(host, runningAnimations), 1000 / 20);
    }
 
    protected abstract ValueType getAnimatedValueAtTime(double timeInSec);
@@ -77,4 +115,6 @@ public abstract class Animation<ValueType> implements Supplier<ValueType>
    private long mAnimationStartTime = -1;
 
    private final Supplier<ValueType> mOffValueSupplier;
+
+   private static final Map<ControllerHost, List<Animation>> HOST_TO_RUNNING_ANIMATIONS_MAP = new HashMap<>();
 }
