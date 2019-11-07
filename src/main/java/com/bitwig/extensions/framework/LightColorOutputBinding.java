@@ -1,12 +1,14 @@
 package com.bitwig.extensions.framework;
 
-import com.bitwig.extension.controller.api.ColorValue;
+import java.util.function.Supplier;
+
+import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 
-class LightColorOutputBinding extends Binding<ColorValue, MultiStateHardwareLight>
+class LightColorOutputBinding extends Binding<Supplier<Color>, MultiStateHardwareLight>
 {
 
-   protected LightColorOutputBinding(final ColorValue source, final MultiStateHardwareLight target)
+   protected LightColorOutputBinding(final Supplier<Color> source, final MultiStateHardwareLight target)
    {
       super(target, source, target);
    }
@@ -14,13 +16,13 @@ class LightColorOutputBinding extends Binding<ColorValue, MultiStateHardwareLigh
    @Override
    protected void deactivate()
    {
-      getTarget().setColorValue(null);
+      getTarget().setColorSupplier(null);
    }
 
    @Override
    protected void activate()
    {
-      getTarget().setColorValue(getSource());
+      getTarget().setColorSupplier(getSource());
    }
 
 }

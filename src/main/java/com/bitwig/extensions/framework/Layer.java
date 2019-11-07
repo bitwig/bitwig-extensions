@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
+import java.util.function.Supplier;
 
+import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.AbsoluteHardwarControlBindable;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.BooleanHardwareOutputValue;
@@ -213,6 +215,9 @@ public class Layer
 
    public Binding bind(final BooleanSupplier source, final BooleanHardwareOutputValue target)
    {
+      if (source instanceof BooleanValue)
+         ((BooleanValue)source).markInterested();
+
       final BooleanSupplierOutputValueBinding binding = new BooleanSupplierOutputValueBinding(source, target);
 
       addBinding(binding);
@@ -237,23 +242,21 @@ public class Layer
       return bind((BooleanSupplier)source, target);
    }
 
-   public Binding bind(final BooleanValue source, final OnOffHardwareLight light)
+   public Binding bind(final Supplier<Color> sourceColor, final MultiStateHardwareLight light)
    {
-      return bind(source, light.isOn());
-   }
+      if (sourceColor instanceof ColorValue)
+         ((ColorValue)sourceColor).markInterested();
 
-   public Binding bind(final BooleanValue source, final HardwareControl hardwareControl)
-   {
-      return bind(source, (OnOffHardwareLight)hardwareControl.backgroundLight());
-   }
-
-   public Binding bind(final ColorValue sourceColor, final MultiStateHardwareLight light)
-   {
       final LightColorOutputBinding binding = new LightColorOutputBinding(sourceColor, light);
 
       addBinding(binding);
 
       return binding;
+   }
+
+   public Binding bind(final Supplier<Color> sourceColor, final HardwareControl target)
+   {
+      return bind(sourceColor, (MultiStateHardwareLight)target.backgroundLight());
    }
 
    public boolean isActive()

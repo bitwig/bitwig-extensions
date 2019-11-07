@@ -7,6 +7,10 @@ public abstract class Binding<SourceType, TargetType>
    protected Binding(final Object exclusivityObject, final SourceType source, final TargetType target)
    {
       super();
+
+      assert source != null;
+      assert target != null;
+
       mExclusivityObject = exclusivityObject;
       mSource = source;
       mTarget = target;
