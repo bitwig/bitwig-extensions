@@ -12,6 +12,8 @@ import com.bitwig.extension.controller.api.ControllerHost;
 
 public abstract class Animation<ValueType> implements Supplier<ValueType>
 {
+   private static final int FRAMES_PER_SEC = 20;
+
    protected Animation(
       final ControllerExtension controllerExtension,
       final BooleanSupplier isOnSupplier,
@@ -103,7 +105,7 @@ public abstract class Animation<ValueType> implements Supplier<ValueType>
       host.requestFlush();
 
       if (!runningAnimations.isEmpty())
-         host.scheduleTask(() -> pumpFlush(host, runningAnimations), 1000 / 20);
+         host.scheduleTask(() -> pumpFlush(host, runningAnimations), 1000 / FRAMES_PER_SEC);
    }
 
    protected abstract ValueType getAnimatedValueAtTime(double timeInSec);

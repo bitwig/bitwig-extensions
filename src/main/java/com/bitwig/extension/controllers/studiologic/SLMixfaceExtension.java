@@ -7,7 +7,8 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
-import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
+import com.bitwig.extension.controller.api.ClipLauncherSlotOrScene;
+import com.bitwig.extension.controller.api.ClipLauncherSlotOrSceneBank;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
@@ -21,6 +22,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RelativeHardwareValueMatcher;
+import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -46,11 +48,12 @@ public class SLMixfaceExtension extends ControllerExtension
       mTransport.isPlaying().markInterested();
       mTrackBank = host.createTrackBank(8, 0, 0);
       mMasterTrack = host.createMasterTrack(0);
-      mCursorTrack = host.createCursorTrack(0, 8 * 4);
+      mCursorTrack = host.createCursorTrack(0, 16);
       mCursorDevice = mCursorTrack.createCursorDevice();
       mMainRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage(8);
       mSlidersRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage("sliders", 8, "envelope");
       mTrackBank.followCursorTrack(mCursorTrack);
+      mSceneBank = host.createSceneBank(16);
 
       final MidiIn midiIn = host.getMidiInPort(0);
       mMidiOut = host.getMidiOutPort(0);
@@ -84,7 +87,7 @@ public class SLMixfaceExtension extends ControllerExtension
          final HardwareSlider slider = surface.createHardwareSlider();
          slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 16 + i));
          final String volLabel = "Volume " + (i + 1);
-         slider.setLabel(panLabel);
+         slider.setLabel(volLabel);
          mVolumeSliders[i] = slider;
 
          // Create the arm button
@@ -97,7 +100,10 @@ public class SLMixfaceExtension extends ControllerExtension
          armButton.setLabel(armLabel);
          final OnOffHardwareLight armBackgroundLight = surface.createOnOffHardwareLight();
 
+         final int j = i;
+
          armBackgroundLight.isOn().onUpdateHardware(value -> {
+            //System.out.println("Updating arm light state " + j + " at time " + System.currentTimeMillis());
             sendCC(15, armCC, value ? 127 : 0);
          });
 
@@ -323,26 +329,42 @@ public class SLMixfaceExtension extends ControllerExtension
 
       }
 
-      final ClipLauncherSlotBank slots = mCursorTrack.clipLauncherSlotBank();
-      int slotIndex = 0;
+      ClipLauncherSlotOrSceneBank<? extends ClipLauncherSlotOrScene> slots = mCursorTrack
+         .clipLauncherSlotBank();
+
+      int sceneIndex = 0;
 
       for (int mode = 0; mode < 4; mode++)
       {
+         if (mode == 2)
+         {
+            sceneIndex = 0;
+            slots = mSceneBank;
+         }
+
          final HardwareButton[] buttons = getLowerButtons(mode);
 
          for (int i = 0; i < 8; i++)
          {
             final HardwareButton button = buttons[i];
-            final ClipLauncherSlot slot = slots.getItemAt(slotIndex);
-            slot.isPlaying().markInterested();
+            final ClipLauncherSlotOrScene slotOrScene = slots.getItemAt(sceneIndex);
 
-            final TriggerAction launchAction = slot.launchAction();
+            final TriggerAction launchAction = slotOrScene.launchAction();
 
             layer.bindPressed(button, launchAction);
-            layer.bind(new BlinkAnimation(this, () -> slot.isPlaying().get() && mTransport.isPlaying().get(),
-               slot.hasContent()), button);
 
-            slotIndex++;
+            if (slotOrScene instanceof ClipLauncherSlot)
+            {
+               final ClipLauncherSlot slot = (ClipLauncherSlot)slotOrScene;
+
+               slot.isPlaying().markInterested();
+
+               layer.bind(new BlinkAnimation(this,
+                  () -> slot.isPlaying().get() && mTransport.isPlaying().get(), slot.hasContent(), 0.1),
+                  button);
+            }
+
+            sceneIndex++;
          }
       }
 
@@ -416,6 +438,8 @@ public class SLMixfaceExtension extends ControllerExtension
    private TrackBank mTrackBank;
 
    private Track mMasterTrack;
+
+   private SceneBank mSceneBank;
 
    private MidiOut mMidiOut;
 
