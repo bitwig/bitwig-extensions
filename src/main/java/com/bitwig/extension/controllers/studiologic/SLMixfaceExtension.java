@@ -28,6 +28,7 @@ import com.bitwig.extension.controller.api.TriggerAction;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.framework.animation.BlinkAnimation;
 
 public class SLMixfaceExtension extends ControllerExtension
 {
@@ -333,11 +334,13 @@ public class SLMixfaceExtension extends ControllerExtension
          {
             final HardwareButton button = buttons[i];
             final ClipLauncherSlot slot = slots.getItemAt(slotIndex);
+            slot.isPlaying().markInterested();
 
             final TriggerAction launchAction = slot.launchAction();
 
             layer.bindPressed(button, launchAction);
-            layer.bind(slot.hasContent(), button);
+            layer.bind(new BlinkAnimation(this, () -> slot.isPlaying().get() && mTransport.isPlaying().get(),
+               slot.hasContent()), button);
 
             slotIndex++;
          }
