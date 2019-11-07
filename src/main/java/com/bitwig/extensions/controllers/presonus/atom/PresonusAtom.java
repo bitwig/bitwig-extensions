@@ -25,6 +25,7 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
@@ -167,6 +168,23 @@ public class PresonusAtom extends ControllerExtension
       mCursorClip.clipLauncherSlot().hasContent().markInterested();
       mCursorClip.getLoopLength().markInterested();
       mCursorClip.getLoopStart().markInterested();
+      mCursorClip.playingStep().addValueObserver(s -> mPlayingStep = s, -1);
+      mCursorClip.scrollToKey(36);
+      mCursorClip.addNoteStepObserver(d ->
+      {
+         final int x = d.x();
+         final int y = d.y();
+
+         if (y == 0 && x >= 0 && x < mStepData.length)
+         {
+            final NoteStep.State state = d.state();
+
+            if (state == NoteStep.State.NoteOn) mStepData[x] = 2;
+            else if (state == NoteStep.State.NoteSustain) mStepData[x] = 1;
+            else mStepData[x] = 0;
+         }
+      });
+      mCursorTrack.playingNotes().addValueObserver(notes -> mPlayingNotes = notes);
 
       mDrumPadBank = mCursorDevice.createDrumPadBank(16);
       mDrumPadBank.exists().markInterested();
