@@ -77,6 +77,16 @@ public class Layer
       return binding;
    }
 
+   public AbsoluteHardwareControlBinding bind(
+      final AbsoluteHardwareControl source,
+      final DoubleConsumer adjustmentConsumer)
+   {
+      final AbsoluteHardwarControlBindable target = getLayers().getControllerExtension().getHost()
+         .createAbsoluteHardwareControlAdjustmentTarget(adjustmentConsumer);
+
+      return bind(source, target);
+   }
+
    public RelativeHardwareControlToRangedValueBinding bind(
       final RelativeHardwareControl source,
       final SettableRangedValue target)
@@ -124,7 +134,7 @@ public class Layer
 
    public RelativeHardwareControlBinding bind(
       final RelativeHardwareControl source,
-      DoubleConsumer adjustmentConsumer)
+      final DoubleConsumer adjustmentConsumer)
    {
       final RelativeHardwarControlBindable target = getLayers().getControllerExtension().getHost()
          .createRelativeHardwareControlAdjustmentTarget(adjustmentConsumer);
