@@ -402,6 +402,12 @@ public class PresonusAtom extends ControllerExtension
    private void initStepsLayer()
    {
       mStepsLayer.bindToggle(mUpButton, () -> scrollKeys(1), mCursorClip.canScrollKeysUp());
+      mStepsLayer.bindToggle(mDownButton,  () -> scrollKeys(-1), mCursorClip.canScrollKeysDown());
+      mStepsLayer.bindToggle(mLeftButton, () -> scrollPage(-1), mCursorClip.canScrollStepsBackwards());
+      mStepsLayer.bindToggle(mRightButton, () -> scrollPage(1), mCursorClip.canScrollStepsForwards());
+
+      mStepsLayer.bindToggle(mZoomButton, mStepsZoomLayer);
+      mStepsLayer.bindToggle(mSetLoopButton, mStepsSetupLoopLayer);
 
       for (int i = 0; i < 16; i++)
       {

@@ -213,16 +213,22 @@ public class Layer
          bind(target, (OnOffHardwareLight)button.backgroundLight());
    }
 
-   public void bindToggle(final HardwareButton button, Runnable pressedRunnable, BooleanSupplier isLightOnOffSupplier)
+   public void bindToggle(final HardwareButton button, final Runnable pressedRunnable, final BooleanSupplier isLightOnOffSupplier)
    {
       bindPressed(button, pressedRunnable);
       bind(isLightOnOffSupplier, button);
    }
 
-   public void bindToggle(final HardwareButton button, TriggerAction pressedAction, BooleanSupplier isLightOnOffSupplier)
+   public void bindToggle(final HardwareButton button, final TriggerAction pressedAction, final BooleanSupplier isLightOnOffSupplier)
    {
       bindPressed(button, pressedAction);
       bind(isLightOnOffSupplier, button);
+   }
+
+   public void bindToggle(final HardwareButton button, final Layer layerToToggle)
+   {
+      bindPressed(button, layerToToggle::toggleIsActive);
+      bind(layerToToggle::isActive, button);
    }
 
    public Binding bind(final BooleanSupplier source, final BooleanHardwareOutputValue target)
