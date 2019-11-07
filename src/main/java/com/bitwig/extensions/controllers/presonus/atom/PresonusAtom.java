@@ -37,7 +37,6 @@ import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.oldframework.targets.ButtonTarget;
 import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 import com.bitwig.extensions.util.NoteInputUtils;
 
@@ -368,12 +367,18 @@ public class PresonusAtom extends ControllerExtension
 
          mBaseLayer.bind((Supplier<Color>)() -> {
 
-            final double darken = 0.7;
             final DrumPad drumPad = mDrumPadBank.getItemAt(padIndex);
+            final boolean padBankExists = mDrumPadBank.exists().get();
+            final boolean isOn = padBankExists ? drumPad.exists().get() : true;
+
+            if (!isOn)
+               return null;
+
+            final double darken = 0.7;
 
             Color drumPadColor;
 
-            if (!mDrumPadBank.exists().get())
+            if (!padBankExists)
             {
                drumPadColor = mCursorTrack.color().get();
             }
