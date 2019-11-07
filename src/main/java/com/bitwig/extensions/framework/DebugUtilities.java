@@ -13,7 +13,14 @@ public class DebugUtilities
    {
       final Layer layer = new Layer(layers, "Debug");
 
-      final ControllerHost host = layers.getControllerExtension().getHost();
+      addDebugBindings(layer, hardwareSurface);
+
+      return layer;
+   }
+
+   public static void addDebugBindings(final Layer layer, final HardwareSurface hardwareSurface)
+   {
+      final ControllerHost host = layer.getLayers().getControllerExtension().getHost();
 
       for (final HardwareControl control : hardwareSurface.getHardwareControls())
       {
@@ -47,7 +54,5 @@ public class DebugUtilities
             layer.bind(relControl, amount -> host.println(prefix + " adjusted " + amount));
          }
       }
-
-      return layer;
    }
 }

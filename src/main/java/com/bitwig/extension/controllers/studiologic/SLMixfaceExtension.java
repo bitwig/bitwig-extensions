@@ -45,7 +45,7 @@ public class SLMixfaceExtension extends ControllerExtension
       mTransport.isPlaying().markInterested();
       mTrackBank = host.createTrackBank(8, 0, 0);
       mMasterTrack = host.createMasterTrack(0);
-      mCursorTrack = host.createCursorTrack(0, 8);
+      mCursorTrack = host.createCursorTrack(0, 8 * 4);
       mCursorDevice = mCursorTrack.createCursorDevice();
       mMainRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage(8);
       mSlidersRemoteControlsPage = mCursorDevice.createCursorRemoteControlsPage("sliders", 8, "envelope");
@@ -236,7 +236,7 @@ public class SLMixfaceExtension extends ControllerExtension
       mTrackLayer = createTrackLayer();
       mDeviceLayer = createDeviceLayer();
       mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-      mDebugLayer.activate();
+      // mDebugLayer.activate();
    }
 
    private void toggleDeviceLayer()
@@ -320,30 +320,49 @@ public class SLMixfaceExtension extends ControllerExtension
          layer.bind(mPanKnobs[i], mMainRemoteControlsPage.getParameter(i));
          layer.bind(mVolumeSliders[i], mSlidersRemoteControlsPage.getParameter(i));
 
-         final HardwareButton armButton = mArmButtons[i];
+      }
 
-         final ClipLauncherSlotBank slots = mCursorTrack.clipLauncherSlotBank();
-         final ClipLauncherSlot slot = slots.getItemAt(i);
+      final ClipLauncherSlotBank slots = mCursorTrack.clipLauncherSlotBank();
+      int slotIndex = 0;
 
-         final TriggerAction launchAction = slot.launchAction();
+      for (int mode = 0; mode < 4; mode++)
+      {
+         final HardwareButton[] buttons = getLowerButtons(mode);
 
-         layer.bindPressed(armButton, launchAction);
-         layer.bind(slot.hasContent(), armButton);
+         for (int i = 0; i < 8; i++)
+         {
+            final HardwareButton button = buttons[i];
+            final ClipLauncherSlot slot = slots.getItemAt(slotIndex);
 
-         final HardwareButton muteButton = mMuteButtons[i];
+            final TriggerAction launchAction = slot.launchAction();
 
-         layer.bindPressed(muteButton, launchAction);
-         layer.bind(slot.isPlaying(), muteButton);
+            layer.bindPressed(button, launchAction);
+            layer.bind(slot.hasContent(), button);
 
-         final HardwareButton soloButton = mSoloButtons[i];
-
-         layer.bindPressed(soloButton, launchAction);
-         layer.bind(slot.hasContent(), soloButton);
+            slotIndex++;
+         }
       }
 
       layer.bind(mNavigationDial, mCursorDevice);
 
       return layer;
+   }
+
+   private HardwareButton[] getLowerButtons(final int mode)
+   {
+      switch (mode)
+      {
+      case 0:
+         return mArmButtons;
+      case 1:
+         return mMuteButtons;
+      case 2:
+         return mSoloButtons;
+      case 3:
+         return mSelectButtons;
+      }
+
+      throw new IllegalStateException();
    }
 
    private void sendMidi(final int status, final int data1, final int data2)
