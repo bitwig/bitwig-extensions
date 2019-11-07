@@ -7,6 +7,7 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
+import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ClipLauncherSlotOrScene;
 import com.bitwig.extension.controller.api.ClipLauncherSlotOrSceneBank;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -103,7 +104,7 @@ public class SLMixfaceExtension extends ControllerExtension
          final int j = i;
 
          armBackgroundLight.isOn().onUpdateHardware(value -> {
-            //System.out.println("Updating arm light state " + j + " at time " + System.currentTimeMillis());
+            // System.out.println("Updating arm light state " + j + " at time " + System.currentTimeMillis());
             sendCC(15, armCC, value ? 127 : 0);
          });
 
@@ -329,8 +330,8 @@ public class SLMixfaceExtension extends ControllerExtension
 
       }
 
-      ClipLauncherSlotOrSceneBank<? extends ClipLauncherSlotOrScene> slots = mCursorTrack
-         .clipLauncherSlotBank();
+      final ClipLauncherSlotBank slots = mCursorTrack.clipLauncherSlotBank();
+      ClipLauncherSlotOrSceneBank<? extends ClipLauncherSlotOrScene> slotsOrScenes = slots;
 
       int sceneIndex = 0;
 
@@ -339,7 +340,7 @@ public class SLMixfaceExtension extends ControllerExtension
          if (mode == 2)
          {
             sceneIndex = 0;
-            slots = mSceneBank;
+            slotsOrScenes = mSceneBank;
          }
 
          final HardwareButton[] buttons = getLowerButtons(mode);
@@ -347,22 +348,18 @@ public class SLMixfaceExtension extends ControllerExtension
          for (int i = 0; i < 8; i++)
          {
             final HardwareButton button = buttons[i];
-            final ClipLauncherSlotOrScene slotOrScene = slots.getItemAt(sceneIndex);
+            final ClipLauncherSlotOrScene slotOrScene = slotsOrScenes.getItemAt(sceneIndex);
 
             final TriggerAction launchAction = slotOrScene.launchAction();
 
             layer.bindPressed(button, launchAction);
 
-            if (slotOrScene instanceof ClipLauncherSlot)
-            {
-               final ClipLauncherSlot slot = (ClipLauncherSlot)slotOrScene;
+            final ClipLauncherSlot slot = slots.getItemAt(sceneIndex);
 
-               slot.isPlaying().markInterested();
+            slot.isPlaying().markInterested();
 
-               layer.bind(new BlinkAnimation(this,
-                  () -> slot.isPlaying().get() && mTransport.isPlaying().get(), slot.hasContent(), 0.1),
-                  button);
-            }
+            layer.bind(new BlinkAnimation(this, () -> slot.isPlaying().get() && mTransport.isPlaying().get(),
+               slot.hasContent(), 0.1), button);
 
             sceneIndex++;
          }
