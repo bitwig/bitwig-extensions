@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
+import java.util.function.Supplier;
+
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
@@ -13,6 +15,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
@@ -258,8 +261,15 @@ public class PresonusAtom extends ControllerExtension
       mNoteRepeatButton.setLabel("Note\nRepeat");
 
       // Pads
+
+      final float darken = 0.7f;
+
       for (int i = 0; i < 16; i++)
       {
+         final DrumPad drumPad = mDrumPadBank.getItemAt(i);
+         drumPad.exists().markInterested();
+         drumPad.color().markInterested();
+
          createPadButton(i);
       }
 
@@ -274,7 +284,7 @@ public class PresonusAtom extends ControllerExtension
       initBaseLayer();
 
       mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-      mDebugLayer.activate();
+      // mDebugLayer.activate();
    }
 
    private void initBaseLayer()
@@ -296,27 +306,49 @@ public class PresonusAtom extends ControllerExtension
          final RelativeHardwareKnob encoder = mEncoders[i];
 
          mBaseLayer.bind(encoder, parameter);
-
-         // mBaseLayer.bind(encoder, new EncoderTarget()
-         // {
-         // @Override
-         // public void inc(final int steps)
-         // {
-         // parameterValue.inc(steps, mShift ? 1010 : 101);
-         // }
-         // });
       }
 
       for (int i = 0; i < 16; i++)
       {
-         final HardwareButton pad = mPadButtons[i];
+         final HardwareButton padButton = mPadButtons[i];
 
          final int padIndex = i;
 
-         mBaseLayer.bindPressed(pad, () -> {
+         mBaseLayer.bindPressed(padButton, () -> {
             mCursorClip.scrollToKey(36 + padIndex);
             mCurrentPadForSteps = padIndex;
          });
+
+         mBaseLayer.bind((Supplier<Color>)() -> {
+
+            final double darken = 0.7;
+            final DrumPad drumPad = mDrumPadBank.getItemAt(padIndex);
+
+            Color drumPadColor;
+
+            if (!mDrumPadBank.exists().get())
+            {
+               drumPadColor = mCursorTrack.color().get();
+            }
+            else
+            {
+               final Color sourceDrumPadColor = drumPad.color().get();
+               final double red = sourceDrumPadColor.getRed() * darken;
+               final double green = sourceDrumPadColor.getGreen() * darken;
+               final double blue = sourceDrumPadColor.getBlue() * darken;
+
+               drumPadColor = Color.fromRGB(red, green, blue);
+            }
+
+            final int playing = velocityForPlayingNote(padIndex);
+
+            if (playing > 0)
+            {
+               return mixColorWithWhite(drumPadColor, playing);
+            }
+
+            return drumPadColor;
+         }, padButton);
       }
 
       mBaseLayer.activate();
@@ -357,14 +389,14 @@ public class PresonusAtom extends ControllerExtension
       return 4;
    }
 
-   private float[] mixColorWithWhite(final float[] color, final int velocity)
+   private Color mixColorWithWhite(final Color color, final int velocity)
    {
       final float x = velocity / 127.f;
-      final float[] mixed = new float[3];
-      for (int i = 0; i < 3; i++)
-         mixed[i] = color[i] * (1 - x) + x;
+      final double red = color.getRed() * (1 - x) + x;
+      final double green = color.getGreen() * (1 - x) + x;
+      final double blue = color.getBlue() * (1 - x) + x;
 
-      return mixed;
+      return Color.fromRGB(red, green, blue);
    }
 
    private HardwareButton createCCButton(final int controlNumber)
@@ -394,7 +426,7 @@ public class PresonusAtom extends ControllerExtension
       final HardwareButton pad = mHardwareSurface.createHardwareButton();
       pad.setLabel("Pad " + (index + 1));
 
-      int note = 0x24 + index;
+      final int note = 0x24 + index;
       pad.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
       pad.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
@@ -403,14 +435,56 @@ public class PresonusAtom extends ControllerExtension
       final MultiStateHardwareLight light = mHardwareSurface
          .createMultiStateHardwareLight(PresonusAtom::padLightStateToColor);
 
+      light.state().onUpdateHardware(state -> {
+
+         final int red = (state & 0x7F0000) >> 16;
+         final int green = (state & 0x7F00) >> 8;
+         final int blue = state & 0x7F;
+
+         final int[] values = new int[4];
+         values[0] = (state & 0x7F000000) >> 24;
+         values[1] = red;
+         values[2] = green;
+         values[3] = blue;
+
+         for (int i = 0; i < 4; i++)
+         {
+            // if (values[i] != mLastSent[i])
+            {
+               mMidiOut.sendMidi(0x90 + i, 0x24 + index, values[i]);
+               // mLastSent[i] = values[i];
+            }
+         }
+      });
+
+      light.setColorToStateFunction(PresonusAtom::padColorToState);
+
       pad.setBackgroundLight(light);
 
       mPadLights[index] = light;
    }
 
+   private static int padColorToState(final Color color)
+   {
+      if (color == null)
+         return 0;
+
+      final int red = colorPartFromFloat(color.getRed());
+      final int green = colorPartFromFloat(color.getGreen());
+      final int blue = colorPartFromFloat(color.getBlue());
+
+      return 0x7F000000 | red << 16 | green << 8 | blue;
+   }
+
+   private static int colorPartFromFloat(final double x)
+   {
+      return Math.max(0, Math.min((int)(127.0 * x), 127));
+   }
+
    private void createEncoder(final int index)
    {
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
+      encoder.setLabel(String.valueOf(index + 1));
       encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index));
 
       mEncoders[index] = encoder;
