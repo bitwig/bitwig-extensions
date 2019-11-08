@@ -10,7 +10,7 @@ import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 
 public class RGBButton extends AbstractButton implements ControlElement<RGBButtonTarget>, Resetable
 {
-   public RGBButton(final Buttons buttonID)
+   public RGBButton(final ButtonId buttonID)
    {
       super(buttonID);
    }

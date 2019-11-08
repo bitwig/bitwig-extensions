@@ -240,7 +240,7 @@ public class OldArturiaKeylabMkII extends LayeredControllerExtension
          }
       });
 
-      final RGBButton multi = addElement(new RGBButton(Buttons.SELECT_MULTI));
+      final RGBButton multi = addElement(new RGBButton(ButtonId.SELECT_MULTI));
       mBaseLayer.bind(multi, new RGBButtonTarget()
       {
          @Override
@@ -376,7 +376,7 @@ public class OldArturiaKeylabMkII extends LayeredControllerExtension
 
    private void initButtons()
    {
-      final Button rewind = addElement(new Button(Buttons.REWIND));
+      final Button rewind = addElement(new Button(ButtonId.REWIND));
       mBaseLayer.bind(rewind, new ButtonTarget()
       {
          @Override
@@ -397,7 +397,7 @@ public class OldArturiaKeylabMkII extends LayeredControllerExtension
          }
       });
 
-      final Button forward = addElement(new Button(Buttons.FORWARD));
+      final Button forward = addElement(new Button(ButtonId.FORWARD));
       mBaseLayer.bind(forward, new ButtonTarget()
       {
          @Override
@@ -418,53 +418,53 @@ public class OldArturiaKeylabMkII extends LayeredControllerExtension
          }
       });
 
-      final Button stop = addElement(new Button(Buttons.STOP));
+      final Button stop = addElement(new Button(ButtonId.STOP));
       mBaseLayer.bindPressedRunnable(stop, null, mTransport::stop);
-      final Button play = addElement(new Button(Buttons.PLAY_OR_PAUSE));
+      final Button play = addElement(new Button(ButtonId.PLAY_OR_PAUSE));
       mBaseLayer.bindPressedRunnable(play, mTransport.isPlaying(), mTransport::play);
-      final Button record = addElement(new Button(Buttons.RECORD));
+      final Button record = addElement(new Button(ButtonId.RECORD));
       mBaseLayer.bindPressedRunnable(record, mTransport.isArrangerRecordEnabled(), mTransport::record);
-      final Button loop = addElement(new Button(Buttons.LOOP));
+      final Button loop = addElement(new Button(ButtonId.LOOP));
       mBaseLayer.bindToggle(loop, mTransport.isArrangerLoopEnabled());
-      final Button metronome = addElement(new Button(Buttons.METRO));
+      final Button metronome = addElement(new Button(ButtonId.METRO));
       mBaseLayer.bindToggle(metronome, mTransport.isMetronomeEnabled());
-      final Button undo = addElement(new Button(Buttons.UNDO));
+      final Button undo = addElement(new Button(ButtonId.UNDO));
       mBaseLayer.bindPressedRunnable(undo, null, mApplication::undo);
-      final Button save = addElement(new Button(Buttons.SAVE));
+      final Button save = addElement(new Button(ButtonId.SAVE));
       mBaseLayer.bindPressedRunnable(save, null, mSaveAction::invoke);
 
-      final Button punchIn = addElement(new Button(Buttons.PUNCH_IN));
+      final Button punchIn = addElement(new Button(ButtonId.PUNCH_IN));
       mBaseLayer.bindToggle(punchIn, mTransport.isPunchInEnabled());
-      final Button punchOut = addElement(new Button(Buttons.PUNCH_OUT));
+      final Button punchOut = addElement(new Button(ButtonId.PUNCH_OUT));
       mBaseLayer.bindToggle(punchOut, mTransport.isPunchOutEnabled());
 
-      final Button solo = addElement(new Button(Buttons.SOLO));
+      final Button solo = addElement(new Button(ButtonId.SOLO));
       mBaseLayer.bindToggle(solo, mCursorTrack.solo());
-      final Button mute = addElement(new Button(Buttons.MUTE));
+      final Button mute = addElement(new Button(ButtonId.MUTE));
       mBaseLayer.bindToggle(mute, mCursorTrack.mute());
-      final Button arm = addElement(new Button(Buttons.RECORD_ARM));
+      final Button arm = addElement(new Button(ButtonId.RECORD_ARM));
       mBaseLayer.bindToggle(arm, mCursorTrack.arm());
-      final Button write = addElement(new Button(Buttons.WRITE));
+      final Button write = addElement(new Button(ButtonId.WRITE));
       mBaseLayer.bindToggle(write, mTransport.isArrangerAutomationWriteEnabled());
 
-      final Button read = addElement(new Button(Buttons.READ));
+      final Button read = addElement(new Button(ButtonId.READ));
       mBaseLayer.bindToggle(read, mTransport.isClipLauncherOverdubEnabled());
 
-      final Button prev = addElement(new Button(Buttons.PREVIOUS));
+      final Button prev = addElement(new Button(ButtonId.PREVIOUS));
       mBaseLayer.bindPressedRunnable(prev, null, mRemoteControls::selectPrevious);
       mMultiLayer.bindPressedRunnable(prev, mTrackBank.canScrollBackwards(), mTrackBank::scrollBackwards);
-      final Button next = addElement(new Button(Buttons.NEXT));
+      final Button next = addElement(new Button(ButtonId.NEXT));
       mBaseLayer.bindPressedRunnable(next, null, mRemoteControls::selectNext);
       mMultiLayer.bindPressedRunnable(next, mTrackBank.canScrollForwards(), mTrackBank::scrollForwards);
 
-      final RGBButton select1 = addPageButtonMapping(0, Buttons.SELECT1);
-      final RGBButton select2 = addPageButtonMapping(1, Buttons.SELECT2);
-      final RGBButton select3 = addPageButtonMapping(2, Buttons.SELECT3);
-      final RGBButton select4 = addPageButtonMapping(3, Buttons.SELECT4);
-      final RGBButton select5 = addPageButtonMapping(4, Buttons.SELECT5);
-      final RGBButton select6 = addPageButtonMapping(5, Buttons.SELECT6);
-      final RGBButton select7 = addPageButtonMapping(6, Buttons.SELECT7);
-      final RGBButton select8 = addPageButtonMapping(7, Buttons.SELECT8);
+      final RGBButton select1 = addPageButtonMapping(0, ButtonId.SELECT1);
+      final RGBButton select2 = addPageButtonMapping(1, ButtonId.SELECT2);
+      final RGBButton select3 = addPageButtonMapping(2, ButtonId.SELECT3);
+      final RGBButton select4 = addPageButtonMapping(3, ButtonId.SELECT4);
+      final RGBButton select5 = addPageButtonMapping(4, ButtonId.SELECT5);
+      final RGBButton select6 = addPageButtonMapping(5, ButtonId.SELECT6);
+      final RGBButton select7 = addPageButtonMapping(6, ButtonId.SELECT7);
+      final RGBButton select8 = addPageButtonMapping(7, ButtonId.SELECT8);
 
       mBrowserLayer.bindPressedRunnable(select1, ORANGE, () -> mPopupBrowser.selectedContentTypeIndex().set(0));
       mBrowserLayer.bindPressedRunnable(select2, ORANGE, () -> mPopupBrowser.selectedContentTypeIndex().set(1));
@@ -479,7 +479,7 @@ public class OldArturiaKeylabMkII extends LayeredControllerExtension
       mBrowserLayer.bindPressedRunnable(select7, RED, () -> creators.selectPrevious());
       mBrowserLayer.bindPressedRunnable(select8, RED, () -> creators.selectNext());
 
-      final Button presetPrev = addElement(new Button(Buttons.PRESET_PREVIOUS));
+      final Button presetPrev = addElement(new Button(ButtonId.PRESET_PREVIOUS));
       mBaseLayer.bindPressedRunnable(presetPrev, mDevice.hasPrevious(), mDevice::selectPrevious);
       final ClipLauncherSlotBank cursorTrackSlots = mCursorTrack.clipLauncherSlotBank();
       cursorTrackSlots.scrollPosition().markInterested();
@@ -492,7 +492,7 @@ public class OldArturiaKeylabMkII extends LayeredControllerExtension
       });
       mBrowserLayer.bindPressedRunnable(presetPrev, null, mPopupBrowser::cancel);
 
-      final Button presetNext = addElement(new Button(Buttons.PRESET_NEXT));
+      final Button presetNext = addElement(new Button(ButtonId.PRESET_NEXT));
       mBaseLayer.bindPressedRunnable(presetNext, mDevice.hasNext(), mDevice::selectNext);
       mMultiLayer.bindPressedRunnable(presetNext, cursorTrackSlots.canScrollForwards(), () ->
       {
@@ -502,7 +502,7 @@ public class OldArturiaKeylabMkII extends LayeredControllerExtension
       });
       mBrowserLayer.bindPressedRunnable(presetNext, null, mPopupBrowser::commit);
 
-      final Button wheelClick = addElement(new Button(Buttons.WHEEL_CLICK));
+      final Button wheelClick = addElement(new Button(ButtonId.WHEEL_CLICK));
       mBaseLayer.bindPressedRunnable(wheelClick, null, () ->
       {
          mDisplay.reset();
@@ -522,7 +522,7 @@ public class OldArturiaKeylabMkII extends LayeredControllerExtension
          final int slot = p & 0x7;
          final boolean isScene = p >= 8;
 
-         final RGBButton pad = addElement(new RGBButton(Buttons.drumPad(p)));
+         final RGBButton pad = addElement(new RGBButton(ButtonId.drumPad(p)));
 
          if (isScene)
          {
@@ -624,7 +624,7 @@ public class OldArturiaKeylabMkII extends LayeredControllerExtension
       }
    }
 
-   private RGBButton addPageButtonMapping(final int number, final Buttons id)
+   private RGBButton addPageButtonMapping(final int number, final ButtonId id)
    {
       final RGBButton button = addElement(new RGBButton(id));
       mBaseLayer.bind(button, new RGBButtonTarget()

@@ -23,6 +23,8 @@ import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
+import com.bitwig.extension.controller.api.MidiExpressions;
+import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Scene;
@@ -31,7 +33,6 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.DebugUtilities;
-import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.oldframework.ControlElement;
 import com.bitwig.extensions.oldframework.targets.EncoderTarget;
@@ -282,44 +283,47 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private void initBaseLayer()
    {
-      mBaseLayer.bindToggle(mSelectMultiButton, mMultiLayer);
-      mBaseLayer.bind((Supplier<Color>)() -> mMultiLayer.isActive() ? BLUEY : ORANGE, mSelectMultiButton);
+      mBaseLayer.bindToggle(ButtonId.SELECT_MULTI, mMultiLayer);
+      mBaseLayer.bind((Supplier<Color>)() -> mMultiLayer.isActive() ? BLUEY : ORANGE, ButtonId.SELECT_MULTI);
 
-      mBaseLayer.bindPressed(mRewindButton, () -> {
+      mBaseLayer.bindPressed(ButtonId.REWIND, () -> {
          mIsRewinding = true;
          repeatRewind();
       });
-      mBaseLayer.bind(() -> mIsRewinding, mRewindButton);
+      mBaseLayer.bind(() -> mIsRewinding, ButtonId.REWIND);
 
-      mBaseLayer.bindPressed(mForwardButton, () -> {
+      mBaseLayer.bindPressed(ButtonId.FORWARD, () -> {
          mIsForwarding = true;
          repeatForward();
       });
-      mBaseLayer.bind(() -> mIsForwarding, mForwardButton);
+      mBaseLayer.bind(() -> mIsForwarding, ButtonId.FORWARD);
 
-      mBaseLayer.bindPressed(mStopButton, mTransport.stopAction());
-      mBaseLayer.bindToggle(mPlayOrPauseButton, mTransport.playAction(), mTransport.isPlaying());
-      mBaseLayer.bindToggle(mRecordButton, mTransport.recordAction(), mTransport.isArrangerRecordEnabled());
-      mBaseLayer.bindToggle(mLoopButton, mTransport.isArrangerLoopEnabled());
-      mBaseLayer.bindToggle(mMetroButton, mTransport.isMetronomeEnabled());
-      mBaseLayer.bindPressed(mUndoButton, mApplication.undoAction());
-      mBaseLayer.bindPressed(mSaveButton, mSaveAction::invoke);
+      mBaseLayer.bindPressed(ButtonId.STOP, mTransport.stopAction());
+      mBaseLayer.bindToggle(ButtonId.PLAY_OR_PAUSE, mTransport.playAction(), mTransport.isPlaying());
+      mBaseLayer.bindToggle(ButtonId.RECORD, mTransport.recordAction(), mTransport.isArrangerRecordEnabled());
+      mBaseLayer.bindToggle(ButtonId.LOOP, mTransport.isArrangerLoopEnabled());
+      mBaseLayer.bindToggle(ButtonId.METRO, mTransport.isMetronomeEnabled());
+      mBaseLayer.bindPressed(ButtonId.UNDO, mApplication.undoAction());
+      mBaseLayer.bindPressed(ButtonId.SAVE, mSaveAction::invoke);
 
-      mBaseLayer.bindToggle(mPunchInButton, mTransport.isPunchInEnabled());
-      mBaseLayer.bindToggle(mPunchOutButton, mTransport.isPunchOutEnabled());
+      mBaseLayer.bindToggle(ButtonId.PUNCH_IN, mTransport.isPunchInEnabled());
+      mBaseLayer.bindToggle(ButtonId.PUNCH_OUT, mTransport.isPunchOutEnabled());
 
-      mBaseLayer.bindToggle(mSoloButton, mCursorTrack.solo());
-      mBaseLayer.bindToggle(mMuteButton, mCursorTrack.mute());
-      mBaseLayer.bindToggle(mRecordArmButton, mCursorTrack.arm());
-      mBaseLayer.bindToggle(mWriteButton, mTransport.isArrangerAutomationWriteEnabled());
+      mBaseLayer.bindToggle(ButtonId.SOLO, mCursorTrack.solo());
+      mBaseLayer.bindToggle(ButtonId.MUTE, mCursorTrack.mute());
+      mBaseLayer.bindToggle(ButtonId.RECORD_ARM, mCursorTrack.arm());
+      mBaseLayer.bindToggle(ButtonId.WRITE, mTransport.isArrangerAutomationWriteEnabled());
 
-      mBaseLayer.bindToggle(mReadButton, mTransport.isClipLauncherOverdubEnabled());
+      mBaseLayer.bindToggle(ButtonId.READ, mTransport.isClipLauncherOverdubEnabled());
+
+      mBaseLayer.bindPressed(ButtonId.PREVIOUS, mRemoteControls::selectPrevious);
+      mBaseLayer.bindPressed(ButtonId.NEXT, mRemoteControls::selectNext);
    }
 
    private void initBrowserLayer()
    {
-      mBrowserLayer.bindPressed(mSelectMultiButton, mPopupBrowser::cancel);
-      mBrowserLayer.bind(() -> WHITE, mSelectMultiButton);
+      mBrowserLayer.bindPressed(ButtonId.SELECT_MULTI, mPopupBrowser::cancel);
+      mBrowserLayer.bind(() -> WHITE, ButtonId.SELECT_MULTI);
    }
 
    private void initMultiLayer()
@@ -425,21 +429,21 @@ public class ArturiaKeylabMkII extends ControllerExtension
    private void initButtons()
    {
 
-      final Button prev = addElement(new Button(Buttons.PREVIOUS));
-      mBaseLayer.bindPressedRunnable(prev, null, mRemoteControls::selectPrevious);
+      final Button prev = addElement(new Button(ButtonId.PREVIOUS));
+
       mMultiLayer.bindPressedRunnable(prev, mTrackBank.canScrollBackwards(), mTrackBank::scrollBackwards);
-      final Button next = addElement(new Button(Buttons.NEXT));
-      mBaseLayer.bindPressedRunnable(next, null, mRemoteControls::selectNext);
+      final Button next = addElement(new Button(ButtonId.NEXT));
+
       mMultiLayer.bindPressedRunnable(next, mTrackBank.canScrollForwards(), mTrackBank::scrollForwards);
 
-      final RGBButton select1 = addPageButtonMapping(0, Buttons.SELECT1);
-      final RGBButton select2 = addPageButtonMapping(1, Buttons.SELECT2);
-      final RGBButton select3 = addPageButtonMapping(2, Buttons.SELECT3);
-      final RGBButton select4 = addPageButtonMapping(3, Buttons.SELECT4);
-      final RGBButton select5 = addPageButtonMapping(4, Buttons.SELECT5);
-      final RGBButton select6 = addPageButtonMapping(5, Buttons.SELECT6);
-      final RGBButton select7 = addPageButtonMapping(6, Buttons.SELECT7);
-      final RGBButton select8 = addPageButtonMapping(7, Buttons.SELECT8);
+      final RGBButton select1 = addPageButtonMapping(0, ButtonId.SELECT1);
+      final RGBButton select2 = addPageButtonMapping(1, ButtonId.SELECT2);
+      final RGBButton select3 = addPageButtonMapping(2, ButtonId.SELECT3);
+      final RGBButton select4 = addPageButtonMapping(3, ButtonId.SELECT4);
+      final RGBButton select5 = addPageButtonMapping(4, ButtonId.SELECT5);
+      final RGBButton select6 = addPageButtonMapping(5, ButtonId.SELECT6);
+      final RGBButton select7 = addPageButtonMapping(6, ButtonId.SELECT7);
+      final RGBButton select8 = addPageButtonMapping(7, ButtonId.SELECT8);
 
       mBrowserLayer.bindPressedRunnable(select1, ORANGE,
          () -> mPopupBrowser.selectedContentTypeIndex().set(0));
@@ -460,7 +464,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       mBrowserLayer.bindPressedRunnable(select7, RED, () -> creators.selectPrevious());
       mBrowserLayer.bindPressedRunnable(select8, RED, () -> creators.selectNext());
 
-      final Button presetPrev = addElement(new Button(Buttons.PRESET_PREVIOUS));
+      final Button presetPrev = addElement(new Button(ButtonId.PRESET_PREVIOUS));
       mBaseLayer.bindPressedRunnable(presetPrev, mDevice.hasPrevious(), mDevice::selectPrevious);
       final ClipLauncherSlotBank cursorTrackSlots = mCursorTrack.clipLauncherSlotBank();
       cursorTrackSlots.scrollPosition().markInterested();
@@ -472,7 +476,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       });
       mBrowserLayer.bindPressedRunnable(presetPrev, null, mPopupBrowser::cancel);
 
-      final Button presetNext = addElement(new Button(Buttons.PRESET_NEXT));
+      final Button presetNext = addElement(new Button(ButtonId.PRESET_NEXT));
       mBaseLayer.bindPressedRunnable(presetNext, mDevice.hasNext(), mDevice::selectNext);
       mMultiLayer.bindPressedRunnable(presetNext, cursorTrackSlots.canScrollForwards(), () -> {
          final int current = cursorTrackSlots.scrollPosition().get();
@@ -481,7 +485,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       });
       mBrowserLayer.bindPressedRunnable(presetNext, null, mPopupBrowser::commit);
 
-      final Button wheelClick = addElement(new Button(Buttons.WHEEL_CLICK));
+      final Button wheelClick = addElement(new Button(ButtonId.WHEEL_CLICK));
       mBaseLayer.bindPressedRunnable(wheelClick, null, () -> {
          mDisplay.reset();
          startPresetBrowsing();
@@ -499,7 +503,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
          final int slot = p & 0x7;
          final boolean isScene = p >= 8;
 
-         final RGBButton pad = addElement(new RGBButton(Buttons.drumPad(p)));
+         final RGBButton pad = addElement(new RGBButton(ButtonId.drumPad(p)));
 
          if (isScene)
          {
@@ -601,7 +605,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       }
    }
 
-   private RGBButton addPageButtonMapping(final int number, final Buttons id)
+   private RGBButton addPageButtonMapping(final int number, final ButtonId id)
    {
       final RGBButton button = addElement(new RGBButton(id));
       mBaseLayer.bind(button, new RGBButtonTarget()
@@ -741,6 +745,35 @@ public class ArturiaKeylabMkII extends ControllerExtension
       }
    };
 
+   private void createButtons()
+   {
+      for (final ButtonId id : ButtonId.values())
+      {
+         mButtons[id.ordinal()] = createButton(id);
+      }
+   }
+
+   HardwareButton getButton(final ButtonId id)
+   {
+      return mButtons[id.ordinal()];
+   }
+
+   private HardwareButton createButton(final ButtonId id)
+   {
+      final MidiIn midiIn = getHost().getMidiInPort(1);
+      final HardwareButton button = mHardwareSurface.createHardwareButton();
+      final MidiExpressions expressions = getHost().midiExpressions();
+
+      final String isNoteOn = expressions.createIsNoteOnExpression(id.getChannel(), id.getKey());
+      final String pressedExpression = isNoteOn + " && data2 >= 64";
+      final String releasedExpression = isNoteOn + " && data2 < 64";
+
+      button.pressedAction().setActionMatcher(midiIn.createActionMatcher(pressedExpression));
+      button.releasedAction().setActionMatcher(midiIn.createActionMatcher(releasedExpression));
+
+      return button;
+   }
+
    private NoteInput mNoteInput;
 
    private final int mNumberOfKeys;
@@ -787,12 +820,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private HardwareSurface mHardwareSurface;
 
-   private HardwareButton mChordButton, mTransButton, mOctMinusButton, mOctPlusButton, mPadButton,
-      mMidiChButton, mSoloButton, mMuteButton, mRecordArmButton, mReadButton, mWriteButton, mSaveButton,
-      mPunchInButton, mPunchOutButton, mMetroButton, mUndoButton, mRewindButton, mForwardButton, mStopButton,
-      mPlayOrPauseButton, mRecordButton, mLoopButton, mCategoryButton, mPresetButton, mPresetPreviousButton,
-      mPresetNextButton, mWheelClickButton, mAnalogLabButton, mDAWButtom, mUserButton, mNexButton,
-      mPreviousButton, mBankButton, mSelectMultiButton;
+   private final HardwareButton[] mButtons = new HardwareButton[ButtonId.values().length];
 
    private final HardwareButton[] mPadButtons = new HardwareButton[16];
 

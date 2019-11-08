@@ -1,6 +1,6 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
-public enum Buttons
+public enum ButtonId
 {
    CHORD(0x12),
    TRANS(0x13),
@@ -63,28 +63,28 @@ public enum Buttons
    SELECT8(0x29, 0x1F),
    SELECT_MULTI(0x2A, 0x33);
 
-   Buttons(final int SysexId)
+   ButtonId(final int SysexId)
    {
       mSysexId = SysexId;
       mKey = 0;
       mChannel = 0;
    }
 
-   Buttons(final int SysexId, final int noteOrCC)
+   ButtonId(final int SysexId, final int noteOrCC)
    {
       mSysexId = SysexId;
       mKey = noteOrCC;
       mChannel = 0;
    }
 
-   Buttons(final int SysexId, final int noteOrCC, final int channel)
+   ButtonId(final int SysexId, final int noteOrCC, final int channel)
    {
       mSysexId = SysexId;
       mKey = noteOrCC;
       mChannel = channel;
    }
 
-   public static Buttons drumPad(int index)
+   public static ButtonId drumPad(int index)
    {
       switch (index)
       {

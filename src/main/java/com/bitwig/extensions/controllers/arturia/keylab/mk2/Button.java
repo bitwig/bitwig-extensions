@@ -9,7 +9,7 @@ import com.bitwig.extensions.oldframework.targets.ButtonTarget;
 
 public class Button extends AbstractButton implements ControlElement<ButtonTarget>, Resetable
 {
-   public Button(final Buttons buttonID)
+   public Button(final ButtonId buttonID)
    {
       super(buttonID);
    }

@@ -26,7 +26,7 @@ import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.arturia.keylab.mk1.KeylabSysex;
-import com.bitwig.extensions.controllers.arturia.keylab.mk2.Buttons;
+import com.bitwig.extensions.controllers.arturia.keylab.mk2.ButtonId;
 
 // TODO
 // add mode to switch pads between pages and drum pads
@@ -580,7 +580,7 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       setLED(0x64, mDisplayMode == DisplayMode.BROWSER);
    }
 
-   private void setRGB(final Buttons b, final float[] RGB)
+   private void setRGB(final ButtonId b, final float[] RGB)
    {
       int red = fromFloat(RGB[0]);
       int green = fromFloat(RGB[1]);
@@ -601,7 +601,7 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       }
    }
 
-   private void setMono(final Buttons b, final int intensity)
+   private void setMono(final ButtonId b, final int intensity)
    {
       byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 10")
          .addByte(b.getSysexID())
@@ -617,7 +617,7 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       }
    }
 
-   Map<Buttons, byte[]> mLastColor = new HashMap<>();
+   Map<ButtonId, byte[]> mLastColor = new HashMap<>();
 
    private int fromFloat(float x)
    {

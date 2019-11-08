@@ -5,7 +5,7 @@ import com.bitwig.extensions.oldframework.targets.ButtonTarget;
 
 public abstract class AbstractButton
 {
-   public AbstractButton(final Buttons buttonID)
+   public AbstractButton(final ButtonId buttonID)
    {
       mButtonID = buttonID;
    }
@@ -25,7 +25,7 @@ public abstract class AbstractButton
       }
    }
 
-   protected final Buttons mButtonID;
+   protected final ButtonId mButtonID;
    protected int mLastButtonState = -1;
    protected byte[] mLastSysex;
 
