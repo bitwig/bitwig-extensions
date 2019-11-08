@@ -46,9 +46,22 @@ class Layer extends com.bitwig.extensions.framework.Layer
       bindToggle(button(button), pressedAction, isLightOnOffSupplier);
    }
 
+   public void bindToggle(
+      final ButtonId button,
+      final Runnable pressedAction,
+      final BooleanSupplier isLightOnOffSupplier)
+   {
+      bindToggle(button(button), pressedAction, isLightOnOffSupplier);
+   }
+
    public void bind(final Supplier<Color> color, final ButtonId buttonId)
    {
       bind(color, button(buttonId));
+   }
+
+   public void bind(final Color color, final ButtonId buttonId)
+   {
+      bind(() -> color, button(buttonId));
    }
 
    public void bind(final BooleanSupplier isOn, final ButtonId buttonId)
