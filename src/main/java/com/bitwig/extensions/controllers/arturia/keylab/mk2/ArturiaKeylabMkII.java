@@ -259,7 +259,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       final RGBButton multi = addElement(new RGBButton(Buttons.SELECT_MULTI));
 
-
       mBrowserLayer.bind(multi, new RGBButtonTarget()
       {
          @Override
@@ -435,9 +434,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
    private void initButtons()
    {
 
-
       final Button forward = addElement(new Button(Buttons.FORWARD));
-
 
       final Button stop = addElement(new Button(Buttons.STOP));
       mBaseLayer.bindPressedRunnable(stop, null, mTransport::stop);
@@ -833,7 +830,16 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private HardwareSurface mHardwareSurface;
 
-   private HardwareButton mSelectMultiButton, mRewindButton, mForwardButton;
+   private HardwareButton mChordButton, mTransButton, mOctMinusButton, mOctPlusButton, mPadButton,
+      mMidiChButton, mSoloButton, mMuteButton, mRecordArmButton, mReadButton, mWriteButton, mSaveButton,
+      mPunchInButton, mPunchOutButton, mMetroButton, mUndoButton, mRewindButton, mForwardButton, mStopButton,
+      mPlayOrPauseButton, mRecordButton, mLoopButton, mCategoryButton, mPresetButton, mPresetPreviousButton,
+      mPresetNextButton, mWheelClickButton, mAnalogLabButton, mDAWButtom, mUserButton, mNexButton,
+      mPreviousButton, mBankButton, mSelectMultiButton;
+
+   private final HardwareButton[] mPadButtons = new HardwareButton[16];
+
+   private final HardwareButton[] mSelectButtons = new HardwareButton[8];
 
    private Layers mLayers;
 }
