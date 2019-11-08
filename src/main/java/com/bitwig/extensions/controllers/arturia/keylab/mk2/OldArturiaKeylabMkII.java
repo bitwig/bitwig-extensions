@@ -1,12 +1,6 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
-import java.util.function.Supplier;
-
-import com.bitwig.extension.api.Color;
-import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
-import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
-import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.BooleanValue;
@@ -19,9 +13,7 @@ import com.bitwig.extension.controller.api.CursorBrowserFilterItem;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PopupBrowser;
@@ -30,32 +22,26 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.framework.DebugUtilities;
-import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.oldframework.ControlElement;
+import com.bitwig.extensions.oldframework.Layer;
+import com.bitwig.extensions.oldframework.LayeredControllerExtension;
+import com.bitwig.extensions.oldframework.targets.ButtonTarget;
 import com.bitwig.extensions.oldframework.targets.EncoderTarget;
 import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 
-public class ArturiaKeylabMkII extends ControllerExtension
+public class OldArturiaKeylabMkII extends LayeredControllerExtension
 {
-   private final Color GREY = Color.fromRGB(0.2f, 0.2f, 0.2f);
-
-   private final Color WHITE = Color.fromRGB(1.f, 1.f, 1.f);
-
-   private final Color BLACK = Color.fromRGB(0.f, 0.f, 0.f);
-
-   private final Color ORANGE = Color.fromRGB(1.f, 0.5f, 0.f);
-
-   private final Color BLUEY = Color.fromRGB(0.f, 0.5f, 1.f);
-
-   private final Color GREEN = Color.fromRGB(0.f, 1.0f, 0.f);
-
-   private final Color RED = Color.fromRGB(1.f, 0.0f, 0.f);
+   float[] GREY = {0.2f, 0.2f, 0.2f};
+   float[] WHITE = {1.f, 1.f, 1.f};
+   float[] BLACK = {0.f, 0.f, 0.f};
+   float[] ORANGE = {1.f, 0.5f, 0.f};
+   float[] BLUEY = {0.f, 0.5f, 1.f};
+   float[] GREEN = {0.f, 1.0f, 0.f};
+   float[] RED = {1.f, 0.0f, 0.f};
 
    final int LAUNCHER_SCENES = 8;
 
-   public ArturiaKeylabMkII(
+   public OldArturiaKeylabMkII(
       final ArturiaKeylabMkIIControllerExtensionDefinition definition,
       final ControllerHost host)
    {
@@ -110,16 +96,16 @@ public class ArturiaKeylabMkII extends ControllerExtension
       mBrowserCategory.name().markInterested();
       mBrowserCreator.name().markInterested();
 
-      for (int i = 0; i < 8; i++)
+      for(int i=0; i<8; i++)
       {
          mRemoteControls.getParameter(i).name().markInterested();
          mRemoteControls.getParameter(i).value().markInterested();
          mRemoteControls.getParameter(i).value().displayedValue().markInterested();
       }
 
-      for (int i = 0; i < 9; i++)
+      for(int i=0; i<9; i++)
       {
-         mDeviceEnvelopes.getParameter(i).setLabel("F" + Integer.toString(i + 1));
+         mDeviceEnvelopes.getParameter(i).setLabel("F" + Integer.toString(i+1));
          mDeviceEnvelopes.getParameter(i).name().markInterested();
          mDeviceEnvelopes.getParameter(i).value().markInterested();
          mDeviceEnvelopes.getParameter(i).value().displayedValue().markInterested();
@@ -140,13 +126,13 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mTrackBank = host.createTrackBank(8, 0, LAUNCHER_SCENES);
 
-      for (int i = 0; i < 8; i++)
+      for(int i=0; i<8; i++)
       {
          final Track track = mTrackBank.getItemAt(i);
          track.color().markInterested();
       }
 
-      for (int s = 0; s < LAUNCHER_SCENES; s++)
+      for(int s = 0; s < LAUNCHER_SCENES; s++)
       {
          final ClipLauncherSlot slot = mCursorTrack.clipLauncherSlotBank().getItemAt(s);
          slot.color().markInterested();
@@ -176,11 +162,11 @@ public class ArturiaKeylabMkII extends ControllerExtension
       mDevice.presetCategory().markInterested();
       mDevice.presetCreator().markInterested();
 
-      host.getMidiInPort(1).setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi(msg));
+      host.getMidiInPort(1).setMidiCallback(getMidiCallbackToUseForLayers());
       host.getMidiInPort(1).setSysexCallback(this::onSysex);
 
-      sendSysex(
-         SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 40 52").addByte(DAWMode.Live.getID()).terminate());
+      sendSysex(SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 40 52")
+         .addByte(DAWMode.Live.getID()).terminate());
       // Init DAW preset in Live mode
 
       sendSysex("F0 00 20 6B 7F 42 05 02 F7"); // Set to DAW mode
@@ -211,10 +197,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
       });
 
       mPopupBrowser.exists().addValueObserver(exists -> {
-         if (exists)
-            mBrowserLayer.activate();
-         else
-            mBrowserLayer.deactivate();
+         if (exists) activateLayer(mBrowserLayer);
+         else deactivateLayer(mBrowserLayer);
       });
 
       mBrowserLayer.bind(mDisplay, new DisplayTarget()
@@ -249,8 +233,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
             final StringBuilder sb = new StringBuilder(16);
             sb.append(vol);
             final int N = 16 - vol.length() - pan.length();
-            for (int i = 0; i < N; i++)
-               sb.append(" ");
+            for(int i=0; i<N; i++) sb.append(" ");
             sb.append(pan);
 
             return sb.toString();
@@ -258,7 +241,26 @@ public class ArturiaKeylabMkII extends ControllerExtension
       });
 
       final RGBButton multi = addElement(new RGBButton(Buttons.SELECT_MULTI));
+      mBaseLayer.bind(multi, new RGBButtonTarget()
+      {
+         @Override
+         public float[] getRGB()
+         {
+            return isLayerActive(mMultiLayer) ? BLUEY : ORANGE;
+         }
 
+         @Override
+         public boolean get()
+         {
+            return false;
+         }
+
+         @Override
+         public void set(final boolean pressed)
+         {
+            if (pressed) toggleLayer(mMultiLayer);
+         }
+      });
 
       mBrowserLayer.bind(multi, new RGBButtonTarget()
       {
@@ -277,70 +279,9 @@ public class ArturiaKeylabMkII extends ControllerExtension
          @Override
          public void set(final boolean pressed)
          {
-            if (pressed)
-               mPopupBrowser.cancel();
+            if (pressed) mPopupBrowser.cancel();
          }
       });
-   }
-
-   private void initHardwareSurface()
-   {
-      mHardwareSurface = getHost().createHardwareSurface();
-   }
-
-   private void initLayers()
-   {
-      mLayers = new Layers(this);
-      mBaseLayer = new Layer(mLayers, "Base");
-      mBrowserLayer = new Layer(mLayers, "Browser");
-      mMultiLayer = new Layer(mLayers, "Multi");
-
-      initBaseLayer();
-      initBrowserLayer();
-      initMultiLayer();
-
-      final Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-      debugLayer.activate();
-   }
-
-   private void initBaseLayer()
-   {
-      mBaseLayer.bindToggle(mSelectMultiButton, mMultiLayer);
-      mBaseLayer.bind((Supplier<Color>)() -> mMultiLayer.isActive() ? BLUEY : ORANGE, mSelectMultiButton);
-
-      mBaseLayer.bindPressed(mRewindButton, () -> {
-         mIsRewinding = true;
-         repeatRewind();
-      });
-      mBaseLayer.bind(() -> mIsRewinding, mRewindButton);
-
-      mBaseLayer.bindPressed(mForwardButton, () -> {
-         mIsForwarding = true;
-         repeatForward();
-      });
-      mBaseLayer.bind(() -> mIsForwarding, mForwardButton);
-   }
-
-   private void initBrowserLayer()
-   {
-
-   }
-
-   private void initMultiLayer()
-   {
-
-   }
-
-   @Override
-   public void flush()
-   {
-      mHardwareSurface.updateHardware();
-   }
-
-   /** Called when we receive short MIDI message on port 0. */
-   private void onMidi(final ShortMidiMessage msg)
-   {
-      getHost().println(msg.toString());
    }
 
    private void onSysex(final String s)
@@ -354,7 +295,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
          activateLayer(mBaseLayer);
 
-         getHost().scheduleTask(() -> {
+         getHost().scheduleTask(() ->
+         {
             reset();
          }, 150);
       }
@@ -411,7 +353,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       mDevice.setIsSubscribed(!isMixer && mDawMode);
       mCursorTrack.setIsSubscribed(mDawMode);
 
-      for (int i = 0; i < 8; i++)
+      for(int i=0; i<8; i++)
       {
          mRemoteControls.getParameter(i).setIndication(!isMixer && mDawMode);
          final Track track = mTrackBank.getItemAt(i);
@@ -419,12 +361,12 @@ public class ArturiaKeylabMkII extends ControllerExtension
          track.pan().setIndication(isMixer && mDawMode);
       }
 
-      for (int i = 0; i < 9; i++)
+      for(int i=0; i<9; i++)
       {
          mDeviceEnvelopes.getParameter(i).setIndication(!isMixer && mDawMode);
       }
 
-      for (int s = 0; s < LAUNCHER_SCENES; s++)
+      for(int s = 0; s < LAUNCHER_SCENES; s++)
       {
          final ClipLauncherSlot slot = mCursorTrack.clipLauncherSlotBank().getItemAt(s);
          slot.setIndication(mDawMode);
@@ -434,10 +376,47 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private void initButtons()
    {
+      final Button rewind = addElement(new Button(Buttons.REWIND));
+      mBaseLayer.bind(rewind, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return mIsRewinding;
+         }
 
+         @Override
+         public void set(final boolean pressed)
+         {
+            mIsRewinding = pressed;
+
+            if (pressed)
+            {
+               repeatRewind();
+            }
+         }
+      });
 
       final Button forward = addElement(new Button(Buttons.FORWARD));
+      mBaseLayer.bind(forward, new ButtonTarget()
+      {
+         @Override
+         public boolean get()
+         {
+            return mIsForwarding;
+         }
 
+         @Override
+         public void set(final boolean pressed)
+         {
+            mIsForwarding = pressed;
+
+            if (pressed)
+            {
+               repeatForward();
+            }
+         }
+      });
 
       final Button stop = addElement(new Button(Buttons.STOP));
       mBaseLayer.bindPressedRunnable(stop, null, mTransport::stop);
@@ -487,19 +466,13 @@ public class ArturiaKeylabMkII extends ControllerExtension
       final RGBButton select7 = addPageButtonMapping(6, Buttons.SELECT7);
       final RGBButton select8 = addPageButtonMapping(7, Buttons.SELECT8);
 
-      mBrowserLayer.bindPressedRunnable(select1, ORANGE,
-         () -> mPopupBrowser.selectedContentTypeIndex().set(0));
-      mBrowserLayer.bindPressedRunnable(select2, ORANGE,
-         () -> mPopupBrowser.selectedContentTypeIndex().set(1));
-      mBrowserLayer.bindPressedRunnable(select3, ORANGE,
-         () -> mPopupBrowser.selectedContentTypeIndex().set(2));
-      mBrowserLayer.bindPressedRunnable(select4, ORANGE,
-         () -> mPopupBrowser.selectedContentTypeIndex().set(3));
+      mBrowserLayer.bindPressedRunnable(select1, ORANGE, () -> mPopupBrowser.selectedContentTypeIndex().set(0));
+      mBrowserLayer.bindPressedRunnable(select2, ORANGE, () -> mPopupBrowser.selectedContentTypeIndex().set(1));
+      mBrowserLayer.bindPressedRunnable(select3, ORANGE, () -> mPopupBrowser.selectedContentTypeIndex().set(2));
+      mBrowserLayer.bindPressedRunnable(select4, ORANGE, () -> mPopupBrowser.selectedContentTypeIndex().set(3));
 
-      final CursorBrowserFilterItem categories = (CursorBrowserFilterItem)mPopupBrowser.categoryColumn()
-         .createCursorItem();
-      final CursorBrowserFilterItem creators = (CursorBrowserFilterItem)mPopupBrowser.creatorColumn()
-         .createCursorItem();
+      final CursorBrowserFilterItem categories = (CursorBrowserFilterItem)mPopupBrowser.categoryColumn().createCursorItem();
+      final CursorBrowserFilterItem creators = (CursorBrowserFilterItem)mPopupBrowser.creatorColumn().createCursorItem();
 
       mBrowserLayer.bindPressedRunnable(select5, GREEN, () -> categories.selectPrevious());
       mBrowserLayer.bindPressedRunnable(select6, GREEN, () -> categories.selectNext());
@@ -511,28 +484,32 @@ public class ArturiaKeylabMkII extends ControllerExtension
       final ClipLauncherSlotBank cursorTrackSlots = mCursorTrack.clipLauncherSlotBank();
       cursorTrackSlots.scrollPosition().markInterested();
 
-      mMultiLayer.bindPressedRunnable(presetPrev, cursorTrackSlots.canScrollBackwards(), () -> {
+      mMultiLayer.bindPressedRunnable(presetPrev, cursorTrackSlots.canScrollBackwards(), () ->
+      {
          final int current = cursorTrackSlots.scrollPosition().get();
-         cursorTrackSlots.scrollPosition().set(current - 1);
-         mSceneBank.scrollPosition().set(current - 1);
+         cursorTrackSlots.scrollPosition().set(current-1);
+         mSceneBank.scrollPosition().set(current-1);
       });
       mBrowserLayer.bindPressedRunnable(presetPrev, null, mPopupBrowser::cancel);
 
       final Button presetNext = addElement(new Button(Buttons.PRESET_NEXT));
       mBaseLayer.bindPressedRunnable(presetNext, mDevice.hasNext(), mDevice::selectNext);
-      mMultiLayer.bindPressedRunnable(presetNext, cursorTrackSlots.canScrollForwards(), () -> {
+      mMultiLayer.bindPressedRunnable(presetNext, cursorTrackSlots.canScrollForwards(), () ->
+      {
          final int current = cursorTrackSlots.scrollPosition().get();
-         cursorTrackSlots.scrollPosition().set(current + 1);
-         mSceneBank.scrollPosition().set(current + 1);
+         cursorTrackSlots.scrollPosition().set(current+1);
+         mSceneBank.scrollPosition().set(current+1);
       });
       mBrowserLayer.bindPressedRunnable(presetNext, null, mPopupBrowser::commit);
 
       final Button wheelClick = addElement(new Button(Buttons.WHEEL_CLICK));
-      mBaseLayer.bindPressedRunnable(wheelClick, null, () -> {
+      mBaseLayer.bindPressedRunnable(wheelClick, null, () ->
+      {
          mDisplay.reset();
          startPresetBrowsing();
       });
-      mMultiLayer.bindPressedRunnable(wheelClick, null, () -> {
+      mMultiLayer.bindPressedRunnable(wheelClick, null, () ->
+      {
       });
 
       mBrowserLayer.bindPressedRunnable(wheelClick, mCursorTrack.hasPrevious(), mPopupBrowser::commit);
@@ -540,7 +517,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private void initPadsForCLipLauncher()
    {
-      for (int p = 0; p < 16; p++)
+      for(int p=0; p<16; p++)
       {
          final int slot = p & 0x7;
          final boolean isScene = p >= 8;
@@ -623,7 +600,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
                private float getTransportPulse(final double multiplier, final double amount)
                {
                   final double p = mTransport.getPosition().get() * multiplier;
-                  return (float)((0.5 + 0.5 * Math.cos(p * 2 * Math.PI)) * amount);
+                  return (float) ((0.5 + 0.5 * Math.cos(p * 2 * Math.PI)) * amount);
                }
 
                private ClipLauncherSlot getSlot()
@@ -655,8 +632,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
          @Override
          public float[] getRGB()
          {
-            if (number >= mRemoteControls.pageCount().get())
-               return BLACK;
+            if (number >= mRemoteControls.pageCount().get()) return BLACK;
 
             final boolean isActive = mRemoteControls.selectedPageIndex().get() == number;
             return isActive ? WHITE : GREY;
@@ -686,8 +662,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
          @Override
          public float[] getRGB()
          {
-            return isCursor.get() ? WHITE
-               : RGBButtonTarget.getFromValue(mTrackBank.getItemAt(number).color());
+            return isCursor.get() ? WHITE : RGBButtonTarget.getFromValue(mTrackBank.getItemAt(number).color());
          }
 
          @Override
@@ -712,7 +687,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mBaseLayer.bindEncoder(encoder9, mCursorTrack.volume(), 101);
 
-      for (int i = 0; i < 8; i++)
+      for(int i=0; i<8; i++)
       {
          final Encoder encoder = addElement(new Encoder(0x10 + i));
 
@@ -721,23 +696,21 @@ public class ArturiaKeylabMkII extends ControllerExtension
       }
 
       final Encoder wheel = addElement(new Encoder(0x3C));
-      mBaseLayer.bind(wheel, (EncoderTarget)steps -> {
-         if (steps > 0)
-            mCursorTrack.selectNext();
-         else
-            mCursorTrack.selectPrevious();
+      mBaseLayer.bind(wheel, (EncoderTarget) steps ->
+      {
+         if (steps > 0) mCursorTrack.selectNext();
+         else mCursorTrack.selectPrevious();
          mCursorTrack.makeVisibleInMixer();
          mTrackBank.scrollIntoView(mCursorTrack.position().get());
       });
 
-      mBrowserLayer.bind(wheel, (EncoderTarget)steps -> {
-         if (steps > 0)
-            mPopupBrowser.selectNextFile();
-         else
-            mPopupBrowser.selectPreviousFile();
+      mBrowserLayer.bind(wheel, (EncoderTarget) steps ->
+      {
+         if (steps > 0) mPopupBrowser.selectNextFile();
+         else mPopupBrowser.selectPreviousFile();
       });
 
-      for (int i = 0; i < 9; i++)
+      for(int i=0; i<9; i++)
       {
          final Fader fader = addElement(new Fader(i));
          mBaseLayer.bind(fader, mDeviceEnvelopes.getParameter(i));
@@ -788,52 +761,26 @@ public class ArturiaKeylabMkII extends ControllerExtension
    };
 
    private NoteInput mNoteInput;
-
    private final int mNumberOfKeys;
-
    private Transport mTransport;
-
    private CursorTrack mCursorTrack;
-
    private CursorDevice mDevice;
-
    private CursorRemoteControlsPage mRemoteControls;
-
    private CursorRemoteControlsPage mDeviceEnvelopes;
-
    private PopupBrowser mPopupBrowser;
-
    private BrowserResultsItem mBrowserResult;
-
    private BrowserFilterItem mBrowserCategory;
-
    private BrowserFilterItem mBrowserCreator;
-
    private Application mApplication;
-
    private boolean mIsRewinding;
-
    private boolean mIsForwarding;
-
    private Display mDisplay;
 
    private Action mSaveAction;
-
    private Layer mBaseLayer;
-
    private Layer mBrowserLayer;
-
    private TrackBank mTrackBank;
-
    private MasterTrack mMasterTrack;
-
    private boolean mDawMode = true;
-
    private SceneBank mSceneBank;
-
-   private HardwareSurface mHardwareSurface;
-
-   private HardwareButton mSelectMultiButton, mRewindButton, mForwardButton;
-
-   private Layers mLayers;
 }
