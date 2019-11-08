@@ -64,6 +64,14 @@ public enum ButtonId
       return mChannel;
    }
 
+   public boolean isRGB()
+   {
+      final int ordinal = ordinal();
+
+      return ordinal >= SELECT1.ordinal() && ordinal <= SELECT8.ordinal()
+         || ordinal >= PAD1.ordinal() && ordinal <= PAD16.ordinal();
+   }
+
    private final int mSysexId;
 
    private final int mKey;

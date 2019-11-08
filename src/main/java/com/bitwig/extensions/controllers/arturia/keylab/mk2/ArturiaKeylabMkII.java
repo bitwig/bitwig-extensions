@@ -1,5 +1,8 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
+import java.util.Arrays;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
@@ -25,7 +28,9 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
@@ -731,7 +736,92 @@ public class ArturiaKeylabMkII extends ControllerExtension
       button.pressedAction().setActionMatcher(midiIn.createActionMatcher(pressedExpression));
       button.releasedAction().setActionMatcher(midiIn.createActionMatcher(releasedExpression));
 
+      if (id.isRGB())
+      {
+         final MultiStateHardwareLight light = mHardwareSurface
+            .createMultiStateHardwareLight(ArturiaKeylabMkII::stateToColor);
+
+         button.setBackgroundLight(light);
+
+         final IntConsumer sendColor = new IntConsumer()
+         {
+
+            @Override
+            public void accept(final int state)
+            {
+               final Color c = stateToColor(state);
+               final int red = fromFloat(c.getRed());
+               final int green = fromFloat(c.getGreen());
+               final int blue = fromFloat(c.getBlue());
+
+               final byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 16")
+                  .addByte(id.getSysexID()).addByte(red).addByte(green).addByte(blue).terminate();
+
+               if (mLastSysex == null || !Arrays.equals(mLastSysex, sysex))
+               {
+                  getMidiOutPort(1).sendSysex(sysex);
+                  mLastSysex = sysex;
+               }
+            }
+
+            private byte[] mLastSysex;
+
+         };
+
+         light.state().onUpdateHardware(sendColor);
+      }
+      else
+      {
+         final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight();
+
+         button.setBackgroundLight(light);
+
+         final Consumer<Boolean> sendOnOff = new Consumer<Boolean>()
+         {
+
+            @Override
+            public void accept(final Boolean v)
+            {
+               final boolean isOn = v.booleanValue();
+
+               final int intensity = isOn ? 0x7f : 0x04;
+
+               final byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 10")
+                  .addByte(id.getSysexID()).addByte(intensity).terminate();
+
+               if (mLastSysex == null || !Arrays.equals(mLastSysex, sysex))
+               {
+                  getMidiOutPort(1).sendSysex(sysex);
+                  mLastSysex = sysex;
+               }
+            }
+
+            private byte[] mLastSysex;
+         };
+
+         light.isOn().onUpdateHardware(sendOnOff);
+      }
+
       return button;
+   }
+
+   private static int colorToState(final Color c)
+   {
+      return c.getRed255() << 16 | c.getGreen255() << 8 | c.getGreen255();
+   }
+
+   private static Color stateToColor(final int state)
+   {
+      final int red = (state & 0xFF0000) >> 16;
+      final int green = (state & 0xFF00) >> 8;
+      final int blue = (state & 0xFF);
+
+      return Color.fromRGB255(red, green, blue);
+   }
+
+   private static int fromFloat(final double x)
+   {
+      return Math.max(0, Math.min((int)(31.0 * x), 31));
    }
 
    private NoteInput mNoteInput;
