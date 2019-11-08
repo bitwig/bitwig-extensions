@@ -149,7 +149,7 @@ public class PresonusAtom extends ControllerExtension
       mTransport.isPlaying().markInterested();
       mTransport.getPosition().markInterested();
 
-      mCursorClip = host.createLauncherCursorClip(16, 1);
+      mCursorClip = mCursorTrack.createClipLauncherCursorClip("clip", "Clip", 16, 1);
       mCursorClip.color().markInterested();
       mCursorClip.clipLauncherSlot().color().markInterested();
       mCursorClip.clipLauncherSlot().isPlaying().markInterested();
