@@ -32,6 +32,8 @@ import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PopupBrowser;
+import com.bitwig.extension.controller.api.RelativeHardwareControl;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
@@ -269,6 +271,13 @@ public class ArturiaKeylabMkII extends ControllerExtension
       mHardwareSurface = getHost().createHardwareSurface();
 
       createButtons();
+
+      for (int i = 0; i < 8; i++)
+      {
+         mEncoders[i] = createEncoder(0x10 + i);
+      }
+
+      mWheel = createEncoder(0x3C);
    }
 
    private void initLayers()
@@ -360,6 +369,13 @@ public class ArturiaKeylabMkII extends ControllerExtension
       });
 
       initPadsForCLipLauncher();
+
+      mBaseLayer.bind(mEncoders[8], mCursorTrack.volume());
+
+      for (int i = 0; i < 8; i++)
+      {
+         mBaseLayer.bind(mEncoders[i], mRemoteControls.getParameter(i));
+      }
    }
 
    private void initBrowserLayer()
@@ -437,6 +453,11 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mBrowserLayer.bindToggle(ButtonId.WHEEL_CLICK, mPopupBrowser.commitAction(),
          mCursorTrack.hasPrevious());
+
+      for (int i = 0; i < 8; i++)
+      {
+         mMultiLayer.bind(mEncoders[i], mTrackBank.getItemAt(i).pan());
+      }
    }
 
    @Override
@@ -607,8 +628,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
    {
       final Encoder encoder9 = addElement(new Encoder(24));
 
-      mBaseLayer.bindEncoder(encoder9, mCursorTrack.volume(), 101);
-
       for (int i = 0; i < 8; i++)
       {
          final Encoder encoder = addElement(new Encoder(0x10 + i));
@@ -674,6 +693,15 @@ public class ArturiaKeylabMkII extends ControllerExtension
    }
 
    private Layer mMultiLayer;
+
+   private RelativeHardwareControl createEncoder(final int cc)
+   {
+      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
+
+      encoder.setAdjustValueMatcher(getMidiInPort(1).createRelative2sComplementCCValueMatcher(0, cc));
+
+      return encoder;
+   }
 
    private void createButtons()
    {
@@ -840,9 +868,9 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private final HardwareButton[] mButtons = new HardwareButton[ButtonId.values().length];
 
-   private final HardwareButton[] mPadButtons = new HardwareButton[16];
+   private RelativeHardwareControl[] mEncoders = new RelativeHardwareControl[9];
 
-   private final HardwareButton[] mSelectButtons = new HardwareButton[8];
+   private RelativeHardwareControl mWheel;
 
    private Layers mLayers;
 }
