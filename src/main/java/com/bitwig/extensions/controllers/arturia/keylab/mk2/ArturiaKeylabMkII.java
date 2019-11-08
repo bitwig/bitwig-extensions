@@ -42,7 +42,6 @@ import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.oldframework.ControlElement;
-import com.bitwig.extensions.oldframework.targets.EncoderTarget;
 
 public class ArturiaKeylabMkII extends ControllerExtension
 {
@@ -264,6 +263,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
          }
       });
 
+      mTrackBank.followCursorTrack(mCursorTrack);
    }
 
    private void initHardwareSurface()
@@ -376,6 +376,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
       {
          mBaseLayer.bind(mEncoders[i], mRemoteControls.getParameter(i));
       }
+
+      mBaseLayer.bind(mWheel, mCursorTrack);
    }
 
    private void initBrowserLayer()
@@ -411,6 +413,10 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mBrowserLayer.bindPressed(ButtonId.PRESET_PREVIOUS, mPopupBrowser.cancelAction());
       mBrowserLayer.bindPressedRunnable(ButtonId.PRESET_NEXT, mPopupBrowser.commitAction());
+
+      mBrowserLayer.bindToggle(ButtonId.WHEEL_CLICK, mPopupBrowser.commitAction(),
+         mCursorTrack.hasPrevious());
+      mBrowserLayer.bind(mWheel, mPopupBrowser);
    }
 
    private void initMultiLayer()
@@ -450,9 +456,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mMultiLayer.bindPressed(ButtonId.WHEEL_CLICK, () -> {
       });
-
-      mBrowserLayer.bindToggle(ButtonId.WHEEL_CLICK, mPopupBrowser.commitAction(),
-         mCursorTrack.hasPrevious());
 
       for (int i = 0; i < 8; i++)
       {
@@ -626,32 +629,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private void initControls()
    {
-      final Encoder encoder9 = addElement(new Encoder(24));
-
-      for (int i = 0; i < 8; i++)
-      {
-         final Encoder encoder = addElement(new Encoder(0x10 + i));
-
-         mBaseLayer.bindEncoder(encoder, mRemoteControls.getParameter(i), 101);
-         mMultiLayer.bindEncoder(encoder, mTrackBank.getItemAt(i).pan(), 101);
-      }
-
-      final Encoder wheel = addElement(new Encoder(0x3C));
-      mBaseLayer.bind(wheel, (EncoderTarget)steps -> {
-         if (steps > 0)
-            mCursorTrack.selectNext();
-         else
-            mCursorTrack.selectPrevious();
-         mCursorTrack.makeVisibleInMixer();
-         mTrackBank.scrollIntoView(mCursorTrack.position().get());
-      });
-
-      mBrowserLayer.bind(wheel, (EncoderTarget)steps -> {
-         if (steps > 0)
-            mPopupBrowser.selectNextFile();
-         else
-            mPopupBrowser.selectPreviousFile();
-      });
 
       for (int i = 0; i < 9; i++)
       {

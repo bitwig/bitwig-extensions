@@ -167,12 +167,8 @@ public class Layer
 
    public Binding bind(final Object actionOwner, final HardwareAction source, final Runnable target)
    {
-      final HardwareActionRunnableBinding binding = new HardwareActionRunnableBinding(actionOwner, source,
-         target);
-
-      addBinding(binding);
-
-      return binding;
+      return bind(actionOwner, source,
+         getLayers().getControllerExtension().getHost().createAction(target, null));
    }
 
    public Binding bindPressed(final HardwareButton button, final Runnable pressedRunnable)
