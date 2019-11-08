@@ -10,6 +10,7 @@ import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
+import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.BooleanValue;
@@ -24,6 +25,7 @@ import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
+import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiExpressions;
@@ -41,7 +43,6 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.oldframework.ControlElement;
 
 public class ArturiaKeylabMkII extends ControllerExtension
 {
@@ -195,8 +196,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       updateIndications();
 
-      initControls();
-      initPadsForCLipLauncher();
       mDisplay = addElement(new Display());
 
       mBaseLayer.bind(mDisplay, new DisplayTarget()
@@ -275,6 +274,11 @@ public class ArturiaKeylabMkII extends ControllerExtension
       for (int i = 0; i < 8; i++)
       {
          mEncoders[i] = createEncoder(0x10 + i);
+      }
+
+      for (int i = 0; i < 9; i++)
+      {
+         mFaders[i] = createFader(i);
       }
 
       mWheel = createEncoder(0x3C);
@@ -378,6 +382,11 @@ public class ArturiaKeylabMkII extends ControllerExtension
       }
 
       mBaseLayer.bind(mWheel, mCursorTrack);
+
+      for (int i = 0; i < 9; i++)
+      {
+         mBaseLayer.bind(mFaders[i], mDeviceEnvelopes.getParameter(i));
+      }
    }
 
    private void initBrowserLayer()
@@ -412,7 +421,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       mBrowserLayer.bind(RED, ButtonId.SELECT8);
 
       mBrowserLayer.bindPressed(ButtonId.PRESET_PREVIOUS, mPopupBrowser.cancelAction());
-      mBrowserLayer.bindPressedRunnable(ButtonId.PRESET_NEXT, mPopupBrowser.commitAction());
+      mBrowserLayer.bindPressed(ButtonId.PRESET_NEXT, mPopupBrowser.commitAction());
 
       mBrowserLayer.bindToggle(ButtonId.WHEEL_CLICK, mPopupBrowser.commitAction(),
          mCursorTrack.hasPrevious());
@@ -461,6 +470,14 @@ public class ArturiaKeylabMkII extends ControllerExtension
       {
          mMultiLayer.bind(mEncoders[i], mTrackBank.getItemAt(i).pan());
       }
+
+      for (int i = 0; i < 9; i++)
+      {
+         if (i == 8)
+            mMultiLayer.bind(mFaders[i], mMasterTrack.volume());
+         else
+            mMultiLayer.bind(mFaders[i], mTrackBank.getItemAt(i).volume());
+      }
    }
 
    @Override
@@ -501,13 +518,14 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private void reset()
    {
-      for (final ControlElement element : getElements())
-      {
-         if (element instanceof Resetable)
-         {
-            ((Resetable)element).reset();
-         }
-      }
+      // TODO
+      // for (final ControlElement element : getElements())
+      // {
+      // if (element instanceof Resetable)
+      // {
+      // ((Resetable)element).reset();
+      // }
+      // }
    }
 
    private void repeatRewind()
@@ -627,21 +645,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
       return (float)((0.5 + 0.5 * Math.cos(p * 2 * Math.PI)) * amount);
    }
 
-   private void initControls()
-   {
-
-      for (int i = 0; i < 9; i++)
-      {
-         final Fader fader = addElement(new Fader(i));
-         mBaseLayer.bind(fader, mDeviceEnvelopes.getParameter(i));
-
-         if (i == 8)
-            mMultiLayer.bind(fader, mMasterTrack.volume());
-         else
-            mMultiLayer.bind(fader, mTrackBank.getItemAt(i).volume());
-      }
-   }
-
    private void startPresetBrowsing()
    {
       if (mDevice.exists().get())
@@ -678,6 +681,15 @@ public class ArturiaKeylabMkII extends ControllerExtension
       encoder.setAdjustValueMatcher(getMidiInPort(1).createRelative2sComplementCCValueMatcher(0, cc));
 
       return encoder;
+   }
+
+   private AbsoluteHardwareControl createFader(final int index)
+   {
+      final HardwareSlider fader = mHardwareSurface.createHardwareSlider();
+
+      fader.setAdjustValueMatcher(getMidiInPort(1).createAbsolutePitchBendValueMatcher(index));
+
+      return fader;
    }
 
    private void createButtons()
@@ -845,7 +857,9 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private final HardwareButton[] mButtons = new HardwareButton[ButtonId.values().length];
 
-   private RelativeHardwareControl[] mEncoders = new RelativeHardwareControl[9];
+   private final RelativeHardwareControl[] mEncoders = new RelativeHardwareControl[9];
+
+   private final AbsoluteHardwareControl[] mFaders = new AbsoluteHardwareControl[9];
 
    private RelativeHardwareControl mWheel;
 
