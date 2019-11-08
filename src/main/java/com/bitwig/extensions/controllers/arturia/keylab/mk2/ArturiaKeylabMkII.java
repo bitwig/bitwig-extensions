@@ -41,7 +41,6 @@ import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.oldframework.ControlElement;
 import com.bitwig.extensions.oldframework.targets.EncoderTarget;
-import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 
 public class ArturiaKeylabMkII extends ControllerExtension
 {
@@ -74,6 +73,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
    public void init()
    {
       final ControllerHost host = getHost();
+
+      initHardwareSurface();
 
       mTransport = host.createTransport();
       mTransport.isPlaying().markInterested();
@@ -266,6 +267,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
    private void initHardwareSurface()
    {
       mHardwareSurface = getHost().createHardwareSurface();
+
+      createButtons();
    }
 
    private void initLayers()
@@ -290,8 +293,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mBaseLayer.activate();
 
-      final Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-      debugLayer.activate();
+      DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+      ;
    }
 
    private void initBaseLayer()
@@ -355,6 +358,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
          mDisplay.reset();
          startPresetBrowsing();
       });
+
+      initPadsForCLipLauncher();
    }
 
    private void initBrowserLayer()
@@ -533,109 +538,69 @@ public class ArturiaKeylabMkII extends ControllerExtension
    {
       for (int p = 0; p < 16; p++)
       {
-         final int slot = p & 0x7;
+         final int slotIndex = p & 0x7;
          final boolean isScene = p >= 8;
 
-         final RGBButton pad = addElement(new RGBButton(ButtonId.drumPad(p)));
+         final HardwareButton pad = getButton(ButtonId.drumPad(p));
 
          if (isScene)
          {
-            mBaseLayer.bind(pad, new RGBButtonTarget()
-            {
-               @Override
-               public float[] getRGB()
+            final Scene scene = mSceneBank.getScene(slotIndex);
+            mBaseLayer.bindPressed(pad, scene.launchAction());
+            mBaseLayer.bind(() -> {
+               if (scene.exists().get())
                {
-                  final Scene scene = getScene();
-
-                  if (scene.exists().get())
-                  {
-                     return RGBButtonTarget.mixWithValue(scene.color(), BLACK, 0.66f);
-                  }
-
-                  return BLACK;
+                  return Color.mix(scene.color().get(), BLACK, 0.66f);
                }
 
-               private Scene getScene()
-               {
-                  return mSceneBank.getScene(slot);
-               }
-
-               @Override
-               public boolean get()
-               {
-                  return true;
-               }
-
-               @Override
-               public void set(final boolean pressed)
-               {
-                  getScene().launch();
-               }
-            });
+               return BLACK;
+            }, pad);
          }
          else
          {
-            mBaseLayer.bind(pad, new RGBButtonTarget()
-            {
-               @Override
-               public float[] getRGB()
+            final ClipLauncherSlot slot = mCursorTrack.clipLauncherSlotBank().getItemAt(slotIndex);
+
+            mBaseLayer.bindPressed(pad, slot.launchAction());
+            mBaseLayer.bind((Supplier<Color>)() -> {
+               if (!slot.hasContent().get())
+                  return null;
+
+               if (slot.isRecordingQueued().get())
                {
-                  final ClipLauncherSlot s = getSlot();
-
-                  if (s.isRecordingQueued().get())
+                  return Color.mix(RED, BLACK, getTransportPulse(1.0, 1));
+               }
+               else if (slot.hasContent().get())
+               {
+                  if (slot.isPlaybackQueued().get())
                   {
-                     return RGBButtonTarget.mix(RED, BLACK, getTransportPulse(1.0, 1));
+                     return Color.mix(slot.color().get(), WHITE, 1 - getTransportPulse(1.0, 1));
                   }
-                  else if (s.hasContent().get())
+                  else if (slot.isRecording().get())
                   {
-                     if (s.isPlaybackQueued().get())
-                     {
-                        return RGBButtonTarget.mixWithValue(s.color(), WHITE, 1 - getTransportPulse(1.0, 1));
-                     }
-                     else if (s.isRecording().get())
-                     {
-                        return RED;
-                     }
-                     else if (s.isPlaying().get())
-                     {
-                        return RGBButtonTarget.getFromValue(s.color());
-                     }
-
-                     return RGBButtonTarget.mixWithValue(s.color(), BLACK, 0.66f);
+                     return RED;
                   }
-                  else if (mCursorTrack.arm().get())
+                  else if (slot.isPlaying().get())
                   {
-                     return RGBButtonTarget.mix(BLACK, RED, 0.1f);
+                     return slot.color().get();
                   }
 
-                  return BLACK;
+                  return Color.mix(slot.color().get(), BLACK, 0.66f);
+               }
+               else if (mCursorTrack.arm().get())
+               {
+                  return Color.mix(BLACK, RED, 0.1f);
                }
 
-               private float getTransportPulse(final double multiplier, final double amount)
-               {
-                  final double p = mTransport.getPosition().get() * multiplier;
-                  return (float)((0.5 + 0.5 * Math.cos(p * 2 * Math.PI)) * amount);
-               }
-
-               private ClipLauncherSlot getSlot()
-               {
-                  return mCursorTrack.clipLauncherSlotBank().getItemAt(slot);
-               }
-
-               @Override
-               public boolean get()
-               {
-                  return getSlot().hasContent().get();
-               }
-
-               @Override
-               public void set(final boolean pressed)
-               {
-                  getSlot().launch();
-               }
-            });
+               return BLACK;
+            }, pad);
          }
       }
+   }
+
+   private float getTransportPulse(final double multiplier, final double amount)
+   {
+      final double p = mTransport.getPosition().get() * multiplier;
+      return (float)((0.5 + 0.5 * Math.cos(p * 2 * Math.PI)) * amount);
    }
 
    private void initControls()
@@ -807,6 +772,9 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private static int colorToState(final Color c)
    {
+      if (c == null) // Off
+         return 0;
+
       return c.getRed255() << 16 | c.getGreen255() << 8 | c.getGreen255();
    }
 
