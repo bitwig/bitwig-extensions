@@ -191,7 +191,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
       initControls();
       initPadsForCLipLauncher();
       mDisplay = addElement(new Display());
-      activateLayer(mBaseLayer);
 
       mBaseLayer.bind(mDisplay, new DisplayTarget()
       {
@@ -257,29 +256,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
          }
       });
 
-      final RGBButton multi = addElement(new RGBButton(Buttons.SELECT_MULTI));
-
-      mBrowserLayer.bind(multi, new RGBButtonTarget()
-      {
-         @Override
-         public float[] getRGB()
-         {
-            return WHITE;
-         }
-
-         @Override
-         public boolean get()
-         {
-            return false;
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed)
-               mPopupBrowser.cancel();
-         }
-      });
    }
 
    private void initHardwareSurface()
@@ -297,6 +273,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
       initBaseLayer();
       initBrowserLayer();
       initMultiLayer();
+
+      mBaseLayer.activate();
 
       final Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
       debugLayer.activate();
@@ -318,11 +296,30 @@ public class ArturiaKeylabMkII extends ControllerExtension
          repeatForward();
       });
       mBaseLayer.bind(() -> mIsForwarding, mForwardButton);
+
+      mBaseLayer.bindPressed(mStopButton, mTransport.stopAction());
+      mBaseLayer.bindToggle(mPlayOrPauseButton, mTransport.playAction(), mTransport.isPlaying());
+      mBaseLayer.bindToggle(mRecordButton, mTransport.recordAction(), mTransport.isArrangerRecordEnabled());
+      mBaseLayer.bindToggle(mLoopButton, mTransport.isArrangerLoopEnabled());
+      mBaseLayer.bindToggle(mMetroButton, mTransport.isMetronomeEnabled());
+      mBaseLayer.bindPressed(mUndoButton, mApplication.undoAction());
+      mBaseLayer.bindPressed(mSaveButton, mSaveAction::invoke);
+
+      mBaseLayer.bindToggle(mPunchInButton, mTransport.isPunchInEnabled());
+      mBaseLayer.bindToggle(mPunchOutButton, mTransport.isPunchOutEnabled());
+
+      mBaseLayer.bindToggle(mSoloButton, mCursorTrack.solo());
+      mBaseLayer.bindToggle(mMuteButton, mCursorTrack.mute());
+      mBaseLayer.bindToggle(mRecordArmButton, mCursorTrack.arm());
+      mBaseLayer.bindToggle(mWriteButton, mTransport.isArrangerAutomationWriteEnabled());
+
+      mBaseLayer.bindToggle(mReadButton, mTransport.isClipLauncherOverdubEnabled());
    }
 
    private void initBrowserLayer()
    {
-
+      mBrowserLayer.bindPressed(mSelectMultiButton, mPopupBrowser::cancel);
+      mBrowserLayer.bind(() -> WHITE, mSelectMultiButton);
    }
 
    private void initMultiLayer()
@@ -351,7 +348,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       {
          mDawMode = true;
 
-         activateLayer(mBaseLayer);
+         mBaseLayer.activate();
 
          getHost().scheduleTask(() -> {
             reset();
@@ -360,7 +357,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       else if (s.equals(EXIT_DAW_MODE))
       {
          mDawMode = false;
-         deactivateLayer(mBaseLayer);
+         mBaseLayer.deactivate();
       }
 
       updateIndications();
@@ -395,17 +392,11 @@ public class ArturiaKeylabMkII extends ControllerExtension
       }
    }
 
-   @Override
-   protected void toggleLayer(final Layer layer)
-   {
-      super.toggleLayer(layer);
-   }
-
    private void updateIndications()
    {
       mCursorTrack.volume().setIndication(mDawMode);
 
-      final boolean isMixer = isLayerActive(mMultiLayer);
+      final boolean isMixer = mMultiLayer.isActive();
 
       mDevice.setIsSubscribed(!isMixer && mDawMode);
       mCursorTrack.setIsSubscribed(mDawMode);
@@ -433,40 +424,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private void initButtons()
    {
-
-      final Button forward = addElement(new Button(Buttons.FORWARD));
-
-      final Button stop = addElement(new Button(Buttons.STOP));
-      mBaseLayer.bindPressedRunnable(stop, null, mTransport::stop);
-      final Button play = addElement(new Button(Buttons.PLAY_OR_PAUSE));
-      mBaseLayer.bindPressedRunnable(play, mTransport.isPlaying(), mTransport::play);
-      final Button record = addElement(new Button(Buttons.RECORD));
-      mBaseLayer.bindPressedRunnable(record, mTransport.isArrangerRecordEnabled(), mTransport::record);
-      final Button loop = addElement(new Button(Buttons.LOOP));
-      mBaseLayer.bindToggle(loop, mTransport.isArrangerLoopEnabled());
-      final Button metronome = addElement(new Button(Buttons.METRO));
-      mBaseLayer.bindToggle(metronome, mTransport.isMetronomeEnabled());
-      final Button undo = addElement(new Button(Buttons.UNDO));
-      mBaseLayer.bindPressedRunnable(undo, null, mApplication::undo);
-      final Button save = addElement(new Button(Buttons.SAVE));
-      mBaseLayer.bindPressedRunnable(save, null, mSaveAction::invoke);
-
-      final Button punchIn = addElement(new Button(Buttons.PUNCH_IN));
-      mBaseLayer.bindToggle(punchIn, mTransport.isPunchInEnabled());
-      final Button punchOut = addElement(new Button(Buttons.PUNCH_OUT));
-      mBaseLayer.bindToggle(punchOut, mTransport.isPunchOutEnabled());
-
-      final Button solo = addElement(new Button(Buttons.SOLO));
-      mBaseLayer.bindToggle(solo, mCursorTrack.solo());
-      final Button mute = addElement(new Button(Buttons.MUTE));
-      mBaseLayer.bindToggle(mute, mCursorTrack.mute());
-      final Button arm = addElement(new Button(Buttons.RECORD_ARM));
-      mBaseLayer.bindToggle(arm, mCursorTrack.arm());
-      final Button write = addElement(new Button(Buttons.WRITE));
-      mBaseLayer.bindToggle(write, mTransport.isArrangerAutomationWriteEnabled());
-
-      final Button read = addElement(new Button(Buttons.READ));
-      mBaseLayer.bindToggle(read, mTransport.isClipLauncherOverdubEnabled());
 
       final Button prev = addElement(new Button(Buttons.PREVIOUS));
       mBaseLayer.bindPressedRunnable(prev, null, mRemoteControls::selectPrevious);
