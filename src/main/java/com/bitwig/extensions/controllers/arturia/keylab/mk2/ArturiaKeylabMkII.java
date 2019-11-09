@@ -194,8 +194,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       sendSysex("F0 00 20 6B 7F 42 05 02 F7"); // Set to DAW mode
 
-      updateIndications();
-
       mPopupBrowser.exists().addValueObserver(exists -> {
          if (exists)
             mBrowserLayer.activate();
@@ -206,6 +204,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
       mTrackBank.followCursorTrack(mCursorTrack);
 
       initLayers();
+
+      updateIndications();
    }
 
    private void initHardwareSurface()
@@ -214,7 +214,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       createButtons();
 
-      for (int i = 0; i < 8; i++)
+      for (int i = 0; i < 9; i++)
       {
          mEncoders[i] = createEncoder(0x10 + i);
       }
@@ -258,7 +258,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private void initBaseLayer()
    {
-      mBaseLayer.bindToggle(ButtonId.SELECT_MULTI, mMultiLayer);
+      mBaseLayer.bindPressed(ButtonId.SELECT_MULTI, mMultiLayer.getToggleAction());
       mBaseLayer.bind((Supplier<Color>)() -> mMultiLayer.isActive() ? BLUEY : ORANGE, ButtonId.SELECT_MULTI);
 
       mBaseLayer.bindPressed(ButtonId.REWIND, () -> {
@@ -689,6 +689,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
       {
          final MultiStateHardwareLight light = mHardwareSurface
             .createMultiStateHardwareLight(ArturiaKeylabMkII::stateToColor);
+
+         light.setColorToStateFunction(ArturiaKeylabMkII::colorToState);
 
          button.setBackgroundLight(light);
 

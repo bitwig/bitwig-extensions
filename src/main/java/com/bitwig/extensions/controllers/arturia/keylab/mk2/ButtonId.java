@@ -68,7 +68,7 @@ public enum ButtonId
    {
       final int ordinal = ordinal();
 
-      return ordinal >= SELECT1.ordinal() && ordinal <= SELECT8.ordinal()
+      return ordinal >= SELECT1.ordinal() && ordinal <= SELECT_MULTI.ordinal()
          || ordinal >= PAD1.ordinal() && ordinal <= PAD16.ordinal();
    }
 
