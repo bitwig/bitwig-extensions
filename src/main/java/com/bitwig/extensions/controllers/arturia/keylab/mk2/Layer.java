@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.TriggerAction;
 import com.bitwig.extensions.framework.Layers;
@@ -67,6 +68,14 @@ class Layer extends com.bitwig.extensions.framework.Layer
    public void bind(final BooleanSupplier isOn, final ButtonId buttonId)
    {
       bind(isOn, button(buttonId));
+   }
+
+   public void showText(final Supplier<String> topLine, final Supplier<String> bottomLine)
+   {
+      final HardwareTextDisplay display = mExtension.mDisplay;
+
+      display.line(0).text().setValueSupplier(topLine);
+      display.line(1).text().setValueSupplier(bottomLine);
    }
 
    private HardwareButton button(final ButtonId buttonId)

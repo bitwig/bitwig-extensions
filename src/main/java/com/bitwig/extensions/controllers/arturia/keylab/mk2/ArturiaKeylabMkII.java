@@ -27,6 +27,7 @@ import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
@@ -196,70 +197,11 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       updateIndications();
 
-      mDisplay = addElement(new Display());
-
-      mBaseLayer.bind(mDisplay, new DisplayTarget()
-      {
-         @Override
-         public String getUpperText()
-         {
-            return mCursorTrack.name().getLimited(16);
-         }
-
-         @Override
-         public String getLowerText()
-         {
-            return mCursorTrack.exists().get()
-               ? mDevice.exists().get() ? (mDevice.name().getLimited(16)) : "No Device"
-               : "";
-         }
-      });
-
       mPopupBrowser.exists().addValueObserver(exists -> {
          if (exists)
             mBrowserLayer.activate();
          else
             mBrowserLayer.deactivate();
-      });
-
-      mBrowserLayer.bind(mDisplay, new DisplayTarget()
-      {
-         @Override
-         public String getUpperText()
-         {
-            return mBrowserCategory.name().getLimited(16);
-         }
-
-         @Override
-         public String getLowerText()
-         {
-            return mBrowserResult.name().getLimited(16);
-         }
-      });
-
-      mMultiLayer.bind(mDisplay, new DisplayTarget()
-      {
-         @Override
-         public String getUpperText()
-         {
-            return mCursorTrack.name().getLimited(16);
-         }
-
-         @Override
-         public String getLowerText()
-         {
-            final String vol = mCursorTrack.volume().displayedValue().getLimited(8);
-            final String pan = mCursorTrack.pan().displayedValue().getLimited(8);
-
-            final StringBuilder sb = new StringBuilder(16);
-            sb.append(vol);
-            final int N = 16 - vol.length() - pan.length();
-            for (int i = 0; i < N; i++)
-               sb.append(" ");
-            sb.append(pan);
-
-            return sb.toString();
-         }
       });
 
       mTrackBank.followCursorTrack(mCursorTrack);
@@ -282,6 +224,10 @@ public class ArturiaKeylabMkII extends ControllerExtension
       }
 
       mWheel = createEncoder(0x3C);
+
+      mDisplay = mHardwareSurface.createHardwareTextDisplay(2);
+      mDisplay.line(0).text().setMaxChars(16);
+      mDisplay.line(1).text().setMaxChars(16);
    }
 
    private void initLayers()
@@ -387,6 +333,11 @@ public class ArturiaKeylabMkII extends ControllerExtension
       {
          mBaseLayer.bind(mFaders[i], mDeviceEnvelopes.getParameter(i));
       }
+
+      mBaseLayer.showText(mCursorTrack.name(),
+         () -> mCursorTrack.exists().get()
+            ? mDevice.exists().get() ? (mDevice.name().getLimited(16)) : "No Device"
+            : "");
    }
 
    private void initBrowserLayer()
@@ -426,6 +377,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
       mBrowserLayer.bindToggle(ButtonId.WHEEL_CLICK, mPopupBrowser.commitAction(),
          mCursorTrack.hasPrevious());
       mBrowserLayer.bind(mWheel, mPopupBrowser);
+
+      mBrowserLayer.showText(mBrowserCategory.name(), mBrowserResult.name());
    }
 
    private void initMultiLayer()
@@ -478,6 +431,20 @@ public class ArturiaKeylabMkII extends ControllerExtension
          else
             mMultiLayer.bind(mFaders[i], mTrackBank.getItemAt(i).volume());
       }
+
+      mMultiLayer.showText(mCursorTrack.name(), () -> {
+         final String vol = mCursorTrack.volume().displayedValue().getLimited(8);
+         final String pan = mCursorTrack.pan().displayedValue().getLimited(8);
+
+         final StringBuilder sb = new StringBuilder(16);
+         sb.append(vol);
+         final int N = 16 - vol.length() - pan.length();
+         for (int i = 0; i < N; i++)
+            sb.append(" ");
+         sb.append(pan);
+
+         return sb.toString();
+      });
    }
 
    @Override
@@ -837,8 +804,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private boolean mIsForwarding;
 
-   private Display mDisplay;
-
    private Action mSaveAction;
 
    private Layer mBaseLayer;
@@ -862,6 +827,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
    private final AbsoluteHardwareControl[] mFaders = new AbsoluteHardwareControl[9];
 
    private RelativeHardwareControl mWheel;
+
+   HardwareTextDisplay mDisplay;
 
    private Layers mLayers;
 }
