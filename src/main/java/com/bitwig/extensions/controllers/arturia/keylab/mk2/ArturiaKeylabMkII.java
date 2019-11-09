@@ -314,7 +314,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       mBaseLayer.bindToggle(ButtonId.PRESET_NEXT, mDevice.selectNextAction(), mDevice.hasNext());
 
       mBaseLayer.bindPressed(ButtonId.WHEEL_CLICK, () -> {
-         mDisplay.reset();
+         clearDisplay();
          startPresetBrowsing();
       });
 
@@ -774,6 +774,12 @@ public class ArturiaKeylabMkII extends ControllerExtension
    private static int fromFloat(final double x)
    {
       return Math.max(0, Math.min((int)(31.0 * x), 31));
+   }
+
+   private void clearDisplay()
+   {
+      mDisplay.line(0).text().setValue("");
+      mDisplay.line(1).text().setValue("");
    }
 
    private NoteInput mNoteInput;
