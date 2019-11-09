@@ -229,6 +229,26 @@ public class ArturiaKeylabMkII extends ControllerExtension
       mDisplay = mHardwareSurface.createHardwareTextDisplay(2);
       mDisplay.line(0).text().setMaxChars(16);
       mDisplay.line(1).text().setMaxChars(16);
+
+      mDisplay.onUpdateHardware(() -> {
+         {
+            final String upper = mDisplay.line(0).text().currentValue();
+            final String lower = mDisplay.line(1).text().currentValue();
+
+            final byte[] data = SysexBuilder.fromHex("F0 00 20 6B 7F 42 04 00 60 01 ")
+               .addString(upper, 16)
+               .addHex("00 02")
+               .addString(lower, 16)
+               .addHex(" 00")
+               .terminate();
+
+            if (mLastDisplayData == null || !Arrays.equals(data, mLastDisplayData))
+            {
+               mLastDisplayData = data;
+               getMidiOutPort(1).sendSysex(data);
+            }
+         }
+      });
    }
 
    private void initLayers()
@@ -837,6 +857,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
    private RelativeHardwareControl mWheel;
 
    HardwareTextDisplay mDisplay;
+
+   private byte[] mLastDisplayData;
 
    private Layers mLayers;
 }
