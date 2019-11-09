@@ -2,11 +2,11 @@ package com.bitwig.extensions.framework;
 
 import java.util.function.BooleanSupplier;
 
-import com.bitwig.extension.controller.api.BooleanHardwareOutputValue;
+import com.bitwig.extension.controller.api.BooleanHardwareProperty;
 
-class BooleanSupplierOutputValueBinding extends Binding<BooleanSupplier, BooleanHardwareOutputValue>
+class BooleanSupplierOutputValueBinding extends Binding<BooleanSupplier, BooleanHardwareProperty>
 {
-   public BooleanSupplierOutputValueBinding(final BooleanSupplier source, final BooleanHardwareOutputValue target)
+   public BooleanSupplierOutputValueBinding(final BooleanSupplier source, final BooleanHardwareProperty target)
    {
       super(target, source, target);
    }

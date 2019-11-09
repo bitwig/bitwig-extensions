@@ -11,7 +11,7 @@ import java.util.function.Supplier;
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.AbsoluteHardwarControlBindable;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
-import com.bitwig.extension.controller.api.BooleanHardwareOutputValue;
+import com.bitwig.extension.controller.api.BooleanHardwareProperty;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -242,7 +242,7 @@ public class Layer
       bind(layerToToggle::isActive, button);
    }
 
-   public Binding bind(final BooleanSupplier source, final BooleanHardwareOutputValue target)
+   public Binding bind(final BooleanSupplier source, final BooleanHardwareProperty target)
    {
       if (source instanceof BooleanValue)
          ((BooleanValue)source).markInterested();
@@ -264,7 +264,7 @@ public class Layer
       return bind(source, (OnOffHardwareLight)target.backgroundLight());
    }
 
-   public Binding bind(final BooleanValue source, final BooleanHardwareOutputValue target)
+   public Binding bind(final BooleanValue source, final BooleanHardwareProperty target)
    {
       source.markInterested();
 
