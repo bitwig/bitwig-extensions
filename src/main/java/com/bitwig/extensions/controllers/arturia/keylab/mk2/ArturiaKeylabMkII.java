@@ -42,7 +42,6 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layers;
 
 public class ArturiaKeylabMkII extends ControllerExtension
@@ -252,8 +251,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mBaseLayer.activate();
 
-      DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
-      ;
+      // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private void initBaseLayer()
