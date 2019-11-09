@@ -204,6 +204,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
       });
 
       mTrackBank.followCursorTrack(mCursorTrack);
+
+      initLayers();
    }
 
    private void initHardwareSurface()
