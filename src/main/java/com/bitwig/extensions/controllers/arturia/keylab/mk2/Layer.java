@@ -74,8 +74,8 @@ class Layer extends com.bitwig.extensions.framework.Layer
    {
       final HardwareTextDisplay display = mExtension.mDisplay;
 
-      display.line(0).text().setValueSupplier(topLine);
-      display.line(1).text().setValueSupplier(bottomLine);
+      bind(topLine, display, 0);
+      bind(bottomLine, display, 1);
    }
 
    private HardwareButton button(final ButtonId buttonId)

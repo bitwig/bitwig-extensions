@@ -20,12 +20,15 @@ import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControl;
 import com.bitwig.extension.controller.api.HardwareLight;
+import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.SettableRangedValue;
+import com.bitwig.extension.controller.api.StringHardwareProperty;
+import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extension.controller.api.TriggerAction;
 
 /**
@@ -247,7 +250,7 @@ public class Layer
       if (source instanceof BooleanValue)
          ((BooleanValue)source).markInterested();
 
-      final BooleanSupplierOutputValueBinding binding = new BooleanSupplierOutputValueBinding(source, target);
+      final BooleanSupplierToPropertyBinding binding = new BooleanSupplierToPropertyBinding(source, target);
 
       addBinding(binding);
 
@@ -286,6 +289,28 @@ public class Layer
    public Binding bind(final Supplier<Color> sourceColor, final HardwareControl target)
    {
       return bind(sourceColor, (MultiStateHardwareLight)target.backgroundLight());
+   }
+
+   public Binding bind(final Supplier<String> source, final StringHardwareProperty target)
+   {
+      if (source instanceof StringValue)
+         ((StringValue)source).markInterested();
+
+      final StringSupplierToPropertyBinding binding = new StringSupplierToPropertyBinding(source, target);
+
+      addBinding(binding);
+
+      return binding;
+   }
+
+   public void bind(final Supplier<String> source, final HardwareTextDisplay textDisplay, final int line)
+   {
+      bind(source, textDisplay.line(line).text());
+   }
+
+   public void bind(final Supplier<String> source, final HardwareTextDisplay textDisplay)
+   {
+      bind(source, textDisplay, 0);
    }
 
    public boolean isActive()

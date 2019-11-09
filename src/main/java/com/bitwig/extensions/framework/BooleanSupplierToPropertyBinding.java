@@ -4,9 +4,9 @@ import java.util.function.BooleanSupplier;
 
 import com.bitwig.extension.controller.api.BooleanHardwareProperty;
 
-class BooleanSupplierOutputValueBinding extends Binding<BooleanSupplier, BooleanHardwareProperty>
+class BooleanSupplierToPropertyBinding extends Binding<BooleanSupplier, BooleanHardwareProperty>
 {
-   public BooleanSupplierOutputValueBinding(final BooleanSupplier source, final BooleanHardwareProperty target)
+   public BooleanSupplierToPropertyBinding(final BooleanSupplier source, final BooleanHardwareProperty target)
    {
       super(target, source, target);
    }
@@ -14,7 +14,7 @@ class BooleanSupplierOutputValueBinding extends Binding<BooleanSupplier, Boolean
    @Override
    protected void deactivate()
    {
-      getTarget().setValue(false);
+      getTarget().setValueSupplier(null);
    }
 
    @Override
