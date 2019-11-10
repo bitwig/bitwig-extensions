@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.presonus.faderport;
 
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
+import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
@@ -28,7 +29,6 @@ import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RemoteControl;
-import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
@@ -37,7 +37,6 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.LayerGroup;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.oldframework.targets.ClickEncoderTarget;
-import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 import com.bitwig.extensions.util.ValueUtils;
 
 public class PresonusFaderPort extends ControllerExtension
@@ -542,8 +541,9 @@ public class PresonusFaderPort extends ControllerExtension
    private void initZoomLayer()
    {
       mZoomLayer.bind(mTransportEncoder, getHost()
-         .createRelativeHardwareControlStepTarget(mAppliction.zoomInAction(), mApplication.zoomOutAction()));
-      mZoomLayer.bind(mTransportEncoder, mTransportEncoder.hardwareButton().pressedAction(), mApplication.zoomToSelectionAction());
+         .createRelativeHardwareControlStepTarget(mApplication.zoomInAction(), mApplication.zoomOutAction()));
+      mZoomLayer.bind(mTransportEncoder, mTransportEncoder.hardwareButton().pressedAction(),
+         mApplication.zoomToSelectionAction());
    }
 
    private void onMidi(final ShortMidiMessage data)
@@ -753,10 +753,10 @@ public class PresonusFaderPort extends ControllerExtension
       }
 
       final Channel channel = mChannels[index];
-      final Button solo = channel.solo;
-      final Button mute = channel.mute;
-      final RGBButton select = channel.select;
-      final MotorFader motorFader = channel.motorFader;
+      final HardwareButton solo = channel.solo;
+      final HardwareButton mute = channel.mute;
+      final HardwareButton select = channel.select;
+      final HardwareSlider motorFader = channel.motorFader;
       final Display display = channel.display;
 
       layer.bindToggle(solo, track.solo());
@@ -775,48 +775,31 @@ public class PresonusFaderPort extends ControllerExtension
          mSendsLayer.bind(motorFader, track.sendBank().getItemAt(0));
       }
 
-      layer.bind(select, new RGBButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return track.exists().get();
-         }
-
-         @Override
-         public float[] getRGB()
-         {
-            if (get())
-            {
-               if (mArm)
-               {
-                  return track.arm().get() ? ARM_HIGH : ARM_LOW;
-               }
-               else
-               {
-                  if (isSelected.get())
-                     return WHITE;
-
-                  final SettableColorValue c = track.color();
-                  final float[] trackColor = new float[] { c.red(), c.green(), c.blue() };
-                  return trackColor;
-               }
-            }
-            return BLACK;
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed)
-            {
-               if (mArm)
-                  track.arm().toggle();
-               else
-                  track.selectInEditor();
-            }
-         }
+      layer.bindPressed(select, () -> {
+         if (mArm)
+            track.arm().toggle();
+         else
+            track.selectInEditor();
       });
+
+      layer.bind((Supplier<Color>)() -> {
+         if (track.exists().get())
+         {
+            if (mArm)
+            {
+               return track.arm().get() ? ARM_HIGH : ARM_LOW;
+            }
+            else
+            {
+               if (isSelected.get())
+                  return WHITE;
+
+               return track.color().get();
+            }
+         }
+
+         return BLACK;
+      }, select);
 
       if (track == mMasterTrack)
       {
