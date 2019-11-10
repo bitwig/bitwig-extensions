@@ -232,7 +232,7 @@ public class Layer
 
    public void bindToggle(
       final HardwareButton button,
-      final TriggerAction pressedAction,
+      final HardwareActionBindable pressedAction,
       final BooleanSupplier isLightOnOffSupplier)
    {
       bindPressed(button, pressedAction);
@@ -322,6 +322,17 @@ public class Layer
    {
       if (isActive != mIsActive)
       {
+         if (isActive && mLayerGroup != null)
+         {
+            for (final Layer other : mLayerGroup.getLayers())
+            {
+               if (other != this)
+               {
+                  other.setIsActive(false);
+               }
+            }
+         }
+
          mIsActive = isActive;
 
          mLayers.activeLayersChanged();
@@ -330,6 +341,9 @@ public class Layer
 
    public void toggleIsActive()
    {
+      if (mIsActive && mLayerGroup != null)
+         return;
+
       setIsActive(!mIsActive);
    }
 
@@ -343,6 +357,14 @@ public class Layer
       setIsActive(false);
    }
 
+   void setLayerGroup(final LayerGroup layerGroup)
+   {
+      assert layerGroup != null;
+      assert mLayerGroup == null;
+
+      mLayerGroup = layerGroup;
+   }
+
    private boolean mIsActive;
 
    private final Layers mLayers;
@@ -352,4 +374,6 @@ public class Layer
    private final String mName;
 
    private final TriggerAction mToggleAction, mActivateAction, mDeactivateAction;
+
+   private LayerGroup mLayerGroup;
 }

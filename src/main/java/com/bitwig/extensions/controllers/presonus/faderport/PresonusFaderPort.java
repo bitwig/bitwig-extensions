@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
+import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 
 import com.bitwig.extension.api.Color;
@@ -16,6 +17,7 @@ import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
@@ -24,15 +26,16 @@ import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RemoteControl;
-import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.oldframework.targets.ButtonTarget;
+import com.bitwig.extensions.framework.LayerGroup;
+import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.oldframework.targets.ClickEncoderTarget;
 import com.bitwig.extensions.oldframework.targets.RGBButtonTarget;
 import com.bitwig.extensions.util.ValueUtils;
@@ -56,6 +59,62 @@ public class PresonusFaderPort extends ControllerExtension
 
    static int[] SOLOD_IDS = { 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x50, 0x51, 0x52, 0x58, 0x54,
          0x55, 0x59, 0x57 };
+
+   private RelativeHardwareKnob mDisplayEncoder;
+
+   private HardwareButton mMasterButton;
+
+   private HardwareButton mShiftLeftButton;
+
+   private HardwareButton mShiftRightButton;
+
+   private HardwareButton mPlayButton;
+
+   private HardwareButton mStopButton;
+
+   private HardwareButton mRecordButton;
+
+   private HardwareButton mMetronomeButton;
+
+   private HardwareButton mLoopButton;
+
+   private HardwareButton mRewindButton;
+
+   private HardwareButton mClearSoloButton;
+
+   private HardwareButton mClearMuteButton;
+
+   private HardwareButton mTrackModeButton;
+
+   private HardwareButton mPluginModeButton;
+
+   private HardwareButton mSendsModeButton;
+
+   private HardwareButton mPanModeButton;
+
+   private HardwareButton mScrollLeftButton;
+
+   private HardwareButton mScrollRightButton;
+
+   private RelativeHardwareKnob mTransportEncoder;
+
+   private HardwareButton mChannelButton;
+
+   private HardwareButton mZoomButton;
+
+   private HardwareButton mScrollButton;
+
+   private HardwareButton mBankButton;
+
+   private HardwareButton mSectionButton;
+
+   private HardwareButton mMarkerButton;
+
+   private HardwareButton mAutomationOffButton;
+
+   private HardwareButton mAutomationWriteButton;
+
+   private HardwareButton mAutomationTouchButton;
 
    public PresonusFaderPort(final PresonusFaderPortDefinition definition, final ControllerHost host)
    {
@@ -98,22 +157,6 @@ public class PresonusFaderPort extends ControllerExtension
       mClearMute = mApplication.getAction("clear_mute");
       mClearSolo = mApplication.getAction("clear_solo");
 
-      final ClickEncoder displayEncoder = addElement(new ClickEncoder(0x20, 0x10));
-
-      mDefaultLayer.bind(displayEncoder, new ClickEncoderTarget()
-      {
-         @Override
-         public void click(final boolean b)
-         {
-         }
-
-         @Override
-         public void inc(final int steps)
-         {
-            mCursorTrack.pan().inc(steps, mShift ? 1010 : 101);
-         }
-      });
-
       initTransportEncoder();
 
       // Link all send positions to the first
@@ -121,38 +164,6 @@ public class PresonusFaderPort extends ControllerExtension
          for (int i = 1; i < mChannelCount; i++)
             mTrackBank.getItemAt(i).sendBank().scrollPosition().set(p);
       });
-
-      mSendsLayer.bind(displayEncoder, new ClickEncoderTarget()
-      {
-         @Override
-         public void click(final boolean b)
-         {
-         }
-
-         @Override
-         public void inc(final int steps)
-         {
-            final SendBank sendBank = mTrackBank.getItemAt(0).sendBank();
-
-            if (steps > 0)
-               sendBank.scrollBy(1);
-            else
-               sendBank.scrollBy(-1);
-         }
-      });
-
-      for (int index = 0; index < mChannelCount; index++)
-      {
-         final Channel channel = new Channel();
-
-         channel.solo = addElement(new Button(SOLOD_IDS[index]));
-         channel.mute = addElement(new Button((index >= 8 ? 0x70 : 0x10) + index));
-         channel.select = addElement(new RGBButton(SELECT_IDS[index]));
-         channel.motorFader = addElement(new MotorFader(index));
-         channel.display = addElement(new Display(index, mSysexHeader));
-
-         mChannels[index] = channel;
-      }
 
       for (int channelIndex = 0; channelIndex < mChannelCount; channelIndex++)
       {
@@ -162,192 +173,12 @@ public class PresonusFaderPort extends ControllerExtension
 
       bindTrack(mMasterLayer, mChannelCount - 1, mMasterTrack);
 
-      final Button master = addElement(new Button(0x3A));
-      mDefaultLayer.bind(master, new ButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return isLayerActive(mMasterLayer);
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed)
-               toggleLayer(mMasterLayer);
-         }
-      });
-
-      final Button shiftLeft = addElement(new Button(0x06));
-      final Button shiftRight = addElement(new Button(0x46));
-      final ButtonTarget shiftTarget = new ButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return mShift;
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            mShift = pressed;
-         }
-      };
-      mDefaultLayer.bind(shiftLeft, shiftTarget);
-      mDefaultLayer.bind(shiftRight, shiftTarget);
-
-      final Button playButton = addElement(new Button(0x5e));
-      mDefaultLayer.bindPressedRunnable(playButton, mTransport.isPlaying(), mTransport::togglePlay);
-
-      final Button stopButton = addElement(new Button(0x5d));
-      mDefaultLayer.bind(stopButton, new ButtonTarget()
-      {
-         @Override
-         public boolean get()
-         {
-            return !mTransport.isPlaying().get();
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed)
-               mTransport.stop();
-         }
-      });
-
-      final Button record = addElement(new Button(0x5f));
-      mDefaultLayer.bindPressedRunnable(record, mTransport.isArrangerRecordEnabled(), mTransport::record);
-
-      final Button metronome = addElement(new Button(0x3B));
-      mDefaultLayer.bindToggle(metronome, mTransport.isMetronomeEnabled());
-
-      final Button loop = addElement(new Button(0x56));
-      mDefaultLayer.bindToggle(loop, mTransport.isArrangerLoopEnabled());
-
-      final Button rewind = addElement(new Button(0x5B));
-      mDefaultLayer.bindPressedRunnable(rewind, null, mTransport::rewind);
-      final Button fastForward = addElement(new Button(0x5C));
-      mDefaultLayer.bindPressedRunnable(fastForward, null, mTransport::fastForward);
-
-      final Button clearSolo = addElement(new Button(0x01));
-      mDefaultLayer.bindPressedRunnable(clearSolo, mClearSolo.isEnabled(), mClearSolo::invoke);
-
-      final Button clearMute = addElement(new Button(0x02));
-      mDefaultLayer.bindPressedRunnable(clearMute, mClearMute.isEnabled(), mClearMute::invoke);
-
       // Automation Write Modes
-      final RGBButton automationOff = addElement(new RGBButton(0x4F));
       mTransport.isArrangerAutomationWriteEnabled().markInterested();
       mTransport.automationWriteMode().markInterested();
-      mDefaultLayer.bind(automationOff, new RGBButtonTarget()
-      {
-         @Override
-         public float[] getRGB()
-         {
-            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
-            return isEnabled ? ARM_HIGH : DIM_WHITE;
-         }
-
-         @Override
-         public boolean get()
-         {
-            return true;
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            if (pressed)
-               mTransport.isArrangerAutomationWriteEnabled().toggle();
-         }
-      });
-
-      final RGBButton automationLatch = addElement(new RGBButton(0x4E));
-      mDefaultLayer.bind(automationLatch, new RGBButtonTarget()
-      {
-         @Override
-         public float[] getRGB()
-         {
-            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
-            return isEnabled ? ARM_HIGH : DIM_WHITE;
-         }
-
-         @Override
-         public boolean get()
-         {
-            return mTransport.automationWriteMode().get().equals("latch");
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            mTransport.automationWriteMode().set("latch");
-         }
-      });
-
-      final RGBButton automationWrite = addElement(new RGBButton(0x4B));
-      mDefaultLayer.bind(automationWrite, new RGBButtonTarget()
-      {
-         @Override
-         public float[] getRGB()
-         {
-            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
-            return isEnabled ? ARM_HIGH : DIM_WHITE;
-         }
-
-         @Override
-         public boolean get()
-         {
-            return mTransport.automationWriteMode().get().equals("write");
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            mTransport.automationWriteMode().set("write");
-         }
-      });
-
-      final RGBButton automationTouch = addElement(new RGBButton(0x4D));
-      mDefaultLayer.bind(automationTouch, new RGBButtonTarget()
-      {
-         @Override
-         public float[] getRGB()
-         {
-            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
-            return isEnabled ? ARM_HIGH : DIM_WHITE;
-         }
-
-         @Override
-         public boolean get()
-         {
-            return mTransport.automationWriteMode().get().equals("touch");
-         }
-
-         @Override
-         public void set(final boolean pressed)
-         {
-            mTransport.automationWriteMode().set("touch");
-         }
-      });
 
       mDefaultLayer.activate();
       mTrackLayer.activate();
-
-      final Button trackMode = addElement(new Button(0x28));
-      final Button pluginMode = addElement(new Button(0x2B));
-      final Button sendsMode = addElement(new Button(0x29));
-      final Button panMode = addElement(new Button(0x2A));
-
-      final Layer[] faderGroup = { mTrackLayer, mDeviceLayer, mSendsLayer, mPanLayer };
-
-      mDefaultLayer.bindLayerInGroup(this, trackMode, mTrackLayer, faderGroup);
-      mDefaultLayer.bindLayerInGroup(this, pluginMode, mDeviceLayer, faderGroup);
-      mDefaultLayer.bindLayerInGroup(this, sendsMode, mSendsLayer, faderGroup);
-      mDefaultLayer.bindLayerInGroup(this, panMode, mPanLayer, faderGroup);
 
       runningStatusTimer();
 
@@ -359,6 +190,52 @@ public class PresonusFaderPort extends ControllerExtension
       mHardwareSurface = getHost().createHardwareSurface();
 
       mArmButton = createButton(0);
+      mMasterButton = createToggleButton(0x3A);
+      mShiftLeftButton = createToggleButton(0x06);
+      mShiftRightButton = createToggleButton(0x46);
+      mPlayButton = createToggleButton(0x5e);
+      mStopButton = createToggleButton(0x5d);
+      mRecordButton = createToggleButton(0x5f);
+      mMetronomeButton = createToggleButton(0x3B);
+      mLoopButton = createToggleButton(0x56);
+      mRewindButton = createToggleButton(0x5B);
+      mClearSoloButton = createToggleButton(0x01);
+      mClearMuteButton = createToggleButton(0x02);
+
+      mTrackModeButton = createToggleButton(0x28);
+      mPluginModeButton = createToggleButton(0x2B);
+      mSendsModeButton = createToggleButton(0x29);
+      mPanModeButton = createToggleButton(0x2A);
+
+      mScrollLeftButton = createToggleButton(0x2E);
+      mScrollRightButton = createToggleButton(0x2F);
+
+      mChannelButton = createToggleButton(0x36);
+      mZoomButton = createToggleButton(0x37);
+      mScrollButton = createToggleButton(0x38);
+      mBankButton = createToggleButton(0x39);
+      mSectionButton = createToggleButton(0x3C);
+      mMarkerButton = createToggleButton(0x3D);
+
+      mDisplayEncoder = createClickEncoder(0x20, 0x10);
+      mTransportEncoder = createClickEncoder(0x53, 0x3C);
+
+      mAutomationOffButton = createRGBButton(0x4F);
+      mAutomationWriteButton = createRGBButton(0x4B);
+      mAutomationTouchButton = createRGBButton(0x4D);
+
+      for (int index = 0; index < mChannelCount; index++)
+      {
+         final Channel channel = new Channel();
+
+         channel.solo = createToggleButton(SOLOD_IDS[index]);
+         channel.mute = createToggleButton((index >= 8 ? 0x70 : 0x10) + index);
+         channel.select = createRGBButton(SELECT_IDS[index]);
+         channel.motorFader = createMotorFader(index);
+         channel.display = addElement(new Display(index, mSysexHeader));
+
+         mChannels[index] = channel;
+      }
    }
 
    private HardwareButton createToggleButton(final int note)
@@ -427,6 +304,55 @@ public class PresonusFaderPort extends ControllerExtension
       return button;
    }
 
+   private HardwareSlider createMotorFader(final int channel)
+   {
+      final HardwareSlider fader = mHardwareSurface.createHardwareSlider();
+
+      fader.setAdjustValueMatcher(mMidiIn.createAbsolutePitchBendValueMatcher(channel));
+
+      fader.beginTouchAction().setActionMatcher(
+         mMidiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + channel) + " && data2 > 0"));
+      fader.endTouchAction().setActionMatcher(
+         mMidiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + channel) + " && data2 == 0"));
+
+      final DoubleConsumer moveFader = new DoubleConsumer()
+      {
+         @Override
+         public void accept(final double value)
+         {
+            final int faderValue = Math.max(0, Math.min(16383, (int)(value * 16384.0)));
+
+            if (mLastSentValue != value)
+            {
+               mMidiOut.sendMidi(0xE0 | channel, faderValue & 0x7f, faderValue >> 7);
+               mLastSentValue = faderValue;
+            }
+         }
+
+         private int mLastSentValue = -1;
+      };
+
+      // TODO: Register move fader callback somehow
+
+      return fader;
+   }
+
+   private RelativeHardwareKnob createClickEncoder(final int key, final int CC)
+   {
+      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
+
+      encoder.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC));
+
+      final HardwareButton clickButton = mHardwareSurface.createHardwareButton();
+
+      clickButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, key));
+      clickButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, key));
+
+      encoder.setHardwareButton(clickButton);
+
+      return encoder;
+   }
+
    private static int colorToState(final Color c)
    {
       if (c == null) // Off
@@ -452,14 +378,172 @@ public class PresonusFaderPort extends ControllerExtension
 
    private void initLayers()
    {
+      mDefaultLayer = createLayer("Default");
+      mSendsLayer = createLayer("Sends");
+      mChannelLayer = createLayer("Channel");
+      mMarkerLayer = createLayer("Marker");
+      mDeviceLayer = createLayer("Device");
+      mZoomLayer = createLayer("Zoom");
+
+      new LayerGroup(mTrackLayer, mDeviceLayer, mSendsLayer, mPanLayer);
+
+      new LayerGroup(mChannelLayer, mZoomLayer, mScrollLayer, mBankLayer, mSectionLayer, mMarkerLayer);
 
       initDefaultLayer();
+      initSendsLayer();
+      initChannelLayer();
+      initMarkerLayer();
+      initDeviceLayer();
+      initZoomLayer();
+
+      // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+   }
+
+   private Layer createLayer(final String name)
+   {
+      return new Layer(mLayers, name);
    }
 
    private void initDefaultLayer()
    {
       mDefaultLayer.bindPressed(mArmButton, () -> mArm = !mArm);
       mDefaultLayer.bind(() -> mArm, mArmButton);
+
+      mDefaultLayer.bindToggle(mMasterButton, mMasterLayer);
+
+      mDefaultLayer.bind(mDisplayEncoder, mCursorTrack.pan());
+
+      mDefaultLayer.bindPressed(mShiftLeftButton, () -> mShift = true);
+      mDefaultLayer.bindReleased(mShiftLeftButton, () -> mShift = false);
+      mDefaultLayer.bind(() -> mShift, mShiftLeftButton);
+
+      mDefaultLayer.bindPressed(mShiftRightButton, () -> mShift = true);
+      mDefaultLayer.bindReleased(mShiftRightButton, () -> mShift = false);
+      mDefaultLayer.bind(() -> mShift, mShiftRightButton);
+
+      mDefaultLayer.bindToggle(mPlayButton, mTransport.isPlaying());
+      mDefaultLayer.bindToggle(mStopButton, mTransport.stopAction(), () -> !mTransport.isPlaying().get());
+      mDefaultLayer.bindToggle(mRecordButton, mTransport.isArrangerRecordEnabled());
+      mDefaultLayer.bindToggle(mMetronomeButton, mTransport.isMetronomeEnabled());
+      mDefaultLayer.bindToggle(mLoopButton, mTransport.isArrangerLoopEnabled());
+      mDefaultLayer.bindPressed(mRewindButton, mTransport.rewindAction());
+      mDefaultLayer.bindToggle(mClearSoloButton, mClearSolo, mClearSolo.isEnabled());
+      mDefaultLayer.bindToggle(mClearMuteButton, mClearMute, mClearMute.isEnabled());
+
+      mDefaultLayer.bindToggle(mTrackModeButton, mTrackLayer);
+      mDefaultLayer.bindToggle(mPluginModeButton, mDeviceLayer);
+      mDefaultLayer.bindToggle(mSendsModeButton, mSendsLayer);
+      mDefaultLayer.bindToggle(mPanModeButton, mPanLayer);
+
+      mDefaultLayer.bindToggle(mScrollLeftButton, mTrackBank.scrollBackwardsAction(),
+         mTrackBank.canScrollBackwards());
+      mDefaultLayer.bindToggle(mScrollRightButton, mTrackBank.scrollForwardsAction(),
+         mTrackBank.canScrollForwards());
+
+      mDefaultLayer.bindToggle(mChannelButton, mChannelLayer);
+      mDefaultLayer.bindToggle(mZoomButton, mZoomLayer);
+      mDefaultLayer.bindToggle(mScrollButton, mScrollLayer);
+      mDefaultLayer.bindToggle(mBankButton, mBankLayer);
+      mDefaultLayer.bindToggle(mScrollButton, mSectionLayer);
+      mDefaultLayer.bindToggle(mMarkerButton, mMarkerLayer);
+
+      mDefaultLayer.bindPressed(mAutomationOffButton, mTransport.isArrangerAutomationWriteEnabled());
+      mDefaultLayer.bind(() -> {
+         final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
+         return isEnabled ? ARM_HIGH : DIM_WHITE;
+      }, mAutomationOffButton);
+
+      mDefaultLayer.bindPressed(mAutomationWriteButton, () -> mTransport.automationWriteMode().set("write"));
+      mDefaultLayer.bind(() -> {
+         if (mTransport.automationWriteMode().get().equals("write"))
+         {
+            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
+            return isEnabled ? ARM_HIGH : DIM_WHITE;
+         }
+
+         return null;
+      }, mAutomationWriteButton);
+
+      mDefaultLayer.bindPressed(mAutomationTouchButton, () -> mTransport.automationWriteMode().set("touch"));
+      mDefaultLayer.bind(() -> {
+         if (mTransport.automationWriteMode().get().equals("touch"))
+         {
+            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
+            return isEnabled ? ARM_HIGH : DIM_WHITE;
+         }
+
+         return null;
+      }, mAutomationTouchButton);
+   }
+
+   private void initChannelLayer()
+   {
+      mChannelLayer.bind(mTransportEncoder, mCursorTrack);
+   }
+
+   private void initSendsLayer()
+   {
+      mSendsLayer.bind(mDisplayEncoder, mTrackBank.getItemAt(0).sendBank());
+   }
+
+   private void initMarkerLayer()
+   {
+      mMarkerLayer.bindToggle(mScrollLeftButton, mCueMarkerBank.scrollPageBackwardsAction(),
+         mCueMarkerBank.canScrollBackwards());
+      mMarkerLayer.bindToggle(mScrollRightButton, mCueMarkerBank.scrollPageForwardsAction(),
+         mCueMarkerBank.canScrollForwards());
+   }
+
+   private void initDeviceLayer()
+   {
+      for (int c = 0; c < mChannelCount; c++)
+      {
+         final int channelIndex = c;
+         final int indexInGroup = c & 0x7;
+
+         final RemoteControl parameter = c >= 8 ? mRemoteControls2.getParameter(indexInGroup)
+            : mRemoteControls.getParameter(indexInGroup);
+
+         parameter.name().markInterested();
+         parameter.displayedValue().markInterested();
+
+         final Channel channel = mChannels[c];
+
+         mDeviceLayer.bind(channel.motorFader, parameter);
+
+         mDeviceLayer.bindPressed(channel.mute, parameter::reset);
+
+         mDeviceLayer.bindPressed(channel.select, () -> getPageIndex().set(channelIndex));
+         mDeviceLayer.bind(() -> {
+            if (channelIndex < mRemoteControls.pageNames().get().length)
+            {
+               if (getPageIndex().get() == channelIndex)
+               {
+                  return WHITE;
+               }
+
+               if (mRemoteControls2 != null)
+               {
+                  if (mRemoteControls.selectedPageIndex().get() == channelIndex
+                     || mRemoteControls2.selectedPageIndex().get() == channelIndex)
+                  {
+                     return HALF_WHITE;
+                  }
+               }
+
+               return DIM_WHITE;
+            }
+
+            return null;
+         }, channel.select);
+      }
+   }
+
+   private void initZoomLayer()
+   {
+      mZoomLayer.bind(mTransportEncoder, getHost()
+         .createRelativeHardwareControlStepTarget(mAppliction.zoomInAction(), mApplication.zoomOutAction()));
+      mZoomLayer.bind(mTransportEncoder, mTransportEncoder.hardwareButton().pressedAction(), mApplication.zoomToSelectionAction());
    }
 
    private void onMidi(final ShortMidiMessage data)
@@ -504,45 +588,6 @@ public class PresonusFaderPort extends ControllerExtension
          parameter.displayedValue().markInterested();
 
          final Channel channel = mChannels[c];
-
-         mDeviceLayer.bind(channel.motorFader, parameter);
-
-         mDeviceLayer.bindPressedRunnable(channel.mute, null, parameter::reset);
-
-         mDeviceLayer.bind(channel.select, new RGBButtonTarget()
-         {
-            @Override
-            public float[] getRGB()
-            {
-               if (getPageIndex().get() == channelIndex)
-               {
-                  return WHITE;
-               }
-
-               if (mRemoteControls2 != null)
-               {
-                  if (mRemoteControls.selectedPageIndex().get() == channelIndex
-                     || mRemoteControls2.selectedPageIndex().get() == channelIndex)
-                  {
-                     return HALF_WHITE;
-                  }
-               }
-
-               return DIM_WHITE;
-            }
-
-            @Override
-            public boolean get()
-            {
-               return channelIndex < mRemoteControls.pageNames().get().length;
-            }
-
-            @Override
-            public void set(final boolean pressed)
-            {
-               getPageIndex().set(channelIndex);
-            }
-         });
 
          mDeviceLayer.bind(channel.display, new DisplayTarget()
          {
@@ -610,56 +655,8 @@ public class PresonusFaderPort extends ControllerExtension
 
    private void initTransportEncoder()
    {
-      final Button scrollLeft = addElement(new Button(0x2E));
-      final Button scrollRight = addElement(new Button(0x2F));
 
-      final ClickEncoder transportEncoder = addElement(new ClickEncoder(0x53, 0x3C));
-      mChannelLayer.bind(transportEncoder, new ClickEncoderTarget()
-      {
-         @Override
-         public void click(final boolean b)
-         {
-            /*
-             * if (b) { if (mShift) mApplication.navigateToParentTrackGroup(); else
-             * mApplication.navigateIntoTrackGroup(mCursorTrack); }
-             */
-         }
-
-         @Override
-         public void inc(final int steps)
-         {
-            if (steps > 0)
-               mCursorTrack.selectNext();
-            else
-               mCursorTrack.selectPrevious();
-         }
-      });
-
-      mDefaultLayer.bindPressedRunnable(scrollLeft, mTrackBank.canScrollBackwards(),
-         mTrackBank::scrollBackwards);
-      mDefaultLayer.bindPressedRunnable(scrollRight, mTrackBank.canScrollForwards(),
-         mTrackBank::scrollForwards);
-
-      activateLayer(mChannelLayer);
-
-      mZoomLayer.bind(transportEncoder, new ClickEncoderTarget()
-      {
-         @Override
-         public void click(final boolean b)
-         {
-            if (b)
-               mApplication.zoomToSelection();
-         }
-
-         @Override
-         public void inc(final int steps)
-         {
-            if (steps > 0)
-               mApplication.zoomIn();
-            else
-               mApplication.zoomOut();
-         }
-      });
+      mChannelLayer.activate();
 
       mScrollLayer.bind(transportEncoder, new ClickEncoderTarget()
       {
@@ -695,11 +692,6 @@ public class PresonusFaderPort extends ControllerExtension
          }
       });
 
-      mBankLayer.bindPressedRunnable(scrollLeft, mTrackBank.canScrollBackwards(),
-         mTrackBank::scrollPageBackwards);
-      mBankLayer.bindPressedRunnable(scrollRight, mTrackBank.canScrollForwards(),
-         mTrackBank::scrollPageForwards);
-
       mMarkerLayer.bind(transportEncoder, new ClickEncoderTarget()
       {
          @Override
@@ -720,40 +712,19 @@ public class PresonusFaderPort extends ControllerExtension
          }
       });
 
-      mMarkerLayer.bindPressedRunnable(scrollLeft, mCueMarkerBank.canScrollBackwards(),
-         mCueMarkerBank::scrollPageBackwards);
-      mMarkerLayer.bindPressedRunnable(scrollRight, mCueMarkerBank.canScrollForwards(),
-         mCueMarkerBank::scrollPageForwards);
-
-      final Layer[] layers = { mChannelLayer, mZoomLayer, mScrollLayer, mBankLayer, mSectionLayer,
-            mMarkerLayer };
-
-      final Button channel = addElement(new Button(0x36));
-      final Button zoom = addElement(new Button(0x37));
-      final Button scroll = addElement(new Button(0x38));
-      final Button bank = addElement(new Button(0x39));
-      final Button section = addElement(new Button(0x3C));
-      final Button marker = addElement(new Button(0x3D));
-
-      mDefaultLayer.bindLayerInGroup(this, channel, mChannelLayer, layers);
-      mDefaultLayer.bindLayerInGroup(this, zoom, mZoomLayer, layers);
-      mDefaultLayer.bindLayerInGroup(this, scroll, mScrollLayer, layers);
-      mDefaultLayer.bindLayerInGroup(this, bank, mBankLayer, layers);
-      mDefaultLayer.bindLayerInGroup(this, section, mSectionLayer, layers);
-      mDefaultLayer.bindLayerInGroup(this, marker, mMarkerLayer, layers);
    }
 
    Channel[] mChannels;
 
    class Channel
    {
-      Button solo;
+      HardwareButton solo;
 
-      Button mute;
+      HardwareButton mute;
 
-      RGBButton select;
+      HardwareButton select;
 
-      MotorFader motorFader;
+      HardwareSlider motorFader;
 
       Display display;
    }
@@ -971,4 +942,6 @@ public class PresonusFaderPort extends ControllerExtension
    private HardwareButton mArmButton;
 
    private MidiIn mMidiIn;
+
+   private final Layers mLayers = new Layers(this);
 }
