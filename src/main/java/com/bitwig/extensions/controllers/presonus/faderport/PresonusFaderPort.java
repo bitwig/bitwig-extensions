@@ -492,7 +492,7 @@ public class PresonusFaderPort extends ControllerExtension
 
    private void initScrollLayer()
    {
-      mScrollLayer.bind(mTransportEncoder, mApplication.zoomToFitAction());
+      mScrollLayer.bindPressed(mTransportEncoder, mApplication.zoomToFitAction());
    }
 
    private void initMarkerLayer()
@@ -553,10 +553,8 @@ public class PresonusFaderPort extends ControllerExtension
 
    private void initZoomLayer()
    {
-      mZoomLayer.bind(mTransportEncoder, getHost()
-         .createRelativeHardwareControlStepTarget(mApplication.zoomInAction(), mApplication.zoomOutAction()));
-      mZoomLayer.bind(mTransportEncoder, mTransportEncoder.hardwareButton().pressedAction(),
-         mApplication.zoomToSelectionAction());
+      mZoomLayer.bind(mTransportEncoder, mApplication.zoomInAction(), mApplication.zoomOutAction());
+      mZoomLayer.bindPressed(mTransportEncoder, mApplication.zoomToSelectionAction());
    }
 
    private void onMidi(final ShortMidiMessage data)
