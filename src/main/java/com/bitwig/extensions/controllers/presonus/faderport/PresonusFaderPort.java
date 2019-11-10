@@ -836,7 +836,7 @@ public class PresonusFaderPort extends ControllerExtension
 
    private static class PanDisplayTarget extends ChannelDisplayTarget
    {
-      public PanDisplayTarget(final Track track, final BooleanValue isSelected, final MotorFader motorFader)
+      public PanDisplayTarget(final Track track, final BooleanValue isSelected, final HardwareSlider motorFader)
       {
          super(track, isSelected, motorFader);
       }
@@ -850,7 +850,7 @@ public class PresonusFaderPort extends ControllerExtension
 
    private static class SendDisplayTarget extends ChannelDisplayTarget
    {
-      public SendDisplayTarget(final Track track, final BooleanValue isSelected, final MotorFader motorFader)
+      public SendDisplayTarget(final Track track, final BooleanValue isSelected, final HardwareSlider motorFader)
       {
          super(track, isSelected, motorFader);
       }

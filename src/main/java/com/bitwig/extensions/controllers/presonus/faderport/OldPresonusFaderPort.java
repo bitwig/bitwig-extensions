@@ -84,7 +84,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
       mClearMute = mApplication.getAction("clear_mute");
       mClearSolo = mApplication.getAction("clear_solo");
 
-      ClickEncoder displayEncoder = addElement(new ClickEncoder(0x20, 0x10));
+      final ClickEncoder displayEncoder = addElement(new ClickEncoder(0x20, 0x10));
 
       mDefaultLayer.bind(displayEncoder, new ClickEncoderTarget()
       {
@@ -119,7 +119,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
          @Override
          public void inc(final int steps)
          {
-            SendBank sendBank = mTrackBank.getItemAt(0).sendBank();
+            final SendBank sendBank = mTrackBank.getItemAt(0).sendBank();
 
             if (steps > 0)
                sendBank.scrollBy(1);
@@ -128,7 +128,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
          }
       });
 
-      Button arm = addElement(new Button(0x00));
+      final Button arm = addElement(new Button(0x00));
       mDefaultLayer.bind(arm, new ButtonTarget()
       {
          @Override
@@ -146,7 +146,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
 
       for(int index=0; index<mChannelCount; index++)
       {
-         Channel channel = new Channel();
+         final Channel channel = new Channel();
 
          channel.solo = addElement(new Button(SOLOD_IDS[index]));
          channel.mute = addElement(new Button((index >= 8 ? 0x70 : 0x10) + index));
@@ -165,7 +165,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
 
       bindTrack(mMasterLayer, mChannelCount-1, mMasterTrack);
 
-      Button master = addElement(new Button(0x3A));
+      final Button master = addElement(new Button(0x3A));
       mDefaultLayer.bind(master, new ButtonTarget()
          {
             @Override
@@ -181,9 +181,9 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
             }
          });
 
-      Button shiftLeft = addElement(new Button(0x06));
-      Button shiftRight = addElement(new Button(0x46));
-      ButtonTarget shiftTarget = new ButtonTarget()
+      final Button shiftLeft = addElement(new Button(0x06));
+      final Button shiftRight = addElement(new Button(0x46));
+      final ButtonTarget shiftTarget = new ButtonTarget()
       {
          @Override
          public boolean get()
@@ -200,10 +200,10 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
       mDefaultLayer.bind(shiftLeft, shiftTarget);
       mDefaultLayer.bind(shiftRight, shiftTarget);
 
-      Button playButton = addElement(new Button(0x5e));
+      final Button playButton = addElement(new Button(0x5e));
       mDefaultLayer.bindPressedRunnable(playButton, mTransport.isPlaying(), mTransport::togglePlay);
 
-      Button stopButton = addElement(new Button(0x5d));
+      final Button stopButton = addElement(new Button(0x5d));
       mDefaultLayer.bind(stopButton, new ButtonTarget()
       {
          @Override
@@ -219,28 +219,28 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
          }
       });
 
-      Button record = addElement(new Button(0x5f));
+      final Button record = addElement(new Button(0x5f));
       mDefaultLayer.bindPressedRunnable(record, mTransport.isArrangerRecordEnabled(), mTransport::record);
 
-      Button metronome = addElement(new Button(0x3B));
+      final Button metronome = addElement(new Button(0x3B));
       mDefaultLayer.bindToggle(metronome, mTransport.isMetronomeEnabled());
 
-      Button loop = addElement(new Button(0x56));
+      final Button loop = addElement(new Button(0x56));
       mDefaultLayer.bindToggle(loop, mTransport.isArrangerLoopEnabled());
 
-      Button rewind = addElement(new Button(0x5B));
+      final Button rewind = addElement(new Button(0x5B));
       mDefaultLayer.bindPressedRunnable(rewind, null, mTransport::rewind);
-      Button fastForward = addElement(new Button(0x5C));
+      final Button fastForward = addElement(new Button(0x5C));
       mDefaultLayer.bindPressedRunnable(fastForward, null, mTransport::fastForward);
 
-      Button clearSolo = addElement(new Button(0x01));
+      final Button clearSolo = addElement(new Button(0x01));
       mDefaultLayer.bindPressedRunnable(clearSolo, mClearSolo.isEnabled(), mClearSolo::invoke);
 
-      Button clearMute = addElement(new Button(0x02));
+      final Button clearMute = addElement(new Button(0x02));
       mDefaultLayer.bindPressedRunnable(clearMute, mClearMute.isEnabled(), mClearMute::invoke);
 
       // Automation Write Modes
-      RGBButton automationOff = addElement(new RGBButton(0x4F));
+      final RGBButton automationOff = addElement(new RGBButton(0x4F));
       mTransport.isArrangerAutomationWriteEnabled().markInterested();
       mTransport.automationWriteMode().markInterested();
       mDefaultLayer.bind(automationOff, new RGBButtonTarget()
@@ -248,7 +248,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
          @Override
          public float[] getRGB()
          {
-            boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
+            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
             return isEnabled ? ARM_HIGH : DIM_WHITE;
          }
 
@@ -265,13 +265,13 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
          }
       });
 
-      RGBButton automationLatch = addElement(new RGBButton(0x4E));
+      final RGBButton automationLatch = addElement(new RGBButton(0x4E));
       mDefaultLayer.bind(automationLatch, new RGBButtonTarget()
       {
          @Override
          public float[] getRGB()
          {
-            boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
+            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
             return isEnabled ? ARM_HIGH : DIM_WHITE;
          }
 
@@ -288,13 +288,13 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
          }
       });
 
-      RGBButton automationWrite = addElement(new RGBButton(0x4B));
+      final RGBButton automationWrite = addElement(new RGBButton(0x4B));
       mDefaultLayer.bind(automationWrite, new RGBButtonTarget()
       {
          @Override
          public float[] getRGB()
          {
-            boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
+            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
             return isEnabled ? ARM_HIGH : DIM_WHITE;
          }
 
@@ -311,13 +311,13 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
          }
       });
 
-      RGBButton automationTouch = addElement(new RGBButton(0x4D));
+      final RGBButton automationTouch = addElement(new RGBButton(0x4D));
       mDefaultLayer.bind(automationTouch, new RGBButtonTarget()
       {
          @Override
          public float[] getRGB()
          {
-            boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
+            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
             return isEnabled ? ARM_HIGH : DIM_WHITE;
          }
 
@@ -337,12 +337,12 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
       activateLayer(mDefaultLayer);
       activateLayer(mTrackLayer);
 
-      Button trackMode = addElement(new Button(0x28));
-      Button pluginMode = addElement(new Button(0x2B));
-      Button sendsMode = addElement(new Button(0x29));
-      Button panMode = addElement(new Button(0x2A));
+      final Button trackMode = addElement(new Button(0x28));
+      final Button pluginMode = addElement(new Button(0x2B));
+      final Button sendsMode = addElement(new Button(0x29));
+      final Button panMode = addElement(new Button(0x2A));
 
-      Layer[] faderGroup = {mTrackLayer, mDeviceLayer, mSendsLayer, mPanLayer};
+      final Layer[] faderGroup = {mTrackLayer, mDeviceLayer, mSendsLayer, mPanLayer};
 
       mDefaultLayer.bindLayerInGroup(this, trackMode, mTrackLayer, faderGroup);
       mDefaultLayer.bindLayerInGroup(this, pluginMode, mDeviceLayer, faderGroup);
@@ -385,7 +385,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
          parameter.name().markInterested();
          parameter.displayedValue().markInterested();
 
-         Channel channel = mChannels[c];
+         final Channel channel = mChannels[c];
 
          mDeviceLayer.bind(channel.motorFader, parameter);
 
@@ -447,7 +447,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
 
                   if (channelIndex == 15)
                   {
-                     int rightIndex = mRemoteControls2.selectedPageIndex().get();
+                     final int rightIndex = mRemoteControls2.selectedPageIndex().get();
                      return rightIndex < pageNames.length ? pageNames[rightIndex] : "";
                   }
 
@@ -490,10 +490,10 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
 
    private void initTransportEncoder()
    {
-      Button scrollLeft = addElement(new Button(0x2E));
-      Button scrollRight = addElement(new Button(0x2F));
+      final Button scrollLeft = addElement(new Button(0x2E));
+      final Button scrollRight = addElement(new Button(0x2F));
 
-      ClickEncoder transportEncoder = addElement(new ClickEncoder(0x53, 0x3C));
+      final ClickEncoder transportEncoder = addElement(new ClickEncoder(0x53, 0x3C));
       mChannelLayer.bind(transportEncoder, new ClickEncoderTarget()
       {
          @Override
@@ -592,14 +592,14 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
       mMarkerLayer.bindPressedRunnable(scrollLeft, mCueMarkerBank.canScrollBackwards(), mCueMarkerBank::scrollPageBackwards);
       mMarkerLayer.bindPressedRunnable(scrollRight, mCueMarkerBank.canScrollForwards(), mCueMarkerBank::scrollPageForwards);
 
-      Layer[] layers = {mChannelLayer, mZoomLayer, mScrollLayer, mBankLayer, mSectionLayer, mMarkerLayer};
+      final Layer[] layers = {mChannelLayer, mZoomLayer, mScrollLayer, mBankLayer, mSectionLayer, mMarkerLayer};
 
-      Button channel = addElement(new Button(0x36));
-      Button zoom = addElement(new Button(0x37));
-      Button scroll = addElement(new Button(0x38));
-      Button bank = addElement(new Button(0x39));
-      Button section = addElement(new Button(0x3C));
-      Button marker = addElement(new Button(0x3D));
+      final Button channel = addElement(new Button(0x36));
+      final Button zoom = addElement(new Button(0x37));
+      final Button scroll = addElement(new Button(0x38));
+      final Button bank = addElement(new Button(0x39));
+      final Button section = addElement(new Button(0x3C));
+      final Button marker = addElement(new Button(0x3D));
 
       mDefaultLayer.bindLayerInGroup(this, channel, mChannelLayer, layers);
       mDefaultLayer.bindLayerInGroup(this, zoom, mZoomLayer, layers);
@@ -643,7 +643,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
          track.sendBank().getItemAt(0).displayedValue().markInterested();
       }
 
-      Channel channel = mChannels[index];
+      final Channel channel = mChannels[index];
       final Button solo = channel.solo;
       final Button mute = channel.mute;
       final RGBButton select = channel.select;
@@ -688,8 +688,8 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
                   if (isSelected.get())
                      return WHITE;
 
-                  SettableColorValue c = track.color();
-                  float[] trackColor = new float[] {c.red(), c.green(), c.blue()};
+                  final SettableColorValue c = track.color();
+                  final float[] trackColor = new float[] {c.red(), c.green(), c.blue()};
                   return trackColor;
                }
             }
@@ -711,11 +711,11 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
 
       if (track == mMasterTrack)
       {
-         layer.bind(display, new ChannelDisplayTarget(track, isSelected, motorFader));
+         layer.bind(display, new OldChannelDisplayTarget(track, isSelected, motorFader));
       }
       else
       {
-         mTrackLayer.bind(display, new ChannelDisplayTarget(track, isSelected, motorFader));
+         mTrackLayer.bind(display, new OldChannelDisplayTarget(track, isSelected, motorFader));
          mSendsLayer.bind(display, new SendDisplayTarget(track, isSelected, motorFader));
          mPanLayer.bind(display, new PanDisplayTarget(track, isSelected, motorFader));
       }
@@ -778,7 +778,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
    private Layer mSectionLayer = new Layer();
    private Layer mMarkerLayer = new Layer();
 
-   private static class PanDisplayTarget extends ChannelDisplayTarget
+   private static class PanDisplayTarget extends OldChannelDisplayTarget
    {
       public PanDisplayTarget(
          final Track track, final BooleanValue isSelected, final MotorFader motorFader)
@@ -793,7 +793,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
       }
    };
 
-   private static class SendDisplayTarget extends ChannelDisplayTarget
+   private static class SendDisplayTarget extends OldChannelDisplayTarget
    {
       public SendDisplayTarget(
          final Track track, final BooleanValue isSelected, final MotorFader motorFader)

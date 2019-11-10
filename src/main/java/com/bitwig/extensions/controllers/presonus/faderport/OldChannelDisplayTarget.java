@@ -1,16 +1,15 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.controller.api.BooleanValue;
-import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.Track;
 
-class ChannelDisplayTarget implements DisplayTarget
+class OldChannelDisplayTarget implements DisplayTarget
 {
-   public ChannelDisplayTarget(
+   public OldChannelDisplayTarget(
       final Track track,
       final BooleanValue isSelected,
-      final HardwareSlider motorFader)
+      final MotorFader motorFader)
    {
       mTrack = track;
       mIsSelected = isSelected;
@@ -77,7 +76,7 @@ class ChannelDisplayTarget implements DisplayTarget
 
       if (line == 2)
       {
-         if (mMotorFader.isBeingTouched().get())
+         if (mMotorFader.isBeingTouched())
             return getMainControl().displayedValue().getLimited(10).replace(" dB", "");
 
          return getLabelControl().name().getLimited(10);
@@ -100,5 +99,5 @@ class ChannelDisplayTarget implements DisplayTarget
 
    private final BooleanValue mIsSelected;
 
-   private final HardwareSlider mMotorFader;
+   private final MotorFader mMotorFader;
 }
