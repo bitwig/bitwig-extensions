@@ -152,7 +152,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
          channel.mute = addElement(new Button((index >= 8 ? 0x70 : 0x10) + index));
          channel.select = addElement(new RGBButton(SELECT_IDS[index]));
          channel.motorFader = addElement(new MotorFader(index));
-         channel.display = addElement(new Display(index, mSysexHeader));
+         channel.display = addElement(new OldDisplay(index, mSysexHeader));
 
          mChannels[index] = channel;
       }
@@ -617,7 +617,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
       Button mute;
       RGBButton select;
       MotorFader motorFader;
-      Display display;
+      OldDisplay display;
    }
 
    private void bindTrack(final Layer layer, final int index, final Track track)
@@ -648,7 +648,7 @@ public class OldPresonusFaderPort extends LayeredControllerExtension
       final Button mute = channel.mute;
       final RGBButton select = channel.select;
       final MotorFader motorFader = channel.motorFader;
-      final Display display = channel.display;
+      final OldDisplay display = channel.display;
 
       layer.bindToggle(solo, track.solo());
       layer.bindToggle(mute, track.mute());

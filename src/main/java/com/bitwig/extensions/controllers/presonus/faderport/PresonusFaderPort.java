@@ -33,10 +33,8 @@ import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.LayerGroup;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.oldframework.targets.ClickEncoderTarget;
 import com.bitwig.extensions.util.ValueUtils;
 
 public class PresonusFaderPort extends ControllerExtension
@@ -231,7 +229,7 @@ public class PresonusFaderPort extends ControllerExtension
          channel.mute = createToggleButton((index >= 8 ? 0x70 : 0x10) + index);
          channel.select = createRGBButton(SELECT_IDS[index]);
          channel.motorFader = createMotorFader(index);
-         channel.display = addElement(new Display(index, mSysexHeader));
+         channel.display = new Display(index, mSysexHeader, this);
 
          mChannels[index] = channel;
       }
@@ -485,12 +483,27 @@ public class PresonusFaderPort extends ControllerExtension
       mSendsLayer.bind(mDisplayEncoder, mTrackBank.getItemAt(0).sendBank());
    }
 
+   private void initBankLayer()
+   {
+      mBankLayer.bind(mTransportEncoder, mTrackBank);
+      mBankLayer.bindPressed(mTransportEncoder,
+         () -> mTrackBank.scrollIntoView(mCursorTrack.position().get()));
+   }
+
+   private void initScrollLayer()
+   {
+      mScrollLayer.bind(mTransportEncoder, mApplication.zoomToFitAction());
+   }
+
    private void initMarkerLayer()
    {
       mMarkerLayer.bindToggle(mScrollLeftButton, mCueMarkerBank.scrollPageBackwardsAction(),
          mCueMarkerBank.canScrollBackwards());
       mMarkerLayer.bindToggle(mScrollRightButton, mCueMarkerBank.scrollPageForwardsAction(),
          mCueMarkerBank.canScrollForwards());
+
+      mMarkerLayer.bindPressed(mTransportEncoder, () -> mCueMarkerBank.getItemAt(0).launch(true));
+      mMarkerLayer.bind(mTransportEncoder, mCueMarkerBank);
    }
 
    private void initDeviceLayer()
@@ -555,6 +568,11 @@ public class PresonusFaderPort extends ControllerExtension
    public void flush()
    {
       mHardwareSurface.updateHardware();
+
+      for (int index = 0; index < mChannelCount; index++)
+      {
+         mChannels[index].display.updateHardware();
+      }
    }
 
    private SettableIntegerValue getPageIndex()
@@ -658,63 +676,9 @@ public class PresonusFaderPort extends ControllerExtension
 
       mChannelLayer.activate();
 
-      mScrollLayer.bind(transportEncoder, new ClickEncoderTarget()
-      {
-         @Override
-         public void click(final boolean b)
-         {
-            if (b)
-               mApplication.zoomToFit();
-         }
-
-         @Override
-         public void inc(final int steps)
-         {
-         }
-      });
-
-      mBankLayer.bind(transportEncoder, new ClickEncoderTarget()
-      {
-         @Override
-         public void click(final boolean b)
-         {
-            if (b)
-               mTrackBank.scrollIntoView(mCursorTrack.position().get());
-         }
-
-         @Override
-         public void inc(final int steps)
-         {
-            if (steps > 0)
-               mTrackBank.scrollForwards();
-            else
-               mTrackBank.scrollBackwards();
-         }
-      });
-
-      mMarkerLayer.bind(transportEncoder, new ClickEncoderTarget()
-      {
-         @Override
-         public void click(final boolean b)
-         {
-            if (b)
-               mCueMarkerBank.getItemAt(0).launch(true);
-         }
-
-         @Override
-         public void inc(final int steps)
-         {
-            if (steps > 0)
-               mCueMarkerBank.scrollForwards();
-            else
-               mCueMarkerBank.scrollBackwards();
-            mCueMarkerBank.scrollIntoView(0);
-         }
-      });
-
    }
 
-   Channel[] mChannels;
+   private Channel[] mChannels;
 
    class Channel
    {
@@ -920,7 +884,7 @@ public class PresonusFaderPort extends ControllerExtension
 
    // Hardware
 
-   private HardwareSurface mHardwareSurface;
+   HardwareSurface mHardwareSurface;
 
    private HardwareButton mArmButton;
 

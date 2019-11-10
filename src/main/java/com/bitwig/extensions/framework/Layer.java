@@ -14,6 +14,7 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.BooleanHardwareProperty;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ColorValue;
+import com.bitwig.extension.controller.api.ContinuousHardwareControl;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareAction;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
@@ -205,6 +206,16 @@ public class Layer
    {
       bind(button, button.pressedAction(), () -> target.accept(true));
       bind(button, button.releasedAction(), () -> target.accept(false));
+   }
+
+   public void bindPressed(final ContinuousHardwareControl control, final HardwareActionBindable target)
+   {
+      bind(control, control.hardwareButton().pressedAction(), target);
+   }
+
+   public void bindPressed(final ContinuousHardwareControl control, final Runnable target)
+   {
+      bind(control, control.hardwareButton().pressedAction(), target);
    }
 
    /**

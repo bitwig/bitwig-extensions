@@ -1,32 +1,53 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
-import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.api.util.midi.SysexBuilder;
+import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.oldframework.ControlElement;
-import com.bitwig.extensions.oldframework.LayeredControllerExtension;
 
-public class Display implements ControlElement<DisplayTarget>
+class Display
 {
    private static int TEXT_LINES = 7;
-   public Display(final int channel, final String sysexHeader)
+
+   public Display(final int channel, final String sysexHeader, final PresonusFaderPort extension)
    {
       mChannel = channel;
       mSysexHeader = sysexHeader;
+      mExtension = extension;
+      mTextDisplay = extension.mHardwareSurface.createHardwareTextDisplay(TEXT_LINES);
    }
 
-   @Override
-   public void onMidi(final DisplayTarget target, final ShortMidiMessage data)
+   public void setDisplayTarget(final DisplayTarget displayTarget)
    {
+      assert (mDisplayTarget == null) != (displayTarget == null);
+
+      if (mDisplayTarget != null)
+      {
+         for (int line = 0; line < TEXT_LINES; line++)
+         {
+            mTextDisplay.line(line).text().setValueSupplier(null);
+         }
+      }
+
+      mDisplayTarget = displayTarget;
+
+      if (mDisplayTarget != null)
+      {
+         for (int line = 0; line < TEXT_LINES; line++)
+         {
+            final int finalLine = line;
+            mTextDisplay.line(line).text().setValueSupplier(() -> displayTarget.getText(finalLine));
+         }
+      }
    }
 
-   @Override
-   public void flush(final DisplayTarget target, final LayeredControllerExtension extension)
+   public void updateHardware()
    {
-      int barValue = target.getBarValue();
-      ValueBarMode valueBarMode = target.getValueBarMode();
+      final DisplayTarget target = mDisplayTarget != null ? mDisplayTarget : NULL_TARGET;
 
-      MidiOut midiOutPort = extension.getMidiOutPort(0);
+      final int barValue = target.getBarValue();
+      final ValueBarMode valueBarMode = target.getValueBarMode();
+
+      final MidiOut midiOutPort = mExtension.getMidiOutPort(0);
       if (valueBarMode != mLastValueBarMode || barValue != mLastBarValue)
       {
          if (mChannel >= 8)
@@ -41,22 +62,24 @@ public class Display implements ControlElement<DisplayTarget>
          }
       }
 
-      DisplayMode mode = target.getMode();
+      final DisplayMode mode = target.getMode();
 
       if (mode != mLastMode)
       {
-         SysexBuilder sb = SysexBuilder.fromHex(mSysexHeader);
+         final SysexBuilder sb = SysexBuilder.fromHex(mSysexHeader);
          sb.addHex("13");
          sb.addByte(mChannel);
-         int m = mode.ordinal() & 0xF;
+         final int m = mode.ordinal() & 0xF;
          sb.addByte(m);
          midiOutPort.sendSysex(sb.terminate());
       }
 
-      for(int line = 0; line< TEXT_LINES; line++)
+      for (int line = 0; line < TEXT_LINES; line++)
       {
-         String text = target.getText(line);
-         if (text == null) text = "";
+         String text = mTextDisplay.line(line).text().currentValue();
+
+         if (text == null)
+            text = "";
          int flags = target.getTextAlignment(line);
 
          if (target.isTextInverted(line))
@@ -69,7 +92,7 @@ public class Display implements ControlElement<DisplayTarget>
             mLastText[line] = text;
             mLastFlags[line] = flags;
 
-            SysexBuilder sb = SysexBuilder.fromHex(mSysexHeader);
+            final SysexBuilder sb = SysexBuilder.fromHex(mSysexHeader);
             sb.addHex("12");
             sb.addByte(mChannel);
             sb.addByte(line);
@@ -86,10 +109,31 @@ public class Display implements ControlElement<DisplayTarget>
    }
 
    private final int mChannel;
+
    private DisplayMode mLastMode;
+
    private int mLastBarValue;
+
    private ValueBarMode mLastValueBarMode;
+
    private final String mSysexHeader;
+
    private final String[] mLastText = new String[TEXT_LINES];
+
    private int[] mLastFlags = new int[TEXT_LINES];
+
+   private final HardwareTextDisplay mTextDisplay;
+
+   private final PresonusFaderPort mExtension;
+
+   private DisplayTarget mDisplayTarget;
+
+   private static final DisplayTarget NULL_TARGET = new DisplayTarget()
+   {
+      @Override
+      public int getBarValue()
+      {
+         return 0;
+      }
+   };
 }

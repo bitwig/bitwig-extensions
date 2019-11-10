@@ -16,7 +16,8 @@ class ChannelDisplayTarget implements DisplayTarget
    @Override
    public ValueBarMode getValueBarMode()
    {
-      if (!mTrack.exists().get()) return ValueBarMode.Off;
+      if (!mTrack.exists().get())
+         return ValueBarMode.Off;
 
       return ValueBarMode.Bipolar;
    }
@@ -24,7 +25,7 @@ class ChannelDisplayTarget implements DisplayTarget
    @Override
    public int getBarValue()
    {
-      double pan = mTrack.pan().get();
+      final double pan = mTrack.pan().get();
       return Math.max(0, Math.min(127, (int)(pan * 127.0)));
    }
 
@@ -48,18 +49,19 @@ class ChannelDisplayTarget implements DisplayTarget
    @Override
    public String getText(final int line)
    {
-      if (!mTrack.exists().get()) return "";
+      if (!mTrack.exists().get())
+         return "";
 
-      String trackNumber = Integer.toString(mTrack.position().get() + 1);
+      final String trackNumber = Integer.toString(mTrack.position().get() + 1);
 
       if (line == 0)
       {
-         String fullname = mTrack.name().get();
+         final String fullname = mTrack.name().get();
 
          if (fullname.endsWith(trackNumber))
-            return mTrack.name().getLimited(8+trackNumber.length()).replace(trackNumber, "");
+            return mTrack.name().getLimited(8 + trackNumber.length()).replace(trackNumber, "");
 
-         String limited = mTrack.name().getLimited(8);
+         final String limited = mTrack.name().getLimited(8);
 
          return limited;
       }
@@ -91,6 +93,8 @@ class ChannelDisplayTarget implements DisplayTarget
    }
 
    protected final Track mTrack;
+
    private final BooleanValue mIsSelected;
+
    private final MotorFader mMotorFader;
 }
