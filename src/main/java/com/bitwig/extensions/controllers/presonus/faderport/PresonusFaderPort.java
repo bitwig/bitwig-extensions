@@ -154,28 +154,18 @@ public class PresonusFaderPort extends ControllerExtension
       mClearMute = mApplication.getAction("clear_mute");
       mClearSolo = mApplication.getAction("clear_solo");
 
-      initTransportEncoder();
-
       // Link all send positions to the first
       mTrackBank.getItemAt(0).sendBank().scrollPosition().addValueObserver(p -> {
          for (int i = 1; i < mChannelCount; i++)
             mTrackBank.getItemAt(i).sendBank().scrollPosition().set(p);
       });
 
-      for (int channelIndex = 0; channelIndex < mChannelCount; channelIndex++)
-      {
-         final Track track = mTrackBank.getItemAt(channelIndex);
-         bindTrack(mDefaultLayer, channelIndex, track);
-      }
-
-      bindTrack(mMasterLayer, mChannelCount - 1, mMasterTrack);
-
       // Automation Write Modes
       mTransport.isArrangerAutomationWriteEnabled().markInterested();
       mTransport.automationWriteMode().markInterested();
 
-      mDefaultLayer.activate();
-      mTrackLayer.activate();
+      initHardwareSurface();
+      initLayers();
 
       runningStatusTimer();
 
@@ -186,7 +176,7 @@ public class PresonusFaderPort extends ControllerExtension
    {
       mHardwareSurface = getHost().createHardwareSurface();
 
-      mArmButton = createButton("arm", 0);
+      mArmButton = createToggleButton("arm", 0);
       mMasterButton = createToggleButton("master", 0x3A);
       mShiftLeftButton = createToggleButton("shift_left", 0x06);
       mShiftRightButton = createToggleButton("shift_right", 0x46);
@@ -258,10 +248,6 @@ public class PresonusFaderPort extends ControllerExtension
          @Override
          public void accept(final int state)
          {
-            final int red = (state & 0x7F0000) >> 16;
-            final int green = (state & 0x7F00) >> 8;
-            final int blue = (state & 0x7F);
-
             for (int i = 0; i < 4; i++)
             {
                final int shift = 24 - 8 * i;
@@ -371,10 +357,16 @@ public class PresonusFaderPort extends ControllerExtension
    {
       mDefaultLayer = createLayer("Default");
       mSendsLayer = createLayer("Sends");
+      mPanLayer = createLayer("Pan");
+      mTrackLayer = createLayer("Track");
       mChannelLayer = createLayer("Channel");
       mMarkerLayer = createLayer("Marker");
       mDeviceLayer = createLayer("Device");
       mZoomLayer = createLayer("Zoom");
+      mScrollLayer = createLayer("Scroll");
+      mBankLayer = createLayer("Bank");
+      mMasterLayer = createLayer("Master");
+      mSectionLayer = createLayer("Section");
 
       new LayerGroup(mTrackLayer, mDeviceLayer, mSendsLayer, mPanLayer);
 
@@ -386,6 +378,13 @@ public class PresonusFaderPort extends ControllerExtension
       initMarkerLayer();
       initDeviceLayer();
       initZoomLayer();
+      initScrollLayer();
+      initBankLayer();
+      initMasterLayer();
+      initSectionLayer();
+
+      mDefaultLayer.activate();
+      mTrackLayer.activate();
 
       // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
@@ -465,6 +464,12 @@ public class PresonusFaderPort extends ControllerExtension
 
          return null;
       }, mAutomationTouchButton);
+
+      for (int channelIndex = 0; channelIndex < mChannelCount; channelIndex++)
+      {
+         final Track track = mTrackBank.getItemAt(channelIndex);
+         bindTrack(mDefaultLayer, channelIndex, track);
+      }
    }
 
    private void initChannelLayer()
@@ -549,6 +554,16 @@ public class PresonusFaderPort extends ControllerExtension
    {
       mZoomLayer.bind(mTransportEncoder, mApplication.zoomInAction(), mApplication.zoomOutAction());
       mZoomLayer.bindPressed(mTransportEncoder, mApplication.zoomToSelectionAction());
+   }
+
+   private void initMasterLayer()
+   {
+      bindTrack(mMasterLayer, mChannelCount - 1, mMasterTrack);
+   }
+
+   private void initSectionLayer()
+   {
+
    }
 
    private void onMidi(final ShortMidiMessage data)
@@ -663,13 +678,6 @@ public class PresonusFaderPort extends ControllerExtension
       }
    }
 
-   private void initTransportEncoder()
-   {
-
-      mChannelLayer.activate();
-
-   }
-
    private Channel[] mChannels;
 
    class Channel
@@ -686,6 +694,8 @@ public class PresonusFaderPort extends ControllerExtension
          select = createRGBButton("select" + channelNumber, SELECT_IDS[index]);
          motorFader = createMotorFader(index);
          display = new Display(index, mSysexHeader, PresonusFaderPort.this);
+
+         motorFader.isBeingTouched().markInterested();
       }
 
       final HardwareButton solo;
@@ -844,7 +854,10 @@ public class PresonusFaderPort extends ControllerExtension
 
    private static class PanDisplayTarget extends ChannelDisplayTarget
    {
-      public PanDisplayTarget(final Track track, final BooleanValue isSelected, final HardwareSlider motorFader)
+      public PanDisplayTarget(
+         final Track track,
+         final BooleanValue isSelected,
+         final HardwareSlider motorFader)
       {
          super(track, isSelected, motorFader);
       }
@@ -858,7 +871,10 @@ public class PresonusFaderPort extends ControllerExtension
 
    private static class SendDisplayTarget extends ChannelDisplayTarget
    {
-      public SendDisplayTarget(final Track track, final BooleanValue isSelected, final HardwareSlider motorFader)
+      public SendDisplayTarget(
+         final Track track,
+         final BooleanValue isSelected,
+         final HardwareSlider motorFader)
       {
          super(track, isSelected, motorFader);
       }
