@@ -336,7 +336,7 @@ public class PresonusFaderPort extends ControllerExtension
          return 0;
 
       return 0x7F000000 | colorPartFromDouble(c.getRed()) << 16 | colorPartFromDouble(c.getGreen()) << 8
-         | colorPartFromDouble(c.getGreen());
+         | colorPartFromDouble(c.getBlue());
    }
 
    private static Color stateToColor(final int state)
@@ -345,7 +345,7 @@ public class PresonusFaderPort extends ControllerExtension
       final int green = (state & 0x7F00) >> 8;
       final int blue = (state & 0x7F);
 
-      return Color.fromRGB(red / 128.0, green / 128.0, blue / 128.0);
+      return Color.fromRGB(red / 127.0, green / 127.0, blue / 127.0);
    }
 
    private static int colorPartFromDouble(final double x)

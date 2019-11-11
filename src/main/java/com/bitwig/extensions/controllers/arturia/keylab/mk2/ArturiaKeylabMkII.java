@@ -42,7 +42,6 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layers;
 
 public class ArturiaKeylabMkII extends ControllerExtension
@@ -252,7 +251,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
    {
       mLayers = new Layers(this);
       mBaseLayer = new Layer(mLayers, "Base");
-      mBrowserLayer = new Layer(mLayers, "Browser");
       mMultiLayer = new Layer(mLayers, "Multi")
       {
          @Override
@@ -263,6 +261,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
             updateIndications();
          }
       };
+      mBrowserLayer = new Layer(mLayers, "Browser");
 
       initBaseLayer();
       initBrowserLayer();
@@ -270,7 +269,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mBaseLayer.activate();
 
-      DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+      //DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private void initBaseLayer()
@@ -662,7 +661,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
    {
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
 
-      encoder.setAdjustValueMatcher(getMidiInPort(1).createRelative2sComplementCCValueMatcher(0, cc));
+      encoder.setAdjustValueMatcher(getMidiInPort(1).createRelativeSignedBitCCValueMatcher(0, cc));
 
       return encoder;
    }
@@ -718,9 +717,9 @@ public class ArturiaKeylabMkII extends ControllerExtension
             public void accept(final int state)
             {
                final Color c = stateToColor(state);
-               final int red = fromFloat(c.getRed());
-               final int green = fromFloat(c.getGreen());
-               final int blue = fromFloat(c.getBlue());
+               final int red = colorPartFromDouble(c.getRed());
+               final int green = colorPartFromDouble(c.getGreen());
+               final int blue = colorPartFromDouble(c.getBlue());
 
                final byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 16")
                   .addByte(id.getSysexID()).addByte(red).addByte(green).addByte(blue).terminate();
@@ -778,21 +777,22 @@ public class ArturiaKeylabMkII extends ControllerExtension
       if (c == null) // Off
          return 0;
 
-      return c.getRed255() << 16 | c.getGreen255() << 8 | c.getGreen255();
+      return 0x7F000000 | colorPartFromDouble(c.getRed()) << 16 | colorPartFromDouble(c.getGreen()) << 8
+         | colorPartFromDouble(c.getBlue());
    }
 
    private static Color stateToColor(final int state)
    {
-      final int red = (state & 0xFF0000) >> 16;
-      final int green = (state & 0xFF00) >> 8;
-      final int blue = (state & 0xFF);
+      final int red = (state & 0x7F0000) >> 16;
+      final int green = (state & 0x7F00) >> 8;
+      final int blue = (state & 0x7F);
 
-      return Color.fromRGB255(red, green, blue);
+      return Color.fromRGB(red / 127.0, green / 127.0, blue / 127.0);
    }
 
-   private static int fromFloat(final double x)
+   private static int colorPartFromDouble(final double x)
    {
-      return Math.max(0, Math.min((int)(31.0 * x), 31));
+      return Math.max(0, Math.min((int)(127.0 * x), 127));
    }
 
    private void clearDisplay()
