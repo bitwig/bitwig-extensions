@@ -42,6 +42,7 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layers;
 
 public class ArturiaKeylabMkII extends ControllerExtension
@@ -235,12 +236,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
             final String upper = mDisplay.line(0).text().currentValue();
             final String lower = mDisplay.line(1).text().currentValue();
 
-            final byte[] data = SysexBuilder.fromHex("F0 00 20 6B 7F 42 04 00 60 01 ")
-               .addString(upper, 16)
-               .addHex("00 02")
-               .addString(lower, 16)
-               .addHex(" 00")
-               .terminate();
+            final byte[] data = SysexBuilder.fromHex("F0 00 20 6B 7F 42 04 00 60 01 ").addString(upper, 16)
+               .addHex("00 02").addString(lower, 16).addHex(" 00").terminate();
 
             if (mLastDisplayData == null || !Arrays.equals(data, mLastDisplayData))
             {
@@ -273,7 +270,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mBaseLayer.activate();
 
-      // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+      DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private void initBaseLayer()
@@ -700,8 +697,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       final String isNoteOn = expressions.createIsNoteOnExpression(id.getChannel(), id.getKey());
       final String pressedExpression = isNoteOn + " && data2 >= 64";
-      final String releasedExpression = isNoteOn + " && data2 < 64";
-
+      final String releasedExpression = "(" + isNoteOn + " && data2 < 64) || "
+         + expressions.createIsNoteOffExpression(id.getChannel(), id.getKey());
       button.pressedAction().setActionMatcher(midiIn.createActionMatcher(pressedExpression));
       button.releasedAction().setActionMatcher(midiIn.createActionMatcher(releasedExpression));
 
