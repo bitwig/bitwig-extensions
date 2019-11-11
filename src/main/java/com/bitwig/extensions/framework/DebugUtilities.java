@@ -24,10 +24,10 @@ public class DebugUtilities
 
       for (final HardwareControl control : hardwareSurface.getHardwareControls())
       {
-         String controlName = control.getLabel();
+         String controlName = control.getId();
 
-         if (controlName.isEmpty())
-            controlName = "<no name>";
+         if (!control.getLabel().isEmpty())
+            controlName += " " + control.getLabel();
 
          final String prefix = controlName + ": ";
 
