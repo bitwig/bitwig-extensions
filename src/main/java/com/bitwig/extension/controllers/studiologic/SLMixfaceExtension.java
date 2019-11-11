@@ -79,13 +79,13 @@ public class SLMixfaceExtension extends ControllerExtension
 
       for (int i = 0; i < 8; i++)
       {
-         final AbsoluteHardwareKnob panKnob = surface.createAbsoluteHardwareKnob();
+         final AbsoluteHardwareKnob panKnob = surface.createAbsoluteHardwareKnob("pan" + (i + 1));
          panKnob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 2 + i));
          final String panLabel = "Pan" + (i + 1);
          panKnob.setLabel(panLabel);
          mPanKnobs[i] = panKnob;
 
-         final HardwareSlider slider = surface.createHardwareSlider();
+         final HardwareSlider slider = surface.createHardwareSlider("volume" + (i + 1));
          slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 16 + i));
          final String volLabel = "Volume " + (i + 1);
          slider.setLabel(volLabel);
@@ -93,7 +93,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
          // Create the arm button
 
-         final HardwareButton armButton = surface.createHardwareButton();
+         final HardwareButton armButton = surface.createHardwareButton("arm" + (i + 1));
          final int armCC = 48 + i;
          armButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 127));
          armButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 0));
@@ -114,7 +114,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
          // Create the mute button
 
-         final HardwareButton muteButton = surface.createHardwareButton();
+         final HardwareButton muteButton = surface.createHardwareButton("mute" + (i + 1));
          final int muteCC = 64 + i;
          muteButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, muteCC, 127));
          muteButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, muteCC, 0));
@@ -132,7 +132,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
          // Create the solo button
 
-         final HardwareButton soloButton = surface.createHardwareButton();
+         final HardwareButton soloButton = surface.createHardwareButton("solo" + (i + 1));
          final int soloCC = 80 + i;
          soloButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, soloCC, 127));
          soloButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, soloCC, 0));
@@ -150,7 +150,7 @@ public class SLMixfaceExtension extends ControllerExtension
 
          // Create the select button
 
-         final HardwareButton selectButton = surface.createHardwareButton();
+         final HardwareButton selectButton = surface.createHardwareButton("select" + (i + 1));
          final int selectCC = 96 + i;
          selectButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, selectCC, 127));
          selectButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, selectCC, 0));
@@ -167,11 +167,11 @@ public class SLMixfaceExtension extends ControllerExtension
          mSelectButtons[i] = selectButton;
       }
 
-      mMasterVolumeSlider = surface.createHardwareSlider();
+      mMasterVolumeSlider = surface.createHardwareSlider("master_volume");
       mMasterVolumeSlider.setLabel("Master Volume");
       mMasterVolumeSlider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 24));
 
-      mPlayButton = surface.createHardwareButton();
+      mPlayButton = surface.createHardwareButton("play");
       mPlayButton.setLabel("Play");
 
       final String playPressedExpression = midiExpressions.createIsCCValueExpression(15, 32, 127) + " || "
@@ -184,7 +184,7 @@ public class SLMixfaceExtension extends ControllerExtension
       });
       mPlayButton.setBackgroundLight(playLight);
 
-      mRecordButton = surface.createHardwareButton();
+      mRecordButton = surface.createHardwareButton("record");
       mRecordButton.setLabel("Record");
       mRecordButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 127));
       mRecordButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
@@ -194,7 +194,7 @@ public class SLMixfaceExtension extends ControllerExtension
       });
       mRecordButton.setBackgroundLight(recordLight);
 
-      mModeButton = surface.createHardwareButton();
+      mModeButton = surface.createHardwareButton("mode");
       mModeButton.setLabel("Mode");
       mModeButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 39, 127));
       final OnOffHardwareLight modeLight = surface.createOnOffHardwareLight();
@@ -203,27 +203,27 @@ public class SLMixfaceExtension extends ControllerExtension
       });
       mModeButton.setBackgroundLight(modeLight);
 
-      mScrollBankForwardsButton = surface.createHardwareButton();
+      mScrollBankForwardsButton = surface.createHardwareButton("scroll_forwards");
       mScrollBankForwardsButton.setLabel("Scroll Forwards");
       mScrollBankForwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 127));
       mScrollBankForwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 38, 0));
 
-      mScrollBankBackwardsButton = surface.createHardwareButton();
+      mScrollBankBackwardsButton = surface.createHardwareButton("scroll_backwards");
       mScrollBankBackwardsButton.setLabel("Scroll Backwards");
       mScrollBankBackwardsButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 127));
       mScrollBankBackwardsButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 37, 0));
 
-      mFastForwardButton = surface.createHardwareButton();
+      mFastForwardButton = surface.createHardwareButton("fast_forward");
       mFastForwardButton.setLabel("Fast Forward");
       mFastForwardButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 36, 127));
       mFastForwardButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 36, 0));
 
-      mRewindButton = surface.createHardwareButton();
+      mRewindButton = surface.createHardwareButton("rewind");
       mRewindButton.setLabel("Rewind");
       mRewindButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 35, 127));
       mRewindButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 35, 0));
 
-      mNavigationDial = surface.createRelativeHardwareKnob();
+      mNavigationDial = surface.createRelativeHardwareKnob("dial");
 
       final double stepSize = 1 / 16.0;
 

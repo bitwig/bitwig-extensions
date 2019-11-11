@@ -186,58 +186,52 @@ public class PresonusFaderPort extends ControllerExtension
    {
       mHardwareSurface = getHost().createHardwareSurface();
 
-      mArmButton = createButton(0);
-      mMasterButton = createToggleButton(0x3A);
-      mShiftLeftButton = createToggleButton(0x06);
-      mShiftRightButton = createToggleButton(0x46);
-      mPlayButton = createToggleButton(0x5e);
-      mStopButton = createToggleButton(0x5d);
-      mRecordButton = createToggleButton(0x5f);
-      mMetronomeButton = createToggleButton(0x3B);
-      mLoopButton = createToggleButton(0x56);
-      mRewindButton = createToggleButton(0x5B);
-      mClearSoloButton = createToggleButton(0x01);
-      mClearMuteButton = createToggleButton(0x02);
+      mArmButton = createButton("arm", 0);
+      mMasterButton = createToggleButton("master", 0x3A);
+      mShiftLeftButton = createToggleButton("shift_left", 0x06);
+      mShiftRightButton = createToggleButton("shift_right", 0x46);
+      mPlayButton = createToggleButton("play", 0x5e);
+      mStopButton = createToggleButton("stop", 0x5d);
+      mRecordButton = createToggleButton("record", 0x5f);
+      mMetronomeButton = createToggleButton("metronome", 0x3B);
+      mLoopButton = createToggleButton("loop", 0x56);
+      mRewindButton = createToggleButton("rewind", 0x5B);
+      mClearSoloButton = createToggleButton("clear_solo", 0x01);
+      mClearMuteButton = createToggleButton("clear_mute", 0x02);
 
-      mTrackModeButton = createToggleButton(0x28);
-      mPluginModeButton = createToggleButton(0x2B);
-      mSendsModeButton = createToggleButton(0x29);
-      mPanModeButton = createToggleButton(0x2A);
+      mTrackModeButton = createToggleButton("track_mode", 0x28);
+      mPluginModeButton = createToggleButton("plugin_mode", 0x2B);
+      mSendsModeButton = createToggleButton("sends_mode", 0x29);
+      mPanModeButton = createToggleButton("pan_mode", 0x2A);
 
-      mScrollLeftButton = createToggleButton(0x2E);
-      mScrollRightButton = createToggleButton(0x2F);
+      mScrollLeftButton = createToggleButton("scroll_left", 0x2E);
+      mScrollRightButton = createToggleButton("scroll_right", 0x2F);
 
-      mChannelButton = createToggleButton(0x36);
-      mZoomButton = createToggleButton(0x37);
-      mScrollButton = createToggleButton(0x38);
-      mBankButton = createToggleButton(0x39);
-      mSectionButton = createToggleButton(0x3C);
-      mMarkerButton = createToggleButton(0x3D);
+      mChannelButton = createToggleButton("channel", 0x36);
+      mZoomButton = createToggleButton("zoom", 0x37);
+      mScrollButton = createToggleButton("scroll", 0x38);
+      mBankButton = createToggleButton("bank", 0x39);
+      mSectionButton = createToggleButton("section", 0x3C);
+      mMarkerButton = createToggleButton("marker", 0x3D);
 
-      mDisplayEncoder = createClickEncoder(0x20, 0x10);
-      mTransportEncoder = createClickEncoder(0x53, 0x3C);
+      mDisplayEncoder = createClickEncoder("display", 0x20, 0x10);
+      mTransportEncoder = createClickEncoder("transport", 0x53, 0x3C);
 
-      mAutomationOffButton = createRGBButton(0x4F);
-      mAutomationWriteButton = createRGBButton(0x4B);
-      mAutomationTouchButton = createRGBButton(0x4D);
+      mAutomationOffButton = createRGBButton("automation_on_off", 0x4F);
+      mAutomationWriteButton = createRGBButton("automation_write", 0x4B);
+      mAutomationTouchButton = createRGBButton("automation_touch", 0x4D);
 
       for (int index = 0; index < mChannelCount; index++)
       {
-         final Channel channel = new Channel();
-
-         channel.solo = createToggleButton(SOLOD_IDS[index]);
-         channel.mute = createToggleButton((index >= 8 ? 0x70 : 0x10) + index);
-         channel.select = createRGBButton(SELECT_IDS[index]);
-         channel.motorFader = createMotorFader(index);
-         channel.display = new Display(index, mSysexHeader, this);
+         final Channel channel = new Channel(index);
 
          mChannels[index] = channel;
       }
    }
 
-   private HardwareButton createToggleButton(final int note)
+   private HardwareButton createToggleButton(final String id, final int note)
    {
-      final HardwareButton button = createButton(note);
+      final HardwareButton button = createButton(id, note);
 
       final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight();
       button.setBackgroundLight(light);
@@ -249,9 +243,9 @@ public class PresonusFaderPort extends ControllerExtension
       return button;
    }
 
-   private HardwareButton createRGBButton(final int note)
+   private HardwareButton createRGBButton(final String id, final int note)
    {
-      final HardwareButton button = createButton(note);
+      final HardwareButton button = createButton(id, note);
 
       final MultiStateHardwareLight light = mHardwareSurface
          .createMultiStateHardwareLight(PresonusFaderPort::stateToColor);
@@ -291,9 +285,9 @@ public class PresonusFaderPort extends ControllerExtension
       return button;
    }
 
-   private HardwareButton createButton(final int note)
+   private HardwareButton createButton(final String id, final int note)
    {
-      final HardwareButton button = mHardwareSurface.createHardwareButton();
+      final HardwareButton button = mHardwareSurface.createHardwareButton(id);
 
       button.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
       button.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
@@ -303,7 +297,7 @@ public class PresonusFaderPort extends ControllerExtension
 
    private HardwareSlider createMotorFader(final int channel)
    {
-      final HardwareSlider fader = mHardwareSurface.createHardwareSlider();
+      final HardwareSlider fader = mHardwareSurface.createHardwareSlider("fader" + (channel + 1));
 
       fader.setAdjustValueMatcher(mMidiIn.createAbsolutePitchBendValueMatcher(channel));
 
@@ -334,13 +328,13 @@ public class PresonusFaderPort extends ControllerExtension
       return fader;
    }
 
-   private RelativeHardwareKnob createClickEncoder(final int key, final int CC)
+   private RelativeHardwareKnob createClickEncoder(final String id, final int key, final int CC)
    {
-      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
+      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
 
       encoder.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC));
 
-      final HardwareButton clickButton = mHardwareSurface.createHardwareButton();
+      final HardwareButton clickButton = mHardwareSurface.createHardwareButton(id + "_click");
 
       clickButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, key));
       clickButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, key));
@@ -680,15 +674,29 @@ public class PresonusFaderPort extends ControllerExtension
 
    class Channel
    {
-      HardwareButton solo;
 
-      HardwareButton mute;
+      public Channel(final int index)
+      {
+         super();
 
-      HardwareButton select;
+         final int channelNumber = index + 1;
 
-      HardwareSlider motorFader;
+         solo = createToggleButton("solo" + channelNumber, SOLOD_IDS[index]);
+         mute = createToggleButton("mute" + channelNumber, (index >= 8 ? 0x70 : 0x10) + index);
+         select = createRGBButton("select" + channelNumber, SELECT_IDS[index]);
+         motorFader = createMotorFader(index);
+         display = new Display(index, mSysexHeader, PresonusFaderPort.this);
+      }
 
-      Display display;
+      final HardwareButton solo;
+
+      final HardwareButton mute;
+
+      final HardwareButton select;
+
+      final HardwareSlider motorFader;
+
+      final Display display;
    }
 
    private void bindTrack(final Layer layer, final int index, final Track track)

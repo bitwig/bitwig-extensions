@@ -13,7 +13,8 @@ class Display
       mChannel = channel;
       mSysexHeader = sysexHeader;
       mExtension = extension;
-      mTextDisplay = extension.mHardwareSurface.createHardwareTextDisplay(TEXT_LINES);
+      mTextDisplay = extension.mHardwareSurface.createHardwareTextDisplay("display" + (channel + 1),
+         TEXT_LINES);
    }
 
    public void setDisplayTarget(final DisplayTarget displayTarget)

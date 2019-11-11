@@ -218,57 +218,57 @@ public class PresonusAtom extends ControllerExtension
 
       surface.setPhysicalSize(202, 195);
 
-      mShiftButton = createToggleButton(CC_SHIFT);
+      mShiftButton = createToggleButton("shift", CC_SHIFT);
       mShiftButton.setLabel("Shift");
 
       // NAV section
-      mUpButton = createToggleButton(CC_UP);
+      mUpButton = createToggleButton("up", CC_UP);
       mUpButton.setLabel("Up");
-      mDownButton = createToggleButton(CC_DOWN);
+      mDownButton = createToggleButton("down", CC_DOWN);
       mDownButton.setLabel("Down");
-      mLeftButton = createToggleButton(CC_LEFT);
+      mLeftButton = createToggleButton("left", CC_LEFT);
       mLeftButton.setLabel("Left");
-      mRightButton = createToggleButton(CC_RIGHT);
+      mRightButton = createToggleButton("right", CC_RIGHT);
       mRightButton.setLabel("Right");
-      mSelectButton = createRGBButton(CC_SELECT);
+      mSelectButton = createRGBButton("select", CC_SELECT);
       mSelectButton.setLabel("Select");
-      mZoomButton = createToggleButton(CC_ZOOM);
+      mZoomButton = createToggleButton("zoom", CC_ZOOM);
       mZoomButton.setLabel("Zoom");
 
       // TRANS section
-      mClickCountInButton = createToggleButton(CC_CLICK_COUNT_IN);
+      mClickCountInButton = createToggleButton("click_count_in", CC_CLICK_COUNT_IN);
       mClickCountInButton.setLabel("Click\nCount in");
-      mRecordSaveButton = createToggleButton(CC_RECORD_SAVE);
+      mRecordSaveButton = createToggleButton("record_save", CC_RECORD_SAVE);
       mRecordSaveButton.setLabel("Record\nSave");
-      mPlayLoopButton = createToggleButton(CC_PLAY_LOOP_TOGGLE);
+      mPlayLoopButton = createToggleButton("play_loop", CC_PLAY_LOOP_TOGGLE);
       mPlayLoopButton.setLabel("Play\nLoop");
-      mStopUndoButton = createToggleButton(CC_STOP_UNDO);
+      mStopUndoButton = createToggleButton("stop_undo", CC_STOP_UNDO);
       mStopUndoButton.setLabel("Stop\nUndo");
 
       // SONG section
-      mSetupButton = createToggleButton(CC_SETUP);
+      mSetupButton = createToggleButton("setup", CC_SETUP);
       mSetupButton.setLabel("Setup");
-      mSetLoopButton = createToggleButton(CC_SET_LOOP);
+      mSetLoopButton = createToggleButton("set_loop", CC_SET_LOOP);
       mSetLoopButton.setLabel("Set Loop");
 
       // EVENT section
-      mEditorButton = createToggleButton(CC_EDITOR);
+      mEditorButton = createToggleButton("editor", CC_EDITOR);
       mEditorButton.setLabel("Editor");
-      mNudgeQuantizeButton = createToggleButton(CC_NUDGE_QUANTIZE);
+      mNudgeQuantizeButton = createToggleButton("nudge_quantize", CC_NUDGE_QUANTIZE);
       mNudgeQuantizeButton.setLabel("Nudge\nQuantize");
 
       // INST section
-      mShowHideButton = createToggleButton(CC_SHOW_HIDE);
+      mShowHideButton = createToggleButton("show_hide", CC_SHOW_HIDE);
       mShowHideButton.setLabel("Show/\nHide");
-      mPresetPadSelectButton = createToggleButton(CC_PRESET_PAD_SELECT);
+      mPresetPadSelectButton = createToggleButton("preset_pad_select", CC_PRESET_PAD_SELECT);
       mPresetPadSelectButton.setLabel("Preset +-\nFocus");
-      mBankButton = createToggleButton(CC_BANK_TRANSPOSE);
+      mBankButton = createToggleButton("bank", CC_BANK_TRANSPOSE);
       mBankButton.setLabel("Bank");
 
       // MODE section
-      mFullLevelButton = createToggleButton(CC_FULL_LEVEL);
+      mFullLevelButton = createToggleButton("full_level", CC_FULL_LEVEL);
       mFullLevelButton.setLabel("Full Level");
-      mNoteRepeatButton = createToggleButton(CC_NOTE_REPEAT);
+      mNoteRepeatButton = createToggleButton("note_repeat", CC_NOTE_REPEAT);
       mNoteRepeatButton.setLabel("Note\nRepeat");
 
       // Pads
@@ -694,9 +694,9 @@ public class PresonusAtom extends ControllerExtension
       return Color.fromRGB(red, green, blue);
    }
 
-   private HardwareButton createToggleButton(final int controlNumber)
+   private HardwareButton createToggleButton(final String id, final int controlNumber)
    {
-      final HardwareButton button = createButton(controlNumber);
+      final HardwareButton button = createButton(id, controlNumber);
       final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight();
       button.setBackgroundLight(light);
 
@@ -707,9 +707,9 @@ public class PresonusAtom extends ControllerExtension
       return button;
    }
 
-   private HardwareButton createRGBButton(final int controlNumber)
+   private HardwareButton createRGBButton(final String id, final int controlNumber)
    {
-      final HardwareButton button = createButton(controlNumber);
+      final HardwareButton button = createButton(id, controlNumber);
 
       final MultiStateHardwareLight light = mHardwareSurface
          .createMultiStateHardwareLight(PresonusAtom::lightStateToColor);
@@ -723,9 +723,9 @@ public class PresonusAtom extends ControllerExtension
       return button;
    }
 
-   private HardwareButton createButton(final int controlNumber)
+   private HardwareButton createButton(final String id, final int controlNumber)
    {
-      final HardwareButton button = mHardwareSurface.createHardwareButton();
+      final HardwareButton button = mHardwareSurface.createHardwareButton(id);
       final MidiExpressions midiExpressions = getHost().midiExpressions();
 
       button.pressedAction().setActionMatcher(mMidiIn
@@ -737,7 +737,7 @@ public class PresonusAtom extends ControllerExtension
 
    private void createPadButton(final int index)
    {
-      final HardwareButton pad = mHardwareSurface.createHardwareButton();
+      final HardwareButton pad = mHardwareSurface.createHardwareButton("pad" + (index + 1));
       pad.setLabel("Pad " + (index + 1));
 
       final int note = 0x24 + index;
@@ -799,7 +799,7 @@ public class PresonusAtom extends ControllerExtension
 
    private void createEncoder(final int index)
    {
-      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
+      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob("encoder" + (index + 1));
       encoder.setLabel(String.valueOf(index + 1));
       encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index));
       encoder.setSensitivity(2.5);

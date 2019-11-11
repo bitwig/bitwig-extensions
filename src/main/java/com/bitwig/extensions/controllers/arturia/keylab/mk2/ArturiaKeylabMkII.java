@@ -216,7 +216,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       for (int i = 0; i < 9; i++)
       {
-         mEncoders[i] = createEncoder(0x10 + i);
+         mEncoders[i] = createEncoder("encoder" + (i + 1), 0x10 + i);
       }
 
       for (int i = 0; i < 9; i++)
@@ -224,9 +224,9 @@ public class ArturiaKeylabMkII extends ControllerExtension
          mFaders[i] = createFader(i);
       }
 
-      mWheel = createEncoder(0x3C);
+      mWheel = createEncoder("wheel", 0x3C);
 
-      mDisplay = mHardwareSurface.createHardwareTextDisplay(2);
+      mDisplay = mHardwareSurface.createHardwareTextDisplay("display", 2);
       mDisplay.line(0).text().setMaxChars(16);
       mDisplay.line(1).text().setMaxChars(16);
 
@@ -661,9 +661,9 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private Layer mMultiLayer;
 
-   private RelativeHardwareControl createEncoder(final int cc)
+   private RelativeHardwareControl createEncoder(final String id, final int cc)
    {
-      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob();
+      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
 
       encoder.setAdjustValueMatcher(getMidiInPort(1).createRelative2sComplementCCValueMatcher(0, cc));
 
@@ -672,7 +672,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private AbsoluteHardwareControl createFader(final int index)
    {
-      final HardwareSlider fader = mHardwareSurface.createHardwareSlider();
+      final HardwareSlider fader = mHardwareSurface.createHardwareSlider("fader" + (index + 1));
 
       fader.setAdjustValueMatcher(getMidiInPort(1).createAbsolutePitchBendValueMatcher(index));
 
@@ -695,7 +695,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
    private HardwareButton createButton(final ButtonId id)
    {
       final MidiIn midiIn = getHost().getMidiInPort(1);
-      final HardwareButton button = mHardwareSurface.createHardwareButton();
+      final HardwareButton button = mHardwareSurface.createHardwareButton(id.name());
       final MidiExpressions expressions = getHost().midiExpressions();
 
       final String isNoteOn = expressions.createIsNoteOnExpression(id.getChannel(), id.getKey());
