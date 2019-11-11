@@ -33,7 +33,6 @@ import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.LayerGroup;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.util.ValueUtils;
@@ -393,7 +392,7 @@ public class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.activate();
       mTrackLayer.activate();
 
-      DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+      //DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private Layer createLayer(final String name)
