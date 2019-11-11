@@ -408,6 +408,7 @@ public class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.bindToggle(mMasterButton, mMasterLayer);
 
       mDefaultLayer.bind(mDisplayEncoder, mCursorTrack.pan());
+      mDefaultLayer.bindPressed(mDisplayEncoder, mCursorTrack.pan()::reset);
 
       mDefaultLayer.bindPressed(mShiftLeftButton, () -> mShift = true);
       mDefaultLayer.bindReleased(mShiftLeftButton, () -> mShift = false);
@@ -618,6 +619,7 @@ public class PresonusFaderPort extends ControllerExtension
 
          parameter.name().markInterested();
          parameter.displayedValue().markInterested();
+         parameter.value().markInterested();
 
          final Channel channel = mChannels[c];
 
@@ -643,6 +645,10 @@ public class PresonusFaderPort extends ControllerExtension
                   if (channelIndex == 15)
                   {
                      final int rightIndex = mRemoteControls2.selectedPageIndex().get();
+
+                     if (rightIndex < 0)
+                        return "";
+
                      return rightIndex < pageNames.length ? pageNames[rightIndex] : "";
                   }
 
