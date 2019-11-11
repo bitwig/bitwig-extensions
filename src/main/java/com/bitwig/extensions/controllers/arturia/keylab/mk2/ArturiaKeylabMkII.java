@@ -269,7 +269,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mBaseLayer.activate();
 
-      //DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+      // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private void initBaseLayer()
@@ -417,8 +417,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
          final int number = i;
          final BooleanValue isCursor = mCursorTrack.createEqualsValue(mTrackBank.getItemAt(number));
 
-         mBaseLayer.bindPressed(selectId, () -> mRemoteControls.selectedPageIndex().set(number));
-         mBaseLayer.bind(() -> {
+         mMultiLayer.bindPressed(selectId, () -> mCursorTrack.selectChannel(mTrackBank.getItemAt(number)));
+         mMultiLayer.bind(() -> {
             return isCursor.get() ? WHITE : mTrackBank.getItemAt(number).color().get();
          }, selectId);
       }
