@@ -568,7 +568,7 @@ public class PresonusFaderPort extends ControllerExtension
 
    private void onMidi(final ShortMidiMessage data)
    {
-      getHost().println(data.toString());
+      //getHost().println(data.toString());
    }
 
    @Override

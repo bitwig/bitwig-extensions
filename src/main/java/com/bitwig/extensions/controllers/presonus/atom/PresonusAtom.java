@@ -207,7 +207,7 @@ public class PresonusAtom extends ControllerExtension
    /** Called when we receive short MIDI message on port 0. */
    private void onMidi0(final ShortMidiMessage msg)
    {
-      getHost().println(msg.toString());
+      //getHost().println(msg.toString());
    }
 
    private void createHardwareSurface()

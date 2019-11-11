@@ -478,7 +478,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
    /** Called when we receive short MIDI message on port 0. */
    private void onMidi(final ShortMidiMessage msg)
    {
-      getHost().println(msg.toString());
+      //getHost().println(msg.toString());
    }
 
    private void onSysex(final String s)
