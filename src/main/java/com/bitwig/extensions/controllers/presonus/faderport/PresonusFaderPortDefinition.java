@@ -38,11 +38,21 @@ public abstract class PresonusFaderPortDefinition extends ControllerExtensionDef
 
    @Override
    public void listAutoDetectionMidiPortNames(
-      final AutoDetectionMidiPortNamesList list, final PlatformType platformType)
+      final AutoDetectionMidiPortNamesList list,
+      final PlatformType platformType)
    {
-      String[] midiNameList = {"PreSonus FP" + channelCount()};
+      if (platformType == PlatformType.WINDOWS)
+      {
+         final String[] midiNameList = { "PreSonus FP" + channelCount() };
 
-      list.add(midiNameList, midiNameList);
+         list.add(midiNameList, midiNameList);
+      }
+      else if (platformType == PlatformType.LINUX)
+      {
+         final String[] midiNameList = { "PreSonus FP" + channelCount() + " MIDI 1" };
+
+         list.add(midiNameList, midiNameList);
+      }
    }
 
    @Override
