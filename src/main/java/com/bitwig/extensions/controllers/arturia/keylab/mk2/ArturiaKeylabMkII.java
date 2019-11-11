@@ -281,11 +281,17 @@ public class ArturiaKeylabMkII extends ControllerExtension
          mIsRewinding = true;
          repeatRewind();
       });
+      mBaseLayer.bindReleased(ButtonId.REWIND, () -> {
+         mIsRewinding = false;
+      });
       mBaseLayer.bind(() -> mIsRewinding, ButtonId.REWIND);
 
       mBaseLayer.bindPressed(ButtonId.FORWARD, () -> {
          mIsForwarding = true;
          repeatForward();
+      });
+      mBaseLayer.bindReleased(ButtonId.FORWARD, () -> {
+         mIsForwarding = false;
       });
       mBaseLayer.bind(() -> mIsForwarding, ButtonId.FORWARD);
 

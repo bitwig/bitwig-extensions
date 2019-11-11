@@ -29,6 +29,11 @@ class Layer extends com.bitwig.extensions.framework.Layer
       bindPressed(button(buttonId), action);
    }
 
+   public void bindReleased(final ButtonId buttonId, final Runnable action)
+   {
+      bindReleased(button(buttonId), action);
+   }
+
    public void bindToggle(final ButtonId buttonId, final SettableBooleanValue value)
    {
       bindToggle(button(buttonId), value);
