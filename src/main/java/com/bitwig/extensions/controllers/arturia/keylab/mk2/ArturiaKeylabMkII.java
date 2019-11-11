@@ -727,6 +727,10 @@ public class ArturiaKeylabMkII extends ControllerExtension
                final int green = colorPartFromDouble(c.getGreen());
                final int blue = colorPartFromDouble(c.getBlue());
 
+               assert red >= 0 && red <= 127;
+               assert green >= 0 && green <= 127;
+               assert blue >= 0 && blue <= 127;
+
                final byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 16")
                   .addByte(id.getSysexID()).addByte(red).addByte(green).addByte(blue).terminate();
 
@@ -738,7 +742,6 @@ public class ArturiaKeylabMkII extends ControllerExtension
             }
 
             private byte[] mLastSysex;
-
          };
 
          light.state().onUpdateHardware(sendColor);
@@ -795,6 +798,10 @@ public class ArturiaKeylabMkII extends ControllerExtension
       final int red = (state & 0x7F0000) >> 16;
       final int green = (state & 0x7F00) >> 8;
       final int blue = (state & 0x7F);
+
+      assert red >= 0 && red <= 127;
+      assert green >= 0 && green <= 127;
+      assert blue >= 0 && blue <= 127;
 
       return Color.fromRGB(red / 127.0, green / 127.0, blue / 127.0);
    }
