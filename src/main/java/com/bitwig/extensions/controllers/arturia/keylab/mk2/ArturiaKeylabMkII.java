@@ -792,7 +792,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       if (c == null) // Off
          return 0;
 
-      return 0x7F000000 | colorPartFromDouble(c.getRed()) << 16 | colorPartFromDouble(c.getGreen()) << 8
+      return colorPartFromDouble(c.getRed()) << 16 | colorPartFromDouble(c.getGreen()) << 8
          | colorPartFromDouble(c.getBlue());
    }
 
@@ -814,7 +814,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private static int colorPartFromDouble(final double x)
    {
-      return Math.max(0, Math.min((int)(127.0 * x), 127));
+      return Math.max(0, Math.min((int)(31.0 * x), 31));
    }
 
    private void clearDisplay()
