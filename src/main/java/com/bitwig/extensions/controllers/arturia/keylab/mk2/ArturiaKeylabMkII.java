@@ -662,6 +662,8 @@ public class ArturiaKeylabMkII extends ControllerExtension
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
 
       encoder.setAdjustValueMatcher(getMidiInPort(1).createRelativeSignedBitCCValueMatcher(0, cc));
+      encoder.setSensitivity(128.0 / 100.0);
+      encoder.setStepSize(1 / 100.0);
 
       return encoder;
    }
@@ -716,7 +718,11 @@ public class ArturiaKeylabMkII extends ControllerExtension
             @Override
             public void accept(final int state)
             {
-               final Color c = stateToColor(state);
+               Color c = stateToColor(state);
+
+               if (c == null)
+                  c = BLACK;
+
                final int red = colorPartFromDouble(c.getRed());
                final int green = colorPartFromDouble(c.getGreen());
                final int blue = colorPartFromDouble(c.getBlue());
@@ -783,6 +789,9 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
    private static Color stateToColor(final int state)
    {
+      if (state == 0)
+         return null;
+
       final int red = (state & 0x7F0000) >> 16;
       final int green = (state & 0x7F00) >> 8;
       final int blue = (state & 0x7F);
