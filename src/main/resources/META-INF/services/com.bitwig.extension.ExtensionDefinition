@@ -1,11 +1,14 @@
-com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab25ControllerExtensionDefinition
-com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab49MkIIControllerExtensionDefinition
-com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab49ControllerExtensionDefinition
-com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab61MkIIControllerExtensionDefinition
-com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab61ControllerExtensionDefinition
-com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylab88ControllerExtensionDefinition
-com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylabEssential49ControllerExtensionDefinition
-com.bitwig.extensions.controllers.arturia.keylab.ArturiaKeylabEssential61ControllerExtensionDefinition
+com.bitwig.extensions.controllers.akai.advance.AdvanceControllerExtensionDefinition
+com.bitwig.extensions.controllers.akai.apc40_mkii.APC40MKIIControllerExtensionDefinition
+
+com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab25ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.mk2.ArturiaKeylab49MkIIControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab49ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.mk2.ArturiaKeylab61MkIIControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab61ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab88ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.essential.ArturiaKeylabEssential49ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.essential.ArturiaKeylabEssential61ControllerExtensionDefinition
 
 com.bitwig.extensions.controllers.bajaao.EDrumControllerExtensionDefinition
 
@@ -14,6 +17,8 @@ com.bitwig.extensions.controllers.devine.EzCreatorKeyDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorPadDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorPlusDefinition
 
+com.bitwig.extensions.controllers.keith_mcmillen.QuNexusDefinition
+
 com.bitwig.extensions.controllers.midiplus.X2MiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X3MiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X4MiniControllerExtensionDefinition
@@ -21,9 +26,14 @@ com.bitwig.extensions.controllers.midiplus.X6MiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X6ProControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X8ProControllerExtensionDefinition
 
-com.bitwig.extensions.controllers.presonus.PresonusAtomDefinition
-com.bitwig.extensions.controllers.presonus.PresonusFaderPort8Definition
-com.bitwig.extensions.controllers.presonus.PresonusFaderPort16Definition
+com.bitwig.extensions.controllers.novation.launch_control_xl.LaunchControlXlControllerExtensionDefinition
+com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControllerExtensionDefinition
+com.bitwig.extensions.controllers.novation.launchkey_mk2.LaunchkeyMk2ControllerExtensionDefinition
+com.bitwig.extensions.controllers.novation.launchpad_pro.LaunchpadProControllerExtensionDefinition
+
+com.bitwig.extensions.controllers.presonus.atom.PresonusAtomDefinition
+com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort8Definition
+com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort16Definition
 
 com.bitwig.extensions.controllers.roger_linn_design.LinnStrumentDefinition
 
@@ -32,3 +42,5 @@ com.bitwig.extensions.controllers.roli.SeaboardRISEDefinition
 com.bitwig.extensions.controllers.vault.Apex25ControllerDefinition
 com.bitwig.extensions.controllers.vault.Apex49ControllerDefinition
 com.bitwig.extensions.controllers.vault.Apex61ControllerDefinition
+
+com.bitwig.extension.controllers.studiologic.SLMixfaceExtensionDefinition
