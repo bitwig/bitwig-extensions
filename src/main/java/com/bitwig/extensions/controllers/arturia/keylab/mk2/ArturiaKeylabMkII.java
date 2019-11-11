@@ -194,18 +194,18 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       sendSysex("F0 00 20 6B 7F 42 05 02 F7"); // Set to DAW mode
 
+      mTrackBank.followCursorTrack(mCursorTrack);
+
+      initLayers();
+
+      updateIndications();
+
       mPopupBrowser.exists().addValueObserver(exists -> {
          if (exists)
             mBrowserLayer.activate();
          else
             mBrowserLayer.deactivate();
       });
-
-      mTrackBank.followCursorTrack(mCursorTrack);
-
-      initLayers();
-
-      updateIndications();
    }
 
    private void initHardwareSurface()

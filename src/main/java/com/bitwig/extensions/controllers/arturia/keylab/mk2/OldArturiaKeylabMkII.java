@@ -777,8 +777,8 @@ public class OldArturiaKeylabMkII extends LayeredControllerExtension
    private Display mDisplay;
 
    private Action mSaveAction;
-   private Layer mBaseLayer;
-   private Layer mBrowserLayer;
+   private Layer mBaseLayer = new Layer();
+   private Layer mBrowserLayer = new Layer();
    private TrackBank mTrackBank;
    private MasterTrack mMasterTrack;
    private boolean mDawMode = true;
