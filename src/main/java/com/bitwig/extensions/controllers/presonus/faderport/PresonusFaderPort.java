@@ -33,6 +33,7 @@ import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.LayerGroup;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.util.ValueUtils;
@@ -113,6 +114,8 @@ public class PresonusFaderPort extends ControllerExtension
 
    private HardwareButton mAutomationTouchButton;
 
+   private HardwareButton mFastForwardButton;
+
    public PresonusFaderPort(final PresonusFaderPortDefinition definition, final ControllerHost host)
    {
       super(definition, host);
@@ -186,6 +189,7 @@ public class PresonusFaderPort extends ControllerExtension
       mMetronomeButton = createToggleButton("metronome", 0x3B);
       mLoopButton = createToggleButton("loop", 0x56);
       mRewindButton = createToggleButton("rewind", 0x5B);
+      mFastForwardButton = createToggleButton("fast_forward", 0x5C);
       mClearSoloButton = createToggleButton("clear_solo", 0x01);
       mClearMuteButton = createToggleButton("clear_mute", 0x02);
 
@@ -318,7 +322,10 @@ public class PresonusFaderPort extends ControllerExtension
    {
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
 
-      encoder.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC));
+      encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC));
+
+      encoder.setSensitivity(128.0 / 100.0);
+      encoder.setStepSize(1 / 100.0);
 
       final HardwareButton clickButton = mHardwareSurface.createHardwareButton(id + "_click");
 
@@ -386,7 +393,7 @@ public class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.activate();
       mTrackLayer.activate();
 
-      // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+      DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private Layer createLayer(final String name)
@@ -417,6 +424,7 @@ public class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.bindToggle(mMetronomeButton, mTransport.isMetronomeEnabled());
       mDefaultLayer.bindToggle(mLoopButton, mTransport.isArrangerLoopEnabled());
       mDefaultLayer.bindPressed(mRewindButton, mTransport.rewindAction());
+      mDefaultLayer.bindPressed(mFastForwardButton, mTransport.fastForwardAction());
       mDefaultLayer.bindToggle(mClearSoloButton, mClearSolo, mClearSolo.isEnabled());
       mDefaultLayer.bindToggle(mClearMuteButton, mClearMute, mClearMute.isEnabled());
 
