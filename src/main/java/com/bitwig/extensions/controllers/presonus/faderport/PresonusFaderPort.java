@@ -759,7 +759,7 @@ public class PresonusFaderPort extends ControllerExtension
          if (mArm)
             track.arm().toggle();
          else
-            track.selectInEditor();
+            mCursorTrack.selectChannel(track);
       });
 
       layer.bind((Supplier<Color>)() -> {
