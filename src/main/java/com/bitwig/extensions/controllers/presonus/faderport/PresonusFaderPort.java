@@ -1,11 +1,11 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
-import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
+import com.bitwig.extension.callback.DoubleValueChangedCallback;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Action;
@@ -295,11 +295,17 @@ public class PresonusFaderPort extends ControllerExtension
       fader.endTouchAction().setActionMatcher(
          mMidiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + channel) + " && data2 == 0"));
 
-      final DoubleConsumer moveFader = new DoubleConsumer()
+      fader.isBeingTouched().markInterested();
+      fader.targetValue().markInterested();
+
+      final DoubleValueChangedCallback moveFader = new DoubleValueChangedCallback()
       {
+
          @Override
-         public void accept(final double value)
+         public void valueChanged(final double value)
          {
+            getHost().println("Moving fader to " + value);
+
             final int faderValue = Math.max(0, Math.min(16383, (int)(value * 16384.0)));
 
             if (mLastSentValue != value)
@@ -311,6 +317,8 @@ public class PresonusFaderPort extends ControllerExtension
 
          private int mLastSentValue = -1;
       };
+
+      fader.targetValue().addValueObserver(moveFader);
 
       // TODO: Register move fader callback somehow
 
@@ -392,7 +400,7 @@ public class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.activate();
       mTrackLayer.activate();
 
-      //DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+      // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private Layer createLayer(final String name)
@@ -576,7 +584,7 @@ public class PresonusFaderPort extends ControllerExtension
 
    private void onMidi(final ShortMidiMessage data)
    {
-      //getHost().println(data.toString());
+      // getHost().println(data.toString());
    }
 
    @Override
@@ -707,8 +715,6 @@ public class PresonusFaderPort extends ControllerExtension
          select = createRGBButton("select" + channelNumber, SELECT_IDS[index]);
          motorFader = createMotorFader(index);
          display = new Display(index, mSysexHeader, PresonusFaderPort.this);
-
-         motorFader.isBeingTouched().markInterested();
       }
 
       final HardwareButton solo;
