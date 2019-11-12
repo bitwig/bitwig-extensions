@@ -333,7 +333,7 @@ public class PresonusAtom extends ControllerExtension
          final int row = i / 4;
          final int column = i % 4;
 
-         pad.setBounds(40 + column * 35, 155 - row * 33, 30, 30);
+         pad.setBounds(35 + column * 35, 155 - row * 33, 30, 30);
       }
 
       for (int i = 0; i < 4; i++)
