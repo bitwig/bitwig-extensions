@@ -292,12 +292,34 @@ public class PresonusAtom extends ControllerExtension
 
    private void initControlPositions()
    {
-      final double leftMargin = 10;
-      final double buttonWidth = 15;
+      final double leftMargin = 13;
+      final double buttonWidth = 14;
       final double buttonHeight = 10;
 
       mSetupButton.setBounds(leftMargin, 20, buttonWidth, buttonHeight);
       mSetLoopButton.setBounds(leftMargin, 37, buttonWidth, buttonHeight);
+
+      mEditorButton.setBounds(leftMargin, 60, buttonWidth, buttonHeight);
+      mNudgeQuantizeButton.setBounds(leftMargin, 77, buttonWidth, buttonHeight);
+
+      mShowHideButton.setBounds(leftMargin, 96, buttonWidth, buttonHeight);
+      mPresetPadSelectButton.setBounds(leftMargin, 115, buttonWidth, buttonHeight);
+      mBankButton.setBounds(leftMargin, 132, buttonWidth, buttonHeight);
+
+      mFullLevelButton.setBounds(leftMargin, 145, buttonWidth, buttonHeight);
+      mNoteRepeatButton.setBounds(leftMargin, 160, buttonWidth, buttonHeight);
+
+      mShiftButton.setBounds(15, 175, 12, 9);
+
+      for (int i = 0; i < 16; i++)
+      {
+         final HardwareButton pad = mPadButtons[i];
+
+         final int row = i / 4;
+         final int column = i % 4;
+
+         pad.setBounds(40 + column * 35, 155 - row * 33, 30, 30);
+      }
    }
 
    private void initLayers()
