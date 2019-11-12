@@ -1,4 +1,5 @@
 package com.bitwig.extension.controllers.studiologic;
+
 import java.util.UUID;
 
 import com.bitwig.extension.api.PlatformType;
@@ -69,23 +70,22 @@ public class SLMixfaceExtensionDefinition extends ControllerExtensionDefinition
    }
 
    @Override
-   public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list, final PlatformType platformType)
+   public void listAutoDetectionMidiPortNames(
+      final AutoDetectionMidiPortNamesList list,
+      final PlatformType platformType)
    {
       if (platformType == PlatformType.WINDOWS)
       {
-         // TODO: Set the correct names of the ports for auto detection on Windows platform here
-         // and uncomment this when port names are correct.
-         // list.add(new String[]{"Input Port 0"}, new String[]{"Output Port 0"});
+         list.add(new String[] { "MIDIIN3 (SLMIXUSB)" }, new String[] { "MIDIOUT3 (SLMIXUSB)" });
       }
       else if (platformType == PlatformType.MAC)
       {
-         // TODO: Set the correct names of the ports for auto detection on Windows platform here
-         // and uncomment this when port names are correct.
-         // list.add(new String[]{"Input Port 0"}, new String[]{"Output Port 0"});
+         list.add(new String[] { "SLMIXUSB Port 3" }, new String[] { "SLMIXUSB Port 3" });
+         list.add(new String[] { "SLMIXUSB Anschluss 3" }, new String[] { "SLMIXUSB Anschluss 3" });
       }
       else if (platformType == PlatformType.LINUX)
       {
-         list.add(new String[]{"SLMIXUSB MIDI 3"}, new String[]{"SLMIXUSB MIDI 3"});
+         list.add(new String[] { "SLMIXUSB MIDI 3" }, new String[] { "SLMIXUSB MIDI 3" });
       }
    }
 

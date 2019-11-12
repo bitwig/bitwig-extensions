@@ -53,6 +53,12 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
 
          list.add(midiNameList, midiNameList);
       }
+      else if (platformType == PlatformType.MAC)
+      {
+         final String[] midiNameList = { "ATOM" };
+
+         list.add(midiNameList, midiNameList);
+      }
    }
 
    @Override

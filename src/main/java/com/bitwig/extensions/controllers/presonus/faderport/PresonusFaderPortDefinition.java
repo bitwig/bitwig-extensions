@@ -53,6 +53,12 @@ public abstract class PresonusFaderPortDefinition extends ControllerExtensionDef
 
          list.add(midiNameList, midiNameList);
       }
+      else if (platformType == PlatformType.MAC)
+      {
+         final String[] midiNameList = { "PreSonus FP" + channelCount() + " Port 1" };
+
+         list.add(midiNameList, midiNameList);
+      }
    }
 
    @Override
