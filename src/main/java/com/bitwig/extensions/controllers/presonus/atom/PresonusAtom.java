@@ -287,10 +287,10 @@ public class PresonusAtom extends ControllerExtension
          createEncoder(i);
       }
 
-      initControlPositions();
+      initHardwareLayout();
    }
 
-   private void initControlPositions()
+   private void initHardwareLayout()
    {
       final double leftMargin = 13;
       final double buttonWidth = 14;
@@ -319,6 +319,13 @@ public class PresonusAtom extends ControllerExtension
          final int column = i % 4;
 
          pad.setBounds(40 + column * 35, 155 - row * 33, 30, 30);
+      }
+
+      for (int i = 0; i < 4; i++)
+      {
+         final RelativeHardwareKnob encoder = mEncoders[i];
+
+         encoder.setBounds(40 + i * 35, 20, 25, 25);
       }
    }
 
