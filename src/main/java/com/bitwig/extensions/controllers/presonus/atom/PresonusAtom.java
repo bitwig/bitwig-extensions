@@ -286,6 +286,18 @@ public class PresonusAtom extends ControllerExtension
       {
          createEncoder(i);
       }
+
+      initControlPositions();
+   }
+
+   private void initControlPositions()
+   {
+      final double leftMargin = 10;
+      final double buttonWidth = 15;
+      final double buttonHeight = 10;
+
+      mSetupButton.setBounds(leftMargin, 20, buttonWidth, buttonHeight);
+      mSetLoopButton.setBounds(leftMargin, 37, buttonWidth, buttonHeight);
    }
 
    private void initLayers()
