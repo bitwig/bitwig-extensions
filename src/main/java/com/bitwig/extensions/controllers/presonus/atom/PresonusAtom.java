@@ -295,6 +295,7 @@ public class PresonusAtom extends ControllerExtension
       final double leftMargin = 13;
       final double buttonWidth = 14;
       final double buttonHeight = 10;
+      final double buttonGap = 15;
 
       mSetupButton.setBounds(leftMargin, 20, buttonWidth, buttonHeight);
       mSetLoopButton.setBounds(leftMargin, 37, buttonWidth, buttonHeight);
@@ -310,6 +311,20 @@ public class PresonusAtom extends ControllerExtension
       mNoteRepeatButton.setBounds(leftMargin, 160, buttonWidth, buttonHeight);
 
       mShiftButton.setBounds(15, 175, 12, 9);
+
+      final double rigtButtonLeftEdge = 175;
+
+      mUpButton.setBounds(rigtButtonLeftEdge, 20, buttonWidth, buttonHeight);
+      mDownButton.setBounds(rigtButtonLeftEdge, 37, buttonWidth, buttonHeight);
+      mLeftButton.setBounds(rigtButtonLeftEdge, 50, buttonWidth, buttonHeight);
+      mRightButton.setBounds(rigtButtonLeftEdge, 65, buttonWidth, buttonHeight);
+      mSelectButton.setBounds(rigtButtonLeftEdge, 80, buttonWidth, buttonHeight);
+      mZoomButton.setBounds(rigtButtonLeftEdge, 95, buttonWidth, buttonHeight);
+
+      mClickCountInButton.setBounds(rigtButtonLeftEdge, 128, buttonWidth, buttonHeight);
+      mRecordSaveButton.setBounds(rigtButtonLeftEdge, 128 + buttonGap, buttonWidth, buttonHeight);
+      mPlayLoopButton.setBounds(rigtButtonLeftEdge, 128 + buttonHeight + buttonGap, buttonWidth, buttonHeight);
+      mStopUndoButton.setBounds(rigtButtonLeftEdge, 128 + 2 * (buttonHeight + buttonGap), buttonWidth, buttonHeight);
 
       for (int i = 0; i < 16; i++)
       {
