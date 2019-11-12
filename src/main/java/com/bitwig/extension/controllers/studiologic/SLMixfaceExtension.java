@@ -14,6 +14,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -27,7 +28,6 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extension.controller.api.TriggerAction;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -350,7 +350,7 @@ public class SLMixfaceExtension extends ControllerExtension
             final HardwareButton button = buttons[i];
             final ClipLauncherSlotOrScene slotOrScene = slotsOrScenes.getItemAt(sceneIndex);
 
-            final TriggerAction launchAction = slotOrScene.launchAction();
+            final HardwareActionBindable launchAction = slotOrScene.launchAction();
 
             layer.bindPressed(button, launchAction);
 

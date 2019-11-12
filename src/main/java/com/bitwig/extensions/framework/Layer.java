@@ -30,7 +30,6 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.StringHardwareProperty;
 import com.bitwig.extension.controller.api.StringValue;
-import com.bitwig.extension.controller.api.TriggerAction;
 
 /**
  * A layer defines a number of bindings between a source object and a target that should be active when the
@@ -66,17 +65,17 @@ public class Layer
       return Collections.unmodifiableList(mBindings);
    }
 
-   public TriggerAction getToggleAction()
+   public HardwareActionBindable getToggleAction()
    {
       return mToggleAction;
    }
 
-   public TriggerAction getActivateAction()
+   public HardwareActionBindable getActivateAction()
    {
       return mActivateAction;
    }
 
-   public TriggerAction getDeactivateAction()
+   public HardwareActionBindable getDeactivateAction()
    {
       return mDeactivateAction;
    }
@@ -138,8 +137,8 @@ public class Layer
 
    public RelativeHardwareControlBinding bind(
       final RelativeHardwareControl source,
-      final TriggerAction stepForwardsAction,
-      final TriggerAction stepBackwardsAction)
+      final HardwareActionBindable stepForwardsAction,
+      final HardwareActionBindable stepBackwardsAction)
    {
       final RelativeHardwarControlBindable target = getLayers().getControllerExtension().getHost()
          .createRelativeHardwareControlStepTarget(stepForwardsAction, stepBackwardsAction);
@@ -384,7 +383,7 @@ public class Layer
 
    private final String mName;
 
-   private final TriggerAction mToggleAction, mActivateAction, mDeactivateAction;
+   private final HardwareActionBindable mToggleAction, mActivateAction, mDeactivateAction;
 
    private LayerGroup mLayerGroup;
 }

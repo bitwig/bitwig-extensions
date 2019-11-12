@@ -4,10 +4,10 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
-import com.bitwig.extension.controller.api.TriggerAction;
 import com.bitwig.extensions.framework.Layers;
 
 class Layer extends com.bitwig.extensions.framework.Layer
@@ -19,7 +19,7 @@ class Layer extends com.bitwig.extensions.framework.Layer
       mExtension = (ArturiaKeylabMkII)layers.getControllerExtension();
    }
 
-   public void bindPressed(final ButtonId buttonId, final TriggerAction action)
+   public void bindPressed(final ButtonId buttonId, final HardwareActionBindable action)
    {
       bindPressed(button(buttonId), action);
    }
@@ -46,7 +46,7 @@ class Layer extends com.bitwig.extensions.framework.Layer
 
    public void bindToggle(
       final ButtonId button,
-      final TriggerAction pressedAction,
+      final HardwareActionBindable pressedAction,
       final BooleanSupplier isLightOnOffSupplier)
    {
       bindToggle(button(button), pressedAction, isLightOnOffSupplier);
