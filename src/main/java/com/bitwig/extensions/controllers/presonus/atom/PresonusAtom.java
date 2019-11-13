@@ -288,6 +288,8 @@ public class PresonusAtom extends ControllerExtension
       }
 
       initHardwareLayout();
+
+      initHardwareColors();
    }
 
    private void initHardwareLayout()
@@ -342,6 +344,28 @@ public class PresonusAtom extends ControllerExtension
 
          encoder.setBounds(40 + i * 35, 20, 25, 25);
       }
+   }
+
+   private void initHardwareColors()
+   {
+      final Color GREEN = Color.fromRGB(0, 1, 0);
+
+      setLightColor(mPlayLoopButton, GREEN);
+   }
+
+   private void setLightColor(final HardwareButton button, final Color on)
+   {
+      final Color off = Color.mix(on, Color.blackColor(), 0.5);
+
+      setLightColor(button, on, off);
+   }
+
+   private void setLightColor(final HardwareButton button, final Color on, final Color off)
+   {
+      final OnOffHardwareLight light = (OnOffHardwareLight)button.backgroundLight();
+
+      light.setOnColor(on);
+      light.setOffColor(off);
    }
 
    private void initLayers()
