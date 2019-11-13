@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
+import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
@@ -92,6 +93,8 @@ public class PresonusAtom extends ControllerExtension
    private static final Color RED = Color.fromRGB(1, 0, 0);
 
    private static final Color DIM_RED = Color.fromRGB(0.3, 0.0, 0.0);
+
+   private static final Color MULTI_STATE_LIGHT_OFF = Color.fromRGB(0.6, 0.6, 0.6);
 
    public PresonusAtom(final PresonusAtomDefinition definition, final ControllerHost host)
    {
@@ -207,7 +210,7 @@ public class PresonusAtom extends ControllerExtension
    /** Called when we receive short MIDI message on port 0. */
    private void onMidi0(final ShortMidiMessage msg)
    {
-      //getHost().println(msg.toString());
+      // getHost().println(msg.toString());
    }
 
    private void createHardwareSurface()
@@ -297,36 +300,52 @@ public class PresonusAtom extends ControllerExtension
       final double leftMargin = 13;
       final double buttonWidth = 14;
       final double buttonHeight = 10;
-      final double buttonGap = 15;
+      final double buttonGap = 6;
+      final double buttonTop = 20;
+      final double shortButtonSpacing = buttonHeight + buttonGap;
+      final double editorButtonTop = 60;
+      final double showHideTop = 96;
+      final double fullLevelTop = 145;
 
-      mSetupButton.setBounds(leftMargin, 20, buttonWidth, buttonHeight);
-      mSetLoopButton.setBounds(leftMargin, 37, buttonWidth, buttonHeight);
+      mSetupButton.setBounds(leftMargin, buttonTop, buttonWidth, buttonHeight);
+      mSetLoopButton.setBounds(leftMargin, buttonTop + shortButtonSpacing, buttonWidth, buttonHeight);
 
-      mEditorButton.setBounds(leftMargin, 60, buttonWidth, buttonHeight);
-      mNudgeQuantizeButton.setBounds(leftMargin, 77, buttonWidth, buttonHeight);
+      mEditorButton.setBounds(leftMargin, editorButtonTop, buttonWidth, buttonHeight);
+      mNudgeQuantizeButton.setBounds(leftMargin, editorButtonTop + shortButtonSpacing, buttonWidth,
+         buttonHeight);
 
-      mShowHideButton.setBounds(leftMargin, 96, buttonWidth, buttonHeight);
-      mPresetPadSelectButton.setBounds(leftMargin, 115, buttonWidth, buttonHeight);
-      mBankButton.setBounds(leftMargin, 132, buttonWidth, buttonHeight);
+      mShowHideButton.setBounds(leftMargin, showHideTop, buttonWidth, buttonHeight);
+      mPresetPadSelectButton.setBounds(leftMargin, showHideTop + shortButtonSpacing, buttonWidth,
+         buttonHeight);
+      mBankButton.setBounds(leftMargin, showHideTop + shortButtonSpacing * 2, buttonWidth, buttonHeight);
 
-      mFullLevelButton.setBounds(leftMargin, 145, buttonWidth, buttonHeight);
-      mNoteRepeatButton.setBounds(leftMargin, 160, buttonWidth, buttonHeight);
+      mFullLevelButton.setBounds(leftMargin, fullLevelTop, buttonWidth, buttonHeight);
+      mNoteRepeatButton.setBounds(leftMargin, fullLevelTop + shortButtonSpacing, buttonWidth, buttonHeight);
 
-      mShiftButton.setBounds(15, 175, 12, 9);
+      mShiftButton.setBounds(leftMargin + (buttonWidth - 12) / 2, 175, 12, 9);
 
       final double rigtButtonLeftEdge = 175;
 
-      mUpButton.setBounds(rigtButtonLeftEdge, 20, buttonWidth, buttonHeight);
-      mDownButton.setBounds(rigtButtonLeftEdge, 37, buttonWidth, buttonHeight);
-      mLeftButton.setBounds(rigtButtonLeftEdge, 50, buttonWidth, buttonHeight);
-      mRightButton.setBounds(rigtButtonLeftEdge, 65, buttonWidth, buttonHeight);
-      mSelectButton.setBounds(rigtButtonLeftEdge, 80, buttonWidth, buttonHeight);
-      mZoomButton.setBounds(rigtButtonLeftEdge, 95, buttonWidth, buttonHeight);
+      mUpButton.setBounds(rigtButtonLeftEdge, buttonTop, buttonWidth, buttonHeight);
+      mDownButton.setBounds(rigtButtonLeftEdge, buttonTop + shortButtonSpacing, buttonWidth, buttonHeight);
+      mLeftButton.setBounds(rigtButtonLeftEdge, buttonTop + shortButtonSpacing * 2, buttonWidth,
+         buttonHeight);
+      mRightButton.setBounds(rigtButtonLeftEdge, buttonTop + shortButtonSpacing * 3, buttonWidth,
+         buttonHeight);
+      mSelectButton.setBounds(rigtButtonLeftEdge, buttonTop + shortButtonSpacing * 4, buttonWidth,
+         buttonHeight);
+      mZoomButton.setBounds(rigtButtonLeftEdge, buttonTop + shortButtonSpacing * 5, buttonWidth,
+         buttonHeight);
 
-      mClickCountInButton.setBounds(rigtButtonLeftEdge, 128, buttonWidth, buttonHeight);
-      mRecordSaveButton.setBounds(rigtButtonLeftEdge, 128 + buttonGap, buttonWidth, buttonHeight);
-      mPlayLoopButton.setBounds(rigtButtonLeftEdge, 128 + buttonHeight + buttonGap, buttonWidth, buttonHeight);
-      mStopUndoButton.setBounds(rigtButtonLeftEdge, 128 + 2 * (buttonHeight + buttonGap), buttonWidth, buttonHeight);
+      final double clickCountInTop = 125;
+
+      mClickCountInButton.setBounds(rigtButtonLeftEdge, clickCountInTop, buttonWidth, buttonHeight);
+      mRecordSaveButton.setBounds(rigtButtonLeftEdge, clickCountInTop + shortButtonSpacing, buttonWidth,
+         buttonHeight);
+      mPlayLoopButton.setBounds(rigtButtonLeftEdge, clickCountInTop + shortButtonSpacing * 2, buttonWidth,
+         buttonHeight);
+      mStopUndoButton.setBounds(rigtButtonLeftEdge, clickCountInTop + shortButtonSpacing * 3, buttonWidth,
+         buttonHeight);
 
       for (int i = 0; i < 16; i++)
       {
@@ -371,7 +390,6 @@ public class PresonusAtom extends ControllerExtension
 
       setLightColor(mShowHideButton, ORANGE);
 
-
       setLightColor(mFullLevelButton, RED);
       setLightColor(mNoteRepeatButton, RED);
 
@@ -411,8 +429,8 @@ public class PresonusAtom extends ControllerExtension
       initNoteRepeatLayer();
       initNoteRepeatShiftLayer();
 
-//      Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-//      debugLayer.activate();
+      // Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+      // debugLayer.activate();
    }
 
    private void initBaseLayer()
@@ -819,7 +837,7 @@ public class PresonusAtom extends ControllerExtension
       final MultiStateHardwareLight light = mHardwareSurface
          .createMultiStateHardwareLight(PresonusAtom::lightStateToColor);
 
-      light.state().onUpdateHardware(state -> sendLightState(0xB0, controlNumber, state));
+      light.state().onUpdateHardware(new LightStateSender(0xB0, controlNumber));
 
       light.setColorToStateFunction(PresonusAtom::lightColorToState);
 
@@ -845,6 +863,7 @@ public class PresonusAtom extends ControllerExtension
    {
       final HardwareButton pad = mHardwareSurface.createHardwareButton("pad" + (index + 1));
       pad.setLabel("Pad " + (index + 1));
+      pad.setLabelColor(BLACK);
 
       final int note = 0x24 + index;
       pad.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
@@ -855,7 +874,7 @@ public class PresonusAtom extends ControllerExtension
       final MultiStateHardwareLight light = mHardwareSurface
          .createMultiStateHardwareLight(PresonusAtom::lightStateToColor);
 
-      light.state().onUpdateHardware(state -> sendLightState(0x90, 0x24 + index, state));
+      light.state().onUpdateHardware(new LightStateSender(0x90, 0x24 + index));
 
       light.setColorToStateFunction(PresonusAtom::lightColorToState);
 
@@ -864,31 +883,48 @@ public class PresonusAtom extends ControllerExtension
       mPadLights[index] = light;
    }
 
-   private void sendLightState(final int statusStart, final int data1, final int state)
+   private class LightStateSender implements IntConsumer
    {
-      final int red = (state & 0x7F0000) >> 16;
-      final int green = (state & 0x7F00) >> 8;
-      final int blue = state & 0x7F;
-
-      final int[] values = new int[4];
-      values[0] = (state & 0x7F000000) >> 24;
-      values[1] = red;
-      values[2] = green;
-      values[3] = blue;
-
-      for (int i = 0; i < 4; i++)
+      protected LightStateSender(final int statusStart, final int data1)
       {
-         // if (values[i] != mLastSent[i])
+         super();
+         mStatusStart = statusStart;
+         mData1 = data1;
+      }
+
+      @Override
+      public void accept(final int state)
+      {
+         final int onState = (state & 0x7F000000) >> 24;
+         final int red = (state & 0x7F0000) >> 16;
+         final int green = (state & 0x7F00) >> 8;
+         final int blue = state & 0x7F;
+
+         mValues[0] = onState;
+         mValues[1] = red;
+         mValues[2] = green;
+         mValues[3] = blue;
+
+         for (int i = 0; i < 4; i++)
          {
-            mMidiOut.sendMidi(statusStart + i, data1, values[i]);
-            // mLastSent[i] = values[i];
+            if (mValues[i] != mLastSent[i])
+            {
+               mMidiOut.sendMidi(mStatusStart + i, mData1, mValues[i]);
+               mLastSent[i] = mValues[i];
+            }
          }
       }
+
+      private final int mStatusStart, mData1;
+
+      private final int[] mLastSent = new int[4];
+
+      private final int[] mValues = new int[4];
    }
 
    private static int lightColorToState(final Color color)
    {
-      if (color == null)
+      if (color == null || color.getAlpha() == 0 || color == MULTI_STATE_LIGHT_OFF)
          return 0;
 
       final int red = colorPartFromFloat(color.getRed());
@@ -905,7 +941,8 @@ public class PresonusAtom extends ControllerExtension
 
    private void createEncoder(final int index)
    {
-      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob("encoder" + (index + 1));
+      final RelativeHardwareKnob encoder = mHardwareSurface
+         .createRelativeHardwareKnob("encoder" + (index + 1));
       encoder.setLabel(String.valueOf(index + 1));
       encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index));
       encoder.setSensitivity(2.5);
@@ -913,11 +950,18 @@ public class PresonusAtom extends ControllerExtension
       mEncoders[index] = encoder;
    }
 
-   private static Color lightStateToColor(final int padState)
+   private static Color lightStateToColor(final int lightState)
    {
-      final int red = (padState & 0xFF0000) >> 16;
-      final int green = (padState & 0xFF00) >> 8;
-      final int blue = (padState & 0xFF);
+      final int onState = (lightState & 0x7F000000) >> 24;
+
+      if (onState == 0)
+      {
+         return MULTI_STATE_LIGHT_OFF;
+      }
+
+      final int red = (lightState & 0xFF0000) >> 16;
+      final int green = (lightState & 0xFF00) >> 8;
+      final int blue = (lightState & 0xFF);
 
       return Color.fromRGB255(red, green, blue);
    }
