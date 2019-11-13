@@ -349,8 +349,33 @@ public class PresonusAtom extends ControllerExtension
    private void initHardwareColors()
    {
       final Color GREEN = Color.fromRGB(0, 1, 0);
+      final Color RED = Color.fromRGB(1, 0, 0);
+      final Color ORANGE = Color.fromRGB(1, 1, 0);
+      final Color BLUE = Color.fromRGB(0, 0, 1);
 
+      setLightColor(mUpButton, ORANGE);
+      setLightColor(mDownButton, ORANGE);
+      setLightColor(mLeftButton, ORANGE);
+      setLightColor(mRightButton, ORANGE);
+      setLightColor(mZoomButton, ORANGE);
+
+      setLightColor(mClickCountInButton, BLUE);
+      setLightColor(mRecordSaveButton, RED);
       setLightColor(mPlayLoopButton, GREEN);
+      setLightColor(mStopUndoButton, ORANGE);
+
+      setLightColor(mSetupButton, ORANGE);
+      setLightColor(mSetLoopButton, ORANGE);
+      setLightColor(mEditorButton, ORANGE);
+      setLightColor(mNudgeQuantizeButton, ORANGE);
+
+      setLightColor(mShowHideButton, ORANGE);
+
+
+      setLightColor(mFullLevelButton, RED);
+      setLightColor(mNoteRepeatButton, RED);
+
+      setLightColor(mShiftButton, ORANGE);
    }
 
    private void setLightColor(final HardwareButton button, final Color on)
