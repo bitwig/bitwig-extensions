@@ -83,6 +83,7 @@ public class SLMixfaceExtension extends ControllerExtension
          panKnob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 2 + i));
          final String panLabel = "Pan" + (i + 1);
          panKnob.setLabel(panLabel);
+         panKnob.setBounds(13 + i * 23, 20, 13, 13);
          mPanKnobs[i] = panKnob;
 
          final HardwareSlider slider = surface.createHardwareSlider("volume" + (i + 1));
