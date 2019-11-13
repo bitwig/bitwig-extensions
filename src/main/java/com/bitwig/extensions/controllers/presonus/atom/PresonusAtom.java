@@ -811,6 +811,7 @@ public class PresonusAtom extends ControllerExtension
       button.pressedAction().setActionMatcher(mMidiIn
          .createActionMatcher(midiExpressions.createIsCCExpression(0, controlNumber) + " && data2 > 0"));
       button.releasedAction().setActionMatcher(mMidiIn.createCCActionMatcher(0, controlNumber, 0));
+      button.setLabelColor(BLACK);
 
       return button;
    }
