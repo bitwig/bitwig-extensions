@@ -220,6 +220,20 @@ public class PresonusFaderPort extends ControllerExtension
 
          mChannels[index] = channel;
       }
+
+      initHardwareLayout();
+   }
+
+   private void initHardwareLayout()
+   {
+      mHardwareSurface.setPhysicalSize(500, 300);
+
+      for (int index = 0; index < mChannelCount; index++)
+      {
+         final Channel channel = mChannels[index];
+
+         channel.motorFader.setBounds(50 + index * 25, 120, 20, 130);
+      }
    }
 
    private HardwareButton createToggleButton(final String id, final int note)
