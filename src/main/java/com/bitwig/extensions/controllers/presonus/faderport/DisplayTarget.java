@@ -1,22 +1,20 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
-import com.bitwig.extensions.oldframework.targets.Target;
-
-public interface DisplayTarget extends Target
+public interface DisplayTarget
 {
    int getBarValue();
 
-   default String getText(int line)
+   default String getText(final int line)
    {
       return "";
    }
 
-   default int getTextAlignment(int line)
+   default int getTextAlignment(final int line)
    {
       return 0;
    }
 
-   default boolean isTextInverted(int line)
+   default boolean isTextInverted(final int line)
    {
       return false;
    }
