@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.midiplus;
 
+import java.util.function.Supplier;
+
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -111,10 +113,12 @@ public class XControllerExtension extends ControllerExtension
       mTrackSelectButtons = new HardwareButton[8];
       for (int i = 0; i < 8; ++i)
       {
+         final int j = i;
          final Track channelToSelect = mTrackBank.getItemAt(i);
          final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + i);
          bt.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 0x18 + i));
-         bt.pressedAction().setBinding(host.createAction(() -> mCursorTrack.selectChannel(channelToSelect), null));
+         bt.pressedAction().setBinding(host.createAction(() -> mCursorTrack.selectChannel(channelToSelect),
+            () -> "Selects the track " + j + " from the track bank."));
          mTrackSelectButtons[i] = bt;
       }
    }
