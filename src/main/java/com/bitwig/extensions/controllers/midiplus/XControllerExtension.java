@@ -15,6 +15,7 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 
@@ -42,11 +43,9 @@ public class XControllerExtension extends ControllerExtension
    public void init()
    {
       final ControllerHost host = getHost();
-      
-      final MidiIn midiIn = host.getMidiInPort(0);
-      midiIn.setMidiCallback(this::onMidi);
-      midiIn.createNoteInput(mKeyboardInputName, "80????", "90????", "b001??", "e0????", "b040??").setShouldConsumeEvents(true);
 
+      final MidiIn midiIn = host.getMidiInPort(0);
+      midiIn.createNoteInput(mKeyboardInputName, "80????", "90????", "b001??", "e0????", "b040??").setShouldConsumeEvents(true);
       if (mNumPads > 0)
          midiIn.createNoteInput(mPadsInputName, "89????", "99????").setShouldConsumeEvents(true);
 
@@ -108,14 +107,15 @@ public class XControllerExtension extends ControllerExtension
       mRecordButton = mHardwareSurface.createHardwareButton("Record");
       mRecordButton.pressedAction().setActionMatcher(midiIn.createNoteOnActionMatcher(0, 0x5F));
       mRecordButton.pressedAction().setBinding(mTransport.recordAction());
-   }
 
-   private void onMidi(final int status, final int data1, final int data2)
-   {
-      if (status == 0xB0)
+      mTrackSelectButtons = new HardwareButton[8];
+      for (int i = 0; i < 8; ++i)
       {
-         if (0x18 <= data1 && data1 <= 0x1F)
-            mCursorTrack.selectChannel(mTrackBank.getItemAt(data1 - 0x18));
+         final Track channelToSelect = mTrackBank.getItemAt(i);
+         final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + i);
+         bt.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 0x18 + i));
+         bt.pressedAction().setBinding(host.createAction(() -> mCursorTrack.selectChannel(channelToSelect), null));
+         mTrackSelectButtons[i] = bt;
       }
    }
 
@@ -157,4 +157,5 @@ public class XControllerExtension extends ControllerExtension
    private HardwareButton mPlayButton;
    private HardwareButton mLoopButton;
    private HardwareButton mRecordButton;
+   private HardwareButton[] mTrackSelectButtons;
 }
