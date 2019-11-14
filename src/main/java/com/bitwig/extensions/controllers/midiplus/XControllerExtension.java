@@ -23,6 +23,8 @@ import com.bitwig.extension.controller.api.Transport;
 
 public class XControllerExtension extends ControllerExtension
 {
+   static final int REQUIRED_API_VERSION = 10;
+
    public XControllerExtension(
       final ControllerExtensionDefinition definition,
       final ControllerHost host,
