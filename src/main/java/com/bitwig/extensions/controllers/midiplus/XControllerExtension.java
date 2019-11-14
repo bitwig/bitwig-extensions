@@ -74,23 +74,46 @@ public class XControllerExtension extends ControllerExtension
       mTrackBank = host.createTrackBank(8, 0, 0, true);
 
       mHardwareSurface = getHost().createHardwareSurface();
+      createMainLayer(host, midiIn);
+   }
 
+   private void createMainLayer(final ControllerHost host, final MidiIn midiIn)
+   {
       mLayers = new Layers(this);
       mMainLayer = new Layer(mLayers, "Main");
       mMainLayer.activate();
 
-      for (int i = 0; i < mNumKnobs; ++i)
-      {
-         final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("Knob-" + i);
-         knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x10 + i));
-         mMainLayer.bind(knob, mRemoteControls.getParameter(i));
-      }
+      createKnobs(midiIn);
+      createCurrentTrackVolumeControl(midiIn);
+      createTransportControls(midiIn);
+      createTrackSelectControls(host, midiIn);
+   }
 
+   private void createCurrentTrackVolumeControl(final MidiIn midiIn)
+   {
       final AbsoluteHardwareKnob cursorTrackVolumeKnob =
          mHardwareSurface.createAbsoluteHardwareKnob("CurstorTrackVolumeKnob");
       cursorTrackVolumeKnob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x07));
       mMainLayer.bind(cursorTrackVolumeKnob, mCursorTrack.volume());
+   }
 
+   private void createTrackSelectControls(final ControllerHost host, final MidiIn midiIn)
+   {
+      for (int i = 0; i < 8; ++i)
+      {
+         final int j = i;
+         final Track channelToSelect = mTrackBank.getItemAt(i);
+         final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + i);
+         bt.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 0x18 + i));
+         final HardwareActionBindable action = host.createAction(
+            () -> mCursorTrack.selectChannel(channelToSelect),
+            () -> "Selects the track " + j + " from the track bank.");
+         mMainLayer.bindPressed(bt, action);
+      }
+   }
+
+   private void createTransportControls(final MidiIn midiIn)
+   {
       final HardwareButton rewindButton = mHardwareSurface.createHardwareButton("Rewind");
       rewindButton.pressedAction().setActionMatcher(midiIn.createNoteOnActionMatcher(0, 0x5A));
       mMainLayer.bindPressed(rewindButton, mTransport.rewindAction());
@@ -114,17 +137,15 @@ public class XControllerExtension extends ControllerExtension
       final HardwareButton recordButton = mHardwareSurface.createHardwareButton("Record");
       recordButton.pressedAction().setActionMatcher(midiIn.createNoteOnActionMatcher(0, 0x5F));
       mMainLayer.bindPressed(recordButton, mTransport.recordAction());
+   }
 
-      for (int i = 0; i < 8; ++i)
+   private void createKnobs(final MidiIn midiIn)
+   {
+      for (int i = 0; i < mNumKnobs; ++i)
       {
-         final int j = i;
-         final Track channelToSelect = mTrackBank.getItemAt(i);
-         final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + i);
-         bt.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 0x18 + i));
-         final HardwareActionBindable action = host.createAction(
-            () -> mCursorTrack.selectChannel(channelToSelect),
-            () -> "Selects the track " + j + " from the track bank.");
-         mMainLayer.bindPressed(bt, action);
+         final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("Knob-" + i);
+         knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x10 + i));
+         mMainLayer.bind(knob, mRemoteControls.getParameter(i));
       }
    }
 
