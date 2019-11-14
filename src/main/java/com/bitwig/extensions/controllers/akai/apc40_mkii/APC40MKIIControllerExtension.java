@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
+import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
@@ -11,6 +12,7 @@ import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareControlType;
+import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -127,6 +129,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private static final int BT_DETAIL_VIEW = 65;
 
    private static final long DOUBLE_MAX_TIME = 250;
+
+   private static final double PHYSICAL_KNOB_WIDTH = 20;
 
    protected APC40MKIIControllerExtension(
       final ControllerExtensionDefinition controllerExtensionDefinition,
@@ -311,19 +315,56 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          sendTrack.exists().markInterested();
       }
 
-      final MidiIn midiIn = host.getMidiInPort(0);
+      mMidiIn = host.getMidiInPort(0);
       mMidiOut = host.getMidiOutPort(0);
 
-      midiIn.setMidiCallback(this::onMidiIn);
-      midiIn.setSysexCallback(this::onSysexIn);
+      mMidiIn.setMidiCallback(this::onMidiIn);
+      mMidiIn.setSysexCallback(this::onSysexIn);
 
       // introduction message
       mMidiOut.sendSysex("F0 7E 7F 06 01 F7");
+
+      createHardwareControls();
+   }
+
+   private void createHardwareControls()
+   {
+      mHardwareSurface = getHost().createHardwareSurface();
+      mHardwareSurface.setPhysicalSize(420, 260);
+
+      createTopKnobs();
+      createDeviceControlKnobs();
+   }
+
+   private void createTopKnobs()
+   {
+      mTopKnobs = new AbsoluteHardwareKnob[8];
+      for (int i = 0; i < 8; ++i)
+      {
+         final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("TopKnob-" + i);
+         knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_TOP_CTL0 + i));
+         knob.setBounds(8 + 32 * i, 8, PHYSICAL_KNOB_WIDTH, PHYSICAL_KNOB_WIDTH);
+
+         mTopKnobs[i] = knob;
+      }
+   }
+
+   private void createDeviceControlKnobs()
+   {
+      mDevControlKnobs = new AbsoluteHardwareKnob[8];
+      for (int i = 0; i < 8; ++i)
+      {
+         final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("DevControl-" + i);
+         knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_DEV_CTL0 + i));
+         knob.setBounds(285 + 32 * (i % 4), 90 + 35 * (i / 4), PHYSICAL_KNOB_WIDTH, PHYSICAL_KNOB_WIDTH);
+
+         mDevControlKnobs[i] = knob;
+      }
    }
 
    private void onSysexIn(final String sysex)
    {
-      // mHost.println("SYSEX IN: " + sysex);
+      getHost().println("SYSEX IN: " + sysex);
 
       // Set the device in the proper mode (Ableton Live Mode 1)
       mMidiOut.sendSysex("F0 47 7F 29 60 00 04 41 02 01 00 F7");
@@ -334,7 +375,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       final int channel = status & 0xF;
       final int msg = status >> 4;
 
-      // getHost().println("MIDI IN, msg: " + msg + " channel: " + channel + ", data1: " + data1 + ", data2: " + data2);
+      getHost().println("MIDI IN, msg: " + msg + " channel: " + channel + ", data1: " + data1 + ", data2: " + data2);
 
       if (msg == MSG_CC)
       {
@@ -1050,6 +1091,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private int mChannelStripNumSends = 4;
 
+   private MidiIn mMidiIn = null;
    private MidiOut mMidiOut = null;
 
    private UserControlBank mUserControls = null;
@@ -1139,4 +1181,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private long mLastBtBankTime;
 
    private SettableBooleanValue mControlSendEffectSetting;
+   private HardwareSurface mHardwareSurface;
+   private AbsoluteHardwareKnob[] mTopKnobs;
+   private AbsoluteHardwareKnob[] mDevControlKnobs;
 }
