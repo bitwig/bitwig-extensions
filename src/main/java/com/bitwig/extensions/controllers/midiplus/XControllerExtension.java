@@ -73,8 +73,7 @@ public class XControllerExtension extends ControllerExtension
 
       mTrackBank = host.createTrackBank(8, 0, 0, true);
 
-      mHardwareSurface = host.createHardwareSurface();
-      createControls();
+      createHardwareControls();
       createLayers();
    }
 
@@ -84,8 +83,11 @@ public class XControllerExtension extends ControllerExtension
       createMainLayer();
    }
 
-   private void createControls()
+   private void createHardwareControls()
    {
+      mHardwareSurface = getHost().createHardwareSurface();
+      mHardwareSurface.setPhysicalSize(400, 160);
+
       createKnobs();
       createCurrentTrackVolumeControl();
       createTransportControls();
@@ -134,6 +136,7 @@ public class XControllerExtension extends ControllerExtension
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + i);
          bt.pressedAction().setActionMatcher(mMidiIn.createCCActionMatcher(0, 0x18 + i));
+         bt.setBounds(10 + i * 30, 60, 20, 8);
          mTrackSelectButtons[i] = bt;
       }
    }
@@ -142,21 +145,27 @@ public class XControllerExtension extends ControllerExtension
    {
       mRewindButton = mHardwareSurface.createHardwareButton("Rewind");
       mRewindButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5A));
+      mRewindButton.setBounds(10, 40, 20, 8);
 
       mForwardButton = mHardwareSurface.createHardwareButton("Forward");
       mForwardButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5B));
+      mForwardButton.setBounds(10 + 30, 40, 20, 8);
 
       mStopButton = mHardwareSurface.createHardwareButton("Stop");
       mStopButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5C));
+      mStopButton.setBounds(10 + 2 * 30, 40, 20, 8);
 
       mPlayButton = mHardwareSurface.createHardwareButton("Play");
       mPlayButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5D));
+      mPlayButton.setBounds(10 + 3 * 30, 40, 20, 8);
 
       mLoopButton = mHardwareSurface.createHardwareButton("Loop");
       mLoopButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5E));
+      mLoopButton.setBounds(10 + 4 * 30, 40, 20, 8);
 
       mRecordButton = mHardwareSurface.createHardwareButton("Record");
       mRecordButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5F));
+      mRecordButton.setBounds(10 + 5 * 30, 40, 20, 8);
    }
 
    private void createKnobs()
@@ -166,6 +175,8 @@ public class XControllerExtension extends ControllerExtension
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("Knob-" + i);
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, 0x10 + i));
+         knob.setLabel("T" + (i + 1));
+         knob.setBounds(10 + i * (20 + 25), 10, 20, 20);
          mKnobs[i] = knob;
       }
    }
