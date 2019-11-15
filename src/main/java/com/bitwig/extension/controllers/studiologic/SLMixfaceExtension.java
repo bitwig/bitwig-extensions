@@ -105,7 +105,7 @@ public class SLMixfaceExtension extends ControllerExtension
          final String armLabel = "Arm " + (i + 1);
          armButton.setLabel(armLabel);
          armButton.setBounds(x, 110, 13, 13);
-         final OnOffHardwareLight armBackgroundLight = surface.createOnOffHardwareLight();
+         final OnOffHardwareLight armBackgroundLight = surface.createOnOffHardwareLight("arm_light" + (i + 1));
 
          final int j = i;
 
@@ -127,7 +127,7 @@ public class SLMixfaceExtension extends ControllerExtension
          final String muteLabel = "Mute " + (i + 1);
          muteButton.setLabel(muteLabel);
          muteButton.setBounds(x, 126, 13, 13);
-         final OnOffHardwareLight muteBackgroundLight = surface.createOnOffHardwareLight();
+         final OnOffHardwareLight muteBackgroundLight = surface.createOnOffHardwareLight("mute_light" + (i + 1));
 
          muteBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, muteCC, value ? 127 : 0);
@@ -146,7 +146,7 @@ public class SLMixfaceExtension extends ControllerExtension
          final String soloLabel = "Solo " + (i + 1);
          soloButton.setLabel(soloLabel);
          soloButton.setBounds(x, 142, 13, 13);
-         final OnOffHardwareLight soloBackgroundLight = surface.createOnOffHardwareLight();
+         final OnOffHardwareLight soloBackgroundLight = surface.createOnOffHardwareLight("solo_light" + (i + 1));
 
          soloBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, soloCC, value ? 127 : 0);
@@ -165,7 +165,7 @@ public class SLMixfaceExtension extends ControllerExtension
          final String selectLabel = "Select " + (i + 1);
          selectButton.setLabel(selectLabel);
          selectButton.setBounds(x, 158, 13, 13);
-         final OnOffHardwareLight selectBackgroundLight = surface.createOnOffHardwareLight();
+         final OnOffHardwareLight selectBackgroundLight = surface.createOnOffHardwareLight("select_light" + (i + 1));
 
          selectBackgroundLight.isOn().onUpdateHardware(value -> {
             sendCC(15, selectCC, value ? 127 : 0);
@@ -189,7 +189,7 @@ public class SLMixfaceExtension extends ControllerExtension
          + midiExpressions.createIsCCValueExpression(15, 33, 127);
       mPlayButton.pressedAction().setActionMatcher(midiIn.createActionMatcher(playPressedExpression));
       mPlayButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 45, 0));
-      final OnOffHardwareLight playLight = surface.createOnOffHardwareLight();
+      final OnOffHardwareLight playLight = surface.createOnOffHardwareLight("play_light");
       playLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 33, value ? 127 : 0);
       });
@@ -200,7 +200,7 @@ public class SLMixfaceExtension extends ControllerExtension
       mRecordButton.setBounds(242, 93, 12, 8);
       mRecordButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 127));
       mRecordButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
-      final OnOffHardwareLight recordLight = surface.createOnOffHardwareLight();
+      final OnOffHardwareLight recordLight = surface.createOnOffHardwareLight("record_light");
       recordLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 34, value ? 127 : 0);
       });
@@ -210,7 +210,7 @@ public class SLMixfaceExtension extends ControllerExtension
       mModeButton.setLabel("Mode");
       mModeButton.setBounds(242, 78, 12, 8);
       mModeButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 39, 127));
-      final OnOffHardwareLight modeLight = surface.createOnOffHardwareLight();
+      final OnOffHardwareLight modeLight = surface.createOnOffHardwareLight("mode_light");
       modeLight.isOn().onUpdateHardware(value -> {
          sendCC(15, 39, value ? 127 : 0);
       });
