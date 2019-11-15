@@ -23,7 +23,7 @@ public class DebugUtilities
    {
       final ControllerHost host = layer.getLayers().getControllerExtension().getHost();
 
-      for (final HardwareControl control : hardwareSurface.getHardwareControls())
+      for (final HardwareControl control : hardwareSurface.hardwareControls())
       {
          String controlName = control.getId();
 
