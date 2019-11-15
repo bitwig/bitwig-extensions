@@ -47,17 +47,20 @@ public class Layers
          {
             for (final Binding binding : layer.mBindings)
             {
-               final Object source = binding.getExclusivityObject();
-
-               for (final Iterator<Binding> i = mActiveBindings.iterator(); i.hasNext();)
+               if (layer.shouldReplaceBindingsInLayersBelow())
                {
-                  final Binding activeBinding = i.next();
+                  final Object source = binding.getExclusivityObject();
 
-                  if (Objects.equals(activeBinding.getExclusivityObject(), source)
-                     && activeBinding.getLayer() != layer)
+                  for (final Iterator<Binding> i = mActiveBindings.iterator(); i.hasNext();)
                   {
-                     i.remove();
-                     activeBinding.setIsActive(false);
+                     final Binding activeBinding = i.next();
+
+                     if (Objects.equals(activeBinding.getExclusivityObject(), source)
+                        && activeBinding.getLayer() != layer)
+                     {
+                        i.remove();
+                        activeBinding.setIsActive(false);
+                     }
                   }
                }
 
@@ -94,15 +97,15 @@ public class Layers
       return mGlobalSensitivity;
    }
 
-   public void setGlobalSensitivity(double value)
+   public void setGlobalSensitivity(final double value)
    {
       if (value != mGlobalSensitivity)
       {
          mGlobalSensitivity = value;
 
-         for (Layer layer : mLayers)
+         for (final Layer layer : mLayers)
          {
-            for (Binding binding : layer.getBindings())
+            for (final Binding binding : layer.getBindings())
             {
                if (binding instanceof BindingWithSensitivity)
                   ((BindingWithSensitivity)binding).setGlobalSensitivity(value);
