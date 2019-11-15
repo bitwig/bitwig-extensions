@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
+import com.bitwig.extension.callback.DoubleValueChangedCallback;
+import com.bitwig.extension.callback.IntegerValueChangedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -30,6 +32,9 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extension.controller.api.UserControlBank;
+import com.bitwig.extensions.framework.DebugUtilities;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
 
 public class APC40MKIIControllerExtension extends ControllerExtension
 {
@@ -325,6 +330,39 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMidiOut.sendSysex("F0 7E 7F 06 01 F7");
 
       createHardwareControls();
+      createLayers();
+   }
+
+   private void createLayers()
+   {
+      mLayers = new Layers(this);
+
+      createMainLayer();
+      createPanLayer();
+      createDebugLayer();
+   }
+
+   private void createPanLayer()
+   {
+      mPanLayer = new Layer(mLayers, "Pan");
+      for (int i = 0; i < 8; ++i)
+         mPanLayer.bind(mTopKnobs[i], mTrackBank.getItemAt(i).pan());
+      mPanLayer.activate();
+   }
+
+   private void createDebugLayer()
+   {
+      mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+      mDebugLayer.activate();
+   }
+
+   private void createMainLayer()
+   {
+      mMainLayer = new Layer(mLayers, "Main");
+      for (int i = 0; i < 8; ++i)
+         mMainLayer.bind(mDevControlKnobs[i], mRemoteControls.getParameter(i));
+
+      mMainLayer.activate();
    }
 
    private void createHardwareControls()
@@ -342,8 +380,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 8; ++i)
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("TopKnob-" + i);
-         knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_TOP_CTL0 + i));
+         final int CC = CC_TOP_CTL0 + i;
+         knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
          knob.setBounds(8 + 32 * i, 8, PHYSICAL_KNOB_WIDTH, PHYSICAL_KNOB_WIDTH);
+         knob.targetValue().addValueObserver(newValue -> mMidiOut.sendMidi(0xB0, CC, (int)(127 * newValue)));
 
          mTopKnobs[i] = knob;
       }
@@ -355,8 +395,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 8; ++i)
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("DevControl-" + i);
-         knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_DEV_CTL0 + i));
+         final int CC = CC_DEV_CTL0 + i;
+         knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
          knob.setBounds(285 + 32 * (i % 4), 90 + 35 * (i / 4), PHYSICAL_KNOB_WIDTH, PHYSICAL_KNOB_WIDTH);
+         // TODO: need to hook the event only when the value changes from Bitwig and not from the controller
+         knob.targetValue().addValueObserver(newValue -> mMidiOut.sendMidi(0xB0, CC, (int)(127 * newValue)));
 
          mDevControlKnobs[i] = knob;
       }
@@ -366,7 +409,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       getHost().println("SYSEX IN: " + sysex);
 
-      // Set the device in the proper mode (Ableton Live Mode 1)
+      // Set the device in the proper mode (Ableton Live Mode 2)
       mMidiOut.sendSysex("F0 47 7F 29 60 00 04 41 02 01 00 F7");
    }
 
@@ -385,19 +428,19 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             setVolume(mMasterTrack.volume(), data2);
          else if (data1 == CC_AB_MIX)
             mTransport.crossfade().set(data2 == 127 ? 126 : data2, 127);
-         else if (CC_DEV_CTL0 <= data1 && data1 < CC_DEV_CTL0 + 8)
+         /*else if (CC_DEV_CTL0 <= data1 && data1 < CC_DEV_CTL0 + 8)
          {
             final int index = data1 - CC_DEV_CTL0;
             mRemoteControls.getParameter(index).setImmediately(data2 / 127.0);
             mDeviceControlLeds[index].setDisplayedValue(data2);
-         }
+         }*/
          else if (CC_TOP_CTL0 <= data1 && data1 < CC_TOP_CTL0 + 8)
          {
             final int index = data1 - CC_TOP_CTL0;
             switch (mTopMode)
             {
             case PAN:
-               mTrackBank.getItemAt(index).pan().setImmediately((data2 == 127 ? 126 : data2) / 126.0);
+               //mTrackBank.getItemAt(index).pan().setImmediately((data2 == 127 ? 126 : data2) / 126.0);
                break;
 
             case USER:
@@ -719,7 +762,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    public void flush()
    {
       paintMixer();
-      paintKnobs();
+      //paintKnobs();
       paintButtons();
       paintPads();
       paintScenes();
@@ -1184,4 +1227,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private HardwareSurface mHardwareSurface;
    private AbsoluteHardwareKnob[] mTopKnobs;
    private AbsoluteHardwareKnob[] mDevControlKnobs;
+   private Layers mLayers;
+   private Layer mMainLayer;
+   private Layer mDebugLayer;
+   private Layer mPanLayer;
 }
