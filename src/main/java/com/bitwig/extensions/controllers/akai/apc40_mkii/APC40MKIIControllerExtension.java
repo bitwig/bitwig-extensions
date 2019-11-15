@@ -433,7 +433,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
       mMainLayer.bindPressed(mMasterTrackSelectButton, getHost()
          .createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
-      mMainLayer.bindPressed(mMasterTrackStopButton, mMasterTrack.stopAction());
+      mMainLayer.bindPressed(mMasterTrackStopButton, mSceneBank.stopAction());
 
       mMainLayer.activate();
    }
