@@ -411,11 +411,20 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       for (int x = 0; x < 8; ++x)
       {
+         final Track track = mTrackBank.getItemAt(x);
          for (int y = 0; y < 5; ++y)
          {
             final int offset = 8 * y + x;
-            mMainLayer.bindPressed(mGridButtons[offset], mTrackBank.getItemAt(x).clipLauncherSlotBank().getItemAt(y).launchAction());
+            mMainLayer.bindPressed(mGridButtons[offset], track.clipLauncherSlotBank().getItemAt(y).launchAction());
          }
+         mMainLayer.bindPressed(mMuteButtons[x], track.mute().toggleAction());
+         mMainLayer.bindPressed(mSoloButtons[x], track.solo().toggleAction());
+         mMainLayer.bindPressed(mArmButtons[x], track.arm().toggleAction());
+         mMainLayer.bindPressed(mABButtons[x], getHost().createAction(() -> {
+            final SettableEnumValue crossFadeMode = track.crossFadeMode();
+            final int nextValue = (crossFadeToInt(crossFadeMode.get()) + 1) % 3;
+            crossFadeMode.set(intToCrossFade(nextValue));
+         }, () -> "Cycle through crossfade values"));
       }
 
       mMainLayer.activate();
@@ -430,6 +439,58 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       createDeviceControlKnobs();
       createVolumeFaders();
       createGridButtons();
+      createMuteButtons();
+      createSoloButtons();
+      createArmButtons();
+      createABButtons();
+   }
+
+   private void createABButtons()
+   {
+      mABButtons = new HardwareButton[8];
+      for (int x = 0; x < 8; ++x)
+      {
+         final HardwareButton bt = mHardwareSurface.createHardwareButton("AB-" + x);
+         bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_AB));
+         bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_AB));
+         mABButtons[x] = bt;
+      }
+   }
+
+   private void createArmButtons()
+   {
+      mArmButtons = new HardwareButton[8];
+      for (int x = 0; x < 8; ++x)
+      {
+         final HardwareButton bt = mHardwareSurface.createHardwareButton("Arm-" + x);
+         bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_ARM));
+         bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_ARM));
+         mArmButtons[x] = bt;
+      }
+   }
+
+   private void createSoloButtons()
+   {
+      mSoloButtons = new HardwareButton[8];
+      for (int x = 0; x < 8; ++x)
+      {
+         final HardwareButton bt = mHardwareSurface.createHardwareButton("Solo-" + x);
+         bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_SOLO));
+         bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_SOLO));
+         mSoloButtons[x] = bt;
+      }
+   }
+
+   private void createMuteButtons()
+   {
+      mMuteButtons = new HardwareButton[8];
+      for (int x = 0; x < 8; ++x)
+      {
+         final HardwareButton bt = mHardwareSurface.createHardwareButton("Mute-" + x);
+         bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_MUTE));
+         bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_MUTE));
+         mMuteButtons[x] = bt;
+      }
    }
 
    private void createGridButtons()
@@ -597,18 +658,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
                final Scene scene = mSceneBank.getScene(index);
                scene.launch();
             }
-         }
-         else if (data1 == BT_TRACK_MUTE)
-            mTrackBank.getItemAt(channel).mute().toggle();
-         else if (data1 == BT_TRACK_SOLO)
-            mTrackBank.getItemAt(channel).solo().toggle();
-         else if (data1 == BT_TRACK_ARM)
-            mTrackBank.getItemAt(channel).arm().toggle();
-         else if (data1 == BT_TRACK_AB)
-         {
-            final SettableEnumValue crossFadeMode = mTrackBank.getItemAt(channel).crossFadeMode();
-            final int nextValue = (crossFadeToInt(crossFadeMode.get()) + 1) % 3;
-            crossFadeMode.set(intToCrossFade(nextValue));
          }
          else if (data1 == BT_PLAY)
             mTransport.togglePlay();
@@ -1282,4 +1331,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private Layer mChannelStripLayer;
    private RelativeHardwareKnob mCueLevelKnob;
    private HardwareButton[] mGridButtons;
+   private HardwareButton[] mMuteButtons;
+   private HardwareButton[] mSoloButtons;
+   private HardwareButton[] mArmButtons;
+   private HardwareButton[] mABButtons;
 }
