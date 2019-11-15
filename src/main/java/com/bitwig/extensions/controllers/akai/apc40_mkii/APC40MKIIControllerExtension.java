@@ -827,8 +827,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
                mTransport.defaultLaunchQuantization().set(quantization);
             }
-            else
-               mTrackBank.getItemAt(channel).selectInMixer();
          }
          else if (BT_SCENE0 <= data1 && data1 < BT_SCENE0 + 5)
          {
@@ -841,11 +839,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
                if (mControlSendEffectSetting.get())
                   mTrackCursor.selectChannel(mSendTrackBank.getItemAt(mSendIndex));
                updateSendIndication(mSendIndex);
-            }
-            else
-            {
-               final Scene scene = mSceneBank.getScene(index);
-               scene.launch();
             }
          }
          else if (data1 == BT_RECORD)
