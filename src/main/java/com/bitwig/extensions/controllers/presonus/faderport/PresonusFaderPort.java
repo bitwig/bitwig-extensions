@@ -228,12 +228,129 @@ public class PresonusFaderPort extends ControllerExtension
    {
       mHardwareSurface.setPhysicalSize(500, 300);
 
-      for (int index = 0; index < mChannelCount; index++)
-      {
-         final Channel channel = mChannels[index];
+      final HardwareSurface surface = mHardwareSurface;
 
-         channel.motorFader.setBounds(50 + index * 25, 120, 20, 130);
-      }
+      surface.hardwareControlWithId("shift_left").setBounds(19.584569732937684, 157.2700296735904,
+         12.373887240356083, 12.373887240356083);
+      surface.hardwareControlWithId("shift_right").setBounds(387.2403560830858, 156.37982195845686,
+         13.264094955489615, 12.373887240356083);
+      surface.hardwareControlWithId("play").setBounds(434.3478260869562, 190.86956521739123,
+         21.739130434782613, 21.30434782608696);
+      surface.hardwareControlWithId("stop").setBounds(408.2608695652173, 186.08695652173927,
+         12.173913043478262, 13.478260869565219);
+      surface.hardwareControlWithId("record").setBounds(469.13043478260795, 185.21739130434793,
+         14.782608695652176, 13.913043478260871);
+      surface.hardwareControlWithId("loop").setBounds(418.2608695652175, 167.82608695652175,
+         11.73913043478261, 13.478260869565219);
+      surface.hardwareControlWithId("fast_forward").setBounds(459.56521739130403, 168.69565217391317,
+         12.608695652173914, 12.173913043478262);
+      surface.hardwareControlWithId("channel").setBounds(407.4183976261123, 124.92581602373893,
+         13.560830860534125, 8.516320474777448);
+      surface.hardwareControlWithId("zoom").setBounds(427.8931750741839, 124.92581602373888,
+         13.857566765578635, 9.109792284866469);
+      surface.hardwareControlWithId("section").setBounds(448.3679525222552, 139.76261127596416,
+         13.264094955489615, 9.70326409495549);
+      surface.hardwareControlWithId("marker").setBounds(468.5459940652815, 139.76261127596425,
+         13.857566765578635, 9.109792284866469);
+      surface.hardwareControlWithId("mute1").setBounds(48.2228121526566, 81.57715839564915, 6.439169139465875,
+         7.032640949554896);
+      surface.hardwareControlWithId("select1").setBounds(49.95891585138779, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader1").setBounds(49.565217391304365, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute2").setBounds(68.65109223423386, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select2").setBounds(70.37516625779578, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader2").setBounds(70.04347826086953, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("solo3").setBounds(117.92096473856886, 99.60393698460072,
+         19.8176336712677, 5.652173913043477);
+      surface.hardwareControlWithId("mute3").setBounds(89.07937231581111, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select3").setBounds(90.79141666420377, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader3").setBounds(90.5217391304347, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute4").setBounds(109.50765239738837, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select4").setBounds(111.20766707061175, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader4").setBounds(110.99999999999986, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute5").setBounds(129.93593247896564, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select5").setBounds(131.62391747701975, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader5").setBounds(131.47826086956502, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute6").setBounds(150.3642125605429, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select6").setBounds(152.04016788342773, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader6").setBounds(151.95652173913018, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute7").setBounds(170.79249264212018, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select7").setBounds(172.4564182898357, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader7").setBounds(172.43478260869534, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute8").setBounds(191.22077272369745, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select8").setBounds(192.8726686962437, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader8").setBounds(192.9130434782605, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute9").setBounds(211.64905280527472, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select9").setBounds(213.28891910265168, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader9").setBounds(213.39130434782567, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute10").setBounds(232.077332886852, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select10").setBounds(233.70516950905966, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader10").setBounds(233.86956521739083, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute11").setBounds(252.50561296842926, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select11").setBounds(254.12141991546764, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader11").setBounds(254.347826086956, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute12").setBounds(272.93389305000653, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select12").setBounds(274.5376703218757, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader12").setBounds(274.8260869565211, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute13").setBounds(293.3621731315838, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select13").setBounds(294.9539207282837, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader13").setBounds(295.30434782608626, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute14").setBounds(313.7904532131611, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select14").setBounds(315.37017113469176, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader14").setBounds(315.7826086956514, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute15").setBounds(334.21873329473834, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select15").setBounds(335.7864215410998, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader15").setBounds(336.2608695652165, 112.17391304347824,
+         14.34782608695652, 130.0);
+      surface.hardwareControlWithId("mute16").setBounds(354.6470133763156, 81.57715839564915,
+         6.439169139465875, 7.032640949554896);
+      surface.hardwareControlWithId("select16").setBounds(356.20267194750784, 61.79440191528981,
+         13.478260869565219, 10.0);
+      surface.hardwareControlWithId("fader16").setBounds(356.73913043478166, 112.17391304347824,
+         14.34782608695652, 130.0);
+
    }
 
    private HardwareButton createToggleButton(final String id, final int note)

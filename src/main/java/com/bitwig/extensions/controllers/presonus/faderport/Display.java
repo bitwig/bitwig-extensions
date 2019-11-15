@@ -15,7 +15,6 @@ class Display
       mExtension = extension;
       mTextDisplay = extension.mHardwareSurface.createHardwareTextDisplay("display" + (channel + 1),
          TEXT_LINES);
-      mTextDisplay.setBounds(50 + channel * 25, 20, 40, 100);
    }
 
    public void setDisplayTarget(final DisplayTarget displayTarget)
