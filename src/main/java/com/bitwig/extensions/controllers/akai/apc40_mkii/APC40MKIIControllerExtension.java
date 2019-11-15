@@ -485,6 +485,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mTrackBank.scrollForwards();
       });
 
+      for (int y = 0; y < 5; ++y)
+         mMainLayer.bindPressed(mSceneButtons[y], mSceneBank.getItemAt(y).launchAction());
+
       mMainLayer.activate();
    }
 
@@ -633,6 +636,15 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
             mGridButtons[y * 8 + x] = bt;
          }
+      }
+
+      mSceneButtons = new HardwareButton[5];
+      for (int y = 0; y < 5; ++y)
+      {
+         final HardwareButton bt = mHardwareSurface.createHardwareButton("Scene-" + y);
+         bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SCENE0 + y));
+         bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SCENE0 + y));
+         mSceneButtons[y] = bt;
       }
    }
 
@@ -1483,4 +1495,5 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private HardwareButton mLauncherDownButton;
    private HardwareButton mLauncherLeftButton;
    private HardwareButton mLauncherRightButton;
+   private HardwareButton[] mSceneButtons;
 }
