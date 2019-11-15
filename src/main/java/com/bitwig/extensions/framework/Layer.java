@@ -389,7 +389,7 @@ public class Layer
 
    private final Layers mLayers;
 
-   final List<Binding> mBindings = new ArrayList<Binding>();
+   final List<Binding> mBindings = new ArrayList<>();
 
    private final String mName;
 

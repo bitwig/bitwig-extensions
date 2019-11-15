@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
+import java.util.function.Supplier;
+
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -11,6 +13,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -435,6 +438,18 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          .createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
       mMainLayer.bindPressed(mMasterTrackStopButton, mSceneBank.stopAction());
 
+      mMainLayer.bindPressed(mPlayButton, mTransport.isPlaying().toggleAction());
+      mMainLayer.bindPressed(mRecordButton, mTransport.isClipLauncherOverdubEnabled());
+      mMainLayer.bindPressed(mSessionButton, mTransport.isClipLauncherAutomationWriteEnabled());
+      mMainLayer.bindPressed(mMetronomeButton, mTransport.isMetronomeEnabled().toggleAction());
+      mMainLayer.bindPressed(mTapTempoButton, mTransport.tapTempoAction());
+
+      final HardwareActionBindable incTempoAction =
+         getHost().createAction(() -> mTransport.tempo().incRaw(1), () -> "Increments the tempo");
+      final HardwareActionBindable decTempoAction =
+         getHost().createAction(() -> mTransport.tempo().incRaw(1), () -> "Decrements the tempo");
+      mMainLayer.bind(mTempoKnob, getHost().createRelativeHardwareControlStepTarget(incTempoAction, decTempoAction));
+
       mMainLayer.activate();
    }
 
@@ -453,6 +468,41 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       createABButtons();
       createTrackSelectButtons();
       createTrackStopButtons();
+      createTransportControls();
+   }
+
+   private void createTransportControls()
+   {
+      mPlayButton = mHardwareSurface.createHardwareButton("Play");
+      mPlayButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PLAY));
+      mPlayButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PLAY));
+
+      mRecordButton = mHardwareSurface.createHardwareButton("Record");
+      mRecordButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_RECORD));
+      mRecordButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_RECORD));
+
+      mSessionButton = mHardwareSurface.createHardwareButton("Session");
+      mSessionButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SESSION));
+      mSessionButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SESSION));
+
+      mMetronomeButton = mHardwareSurface.createHardwareButton("Metronome");
+      mMetronomeButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_METRONOME));
+      mMetronomeButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_METRONOME));
+
+      mTapTempoButton = mHardwareSurface.createHardwareButton("TapTempo");
+      mTapTempoButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_TAP_TEMPO));
+      mTapTempoButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_TAP_TEMPO));
+
+      mNudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
+      mNudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
+      mNudgePlusButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_PLUS));
+
+      mNudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
+      mNudgeMinusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_MINUS));
+      mNudgeMinusButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_MINUS));
+
+      mTempoKnob = mHardwareSurface.createRelativeHardwareKnob("Tempo");
+      mTempoKnob.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_TEMPO));
    }
 
    private void createTrackStopButtons()
@@ -627,9 +677,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
       else if (msg == MSG_NOTE_ON)
       {
-         if (data1 == BT_TRACK_STOP)
-            mTrackBank.getItemAt(channel).stop();
-         else if (data1 == BT_TRACK_SELECT)
+         if (data1 == BT_TRACK_SELECT)
          {
             if (mIsShiftOn)
             {
@@ -679,8 +727,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             else
                mTrackBank.getItemAt(channel).selectInMixer();
          }
-         else if (data1 == BT_MASTER_STOP)
-            mSceneBank.stop();
          else if (BT_SCENE0 <= data1 && data1 < BT_SCENE0 + 5)
          {
             final int index = data1 - BT_SCENE0;
@@ -699,16 +745,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
                scene.launch();
             }
          }
-         else if (data1 == BT_PLAY)
-            mTransport.togglePlay();
          else if (data1 == BT_RECORD)
             getRecordButtonValue().toggle();
          else if (data1 == BT_SESSION)
             getSessionButtonValue().toggle();
-         else if (data1 == BT_METRONOME)
-            mTransport.isMetronomeEnabled().toggle();
-         else if (data1 == BT_TAP_TEMPO)
-            mTransport.tapTempo();
          else if (data1 == BT_LAUNCHER_TOP)
          {
             if (mIsShiftOn ^ mVerticalScrollByPageSetting.get())
@@ -1356,19 +1396,22 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private long mLastBtBankTime;
 
    private SettableBooleanValue mControlSendEffectSetting;
+
    private HardwareSurface mHardwareSurface;
-   private AbsoluteHardwareKnob[] mTopKnobs;
-   private AbsoluteHardwareKnob[] mDeviceControlKnobs;
+
    private Layers mLayers;
    private Layer mMainLayer;
    private Layer mDebugLayer;
    private Layer mPanLayer;
-   private AbsoluteHardwareKnob[] mTrackVolumeFaders;
-   private AbsoluteHardwareKnob mMasterTrackVolumeFader;
-   private AbsoluteHardwareKnob mABCrossfade;
    private Layer[] mUserLayers;
    private Layer[] mSendLayers;
    private Layer mChannelStripLayer;
+
+   private AbsoluteHardwareKnob[] mTopKnobs;
+   private AbsoluteHardwareKnob[] mDeviceControlKnobs;
+   private AbsoluteHardwareKnob[] mTrackVolumeFaders;
+   private AbsoluteHardwareKnob mMasterTrackVolumeFader;
+   private AbsoluteHardwareKnob mABCrossfade;
    private RelativeHardwareKnob mCueLevelKnob;
    private HardwareButton[] mGridButtons;
    private HardwareButton[] mMuteButtons;
@@ -1379,4 +1422,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private HardwareButton mMasterTrackSelectButton;
    private HardwareButton[] mTrackStopButtons;
    private HardwareButton mMasterTrackStopButton;
+   private HardwareButton mPlayButton;
+   private HardwareButton mRecordButton;
+   private HardwareButton mSessionButton;
+   private HardwareButton mMetronomeButton;
+   private HardwareButton mTapTempoButton;
+   private HardwareButton mNudgePlusButton;
+   private HardwareButton mNudgeMinusButton;
+   private RelativeHardwareKnob mTempoKnob;
 }
