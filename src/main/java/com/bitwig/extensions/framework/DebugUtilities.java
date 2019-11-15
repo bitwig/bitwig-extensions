@@ -12,6 +12,7 @@ public class DebugUtilities
    public static Layer createDebugLayer(final Layers layers, final HardwareSurface hardwareSurface)
    {
       final Layer layer = new Layer(layers, "Debug");
+      layer.setShouldReplaceBindingsInLayersBelow(false);
 
       addDebugBindings(layer, hardwareSurface);
 
