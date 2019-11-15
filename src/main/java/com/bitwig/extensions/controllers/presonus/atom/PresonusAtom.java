@@ -820,7 +820,7 @@ public class PresonusAtom extends ControllerExtension
    private HardwareButton createToggleButton(final String id, final int controlNumber)
    {
       final HardwareButton button = createButton(id, controlNumber);
-      final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight();
+      final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight(id + "_light");
       button.setBackgroundLight(light);
 
       light.isOn().onUpdateHardware(value -> {
@@ -835,7 +835,7 @@ public class PresonusAtom extends ControllerExtension
       final HardwareButton button = createButton(id, controlNumber);
 
       final MultiStateHardwareLight light = mHardwareSurface
-         .createMultiStateHardwareLight(PresonusAtom::lightStateToColor);
+         .createMultiStateHardwareLight(id + "_light", PresonusAtom::lightStateToColor);
 
       light.state().onUpdateHardware(new LightStateSender(0xB0, controlNumber));
 
@@ -872,7 +872,7 @@ public class PresonusAtom extends ControllerExtension
       mPadButtons[index] = pad;
 
       final MultiStateHardwareLight light = mHardwareSurface
-         .createMultiStateHardwareLight(PresonusAtom::lightStateToColor);
+         .createMultiStateHardwareLight("pad_light" + (index + 1), PresonusAtom::lightStateToColor);
 
       light.state().onUpdateHardware(new LightStateSender(0x90, 0x24 + index));
 
