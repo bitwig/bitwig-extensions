@@ -11,6 +11,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
@@ -406,7 +407,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
       mMainLayer.bind(mMasterTrackVolumeFader, mMasterTrack.volume());
       mMainLayer.bind(mABCrossfade, mTransport.crossfade());
-      mMainLayer.bind(mCueLevelKnob, );
+      // TODO: mMainLayer.bind(mCueLevelKnob, );
+
+      for (int x = 0; x < 8; ++x)
+      {
+         for (int y = 0; y < 5; ++y)
+         {
+            final int offset = 8 * y + x;
+            mMainLayer.bindPressed(mGridButtons[offset], mTrackBank.getItemAt(x).clipLauncherSlotBank().getItemAt(y).launchAction());
+         }
+      }
 
       mMainLayer.activate();
    }
@@ -419,6 +429,23 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       createTopKnobs();
       createDeviceControlKnobs();
       createVolumeFaders();
+      createGridButtons();
+   }
+
+   private void createGridButtons()
+   {
+      mGridButtons = new HardwareButton[8 * 5];
+      for (int x = 0; x < 8; ++x)
+      {
+         for (int y = 0; y < 5; ++y)
+         {
+            final HardwareButton bt = mHardwareSurface.createHardwareButton("Grid-" + x + "-" + y);
+            final int note = BT_PAD0 + (4 - y) * 8 + x;
+            bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
+            bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
+            mGridButtons[y * 8 + x] = bt;
+         }
+      }
    }
 
    private void createVolumeFaders()
@@ -570,15 +597,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
                final Scene scene = mSceneBank.getScene(index);
                scene.launch();
             }
-         }
-         else if (BT_PAD0 <= data1 && data1 < BT_PAD0 + 40)
-         {
-            final int padIndex = data1 - BT_PAD0;
-            final int trackIndex = padIndex % 8;
-            final int sceneIndex = 4 - (padIndex / 8);
-            final Track track = mTrackBank.getItemAt(trackIndex);
-            final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
-            slot.launch();
          }
          else if (data1 == BT_TRACK_MUTE)
             mTrackBank.getItemAt(channel).mute().toggle();
@@ -1263,4 +1281,5 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private Layer[] mSendLayers;
    private Layer mChannelStripLayer;
    private RelativeHardwareKnob mCueLevelKnob;
+   private HardwareButton[] mGridButtons;
 }
