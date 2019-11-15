@@ -19,6 +19,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Preferences;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
@@ -36,11 +37,15 @@ import com.bitwig.extensions.framework.Layers;
 
 public class APC40MKIIControllerExtension extends ControllerExtension
 {
+   private static final int CHANNEL_STRIP_NUM_PARAMS = 4;
+
+   private static final int CHANNEL_STRIP_NUM_SENDS = 4;
+
    private enum TopMode
    {
-      PAN, SENDS, USER, CHANNEL_STRIP
-   }
+      PAN, SENDS, USER, CHANNEL_STRIP;
 
+   }
    private static final int MSG_NOTE_ON = 9;
 
    private static final int MSG_NOTE_OFF = 8;
@@ -134,6 +139,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private static final long DOUBLE_MAX_TIME = 250;
 
    private static final double PHYSICAL_KNOB_WIDTH = 20;
+
 
    protected APC40MKIIControllerExtension(
       final ControllerExtensionDefinition controllerExtensionDefinition,
@@ -337,7 +343,43 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       createMainLayer();
       createPanLayer();
+      createUserLayers();
       createDebugLayer();
+      createSendLayers();
+      createChannelStripLayer();
+   }
+
+   private void createChannelStripLayer()
+   {
+      mChannelStripLayer = new Layer(mLayers, "ChannelStrip");
+      for (int i = 0; i < 8; ++i)
+         mChannelStripLayer.bind(
+            mTopKnobs[i],
+            i < CHANNEL_STRIP_NUM_PARAMS
+               ? mChannelStripRemoteControls.getParameter(i)
+               : mTrackCursor.sendBank().getItemAt(i - CHANNEL_STRIP_NUM_PARAMS));
+   }
+
+   private void createSendLayers()
+   {
+      mSendLayers = new Layer[5];
+      for (int sendIndex = 0; sendIndex < 5; ++sendIndex)
+      {
+         mSendLayers[sendIndex] = new Layer(mLayers, "Send-" + sendIndex);
+         for (int i = 0; i < 8; ++i)
+            mSendLayers[sendIndex].bind(mTopKnobs[i], mTrackBank.getItemAt(i).sendBank().getItemAt(sendIndex));
+      }
+   }
+
+   private void createUserLayers()
+   {
+      mUserLayers = new Layer[5];
+      for (int userIndex = 0; userIndex < 5; ++userIndex)
+      {
+         mUserLayers[userIndex] = new Layer(mLayers, "User-" + userIndex);
+         for (int i = 0; i < 8; ++i)
+            mUserLayers[userIndex].bind(mTopKnobs[i], mUserControls.getControl(i + mUserIndex * 8));
+      }
    }
 
    private void createPanLayer()
@@ -345,7 +387,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPanLayer = new Layer(mLayers, "Pan");
       for (int i = 0; i < 8; ++i)
          mPanLayer.bind(mTopKnobs[i], mTrackBank.getItemAt(i).pan());
-      mPanLayer.activate();
    }
 
    private void createDebugLayer()
@@ -365,6 +406,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
       mMainLayer.bind(mMasterTrackVolumeFader, mMasterTrack.volume());
       mMainLayer.bind(mABCrossfade, mTransport.crossfade());
+      mMainLayer.bind(mCueLevelKnob, );
 
       mMainLayer.activate();
    }
@@ -395,6 +437,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mABCrossfade = mHardwareSurface.createAbsoluteHardwareKnob("AB-Crossfade");
       mABCrossfade.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_AB_CROSSFADE));
+
+      mCueLevelKnob = mHardwareSurface.createRelativeHardwareKnob("Cue-Level");
+      mCueLevelKnob.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_CUE));
    }
 
    private void createTopKnobs()
@@ -445,34 +490,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       if (msg == MSG_CC)
       {
-         if (CC_TOP_CTL0 <= data1 && data1 < CC_TOP_CTL0 + 8)
-         {
-            final int index = data1 - CC_TOP_CTL0;
-            switch (mTopMode)
-            {
-            case PAN:
-               //mTrackBank.getItemAt(index).pan().setImmediately((data2 == 127 ? 126 : data2) / 126.0);
-               break;
-
-            case USER:
-               mUserControls.getControl(index + mUserIndex * 8).setImmediately(data2 / 127.0);
-               break;
-
-            case SENDS:
-               mTrackBank.getItemAt(index).sendBank().getItemAt(mSendIndex).setImmediately(data2 / 127.0);
-               break;
-
-            case CHANNEL_STRIP:
-               if (index < mChannelStripNumParams)
-                  mChannelStripRemoteControls.getParameter(index).setImmediately(data2 / 127.0);
-               else
-                  mTrackCursor.sendBank().getItemAt(index - mChannelStripNumParams)
-                     .setImmediately(data2 / 127.0);
-               break;
-            }
-            mTopControlLeds[index].setDisplayedValue(data2);
-         }
-         else if (data1 == CC_TEMPO)
+         if (data1 == CC_TEMPO)
             mTransport.tempo().incRaw((mIsShiftOn ? 0.1 : 1) * (data2 == 1 ? 1 : -1));
          else if (data2 == CC_CUE)
             mCueConrol.getControl(0).inc((data2 < 64 ? data2 : 127 - data2) / 127.0);
@@ -710,10 +728,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void updateChannelStripIndication(boolean shouldIndicate)
    {
-      for (int i = 0; i < mChannelStripNumParams; ++i)
+      for (int i = 0; i < CHANNEL_STRIP_NUM_PARAMS; ++i)
          mChannelStripRemoteControls.getParameter(i).setIndication(shouldIndicate);
 
-      for (int i = 0; i < mChannelStripNumSends; ++i)
+      for (int i = 0; i < CHANNEL_STRIP_NUM_SENDS; ++i)
          mTrackCursor.sendBank().getItemAt(i).setIndication(shouldIndicate);
    }
 
@@ -990,7 +1008,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
             case CHANNEL_STRIP:
             {
-               if (i < mChannelStripNumParams)
+               if (i < CHANNEL_STRIP_NUM_PARAMS)
                {
                   final RemoteControl parameter = mChannelStripRemoteControls.getParameter(i);
                   if (parameter.exists().get())
@@ -1002,7 +1020,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
                }
                else
                {
-                  final Send send = mTrackCursor.sendBank().getItemAt(i - mChannelStripNumParams);
+                  final Send send = mTrackCursor.sendBank().getItemAt(i - CHANNEL_STRIP_NUM_PARAMS);
                   if (send.exists().get())
                   {
                      ring = KnobLed.RING_VOLUME;
@@ -1106,7 +1124,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       volume.set(midiVal * getMaxVolume() / 127.0);
    }
-
    private Application mApplication = null;
 
    private Transport mTransport = null;
@@ -1141,9 +1158,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private SettableBooleanValue mVerticalScrollByPageSetting;
 
-   private int mChannelStripNumParams = 4;
-
-   private int mChannelStripNumSends = 4;
 
    private MidiIn mMidiIn = null;
    private MidiOut mMidiOut = null;
@@ -1245,4 +1259,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private AbsoluteHardwareKnob[] mTrackVolumeFaders;
    private AbsoluteHardwareKnob mMasterTrackVolumeFader;
    private AbsoluteHardwareKnob mABCrossfade;
+   private Layer[] mUserLayers;
+   private Layer[] mSendLayers;
+   private Layer mChannelStripLayer;
+   private RelativeHardwareKnob mCueLevelKnob;
 }
