@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
-import com.bitwig.extension.callback.DoubleValueChangedCallback;
-import com.bitwig.extension.callback.IntegerValueChangedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -53,7 +51,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private static final int CC_MASTER_VOLUME = 14;
 
-   private static final int CC_AB_MIX = 15;
+   private static final int CC_AB_CROSSFADE = 15;
 
    private static final int CC_DEV_CTL0 = 16;
 
@@ -359,8 +357,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createMainLayer()
    {
       mMainLayer = new Layer(mLayers, "Main");
+
       for (int i = 0; i < 8; ++i)
-         mMainLayer.bind(mDevControlKnobs[i], mRemoteControls.getParameter(i));
+      {
+         mMainLayer.bind(mDeviceControlKnobs[i], mRemoteControls.getParameter(i));
+         mMainLayer.bind(mTrackVolumeFaders[i], mTrackBank.getItemAt(i).volume());
+      }
+      mMainLayer.bind(mMasterTrackVolumeFader, mMasterTrack.volume());
+      mMainLayer.bind(mABCrossfade, mTransport.crossfade());
 
       mMainLayer.activate();
    }
@@ -372,6 +376,25 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       createTopKnobs();
       createDeviceControlKnobs();
+      createVolumeFaders();
+   }
+
+   private void createVolumeFaders()
+   {
+      mTrackVolumeFaders = new AbsoluteHardwareKnob[8];
+      for (int i = 0; i < 8; ++i)
+      {
+         final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("TrackVolumeFader-" + i);
+         knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(i, CC_TRACK_VOLUME));
+
+         mTrackVolumeFaders[i] = knob;
+      }
+
+      mMasterTrackVolumeFader = mHardwareSurface.createAbsoluteHardwareKnob("MasterTrackVolumeFader");
+      mMasterTrackVolumeFader.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_MASTER_VOLUME));
+
+      mABCrossfade = mHardwareSurface.createAbsoluteHardwareKnob("AB-Crossfade");
+      mABCrossfade.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_AB_CROSSFADE));
    }
 
    private void createTopKnobs()
@@ -382,7 +405,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("TopKnob-" + i);
          final int CC = CC_TOP_CTL0 + i;
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
-         knob.setBounds(8 + 32 * i, 8, PHYSICAL_KNOB_WIDTH, PHYSICAL_KNOB_WIDTH);
+         // TODO: need to hook the event only when the value changes from Bitwig and not from the controller
          knob.targetValue().addValueObserver(newValue -> mMidiOut.sendMidi(0xB0, CC, (int)(127 * newValue)));
 
          mTopKnobs[i] = knob;
@@ -391,17 +414,17 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void createDeviceControlKnobs()
    {
-      mDevControlKnobs = new AbsoluteHardwareKnob[8];
+      mDeviceControlKnobs = new AbsoluteHardwareKnob[8];
       for (int i = 0; i < 8; ++i)
       {
-         final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("DevControl-" + i);
+         final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("DeviceControl-" + i);
          final int CC = CC_DEV_CTL0 + i;
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
          knob.setBounds(285 + 32 * (i % 4), 90 + 35 * (i / 4), PHYSICAL_KNOB_WIDTH, PHYSICAL_KNOB_WIDTH);
          // TODO: need to hook the event only when the value changes from Bitwig and not from the controller
          knob.targetValue().addValueObserver(newValue -> mMidiOut.sendMidi(0xB0, CC, (int)(127 * newValue)));
 
-         mDevControlKnobs[i] = knob;
+         mDeviceControlKnobs[i] = knob;
       }
    }
 
@@ -422,19 +445,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       if (msg == MSG_CC)
       {
-         if (data1 == CC_TRACK_VOLUME)
-            setVolume(mTrackBank.getItemAt(channel).volume(), data2);
-         else if (data1 == CC_MASTER_VOLUME)
-            setVolume(mMasterTrack.volume(), data2);
-         else if (data1 == CC_AB_MIX)
-            mTransport.crossfade().set(data2 == 127 ? 126 : data2, 127);
-         /*else if (CC_DEV_CTL0 <= data1 && data1 < CC_DEV_CTL0 + 8)
-         {
-            final int index = data1 - CC_DEV_CTL0;
-            mRemoteControls.getParameter(index).setImmediately(data2 / 127.0);
-            mDeviceControlLeds[index].setDisplayedValue(data2);
-         }*/
-         else if (CC_TOP_CTL0 <= data1 && data1 < CC_TOP_CTL0 + 8)
+         if (CC_TOP_CTL0 <= data1 && data1 < CC_TOP_CTL0 + 8)
          {
             final int index = data1 - CC_TOP_CTL0;
             switch (mTopMode)
@@ -1226,9 +1237,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private SettableBooleanValue mControlSendEffectSetting;
    private HardwareSurface mHardwareSurface;
    private AbsoluteHardwareKnob[] mTopKnobs;
-   private AbsoluteHardwareKnob[] mDevControlKnobs;
+   private AbsoluteHardwareKnob[] mDeviceControlKnobs;
    private Layers mLayers;
    private Layer mMainLayer;
    private Layer mDebugLayer;
    private Layer mPanLayer;
+   private AbsoluteHardwareKnob[] mTrackVolumeFaders;
+   private AbsoluteHardwareKnob mMasterTrackVolumeFader;
+   private AbsoluteHardwareKnob mABCrossfade;
 }
