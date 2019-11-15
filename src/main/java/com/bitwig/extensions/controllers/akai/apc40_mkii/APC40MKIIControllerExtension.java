@@ -425,7 +425,15 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             final int nextValue = (crossFadeToInt(crossFadeMode.get()) + 1) % 3;
             crossFadeMode.set(intToCrossFade(nextValue));
          }, () -> "Cycle through crossfade values"));
+         mMainLayer.bindPressed(
+            mTrackSelectButtons[x],
+            // TODO: add new api for CursorTrack.select(Track).
+            getHost().createAction(() -> track.selectInMixer(), () -> "Selects the track"));
+         mMainLayer.bindPressed(mTrackStopButtons[x], track.stopAction());
       }
+      mMainLayer.bindPressed(mMasterTrackSelectButton, getHost()
+         .createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
+      mMainLayer.bindPressed(mMasterTrackStopButton, mMasterTrack.stopAction());
 
       mMainLayer.activate();
    }
@@ -443,6 +451,40 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       createSoloButtons();
       createArmButtons();
       createABButtons();
+      createTrackSelectButtons();
+      createTrackStopButtons();
+   }
+
+   private void createTrackStopButtons()
+   {
+      mTrackStopButtons = new HardwareButton[8];
+      for (int x = 0; x < 8; ++x)
+      {
+         final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackStop-" + x);
+         bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_STOP));
+         bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_STOP));
+         mTrackStopButtons[x] = bt;
+      }
+
+      mMasterTrackStopButton = mHardwareSurface.createHardwareButton("MasterTrackStop");
+      mMasterTrackStopButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_MASTER_STOP));
+      mMasterTrackStopButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_STOP));
+   }
+
+   private void createTrackSelectButtons()
+   {
+      mTrackSelectButtons = new HardwareButton[8];
+      for (int x = 0; x < 8; ++x)
+      {
+         final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + x);
+         bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_SELECT));
+         bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_SELECT));
+         mTrackSelectButtons[x] = bt;
+      }
+
+      mMasterTrackSelectButton = mHardwareSurface.createHardwareButton("MasterTrackSelect");
+      mMasterTrackSelectButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_MASTER_SELECT));
+      mMasterTrackSelectButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_SELECT));
    }
 
    private void createABButtons()
@@ -637,8 +679,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             else
                mTrackBank.getItemAt(channel).selectInMixer();
          }
-         else if (data1 == BT_MASTER_SELECT)
-            mMasterTrack.selectInMixer();
          else if (data1 == BT_MASTER_STOP)
             mSceneBank.stop();
          else if (BT_SCENE0 <= data1 && data1 < BT_SCENE0 + 5)
@@ -1335,4 +1375,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private HardwareButton[] mSoloButtons;
    private HardwareButton[] mArmButtons;
    private HardwareButton[] mABButtons;
+   private HardwareButton[] mTrackSelectButtons;
+   private HardwareButton mMasterTrackSelectButton;
+   private HardwareButton[] mTrackStopButtons;
+   private HardwareButton mMasterTrackStopButton;
 }
