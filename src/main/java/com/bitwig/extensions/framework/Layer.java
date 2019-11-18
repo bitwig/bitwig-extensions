@@ -255,6 +255,11 @@ public class Layer
       bind(layerToToggle::isActive, button);
    }
 
+   public Binding bindInverted(final BooleanSupplier source, final BooleanHardwareProperty target)
+   {
+      return bind(() -> !source.getAsBoolean(), target);
+   }
+
    public Binding bind(final BooleanSupplier source, final BooleanHardwareProperty target)
    {
       if (source instanceof BooleanValue)
@@ -270,6 +275,11 @@ public class Layer
    public Binding bind(final BooleanSupplier source, final OnOffHardwareLight target)
    {
       return bind(source, target.isOn());
+   }
+
+   public Binding bindInverted(final BooleanSupplier source, final OnOffHardwareLight target)
+   {
+      return bindInverted(source, target.isOn());
    }
 
    public Binding bind(final BooleanSupplier source, final HardwareControl target)
