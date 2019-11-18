@@ -18,6 +18,7 @@ import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -454,7 +455,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             final int nextValue = (crossFadeToInt(crossFadeMode.get()) + 1) % 3;
             crossFadeMode.set(intToCrossFade(nextValue));
          }, () -> "Cycle through crossfade values"));
-         // TODO: bind the AB led
+         mMainLayer.bind(track.crossFadeMode(), mABLeds[x]);
+
          mMainLayer.bindPressed(
             mTrackSelectButtons[x],
             // TODO: add new api for CursorTrack.select(Track).
@@ -666,7 +668,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createABButtons()
    {
       mABButtons = new HardwareButton[8];
-      mABLeds = new MultiStateHardwareLight[8];
+      mABLeds = new HardwareTextDisplay[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("AB-" + x);
@@ -675,8 +677,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mABButtons[x] = bt;
 
          final int channel = x;
-         final MultiStateHardwareLight led = mHardwareSurface.createMultiStateHardwareLight("ABLed-" + x, i -> getABLedColor(i));
-         led.state().onUpdateHardware((value) -> sendLedUpdate(BT_TRACK_AB, channel, value));
+         final HardwareTextDisplay led = mHardwareSurface.createHardwareTextDisplay("ABLed-" + x, 1);
+         led.onUpdateHardware(() -> {
+            sendLedUpdate(BT_TRACK_AB, channel, crossFadeToInt(led.line(0).text().currentValue()));
+         });
+         mABLeds[x] = led;
       }
    }
 
@@ -1563,7 +1568,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private OnOffHardwareLight[] mMuteLeds;
    private OnOffHardwareLight[] mSoloLeds;
    private OnOffHardwareLight[] mArmLeds;
-   private MultiStateHardwareLight[] mABLeds;
+   private HardwareTextDisplay[] mABLeds;
    private OnOffHardwareLight[] mTrackSelectLeds;
    private OnOffHardwareLight mMasterTrackSelectLed;
    private OnOffHardwareLight[] mTrackStopLeds;
