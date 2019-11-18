@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.controller.ControllerExtension;
@@ -344,7 +345,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void createLayers()
    {
+      // We create all the layers here because the main layer might bind actions to activate other layers.
       mLayers = new Layers(this);
+      mMainLayer = new Layer(mLayers, "Main");
+      mChannelStripLayer = new Layer(mLayers, "ChannelStrip");
+      mShiftLayer = new Layer(mLayers, "Shift");
 
       createMainLayer();
       createPanLayer();
@@ -357,18 +362,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void createShiftLayer()
    {
-      mShiftLayer = new Layer(mLayers, "Shift");
-
-      mShiftLayer.bind(mTransport.isArrangerRecordEnabled(), mRecordButton);
-      mShiftLayer.bind(mTransport.isArrangerRecordEnabled(), mRecordLed);
-
-      mShiftLayer.bind(mTransport.isArrangerAutomationWriteEnabled(), mSessionButton);
-      mShiftLayer.bind(mTransport.isArrangerAutomationWriteEnabled(), mSessionLed);
+      mShiftLayer.bindToggle(mRecordButton, mTransport.isArrangerRecordEnabled());
+      mShiftLayer.bindToggle(mSessionButton, mTransport.isArrangerAutomationWriteEnabled());
    }
 
    private void createChannelStripLayer()
    {
-      mChannelStripLayer = new Layer(mLayers, "ChannelStrip");
       for (int i = 0; i < 8; ++i)
          mChannelStripLayer.bind(
             mTopKnobs[i],
@@ -414,8 +413,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void createMainLayer()
    {
-      mMainLayer = new Layer(mLayers, "Main");
-
       for (int i = 0; i < 8; ++i)
       {
          mMainLayer.bind(mDeviceControlKnobs[i], mRemoteControls.getParameter(i));
@@ -451,10 +448,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          .createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
       mMainLayer.bindPressed(mMasterTrackStopButton, mSceneBank.stopAction());
 
-      mMainLayer.bindPressed(mPlayButton, mTransport.isPlaying().toggleAction());
-      mMainLayer.bindPressed(mRecordButton, mTransport.isClipLauncherOverdubEnabled());
-      mMainLayer.bindPressed(mSessionButton, mTransport.isClipLauncherAutomationWriteEnabled());
-      mMainLayer.bindPressed(mMetronomeButton, mTransport.isMetronomeEnabled().toggleAction());
+      mMainLayer.bindToggle(mPlayButton, mTransport.isPlaying());
+      mMainLayer.bindToggle(mRecordButton, mTransport.isClipLauncherOverdubEnabled());
+      mMainLayer.bindToggle(mSessionButton, mTransport.isClipLauncherAutomationWriteEnabled());
+      mMainLayer.bindToggle(mMetronomeButton, mTransport.isMetronomeEnabled());
       mMainLayer.bindPressed(mTapTempoButton, mTransport.tapTempoAction());
 
       // TODO: not the right way...
@@ -468,9 +465,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMainLayer.bindPressed(mPrevDeviceButton, mDeviceCursor.selectPreviousAction());
       mMainLayer.bindPressed(mNextBankButton, mRemoteControls.selectNextAction());
       mMainLayer.bindPressed(mPrevBankButton, mRemoteControls.selectPreviousAction());
-      mMainLayer.bindPressed(mDeviceOnOffButton, mDeviceCursor.isEnabled().toggleAction());
-      mMainLayer.bindPressed(mDeviceLockButton, mDeviceCursor.isPinned().toggleAction());
-      mMainLayer.bindPressed(mDetailViewButton, mDeviceCursor.isWindowOpen().toggleAction());
+      mMainLayer.bindToggle(mDeviceOnOffButton, mDeviceCursor.isEnabled());
+      mMainLayer.bindToggle(mDeviceLockButton, mDeviceCursor.isPinned());
+      mMainLayer.bindToggle(mDetailViewButton, mDeviceCursor.isWindowOpen());
       mMainLayer.bindPressed(
          mClipDeviceViewButton,
          getHost().createAction(() -> mApplication.nextSubPanel(), () -> "Next Sub Panel"));
@@ -503,15 +500,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int y = 0; y < 5; ++y)
          mMainLayer.bindPressed(mSceneButtons[y], mSceneBank.getItemAt(y).launchAction());
 
-      mMainLayer.bind(mTransport.isPlaying(), mPlayLed);
-      mMainLayer.bind(mTransport.isClipLauncherOverdubEnabled(), mRecordLed);
-      mMainLayer.bind(mTransport.isMetronomeEnabled(), mMetronomeLed);
-
       mMainLayer.bindPressed(mPanButton, getHost().createAction(() -> activateTopMode(mPanAsChannelStripSetting.get()
          ? TopMode.CHANNEL_STRIP
          : TopMode.PAN), () -> "Activate Pan mode or ChannelStrip mode"));
       mMainLayer.bindPressed(mSendsButton, getHost().createAction(() -> activateTopMode(TopMode.SENDS), () -> "Activate Sends mode"));
       mMainLayer.bindPressed(mUserButton, getHost().createAction(() -> activateTopMode(TopMode.USER), () -> "Activate User mode"));
+
+      mMainLayer.bindPressed(mShiftButton, mShiftLayer.getActivateAction());
+      mMainLayer.bindReleased(mShiftButton, mShiftLayer.getDeactivateAction());
 
       mMainLayer.activate();
    }
@@ -541,24 +537,28 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPlayButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PLAY));
       mPlayLed = mHardwareSurface.createOnOffHardwareLight("PlayLed");
       mPlayLed.onUpdateHardware(() -> sendLedUpdate(BT_PLAY, mPlayLed));
+      mPlayButton.setBackgroundLight(mPlayLed);
 
       mRecordButton = mHardwareSurface.createHardwareButton("Record");
       mRecordButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_RECORD));
       mRecordButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_RECORD));
       mRecordLed = mHardwareSurface.createOnOffHardwareLight("RecordLed");
       mRecordLed.onUpdateHardware(() -> sendLedUpdate(BT_RECORD, mRecordLed));
+      mRecordButton.setBackgroundLight(mRecordLed);
 
       mSessionButton = mHardwareSurface.createHardwareButton("Session");
       mSessionButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SESSION));
       mSessionButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SESSION));
       mSessionLed = mHardwareSurface.createOnOffHardwareLight("SessionLed");
       mSessionLed.onUpdateHardware(() -> sendLedUpdate(BT_SESSION, mSessionLed));
+      mSessionButton.setBackgroundLight(mSessionLed);
 
       mMetronomeButton = mHardwareSurface.createHardwareButton("Metronome");
       mMetronomeButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_METRONOME));
       mMetronomeButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_METRONOME));
       mMetronomeLed = mHardwareSurface.createOnOffHardwareLight("MetronomeLed");
       mMetronomeLed.onUpdateHardware(() -> sendLedUpdate(BT_METRONOME, mMetronomeLed));
+      mMetronomeButton.setBackgroundLight(mMetronomeLed);
 
       mTapTempoButton = mHardwareSurface.createHardwareButton("TapTempo");
       mTapTempoButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_TAP_TEMPO));
