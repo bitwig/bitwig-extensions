@@ -152,15 +152,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       final ControllerHost host)
    {
       super(controllerExtensionDefinition, host);
-
-      mBankLeds[0] = mDevPrevLed;
-      mBankLeds[1] = mDevNextLed;
-      mBankLeds[2] = mDevControlsPrevLed;
-      mBankLeds[3] = mDevControlsNextLed;
-      mBankLeds[4] = mDevOnOffLed;
-      mBankLeds[5] = mDevLockLed;
-      mBankLeds[6] = mClipDevViewLed;
-      mBankLeds[7] = mDetailViewLed;
    }
 
    @Override
@@ -350,6 +341,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMainLayer = new Layer(mLayers, "Main");
       mChannelStripLayer = new Layer(mLayers, "ChannelStrip");
       mShiftLayer = new Layer(mLayers, "Shift");
+      mBankLayer = new Layer(mLayers, "Bank");
 
       createMainLayer();
       createPanLayer();
@@ -358,6 +350,28 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       createSendLayers();
       createChannelStripLayer();
       createShiftLayer();
+      createBankLayer();
+   }
+
+   private void createBankLayer()
+   {
+      mBankLayer.bindPressed(mPrevDeviceButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(0), () -> "Select Remote Controls Page 1"));
+      mBankLayer.bindPressed(mNextDeviceButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(1), () -> "Select Remote Controls Page 2"));
+      mBankLayer.bindPressed(mPrevBankButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(2), () -> "Select Remote Controls Page 3"));
+      mBankLayer.bindPressed(mNextBankButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(3), () -> "Select Remote Controls Page 4"));
+      mBankLayer.bindPressed(mDeviceOnOffButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(4), () -> "Select Remote Controls Page 5"));
+      mBankLayer.bindPressed(mDeviceLockButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(5), () -> "Select Remote Controls Page 6"));
+      mBankLayer.bindPressed(mClipDeviceViewButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(6), () -> "Select Remote Controls Page 7"));
+      mBankLayer.bindPressed(mDetailViewButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(7), () -> "Select Remote Controls Page 8"));
+
+      mBankLayer.bind(() -> mRemoteControls.selectedPageIndex().get() == 0, mPrevDeviceLed);
+      mBankLayer.bind(() -> mRemoteControls.selectedPageIndex().get() == 1, mNextDeviceLed);
+      mBankLayer.bind(() -> mRemoteControls.selectedPageIndex().get() == 2, mPrevBankLed);
+      mBankLayer.bind(() -> mRemoteControls.selectedPageIndex().get() == 3, mNextBankLed);
+      mBankLayer.bind(() -> mRemoteControls.selectedPageIndex().get() == 4, mDeviceOnOffLed);
+      mBankLayer.bind(() -> mRemoteControls.selectedPageIndex().get() == 5, mDeviceLockLed);
+      mBankLayer.bind(() -> mRemoteControls.selectedPageIndex().get() == 6, mClipDeviceViewLed);
+      mBankLayer.bind(() -> mRemoteControls.selectedPageIndex().get() == 7, mDetailViewLed);
    }
 
    private void createShiftLayer()
@@ -462,15 +476,30 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 //      mMainLayer.bind(mTempoKnob, getHost().createRelativeHardwareControlStepTarget(incTempoAction, decTempoAction));
 
       mMainLayer.bindPressed(mNextDeviceButton, mDeviceCursor.selectNextAction());
+      mMainLayer.bind(mDeviceCursor.hasNext(), mNextDeviceLed);
+
       mMainLayer.bindPressed(mPrevDeviceButton, mDeviceCursor.selectPreviousAction());
+      mMainLayer.bind(mDeviceCursor.hasPrevious(), mPrevDeviceLed);
+
       mMainLayer.bindPressed(mNextBankButton, mRemoteControls.selectNextAction());
+      mMainLayer.bind(mRemoteControls.hasNext(), mNextBankLed);
+
       mMainLayer.bindPressed(mPrevBankButton, mRemoteControls.selectPreviousAction());
+      mMainLayer.bind(mRemoteControls.hasPrevious(), mPrevBankLed);
+
       mMainLayer.bindToggle(mDeviceOnOffButton, mDeviceCursor.isEnabled());
+      mMainLayer.bind(mDeviceCursor.isEnabled(), mDeviceOnOffLed);
+
       mMainLayer.bindToggle(mDeviceLockButton, mDeviceCursor.isPinned());
-      mMainLayer.bindToggle(mDetailViewButton, mDeviceCursor.isWindowOpen());
+      mMainLayer.bind(mDeviceCursor.isPinned(), mDeviceLockLed);
+
       mMainLayer.bindPressed(
          mClipDeviceViewButton,
          getHost().createAction(() -> mApplication.nextSubPanel(), () -> "Next Sub Panel"));
+      mMainLayer.bind(() -> true, mClipDeviceViewLed);
+
+      mMainLayer.bindToggle(mDetailViewButton, mDeviceCursor.isWindowOpen());
+      mMainLayer.bind(mDeviceCursor.isWindowOpen(), mDetailViewLed);
 
       mMainLayer.bindPressed(mLauncherUpButton, () -> {
          if (mShiftButton.isPressed().get() ^ mVerticalScrollByPageSetting.get())
@@ -753,34 +782,50 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevDeviceButton = mHardwareSurface.createHardwareButton("PrevDevice");
       mPrevDeviceButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_DEVICE));
       mPrevDeviceButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_DEVICE));
+      mPrevDeviceLed = mHardwareSurface.createOnOffHardwareLight("PrevDeviceLed");
+      mPrevDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_DEVICE, mPrevDeviceLed));
 
       mNextDeviceButton = mHardwareSurface.createHardwareButton("NextDevice");
       mNextDeviceButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_DEVICE));
       mNextDeviceButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_DEVICE));
+      mNextDeviceLed = mHardwareSurface.createOnOffHardwareLight("NextDeviceLed");
+      mNextDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_DEVICE, mNextDeviceLed));
 
       mPrevBankButton = mHardwareSurface.createHardwareButton("PrevBank");
       mPrevBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_BANK));
       mPrevBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_BANK));
+      mPrevBankLed = mHardwareSurface.createOnOffHardwareLight("PrevBankLed");
+      mPrevBankLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_BANK, mPrevBankLed));
 
       mNextBankButton = mHardwareSurface.createHardwareButton("NextBank");
       mNextBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_BANK));
       mNextBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_BANK));
+      mNextBankLed = mHardwareSurface.createOnOffHardwareLight("NextBankLed");
+      mNextBankLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_BANK, mNextBankLed));
 
       mDeviceOnOffButton = mHardwareSurface.createHardwareButton("DeviceOnOff");
       mDeviceOnOffButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DEVICE_ONOFF));
       mDeviceOnOffButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_ONOFF));
+      mDeviceOnOffLed = mHardwareSurface.createOnOffHardwareLight("DeviceOnOffLed");
+      mDeviceOnOffLed.onUpdateHardware(() -> sendLedUpdate(BT_DEVICE_ONOFF, mDeviceOnOffLed));
 
       mDeviceLockButton = mHardwareSurface.createHardwareButton("DeviceLock");
       mDeviceLockButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DEVICE_LOCK));
       mDeviceLockButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_LOCK));
+      mDeviceLockLed = mHardwareSurface.createOnOffHardwareLight("DeviceLockLed");
+      mDeviceLockLed.onUpdateHardware(() -> sendLedUpdate(BT_DEVICE_LOCK, mDeviceLockLed));
 
       mClipDeviceViewButton = mHardwareSurface.createHardwareButton("ClipDeviceView");
       mClipDeviceViewButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_CLIP_DEVICE_VIEW));
       mClipDeviceViewButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_CLIP_DEVICE_VIEW));
+      mClipDeviceViewLed = mHardwareSurface.createOnOffHardwareLight("ClipDeviceViewLed");
+      mClipDeviceViewLed.onUpdateHardware(() -> sendLedUpdate(BT_CLIP_DEVICE_VIEW, mClipDeviceViewLed));
 
       mDetailViewButton = mHardwareSurface.createHardwareButton("DetailView");
       mDetailViewButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DETAIL_VIEW));
       mDetailViewButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DETAIL_VIEW));
+      mDetailViewLed = mHardwareSurface.createOnOffHardwareLight("DetailViewLed");
+      mDetailViewLed.onUpdateHardware(() -> sendLedUpdate(BT_DETAIL_VIEW, mDetailViewLed));
 
       mShiftButton = mHardwareSurface.createHardwareButton("Shift");
       mShiftButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SHIFT));
@@ -790,7 +835,15 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mBankButton = mHardwareSurface.createHardwareButton("Bank");
       mBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
       mBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_BANK));
-      mBankButton.isPressed().addValueObserver(mBankOn::stateChanged);
+      mBankButton.isPressed().addValueObserver((isPressed) -> {
+         mBankOn.stateChanged(isPressed);
+         if (mBankOn.isOn())
+            mBankLayer.activate();
+         else
+            mBankLayer.deactivate();
+      });
+      mBankLed = mHardwareSurface.createOnOffHardwareLight("BankLed");
+      mBankLed.onUpdateHardware(() -> sendLedUpdate(BT_BANK, mBankLed));
 
       mLauncherUpButton = mHardwareSurface.createHardwareButton("LauncherUp");
       mLauncherUpButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_UP));
@@ -1038,7 +1091,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       paintMixer();
       //paintKnobs();
-      paintButtons();
       paintPads();
       paintScenes();
 
@@ -1123,47 +1175,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             }
 
             rgbLed.paint(mMidiOut, MSG_NOTE_ON, BT_PAD0 + i + (4 - j) * 8);
-         }
-      }
-   }
-
-   private void paintButtons()
-   {
-      mBankOnLed.set(mBankOn.isOn() ? 1 : 0);
-      mBankOnLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_BANK);
-
-      if (!mBankOn.isOn())
-      {
-         mDevOnOffLed.set(mDeviceCursor.isEnabled().get() ? 1 : 0);
-         mDevOnOffLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_DEVICE_ONOFF);
-
-         mDevLockLed.set(mDeviceCursor.isPinned().get() ? 1 : 0);
-         mDevLockLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_DEVICE_LOCK);
-
-         mDevPrevLed.set(mDeviceCursor.hasPrevious().get() ? 1 : 0);
-         mDevPrevLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_PREV_DEVICE);
-
-         mDevNextLed.set(mDeviceCursor.hasNext().get() ? 1 : 0);
-         mDevNextLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_NEXT_DEVICE);
-
-         mDevControlsPrevLed.set(mRemoteControls.hasPrevious().get() ? 1 : 0);
-         mDevControlsPrevLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_PREV_BANK);
-
-         mDevControlsNextLed.set(mRemoteControls.hasNext().get() ? 1 : 0);
-         mDevControlsNextLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_NEXT_BANK);
-
-         mClipDevViewLed.set(1);
-         mClipDevViewLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_CLIP_DEVICE_VIEW);
-
-         mDetailViewLed.set((mDeviceCursor.exists().get() && mDeviceCursor.isWindowOpen().get()) ? 1 : 0);
-         mDetailViewLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_DETAIL_VIEW);
-      }
-      else
-      {
-         for (int i = 0; i < 8; ++i)
-         {
-            mBankLeds[i].set(i == mRemoteControls.selectedPageIndex().get() ? 1 : 0);
-            mBankLeds[i].paint(mMidiOut, MSG_NOTE_ON, 0, BT_BANK0 + i);
          }
       }
    }
@@ -1444,26 +1455,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private final Led mStopMasterTrackLed = new Led();
 
-   private final Led mBankOnLed = new Led();
-
-   private final Led mDevOnOffLed = new Led();
-
-   private final Led mDevLockLed = new Led();
-
-   private final Led mDevPrevLed = new Led();
-
-   private final Led mDevNextLed = new Led();
-
-   private final Led mDevControlsPrevLed = new Led();
-
-   private final Led mDevControlsNextLed = new Led();
-
-   private final Led mClipDevViewLed = new Led();
-
-   private final Led mDetailViewLed = new Led();
-
-   private final Led[] mBankLeds = new Led[8];
-
    private final KnobLed[] mDeviceControlLeds = new KnobLed[8];
 
    private final KnobLed[] mTopControlLeds = new KnobLed[8];
@@ -1488,6 +1479,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private Layer[] mSendLayers;
    private Layer mChannelStripLayer;
    private Layer mShiftLayer;
+   private Layer mBankLayer;
 
    private AbsoluteHardwareKnob[] mTopKnobs;
    private AbsoluteHardwareKnob[] mDeviceControlKnobs;
@@ -1537,4 +1529,13 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private OnOffHardwareLight mPlayLed;
    private OnOffHardwareLight mRecordLed;
    private OnOffHardwareLight mSessionLed;
+   private OnOffHardwareLight mPrevDeviceLed;
+   private OnOffHardwareLight mNextDeviceLed;
+   private OnOffHardwareLight mPrevBankLed;
+   private OnOffHardwareLight mNextBankLed;
+   private OnOffHardwareLight mDeviceOnOffLed;
+   private OnOffHardwareLight mDeviceLockLed;
+   private OnOffHardwareLight mClipDeviceViewLed;
+   private OnOffHardwareLight mDetailViewLed;
+   private OnOffHardwareLight mBankLed;
 }
