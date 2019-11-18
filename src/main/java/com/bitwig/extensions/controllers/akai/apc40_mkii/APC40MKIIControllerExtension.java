@@ -626,7 +626,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("TrackStopLed-" + x);
-         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_ARM, channel, led));
+         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_STOP, channel, led));
          bt.setBackgroundLight(led);
          mTrackStopLeds[x] = led;
       }
@@ -651,7 +651,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("TrackSelectLed-" + x);
-         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_ARM, channel, led));
+         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_SELECT, channel, led));
          bt.setBackgroundLight(led);
          mTrackSelectLeds[x] = led;
       }
@@ -799,28 +799,17 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createTopControls()
    {
       mTopKnobs = new AbsoluteHardwareKnob[8];
-//      mTopKnobsRingLed = new MultiStateHardwareLight[8];
-//      mTopKnobsValueLed = new MultiStateHardwareLight[8];
       for (int i = 0; i < 8; ++i)
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("TopKnob-" + i);
          final int CC = CC_TOP_CTL0 + i;
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
-         // TODO: need to hook the event only when the value changes from Bitwig and not from the controller
          knob.isUpdatingTargetValue().markInterested();
          knob.targetValue().addValueObserver(newValue -> {
             if (!knob.isUpdatingTargetValue().get())
                mMidiOut.sendMidi(0xB0, CC, (int)(127 * newValue));
          });
-
-//         final MultiStateHardwareLight valueLed =
-//            mHardwareSurface.createMultiStateHardwareLight("TopKnobValueLed-" + i, null);
-//         final MultiStateHardwareLight ringLed =
-//            mHardwareSurface.createMultiStateHardwareLight("TopKnobRingLed-" + i, null);
-
          mTopKnobs[i] = knob;
-//         mTopKnobsValueLed[i] = valueLed;
-//         mTopKnobsRingLed[i] = ringLed;
       }
 
       mPanButton = mHardwareSurface.createHardwareButton("Pan");
