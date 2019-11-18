@@ -349,6 +349,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       createDebugLayer();
       createSendLayers();
       createChannelStripLayer();
+      createShiftLayer();
+   }
+
+   private void createShiftLayer()
+   {
+      mShiftLayer = new Layer(mLayers, "Shift");
    }
 
    private void createChannelStripLayer()
@@ -1450,6 +1456,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private Layer[] mUserLayers;
    private Layer[] mSendLayers;
    private Layer mChannelStripLayer;
+   private Layer mShiftLayer;
 
    private AbsoluteHardwareKnob[] mTopKnobs;
    private AbsoluteHardwareKnob[] mDeviceControlKnobs;
