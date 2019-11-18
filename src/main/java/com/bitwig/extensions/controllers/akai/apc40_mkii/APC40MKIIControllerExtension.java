@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
-import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -194,8 +193,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTransport.tempo().markInterested();
       mTransport.isPlaying().markInterested();
       mTransport.isArrangerRecordEnabled().markInterested();
+      mTransport.isArrangerAutomationWriteEnabled().markInterested();
       mTransport.isClipLauncherAutomationWriteEnabled().markInterested();
-      mTransport.isMetronomeEnabled().markInterested();
       mTransport.isClipLauncherOverdubEnabled().markInterested();
       mTransport.defaultLaunchQuantization().markInterested();
 
@@ -503,7 +502,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mHardwareSurface = getHost().createHardwareSurface();
       mHardwareSurface.setPhysicalSize(420, 260);
 
-      createTopKnobs();
+      createTopControls();
       createDeviceControls();
       createVolumeFaders();
       createGridButtons();
@@ -676,7 +675,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mCueLevelKnob.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_CUE));
    }
 
-   private void createTopKnobs()
+   private void createTopControls()
    {
       mTopKnobs = new AbsoluteHardwareKnob[8];
       for (int i = 0; i < 8; ++i)
@@ -689,6 +688,20 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          mTopKnobs[i] = knob;
       }
+
+      mPanButton = mHardwareSurface.createHardwareButton("Pan");
+      mPanButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PAN));
+      mPanButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PAN));
+
+      mSendsButton = mHardwareSurface.createHardwareButton("Sends");
+      mSendsButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SENDS));
+      mSendsButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SENDS));
+      mSendsButton.isPressed().addValueObserver(mSendsOn::stateChanged);
+
+      mUserButton = mHardwareSurface.createHardwareButton("User");
+      mUserButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_USER));
+      mUserButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_USER));
+      mUserButton.isPressed().addValueObserver(mUserOn::stateChanged);
    }
 
    private void createDeviceControls()
@@ -741,6 +754,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mShiftButton = mHardwareSurface.createHardwareButton("Shift");
       mShiftButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SHIFT));
       mShiftButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SHIFT));
+      mShiftButton.isPressed().markInterested();
 
       mBankButton = mHardwareSurface.createHardwareButton("Bank");
       mBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
@@ -1489,4 +1503,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private HardwareButton mLauncherLeftButton;
    private HardwareButton mLauncherRightButton;
    private HardwareButton[] mSceneButtons;
+   private HardwareButton mPanButton;
+   private HardwareButton mSendsButton;
+   private HardwareButton mUserButton;
 }
