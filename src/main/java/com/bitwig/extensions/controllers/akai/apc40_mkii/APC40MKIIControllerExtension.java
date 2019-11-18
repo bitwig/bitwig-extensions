@@ -446,6 +446,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mMainLayer.bindPressed(mGridButtons[offset], track.clipLauncherSlotBank().getItemAt(y).launchAction());
          }
          mMainLayer.bindToggle(mMuteButtons[x], track.mute());
+         mMainLayer.bindInverted(track.mute(), mMuteLeds[x]);
          mMainLayer.bindToggle(mSoloButtons[x], track.solo());
          mMainLayer.bindToggle(mArmButtons[x], track.arm());
          mMainLayer.bindPressed(mABButtons[x], getHost().createAction(() -> {
@@ -460,8 +461,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             getHost().createAction(() -> track.selectInMixer(), () -> "Selects the track"));
          mMainLayer.bind(mIsTrackSelected[x], mTrackSelectLeds[x]);
          mMainLayer.bindPressed(mTrackStopButtons[x], track.stopAction());
-         // TODO: negate the isStopped()
-         mMainLayer.bind(track.isStopped(), mTrackStopLeds[x]);
+         mMainLayer.bindInverted(track.isStopped(), mTrackStopLeds[x]);
       }
       mMainLayer.bindPressed(mMasterTrackSelectButton, getHost()
          .createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
@@ -745,7 +745,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("MuteLed-" + x);
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_MUTE, channel, led));
-         bt.setBackgroundLight(led);
          mMuteLeds[x] = led;
       }
    }
