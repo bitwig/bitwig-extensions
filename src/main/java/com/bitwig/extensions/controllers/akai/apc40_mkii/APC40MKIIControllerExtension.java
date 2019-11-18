@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.IntFunction;
 
+import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -21,6 +21,7 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
@@ -298,13 +299,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mIsTrackSelected[i] = mTrackCursor.createEqualsValue(track);
          mIsTrackSelected[i].markInterested();
 
-         mMuteLeds[i] = new Led();
-         mArmLeds[i] = new Led();
-         mSoloLeds[i] = new Led();
-         mABLeds[i] = new Led();
-         mSelectTrackLeds[i] = new Led();
-         mStopTrackLeds[i] = new Led();
-
          final RemoteControl parameter = mRemoteControls.getParameter(i);
          parameter.setIndication(true);
          parameter.markInterested();
@@ -378,6 +372,13 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       mShiftLayer.bindToggle(mRecordButton, mTransport.isArrangerRecordEnabled());
       mShiftLayer.bindToggle(mSessionButton, mTransport.isArrangerAutomationWriteEnabled());
+
+      for (int i = 0; i < 8; ++i)
+      {
+         // TODO: bind the track select led to the launch quantization:
+         // final int launchQuantizationIndex = computeLaunchQuantizationIndex();
+         // x == launchQuantizationIndex
+      }
    }
 
    private void createChannelStripLayer()
@@ -444,23 +445,30 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             final int offset = 8 * y + x;
             mMainLayer.bindPressed(mGridButtons[offset], track.clipLauncherSlotBank().getItemAt(y).launchAction());
          }
-         mMainLayer.bindPressed(mMuteButtons[x], track.mute().toggleAction());
-         mMainLayer.bindPressed(mSoloButtons[x], track.solo().toggleAction());
-         mMainLayer.bindPressed(mArmButtons[x], track.arm().toggleAction());
+         mMainLayer.bindToggle(mMuteButtons[x], track.mute());
+         mMainLayer.bindToggle(mSoloButtons[x], track.solo());
+         mMainLayer.bindToggle(mArmButtons[x], track.arm());
          mMainLayer.bindPressed(mABButtons[x], getHost().createAction(() -> {
             final SettableEnumValue crossFadeMode = track.crossFadeMode();
             final int nextValue = (crossFadeToInt(crossFadeMode.get()) + 1) % 3;
             crossFadeMode.set(intToCrossFade(nextValue));
          }, () -> "Cycle through crossfade values"));
+         // TODO: bind the AB led
          mMainLayer.bindPressed(
             mTrackSelectButtons[x],
             // TODO: add new api for CursorTrack.select(Track).
             getHost().createAction(() -> track.selectInMixer(), () -> "Selects the track"));
+         mMainLayer.bind(mIsTrackSelected[x], mTrackSelectLeds[x]);
          mMainLayer.bindPressed(mTrackStopButtons[x], track.stopAction());
+         // TODO: negate the isStopped()
+         mMainLayer.bind(track.isStopped(), mTrackStopLeds[x]);
       }
       mMainLayer.bindPressed(mMasterTrackSelectButton, getHost()
          .createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
+      mMainLayer.bind(mIsMasterSelected, mMasterTrackSelectLed);
       mMainLayer.bindPressed(mMasterTrackStopButton, mSceneBank.stopAction());
+      // TODO: negate the isStopped()
+      mMainLayer.bind(mMasterTrack.isStopped(), mMasterTrackStopLed);
 
       mMainLayer.bindToggle(mPlayButton, mTransport.isPlaying());
       mMainLayer.bindToggle(mRecordButton, mTransport.isClipLauncherOverdubEnabled());
@@ -548,7 +556,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       createTopControls();
       createDeviceControls();
-      createVolumeFaders();
+      createVolumeControls();
       createGridButtons();
       createMuteButtons();
       createSoloButtons();
@@ -608,80 +616,137 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createTrackStopButtons()
    {
       mTrackStopButtons = new HardwareButton[8];
+      mTrackStopLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackStop-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_STOP));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_STOP));
          mTrackStopButtons[x] = bt;
+
+         final int channel = x;
+         final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("TrackStopLed-" + x);
+         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_ARM, channel, led));
+         bt.setBackgroundLight(led);
+         mTrackStopLeds[x] = led;
       }
 
       mMasterTrackStopButton = mHardwareSurface.createHardwareButton("MasterTrackStop");
       mMasterTrackStopButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_MASTER_STOP));
       mMasterTrackStopButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_STOP));
+      mMasterTrackStopLed = mHardwareSurface.createOnOffHardwareLight("MasterTrackStopLed");
+      mMasterTrackStopLed.onUpdateHardware(() -> sendLedUpdate(BT_MASTER_STOP, mMasterTrackStopLed));
    }
 
    private void createTrackSelectButtons()
    {
       mTrackSelectButtons = new HardwareButton[8];
+      mTrackSelectLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_SELECT));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_SELECT));
          mTrackSelectButtons[x] = bt;
+
+         final int channel = x;
+         final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("TrackSelectLed-" + x);
+         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_ARM, channel, led));
+         bt.setBackgroundLight(led);
+         mTrackSelectLeds[x] = led;
       }
 
       mMasterTrackSelectButton = mHardwareSurface.createHardwareButton("MasterTrackSelect");
       mMasterTrackSelectButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_MASTER_SELECT));
       mMasterTrackSelectButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_SELECT));
+      mMasterTrackSelectLed = mHardwareSurface.createOnOffHardwareLight("MasterTrackSelectLed");
+      mMasterTrackSelectLed.onUpdateHardware(() -> sendLedUpdate(BT_MASTER_SELECT, mMasterTrackSelectLed));
    }
 
    private void createABButtons()
    {
       mABButtons = new HardwareButton[8];
+      mABLeds = new MultiStateHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("AB-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_AB));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_AB));
          mABButtons[x] = bt;
+
+         final int channel = x;
+         final MultiStateHardwareLight led = mHardwareSurface.createMultiStateHardwareLight("ABLed-" + x, i -> getABLedColor(i));
+         led.state().onUpdateHardware((value) -> sendLedUpdate(BT_TRACK_AB, channel, value));
+      }
+   }
+
+   private static Color getABLedColor(final int i)
+   {
+      switch (i)
+      {
+         case 1:
+            return Color.fromRGB(1.0, 0.5, 0);
+         case 2:
+            return Color.fromRGB(0, 0, 1.0);
+         default:
+            return Color.fromRGB(0, 0, 0);
       }
    }
 
    private void createArmButtons()
    {
       mArmButtons = new HardwareButton[8];
+      mArmLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Arm-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_ARM));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_ARM));
          mArmButtons[x] = bt;
+
+         final int channel = x;
+         final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("ArmLed-" + x);
+         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_ARM, channel, led));
+         bt.setBackgroundLight(led);
+         mArmLeds[x] = led;
       }
    }
 
    private void createSoloButtons()
    {
       mSoloButtons = new HardwareButton[8];
+      mSoloLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Solo-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_SOLO));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_SOLO));
          mSoloButtons[x] = bt;
+
+         final int channel = x;
+         final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("SoloLed-" + x);
+         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_SOLO, channel, led));
+         bt.setBackgroundLight(led);
+         mSoloLeds[x] = led;
       }
    }
 
    private void createMuteButtons()
    {
       mMuteButtons = new HardwareButton[8];
+      mMuteLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Mute-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_MUTE));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_MUTE));
          mMuteButtons[x] = bt;
+
+         final int channel = x;
+         final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("MuteLed-" + x);
+         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_MUTE, channel, led));
+         bt.setBackgroundLight(led);
+         mMuteLeds[x] = led;
       }
    }
 
@@ -710,7 +775,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
    }
 
-   private void createVolumeFaders()
+   private void createVolumeControls()
    {
       mTrackVolumeSliders = new HardwareSlider[8];
       for (int i = 0; i < 8; ++i)
@@ -862,9 +927,24 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mLauncherRightButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_RIGHT));
    }
 
-   private void sendLedUpdate(final int note, final OnOffHardwareLight light)
+   private void sendLedUpdate(final int note, final OnOffHardwareLight led)
    {
-      mMidiOut.sendMidi(MSG_NOTE_ON << 4, note, light.isOn().currentValue() ? 1 : 0);
+      sendLedUpdate(note, 0, led);
+   }
+
+   private void sendLedUpdate(final int note, final int channel, final OnOffHardwareLight led)
+   {
+      mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note, led.isOn().currentValue() ? 1 : 0);
+   }
+
+   private void sendLedUpdate(final int note, final int channel, final MultiStateHardwareLight led)
+   {
+      mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note, led.state().currentValue());
+   }
+
+   private void sendLedUpdate(final int note, final int channel, final int color)
+   {
+      mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note, color);
    }
 
    private void activateTopMode(final TopMode topMode)
@@ -1089,7 +1169,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    @Override
    public void flush()
    {
-      paintMixer();
       //paintKnobs();
       paintPads();
       paintScenes();
@@ -1295,51 +1374,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
    }
 
-   private void paintMixer()
-   {
-      final int launchQuantizationIndex = computeLaunchQuantizationIndex();
-
-      for (int i = 0; i < 8; ++i)
-      {
-         final Track track = mTrackBank.getItemAt(i);
-         final boolean exists = track.exists().get();
-
-         mMuteLeds[i].set(exists && !track.mute().get() ? 1 : 0);
-         mMuteLeds[i].paint(mMidiOut, MSG_NOTE_ON, i, BT_TRACK_MUTE);
-
-         mArmLeds[i].set(exists && track.arm().get() ? 1 : 0);
-         mArmLeds[i].paint(mMidiOut, MSG_NOTE_ON, i, BT_TRACK_ARM);
-
-         mSoloLeds[i].set(exists && track.solo().get() ? 1 : 0);
-         mSoloLeds[i].paint(mMidiOut, MSG_NOTE_ON, i, BT_TRACK_SOLO);
-
-         mABLeds[i].set(exists ? crossFadeToInt(track.crossFadeMode().get()) : 0);
-         mABLeds[i].paint(mMidiOut, MSG_NOTE_ON, i, BT_TRACK_AB);
-
-         if (mShiftButton.isPressed().get())
-         {
-            // Show the launch quantization
-            mSelectTrackLeds[i].set(launchQuantizationIndex == i ? 1 : 0);
-            mSelectTrackLeds[i].paint(mMidiOut, MSG_NOTE_ON, i, BT_TRACK_SELECT);
-         }
-         else
-         {
-            // Show the selected track.
-            mSelectTrackLeds[i].set(exists && mIsTrackSelected[i].get() ? 1 : 0);
-            mSelectTrackLeds[i].paint(mMidiOut, MSG_NOTE_ON, i, BT_TRACK_SELECT);
-         }
-
-         mStopTrackLeds[i].set(exists && !track.isStopped().get() ? 1 : 0);
-         mStopTrackLeds[i].paint(mMidiOut, MSG_NOTE_ON, i, BT_TRACK_STOP);
-      }
-
-      mStopMasterTrackLed.set(mMasterTrack.isStopped().get() ? 0 : 1);
-      mStopMasterTrackLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_MASTER_STOP);
-
-      mSelectMasterTrackLed.set(mIsMasterSelected.get() ? 1 : 0);
-      mSelectMasterTrackLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_MASTER_SELECT);
-   }
-
    private double getMaxVolume()
    {
       final String text = mMaxVolumeSetting.get();
@@ -1439,22 +1473,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private int mUserIndex = 0; // 0..4
 
-   private final Led[] mMuteLeds = new Led[8];
-
-   private final Led[] mSoloLeds = new Led[8];
-
-   private final Led[] mABLeds = new Led[8];
-
-   private final Led[] mArmLeds = new Led[8];
-
-   private final Led[] mSelectTrackLeds = new Led[8];
-
-   private final Led mSelectMasterTrackLed = new Led();
-
-   private final Led[] mStopTrackLeds = new Led[8];
-
-   private final Led mStopMasterTrackLed = new Led();
-
    private final KnobLed[] mDeviceControlLeds = new KnobLed[8];
 
    private final KnobLed[] mTopControlLeds = new KnobLed[8];
@@ -1538,4 +1556,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private OnOffHardwareLight mClipDeviceViewLed;
    private OnOffHardwareLight mDetailViewLed;
    private OnOffHardwareLight mBankLed;
+   private OnOffHardwareLight[] mMuteLeds;
+   private OnOffHardwareLight[] mSoloLeds;
+   private OnOffHardwareLight[] mArmLeds;
+   private MultiStateHardwareLight[] mABLeds;
+   private OnOffHardwareLight[] mTrackSelectLeds;
+   private OnOffHardwareLight mMasterTrackSelectLed;
+   private OnOffHardwareLight[] mTrackStopLeds;
+   private OnOffHardwareLight mMasterTrackStopLed;
 }
