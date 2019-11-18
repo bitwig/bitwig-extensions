@@ -86,14 +86,12 @@ public class SLMixfaceExtension extends ControllerExtension
          panKnob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 2 + i));
          final String panLabel = "Pan" + (i + 1);
          panKnob.setLabel(panLabel);
-         panKnob.setBounds(x, 20, 13, 13);
          mPanKnobs[i] = panKnob;
 
          final HardwareSlider slider = surface.createHardwareSlider("volume" + (i + 1));
          slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 16 + i));
          final String volLabel = "Volume " + (i + 1);
          slider.setLabel(volLabel);
-         slider.setBounds(x, 50, 13, 50);
          mVolumeSliders[i] = slider;
 
          // Create the arm button
@@ -104,7 +102,6 @@ public class SLMixfaceExtension extends ControllerExtension
          armButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 0));
          final String armLabel = "Arm " + (i + 1);
          armButton.setLabel(armLabel);
-         armButton.setBounds(x, 110, 13, 13);
          final OnOffHardwareLight armBackgroundLight = surface.createOnOffHardwareLight("arm_light" + (i + 1));
 
          final int j = i;
@@ -126,7 +123,6 @@ public class SLMixfaceExtension extends ControllerExtension
          muteButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, muteCC, 0));
          final String muteLabel = "Mute " + (i + 1);
          muteButton.setLabel(muteLabel);
-         muteButton.setBounds(x, 126, 13, 13);
          final OnOffHardwareLight muteBackgroundLight = surface.createOnOffHardwareLight("mute_light" + (i + 1));
 
          muteBackgroundLight.isOn().onUpdateHardware(value -> {
@@ -145,7 +141,6 @@ public class SLMixfaceExtension extends ControllerExtension
          soloButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, soloCC, 0));
          final String soloLabel = "Solo " + (i + 1);
          soloButton.setLabel(soloLabel);
-         soloButton.setBounds(x, 142, 13, 13);
          final OnOffHardwareLight soloBackgroundLight = surface.createOnOffHardwareLight("solo_light" + (i + 1));
 
          soloBackgroundLight.isOn().onUpdateHardware(value -> {
@@ -164,7 +159,6 @@ public class SLMixfaceExtension extends ControllerExtension
          selectButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, selectCC, 0));
          final String selectLabel = "Select " + (i + 1);
          selectButton.setLabel(selectLabel);
-         selectButton.setBounds(x, 158, 13, 13);
          final OnOffHardwareLight selectBackgroundLight = surface.createOnOffHardwareLight("select_light" + (i + 1));
 
          selectBackgroundLight.isOn().onUpdateHardware(value -> {
@@ -179,11 +173,9 @@ public class SLMixfaceExtension extends ControllerExtension
       mMasterVolumeSlider = surface.createHardwareSlider("master_volume");
       mMasterVolumeSlider.setLabel("Master Volume");
       mMasterVolumeSlider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 24));
-      mMasterVolumeSlider.setBounds(175, 50, 13, 50);
 
       mPlayButton = createButton("play");
       mPlayButton.setLabel("Play");
-      mPlayButton.setBounds(226, 93, 12, 8);
 
       final String playPressedExpression = midiExpressions.createIsCCValueExpression(15, 32, 127) + " || "
          + midiExpressions.createIsCCValueExpression(15, 33, 127);
@@ -197,7 +189,6 @@ public class SLMixfaceExtension extends ControllerExtension
 
       mRecordButton = createButton("record");
       mRecordButton.setLabel("Record");
-      mRecordButton.setBounds(242, 93, 12, 8);
       mRecordButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 127));
       mRecordButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 34, 0));
       final OnOffHardwareLight recordLight = surface.createOnOffHardwareLight("record_light");
@@ -208,7 +199,6 @@ public class SLMixfaceExtension extends ControllerExtension
 
       mModeButton = createButton("mode");
       mModeButton.setLabel("Mode");
-      mModeButton.setBounds(242, 78, 12, 8);
       mModeButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, 39, 127));
       final OnOffHardwareLight modeLight = surface.createOnOffHardwareLight("mode_light");
       modeLight.isOn().onUpdateHardware(value -> {
@@ -249,6 +239,72 @@ public class SLMixfaceExtension extends ControllerExtension
 
       mNavigationDial.setAdjustValueMatcher(valueMatcher);
       mNavigationDial.setStepSize(stepSize);
+
+      initHardwareLayout();
+   }
+
+   private void initHardwareLayout()
+   {
+      final HardwareSurface surface = mHardwareSurface;
+      surface.hardwareElementWithId("pan1").setBounds(9.0, 20.75, 13.0, 13.0);
+      surface.hardwareElementWithId("volume1").setBounds(9.0, 46.25, 13.0, 50.0);
+      surface.hardwareElementWithId("arm1").setBounds(9.0, 108.25, 13.0, 13.0);
+      surface.hardwareElementWithId("mute1").setBounds(9.0, 124.25, 13.0, 13.0);
+      surface.hardwareElementWithId("solo1").setBounds(9.0, 140.25, 13.0, 13.0);
+      surface.hardwareElementWithId("select1").setBounds(9.0, 156.25, 13.0, 13.0);
+      surface.hardwareElementWithId("pan2").setBounds(29.0, 20.75, 13.0, 13.0);
+      surface.hardwareElementWithId("volume2").setBounds(29.0, 46.25, 13.0, 50.0);
+      surface.hardwareElementWithId("arm2").setBounds(29.0, 108.25, 13.0, 13.0);
+      surface.hardwareElementWithId("mute2").setBounds(29.0, 124.25, 13.0, 13.0);
+      surface.hardwareElementWithId("solo2").setBounds(29.0, 140.25, 13.0, 13.0);
+      surface.hardwareElementWithId("select2").setBounds(29.0, 156.25, 13.0, 13.0);
+      surface.hardwareElementWithId("pan3").setBounds(49.25, 20.75, 13.0, 13.0);
+      surface.hardwareElementWithId("volume3").setBounds(49.25, 46.25, 13.0, 50.0);
+      surface.hardwareElementWithId("arm3").setBounds(49.0, 108.25, 13.0, 13.0);
+      surface.hardwareElementWithId("mute3").setBounds(49.0, 124.25, 13.0, 13.0);
+      surface.hardwareElementWithId("solo3").setBounds(49.0, 140.25, 13.0, 13.0);
+      surface.hardwareElementWithId("select3").setBounds(49.0, 156.25, 13.0, 13.0);
+      surface.hardwareElementWithId("pan4").setBounds(69.25, 20.75, 13.0, 13.0);
+      surface.hardwareElementWithId("volume4").setBounds(69.25, 46.25, 13.0, 50.0);
+      surface.hardwareElementWithId("arm4").setBounds(69.0, 108.25, 13.0, 13.0);
+      surface.hardwareElementWithId("mute4").setBounds(69.0, 124.25, 13.0, 13.0);
+      surface.hardwareElementWithId("solo4").setBounds(69.0, 140.25, 13.0, 13.0);
+      surface.hardwareElementWithId("select4").setBounds(69.0, 156.25, 13.0, 13.0);
+      surface.hardwareElementWithId("pan5").setBounds(89.5, 20.75, 13.0, 13.0);
+      surface.hardwareElementWithId("volume5").setBounds(89.25, 46.25, 13.0, 50.0);
+      surface.hardwareElementWithId("arm5").setBounds(89.0, 108.25, 13.0, 13.0);
+      surface.hardwareElementWithId("mute5").setBounds(89.0, 124.25, 13.0, 13.0);
+      surface.hardwareElementWithId("solo5").setBounds(89.0, 140.25, 13.0, 13.0);
+      surface.hardwareElementWithId("select5").setBounds(89.0, 156.25, 13.0, 13.0);
+      surface.hardwareElementWithId("pan6").setBounds(109.5, 20.75, 13.0, 13.0);
+      surface.hardwareElementWithId("volume6").setBounds(109.5, 46.25, 13.0, 50.0);
+      surface.hardwareElementWithId("arm6").setBounds(109.0, 108.25, 13.0, 13.0);
+      surface.hardwareElementWithId("mute6").setBounds(109.0, 124.25, 13.0, 13.0);
+      surface.hardwareElementWithId("solo6").setBounds(109.0, 140.25, 13.0, 13.0);
+      surface.hardwareElementWithId("select6").setBounds(109.0, 156.25, 13.0, 13.0);
+      surface.hardwareElementWithId("pan7").setBounds(129.75, 20.75, 13.0, 13.0);
+      surface.hardwareElementWithId("volume7").setBounds(129.5, 46.25, 13.0, 50.0);
+      surface.hardwareElementWithId("arm7").setBounds(129.0, 108.25, 13.0, 13.0);
+      surface.hardwareElementWithId("mute7").setBounds(129.0, 124.25, 13.0, 13.0);
+      surface.hardwareElementWithId("solo7").setBounds(129.0, 140.25, 13.0, 13.0);
+      surface.hardwareElementWithId("select7").setBounds(129.0, 156.25, 13.0, 13.0);
+      surface.hardwareElementWithId("pan8").setBounds(149.75, 20.75, 13.0, 13.0);
+      surface.hardwareElementWithId("volume8").setBounds(149.75, 46.25, 13.0, 50.0);
+      surface.hardwareElementWithId("arm8").setBounds(149.0, 108.25, 13.0, 13.0);
+      surface.hardwareElementWithId("mute8").setBounds(149.0, 124.25, 13.0, 13.0);
+      surface.hardwareElementWithId("solo8").setBounds(149.0, 140.25, 13.0, 13.0);
+      surface.hardwareElementWithId("select8").setBounds(149.0, 156.25, 13.0, 13.0);
+      surface.hardwareElementWithId("master_volume").setBounds(169.75, 46.25, 13.0, 50.0);
+      surface.hardwareElementWithId("play").setBounds(226.0, 91.0, 12.0, 8.0);
+      surface.hardwareElementWithId("record").setBounds(241.0, 91.0, 12.0, 8.0);
+      surface.hardwareElementWithId("mode").setBounds(241.0, 77.0, 12.0, 8.0);
+      surface.hardwareElementWithId("scroll_forwards").setBounds(241.0, 57.25, 12.0, 8.0);
+      surface.hardwareElementWithId("scroll_backwards").setBounds(225.0, 57.0, 12.0, 8.0);
+      surface.hardwareElementWithId("fast_forward").setBounds(210.5, 91.0, 12.0, 8.0);
+      surface.hardwareElementWithId("rewind").setBounds(195.0, 91.0, 12.0, 8.0);
+      surface.hardwareElementWithId("dial").setBounds(239.0, 28.5, 18.25, 18.0);
+
+
    }
 
    private HardwareButton createButton(final String id)
