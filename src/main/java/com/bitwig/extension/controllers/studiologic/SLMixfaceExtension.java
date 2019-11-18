@@ -7,6 +7,7 @@ import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ClipLauncherSlotOrScene;
@@ -384,6 +385,10 @@ public class SLMixfaceExtension extends ControllerExtension
          final HardwareButton selectButton = mSelectButtons[i];
 
          layer.bindPressed(selectButton, () -> mCursorTrack.selectChannel(track));
+
+         final BooleanValue isSelected = track.createEqualsValue(mCursorTrack);
+
+         layer.bind(isSelected, selectButton);
       }
 
       layer.bind(mNavigationDial, mCursorTrack);
