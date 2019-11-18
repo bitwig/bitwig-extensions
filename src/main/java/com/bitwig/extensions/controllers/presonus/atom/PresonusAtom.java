@@ -297,72 +297,48 @@ public class PresonusAtom extends ControllerExtension
 
    private void initHardwareLayout()
    {
-      final double leftMargin = 13;
-      final double buttonWidth = 14;
-      final double buttonHeight = 10;
-      final double buttonGap = 6;
-      final double buttonTop = 20;
-      final double shortButtonSpacing = buttonHeight + buttonGap;
-      final double editorButtonTop = 60;
-      final double showHideTop = 96;
-      final double fullLevelTop = 145;
+      final HardwareSurface surface = mHardwareSurface;
+      surface.hardwareElementWithId("shift").setBounds(12.25, 175.25, 12.0, 9.0);
+      surface.hardwareElementWithId("up").setBounds(178.25, 21.75, 14.0, 10.0);
+      surface.hardwareElementWithId("down").setBounds(178.25, 37.0, 14.0, 10.0);
+      surface.hardwareElementWithId("left").setBounds(178.25, 52.0, 14.0, 10.0);
+      surface.hardwareElementWithId("right").setBounds(178.25, 67.25, 14.0, 10.0);
+      surface.hardwareElementWithId("select").setBounds(178.25, 82.5, 14.0, 10.0);
+      surface.hardwareElementWithId("zoom").setBounds(178.25, 97.75, 14.0, 10.0);
+      surface.hardwareElementWithId("click_count_in").setBounds(178.75, 129.75, 14.0, 10.0);
+      surface.hardwareElementWithId("record_save").setBounds(178.75, 145.0, 14.0, 10.0);
+      surface.hardwareElementWithId("play_loop").setBounds(178.75, 160.0, 14.0, 10.0);
+      surface.hardwareElementWithId("stop_undo").setBounds(178.75, 175.25, 14.0, 10.0);
+      surface.hardwareElementWithId("setup").setBounds(11.5, 21.5, 14.0, 10.0);
+      surface.hardwareElementWithId("set_loop").setBounds(11.5, 37.5, 14.0, 10.0);
+      surface.hardwareElementWithId("editor").setBounds(11.25, 56.5, 14.0, 10.0);
+      surface.hardwareElementWithId("nudge_quantize").setBounds(11.25, 72.5, 14.0, 10.0);
+      surface.hardwareElementWithId("show_hide").setBounds(11.0, 93.5, 14.0, 10.0);
+      surface.hardwareElementWithId("preset_pad_select").setBounds(11.0, 108.25, 14.0, 10.0);
+      surface.hardwareElementWithId("bank").setBounds(11.0, 123.25, 14.0, 10.0);
+      surface.hardwareElementWithId("full_level").setBounds(11.25, 144.75, 14.0, 10.0);
+      surface.hardwareElementWithId("note_repeat").setBounds(11.25, 160.75, 14.0, 10.0);
+      surface.hardwareElementWithId("pad1").setBounds(34.75, 154.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad2").setBounds(69.75, 154.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad3").setBounds(104.75, 154.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad4").setBounds(139.75, 154.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad5").setBounds(34.75, 121.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad6").setBounds(69.75, 121.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad7").setBounds(104.75, 121.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad8").setBounds(139.75, 121.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad9").setBounds(34.75, 88.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad10").setBounds(69.75, 88.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad11").setBounds(104.75, 88.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad12").setBounds(139.75, 88.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad13").setBounds(34.75, 55.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad14").setBounds(69.75, 55.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad15").setBounds(104.75, 55.75, 30.0, 30.0);
+      surface.hardwareElementWithId("pad16").setBounds(139.75, 55.75, 30.0, 30.0);
+      surface.hardwareElementWithId("encoder1").setBounds(38.75, 21.5, 25.0, 25.0);
+      surface.hardwareElementWithId("encoder2").setBounds(72.5, 21.5, 25.0, 25.0);
+      surface.hardwareElementWithId("encoder3").setBounds(106.25, 21.5, 25.0, 25.0);
+      surface.hardwareElementWithId("encoder4").setBounds(140.25, 21.5, 25.0, 25.0);
 
-      mSetupButton.setBounds(leftMargin, buttonTop, buttonWidth, buttonHeight);
-      mSetLoopButton.setBounds(leftMargin, buttonTop + shortButtonSpacing, buttonWidth, buttonHeight);
-
-      mEditorButton.setBounds(leftMargin, editorButtonTop, buttonWidth, buttonHeight);
-      mNudgeQuantizeButton.setBounds(leftMargin, editorButtonTop + shortButtonSpacing, buttonWidth,
-         buttonHeight);
-
-      mShowHideButton.setBounds(leftMargin, showHideTop, buttonWidth, buttonHeight);
-      mPresetPadSelectButton.setBounds(leftMargin, showHideTop + shortButtonSpacing, buttonWidth,
-         buttonHeight);
-      mBankButton.setBounds(leftMargin, showHideTop + shortButtonSpacing * 2, buttonWidth, buttonHeight);
-
-      mFullLevelButton.setBounds(leftMargin, fullLevelTop, buttonWidth, buttonHeight);
-      mNoteRepeatButton.setBounds(leftMargin, fullLevelTop + shortButtonSpacing, buttonWidth, buttonHeight);
-
-      mShiftButton.setBounds(leftMargin + (buttonWidth - 12) / 2, 175, 12, 9);
-
-      final double rigtButtonLeftEdge = 175;
-
-      mUpButton.setBounds(rigtButtonLeftEdge, buttonTop, buttonWidth, buttonHeight);
-      mDownButton.setBounds(rigtButtonLeftEdge, buttonTop + shortButtonSpacing, buttonWidth, buttonHeight);
-      mLeftButton.setBounds(rigtButtonLeftEdge, buttonTop + shortButtonSpacing * 2, buttonWidth,
-         buttonHeight);
-      mRightButton.setBounds(rigtButtonLeftEdge, buttonTop + shortButtonSpacing * 3, buttonWidth,
-         buttonHeight);
-      mSelectButton.setBounds(rigtButtonLeftEdge, buttonTop + shortButtonSpacing * 4, buttonWidth,
-         buttonHeight);
-      mZoomButton.setBounds(rigtButtonLeftEdge, buttonTop + shortButtonSpacing * 5, buttonWidth,
-         buttonHeight);
-
-      final double clickCountInTop = 125;
-
-      mClickCountInButton.setBounds(rigtButtonLeftEdge, clickCountInTop, buttonWidth, buttonHeight);
-      mRecordSaveButton.setBounds(rigtButtonLeftEdge, clickCountInTop + shortButtonSpacing, buttonWidth,
-         buttonHeight);
-      mPlayLoopButton.setBounds(rigtButtonLeftEdge, clickCountInTop + shortButtonSpacing * 2, buttonWidth,
-         buttonHeight);
-      mStopUndoButton.setBounds(rigtButtonLeftEdge, clickCountInTop + shortButtonSpacing * 3, buttonWidth,
-         buttonHeight);
-
-      for (int i = 0; i < 16; i++)
-      {
-         final HardwareButton pad = mPadButtons[i];
-
-         final int row = i / 4;
-         final int column = i % 4;
-
-         pad.setBounds(35 + column * 35, 155 - row * 33, 30, 30);
-      }
-
-      for (int i = 0; i < 4; i++)
-      {
-         final RelativeHardwareKnob encoder = mEncoders[i];
-
-         encoder.setBounds(40 + i * 35, 20, 25, 25);
-      }
    }
 
    private void initHardwareColors()
