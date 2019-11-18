@@ -818,6 +818,48 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mChannelStripLayer.activate();
       else
          mChannelStripLayer.deactivate();
+
+      updateTopIndications();
+   }
+
+   private void updateTopIndications()
+   {
+      updatePanIndication(mTopMode == TopMode.PAN);
+      updateSendIndication(mTopMode == TopMode.SENDS ? mSendIndex : -1);
+      updateChannelStripIndication(mTopMode == TopMode.CHANNEL_STRIP);
+   }
+
+   private void updateChannelStripIndication(boolean shouldIndicate)
+   {
+      for (int i = 0; i < CHANNEL_STRIP_NUM_PARAMS; ++i)
+         mChannelStripRemoteControls.getParameter(i).setIndication(shouldIndicate);
+
+      for (int i = 0; i < CHANNEL_STRIP_NUM_SENDS; ++i)
+         mTrackCursor.sendBank().getItemAt(i).setIndication(shouldIndicate);
+   }
+
+   private void updatePanIndication(boolean shouldIndicate)
+   {
+      for (int i = 0; i < 8; ++i)
+      {
+         final Track track = mTrackBank.getItemAt(i);
+         track.pan().setIndication(track.exists().get() && shouldIndicate);
+      }
+   }
+
+   private void updateSendIndication(final int sendIndex)
+   {
+      for (int i = 0; i < 8; ++i)
+      {
+         final Track track = mTrackBank.getItemAt(i);
+         final SendBank sendBank = track.sendBank();
+         for (int j = 0; j < 5; ++j)
+         {
+            final Send send = sendBank.getItemAt(j);
+            final boolean shouldIndicate = sendIndex == j && send.exists().get();
+            send.setIndication(shouldIndicate);
+         }
+      }
    }
 
    private void onSysexIn(final String sysex)
@@ -937,46 +979,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          {
             if (mTrackCursor.isGroup().get())
                mApplication.navigateIntoTrackGroup(mTrackCursor);
-         }
-      }
-   }
-
-   private void updateTopIndications()
-   {
-      updatePanIndication(mTopMode == TopMode.PAN);
-      updateSendIndication(mTopMode == TopMode.SENDS ? mSendIndex : -1);
-      updateChannelStripIndication(mTopMode == TopMode.CHANNEL_STRIP);
-   }
-
-   private void updateChannelStripIndication(boolean shouldIndicate)
-   {
-      for (int i = 0; i < CHANNEL_STRIP_NUM_PARAMS; ++i)
-         mChannelStripRemoteControls.getParameter(i).setIndication(shouldIndicate);
-
-      for (int i = 0; i < CHANNEL_STRIP_NUM_SENDS; ++i)
-         mTrackCursor.sendBank().getItemAt(i).setIndication(shouldIndicate);
-   }
-
-   private void updatePanIndication(boolean shouldIndicate)
-   {
-      for (int i = 0; i < 8; ++i)
-      {
-         final Track track = mTrackBank.getItemAt(i);
-         track.pan().setIndication(track.exists().get() && shouldIndicate);
-      }
-   }
-
-   private void updateSendIndication(final int sendIndex)
-   {
-      for (int i = 0; i < 8; ++i)
-      {
-         final Track track = mTrackBank.getItemAt(i);
-         final SendBank sendBank = track.sendBank();
-         for (int j = 0; j < 5; ++j)
-         {
-            final Send send = sendBank.getItemAt(j);
-            final boolean shouldIndicate = sendIndex == j && send.exists().get();
-            send.setIndication(shouldIndicate);
          }
       }
    }
