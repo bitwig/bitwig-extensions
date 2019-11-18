@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
+import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -46,8 +47,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private enum TopMode
    {
       PAN, SENDS, USER, CHANNEL_STRIP;
-
    }
+
    private static final int MSG_NOTE_ON = 9;
 
    private static final int MSG_NOTE_OFF = 8;
@@ -355,6 +356,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createShiftLayer()
    {
       mShiftLayer = new Layer(mLayers, "Shift");
+      // TODO
    }
 
    private void createChannelStripLayer()
@@ -692,16 +694,28 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPanButton = mHardwareSurface.createHardwareButton("Pan");
       mPanButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PAN));
       mPanButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PAN));
+      mPanButton.isPressed().addValueObserver(isPressed -> {
+         if (isPressed)
+            activateTopMode(mPanAsChannelStripSetting.get() ? TopMode.CHANNEL_STRIP : TopMode.PAN);
+      });
 
       mSendsButton = mHardwareSurface.createHardwareButton("Sends");
       mSendsButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SENDS));
       mSendsButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SENDS));
-      mSendsButton.isPressed().addValueObserver(mSendsOn::stateChanged);
+      mSendsButton.isPressed().addValueObserver(isPressed -> {
+         mSendsOn.stateChanged(isPressed);
+         if (isPressed)
+            activateTopMode(TopMode.SENDS);
+      });
 
       mUserButton = mHardwareSurface.createHardwareButton("User");
       mUserButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_USER));
       mUserButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_USER));
-      mUserButton.isPressed().addValueObserver(mUserOn::stateChanged);
+      mUserButton.isPressed().addValueObserver(isPressed -> {
+         mUserOn.stateChanged(isPressed);
+         if (isPressed)
+            activateTopMode(TopMode.USER);
+      });
    }
 
    private void createDeviceControls()
@@ -776,6 +790,34 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mLauncherRightButton = mHardwareSurface.createHardwareButton("LauncherRight");
       mLauncherRightButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_RIGHT));
       mLauncherRightButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_RIGHT));
+   }
+
+   private void activateTopMode(final TopMode topMode)
+   {
+      mTopMode = topMode;
+
+      for (int i = 0; i < 5; ++i)
+      {
+         if (topMode == TopMode.SENDS && mSendIndex == i)
+            mSendLayers[i].activate();
+         else
+            mSendLayers[i].deactivate();
+
+         if (topMode == TopMode.USER && mUserIndex == i)
+            mUserLayers[i].activate();
+         else
+            mUserLayers[i].deactivate();
+      }
+
+      if (topMode == TopMode.PAN)
+         mPanLayer.activate();
+      else
+         mPanLayer.deactivate();
+
+      if (topMode == TopMode.CHANNEL_STRIP)
+         mChannelStripLayer.activate();
+      else
+         mChannelStripLayer.deactivate();
    }
 
    private void onSysexIn(final String sysex)
@@ -1304,6 +1346,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       volume.set(midiVal * getMaxVolume() / 127.0);
    }
+
    private Application mApplication = null;
 
    private Transport mTransport = null;
