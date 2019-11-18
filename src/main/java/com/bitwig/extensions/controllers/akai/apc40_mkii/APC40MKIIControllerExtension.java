@@ -799,15 +799,28 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createTopControls()
    {
       mTopKnobs = new AbsoluteHardwareKnob[8];
+//      mTopKnobsRingLed = new MultiStateHardwareLight[8];
+//      mTopKnobsValueLed = new MultiStateHardwareLight[8];
       for (int i = 0; i < 8; ++i)
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("TopKnob-" + i);
          final int CC = CC_TOP_CTL0 + i;
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
          // TODO: need to hook the event only when the value changes from Bitwig and not from the controller
-         knob.targetValue().addValueObserver(newValue -> mMidiOut.sendMidi(0xB0, CC, (int)(127 * newValue)));
+         knob.isUpdatingTargetValue().markInterested();
+         knob.targetValue().addValueObserver(newValue -> {
+            if (!knob.isUpdatingTargetValue().get())
+               mMidiOut.sendMidi(0xB0, CC, (int)(127 * newValue));
+         });
+
+//         final MultiStateHardwareLight valueLed =
+//            mHardwareSurface.createMultiStateHardwareLight("TopKnobValueLed-" + i, null);
+//         final MultiStateHardwareLight ringLed =
+//            mHardwareSurface.createMultiStateHardwareLight("TopKnobRingLed-" + i, null);
 
          mTopKnobs[i] = knob;
+//         mTopKnobsValueLed[i] = valueLed;
+//         mTopKnobsRingLed[i] = ringLed;
       }
 
       mPanButton = mHardwareSurface.createHardwareButton("Pan");
@@ -838,8 +851,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final int CC = CC_DEV_CTL0 + i;
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
          knob.setBounds(285 + 32 * (i % 4), 90 + 35 * (i / 4), PHYSICAL_KNOB_WIDTH, PHYSICAL_KNOB_WIDTH);
-         // TODO: need to hook the event only when the value changes from Bitwig and not from the controller
-         knob.targetValue().addValueObserver(newValue -> mMidiOut.sendMidi(0xB0, CC, (int)(127 * newValue)));
+         knob.isUpdatingTargetValue().markInterested();
+         knob.targetValue().addValueObserver(newValue -> {
+            if (!knob.isUpdatingTargetValue().get())
+               mMidiOut.sendMidi(0xB0, CC, (int)(127 * newValue));
+         });
 
          mDeviceControlKnobs[i] = knob;
       }
@@ -1564,4 +1580,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private OnOffHardwareLight mMasterTrackSelectLed;
    private OnOffHardwareLight[] mTrackStopLeds;
    private OnOffHardwareLight mMasterTrackStopLed;
+   private MultiStateHardwareLight[] mTopKnobsRingLed;
+   private MultiStateHardwareLight[] mTopKnobsValueLed;
 }
