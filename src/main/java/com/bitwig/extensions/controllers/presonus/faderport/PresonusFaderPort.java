@@ -418,14 +418,14 @@ public class PresonusFaderPort extends ControllerExtension
 
       fader.isBeingTouched().markInterested();
       fader.targetValue().markInterested();
+      fader.isUpdatingTargetValue().markInterested();
 
       final DoubleValueChangedCallback moveFader = new DoubleValueChangedCallback()
       {
-
          @Override
          public void valueChanged(final double value)
          {
-            getHost().println("Moving fader to " + value);
+            //getHost().println("Moving fader to " + value + ", " + fader.isUpdatingTargetValue().get());
 
             final int faderValue = Math.max(0, Math.min(16383, (int)(value * 16384.0)));
 
@@ -440,8 +440,6 @@ public class PresonusFaderPort extends ControllerExtension
       };
 
       fader.targetValue().addValueObserver(moveFader);
-
-      // TODO: Register move fader callback somehow
 
       return fader;
    }
@@ -521,7 +519,7 @@ public class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.activate();
       mTrackLayer.activate();
 
-      // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+//      DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private Layer createLayer(final String name)
