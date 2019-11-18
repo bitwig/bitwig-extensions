@@ -19,6 +19,7 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Preferences;
@@ -698,6 +699,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          if (isPressed)
             activateTopMode(mPanAsChannelStripSetting.get() ? TopMode.CHANNEL_STRIP : TopMode.PAN);
       });
+      mHwPanLed = mHardwareSurface.createOnOffHardwareLight("PanLed");
+      mHwPanLed.onUpdateHardware(() -> sendLedUpdate(BT_PAN, mHwPanLed));
 
       mSendsButton = mHardwareSurface.createHardwareButton("Sends");
       mSendsButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SENDS));
@@ -707,6 +710,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          if (isPressed)
             activateTopMode(TopMode.SENDS);
       });
+      mHwSendsLed = mHardwareSurface.createOnOffHardwareLight("SendsLed");
+      mHwSendsLed.onUpdateHardware(() -> sendLedUpdate(BT_SENDS, mHwSendsLed));
 
       mUserButton = mHardwareSurface.createHardwareButton("User");
       mUserButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_USER));
@@ -716,6 +721,13 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          if (isPressed)
             activateTopMode(TopMode.USER);
       });
+      mHwUserLed = mHardwareSurface.createOnOffHardwareLight("UserLed");
+      mHwUserLed.onUpdateHardware(() -> sendLedUpdate(BT_USER, mHwUserLed));
+   }
+
+   private void sendLedUpdate(final int note, final OnOffHardwareLight light)
+   {
+      mMidiOut.sendMidi(MSG_NOTE_ON << 4, note, light.isOn().currentValue() ? 1 : 0);
    }
 
    private void createDeviceControls()
@@ -818,6 +830,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mChannelStripLayer.activate();
       else
          mChannelStripLayer.deactivate();
+
+      mHwPanLed.isOn().setValue(topMode == TopMode.PAN || topMode == TopMode.CHANNEL_STRIP);
+      mHwSendsLed.isOn().setValue(topMode == TopMode.SENDS);
+      mHwUserLed.isOn().setValue(topMode == TopMode.USER);
 
       updateTopIndications();
    }
@@ -1113,15 +1129,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mSessionLed.set(getSessionButtonValue().get() ? 1 : 0);
       mSessionLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_SESSION);
-
-      mPanLed.set((mTopMode == TopMode.PAN || mTopMode == TopMode.CHANNEL_STRIP) ? 1 : 0);
-      mPanLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_PAN);
-
-      mSendsLed.set(mTopMode == TopMode.SENDS ? 1 : 0);
-      mSendsLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_SENDS);
-
-      mUserLed.set(mTopMode == TopMode.USER ? 1 : 0);
-      mUserLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_USER);
 
       mMetronomeLed.set(mTransport.isMetronomeEnabled().get() ? 1 : 0);
       mMetronomeLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_METRONOME);
@@ -1457,12 +1464,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private final Led mSessionLed = new Led();
 
-   private final Led mPanLed = new Led();
-
-   private final Led mSendsLed = new Led();
-
-   private final Led mUserLed = new Led();
-
    private final Led mMetronomeLed = new Led();
 
    private final Led mBankOnLed = new Led();
@@ -1551,4 +1552,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private HardwareButton mPanButton;
    private HardwareButton mSendsButton;
    private HardwareButton mUserButton;
+   private OnOffHardwareLight mHwPanLed;
+   private OnOffHardwareLight mHwSendsLed;
+   private OnOffHardwareLight mHwUserLed;
 }
