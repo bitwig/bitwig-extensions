@@ -1,6 +1,8 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.ControllerExtension;
@@ -376,10 +378,58 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       for (int i = 0; i < 8; ++i)
       {
-         // TODO: bind the track select led to the launch quantization:
-         // final int launchQuantizationIndex = computeLaunchQuantizationIndex();
-         // x == launchQuantizationIndex
+         final int x = i;
+         mShiftLayer.bindPressed(mTrackSelectButtons[x], getHost().createAction(() -> {
+            setLaunchQuantizationFromTrackSelect(x);
+         }, () -> "Configures the default launch quantization"));
+         mShiftLayer.bind(() -> x == computeLaunchQuantizationIndex(), mTrackSelectLeds[x]);
       }
+   }
+
+   private void setLaunchQuantizationFromTrackSelect(final int x)
+   {
+      final String quantization;
+
+      switch (x)
+      {
+         case 0:
+            quantization = "none";
+            break;
+
+         case 1:
+            quantization = "8";
+            break;
+
+         case 2:
+            quantization = "4";
+            break;
+
+         case 3:
+            quantization = "2";
+            break;
+
+         case 4:
+            quantization = "1";
+            break;
+
+         case 5:
+            quantization = "1/4";
+            break;
+
+         case 6:
+            quantization = "1/8";
+            break;
+
+         case 7:
+            quantization = "1/16";
+            break;
+
+         default:
+            quantization = "1";
+            break;
+      }
+
+      mTransport.defaultLaunchQuantization().set(quantization);
    }
 
    private void createChannelStripLayer()
@@ -1054,55 +1104,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
       else if (msg == MSG_NOTE_ON)
       {
-         if (data1 == BT_TRACK_SELECT)
-         {
-            if (mShiftButton.isPressed().get())
-            {
-               final String quantization;
-
-               switch (channel)
-               {
-               case 0:
-                  quantization = "none";
-                  break;
-
-               case 1:
-                  quantization = "8";
-                  break;
-
-               case 2:
-                  quantization = "4";
-                  break;
-
-               case 3:
-                  quantization = "2";
-                  break;
-
-               case 4:
-                  quantization = "1";
-                  break;
-
-               case 5:
-                  quantization = "1/4";
-                  break;
-
-               case 6:
-                  quantization = "1/8";
-                  break;
-
-               case 7:
-                  quantization = "1/16";
-                  break;
-
-               default:
-                  quantization = "1";
-                  break;
-               }
-
-               mTransport.defaultLaunchQuantization().set(quantization);
-            }
-         }
-         else if (BT_SCENE0 <= data1 && data1 < BT_SCENE0 + 5)
+         if (BT_SCENE0 <= data1 && data1 < BT_SCENE0 + 5)
          {
             final int index = data1 - BT_SCENE0;
             if (mUserOn.isOn())
@@ -1573,6 +1575,4 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private OnOffHardwareLight mMasterTrackSelectLed;
    private OnOffHardwareLight[] mTrackStopLeds;
    private OnOffHardwareLight mMasterTrackStopLed;
-   private MultiStateHardwareLight[] mTopKnobsRingLed;
-   private MultiStateHardwareLight[] mTopKnobsValueLed;
 }
