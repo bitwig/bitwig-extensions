@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
+import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -467,25 +468,25 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          getHost().createAction(() -> mApplication.nextSubPanel(), () -> "Next Sub Panel"));
 
       mMainLayer.bindPressed(mLauncherUpButton, () -> {
-         if (mIsShiftOn ^ mVerticalScrollByPageSetting.get())
+         if (mShiftButton.isPressed().get() ^ mVerticalScrollByPageSetting.get())
             mSceneBank.scrollPageBackwards();
          else
             mSceneBank.scrollBackwards();
       });
       mMainLayer.bindPressed(mLauncherDownButton, () -> {
-         if (mIsShiftOn ^ mVerticalScrollByPageSetting.get())
+         if (mShiftButton.isPressed().get() ^ mVerticalScrollByPageSetting.get())
             mSceneBank.scrollPageForwards();
          else
             mSceneBank.scrollForwards();
       });
       mMainLayer.bindPressed(mLauncherLeftButton, () -> {
-         if (mIsShiftOn ^ mHorizontalScrollByPageSetting.get())
+         if (mShiftButton.isPressed().get() ^ mHorizontalScrollByPageSetting.get())
             mTrackBank.scrollPageBackwards();
          else
             mTrackBank.scrollBackwards();
       });
       mMainLayer.bindPressed(mLauncherRightButton, () -> {
-         if (mIsShiftOn ^ mHorizontalScrollByPageSetting.get())
+         if (mShiftButton.isPressed().get() ^ mHorizontalScrollByPageSetting.get())
             mTrackBank.scrollPageForwards();
          else
             mTrackBank.scrollForwards();
@@ -744,6 +745,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mBankButton = mHardwareSurface.createHardwareButton("Bank");
       mBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
       mBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_BANK));
+      mBankButton.isPressed().addValueObserver(mBankOn::stateChanged);
 
       mLauncherUpButton = mHardwareSurface.createHardwareButton("LauncherUp");
       mLauncherUpButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_UP));
@@ -780,7 +782,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       if (msg == MSG_CC)
       {
          if (data1 == CC_TEMPO)
-            mTransport.tempo().incRaw((mIsShiftOn ? 0.1 : 1) * (data2 == 1 ? 1 : -1));
+            mTransport.tempo().incRaw((mShiftButton.isPressed().get() ? 0.1 : 1) * (data2 == 1 ? 1 : -1));
          else if (data2 == CC_CUE)
             mCueConrol.getControl(0).inc((data2 < 64 ? data2 : 127 - data2) / 127.0);
       }
@@ -788,7 +790,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          if (data1 == BT_TRACK_SELECT)
          {
-            if (mIsShiftOn)
+            if (mShiftButton.isPressed().get())
             {
                final String quantization;
 
@@ -837,9 +839,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          else if (BT_SCENE0 <= data1 && data1 < BT_SCENE0 + 5)
          {
             final int index = data1 - BT_SCENE0;
-            if (mIsUserOn)
+            if (mUserOn.isOn())
                mUserIndex = index;
-            else if (mIsSendsOn)
+            else if (mSendsOn.isOn())
             {
                mSendIndex = index;
                if (mControlSendEffectSetting.get())
@@ -851,10 +853,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             getRecordButtonValue().toggle();
          else if (data1 == BT_SESSION)
             getSessionButtonValue().toggle();
-         else if (data1 == BT_SHIFT)
-            mIsShiftOn = true;
-         else if (data1 == BT_BANK)
-            mIsBankOn = !mIsBankOn;
          else if (data1 == BT_PAN)
          {
             mTopMode = mPanAsChannelStripSetting.get() ? TopMode.CHANNEL_STRIP : TopMode.PAN;
@@ -863,18 +861,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          else if (data1 == BT_SENDS)
          {
             mTopMode = TopMode.SENDS;
-            mIsSendsOn = true;
-            mIsUserOn = false;
+            mUserOn.clear();
             updateTopIndications();
          }
          else if (data1 == BT_USER)
          {
             mTopMode = TopMode.USER;
-            mIsUserOn = true;
-            mIsSendsOn = false;
+            mSendsOn.clear();
             updateTopIndications();
          }
-         else if (mIsBankOn && BT_BANK0 <= data1 && data1 < BT_BANK0 + 8)
+         else if (mBankButton.isPressed().get() && BT_BANK0 <= data1 && data1 < BT_BANK0 + 8)
          {
             final int index = data1 - BT_BANK0;
             mRemoteControls.selectedPageIndex().set(index);
@@ -885,33 +881,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          {
             if (mTrackCursor.isGroup().get())
                mApplication.navigateIntoTrackGroup(mTrackCursor);
-         }
-      }
-      else if (msg == MSG_NOTE_OFF)
-      {
-         if (data1 == BT_SHIFT)
-            mIsShiftOn = false;
-         else if (data1 == BT_SENDS)
-         {
-            final long currentTimeMillis = System.currentTimeMillis();
-            if (currentTimeMillis - mLastBtSendTime >= DOUBLE_MAX_TIME && !mIsShiftOn)
-               mIsSendsOn = false;
-            mLastBtSendTime = currentTimeMillis;
-         }
-         else if (data1 == BT_USER)
-         {
-            final long currentTimeMillis = System.currentTimeMillis();
-            if (currentTimeMillis - mLastBtUserTime >= DOUBLE_MAX_TIME && !mIsShiftOn)
-               mIsUserOn = false;
-            mIsUserOn = false;
-            mLastBtUserTime = currentTimeMillis;
-         }
-         else if (data1 == BT_BANK)
-         {
-            final long currentTimeMillis = System.currentTimeMillis();
-            if (currentTimeMillis - mLastBtBankTime >= DOUBLE_MAX_TIME && !mIsShiftOn)
-               mIsBankOn = false;
-            mLastBtBankTime = currentTimeMillis;
          }
       }
    }
@@ -999,13 +968,13 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 5; ++i)
       {
          final RgbLed rgbLed = mSceneLeds[i];
-         if (mIsSendsOn)
+         if (mSendsOn.isOn())
          {
             rgbLed.setColor(mSendIndex == i ? RgbLed.COLOR_PLAYING : RgbLed.COLOR_STOPPING);
             rgbLed.setBlinkType(RgbLed.BLINK_NONE);
             rgbLed.setBlinkColor(RgbLed.COLOR_NONE);
          }
-         else if (mIsUserOn)
+         else if (mUserOn.isOn())
          {
             rgbLed.setColor(mUserIndex == i ? RgbLed.COLOR_PLAYING : RgbLed.COLOR_STOPPING);
             rgbLed.setBlinkType(RgbLed.BLINK_NONE);
@@ -1099,10 +1068,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMetronomeLed.set(mTransport.isMetronomeEnabled().get() ? 1 : 0);
       mMetronomeLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_METRONOME);
 
-      mBankOnLed.set(mIsBankOn ? 1 : 0);
+      mBankOnLed.set(mBankOn.isOn() ? 1 : 0);
       mBankOnLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_BANK);
 
-      if (!mIsBankOn)
+      if (!mBankOn.isOn())
       {
          mDevOnOffLed.set(mDeviceCursor.isEnabled().get() ? 1 : 0);
          mDevOnOffLed.paint(mMidiOut, MSG_NOTE_ON, 0, BT_DEVICE_ONOFF);
@@ -1140,12 +1109,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private SettableBooleanValue getRecordButtonValue()
    {
-      return mIsShiftOn ? mTransport.isArrangerRecordEnabled() : mTransport.isClipLauncherOverdubEnabled();
+      return mShiftButton.isPressed().get() ? mTransport.isArrangerRecordEnabled() : mTransport.isClipLauncherOverdubEnabled();
    }
 
    private SettableBooleanValue getSessionButtonValue()
    {
-      return mIsShiftOn ? mTransport.isArrangerAutomationWriteEnabled() : mTransport.isClipLauncherAutomationWriteEnabled();
+      return mShiftButton.isPressed().get() ? mTransport.isArrangerAutomationWriteEnabled() : mTransport.isClipLauncherAutomationWriteEnabled();
    }
 
    private void paintKnobs()
@@ -1285,7 +1254,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mABLeds[i].set(exists ? crossFadeToInt(track.crossFadeMode().get()) : 0);
          mABLeds[i].paint(mMidiOut, MSG_NOTE_ON, i, BT_TRACK_AB);
 
-         if (mIsShiftOn)
+         if (mShiftButton.isPressed().get())
          {
             // Show the launch quantization
             mSelectTrackLeds[i].set(launchQuantizationIndex == i ? 1 : 0);
@@ -1363,13 +1332,43 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private UserControlBank mCueConrol = null;
 
-   private boolean mIsShiftOn = false;
+   /**
+    * Helper class that will stay as pressed if there is a "double press" (like a double click).
+    */
+   private class DoublePressedButtonState
+   {
+      void stateChanged(boolean isPressed)
+      {
+         if (!isPressed)
+         {
+            final long currentTimeMillis = System.currentTimeMillis();
+            if (currentTimeMillis - mLastPressTime >= DOUBLE_MAX_TIME && !mShiftButton.isPressed().get())
+               mIsOn = false;
+            mLastPressTime = currentTimeMillis;
+         }
+         else
+         {
+            mIsOn = true;
+         }
+      }
 
-   private boolean mIsBankOn = false;
+      boolean isOn()
+      {
+         return mIsOn;
+      }
 
-   private boolean mIsUserOn = false;
+      void clear()
+      {
+         mIsOn = false;
+      }
 
-   private boolean mIsSendsOn = false;
+      private boolean mIsOn = false;
+      private long mLastPressTime = 0;
+   }
+
+   private final DoublePressedButtonState mBankOn = new DoublePressedButtonState();
+   private final DoublePressedButtonState mUserOn = new DoublePressedButtonState();
+   private final DoublePressedButtonState mSendsOn = new DoublePressedButtonState();
 
    private TopMode mTopMode = TopMode.PAN;
 
@@ -1438,12 +1437,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private final static String[] FADER_VOLUME_ENUM = new String[] { "0dB", "+6dB" };
 
    private final static String[] ON_OFF_ENUM = new String[] { "On", "Off" };
-
-   private long mLastBtSendTime;
-
-   private long mLastBtUserTime;
-
-   private long mLastBtBankTime;
 
    private SettableBooleanValue mControlSendEffectSetting;
 
