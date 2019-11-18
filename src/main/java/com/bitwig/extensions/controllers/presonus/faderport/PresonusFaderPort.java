@@ -425,14 +425,17 @@ public class PresonusFaderPort extends ControllerExtension
          @Override
          public void valueChanged(final double value)
          {
-            //getHost().println("Moving fader to " + value + ", " + fader.isUpdatingTargetValue().get());
+            // getHost().println("Moving fader to " + value + ", " + fader.isUpdatingTargetValue().get());
 
-            final int faderValue = Math.max(0, Math.min(16383, (int)(value * 16384.0)));
-
-            if (mLastSentValue != value)
+            if (!fader.isUpdatingTargetValue().get())
             {
-               mMidiOut.sendMidi(0xE0 | channel, faderValue & 0x7f, faderValue >> 7);
-               mLastSentValue = faderValue;
+               final int faderValue = Math.max(0, Math.min(16383, (int)(value * 16384.0)));
+
+               if (mLastSentValue != value)
+               {
+                  mMidiOut.sendMidi(0xE0 | channel, faderValue & 0x7f, faderValue >> 7);
+                  mLastSentValue = faderValue;
+               }
             }
          }
 
@@ -519,7 +522,7 @@ public class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.activate();
       mTrackLayer.activate();
 
-//      DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+      // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private Layer createLayer(final String name)
