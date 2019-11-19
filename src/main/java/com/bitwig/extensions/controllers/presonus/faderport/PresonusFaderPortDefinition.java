@@ -2,9 +2,7 @@ package com.bitwig.extensions.controllers.presonus.faderport;
 
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
-import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
-import com.bitwig.extension.controller.api.ControllerHost;
 
 public abstract class PresonusFaderPortDefinition extends ControllerExtensionDefinition
 {
@@ -59,12 +57,6 @@ public abstract class PresonusFaderPortDefinition extends ControllerExtensionDef
 
          list.add(midiNameList, midiNameList);
       }
-   }
-
-   @Override
-   public ControllerExtension createInstance(final ControllerHost host)
-   {
-      return new PresonusFaderPort(this, host);
    }
 
    @Override
