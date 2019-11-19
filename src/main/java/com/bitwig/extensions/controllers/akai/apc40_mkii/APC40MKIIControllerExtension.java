@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
 import com.bitwig.extension.api.Color;
+import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -856,12 +857,19 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 8; ++i)
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("TopKnob-" + i);
+         final int I = i;
          final int CC = CC_TOP_CTL0 + i;
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
          knob.isUpdatingTargetValue().markInterested();
          knob.targetValue().addValueObserver(newValue -> {
+            final int value = (int) (127 * newValue);
+            final KnobLed knobLed = mTopControlKnobLeds[I];
             if (!knob.isUpdatingTargetValue().get())
-               mMidiOut.sendMidi(0xB0, CC, (int)(127 * newValue));
+               knobLed.set(value);
+            else
+               knobLed.setDisplayedValue(value);
+            knobLed.setRing(knob.hasTargetValue().get() ? KnobLed.RING_SINGLE : KnobLed.RING_OFF);
+            knobLed.paint(mMidiOut, MSG_CC, 0, CC);
          });
          mTopKnobs[i] = knob;
       }
@@ -896,16 +904,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
          knob.setBounds(285 + 32 * (i % 4), 90 + 35 * (i / 4), PHYSICAL_KNOB_WIDTH, PHYSICAL_KNOB_WIDTH);
          knob.isUpdatingTargetValue().markInterested();
-         knob.targetValue().addValueObserver(newValue -> {
-            final int value = (int) (127 * newValue);
-            final KnobLed knobLed = mDeviceControlKnobLeds[I];
-            if (!knob.isUpdatingTargetValue().get())
-               knobLed.set(value);
-            else
-               knobLed.setDisplayedValue(value);
-            knobLed.setRing(KnobLed.RING_SINGLE);
-            knobLed.paint(mMidiOut, 0xB0, 0, CC);
-         });
+         knob.hasTargetValue().addValueObserver(newValue -> deviceControlValueChanged(knob, mDeviceControlKnobLeds[I], CC, 0));
+         knob.targetValue().addValueObserver(newValue -> deviceControlValueChanged(knob, mDeviceControlKnobLeds[I], CC, newValue));
 
          mDeviceControlKnobs[i] = knob;
       }
@@ -991,6 +991,19 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mLauncherRightButton = mHardwareSurface.createHardwareButton("LauncherRight");
       mLauncherRightButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_RIGHT));
       mLauncherRightButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_RIGHT));
+   }
+
+   private void deviceControlValueChanged(
+      final AbsoluteHardwareKnob knob, final KnobLed deviceControlKnobLed, final int CC, final double newValue)
+   {
+      final int value = (int) (127 * newValue);
+      final KnobLed knobLed = deviceControlKnobLed;
+      if (!knob.isUpdatingTargetValue().get())
+         knobLed.set(value);
+      else
+         knobLed.setDisplayedValue(value);
+      knobLed.setRing(knob.hasTargetValue().get() ? KnobLed.RING_SINGLE : KnobLed.RING_OFF);
+      knobLed.paint(mMidiOut, MSG_CC, 0, CC);
    }
 
    private void sendLedUpdate(final int note, final OnOffHardwareLight led)
