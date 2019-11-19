@@ -12,6 +12,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.HardwareSlider;
@@ -561,12 +562,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMainLayer.bindToggle(mMetronomeButton, mTransport.isMetronomeEnabled());
       mMainLayer.bindPressed(mTapTempoButton, mTransport.tapTempoAction());
 
-      // TODO: not the right way...
-//      final HardwareActionBindable incTempoAction =
-//         getHost().createAction(() -> mTransport.tempo().incRaw(1), () -> "Increments the tempo");
-//      final HardwareActionBindable decTempoAction =
-//         getHost().createAction(() -> mTransport.tempo().incRaw(1), () -> "Decrements the tempo");
-//      mMainLayer.bind(mTempoKnob, getHost().createRelativeHardwareControlStepTarget(incTempoAction, decTempoAction));
+      final HardwareActionBindable incTempoAction =
+         getHost().createAction(() -> mTransport.tempo().incRaw(1), () -> "Increments the tempo");
+      final HardwareActionBindable decTempoAction =
+         getHost().createAction(() -> mTransport.tempo().incRaw(1), () -> "Decrements the tempo");
+      mMainLayer.bind(mTempoKnob, getHost().createRelativeHardwareControlStepTarget(incTempoAction, decTempoAction));
 
       mMainLayer.bindPressed(mNextDeviceButton, mDeviceCursor.selectNextAction());
       mMainLayer.bind(mDeviceCursor.hasNext(), mNextDeviceLed);
@@ -1032,6 +1032,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMasterTrackVolumeSlider.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_MASTER_VOLUME));
 
       mABCrossfadeSlider = mHardwareSurface.createHardwareSlider("AB-Crossfade");
+      mABCrossfadeSlider.setIsHorizontal(true);
       mABCrossfadeSlider.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_AB_CROSSFADE));
 
       mCueLevelKnob = mHardwareSurface.createRelativeHardwareKnob("Cue-Level");
