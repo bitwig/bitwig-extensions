@@ -1,7 +1,6 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
 import com.bitwig.extension.api.Color;
-import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -433,7 +432,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       for (int i = 0; i < 8; ++i)
          mChannelStripLayer.bind(
-            mTopKnobs[i],
+            mTopControlKnobs[i],
             i < CHANNEL_STRIP_NUM_PARAMS
                ? mChannelStripRemoteControls.getParameter(i)
                : mTrackCursor.sendBank().getItemAt(i - CHANNEL_STRIP_NUM_PARAMS));
@@ -446,7 +445,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          final Layer layer = new Layer(mLayers, "Send-" + sendIndex);
          for (int i = 0; i < 8; ++i)
-            layer.bind(mTopKnobs[i], mTrackBank.getItemAt(i).sendBank().getItemAt(sendIndex));
+            layer.bind(mTopControlKnobs[i], mTrackBank.getItemAt(i).sendBank().getItemAt(sendIndex));
 
          mSendLayers[sendIndex] = layer;
       }
@@ -459,7 +458,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          mUserLayers[userIndex] = new Layer(mLayers, "User-" + userIndex);
          for (int i = 0; i < 8; ++i)
-            mUserLayers[userIndex].bind(mTopKnobs[i], mUserControls.getControl(i + mUserIndex * 8));
+            mUserLayers[userIndex].bind(mTopControlKnobs[i], mUserControls.getControl(i + mUserIndex * 8));
       }
    }
 
@@ -467,7 +466,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       mPanLayer = new Layer(mLayers, "Pan");
       for (int i = 0; i < 8; ++i)
-         mPanLayer.bind(mTopKnobs[i], mTrackBank.getItemAt(i).pan());
+         mPanLayer.bind(mTopControlKnobs[i], mTrackBank.getItemAt(i).pan());
    }
 
    private void createDebugLayer()
@@ -853,7 +852,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void createTopControls()
    {
-      mTopKnobs = new AbsoluteHardwareKnob[8];
+      mTopControlKnobs = new AbsoluteHardwareKnob[8];
       for (int i = 0; i < 8; ++i)
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("TopKnob-" + i);
@@ -861,18 +860,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final int CC = CC_TOP_CTL0 + i;
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
          knob.isUpdatingTargetValue().markInterested();
-         knob.hasTargetValue().markInterested();
-         knob.targetValue().addValueObserver(newValue -> {
-            final int value = (int) (127 * newValue);
-            final KnobLed knobLed = mTopControlKnobLeds[I];
-            if (!knob.isUpdatingTargetValue().get())
-               knobLed.set(value);
-            else
-               knobLed.setDisplayedValue(value);
-            knobLed.setRing(knob.hasTargetValue().get() ? KnobLed.RING_SINGLE : KnobLed.RING_OFF);
-            knobLed.paint(mMidiOut, MSG_CC, 0, CC);
-         });
-         mTopKnobs[i] = knob;
+         knob.hasTargetValue().addValueObserver(newValue -> updateTopControlRing(I));
+         knob.targetValue().addValueObserver(newValue -> updateTopControlRing(I));
+         mTopControlKnobs[i] = knob;
       }
 
       mPanButton = mHardwareSurface.createHardwareButton("Pan");
@@ -905,8 +895,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
          knob.setBounds(285 + 32 * (i % 4), 90 + 35 * (i / 4), PHYSICAL_KNOB_WIDTH, PHYSICAL_KNOB_WIDTH);
          knob.isUpdatingTargetValue().markInterested();
-         knob.hasTargetValue().addValueObserver(newValue -> deviceControlValueChanged(knob, mDeviceControlKnobLeds[I], CC, 0));
-         knob.targetValue().addValueObserver(newValue -> deviceControlValueChanged(knob, mDeviceControlKnobLeds[I], CC, newValue));
+         knob.hasTargetValue().addValueObserver(newValue -> updateDeviceControlRing(I));
+         knob.targetValue().addValueObserver(newValue -> updateDeviceControlRing(I));
 
          mDeviceControlKnobs[i] = knob;
       }
@@ -994,17 +984,53 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mLauncherRightButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_RIGHT));
    }
 
-   private void deviceControlValueChanged(
-      final AbsoluteHardwareKnob knob, final KnobLed deviceControlKnobLed, final int CC, final double newValue)
+   private void updateTopControlRing(final int knobIndex)
    {
-      final int value = (int) (127 * newValue);
-      final KnobLed knobLed = deviceControlKnobLed;
+      final KnobLed knobLed = mTopControlKnobLeds[knobIndex];
+      final AbsoluteHardwareKnob knob = mTopControlKnobs[knobIndex];
+      final int value = (int) (127 * knob.targetValue().get());
+      if (!knob.isUpdatingTargetValue().get())
+         knobLed.set(value);
+      else
+         knobLed.setDisplayedValue(value);
+
+      final int ring;
+      switch (mTopMode)
+      {
+         case PAN:
+            ring = KnobLed.RING_PAN;
+            break;
+         case SENDS:
+            ring = KnobLed.RING_VOLUME;
+            break;
+         case USER:
+            ring = KnobLed.RING_SINGLE;
+            break;
+         case CHANNEL_STRIP:
+            ring = knobIndex < CHANNEL_STRIP_NUM_PARAMS ? KnobLed.RING_SINGLE : KnobLed.RING_VOLUME;
+            break;
+         default:
+            ring = KnobLed.RING_SINGLE;
+            break;
+      }
+
+      if (knobLed.wantsFlush())
+         knobLed.setRing(knob.hasTargetValue().get() ? ring : KnobLed.RING_OFF);
+   }
+
+   private void updateDeviceControlRing(final int knobIndex)
+   {
+      final KnobLed knobLed = mDeviceControlKnobLeds[knobIndex];
+      final AbsoluteHardwareKnob knob = mDeviceControlKnobs[knobIndex];
+      final int value = (int) (127 * knob.targetValue().get());
       if (!knob.isUpdatingTargetValue().get())
          knobLed.set(value);
       else
          knobLed.setDisplayedValue(value);
       knobLed.setRing(knob.hasTargetValue().get() ? KnobLed.RING_SINGLE : KnobLed.RING_OFF);
-      knobLed.paint(mMidiOut, MSG_CC, 0, CC);
+
+      if (knobLed.wantsFlush())
+         getHost().requestFlush();
    }
 
    private void sendLedUpdate(final int note, final OnOffHardwareLight led)
@@ -1201,11 +1227,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    @Override
    public void flush()
    {
-      //paintKnobs();
+      mHardwareSurface.updateHardware();
+      flushKnobs();
       paintPads();
       paintScenes();
-
-      mHardwareSurface.updateHardware();
    }
 
    private void paintScenes()
@@ -1290,94 +1315,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
    }
 
-   private void paintKnobs()
+   private void flushKnobs()
    {
       for (int i = 0; i < 8; ++i)
       {
-         {
-            final RemoteControl parameter = mRemoteControls.getParameter(i);
-            final double value = parameter.get();
-            final boolean exists = parameter.exists().get();
-
-            if (exists)
-            {
-               assert value >= 0;
-               assert value <= 1;
-
-               mDeviceControlKnobLeds[i].set((int)(value * 127));
-               mDeviceControlKnobLeds[i].setRing(KnobLed.RING_SINGLE);
-            }
-            else
-               mDeviceControlKnobLeds[i].setRing(KnobLed.RING_OFF);
-            mDeviceControlKnobLeds[i].paint(mMidiOut, MSG_CC, 0, CC_DEV_CTL0 + i);
-         }
-
-         {
-            boolean exists = false;
-            double value = 0;
-            int ring = KnobLed.RING_OFF;
-
-            final Track track = mTrackBank.getItemAt(i);
-            switch (mTopMode)
-            {
-            case SENDS:
-            {
-               final Send send = track.sendBank().getItemAt(mSendIndex);
-               exists = send.exists().get();
-               value = send.get();
-               ring = KnobLed.RING_VOLUME;
-               break;
-            }
-
-            case PAN:
-            {
-               value = track.pan().get();
-               exists = track.exists().get();
-               ring = KnobLed.RING_PAN;
-               break;
-            }
-
-            case USER:
-            {
-               value = mUserControls.getControl(i + 8 * mUserIndex).get();
-               exists = true;
-               ring = KnobLed.RING_SINGLE;
-               break;
-            }
-
-            case CHANNEL_STRIP:
-            {
-               if (i < CHANNEL_STRIP_NUM_PARAMS)
-               {
-                  final RemoteControl parameter = mChannelStripRemoteControls.getParameter(i);
-                  if (parameter.exists().get())
-                  {
-                     ring = KnobLed.RING_SINGLE;
-                     value = parameter.get();
-                     exists = true;
-                  }
-               }
-               else
-               {
-                  final Send send = mTrackCursor.sendBank().getItemAt(i - CHANNEL_STRIP_NUM_PARAMS);
-                  if (send.exists().get())
-                  {
-                     ring = KnobLed.RING_VOLUME;
-                     value = send.get();
-                     exists = true;
-                  }
-                  break;
-               }
-            }
-            }
-
-            assert value >= 0;
-            assert value <= 1;
-
-            mTopControlKnobLeds[i].set((int)(value * 127));
-            mTopControlKnobLeds[i].setRing(exists ? ring : KnobLed.RING_OFF);
-            mTopControlKnobLeds[i].paint(mMidiOut, MSG_CC, 0, CC_TOP_CTL0 + i);
-         }
+         mDeviceControlKnobLeds[i].flush(mMidiOut, MSG_CC, 0, CC_DEV_CTL0 + i);
+         mTopControlKnobLeds[i].flush(mMidiOut, MSG_CC, 0, CC_TOP_CTL0 + i);
       }
    }
 
@@ -1531,7 +1474,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private Layer mShiftLayer;
    private Layer mBankLayer;
 
-   private AbsoluteHardwareKnob[] mTopKnobs;
+   private AbsoluteHardwareKnob[] mTopControlKnobs;
    private AbsoluteHardwareKnob[] mDeviceControlKnobs;
    private HardwareSlider[] mTrackVolumeSliders;
    private HardwareSlider mMasterTrackVolumeSlider;

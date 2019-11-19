@@ -14,7 +14,7 @@ public class KnobLed
 
    public static final int RING_PAN = 3;
 
-   public void paint(final MidiOut midiOut, final int msg, final int channel, final int data1)
+   public void flush(final MidiOut midiOut, final int msg, final int channel, final int data1)
    {
       if (mRing != mDisplayedRing)
       {
@@ -33,6 +33,11 @@ public class KnobLed
          midiOut.sendMidi((msg << 4) | channel, data1, mValue);
          mDisplayedValue = mValue;
       }
+   }
+
+   public boolean wantsFlush()
+   {
+      return mRing != mDisplayedRing || mValue != mDisplayedValue;
    }
 
    public void set(final int value)
