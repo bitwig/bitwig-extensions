@@ -12,6 +12,7 @@ public class DebugUtilities
    public static Layer createDebugLayer(final Layers layers, final HardwareSurface hardwareSurface)
    {
       final Layer layer = new Layer(layers, "Debug");
+      layer.setShouldReplaceBindingsInLayersBelow(false);
 
       addDebugBindings(layer, hardwareSurface);
 
@@ -22,7 +23,7 @@ public class DebugUtilities
    {
       final ControllerHost host = layer.getLayers().getControllerExtension().getHost();
 
-      for (final HardwareControl control : hardwareSurface.getHardwareControls())
+      for (final HardwareControl control : hardwareSurface.hardwareControls())
       {
          String controlName = control.getId();
 

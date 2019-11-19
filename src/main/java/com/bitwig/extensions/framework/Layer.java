@@ -375,6 +375,16 @@ public class Layer
       mLayerGroup = layerGroup;
    }
 
+   public boolean shouldReplaceBindingsInLayersBelow()
+   {
+      return mShouldReplaceBindingsInLayersBelow;
+   }
+
+   public void setShouldReplaceBindingsInLayersBelow(final boolean value)
+   {
+      mShouldReplaceBindingsInLayersBelow = value;
+   }
+
    private boolean mIsActive;
 
    private final Layers mLayers;
@@ -386,4 +396,6 @@ public class Layer
    private final HardwareActionBindable mToggleAction, mActivateAction, mDeactivateAction;
 
    private LayerGroup mLayerGroup;
+
+   private boolean mShouldReplaceBindingsInLayersBelow = true;
 }

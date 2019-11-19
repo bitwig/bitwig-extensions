@@ -712,7 +712,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       if (id.isRGB())
       {
          final MultiStateHardwareLight light = mHardwareSurface
-            .createMultiStateHardwareLight(ArturiaKeylabMkII::stateToColor);
+            .createMultiStateHardwareLight(id + "_light", ArturiaKeylabMkII::stateToColor);
 
          light.setColorToStateFunction(ArturiaKeylabMkII::colorToState);
 
@@ -754,7 +754,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
       }
       else
       {
-         final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight();
+         final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight(id + "_light");
 
          button.setBackgroundLight(light);
 
