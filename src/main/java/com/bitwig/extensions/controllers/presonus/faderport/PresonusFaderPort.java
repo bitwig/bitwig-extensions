@@ -420,13 +420,16 @@ public class PresonusFaderPort extends ControllerExtension
       fader.isBeingTouched().markInterested();
       fader.targetValue().markInterested();
       fader.isUpdatingTargetValue().markInterested();
+      fader.hasTargetValue().markInterested();
 
       final DoubleValueChangedCallback moveFader = new DoubleValueChangedCallback()
       {
          @Override
          public void valueChanged(final double value)
          {
-            // getHost().println("Moving fader to " + value + ", " + fader.isUpdatingTargetValue().get());
+            // getHost().println("Moving fader to " + value + ", " + fader.isUpdatingTargetValue().get() + ",
+            // "
+            // + fader.hasTargetValue().get());
 
             if (!fader.isUpdatingTargetValue().get())
             {
