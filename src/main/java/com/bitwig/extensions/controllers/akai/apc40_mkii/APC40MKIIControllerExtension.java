@@ -840,8 +840,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createGridButtons()
    {
       mGridButtons = new HardwareButton[8 * 5];
-      //mGridLeds = new MultiStateHardwareLight[8 * 5];
-      //mGridBlinkLeds = new MultiStateHardwareLight[8 * 5];
       for (int x = 0; x < 8; ++x)
       {
          for (int y = 0; y < 5; ++y)
@@ -912,11 +910,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mSendsButton.isPressed().addValueObserver(isPressed -> {
          mSendsOn.stateChanged(isPressed);
          if (mSendsOn.isOn())
-         {
             mSendSelectLayer.activate();
-            if (mControlSendEffectSetting.get())
-               mTrackCursor.selectChannel(mSendTrackBank.getItemAt(mSendIndex));
-         }
          else
             mSendSelectLayer.deactivate();
       });
@@ -1136,6 +1130,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPanLed.isOn().setValue(topMode == TopMode.PAN || topMode == TopMode.CHANNEL_STRIP);
       mSendsLed.isOn().setValue(topMode == TopMode.SENDS);
       mUserLed.isOn().setValue(topMode == TopMode.USER);
+
+      if (topMode == TopMode.SENDS && mControlSendEffectSetting.get())
+         mTrackCursor.selectChannel(mSendTrackBank.getItemAt(mSendIndex));
 
       updateTopIndications();
    }
