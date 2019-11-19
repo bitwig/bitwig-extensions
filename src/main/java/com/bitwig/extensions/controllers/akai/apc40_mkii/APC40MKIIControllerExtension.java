@@ -197,7 +197,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 8 * 5; ++i)
          mUserControls.getControl(i).markInterested();
 
-      mCueConrol = host.createUserControls(1);
+      mCueControl = host.createUserControls(1);
 
       mMasterTrack = host.createMasterTrack(5);
       mMasterTrack.isStopped().markInterested();
@@ -522,7 +522,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
       mMainLayer.bind(mMasterTrackVolumeSlider, mMasterTrack.volume());
       mMainLayer.bind(mABCrossfadeSlider, mTransport.crossfade());
-      // TODO: mMainLayer.bind(mCueLevelKnob, );
+      mMainLayer.bind(mCueLevelKnob, mCueControl.getControl(0));
 
       for (int x = 0; x < 8; ++x)
       {
@@ -1038,7 +1038,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mABCrossfadeSlider.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_AB_CROSSFADE));
 
       mCueLevelKnob = mHardwareSurface.createRelativeHardwareKnob("Cue-Level");
-      mCueLevelKnob.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_CUE));
+      mCueLevelKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_CUE));
    }
 
    private void createTopControls()
@@ -1355,7 +1355,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          if (data1 == CC_TEMPO)
             mTransport.tempo().incRaw((mShiftButton.isPressed().get() ? 0.1 : 1) * (data2 == 1 ? 1 : -1));
          else if (data2 == CC_CUE)
-            mCueConrol.getControl(0).inc((data2 < 64 ? data2 : 127 - data2) / 127.0);
+            mCueControl.getControl(0).inc((data2 < 64 ? data2 : 127 - data2) / 127.0);
       }
       else if (msg == MSG_NOTE_ON)
       {
@@ -1610,7 +1610,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private UserControlBank mUserControls = null;
 
-   private UserControlBank mCueConrol = null;
+   private UserControlBank mCueControl = null;
 
    /**
     * Helper class that will stay as pressed if there is a "double press" (like a double click).
