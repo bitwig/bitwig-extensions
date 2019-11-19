@@ -861,6 +861,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final int CC = CC_TOP_CTL0 + i;
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
          knob.isUpdatingTargetValue().markInterested();
+         knob.hasTargetValue().markInterested();
          knob.targetValue().addValueObserver(newValue -> {
             final int value = (int) (127 * newValue);
             final KnobLed knobLed = mTopControlKnobLeds[I];
