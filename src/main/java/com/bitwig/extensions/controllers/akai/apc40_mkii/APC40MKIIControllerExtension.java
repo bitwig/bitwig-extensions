@@ -127,7 +127,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private static final int BT_BANK0 = 58;
 
-   private static final int BT_PREV_DEVICE = 58;
+   private static final int BT_PREV_DEVICE = BT_BANK0;
 
    private static final int BT_NEXT_DEVICE = 59;
 
@@ -161,34 +161,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mApplication = host.createApplication();
 
-      final Preferences preferences = host.getPreferences();
-
-      mPanAsChannelStripSetting = preferences.getBooleanSetting("Replace PAN by Channel Strip",
-         "Channel Strip", false);
-      mPanAsChannelStripSetting.markInterested();
-      if (mPanAsChannelStripSetting.get())
-         mTopMode = TopMode.CHANNEL_STRIP;
-
-      mHorizontalScrollByPageSetting = preferences.getBooleanSetting("Scroll by page (Horizontal)",
-         "Clip Launcher", false);
-      mHorizontalScrollByPageSetting.markInterested();
-
-      mVerticalScrollByPageSetting = preferences.getBooleanSetting("Scroll by page (Vertical)",
-         "Clip Launcher", false);
-      mVerticalScrollByPageSetting.markInterested();
-
-      mControlSendEffectSetting = preferences.getBooleanSetting("FX Control when latched", "Sends", true);
-      mControlSendEffectSetting.markInterested();
-
-      mTransport = host.createTransport();
-      mTransport.isMetronomeEnabled().markInterested();
-      mTransport.tempo().markInterested();
-      mTransport.isPlaying().markInterested();
-      mTransport.isArrangerRecordEnabled().markInterested();
-      mTransport.isArrangerAutomationWriteEnabled().markInterested();
-      mTransport.isClipLauncherAutomationWriteEnabled().markInterested();
-      mTransport.isClipLauncherOverdubEnabled().markInterested();
-      mTransport.defaultLaunchQuantization().markInterested();
+      createSettingsObjects(host);
+      createTransportObject(host);
 
       mUserControls = host.createUserControls(8 * 5);
       for (int i = 0; i < 8 * 5; ++i)
@@ -311,19 +285,54 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          sendTrack.exists().markInterested();
       }
 
-      mMidiIn = host.getMidiInPort(0);
-      mMidiOut = host.getMidiOutPort(0);
-
-      mMidiIn.setMidiCallback(this::onMidiIn);
-      mMidiIn.setSysexCallback(this::onSysexIn);
-
-      // introduction message
-      mMidiOut.sendSysex("F0 7E 7F 06 01 F7");
-
+      createMidiObjects(host);
       createHardwareControls();
       createLayers();
 
       host.scheduleTask(this::postInit, 0);
+   }
+
+   private void createMidiObjects(final ControllerHost host)
+   {
+      mMidiIn = host.getMidiInPort(0);
+      mMidiIn.setSysexCallback(this::onSysexIn);
+
+      mMidiOut = host.getMidiOutPort(0);
+      mMidiOut.sendSysex("F0 7E 7F 06 01 F7"); // send introduction message
+   }
+
+   private void createTransportObject(final ControllerHost host)
+   {
+      mTransport = host.createTransport();
+      mTransport.isMetronomeEnabled().markInterested();
+      mTransport.tempo().markInterested();
+      mTransport.isPlaying().markInterested();
+      mTransport.isArrangerRecordEnabled().markInterested();
+      mTransport.isArrangerAutomationWriteEnabled().markInterested();
+      mTransport.isClipLauncherAutomationWriteEnabled().markInterested();
+      mTransport.isClipLauncherOverdubEnabled().markInterested();
+      mTransport.defaultLaunchQuantization().markInterested();
+   }
+
+   private void createSettingsObjects(final ControllerHost host)
+   {
+      final Preferences preferences = host.getPreferences();
+      mPanAsChannelStripSetting = preferences.getBooleanSetting("Replace PAN by Channel Strip",
+         "Channel Strip", false);
+      mPanAsChannelStripSetting.markInterested();
+      if (mPanAsChannelStripSetting.get())
+         mTopMode = TopMode.CHANNEL_STRIP;
+
+      mHorizontalScrollByPageSetting = preferences.getBooleanSetting("Scroll by page (Horizontal)",
+         "Clip Launcher", false);
+      mHorizontalScrollByPageSetting.markInterested();
+
+      mVerticalScrollByPageSetting = preferences.getBooleanSetting("Scroll by page (Vertical)",
+         "Clip Launcher", false);
+      mVerticalScrollByPageSetting.markInterested();
+
+      mControlSendEffectSetting = preferences.getBooleanSetting("FX Control when latched", "Sends", true);
+      mControlSendEffectSetting.markInterested();
    }
 
    private void postInit()
@@ -1334,71 +1343,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void onSysexIn(final String sysex)
    {
-      getHost().println("SYSEX IN: " + sysex);
-
       // Set the device in the proper mode (Ableton Live Mode 2)
       mMidiOut.sendSysex("F0 47 7F 29 60 00 04 41 02 01 00 F7");
-   }
-
-   private void onMidiIn(final int status, final int data1, final int data2)
-   {
-      final int channel = status & 0xF;
-      final int msg = status >> 4;
-
-      getHost().println("MIDI IN, msg: " + msg + " channel: " + channel + ", data1: " + data1 + ", data2: " + data2);
-
-      if (msg == MSG_CC)
-      {
-         if (data1 == CC_TEMPO)
-            mTransport.tempo().incRaw((mShiftButton.isPressed().get() ? 0.1 : 1) * (data2 == 1 ? 1 : -1));
-         else if (data2 == CC_CUE)
-            mCueControl.getControl(0).inc((data2 < 64 ? data2 : 127 - data2) / 127.0);
-      }
-      else if (msg == MSG_NOTE_ON)
-      {
-         if (BT_SCENE0 <= data1 && data1 < BT_SCENE0 + 5)
-         {
-            final int index = data1 - BT_SCENE0;
-            if (mUserOn.isOn())
-               mUserIndex = index;
-            else if (mSendsOn.isOn())
-            {
-               mSendIndex = index;
-               if (mControlSendEffectSetting.get())
-                  mTrackCursor.selectChannel(mSendTrackBank.getItemAt(mSendIndex));
-               updateSendIndication(mSendIndex);
-            }
-         }
-         else if (data1 == BT_PAN)
-         {
-            mTopMode = mPanAsChannelStripSetting.get() ? TopMode.CHANNEL_STRIP : TopMode.PAN;
-            updateTopIndications();
-         }
-         else if (data1 == BT_SENDS)
-         {
-            mTopMode = TopMode.SENDS;
-            mUserOn.clear();
-            updateTopIndications();
-         }
-         else if (data1 == BT_USER)
-         {
-            mTopMode = TopMode.USER;
-            mSendsOn.clear();
-            updateTopIndications();
-         }
-         else if (mBankButton.isPressed().get() && BT_BANK0 <= data1 && data1 < BT_BANK0 + 8)
-         {
-            final int index = data1 - BT_BANK0;
-            mRemoteControls.selectedPageIndex().set(index);
-         }
-         else if (data1 == BT_NUDGE_MINUS)
-            mApplication.navigateToParentTrackGroup();
-         else if (data1 == BT_NUDGE_PLUS)
-         {
-            if (mTrackCursor.isGroup().get())
-               mApplication.navigateIntoTrackGroup(mTrackCursor);
-         }
-      }
    }
 
    private String intToCrossFade(final int index)
@@ -1426,7 +1372,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    @Override
    public void exit()
    {
-
    }
 
    @Override
@@ -1588,71 +1533,51 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       private long mLastPressTime = 0;
    }
 
+   ////////////////////////
+   // Host Proxy Objects //
+   ////////////////////////
+
    private Application mApplication = null;
-
    private Transport mTransport = null;
-
    private MasterTrack mMasterTrack = null;
-
    private BooleanValue mIsMasterSelected = null;
-
-   private BooleanValue[] mIsTrackSelected = new BooleanValue[8];
-
    private TrackBank mTrackBank = null;
-
+   private BooleanValue[] mIsTrackSelected = new BooleanValue[8];
    private TrackBank mSendTrackBank = null;
-
    private SceneBank mSceneBank = null;
-
    private CursorTrack mTrackCursor = null;
-
    private PinnableCursorDevice mDeviceCursor = null;
-
    private PinnableCursorDevice mChannelStripDevice;
-
    private CursorRemoteControlsPage mRemoteControls = null;
-
    private CursorRemoteControlsPage mChannelStripRemoteControls;
-
-   private SettableBooleanValue mPanAsChannelStripSetting;
-
-   private SettableBooleanValue mHorizontalScrollByPageSetting;
-
-   private SettableBooleanValue mVerticalScrollByPageSetting;
-
+   private UserControlBank mUserControls = null;
+   private UserControlBank mCueControl = null;
    private MidiIn mMidiIn = null;
-
    private MidiOut mMidiOut = null;
 
-   private UserControlBank mUserControls = null;
+   //////////////
+   // Settings //
+   //////////////
 
-   private UserControlBank mCueControl = null;
+   private SettableBooleanValue mPanAsChannelStripSetting;
+   private SettableBooleanValue mHorizontalScrollByPageSetting;
+   private SettableBooleanValue mVerticalScrollByPageSetting;
+   private SettableBooleanValue mControlSendEffectSetting;
+
+   ///////////
+   // State //
+   ///////////
 
    private final DoublePressedButtonState mBankOn = new DoublePressedButtonState();
    private final DoublePressedButtonState mUserOn = new DoublePressedButtonState();
    private final DoublePressedButtonState mSendsOn = new DoublePressedButtonState();
-
    private TopMode mTopMode = TopMode.PAN;
-
    private int mSendIndex = 0; // 0..4
-
    private int mUserIndex = 0; // 0..4
 
-   private final KnobLed[] mDeviceControlKnobLeds = new KnobLed[8];
-
-   private final KnobLed[] mTopControlKnobLeds = new KnobLed[8];
-
-   private final RgbLed[][] mPadLeds = new RgbLed[8][5];
-
-   private final RgbLed[] mSceneLeds = new RgbLed[5];
-
-   private final static String[] FADER_VOLUME_ENUM = new String[] { "0dB", "+6dB" };
-
-   private final static String[] ON_OFF_ENUM = new String[] { "On", "Off" };
-
-   private SettableBooleanValue mControlSendEffectSetting;
-
-   private HardwareSurface mHardwareSurface;
+   ////////////
+   // Layers //
+   ////////////
 
    private Layers mLayers;
    private Layer mMainLayer;
@@ -1666,6 +1591,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private Layer mSendSelectLayer;
    private Layer mUserSelectLayer;
 
+   ///////////////////////
+   // Hardware Controls //
+   ///////////////////////
+
+   private HardwareSurface mHardwareSurface;
    private AbsoluteHardwareKnob[] mTopControlKnobs;
    private AbsoluteHardwareKnob[] mDeviceControlKnobs;
    private HardwareSlider[] mTrackVolumeSliders;
@@ -1731,4 +1661,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private OnOffHardwareLight mMasterTrackSelectLed;
    private OnOffHardwareLight[] mTrackStopLeds;
    private OnOffHardwareLight mMasterTrackStopLed;
+
+   /////////////////
+   // Custom LEDs //
+   /////////////////
+
+   private final KnobLed[] mDeviceControlKnobLeds = new KnobLed[8];
+   private final KnobLed[] mTopControlKnobLeds = new KnobLed[8];
+   private final RgbLed[][] mPadLeds = new RgbLed[8][5];
+   private final RgbLed[] mSceneLeds = new RgbLed[5];
+
 }
