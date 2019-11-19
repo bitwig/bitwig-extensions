@@ -87,7 +87,7 @@ public class X6ProControllerExtensionDefinition extends ControllerExtensionDefin
    @Override
    public int getRequiredAPIVersion()
    {
-      return 7;
+      return XControllerExtension.REQUIRED_API_VERSION;
    }
 
    @Override

@@ -87,7 +87,7 @@ public class X4MiniControllerExtensionDefinition extends ControllerExtensionDefi
    @Override
    public int getRequiredAPIVersion()
    {
-      return 7;
+      return XControllerExtension.REQUIRED_API_VERSION;
    }
 
    @Override
