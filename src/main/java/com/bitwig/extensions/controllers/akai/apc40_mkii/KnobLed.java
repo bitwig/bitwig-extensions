@@ -14,7 +14,7 @@ public class KnobLed
 
    public static final int RING_PAN = 3;
 
-   public void paint(final MidiOut midiOut, final int msg, final int channel, final int data1)
+   public void flush(final MidiOut midiOut, final int msg, final int channel, final int data1)
    {
       if (mRing != mDisplayedRing)
       {
@@ -35,20 +35,22 @@ public class KnobLed
       }
    }
 
+   public boolean wantsFlush()
+   {
+      return mRing != mDisplayedRing || mValue != mDisplayedValue;
+   }
+
    public void set(final int value)
    {
       assert value >= 0;
       assert value < 128;
 
-      if (mLastDisplayedValueUpdateTime + 250 < System.currentTimeMillis())
-      {
-         if (value > 127)
-            mValue = 127;
-         else if (value < 0)
-            mValue = 0;
-         else
-            mValue = value;
-      }
+      if (value > 127)
+         mValue = 127;
+      else if (value < 0)
+         mValue = 0;
+      else
+         mValue = value;
    }
 
    public void setDisplayedValue(final int value)
@@ -56,7 +58,6 @@ public class KnobLed
       assert value >= 0;
       assert value < 128;
 
-      mLastDisplayedValueUpdateTime = System.currentTimeMillis();
       mValue = value;
       mDisplayedValue = value;
    }
@@ -73,6 +74,4 @@ public class KnobLed
    private int mRing = RING_OFF;
 
    private int mDisplayedRing = RING_INIT;
-
-   private long mLastDisplayedValueUpdateTime = 0;
 }

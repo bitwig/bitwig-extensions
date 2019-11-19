@@ -2,19 +2,28 @@ package com.bitwig.extensions.controllers.midiplus;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
+import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
+import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
 
 public class XControllerExtension extends ControllerExtension
 {
+   static final int REQUIRED_API_VERSION = 10;
+
    public XControllerExtension(
       final ControllerExtensionDefinition definition,
       final ControllerHost host,
@@ -38,14 +47,10 @@ public class XControllerExtension extends ControllerExtension
    {
       final ControllerHost host = getHost();
 
-      final MidiIn midiIn = host.getMidiInPort(0);
-
-      midiIn.setMidiCallback(this::onMidi);
-      midiIn.setSysexCallback(this::onSysex);
-      midiIn.createNoteInput(mKeyboardInputName, "80????", "90????", "b001??", "e0????", "b040??").setShouldConsumeEvents(true);
-
+      mMidiIn = host.getMidiInPort(0);
+      mMidiIn.createNoteInput(mKeyboardInputName, "80????", "90????", "b001??", "e0????", "b040??").setShouldConsumeEvents(true);
       if (mNumPads > 0)
-         midiIn.createNoteInput(mPadsInputName, "89????", "99????").setShouldConsumeEvents(true);
+         mMidiIn.createNoteInput(mPadsInputName, "89????", "99????").setShouldConsumeEvents(true);
 
       mMidiOut = host.getMidiOutPort(0);
       mMidiOut.sendSysex(mInitSysex);
@@ -67,62 +72,127 @@ public class XControllerExtension extends ControllerExtension
       mTransport = host.createTransport();
 
       mTrackBank = host.createTrackBank(8, 0, 0, true);
+
+      createHardwareControls();
+      createLayers();
    }
 
-   private void onSysex(final String sysex)
+   private void createLayers()
    {
-      getHost().println("received sysex: " + sysex);
+      mLayers = new Layers(this);
+      createMainLayer();
    }
 
-   private void onMidi(final int status, final int data1, final int data2)
+   private void createHardwareControls()
    {
-      final int channel = status & 0xf;
-      final int msg = (status >> 4) & 0xf;
-      getHost().println("msg: " + msg + ", channel: " + channel + ", data1: " + data1 + ", data2: " + data2);
+      mHardwareSurface = getHost().createHardwareSurface();
+      mHardwareSurface.setPhysicalSize(400, 160);
 
-      if (status == 0xB0)
+      createKnobs();
+      createCurrentTrackVolumeControl();
+      createTransportControls();
+      createTrackSelectControls();
+
+      setGeometry();
+   }
+
+   private void setGeometry()
+   {
+      final HardwareSurface surface = mHardwareSurface;
+      surface.hardwareElementWithId("Rewind").setBounds(10.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("Forward").setBounds(40.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("Stop").setBounds(70.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("Play").setBounds(100.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("Loop").setBounds(130.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("Record").setBounds(160.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-0").setBounds(10.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-1").setBounds(40.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-2").setBounds(70.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-3").setBounds(100.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-4").setBounds(130.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-5").setBounds(160.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-6").setBounds(190.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-7").setBounds(220.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("CurstorTrackVolumeKnob").setBounds(324.5, 12.25, 20.75, 18.5);
+   }
+
+   private void createMainLayer()
+   {
+      mMainLayer = new Layer(mLayers, "Main");
+
+      mMainLayer.bind(mCursorTrackVolumeKnob, mCursorTrack.volume());
+
+      mMainLayer.bindPressed(mRewindButton, mTransport.rewindAction());
+      mMainLayer.bindPressed(mForwardButton, mTransport.fastForwardAction());
+      mMainLayer.bindPressed(mStopButton, mTransport.stopAction());
+      mMainLayer.bindPressed(mPlayButton, mTransport.playAction());
+      mMainLayer.bindPressed(mLoopButton, mTransport.isArrangerLoopEnabled().toggleAction());
+      mMainLayer.bindPressed(mRecordButton, mTransport.recordAction());
+
+      for (int i = 0; i < mNumKnobs; ++i)
+         mMainLayer.bind(mKnobs[i], mRemoteControls.getParameter(i));
+
+      for (int i = 0; i < 8; ++i)
       {
-         if (0x10 <= data1 && data1 <= 0x17)
-            mRemoteControls.getParameter(data1 - 0x10).value().set(data2, 128);
-         else if (data1 == 0x07)
-            mCursorTrack.volume().set(data2, 128);
-         if (0x18 <= data1 && data1 <= 0x1F)
-            mCursorTrack.selectChannel(mTrackBank.getItemAt(data1 - 0x18));
+         final int j = i;
+         final Track channelToSelect = mTrackBank.getItemAt(i);
+         final HardwareActionBindable action = getHost().createAction(
+            () -> mCursorTrack.selectChannel(channelToSelect),
+            () -> "Selects the track " + j + " from the track bank.");
+         mMainLayer.bindPressed(mTrackSelectButtons[i], action);
       }
-      else if (status == 0xA0)
+
+      mMainLayer.activate();
+   }
+
+   private void createCurrentTrackVolumeControl()
+   {
+      mCursorTrackVolumeKnob = mHardwareSurface.createAbsoluteHardwareKnob("CurstorTrackVolumeKnob");
+      mCursorTrackVolumeKnob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, 0x07));
+   }
+
+   private void createTrackSelectControls()
+   {
+      mTrackSelectButtons = new HardwareButton[8];
+      for (int i = 0; i < 8; ++i)
       {
-         switch (data1)
-         {
-            case 0x5A:
-               if (data2 == 127)
-                  mTransport.rewind();
-               break;
+         final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + i);
+         bt.pressedAction().setActionMatcher(mMidiIn.createCCActionMatcher(0, 0x18 + i));
+         mTrackSelectButtons[i] = bt;
+      }
+   }
 
-            case 0x5B:
-               if (data2 == 127)
-                  mTransport.fastForward();
-               break;
+   private void createTransportControls()
+   {
+      mRewindButton = mHardwareSurface.createHardwareButton("Rewind");
+      mRewindButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5A));
 
-            case 0x5C:
-               if (data2 == 127)
-                  mTransport.stop();
-               break;
+      mForwardButton = mHardwareSurface.createHardwareButton("Forward");
+      mForwardButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5B));
 
-            case 0x5D:
-               if (data2 == 127)
-                  mTransport.play();
-               break;
+      mStopButton = mHardwareSurface.createHardwareButton("Stop");
+      mStopButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5C));
 
-            case 0x5E:
-               if (data2 == 127)
-                  mTransport.isArrangerLoopEnabled().toggle();
-               break;
+      mPlayButton = mHardwareSurface.createHardwareButton("Play");
+      mPlayButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5D));
 
-            case 0x5F:
-               if (data2 == 127)
-                  mTransport.record();
-               break;
-         }
+      mLoopButton = mHardwareSurface.createHardwareButton("Loop");
+      mLoopButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5E));
+
+      mRecordButton = mHardwareSurface.createHardwareButton("Record");
+      mRecordButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5F));
+   }
+
+   private void createKnobs()
+   {
+      mKnobs = new AbsoluteHardwareKnob[mNumKnobs];
+      for (int i = 0; i < mNumKnobs; ++i)
+      {
+         final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("Knob-" + i);
+         knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, 0x10 + i));
+         knob.setLabel("T" + (i + 1));
+         knob.setBounds(10 + i * (20 + 25), 10, 20, 20);
+         mKnobs[i] = knob;
       }
    }
 
@@ -136,7 +206,6 @@ public class XControllerExtension extends ControllerExtension
    @Override
    public void flush()
    {
-
    }
 
    /* Configuration */
@@ -152,6 +221,21 @@ public class XControllerExtension extends ControllerExtension
    private PinnableCursorDevice mCursorDevice;
    private CursorRemoteControlsPage mRemoteControls;
    private Transport mTransport;
+   private MidiIn mMidiIn;
    private MidiOut mMidiOut;
    private TrackBank mTrackBank;
+
+   /* Hardware stuff */
+   private Layers mLayers;
+   private Layer mMainLayer;
+   private HardwareSurface mHardwareSurface;
+   private HardwareButton mRewindButton;
+   private HardwareButton mForwardButton;
+   private HardwareButton mStopButton;
+   private HardwareButton mPlayButton;
+   private HardwareButton mLoopButton;
+   private HardwareButton mRecordButton;
+   private AbsoluteHardwareKnob mCursorTrackVolumeKnob;
+   private HardwareButton[] mTrackSelectButtons;
+   private AbsoluteHardwareKnob[] mKnobs;
 }
