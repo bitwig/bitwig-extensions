@@ -2,9 +2,7 @@ package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
-import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
-import com.bitwig.extension.controller.api.ControllerHost;
 
 public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends ControllerExtensionDefinition
 {
@@ -62,12 +60,6 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    public int getNumMidiOutPorts()
    {
       return 2;
-   }
-
-   @Override
-   public ControllerExtension createInstance(final ControllerHost host)
-   {
-      return new ArturiaKeylabMkII(this, host);
    }
 
    @Override

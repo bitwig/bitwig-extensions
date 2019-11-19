@@ -44,7 +44,7 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.Layers;
 
-public class ArturiaKeylabMkII extends ControllerExtension
+public abstract class ArturiaKeylabMkII extends ControllerExtension
 {
    private final Color GREY = Color.fromRGB(0.2f, 0.2f, 0.2f);
 
@@ -245,7 +245,11 @@ public class ArturiaKeylabMkII extends ControllerExtension
             }
          }
       });
+
+      initHardwareLayout(mHardwareSurface);
    }
+
+   protected abstract void initHardwareLayout(HardwareSurface surface);
 
    private void initLayers()
    {
@@ -269,7 +273,7 @@ public class ArturiaKeylabMkII extends ControllerExtension
 
       mBaseLayer.activate();
 
-      // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+      //DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private void initBaseLayer()
