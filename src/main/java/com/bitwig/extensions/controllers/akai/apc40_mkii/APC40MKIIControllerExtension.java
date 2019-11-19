@@ -162,9 +162,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mApplication = host.createApplication();
 
       final Preferences preferences = host.getPreferences();
-      mMaxVolumeSetting = preferences.getEnumSetting("Maximum Volume", "Volume Faders", FADER_VOLUME_ENUM,
-         FADER_VOLUME_ENUM[1]);
-      mMaxVolumeSetting.markInterested();
 
       mPanAsChannelStripSetting = preferences.getBooleanSetting("Replace PAN by Channel Strip",
          "Channel Strip", false);
@@ -1557,61 +1554,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
    }
 
-   private double getMaxVolume()
-   {
-      final String text = mMaxVolumeSetting.get();
-      if (text.equals(FADER_VOLUME_ENUM[0]))
-         return 7.937005259840999e-01;
-      return 1.0;
-   }
-
-   private void setVolume(final Parameter volume, int midiVal)
-   {
-      volume.set(midiVal * getMaxVolume() / 127.0);
-   }
-
-   private Application mApplication = null;
-
-   private Transport mTransport = null;
-
-   private MasterTrack mMasterTrack = null;
-
-   private BooleanValue mIsMasterSelected = null;
-
-   private BooleanValue[] mIsTrackSelected = new BooleanValue[8];
-
-   private TrackBank mTrackBank = null;
-
-   private TrackBank mSendTrackBank = null;
-
-   private SceneBank mSceneBank = null;
-
-   private CursorTrack mTrackCursor = null;
-
-   private PinnableCursorDevice mDeviceCursor = null;
-
-   private PinnableCursorDevice mChannelStripDevice;
-
-   private CursorRemoteControlsPage mRemoteControls = null;
-
-   private CursorRemoteControlsPage mChannelStripRemoteControls;
-
-   private SettableEnumValue mMaxVolumeSetting;
-
-   private SettableBooleanValue mPanAsChannelStripSetting;
-
-   private SettableBooleanValue mHorizontalScrollByPageSetting;
-
-   private SettableBooleanValue mVerticalScrollByPageSetting;
-
-
-   private MidiIn mMidiIn = null;
-   private MidiOut mMidiOut = null;
-
-   private UserControlBank mUserControls = null;
-
-   private UserControlBank mCueControl = null;
-
    /**
     * Helper class that will stay as pressed if there is a "double press" (like a double click).
     */
@@ -1645,6 +1587,46 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       private boolean mIsOn = false;
       private long mLastPressTime = 0;
    }
+
+   private Application mApplication = null;
+
+   private Transport mTransport = null;
+
+   private MasterTrack mMasterTrack = null;
+
+   private BooleanValue mIsMasterSelected = null;
+
+   private BooleanValue[] mIsTrackSelected = new BooleanValue[8];
+
+   private TrackBank mTrackBank = null;
+
+   private TrackBank mSendTrackBank = null;
+
+   private SceneBank mSceneBank = null;
+
+   private CursorTrack mTrackCursor = null;
+
+   private PinnableCursorDevice mDeviceCursor = null;
+
+   private PinnableCursorDevice mChannelStripDevice;
+
+   private CursorRemoteControlsPage mRemoteControls = null;
+
+   private CursorRemoteControlsPage mChannelStripRemoteControls;
+
+   private SettableBooleanValue mPanAsChannelStripSetting;
+
+   private SettableBooleanValue mHorizontalScrollByPageSetting;
+
+   private SettableBooleanValue mVerticalScrollByPageSetting;
+
+   private MidiIn mMidiIn = null;
+
+   private MidiOut mMidiOut = null;
+
+   private UserControlBank mUserControls = null;
+
+   private UserControlBank mCueControl = null;
 
    private final DoublePressedButtonState mBankOn = new DoublePressedButtonState();
    private final DoublePressedButtonState mUserOn = new DoublePressedButtonState();
