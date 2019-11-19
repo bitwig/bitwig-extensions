@@ -563,9 +563,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMainLayer.bindPressed(mTapTempoButton, mTransport.tapTempoAction());
 
       final HardwareActionBindable incTempoAction =
-         getHost().createAction(() -> mTransport.tempo().incRaw(1), () -> "Increments the tempo");
+         getHost().createAction(() -> mTransport.tempo().incRaw(mShiftButton.isPressed().get() ? 0.1 : 1), () -> "Increments the tempo");
       final HardwareActionBindable decTempoAction =
-         getHost().createAction(() -> mTransport.tempo().incRaw(1), () -> "Decrements the tempo");
+         getHost().createAction(() -> mTransport.tempo().incRaw(mShiftButton.isPressed().get() ? -0.1 : -1), () -> "Decrements the tempo");
       mMainLayer.bind(mTempoKnob, getHost().createRelativeHardwareControlStepTarget(incTempoAction, decTempoAction));
 
       mMainLayer.bindPressed(mNextDeviceButton, mDeviceCursor.selectNextAction());
@@ -850,7 +850,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mNudgeMinusButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_MINUS));
 
       mTempoKnob = mHardwareSurface.createRelativeHardwareKnob("Tempo");
-      mTempoKnob.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_TEMPO));
+      mTempoKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_TEMPO));
+      mTempoKnob.setSensitivity(128.0);
+      mTempoKnob.setStepSize(1);
    }
 
    private void createTrackStopButtons()
