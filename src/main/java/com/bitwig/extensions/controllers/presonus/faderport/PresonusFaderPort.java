@@ -415,6 +415,7 @@ public class PresonusFaderPort extends ControllerExtension
          mMidiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + channel) + " && data2 > 0"));
       fader.endTouchAction().setActionMatcher(
          mMidiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + channel) + " && data2 == 0"));
+      fader.disableTakeOver();
 
       fader.isBeingTouched().markInterested();
       fader.targetValue().markInterested();
