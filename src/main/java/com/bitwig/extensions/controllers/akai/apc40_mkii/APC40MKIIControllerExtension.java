@@ -146,7 +146,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private static final double PHYSICAL_KNOB_WIDTH = 20;
 
-
    protected APC40MKIIControllerExtension(
       final ControllerExtensionDefinition controllerExtensionDefinition,
       final ControllerHost host)
@@ -325,6 +324,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       createHardwareControls();
       createLayers();
+
+      host.scheduleTask(this::postInit, 0);
+   }
+
+   private void postInit()
+   {
+      if (mPanAsChannelStripSetting.get())
+         activateTopMode(TopMode.CHANNEL_STRIP);
+      else
+         activateTopMode(TopMode.PAN);
    }
 
    private void createLayers()
@@ -335,6 +344,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mChannelStripLayer = new Layer(mLayers, "ChannelStrip");
       mShiftLayer = new Layer(mLayers, "Shift");
       mBankLayer = new Layer(mLayers, "Bank");
+      mSendSelectLayer = new Layer(mLayers, "SendSelect");
+      mUserSelectLayer = new Layer(mLayers, "UserSelect");
 
       createMainLayer();
       createPanLayer();
@@ -344,6 +355,32 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       createChannelStripLayer();
       createShiftLayer();
       createBankLayer();
+      createSendSelectLayer();
+      createUserSelectLayer();
+   }
+
+   private void createUserSelectLayer()
+   {
+      for (int i = 0; i < 5; ++i)
+      {
+         final int I = i;
+         mUserSelectLayer.bindPressed(mSceneButtons[i], () -> {
+            mUserIndex = I;
+            activateTopMode(mTopMode);
+         });
+      }
+   }
+
+   private void createSendSelectLayer()
+   {
+      for (int i = 0; i < 5; ++i)
+      {
+         final int I = i;
+         mSendSelectLayer.bindPressed(mSceneButtons[i], () -> {
+            mSendIndex = I;
+            activateTopMode(mTopMode);
+         });
+      }
    }
 
    private void createBankLayer()
@@ -507,8 +544,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          mMainLayer.bindPressed(
             mTrackSelectButtons[x],
-            // TODO: add new api for CursorTrack.select(Track).
-            getHost().createAction(() -> track.selectInMixer(), () -> "Selects the track"));
+            getHost().createAction(() -> mTrackCursor.selectChannel(track), () -> "Selects the track"));
          mMainLayer.bind(mIsTrackSelected[x], mTrackSelectLeds[x]);
          mMainLayer.bindPressed(mTrackStopButtons[x], track.stopAction());
          mMainLayer.bindInverted(track.isStopped(), mTrackStopLeds[x]);
@@ -517,8 +553,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          .createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
       mMainLayer.bind(mIsMasterSelected, mMasterTrackSelectLed);
       mMainLayer.bindPressed(mMasterTrackStopButton, mSceneBank.stopAction());
-      // TODO: negate the isStopped()
-      mMainLayer.bind(mMasterTrack.isStopped(), mMasterTrackStopLed);
+      mMainLayer.bindInverted(mMasterTrack.isStopped(), mMasterTrackStopLed);
 
       mMainLayer.bindToggle(mPlayButton, mTransport.isPlaying());
       mMainLayer.bindToggle(mRecordButton, mTransport.isClipLauncherOverdubEnabled());
@@ -874,12 +909,30 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mSendsButton = mHardwareSurface.createHardwareButton("Sends");
       mSendsButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SENDS));
       mSendsButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SENDS));
+      mSendsButton.isPressed().addValueObserver(isPressed -> {
+         mSendsOn.stateChanged(isPressed);
+         if (mSendsOn.isOn())
+         {
+            mSendSelectLayer.activate();
+            if (mControlSendEffectSetting.get())
+               mTrackCursor.selectChannel(mSendTrackBank.getItemAt(mSendIndex));
+         }
+         else
+            mSendSelectLayer.deactivate();
+      });
       mSendsLed = mHardwareSurface.createOnOffHardwareLight("SendsLed");
       mSendsLed.onUpdateHardware(() -> sendLedUpdate(BT_SENDS, mSendsLed));
 
       mUserButton = mHardwareSurface.createHardwareButton("User");
       mUserButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_USER));
       mUserButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_USER));
+      mUserButton.isPressed().addValueObserver(isPressed -> {
+         mUserOn.stateChanged(isPressed);
+         if (mUserOn.isOn())
+            mUserSelectLayer.activate();
+         else
+            mUserSelectLayer.deactivate();
+      });
       mUserLed = mHardwareSurface.createOnOffHardwareLight("UserLed");
       mUserLed.onUpdateHardware(() -> sendLedUpdate(BT_USER, mUserLed));
    }
@@ -1473,6 +1526,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private Layer mChannelStripLayer;
    private Layer mShiftLayer;
    private Layer mBankLayer;
+   private Layer mSendSelectLayer;
+   private Layer mUserSelectLayer;
 
    private AbsoluteHardwareKnob[] mTopControlKnobs;
    private AbsoluteHardwareKnob[] mDeviceControlKnobs;
