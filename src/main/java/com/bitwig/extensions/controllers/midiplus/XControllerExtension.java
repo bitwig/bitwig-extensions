@@ -92,6 +92,28 @@ public class XControllerExtension extends ControllerExtension
       createCurrentTrackVolumeControl();
       createTransportControls();
       createTrackSelectControls();
+
+      setGeometry();
+   }
+
+   private void setGeometry()
+   {
+      final HardwareSurface surface = mHardwareSurface;
+      surface.hardwareElementWithId("Rewind").setBounds(10.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("Forward").setBounds(40.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("Stop").setBounds(70.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("Play").setBounds(100.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("Loop").setBounds(130.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("Record").setBounds(160.0, 40.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-0").setBounds(10.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-1").setBounds(40.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-2").setBounds(70.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-3").setBounds(100.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-4").setBounds(130.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-5").setBounds(160.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-6").setBounds(190.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("TrackSelect-7").setBounds(220.0, 60.0, 20.0, 8.0);
+      surface.hardwareElementWithId("CurstorTrackVolumeKnob").setBounds(324.5, 12.25, 20.75, 18.5);
    }
 
    private void createMainLayer()
@@ -136,7 +158,6 @@ public class XControllerExtension extends ControllerExtension
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + i);
          bt.pressedAction().setActionMatcher(mMidiIn.createCCActionMatcher(0, 0x18 + i));
-         bt.setBounds(10 + i * 30, 60, 20, 8);
          mTrackSelectButtons[i] = bt;
       }
    }
@@ -145,27 +166,21 @@ public class XControllerExtension extends ControllerExtension
    {
       mRewindButton = mHardwareSurface.createHardwareButton("Rewind");
       mRewindButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5A));
-      mRewindButton.setBounds(10, 40, 20, 8);
 
       mForwardButton = mHardwareSurface.createHardwareButton("Forward");
       mForwardButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5B));
-      mForwardButton.setBounds(10 + 30, 40, 20, 8);
 
       mStopButton = mHardwareSurface.createHardwareButton("Stop");
       mStopButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5C));
-      mStopButton.setBounds(10 + 2 * 30, 40, 20, 8);
 
       mPlayButton = mHardwareSurface.createHardwareButton("Play");
       mPlayButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5D));
-      mPlayButton.setBounds(10 + 3 * 30, 40, 20, 8);
 
       mLoopButton = mHardwareSurface.createHardwareButton("Loop");
       mLoopButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5E));
-      mLoopButton.setBounds(10 + 4 * 30, 40, 20, 8);
 
       mRecordButton = mHardwareSurface.createHardwareButton("Record");
       mRecordButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, 0x5F));
-      mRecordButton.setBounds(10 + 5 * 30, 40, 20, 8);
    }
 
    private void createKnobs()
