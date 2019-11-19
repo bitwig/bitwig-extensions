@@ -17,22 +17,34 @@ public class ArturiaKeylab61MkII extends ArturiaKeylabMkII
    {
       surface.setPhysicalSize(875, 297);
 
-      surface.hardwareElementWithId("PAD1").setBounds(137.0, 30.5, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD2").setBounds(174.5, 31.25, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD3").setBounds(206.75, 30.5, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD4").setBounds(238.25, 32.0, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD5").setBounds(140.75, 59.25, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD6").setBounds(175.0, 63.25, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD7").setBounds(207.75, 60.0, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD8").setBounds(243.5, 60.0, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD9").setBounds(142.25, 85.25, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD10").setBounds(172.75, 89.75, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD11").setBounds(202.5, 87.5, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD12").setBounds(238.25, 91.25, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD13").setBounds(137.0, 115.75, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD14").setBounds(169.75, 112.5, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD15").setBounds(204.75, 113.25, 10.0, 10.0);
-      surface.hardwareElementWithId("PAD16").setBounds(235.75, 111.0, 10.0, 10.0);
+      surface.hardwareElementWithId("CHORD").setBounds(46.0, 30.5, 10.0, 10.0);
+      surface.hardwareElementWithId("TRANS").setBounds(71.0, 29.0, 10.0, 10.0);
+      surface.hardwareElementWithId("OCT_MINUS").setBounds(44.0, 52.0, 10.0, 10.0);
+      surface.hardwareElementWithId("OCT_PLUS").setBounds(71.0, 53.5, 10.0, 10.0);
+      surface.hardwareElementWithId("PAD1").setBounds(135.25, 27.5, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD2").setBounds(168.25, 27.5, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD3").setBounds(202.5, 27.5, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD4").setBounds(234.75, 27.5, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD5").setBounds(135.25, 53.75, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD6").setBounds(168.25, 53.75, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD7").setBounds(202.5, 53.75, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD8").setBounds(234.75, 53.75, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD9").setBounds(135.25, 79.75, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD10").setBounds(168.25, 79.75, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD11").setBounds(202.5, 79.75, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD12").setBounds(234.75, 79.75, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD13").setBounds(135.25, 107.5, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD14").setBounds(168.25, 107.5, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD15").setBounds(202.5, 107.5, 24.0, 21.5);
+      surface.hardwareElementWithId("PAD16").setBounds(234.75, 107.5, 24.0, 21.5);
+      surface.hardwareElementWithId("SOLO").setBounds(280.75, 46.5, 10.0, 10.0);
+      surface.hardwareElementWithId("MUTE").setBounds(306.75, 47.25, 10.0, 10.0);
+      surface.hardwareElementWithId("READ").setBounds(356.0, 48.0, 10.0, 10.0);
+      surface.hardwareElementWithId("WRITE").setBounds(379.75, 45.75, 10.0, 10.0);
+      surface.hardwareElementWithId("SAVE").setBounds(280.0, 75.25, 10.0, 10.0);
+      surface.hardwareElementWithId("PUNCH_IN").setBounds(305.0, 76.75, 10.0, 10.0);
+      surface.hardwareElementWithId("PUNCH_OUT").setBounds(332.0, 76.0, 10.0, 10.0);
+      surface.hardwareElementWithId("METRO").setBounds(355.25, 76.0, 10.0, 10.0);
       surface.hardwareElementWithId("UNDO").setBounds(378.5, 74.5, 10.0, 10.0);
       surface.hardwareElementWithId("REWIND").setBounds(276.75, 114.0, 10.0, 10.0);
       surface.hardwareElementWithId("FORWARD").setBounds(297.75, 115.5, 10.0, 10.0);
@@ -40,6 +52,8 @@ public class ArturiaKeylab61MkII extends ArturiaKeylabMkII
       surface.hardwareElementWithId("PLAY_OR_PAUSE").setBounds(337.75, 117.0, 10.0, 10.0);
       surface.hardwareElementWithId("RECORD").setBounds(362.25, 114.5, 10.0, 10.0);
       surface.hardwareElementWithId("LOOP").setBounds(382.5, 118.0, 10.0, 10.0);
+      surface.hardwareElementWithId("NEXT").setBounds(553.25, 35.0, 10.0, 10.0);
+      surface.hardwareElementWithId("PREVIOUS").setBounds(555.25, 64.0, 10.0, 10.0);
       surface.hardwareElementWithId("SELECT1").setBounds(581.75, 121.0, 10.0, 10.0);
       surface.hardwareElementWithId("SELECT2").setBounds(610.5, 121.5, 10.0, 10.0);
       surface.hardwareElementWithId("SELECT3").setBounds(640.0, 122.0, 10.0, 10.0);
@@ -68,20 +82,7 @@ public class ArturiaKeylab61MkII extends ArturiaKeylabMkII
       surface.hardwareElementWithId("fader8").setBounds(790.75, 53.75, 10.0, 50.0);
       surface.hardwareElementWithId("fader9").setBounds(819.75, 56.75, 10.0, 50.0);
       surface.hardwareElementWithId("wheel").setBounds(447.5, 73.25, 38.5, 28.0);
-      surface.hardwareElementWithId("WRITE").setBounds(379.75, 45.75, 10.0, 10.0);
-      surface.hardwareElementWithId("READ").setBounds(356.0, 48.0, 10.0, 10.0);
-      surface.hardwareElementWithId("SAVE").setBounds(280.0, 75.25, 10.0, 10.0);
-      surface.hardwareElementWithId("SOLO").setBounds(280.75, 46.5, 10.0, 10.0);
-      surface.hardwareElementWithId("MUTE").setBounds(306.75, 47.25, 10.0, 10.0);
-      surface.hardwareElementWithId("METRO").setBounds(355.25, 76.0, 10.0, 10.0);
-      surface.hardwareElementWithId("PUNCH_IN").setBounds(305.0, 76.75, 10.0, 10.0);
-      surface.hardwareElementWithId("PUNCH_OUT").setBounds(332.0, 76.0, 10.0, 10.0);
-      surface.hardwareElementWithId("NEXT").setBounds(553.25, 35.0, 10.0, 10.0);
-      surface.hardwareElementWithId("PREVIOUS").setBounds(555.25, 64.0, 10.0, 10.0);
-      surface.hardwareElementWithId("OCT_MINUS").setBounds(44.0, 52.0, 10.0, 10.0);
-      surface.hardwareElementWithId("OCT_PLUS").setBounds(71.0, 53.5, 10.0, 10.0);
-      surface.hardwareElementWithId("CHORD").setBounds(46.0, 30.5, 10.0, 10.0);
-      surface.hardwareElementWithId("TRANS").setBounds(71.0, 29.0, 10.0, 10.0);
+
 
 
    }
