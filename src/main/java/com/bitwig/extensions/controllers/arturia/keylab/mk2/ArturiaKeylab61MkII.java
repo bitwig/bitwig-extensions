@@ -17,10 +17,10 @@ public class ArturiaKeylab61MkII extends ArturiaKeylabMkII
    {
       surface.setPhysicalSize(875, 297);
 
-      surface.hardwareElementWithId("CHORD").setBounds(46.0, 30.5, 10.0, 10.0);
-      surface.hardwareElementWithId("TRANS").setBounds(71.0, 29.0, 10.0, 10.0);
-      surface.hardwareElementWithId("OCT_MINUS").setBounds(44.0, 52.0, 10.0, 10.0);
-      surface.hardwareElementWithId("OCT_PLUS").setBounds(71.0, 53.5, 10.0, 10.0);
+      surface.hardwareElementWithId("CHORD").setBounds(44.0, 28.5, 14.5, 8.0);
+      surface.hardwareElementWithId("TRANS").setBounds(69.5, 28.5, 14.5, 8.0);
+      surface.hardwareElementWithId("OCT_MINUS").setBounds(44.0, 50.5, 14.5, 8.0);
+      surface.hardwareElementWithId("OCT_PLUS").setBounds(69.5, 50.5, 14.5, 8.0);
       surface.hardwareElementWithId("PAD1").setBounds(135.25, 27.5, 24.0, 21.5);
       surface.hardwareElementWithId("PAD2").setBounds(168.25, 27.5, 24.0, 21.5);
       surface.hardwareElementWithId("PAD3").setBounds(202.5, 27.5, 24.0, 21.5);
@@ -84,5 +84,6 @@ public class ArturiaKeylab61MkII extends ArturiaKeylabMkII
       surface.hardwareElementWithId("wheel").setBounds(447.5, 73.25, 38.5, 28.0);
       surface.hardwareElementWithId("display").setBounds(435.0, 38.25, 67.25, 15.5);
       surface.hardwareElementWithId("WHEEL_CLICK").setBounds(488.0, 82.5, 10.0, 10.0);
+
    }
 }
