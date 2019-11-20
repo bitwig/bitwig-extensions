@@ -23,7 +23,6 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
-import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Preferences;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
@@ -1006,10 +1005,17 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          for (int y = 0; y < 5; ++y)
          {
-            final HardwareButton bt = mHardwareSurface.createHardwareButton("Grid-" + x + "-" + y);
+            final String id ="Grid-" + x + "-" + y;
+            final HardwareButton bt = mHardwareSurface.createHardwareButton(id);
             final int note = BT_PAD0 + (4 - y) * 8 + x;
             bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
             bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
+
+            final RgbLed rgbLed = mPadLeds[x][y];
+            final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight(id + "-light", RgbLed::stateToColor);
+            light.state().setValueSupplier(rgbLed::getStateAsInt);
+            bt.setBackgroundLight(light);
+
             mGridButtons[y * 8 + x] = bt;
          }
       }
@@ -1307,7 +1313,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       updateChannelStripIndication(mTopMode == TopMode.CHANNEL_STRIP);
    }
 
-   private void updateChannelStripIndication(boolean shouldIndicate)
+   private void updateChannelStripIndication(final boolean shouldIndicate)
    {
       for (int i = 0; i < CHANNEL_STRIP_NUM_PARAMS; ++i)
          mChannelStripRemoteControls.getParameter(i).setIndication(shouldIndicate);
@@ -1316,7 +1322,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mTrackCursor.sendBank().getItemAt(i).setIndication(shouldIndicate);
    }
 
-   private void updatePanIndication(boolean shouldIndicate)
+   private void updatePanIndication(final boolean shouldIndicate)
    {
       for (int i = 0; i < 8; ++i)
       {
@@ -1376,10 +1382,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    @Override
    public void flush()
    {
-      mHardwareSurface.updateHardware();
       flushKnobs();
       paintPads();
       paintScenes();
+      mHardwareSurface.updateHardware();
    }
 
    private void paintScenes()
@@ -1503,7 +1509,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
     */
    private class DoublePressedButtonState
    {
-      void stateChanged(boolean isPressed)
+      void stateChanged(final boolean isPressed)
       {
          if (!isPressed)
          {

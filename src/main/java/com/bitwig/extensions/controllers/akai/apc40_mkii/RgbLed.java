@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.akai.apc40_mkii;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.MidiOut;
 
@@ -36,46 +37,70 @@ public class RgbLed
 
    public static final int BLINK_STOP_QUEUED = 12;
 
-   private static final Map<Integer, Integer> COLORS = new HashMap<>();
+   private static final Map<Integer, Integer> RGB_TO_COLOR_VALUE_MAP = new HashMap<>();
+
+   private static final Map<Integer, Color> COLOR_VALUE_TO_COLOR_MAP = new HashMap<>();
+
+   private static void registerColor(final Color color, final int value)
+   {
+      COLOR_VALUE_TO_COLOR_MAP.put(value, color);
+
+      final int rgb = color.getRed255() << 16 | color.getGreen255() << 8 | color.getBlue255();
+
+      RGB_TO_COLOR_VALUE_MAP.put(rgb, value);
+   }
+
+   private static void registerColor(final int rgb, final int value)
+   {
+      COLOR_VALUE_TO_COLOR_MAP.put(value, Color.fromRGB255((rgb & 0xFF0000) >> 16, (rgb & 0xFF00) >> 8, rgb & 0xFF));
+
+      RGB_TO_COLOR_VALUE_MAP.put(rgb, value);
+   }
 
    static
    {
-      COLORS.put(0, 0);
+      registerColor(0xFF0000, COLOR_RED);
+      registerColor(0xFF00, COLOR_GREEN);
+      registerColor(0xFF, COLOR_BLUE);
+      registerColor(0xFFD90F, COLOR_YELLOW);
 
-      COLORS.put(14235761, 57);
-      COLORS.put(14771857, 107);
-      COLORS.put(5526612, 1);
 
-      COLORS.put(14233124, 6);
-      COLORS.put(15491415, 5);
-      COLORS.put(8026746, 2);
+      registerColor(0, 0);
 
-      COLORS.put(16733958, 9);
-      COLORS.put(16745278, 12);
-      COLORS.put(13224393, 3);
+      registerColor(14235761, 57);
+      registerColor(14771857, 107);
+      registerColor(5526612, 1);
 
-      COLORS.put(14261520, 14);
-      COLORS.put(14989134, 13);
-      COLORS.put(8817068, 104);
+      registerColor(14233124, 6);
+      registerColor(15491415, 5);
+      registerColor(8026746, 2);
 
-      COLORS.put(7575572, 18);
-      COLORS.put(10534988, 17);
-      COLORS.put(10713411, 125);
+      registerColor(16733958, 9);
+      registerColor(16745278, 12);
+      registerColor(13224393, 3);
 
-      COLORS.put(40263, 22);
-      COLORS.put(4111202, 21);
-      COLORS.put(13016944, 124);
+      registerColor(14261520, 14);
+      registerColor(14989134, 13);
+      registerColor(8817068, 104);
 
-      COLORS.put(42644, 34);
-      COLORS.put(4444857, 33);
-      COLORS.put(5726662, 43);
+      registerColor(7575572, 18);
+      registerColor(10534988, 17);
+      registerColor(10713411, 125);
 
-      COLORS.put(39385, 38);
-      COLORS.put(4507903, 37);
-      COLORS.put(8686304, 115);
+      registerColor(40263, 22);
+      registerColor(4111202, 21);
+      registerColor(13016944, 124);
 
-      COLORS.put(9783755, 50);
-      COLORS.put(12351216, 49);
+      registerColor(42644, 34);
+      registerColor(4444857, 33);
+      registerColor(5726662, 43);
+
+      registerColor(39385, 38);
+      registerColor(4507903, 37);
+      registerColor(8686304, 115);
+
+      registerColor(9783755, 50);
+      registerColor(12351216, 49);
    }
 
    public void paint(final MidiOut midiOut, final int msg, final int data1)
@@ -101,14 +126,14 @@ public class RgbLed
       }
    }
 
-   public void setColor(float red, float green, float blue)
+   public void setColor(final float red, final float green, final float blue)
    {
-      int r8 = (int)(red * 255);
-      int g8 = (int)(green * 255);
-      int b8 = (int)(blue * 255);
-      int total = (r8 << 16) | (g8 << 8) | b8;
+      final int r8 = (int)(red * 255);
+      final int g8 = (int)(green * 255);
+      final int b8 = (int)(blue * 255);
+      final int total = (r8 << 16) | (g8 << 8) | b8;
 
-      final Integer color = COLORS.get(total);
+      final Integer color = RGB_TO_COLOR_VALUE_MAP.get(total);
       if (color != null)
       {
          mColor = color;
@@ -118,7 +143,7 @@ public class RgbLed
       mColor = 13;
    }
 
-   public void setColor(int color)
+   public void setColor(final int color)
    {
       mColor = color;
    }
@@ -136,6 +161,16 @@ public class RgbLed
    public void setBlinkColor(final int blinkColor)
    {
       mBlinkColor = blinkColor;
+   }
+
+   public static Color stateToColor(final int state)
+   {
+      return COLOR_VALUE_TO_COLOR_MAP.get(state);
+   }
+
+   public int getStateAsInt()
+   {
+      return mColor;
    }
 
    private int mColor = COLOR_NONE;
