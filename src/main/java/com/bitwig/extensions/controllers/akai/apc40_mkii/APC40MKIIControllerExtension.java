@@ -43,6 +43,8 @@ import com.bitwig.extensions.framework.Layers;
 
 public class APC40MKIIControllerExtension extends ControllerExtension
 {
+   private static final boolean ENABLE_DEBUG_LAYER = false;
+
    private static final int CHANNEL_STRIP_NUM_PARAMS = 4;
 
    private static final int CHANNEL_STRIP_NUM_SENDS = 4;
@@ -514,8 +516,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void createDebugLayer()
    {
-      mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-      mDebugLayer.activate();
+      if (ENABLE_DEBUG_LAYER)
+      {
+         mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+         mDebugLayer.activate();
+      }
    }
 
    private void createMainLayer()
@@ -1675,5 +1680,4 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private final KnobLed[] mTopControlKnobLeds = new KnobLed[8];
    private final RgbLed[][] mPadLeds = new RgbLed[8][5];
    private final RgbLed[] mSceneLeds = new RgbLed[5];
-
 }
