@@ -519,7 +519,7 @@ public class PresonusAtom extends ControllerExtension
 
          final int padIndex = i;
 
-         mStepsLayer.bindPressed(padButton, () -> {
+         mStepsLayer.bindPressed(padButton, pressure -> {
             if (mShift)
             {
                mCursorClip.scrollToKey(36 + padIndex);
@@ -527,7 +527,7 @@ public class PresonusAtom extends ControllerExtension
                mCursorTrack.playNote(36 + padIndex, 100);
             }
             else
-               mCursorClip.toggleStep(padIndex, 0, 100);
+               mCursorClip.toggleStep(padIndex, 0, (int)Math.round(pressure * 127));
          });
          mStepsLayer.bind(() -> getStepsPadColor(padIndex), padButton);
       }
