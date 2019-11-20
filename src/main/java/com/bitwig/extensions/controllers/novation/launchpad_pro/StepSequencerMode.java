@@ -118,6 +118,12 @@ public class StepSequencerMode extends AbstractSequencerMode
             for (int y = 0; y < 4; ++y)
             {
                final int key = mKeyboardWidget.calculateKeyForPosition(x, y);
+               if (key == -1)
+                  continue;
+
+               assert key >= 0;
+               assert key < 127;
+
                final NoteStep noteStep = cursorClip.getStep(0, absoluteStepIndex, key);
                if (noteStep.state() == NoteStep.State.NoteOn)
                   mDriver.getPadLed(x, y).setColor(Color.GREEN);
