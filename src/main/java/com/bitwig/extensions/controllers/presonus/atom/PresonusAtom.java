@@ -841,7 +841,7 @@ public class PresonusAtom extends ControllerExtension
       pad.setLabelColor(BLACK);
 
       final int note = 0x24 + index;
-      pad.pressedAction().setPressureActionMatcher(mMidiIn.createNoteOnValueMatcher(0, note));
+      pad.pressedAction().setPressureActionMatcher(mMidiIn.createNoteOnVelocityValueMatcher(0, note));
       pad.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
       mPadButtons[index] = pad;
