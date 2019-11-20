@@ -405,8 +405,7 @@ public class PresonusAtom extends ControllerExtension
       initNoteRepeatLayer();
       initNoteRepeatShiftLayer();
 
-      // Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-      // debugLayer.activate();
+       // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private void initBaseLayer()
@@ -842,7 +841,7 @@ public class PresonusAtom extends ControllerExtension
       pad.setLabelColor(BLACK);
 
       final int note = 0x24 + index;
-      pad.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
+      pad.pressedAction().setPressureActionMatcher(mMidiIn.createNoteOnValueMatcher(0, note));
       pad.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
       mPadButtons[index] = pad;
