@@ -74,6 +74,7 @@ public class EzCreatorPlus extends ControllerExtension
          mMainLayer.bind(mKnobs[i], mRemoteControls.getParameter(i));
          mMainLayer.bind(mSliders[i], mRemoteControls.getParameter(i + 4));
       }
+      mMainLayer.activate();
    }
 
    private void createHardwareControls()
@@ -89,9 +90,20 @@ public class EzCreatorPlus extends ControllerExtension
          mKnobs[i] = knob;
 
          final HardwareSlider slider = mHardwareSurface.createHardwareSlider("Slider-" + i);
-         slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x03));
+         slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x03 + i));
          mSliders[i] = slider;
       }
+
+      mHardwareSurface.setPhysicalSize(250, 150);
+      final HardwareSurface surface = mHardwareSurface;
+      surface.hardwareElementWithId("Knob-0").setBounds(11.5, 12.25, 10.0, 10.0);
+      surface.hardwareElementWithId("Slider-0").setBounds(11.5, 34.75, 10.0, 50.0);
+      surface.hardwareElementWithId("Knob-1").setBounds(35.5, 12.25, 10.0, 10.0);
+      surface.hardwareElementWithId("Slider-1").setBounds(35.5, 34.75, 10.0, 50.0);
+      surface.hardwareElementWithId("Knob-2").setBounds(59.5, 12.25, 10.0, 10.0);
+      surface.hardwareElementWithId("Slider-2").setBounds(59.5, 34.75, 10.0, 50.0);
+      surface.hardwareElementWithId("Knob-3").setBounds(83.5, 12.25, 10.0, 10.0);
+      surface.hardwareElementWithId("Slider-3").setBounds(83.5, 34.75, 10.0, 50.0);
    }
 
    @Override
