@@ -825,6 +825,15 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       surface.hardwareElementWithId("Nudge+").setBounds(327.5, 72.25, 13.0, 6.25);
       surface.hardwareElementWithId("Nudge-").setBounds(359.25, 72.25, 13.0, 6.25);
       surface.hardwareElementWithId("Tempo").setBounds(389.5, 57.25, 19.0, 20.5);
+      surface.hardwareElementWithId("ABLed-0").setBounds(24.0, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-1").setBounds(56.0, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-2").setBounds(88.0, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-3").setBounds(119.75, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-4").setBounds(151.75, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-5").setBounds(183.75, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-6").setBounds(215.75, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-7").setBounds(247.5, 153.25, 10.0, 10.0);
+
    }
 
    private void createTransportControls()
@@ -1161,6 +1170,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mNextDeviceButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_DEVICE));
       mNextDeviceLed = mHardwareSurface.createOnOffHardwareLight("NextDeviceLed");
+      mNextDeviceButton.setBackgroundLight(mNextDeviceLed);
       mNextDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_DEVICE, mNextDeviceLed));
 
       mPrevBankButton = mHardwareSurface.createHardwareButton("PrevBank");
@@ -1174,6 +1184,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mNextBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_BANK));
       mNextBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_BANK));
       mNextBankLed = mHardwareSurface.createOnOffHardwareLight("NextBankLed");
+      mNextBankButton.setBackgroundLight(mNextBankLed);
       mNextBankLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_BANK, mNextBankLed));
 
       mDeviceOnOffButton = mHardwareSurface.createHardwareButton("DeviceOnOff");
