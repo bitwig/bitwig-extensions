@@ -18,6 +18,7 @@ import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
@@ -245,7 +246,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
       final HardwareButton button = createButton(id, note);
 
       final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight(id + "_light",
-         PresonusFaderPort::stateToColor);
+         PresonusFaderPort::stateToVisualState);
       button.setBackgroundLight(light);
 
       light.setColorToStateFunction(PresonusFaderPort::colorToState);
@@ -369,6 +370,11 @@ public abstract class PresonusFaderPort extends ControllerExtension
       final int blue = (state & 0x7F);
 
       return Color.fromRGB(red / 127.0, green / 127.0, blue / 127.0);
+   }
+
+   private static HardwareLightVisualState stateToVisualState(final int state)
+   {
+      return HardwareLightVisualState.createForColor(stateToColor(state));
    }
 
    private static int colorPartFromDouble(final double x)

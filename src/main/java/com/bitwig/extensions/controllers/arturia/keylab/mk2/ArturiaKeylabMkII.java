@@ -25,6 +25,7 @@ import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
+import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.HardwareTextDisplay;
@@ -716,7 +717,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       if (id.isRGB())
       {
          final MultiStateHardwareLight light = mHardwareSurface
-            .createMultiStateHardwareLight(id + "_light", ArturiaKeylabMkII::stateToColor);
+            .createMultiStateHardwareLight(id + "_light", ArturiaKeylabMkII::stateToVisualState);
 
          light.setColorToStateFunction(ArturiaKeylabMkII::colorToState);
 
@@ -814,6 +815,13 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       assert blue >= 0 && blue <= 127;
 
       return Color.fromRGB(red / 127.0, green / 127.0, blue / 127.0);
+   }
+
+   private static HardwareLightVisualState stateToVisualState(final int state)
+   {
+      final Color color = stateToColor(state);
+
+      return HardwareLightVisualState.createForColor(color);
    }
 
    private static int colorPartFromDouble(final double x)
