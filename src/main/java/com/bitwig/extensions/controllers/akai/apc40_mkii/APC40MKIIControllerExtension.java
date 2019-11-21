@@ -842,12 +842,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPlayButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PLAY));
       mPlayLed = mHardwareSurface.createOnOffHardwareLight("PlayLed");
       mPlayLed.onUpdateHardware(() -> sendLedUpdate(BT_PLAY, mPlayLed));
+      mPlayLed.setOnColor(Color.fromRGB(0, 1, 0));
       mPlayButton.setBackgroundLight(mPlayLed);
 
       mRecordButton = mHardwareSurface.createHardwareButton("Record");
       mRecordButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_RECORD));
       mRecordButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_RECORD));
       mRecordLed = mHardwareSurface.createOnOffHardwareLight("RecordLed");
+      mRecordLed.setOnColor(Color.fromRGB(1, 0, 0));
       mRecordLed.onUpdateHardware(() -> sendLedUpdate(BT_RECORD, mRecordLed));
       mRecordButton.setBackgroundLight(mRecordLed);
 
@@ -855,6 +857,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mSessionButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SESSION));
       mSessionButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SESSION));
       mSessionLed = mHardwareSurface.createOnOffHardwareLight("SessionLed");
+      mSessionLed.setOnColor(Color.fromRGB(1, 0, 0));
       mSessionLed.onUpdateHardware(() -> sendLedUpdate(BT_SESSION, mSessionLed));
       mSessionButton.setBackgroundLight(mSessionLed);
 
@@ -1171,6 +1174,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevDeviceButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_DEVICE));
       mPrevDeviceLed = mHardwareSurface.createOnOffHardwareLight("PrevDeviceLed");
+      mPrevDeviceLed.setOnColor(Color.fromRGB255(255,165,0));
       mPrevDeviceButton.setBackgroundLight(mPrevDeviceLed);
       mPrevDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_DEVICE, mPrevDeviceLed));
 
@@ -1180,6 +1184,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mNextDeviceButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_DEVICE));
       mNextDeviceLed = mHardwareSurface.createOnOffHardwareLight("NextDeviceLed");
+      mNextDeviceLed.setOnColor(Color.fromRGB255(255,165,0));
       mNextDeviceButton.setBackgroundLight(mNextDeviceLed);
       mNextDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_DEVICE, mNextDeviceLed));
 
@@ -1187,6 +1192,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_BANK));
       mPrevBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_BANK));
       mPrevBankLed = mHardwareSurface.createOnOffHardwareLight("PrevBankLed");
+      mPrevBankLed.setOnColor(Color.fromRGB255(255,165,0));
       mPrevBankButton.setBackgroundLight(mPrevBankLed);
       mPrevBankLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_BANK, mPrevBankLed));
 
@@ -1194,6 +1200,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mNextBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_BANK));
       mNextBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_BANK));
       mNextBankLed = mHardwareSurface.createOnOffHardwareLight("NextBankLed");
+      mNextBankLed.setOnColor(Color.fromRGB255(255,165,0));
       mNextBankButton.setBackgroundLight(mNextBankLed);
       mNextBankLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_BANK, mNextBankLed));
 
@@ -1203,6 +1210,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mDeviceOnOffButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_ONOFF));
       mDeviceOnOffLed = mHardwareSurface.createOnOffHardwareLight("DeviceOnOffLed");
+      mDeviceOnOffLed.setOnColor(Color.fromRGB255(255,165,0));
       mDeviceOnOffButton.setBackgroundLight(mDeviceOnOffLed);
       mDeviceOnOffLed.onUpdateHardware(() -> sendLedUpdate(BT_DEVICE_ONOFF, mDeviceOnOffLed));
 
@@ -1212,6 +1220,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mDeviceLockButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_LOCK));
       mDeviceLockLed = mHardwareSurface.createOnOffHardwareLight("DeviceLockLed");
+      mDeviceLockLed.setOnColor(Color.fromRGB255(255,165,0));
       mDeviceLockButton.setBackgroundLight(mDeviceLockLed);
       mDeviceLockLed.onUpdateHardware(() -> sendLedUpdate(BT_DEVICE_LOCK, mDeviceLockLed));
 
@@ -1221,6 +1230,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mClipDeviceViewButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_CLIP_DEVICE_VIEW));
       mClipDeviceViewLed = mHardwareSurface.createOnOffHardwareLight("ClipDeviceViewLed");
+      mClipDeviceViewLed.setOnColor(Color.fromRGB255(255,165,0));
       mClipDeviceViewButton.setBackgroundLight(mClipDeviceViewLed);
       mClipDeviceViewLed.onUpdateHardware(() -> sendLedUpdate(BT_CLIP_DEVICE_VIEW, mClipDeviceViewLed));
 
@@ -1230,6 +1240,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mDetailViewButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DETAIL_VIEW));
       mDetailViewLed = mHardwareSurface.createOnOffHardwareLight("DetailViewLed");
+      mDetailViewLed.setOnColor(Color.fromRGB255(255,165,0));
       mDetailViewButton.setBackgroundLight(mDetailViewLed);
       mDetailViewLed.onUpdateHardware(() -> sendLedUpdate(BT_DETAIL_VIEW, mDetailViewLed));
 
@@ -1249,6 +1260,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mBankLayer.deactivate();
       });
       mBankLed = mHardwareSurface.createOnOffHardwareLight("BankLed");
+      mBankLed.setOnColor(Color.fromRGB255(255,165,0));
       mBankButton.setBackgroundLight(mBankLed);
       mBankLed.onUpdateHardware(() -> sendLedUpdate(BT_BANK, mBankLed));
 
