@@ -862,6 +862,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMetronomeButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_METRONOME));
       mMetronomeButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_METRONOME));
       mMetronomeLed = mHardwareSurface.createOnOffHardwareLight("MetronomeLed");
+      mMetronomeLed.setOnColor(Color.fromRGB255(255,165,0));
       mMetronomeLed.onUpdateHardware(() -> sendLedUpdate(BT_METRONOME, mMetronomeLed));
       mMetronomeButton.setBackgroundLight(mMetronomeLed);
 
@@ -899,6 +900,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("TrackStopLed-" + x);
+         led.setOnColor(Color.fromRGB255(255,165,0));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_STOP, channel, led));
          bt.setBackgroundLight(led);
          mTrackStopLeds[x] = led;
@@ -910,6 +912,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMasterTrackStopButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_STOP));
       mMasterTrackStopLed = mHardwareSurface.createOnOffHardwareLight("MasterTrackStopLed");
+      mMasterTrackStopLed.setOnColor(Color.fromRGB255(255,165,0));
       mMasterTrackStopButton.setBackgroundLight(mMasterTrackStopLed);
       mMasterTrackStopLed.onUpdateHardware(() -> sendLedUpdate(BT_MASTER_STOP, mMasterTrackStopLed));
    }
@@ -927,6 +930,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("TrackSelectLed-" + x);
+         led.setOnColor(Color.fromRGB255(255,165,0));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_SELECT, channel, led));
          bt.setBackgroundLight(led);
          mTrackSelectLeds[x] = led;
@@ -938,6 +942,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMasterTrackSelectButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_SELECT));
       mMasterTrackSelectLed = mHardwareSurface.createOnOffHardwareLight("MasterTrackSelectLed");
+      mMasterTrackSelectLed.setOnColor(Color.fromRGB255(255,165,0));
       mMasterTrackSelectButton.setBackgroundLight(mMasterTrackSelectLed);
       mMasterTrackSelectLed.onUpdateHardware(() -> sendLedUpdate(BT_MASTER_SELECT, mMasterTrackSelectLed));
    }
@@ -988,6 +993,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("ArmLed-" + x);
+         led.setOnColor(Color.fromRGB(1, 0, 0));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_ARM, channel, led));
          bt.setBackgroundLight(led);
          mArmLeds[x] = led;
@@ -1007,6 +1013,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("SoloLed-" + x);
+         led.setOnColor(Color.fromRGB(0, 0, 1));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_SOLO, channel, led));
          bt.setBackgroundLight(led);
          mSoloLeds[x] = led;
@@ -1026,8 +1033,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("MuteLed-" + x);
-         bt.setBackgroundLight(led);
+         led.setOnColor(Color.fromRGB255(255,165,0));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_MUTE, channel, led));
+         bt.setBackgroundLight(led);
          mMuteLeds[x] = led;
       }
    }
@@ -1105,6 +1113,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPanButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PAN));
       mPanButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PAN));
       mPanLed = mHardwareSurface.createOnOffHardwareLight("PanLed");
+      mPanLed.setOnColor(Color.fromRGB255(255,165,0));
       mPanButton.setBackgroundLight(mPanLed);
       mPanLed.onUpdateHardware(() -> sendLedUpdate(BT_PAN, mPanLed));
 
@@ -1119,6 +1128,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mSendSelectLayer.deactivate();
       });
       mSendsLed = mHardwareSurface.createOnOffHardwareLight("SendsLed");
+      mSendsLed.setOnColor(Color.fromRGB255(255,165,0));
       mSendsButton.setBackgroundLight(mSendsLed);
       mSendsLed.onUpdateHardware(() -> sendLedUpdate(BT_SENDS, mSendsLed));
 
@@ -1133,6 +1143,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mUserSelectLayer.deactivate();
       });
       mUserLed = mHardwareSurface.createOnOffHardwareLight("UserLed");
+      mUserLed.setOnColor(Color.fromRGB255(255,165,0));
       mUserButton.setBackgroundLight(mUserLed);
       mUserLed.onUpdateHardware(() -> sendLedUpdate(BT_USER, mUserLed));
    }
