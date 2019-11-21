@@ -1,13 +1,18 @@
 package com.bitwig.extensions.controllers.devine;
 
 import com.bitwig.extension.controller.ControllerExtension;
+import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareSlider;
+import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.RemoteControl;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
 
 public class EzCreatorPlus extends ControllerExtension
 {
@@ -22,7 +27,6 @@ public class EzCreatorPlus extends ControllerExtension
       final ControllerHost host = getHost();
 
       final MidiIn midiIn = host.getMidiInPort(0);
-      midiIn.setMidiCallback(this::onMidi);
       final NoteInput keysInput = midiIn.createNoteInput("EZ-Creator Plus Keys", "80????", "90????");
       final NoteInput padsInput = midiIn.createNoteInput("EZ-Creator Plus Pads", "89????", "99????");
 
@@ -49,30 +53,44 @@ public class EzCreatorPlus extends ControllerExtension
 
       mTrackCursor = host.createCursorTrack("ez-creator-plus-cursor", "EZ-Creator Plus", 0, 0, true);
       mCursorDevice = mTrackCursor.createCursorDevice();
-      mKnobs = mCursorDevice.createCursorRemoteControlsPage("EZ-Creator Plus", 8, "");
+      mRemoteControls = mCursorDevice.createCursorRemoteControlsPage("EZ-Creator Plus", 8, "");
 
       for (int i = 0; i < 8; ++i)
       {
-         final RemoteControl parameter = mKnobs.getParameter(i);
+         final RemoteControl parameter = mRemoteControls.getParameter(i);
          parameter.setIndication(true);
+      }
+
+      createHardwareControls();
+      createLayers();
+   }
+
+   private void createLayers()
+   {
+      mLayers = new Layers(this);
+      mMainLayer = new Layer(mLayers, "Main");
+      for (int i = 0; i < 4; ++i)
+      {
+         mMainLayer.bind(mKnobs[i], mRemoteControls.getParameter(i));
+         mMainLayer.bind(mSliders[i], mRemoteControls.getParameter(i + 4));
       }
    }
 
-   private void onMidi(final int status, final int data1, final int data2)
+   private void createHardwareControls()
    {
-      final int channel = status & 0xf;
-      final int msg = (status >> 4) & 0xf;
-
-      getHost().println("msg: " + msg + ", channel: " + channel + ", data1: " + data1 + ", data2: " + data2);
-
-      switch (status)
+      final MidiIn midiIn = getMidiInPort(0);
+      mHardwareSurface = getHost().createHardwareSurface();
+      mKnobs = new AbsoluteHardwareKnob[4];
+      mSliders = new HardwareSlider[4];
+      for (int i = 0; i < 4; ++i)
       {
-         case 0xB0:
-            if (0x0E <= data1 && data1 <= 0x11)
-               mKnobs.getParameter(data1 - 0x0E).set(data2, 128);
-            else if (0x03 <= data1 && data1 <= 0x06)
-               mKnobs.getParameter(data1 - 0x03 + 4).set(data2, 128);
-            break;
+         final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("Knob-" + i);
+         knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x0E + i));
+         mKnobs[i] = knob;
+
+         final HardwareSlider slider = mHardwareSurface.createHardwareSlider("Slider-" + i);
+         slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x03));
+         mSliders[i] = slider;
       }
    }
 
@@ -85,10 +103,16 @@ public class EzCreatorPlus extends ControllerExtension
    @Override
    public void flush()
    {
-
+      mHardwareSurface.updateHardware();
    }
 
    private CursorTrack mTrackCursor;
    private PinnableCursorDevice mCursorDevice;
-   private CursorRemoteControlsPage mKnobs;
+   private CursorRemoteControlsPage mRemoteControls;
+
+   private HardwareSurface mHardwareSurface;
+   private AbsoluteHardwareKnob[] mKnobs;
+   private HardwareSlider[] mSliders;
+   private Layers mLayers;
+   private Layer mMainLayer;
 }
