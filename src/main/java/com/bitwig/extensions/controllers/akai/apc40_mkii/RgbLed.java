@@ -53,7 +53,8 @@ public class RgbLed
 
    private static void registerColor(final int rgb, final int value)
    {
-      COLOR_VALUE_TO_COLOR_MAP.put(value, Color.fromRGB255((rgb & 0xFF0000) >> 16, (rgb & 0xFF00) >> 8, rgb & 0xFF));
+      COLOR_VALUE_TO_COLOR_MAP.put(value,
+         Color.fromRGB255((rgb & 0xFF0000) >> 16, (rgb & 0xFF00) >> 8, rgb & 0xFF));
 
       RGB_TO_COLOR_VALUE_MAP.put(rgb, value);
    }
@@ -64,7 +65,6 @@ public class RgbLed
       registerColor(0xFF00, COLOR_GREEN);
       registerColor(0xFF, COLOR_BLUE);
       registerColor(0xFFD90F, COLOR_YELLOW);
-
 
       registerColor(0, 0);
 
@@ -164,18 +164,31 @@ public class RgbLed
       mBlinkColor = blinkColor;
    }
 
-   public static Color stateToColor(final int state)
-   {
-      return COLOR_VALUE_TO_COLOR_MAP.get(state);
-   }
-
    public static HardwareLightVisualState stateToVisualState(final int state)
    {
-      return HardwareLightVisualState.createForColor(stateToColor(state));
+      final int blinkType = (state & 0xFF0000) >> 16;
+      final int colorValue = state & 0xFF;
+      final Color color = COLOR_VALUE_TO_COLOR_MAP.get(colorValue);
+
+      if (blinkType == BLINK_NONE)
+         return HardwareLightVisualState.createForColor(color);
+
+      final int offColorValue = (state & 0xFF00) >> 8;
+      final Color offColor = COLOR_VALUE_TO_COLOR_MAP.get(offColorValue);
+
+      if (blinkType == BLINK_PLAY_QUEUED)
+         return HardwareLightVisualState.createBlinking(color, offColor, 0.1, 0.1);
+
+      return HardwareLightVisualState.createBlinking(color, offColor, 0.2, 0.2);
    }
 
    public int getStateAsInt()
    {
+      if (mBlinkType != BLINK_NONE)
+      {
+         return mBlinkType << 16 | mBlinkColor << 8 | mColor;
+      }
+
       return mColor;
    }
 
