@@ -707,9 +707,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       surface.hardwareElementWithId("DetailView").setBounds(391.0, 173.0, 13.0, 6.25);
       surface.hardwareElementWithId("Shift").setBounds(359.75, 191.25, 13.0, 6.25);
       surface.hardwareElementWithId("Bank").setBounds(391.0, 191.0, 13.0, 6.25);
-      surface.hardwareElementWithId("LauncherUp").setBounds(306.5, 192.5, 13.25, 11.25);
+      surface.hardwareElementWithId("LauncherUp").setBounds(306.0, 192.5, 13.25, 11.25);
       surface.hardwareElementWithId("LauncherDown").setBounds(306.0, 204.25, 13.25, 11.25);
-      surface.hardwareElementWithId("LauncherLeft").setBounds(296.0, 192.25, 10.0, 23.0);
+      surface.hardwareElementWithId("LauncherLeft").setBounds(296.0, 192.5, 10.0, 23.0);
       surface.hardwareElementWithId("LauncherRight").setBounds(319.75, 192.5, 10.0, 23.0);
       surface.hardwareElementWithId("TrackVolumeFader-0").setBounds(9.75, 182.0, 21.75, 64.0);
       surface.hardwareElementWithId("TrackVolumeFader-1").setBounds(42.0, 182.0, 21.75, 64.0);
@@ -833,7 +833,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       surface.hardwareElementWithId("ABLed-5").setBounds(183.75, 153.25, 10.0, 10.0);
       surface.hardwareElementWithId("ABLed-6").setBounds(215.75, 153.25, 10.0, 10.0);
       surface.hardwareElementWithId("ABLed-7").setBounds(247.5, 153.25, 10.0, 10.0);
-
    }
 
    private void createTransportControls()
