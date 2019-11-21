@@ -80,7 +80,7 @@ public class EzCreatorPad extends ControllerExtension
    private void createHardwareControls()
    {
       final HardwareSurface surface = getHost().createHardwareSurface();
-      surface.setPhysicalSize(80, 300);
+      surface.setPhysicalSize(300, 80);
       mHardwareSurface = surface;
 
       final MidiIn midiIn = getMidiInPort(0);
@@ -111,6 +111,16 @@ public class EzCreatorPad extends ControllerExtension
 
       mPreviousTrackButton = surface.createHardwareButton("previous-track");
       mPreviousTrackButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 64, 127));
+
+      surface.hardwareElementWithId("xy").setBounds(68.75, 6.5, 10.0, 50.0);
+      surface.hardwareElementWithId("play").setBounds(50.0, 27.0, 10.0, 5.5);
+      surface.hardwareElementWithId("stop").setBounds(38.0, 27.0, 10.0, 5.5);
+      surface.hardwareElementWithId("record").setBounds(25.75, 27.0, 10.0, 5.5);
+      surface.hardwareElementWithId("loop").setBounds(25.5, 17.25, 10.0, 5.5);
+      surface.hardwareElementWithId("fast-forward").setBounds(50.0, 17.25, 10.0, 5.5);
+      surface.hardwareElementWithId("rewind").setBounds(38.0, 17.25, 10.0, 5.5);
+      surface.hardwareElementWithId("next-track").setBounds(48.25, 62.75, 10.0, 5.5);
+      surface.hardwareElementWithId("previous-track").setBounds(60.25, 62.75, 10.0, 5.5);
    }
 
    @Override
