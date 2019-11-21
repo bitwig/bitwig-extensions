@@ -1255,9 +1255,15 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mBankButton.isPressed().addValueObserver((isPressed) -> {
          mBankOn.stateChanged(isPressed);
          if (mBankOn.isOn())
+         {
             mBankLayer.activate();
+            sendLedUpdate(BT_BANK, 0, 1);
+         }
          else
+         {
             mBankLayer.deactivate();
+            sendLedUpdate(BT_BANK, 0, 0);
+         }
       });
       mBankLed = mHardwareSurface.createOnOffHardwareLight("BankLed");
       mBankLed.setOnColor(Color.fromRGB255(255,165,0));
