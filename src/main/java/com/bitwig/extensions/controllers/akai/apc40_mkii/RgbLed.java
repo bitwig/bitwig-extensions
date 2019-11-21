@@ -170,7 +170,7 @@ class RgbLed
       mBlinkColor = blinkColor;
    }
 
-   public static HardwareLightVisualState stateToVisualState(final int state)
+   private static HardwareLightVisualState stateToVisualState(final int state)
    {
       final int blinkType = (state & 0xFF0000) >> 16;
       final int colorValue = state & 0xFF;
@@ -188,7 +188,7 @@ class RgbLed
       return HardwareLightVisualState.createBlinking(color, offColor, 0.5, 0.5);
    }
 
-   public int getStateAsInt()
+   private int getStateAsInt()
    {
       if (mDisplayedBlinkType != BLINK_NONE)
       {
