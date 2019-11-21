@@ -75,6 +75,7 @@ public class EzCreatorPad extends ControllerExtension
       mMainLayer.bindPressed(mRewindButton, mTransport.rewindAction());
       mMainLayer.bindPressed(mNextTrackButton, mCursorTrack.selectNextAction());
       mMainLayer.bindPressed(mPreviousTrackButton, mCursorTrack.selectPreviousAction());
+      mMainLayer.activate();
    }
 
    private void createHardwareControls()
