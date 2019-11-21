@@ -1165,18 +1165,21 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mDeviceLockButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DEVICE_LOCK));
       mDeviceLockButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_LOCK));
       mDeviceLockLed = mHardwareSurface.createOnOffHardwareLight("DeviceLockLed");
+      mDeviceLockButton.setBackgroundLight(mDeviceLockLed);
       mDeviceLockLed.onUpdateHardware(() -> sendLedUpdate(BT_DEVICE_LOCK, mDeviceLockLed));
 
       mClipDeviceViewButton = mHardwareSurface.createHardwareButton("ClipDeviceView");
       mClipDeviceViewButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_CLIP_DEVICE_VIEW));
       mClipDeviceViewButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_CLIP_DEVICE_VIEW));
       mClipDeviceViewLed = mHardwareSurface.createOnOffHardwareLight("ClipDeviceViewLed");
+      mClipDeviceViewButton.setBackgroundLight(mClipDeviceViewLed);
       mClipDeviceViewLed.onUpdateHardware(() -> sendLedUpdate(BT_CLIP_DEVICE_VIEW, mClipDeviceViewLed));
 
       mDetailViewButton = mHardwareSurface.createHardwareButton("DetailView");
       mDetailViewButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DETAIL_VIEW));
       mDetailViewButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DETAIL_VIEW));
       mDetailViewLed = mHardwareSurface.createOnOffHardwareLight("DetailViewLed");
+      mDetailViewButton.setBackgroundLight(mDetailViewLed);
       mDetailViewLed.onUpdateHardware(() -> sendLedUpdate(BT_DETAIL_VIEW, mDetailViewLed));
 
       mShiftButton = mHardwareSurface.createHardwareButton("Shift");
@@ -1195,6 +1198,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mBankLayer.deactivate();
       });
       mBankLed = mHardwareSurface.createOnOffHardwareLight("BankLed");
+      mBankButton.setBackgroundLight(mBankLed);
       mBankLed.onUpdateHardware(() -> sendLedUpdate(BT_BANK, mBankLed));
 
       mLauncherUpButton = mHardwareSurface.createHardwareButton("LauncherUp");
