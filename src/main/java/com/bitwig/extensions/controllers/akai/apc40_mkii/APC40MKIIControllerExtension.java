@@ -1017,7 +1017,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
             final RgbLed rgbLed = mPadLeds[x][y];
-            final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight(id + "-light", RgbLed::stateToColor);
+            final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight(id + "-light", RgbLed::stateToVisualState);
             light.state().setValueSupplier(rgbLed::getStateAsInt);
             bt.setBackgroundLight(light);
 

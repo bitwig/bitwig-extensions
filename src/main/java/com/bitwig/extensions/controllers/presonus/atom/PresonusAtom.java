@@ -20,6 +20,7 @@ import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
+import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
@@ -810,7 +811,7 @@ public class PresonusAtom extends ControllerExtension
       final HardwareButton button = createButton(id, controlNumber);
 
       final MultiStateHardwareLight light = mHardwareSurface
-         .createMultiStateHardwareLight(id + "_light", PresonusAtom::lightStateToColor);
+         .createMultiStateHardwareLight(id + "_light", PresonusAtom::lightStateToVisualState);
 
       light.state().onUpdateHardware(new LightStateSender(0xB0, controlNumber));
 
@@ -847,7 +848,7 @@ public class PresonusAtom extends ControllerExtension
       mPadButtons[index] = pad;
 
       final MultiStateHardwareLight light = mHardwareSurface
-         .createMultiStateHardwareLight("pad_light" + (index + 1), PresonusAtom::lightStateToColor);
+         .createMultiStateHardwareLight("pad_light" + (index + 1), PresonusAtom::lightStateToVisualState);
 
       light.state().onUpdateHardware(new LightStateSender(0x90, 0x24 + index));
 
@@ -939,6 +940,13 @@ public class PresonusAtom extends ControllerExtension
       final int blue = (lightState & 0xFF);
 
       return Color.fromRGB255(red, green, blue);
+   }
+
+   private static HardwareLightVisualState lightStateToVisualState(final int lightState)
+   {
+      final Color color = lightStateToColor(lightState);
+
+      return HardwareLightVisualState.createForColor(color);
    }
 
    private void scrollKeys(final int delta)

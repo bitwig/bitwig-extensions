@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.ColorValue;
+import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.MidiOut;
 
 public class RgbLed
@@ -166,6 +167,11 @@ public class RgbLed
    public static Color stateToColor(final int state)
    {
       return COLOR_VALUE_TO_COLOR_MAP.get(state);
+   }
+
+   public static HardwareLightVisualState stateToVisualState(final int state)
+   {
+      return HardwareLightVisualState.createForColor(stateToColor(state));
    }
 
    public int getStateAsInt()
