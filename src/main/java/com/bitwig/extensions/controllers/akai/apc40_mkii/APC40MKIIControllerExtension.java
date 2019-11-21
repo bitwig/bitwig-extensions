@@ -224,7 +224,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final Scene scene = mSceneBank.getScene(j);
          scene.exists().markInterested();
          scene.color().markInterested();
-         mSceneLeds[j] = new RgbLed();
+
       }
 
       for (int i = 0; i < 8; ++i)
@@ -238,6 +238,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final SendBank sendBank = track.sendBank();
          final ClipLauncherSlotBank clipLauncher = track.clipLauncherSlotBank();
          clipLauncher.setIndication(true);
+
          for (int j = 0; j < 5; ++j)
          {
             final ClipLauncherSlot slot = clipLauncher.getItemAt(j);
@@ -254,8 +255,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             final Send send = sendBank.getItemAt(j);
             send.markInterested();
             send.exists().markInterested();
-
-            mPadLeds[i][j] = new RgbLed();
          }
 
          track.exists().markInterested();
@@ -1038,23 +1037,21 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
             bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
-            final RgbLed rgbLed = mPadLeds[x][y];
-            final MultiStateHardwareLight light = mHardwareSurface
-               .createMultiStateHardwareLight(id + "-light", RgbLed::stateToVisualState);
-            light.state().setValueSupplier(rgbLed::getStateAsInt);
-            bt.setBackgroundLight(light);
-
             mGridButtons[y * 8 + x] = bt;
+            mPadLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_PAD0 + x + (4 - y) * 8);
          }
       }
 
       mSceneButtons = new HardwareButton[5];
+
       for (int y = 0; y < 5; ++y)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Scene-" + y);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SCENE0 + y));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SCENE0 + y));
          mSceneButtons[y] = bt;
+
+         mSceneLeds[y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_SCENE0 + y);
       }
    }
 
@@ -1475,7 +1472,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             rgbLed.setBlinkColor(RgbLed.COLOR_NONE);
          }
 
-         rgbLed.paint(mMidiOut, MSG_NOTE_ON, BT_SCENE0 + i);
+         rgbLed.paint(mMidiOut);
       }
    }
 
@@ -1524,7 +1521,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
                rgbLed.setBlinkColor(RgbLed.COLOR_NONE);
             }
 
-            rgbLed.paint(mMidiOut, MSG_NOTE_ON, BT_PAD0 + i + (4 - j) * 8);
+            rgbLed.paint(mMidiOut);
          }
       }
    }
