@@ -39,8 +39,9 @@ public class DebugUtilities
          {
             final HardwareButton button = (HardwareButton)control;
 
-            layer.bindPressed(button, () -> host.println(prefix + "pressed"));
-            layer.bindReleased(button, () -> host.println(prefix + "released"));
+            layer.bindPressed(button, pressure -> host.println(prefix + "pressed with pressure " + pressure));
+            layer.bindReleased(button,
+               pressure -> host.println(prefix + "released with pressure " + pressure));
          }
          else if (control instanceof AbsoluteHardwareControl)
          {

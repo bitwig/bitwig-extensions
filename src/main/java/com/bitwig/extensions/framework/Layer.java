@@ -174,9 +174,20 @@ public class Layer
          getLayers().getControllerExtension().getHost().createAction(target, null));
    }
 
+   public Binding bind(final Object actionOwner, final HardwareAction source, final DoubleConsumer target)
+   {
+      return bind(actionOwner, source,
+         getLayers().getControllerExtension().getHost().createAction(target, null));
+   }
+
    public Binding bindPressed(final HardwareButton button, final Runnable pressedRunnable)
    {
       return bind(button, button.pressedAction(), pressedRunnable);
+   }
+
+   public Binding bindPressed(final HardwareButton button, final DoubleConsumer pressedPressureConsumer)
+   {
+      return bind(button, button.pressedAction(), pressedPressureConsumer);
    }
 
    public Binding bindPressed(final HardwareButton button, final HardwareActionBindable target)
@@ -187,6 +198,11 @@ public class Layer
    public Binding bindReleased(final HardwareButton button, final Runnable releasedRunnable)
    {
       return bind(button, button.releasedAction(), releasedRunnable);
+   }
+
+   public Binding bindReleased(final HardwareButton button, final DoubleConsumer releasedPressureConsumer)
+   {
+      return bind(button, button.releasedAction(), releasedPressureConsumer);
    }
 
    public Binding bindReleased(final HardwareButton button, final HardwareActionBindable target)

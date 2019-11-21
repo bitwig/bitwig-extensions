@@ -23,7 +23,6 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
-import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Preferences;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
@@ -44,6 +43,8 @@ import com.bitwig.extensions.framework.Layers;
 
 public class APC40MKIIControllerExtension extends ControllerExtension
 {
+   private static final boolean ENABLE_DEBUG_LAYER = false;
+
    private static final int CHANNEL_STRIP_NUM_PARAMS = 4;
 
    private static final int CHANNEL_STRIP_NUM_SENDS = 4;
@@ -179,6 +180,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTrackCursor.isGroup().markInterested();
       mTrackCursor.volume().markInterested();
       mTrackCursor.pan().markInterested();
+
       for (int i = 0; i < 8; ++i)
       {
          final SendBank sendBank = mTrackCursor.sendBank();
@@ -222,7 +224,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final Scene scene = mSceneBank.getScene(j);
          scene.exists().markInterested();
          scene.color().markInterested();
-         mSceneLeds[j] = new RgbLed();
+
       }
 
       for (int i = 0; i < 8; ++i)
@@ -236,6 +238,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final SendBank sendBank = track.sendBank();
          final ClipLauncherSlotBank clipLauncher = track.clipLauncherSlotBank();
          clipLauncher.setIndication(true);
+
          for (int j = 0; j < 5; ++j)
          {
             final ClipLauncherSlot slot = clipLauncher.getItemAt(j);
@@ -252,8 +255,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             final Send send = sendBank.getItemAt(j);
             send.markInterested();
             send.exists().markInterested();
-
-            mPadLeds[i][j] = new RgbLed();
          }
 
          track.exists().markInterested();
@@ -392,14 +393,22 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void createBankLayer()
    {
-      mBankLayer.bindPressed(mPrevDeviceButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(0), () -> "Select Remote Controls Page 1"));
-      mBankLayer.bindPressed(mNextDeviceButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(1), () -> "Select Remote Controls Page 2"));
-      mBankLayer.bindPressed(mPrevBankButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(2), () -> "Select Remote Controls Page 3"));
-      mBankLayer.bindPressed(mNextBankButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(3), () -> "Select Remote Controls Page 4"));
-      mBankLayer.bindPressed(mDeviceOnOffButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(4), () -> "Select Remote Controls Page 5"));
-      mBankLayer.bindPressed(mDeviceLockButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(5), () -> "Select Remote Controls Page 6"));
-      mBankLayer.bindPressed(mClipDeviceViewButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(6), () -> "Select Remote Controls Page 7"));
-      mBankLayer.bindPressed(mDetailViewButton, getHost().createAction(() -> mRemoteControls.selectedPageIndex().set(7), () -> "Select Remote Controls Page 8"));
+      mBankLayer.bindPressed(mPrevDeviceButton, getHost().createAction(
+         () -> mRemoteControls.selectedPageIndex().set(0), () -> "Select Remote Controls Page 1"));
+      mBankLayer.bindPressed(mNextDeviceButton, getHost().createAction(
+         () -> mRemoteControls.selectedPageIndex().set(1), () -> "Select Remote Controls Page 2"));
+      mBankLayer.bindPressed(mPrevBankButton, getHost().createAction(
+         () -> mRemoteControls.selectedPageIndex().set(2), () -> "Select Remote Controls Page 3"));
+      mBankLayer.bindPressed(mNextBankButton, getHost().createAction(
+         () -> mRemoteControls.selectedPageIndex().set(3), () -> "Select Remote Controls Page 4"));
+      mBankLayer.bindPressed(mDeviceOnOffButton, getHost().createAction(
+         () -> mRemoteControls.selectedPageIndex().set(4), () -> "Select Remote Controls Page 5"));
+      mBankLayer.bindPressed(mDeviceLockButton, getHost().createAction(
+         () -> mRemoteControls.selectedPageIndex().set(5), () -> "Select Remote Controls Page 6"));
+      mBankLayer.bindPressed(mClipDeviceViewButton, getHost().createAction(
+         () -> mRemoteControls.selectedPageIndex().set(6), () -> "Select Remote Controls Page 7"));
+      mBankLayer.bindPressed(mDetailViewButton, getHost().createAction(
+         () -> mRemoteControls.selectedPageIndex().set(7), () -> "Select Remote Controls Page 8"));
 
       mBankLayer.bind(() -> mRemoteControls.selectedPageIndex().get() == 0, mPrevDeviceLed);
       mBankLayer.bind(() -> mRemoteControls.selectedPageIndex().get() == 1, mNextDeviceLed);
@@ -432,41 +441,41 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       switch (x)
       {
-         case 0:
-            quantization = "none";
-            break;
+      case 0:
+         quantization = "none";
+         break;
 
-         case 1:
-            quantization = "8";
-            break;
+      case 1:
+         quantization = "8";
+         break;
 
-         case 2:
-            quantization = "4";
-            break;
+      case 2:
+         quantization = "4";
+         break;
 
-         case 3:
-            quantization = "2";
-            break;
+      case 3:
+         quantization = "2";
+         break;
 
-         case 4:
-            quantization = "1";
-            break;
+      case 4:
+         quantization = "1";
+         break;
 
-         case 5:
-            quantization = "1/4";
-            break;
+      case 5:
+         quantization = "1/4";
+         break;
 
-         case 6:
-            quantization = "1/8";
-            break;
+      case 6:
+         quantization = "1/8";
+         break;
 
-         case 7:
-            quantization = "1/16";
-            break;
+      case 7:
+         quantization = "1/16";
+         break;
 
-         default:
-            quantization = "1";
-            break;
+      default:
+         quantization = "1";
+         break;
       }
 
       mTransport.defaultLaunchQuantization().set(quantization);
@@ -475,10 +484,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createChannelStripLayer()
    {
       for (int i = 0; i < 8; ++i)
-         mChannelStripLayer.bind(
-            mTopControlKnobs[i],
-            i < CHANNEL_STRIP_NUM_PARAMS
-               ? mChannelStripRemoteControls.getParameter(i)
+         mChannelStripLayer.bind(mTopControlKnobs[i],
+            i < CHANNEL_STRIP_NUM_PARAMS ? mChannelStripRemoteControls.getParameter(i)
                : mTrackCursor.sendBank().getItemAt(i - CHANNEL_STRIP_NUM_PARAMS));
    }
 
@@ -515,8 +522,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void createDebugLayer()
    {
-      mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-      mDebugLayer.activate();
+      if (ENABLE_DEBUG_LAYER)
+      {
+         mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+         mDebugLayer.activate();
+      }
    }
 
    private void createMainLayer()
@@ -536,7 +546,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          for (int y = 0; y < 5; ++y)
          {
             final int offset = 8 * y + x;
-            mMainLayer.bindPressed(mGridButtons[offset], track.clipLauncherSlotBank().getItemAt(y).launchAction());
+            mMainLayer.bindPressed(mGridButtons[offset],
+               track.clipLauncherSlotBank().getItemAt(y).launchAction());
          }
          mMainLayer.bindToggle(mMuteButtons[x], track.mute());
          mMainLayer.bindInverted(track.mute(), mMuteLeds[x]);
@@ -549,15 +560,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          }, () -> "Cycle through crossfade values"));
          mMainLayer.bind(track.crossFadeMode(), mABLeds[x]);
 
-         mMainLayer.bindPressed(
-            mTrackSelectButtons[x],
+         mMainLayer.bindPressed(mTrackSelectButtons[x],
             getHost().createAction(() -> mTrackCursor.selectChannel(track), () -> "Selects the track"));
          mMainLayer.bind(mIsTrackSelected[x], mTrackSelectLeds[x]);
          mMainLayer.bindPressed(mTrackStopButtons[x], track.stopAction());
          mMainLayer.bindInverted(track.isStopped(), mTrackStopLeds[x]);
       }
-      mMainLayer.bindPressed(mMasterTrackSelectButton, getHost()
-         .createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
+      mMainLayer.bindPressed(mMasterTrackSelectButton,
+         getHost().createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
       mMainLayer.bind(mIsMasterSelected, mMasterTrackSelectLed);
       mMainLayer.bindPressed(mMasterTrackStopButton, mSceneBank.stopAction());
       mMainLayer.bindInverted(mMasterTrack.isStopped(), mMasterTrackStopLed);
@@ -568,11 +578,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMainLayer.bindToggle(mMetronomeButton, mTransport.isMetronomeEnabled());
       mMainLayer.bindPressed(mTapTempoButton, mTransport.tapTempoAction());
 
-      final HardwareActionBindable incTempoAction =
-         getHost().createAction(() -> mTransport.tempo().incRaw(mShiftButton.isPressed().get() ? 0.1 : 1), () -> "Increments the tempo");
-      final HardwareActionBindable decTempoAction =
-         getHost().createAction(() -> mTransport.tempo().incRaw(mShiftButton.isPressed().get() ? -0.1 : -1), () -> "Decrements the tempo");
-      mMainLayer.bind(mTempoKnob, getHost().createRelativeHardwareControlStepTarget(incTempoAction, decTempoAction));
+      final HardwareActionBindable incTempoAction = getHost().createAction(
+         () -> mTransport.tempo().incRaw(mShiftButton.isPressed().get() ? 0.1 : 1),
+         () -> "Increments the tempo");
+      final HardwareActionBindable decTempoAction = getHost().createAction(
+         () -> mTransport.tempo().incRaw(mShiftButton.isPressed().get() ? -0.1 : -1),
+         () -> "Decrements the tempo");
+      mMainLayer.bind(mTempoKnob,
+         getHost().createRelativeHardwareControlStepTarget(incTempoAction, decTempoAction));
 
       mMainLayer.bindPressed(mNextDeviceButton, mDeviceCursor.selectNextAction());
       mMainLayer.bind(mDeviceCursor.hasNext(), mNextDeviceLed);
@@ -592,8 +605,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMainLayer.bindToggle(mDeviceLockButton, mDeviceCursor.isPinned());
       mMainLayer.bind(mDeviceCursor.isPinned(), mDeviceLockLed);
 
-      mMainLayer.bindPressed(
-         mClipDeviceViewButton,
+      mMainLayer.bindPressed(mClipDeviceViewButton,
          getHost().createAction(() -> mApplication.nextSubPanel(), () -> "Next Sub Panel"));
       mMainLayer.bind(() -> true, mClipDeviceViewLed);
 
@@ -628,11 +640,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int y = 0; y < 5; ++y)
          mMainLayer.bindPressed(mSceneButtons[y], mSceneBank.getItemAt(y).launchAction());
 
-      mMainLayer.bindPressed(mPanButton, getHost().createAction(() -> activateTopMode(mPanAsChannelStripSetting.get()
-         ? TopMode.CHANNEL_STRIP
-         : TopMode.PAN), () -> "Activate Pan mode or ChannelStrip mode"));
-      mMainLayer.bindPressed(mSendsButton, getHost().createAction(() -> activateTopMode(TopMode.SENDS), () -> "Activate Sends mode"));
-      mMainLayer.bindPressed(mUserButton, getHost().createAction(() -> activateTopMode(TopMode.USER), () -> "Activate User mode"));
+      mMainLayer.bindPressed(mPanButton,
+         getHost().createAction(
+            () -> activateTopMode(mPanAsChannelStripSetting.get() ? TopMode.CHANNEL_STRIP : TopMode.PAN),
+            () -> "Activate Pan mode or ChannelStrip mode"));
+      mMainLayer.bindPressed(mSendsButton,
+         getHost().createAction(() -> activateTopMode(TopMode.SENDS), () -> "Activate Sends mode"));
+      mMainLayer.bindPressed(mUserButton,
+         getHost().createAction(() -> activateTopMode(TopMode.USER), () -> "Activate User mode"));
 
       mMainLayer.bindPressed(mShiftButton, mShiftLayer.getActivateAction());
       mMainLayer.bindReleased(mShiftButton, mShiftLayer.getDeactivateAction());
@@ -663,154 +678,161 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void setPhysicalPositions()
    {
       final HardwareSurface surface = mHardwareSurface;
-      surface.hardwareElementWithId("DeviceControl-0").setBounds(152.25, 108.75, 12.75, 13.75);
-      surface.hardwareElementWithId("DeviceControl-1").setBounds(167.0, 109.0, 12.75, 13.75);
-      surface.hardwareElementWithId("DeviceControl-2").setBounds(182.25, 109.25, 12.75, 13.75);
-      surface.hardwareElementWithId("DeviceControl-3").setBounds(196.75, 108.5, 12.75, 13.75);
-      surface.hardwareElementWithId("DeviceControl-4").setBounds(152.5, 123.0, 12.75, 13.75);
-      surface.hardwareElementWithId("DeviceControl-5").setBounds(167.0, 122.5, 12.75, 13.75);
-      surface.hardwareElementWithId("DeviceControl-6").setBounds(182.0, 123.25, 12.75, 13.75);
-      surface.hardwareElementWithId("DeviceControl-7").setBounds(198.0, 123.5, 12.75, 13.75);
-      surface.hardwareElementWithId("TopKnob-0").setBounds(6.75, 6.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TopKnob-1").setBounds(19.0, 6.5, 10.0, 10.0);
-      surface.hardwareElementWithId("TopKnob-2").setBounds(31.0, 6.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TopKnob-3").setBounds(43.0, 6.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TopKnob-4").setBounds(55.0, 6.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TopKnob-5").setBounds(67.0, 6.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TopKnob-6").setBounds(79.0, 6.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TopKnob-7").setBounds(91.0, 6.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Pan").setBounds(136.5, 18.0, 10.0, 4.5);
-      surface.hardwareElementWithId("Sends").setBounds(136.5, 29.0, 10.0, 4.5);
-      surface.hardwareElementWithId("User").setBounds(136.75, 40.25, 10.0, 4.5);
-      surface.hardwareElementWithId("PrevDevice").setBounds(168.5, 154.0, 10.0, 10.0);
-      surface.hardwareElementWithId("NextDevice").setBounds(181.25, 154.25, 10.0, 10.0);
-      surface.hardwareElementWithId("PrevBank").setBounds(193.25, 154.25, 10.0, 10.0);
-      surface.hardwareElementWithId("NextBank").setBounds(205.25, 154.25, 10.0, 10.0);
-      surface.hardwareElementWithId("DeviceOnOff").setBounds(169.5, 167.25, 10.0, 10.0);
-      surface.hardwareElementWithId("DeviceLock").setBounds(181.5, 167.25, 10.0, 10.0);
-      surface.hardwareElementWithId("ClipDeviceView").setBounds(193.5, 167.25, 10.0, 10.0);
-      surface.hardwareElementWithId("DetailView").setBounds(205.5, 167.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Shift").setBounds(193.75, 180.5, 10.0, 10.0);
-      surface.hardwareElementWithId("Bank").setBounds(206.0, 180.75, 10.0, 10.0);
-      surface.hardwareElementWithId("LauncherUp").setBounds(139.75, 177.5, 10.0, 10.0);
-      surface.hardwareElementWithId("LauncherDown").setBounds(140.25, 200.25, 10.0, 10.0);
-      surface.hardwareElementWithId("LauncherLeft").setBounds(127.5, 189.75, 10.0, 10.0);
-      surface.hardwareElementWithId("LauncherRight").setBounds(152.0, 189.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackVolumeFader-0").setBounds(6.75, 182.25, 10.0, 50.0);
-      surface.hardwareElementWithId("TrackVolumeFader-1").setBounds(19.0, 182.25, 10.0, 50.0);
-      surface.hardwareElementWithId("TrackVolumeFader-2").setBounds(31.0, 182.25, 10.0, 50.0);
-      surface.hardwareElementWithId("TrackVolumeFader-3").setBounds(43.0, 182.25, 10.0, 50.0);
-      surface.hardwareElementWithId("TrackVolumeFader-4").setBounds(55.0, 182.25, 10.0, 50.0);
-      surface.hardwareElementWithId("TrackVolumeFader-5").setBounds(67.0, 182.5, 10.0, 50.0);
-      surface.hardwareElementWithId("TrackVolumeFader-6").setBounds(79.0, 182.5, 10.0, 50.0);
-      surface.hardwareElementWithId("TrackVolumeFader-7").setBounds(91.0, 182.5, 10.0, 50.0);
-      surface.hardwareElementWithId("MasterTrackVolumeFader").setBounds(107.25, 182.25, 11.25, 50.0);
-      surface.hardwareElementWithId("AB-Crossfade").setBounds(125.0, 220.0, 97.0, 10.75);
-      surface.hardwareElementWithId("Cue-Level").setBounds(107.25, 117.5, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-0-0").setBounds(6.75, 20.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-0-1").setBounds(6.75, 32.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-0-2").setBounds(6.75, 44.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-0-3").setBounds(7.0, 55.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-0-4").setBounds(7.25, 67.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-1-0").setBounds(19.0, 20.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-1-1").setBounds(19.0, 32.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-1-2").setBounds(19.0, 44.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-1-3").setBounds(19.25, 55.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-1-4").setBounds(19.5, 67.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-2-0").setBounds(31.0, 20.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-2-1").setBounds(31.0, 32.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-2-2").setBounds(31.0, 44.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-2-3").setBounds(31.25, 55.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-2-4").setBounds(31.5, 67.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-3-0").setBounds(43.0, 20.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-3-1").setBounds(43.0, 32.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-3-2").setBounds(43.0, 44.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-3-3").setBounds(43.25, 55.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-3-4").setBounds(43.5, 67.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-4-0").setBounds(55.0, 20.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-4-1").setBounds(55.0, 32.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-4-2").setBounds(55.0, 44.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-4-3").setBounds(55.25, 55.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-4-4").setBounds(55.5, 67.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-5-0").setBounds(67.0, 20.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-5-1").setBounds(67.0, 32.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-5-2").setBounds(67.0, 44.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-5-3").setBounds(67.25, 55.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-5-4").setBounds(67.5, 67.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-6-0").setBounds(79.0, 20.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-6-1").setBounds(79.0, 32.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-6-2").setBounds(79.0, 44.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-6-3").setBounds(79.25, 55.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-6-4").setBounds(79.5, 67.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-7-0").setBounds(91.0, 20.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-7-1").setBounds(91.0, 32.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-7-2").setBounds(91.0, 44.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-7-3").setBounds(91.25, 55.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Grid-7-4").setBounds(91.5, 67.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Scene-0").setBounds(107.25, 20.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Scene-1").setBounds(107.25, 32.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Scene-2").setBounds(107.25, 44.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Scene-3").setBounds(107.5, 55.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Scene-4").setBounds(107.75, 67.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Mute-0").setBounds(6.75, 129.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Mute-1").setBounds(19.0, 130.5, 10.0, 10.0);
-      surface.hardwareElementWithId("Mute-2").setBounds(31.0, 130.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Mute-3").setBounds(43.0, 130.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Mute-4").setBounds(55.0, 130.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Mute-5").setBounds(67.0, 130.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Mute-6").setBounds(79.0, 130.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Mute-7").setBounds(91.0, 130.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Solo-0").setBounds(6.75, 143.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Solo-1").setBounds(19.0, 143.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Solo-2").setBounds(31.0, 143.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Solo-3").setBounds(43.0, 143.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Solo-4").setBounds(55.0, 143.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Solo-5").setBounds(67.0, 143.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Solo-6").setBounds(79.0, 143.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Solo-7").setBounds(91.0, 143.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Arm-0").setBounds(6.75, 155.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Arm-1").setBounds(19.0, 155.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Arm-2").setBounds(31.0, 155.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Arm-3").setBounds(43.0, 155.5, 10.0, 10.0);
-      surface.hardwareElementWithId("Arm-4").setBounds(55.0, 155.5, 10.0, 10.0);
-      surface.hardwareElementWithId("Arm-5").setBounds(67.0, 155.5, 10.0, 10.0);
-      surface.hardwareElementWithId("Arm-6").setBounds(79.0, 155.5, 10.0, 10.0);
-      surface.hardwareElementWithId("Arm-7").setBounds(91.0, 155.5, 10.0, 10.0);
-      surface.hardwareElementWithId("AB-0").setBounds(6.75, 168.5, 10.0, 10.0);
-      surface.hardwareElementWithId("AB-1").setBounds(19.0, 168.5, 10.0, 10.0);
-      surface.hardwareElementWithId("AB-2").setBounds(31.0, 168.5, 10.0, 10.0);
-      surface.hardwareElementWithId("AB-3").setBounds(43.0, 168.5, 10.0, 10.0);
-      surface.hardwareElementWithId("AB-4").setBounds(55.0, 168.5, 10.0, 10.0);
-      surface.hardwareElementWithId("AB-5").setBounds(67.0, 168.5, 10.0, 10.0);
-      surface.hardwareElementWithId("AB-6").setBounds(79.0, 168.5, 10.0, 10.0);
-      surface.hardwareElementWithId("AB-7").setBounds(91.0, 168.5, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackSelect-0").setBounds(7.0, 101.75, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackSelect-1").setBounds(19.25, 101.75, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackSelect-2").setBounds(31.25, 101.75, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackSelect-3").setBounds(43.25, 101.75, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackSelect-4").setBounds(55.25, 101.75, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackSelect-5").setBounds(67.25, 101.75, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackSelect-6").setBounds(79.25, 101.75, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackSelect-7").setBounds(91.25, 101.75, 10.0, 10.0);
-      surface.hardwareElementWithId("MasterTrackSelect").setBounds(107.5, 101.5, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackStop-0").setBounds(6.75, 89.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackStop-1").setBounds(19.0, 89.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackStop-2").setBounds(31.0, 89.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackStop-3").setBounds(43.0, 89.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackStop-4").setBounds(55.0, 89.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackStop-5").setBounds(67.0, 89.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackStop-6").setBounds(79.0, 89.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TrackStop-7").setBounds(91.0, 89.25, 10.0, 10.0);
-      surface.hardwareElementWithId("MasterTrackStop").setBounds(107.25, 89.5, 10.0, 10.0);
-      surface.hardwareElementWithId("Play").setBounds(155.75, 17.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Record").setBounds(167.75, 17.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Session").setBounds(179.75, 17.75, 10.0, 10.0);
-      surface.hardwareElementWithId("Metronome").setBounds(167.5, 39.25, 10.0, 10.0);
-      surface.hardwareElementWithId("TapTempo").setBounds(179.75, 39.0, 10.0, 10.0);
-      surface.hardwareElementWithId("Nudge+").setBounds(168.5, 53.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Nudge-").setBounds(180.5, 53.25, 10.0, 10.0);
-      surface.hardwareElementWithId("Tempo").setBounds(204.0, 49.25, 10.0, 10.0);
-
+      surface.hardwareElementWithId("TopKnob-0").setBounds(11.25, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("TopKnob-1").setBounds(43.25, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("TopKnob-2").setBounds(75.0, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("TopKnob-3").setBounds(107.0, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("TopKnob-4").setBounds(139.0, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("TopKnob-5").setBounds(170.75, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("TopKnob-6").setBounds(202.75, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("TopKnob-7").setBounds(234.75, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("Pan").setBounds(295.5, 36.0, 13.0, 6.25);
+      surface.hardwareElementWithId("Sends").setBounds(295.75, 54.5, 13.0, 6.25);
+      surface.hardwareElementWithId("User").setBounds(295.75, 71.75, 13.0, 6.25);
+      surface.hardwareElementWithId("DeviceControl-0").setBounds(288.5, 90.0, 27.5, 24.25);
+      surface.hardwareElementWithId("DeviceControl-1").setBounds(320.5, 90.0, 27.5, 24.25);
+      surface.hardwareElementWithId("DeviceControl-2").setBounds(352.75, 90.0, 27.5, 24.25);
+      surface.hardwareElementWithId("DeviceControl-3").setBounds(384.75, 90.0, 27.5, 24.25);
+      surface.hardwareElementWithId("DeviceControl-4").setBounds(288.5, 122.0, 27.5, 24.25);
+      surface.hardwareElementWithId("DeviceControl-5").setBounds(320.5, 122.0, 27.5, 24.25);
+      surface.hardwareElementWithId("DeviceControl-6").setBounds(352.75, 122.0, 27.5, 24.25);
+      surface.hardwareElementWithId("DeviceControl-7").setBounds(384.75, 122.0, 27.5, 24.25);
+      surface.hardwareElementWithId("PrevDevice").setBounds(296.0, 155.0, 13.0, 6.25);
+      surface.hardwareElementWithId("NextDevice").setBounds(327.75, 155.0, 13.0, 6.25);
+      surface.hardwareElementWithId("PrevBank").setBounds(359.75, 155.0, 13.0, 6.25);
+      surface.hardwareElementWithId("NextBank").setBounds(391.0, 155.0, 13.0, 6.25);
+      surface.hardwareElementWithId("DeviceOnOff").setBounds(296.0, 173.0, 13.0, 6.25);
+      surface.hardwareElementWithId("DeviceLock").setBounds(327.75, 173.0, 13.0, 6.25);
+      surface.hardwareElementWithId("ClipDeviceView").setBounds(359.75, 173.0, 13.0, 6.25);
+      surface.hardwareElementWithId("DetailView").setBounds(391.0, 173.0, 13.0, 6.25);
+      surface.hardwareElementWithId("Shift").setBounds(359.75, 191.25, 13.0, 6.25);
+      surface.hardwareElementWithId("Bank").setBounds(391.0, 191.0, 13.0, 6.25);
+      surface.hardwareElementWithId("LauncherUp").setBounds(306.0, 192.5, 13.25, 11.25);
+      surface.hardwareElementWithId("LauncherDown").setBounds(306.0, 204.25, 13.25, 11.25);
+      surface.hardwareElementWithId("LauncherLeft").setBounds(296.0, 192.5, 10.0, 23.0);
+      surface.hardwareElementWithId("LauncherRight").setBounds(319.75, 192.5, 10.0, 23.0);
+      surface.hardwareElementWithId("TrackVolumeFader-0").setBounds(9.75, 182.0, 21.75, 64.0);
+      surface.hardwareElementWithId("TrackVolumeFader-1").setBounds(42.0, 182.0, 21.75, 64.0);
+      surface.hardwareElementWithId("TrackVolumeFader-2").setBounds(73.75, 182.0, 21.75, 64.0);
+      surface.hardwareElementWithId("TrackVolumeFader-3").setBounds(106.0, 182.0, 21.75, 64.0);
+      surface.hardwareElementWithId("TrackVolumeFader-4").setBounds(138.0, 182.0, 21.75, 64.0);
+      surface.hardwareElementWithId("TrackVolumeFader-5").setBounds(170.0, 182.0, 21.75, 64.0);
+      surface.hardwareElementWithId("TrackVolumeFader-6").setBounds(201.75, 182.0, 21.75, 64.0);
+      surface.hardwareElementWithId("TrackVolumeFader-7").setBounds(233.75, 182.0, 21.75, 64.0);
+      surface.hardwareElementWithId("MasterTrackVolumeFader").setBounds(261.0, 182.0, 21.75, 64.0);
+      surface.hardwareElementWithId("AB-Crossfade").setBounds(339.75, 230.25, 56.25, 10.75);
+      surface.hardwareElementWithId("Cue-Level").setBounds(262.5, 156.25, 18.5, 20.0);
+      surface.hardwareElementWithId("Grid-0-0").setBounds(6.75, 41.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-0-1").setBounds(6.75, 57.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-0-2").setBounds(6.75, 72.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-0-3").setBounds(6.75, 87.5, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-0-4").setBounds(6.75, 102.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-1-0").setBounds(38.25, 41.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-1-1").setBounds(38.25, 57.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-1-2").setBounds(38.25, 72.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-1-3").setBounds(38.25, 87.5, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-1-4").setBounds(38.25, 102.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-2-0").setBounds(70.5, 41.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-2-1").setBounds(70.5, 57.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-2-2").setBounds(70.5, 72.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-2-3").setBounds(70.5, 87.5, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-2-4").setBounds(70.5, 102.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-3-0").setBounds(102.5, 41.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-3-1").setBounds(102.5, 57.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-3-2").setBounds(102.5, 72.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-3-3").setBounds(102.5, 87.5, 28.75, 10.0);
+      surface.hardwareElementWithId("Grid-3-4").setBounds(102.5, 102.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-4-0").setBounds(134.5, 41.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-4-1").setBounds(134.5, 57.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-4-2").setBounds(134.5, 72.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-4-3").setBounds(134.5, 87.5, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-4-4").setBounds(134.5, 102.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-5-0").setBounds(166.5, 41.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-5-1").setBounds(166.5, 57.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-5-2").setBounds(166.5, 72.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-5-3").setBounds(166.5, 87.5, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-5-4").setBounds(166.5, 102.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-6-0").setBounds(198.5, 41.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-6-1").setBounds(198.5, 57.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-6-2").setBounds(198.5, 72.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-6-3").setBounds(198.5, 87.5, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-6-4").setBounds(198.5, 102.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-7-0").setBounds(230.5, 41.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-7-1").setBounds(230.5, 57.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-7-2").setBounds(230.5, 72.0, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-7-3").setBounds(230.5, 87.5, 28.0, 10.0);
+      surface.hardwareElementWithId("Grid-7-4").setBounds(230.5, 102.75, 28.0, 10.0);
+      surface.hardwareElementWithId("Scene-0").setBounds(262.5, 41.75, 17.25, 11.0);
+      surface.hardwareElementWithId("Scene-1").setBounds(262.5, 56.5, 17.25, 11.0);
+      surface.hardwareElementWithId("Scene-2").setBounds(262.5, 72.0, 17.25, 11.0);
+      surface.hardwareElementWithId("Scene-3").setBounds(262.5, 87.0, 17.25, 11.0);
+      surface.hardwareElementWithId("Scene-4").setBounds(262.5, 102.75, 17.25, 11.0);
+      surface.hardwareElementWithId("Mute-0").setBounds(7.0, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("Mute-1").setBounds(39.5, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("Mute-2").setBounds(70.75, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("Mute-3").setBounds(102.75, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("Mute-4").setBounds(135.0, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("Mute-5").setBounds(167.5, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("Mute-6").setBounds(199.25, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("Mute-7").setBounds(231.5, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("Solo-0").setBounds(7.5, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Solo-1").setBounds(39.25, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Solo-2").setBounds(70.75, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Solo-3").setBounds(103.0, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Solo-4").setBounds(135.75, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Solo-5").setBounds(167.5, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Solo-6").setBounds(199.5, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Solo-7").setBounds(231.75, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Arm-0").setBounds(23.0, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Arm-1").setBounds(55.5, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Arm-2").setBounds(87.25, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Arm-3").setBounds(118.75, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Arm-4").setBounds(151.75, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Arm-5").setBounds(183.0, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Arm-6").setBounds(216.0, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("Arm-7").setBounds(248.0, 166.75, 10.0, 10.0);
+      surface.hardwareElementWithId("AB-0").setBounds(23.5, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("AB-1").setBounds(55.75, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("AB-2").setBounds(87.25, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("AB-3").setBounds(119.5, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("AB-4").setBounds(151.5, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("AB-5").setBounds(182.5, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("AB-6").setBounds(216.0, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("AB-7").setBounds(247.5, 152.5, 10.0, 10.0);
+      surface.hardwareElementWithId("TrackSelect-0").setBounds(7.25, 137.25, 27.25, 9.5);
+      surface.hardwareElementWithId("TrackSelect-1").setBounds(39.5, 137.25, 27.25, 9.5);
+      surface.hardwareElementWithId("TrackSelect-2").setBounds(70.75, 137.25, 27.25, 9.5);
+      surface.hardwareElementWithId("TrackSelect-3").setBounds(103.0, 137.25, 27.25, 9.5);
+      surface.hardwareElementWithId("TrackSelect-4").setBounds(134.75, 137.25, 27.25, 9.5);
+      surface.hardwareElementWithId("TrackSelect-5").setBounds(166.75, 137.25, 27.25, 9.5);
+      surface.hardwareElementWithId("TrackSelect-6").setBounds(199.5, 137.25, 27.25, 9.5);
+      surface.hardwareElementWithId("TrackSelect-7").setBounds(231.0, 137.25, 27.25, 9.5);
+      surface.hardwareElementWithId("MasterTrackSelect").setBounds(262.5, 137.75, 16.75, 9.25);
+      surface.hardwareElementWithId("TrackStop-0").setBounds(12.75, 119.75, 17.25, 11.0);
+      surface.hardwareElementWithId("TrackStop-1").setBounds(43.75, 120.0, 17.25, 11.0);
+      surface.hardwareElementWithId("TrackStop-2").setBounds(75.5, 120.0, 17.25, 11.0);
+      surface.hardwareElementWithId("TrackStop-3").setBounds(107.5, 120.0, 17.25, 11.0);
+      surface.hardwareElementWithId("TrackStop-4").setBounds(140.25, 119.75, 17.25, 11.0);
+      surface.hardwareElementWithId("TrackStop-5").setBounds(171.25, 120.25, 17.25, 11.0);
+      surface.hardwareElementWithId("TrackStop-6").setBounds(203.5, 120.5, 17.25, 11.0);
+      surface.hardwareElementWithId("TrackStop-7").setBounds(235.5, 120.25, 17.25, 11.0);
+      surface.hardwareElementWithId("MasterTrackStop").setBounds(262.5, 120.25, 17.25, 11.0);
+      surface.hardwareElementWithId("Play").setBounds(328.0, 31.0, 13.0, 10.0);
+      surface.hardwareElementWithId("Record").setBounds(360.0, 31.0, 13.0, 10.0);
+      surface.hardwareElementWithId("Session").setBounds(391.25, 31.0, 13.0, 10.0);
+      surface.hardwareElementWithId("Metronome").setBounds(327.75, 54.25, 13.0, 6.25);
+      surface.hardwareElementWithId("TapTempo").setBounds(359.5, 54.75, 13.0, 6.25);
+      surface.hardwareElementWithId("Nudge+").setBounds(327.5, 72.25, 13.0, 6.25);
+      surface.hardwareElementWithId("Nudge-").setBounds(359.25, 72.25, 13.0, 6.25);
+      surface.hardwareElementWithId("Tempo").setBounds(389.5, 57.25, 19.0, 20.5);
+      surface.hardwareElementWithId("ABLed-0").setBounds(24.0, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-1").setBounds(56.0, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-2").setBounds(88.0, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-3").setBounds(119.75, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-4").setBounds(151.75, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-5").setBounds(183.75, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-6").setBounds(215.75, 153.25, 10.0, 10.0);
+      surface.hardwareElementWithId("ABLed-7").setBounds(247.5, 153.25, 10.0, 10.0);
    }
 
    private void createTransportControls()
@@ -849,11 +871,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mNudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
       mNudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
-      mNudgePlusButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_PLUS));
+      mNudgePlusButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_PLUS));
 
       mNudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
-      mNudgeMinusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_MINUS));
-      mNudgeMinusButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_MINUS));
+      mNudgeMinusButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_MINUS));
+      mNudgeMinusButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_MINUS));
 
       mTempoKnob = mHardwareSurface.createRelativeHardwareKnob("Tempo");
       mTempoKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_TEMPO));
@@ -880,9 +905,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mMasterTrackStopButton = mHardwareSurface.createHardwareButton("MasterTrackStop");
-      mMasterTrackStopButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_MASTER_STOP));
-      mMasterTrackStopButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_STOP));
+      mMasterTrackStopButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_MASTER_STOP));
+      mMasterTrackStopButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_STOP));
       mMasterTrackStopLed = mHardwareSurface.createOnOffHardwareLight("MasterTrackStopLed");
+      mMasterTrackStopButton.setBackgroundLight(mMasterTrackStopLed);
       mMasterTrackStopLed.onUpdateHardware(() -> sendLedUpdate(BT_MASTER_STOP, mMasterTrackStopLed));
    }
 
@@ -905,9 +933,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mMasterTrackSelectButton = mHardwareSurface.createHardwareButton("MasterTrackSelect");
-      mMasterTrackSelectButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_MASTER_SELECT));
-      mMasterTrackSelectButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_SELECT));
+      mMasterTrackSelectButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_MASTER_SELECT));
+      mMasterTrackSelectButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_SELECT));
       mMasterTrackSelectLed = mHardwareSurface.createOnOffHardwareLight("MasterTrackSelectLed");
+      mMasterTrackSelectButton.setBackgroundLight(mMasterTrackSelectLed);
       mMasterTrackSelectLed.onUpdateHardware(() -> sendLedUpdate(BT_MASTER_SELECT, mMasterTrackSelectLed));
    }
 
@@ -935,12 +966,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       switch (i)
       {
-         case 1:
-            return Color.fromRGB(1.0, 0.5, 0);
-         case 2:
-            return Color.fromRGB(0, 0, 1.0);
-         default:
-            return Color.fromRGB(0, 0, 0);
+      case 1:
+         return Color.fromRGB(1.0, 0.5, 0);
+      case 2:
+         return Color.fromRGB(0, 0, 1.0);
+      default:
+         return Color.fromRGB(0, 0, 0);
       }
    }
 
@@ -995,6 +1026,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("MuteLed-" + x);
+         bt.setBackgroundLight(led);
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_MUTE, channel, led));
          mMuteLeds[x] = led;
       }
@@ -1007,21 +1039,27 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          for (int y = 0; y < 5; ++y)
          {
-            final HardwareButton bt = mHardwareSurface.createHardwareButton("Grid-" + x + "-" + y);
+            final String id = "Grid-" + x + "-" + y;
+            final HardwareButton bt = mHardwareSurface.createHardwareButton(id);
             final int note = BT_PAD0 + (4 - y) * 8 + x;
             bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
             bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
+
             mGridButtons[y * 8 + x] = bt;
+            mPadLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_PAD0 + x + (4 - y) * 8);
          }
       }
 
       mSceneButtons = new HardwareButton[5];
+
       for (int y = 0; y < 5; ++y)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Scene-" + y);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SCENE0 + y));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SCENE0 + y));
          mSceneButtons[y] = bt;
+
+         mSceneLeds[y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_SCENE0 + y);
       }
    }
 
@@ -1037,7 +1075,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mMasterTrackVolumeSlider = mHardwareSurface.createHardwareSlider("MasterTrackVolumeFader");
-      mMasterTrackVolumeSlider.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_MASTER_VOLUME));
+      mMasterTrackVolumeSlider
+         .setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_MASTER_VOLUME));
 
       mABCrossfadeSlider = mHardwareSurface.createHardwareSlider("AB-Crossfade");
       mABCrossfadeSlider.setIsHorizontal(true);
@@ -1066,6 +1105,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPanButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PAN));
       mPanButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PAN));
       mPanLed = mHardwareSurface.createOnOffHardwareLight("PanLed");
+      mPanButton.setBackgroundLight(mPanLed);
       mPanLed.onUpdateHardware(() -> sendLedUpdate(BT_PAN, mPanLed));
 
       mSendsButton = mHardwareSurface.createHardwareButton("Sends");
@@ -1079,6 +1119,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mSendSelectLayer.deactivate();
       });
       mSendsLed = mHardwareSurface.createOnOffHardwareLight("SendsLed");
+      mSendsButton.setBackgroundLight(mSendsLed);
       mSendsLed.onUpdateHardware(() -> sendLedUpdate(BT_SENDS, mSendsLed));
 
       mUserButton = mHardwareSurface.createHardwareButton("User");
@@ -1092,6 +1133,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mUserSelectLayer.deactivate();
       });
       mUserLed = mHardwareSurface.createOnOffHardwareLight("UserLed");
+      mUserButton.setBackgroundLight(mUserLed);
       mUserLed.onUpdateHardware(() -> sendLedUpdate(BT_USER, mUserLed));
    }
 
@@ -1113,51 +1155,71 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mPrevDeviceButton = mHardwareSurface.createHardwareButton("PrevDevice");
-      mPrevDeviceButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_DEVICE));
-      mPrevDeviceButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_DEVICE));
+      mPrevDeviceButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_DEVICE));
+      mPrevDeviceButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_DEVICE));
       mPrevDeviceLed = mHardwareSurface.createOnOffHardwareLight("PrevDeviceLed");
+      mPrevDeviceButton.setBackgroundLight(mPrevDeviceLed);
       mPrevDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_DEVICE, mPrevDeviceLed));
 
       mNextDeviceButton = mHardwareSurface.createHardwareButton("NextDevice");
-      mNextDeviceButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_DEVICE));
-      mNextDeviceButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_DEVICE));
+      mNextDeviceButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_DEVICE));
+      mNextDeviceButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_DEVICE));
       mNextDeviceLed = mHardwareSurface.createOnOffHardwareLight("NextDeviceLed");
+      mNextDeviceButton.setBackgroundLight(mNextDeviceLed);
       mNextDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_DEVICE, mNextDeviceLed));
 
       mPrevBankButton = mHardwareSurface.createHardwareButton("PrevBank");
       mPrevBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_BANK));
       mPrevBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_BANK));
       mPrevBankLed = mHardwareSurface.createOnOffHardwareLight("PrevBankLed");
+      mPrevBankButton.setBackgroundLight(mPrevBankLed);
       mPrevBankLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_BANK, mPrevBankLed));
 
       mNextBankButton = mHardwareSurface.createHardwareButton("NextBank");
       mNextBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_BANK));
       mNextBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_BANK));
       mNextBankLed = mHardwareSurface.createOnOffHardwareLight("NextBankLed");
+      mNextBankButton.setBackgroundLight(mNextBankLed);
       mNextBankLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_BANK, mNextBankLed));
 
       mDeviceOnOffButton = mHardwareSurface.createHardwareButton("DeviceOnOff");
-      mDeviceOnOffButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DEVICE_ONOFF));
-      mDeviceOnOffButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_ONOFF));
+      mDeviceOnOffButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DEVICE_ONOFF));
+      mDeviceOnOffButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_ONOFF));
       mDeviceOnOffLed = mHardwareSurface.createOnOffHardwareLight("DeviceOnOffLed");
+      mDeviceOnOffButton.setBackgroundLight(mDeviceOnOffLed);
       mDeviceOnOffLed.onUpdateHardware(() -> sendLedUpdate(BT_DEVICE_ONOFF, mDeviceOnOffLed));
 
       mDeviceLockButton = mHardwareSurface.createHardwareButton("DeviceLock");
-      mDeviceLockButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DEVICE_LOCK));
-      mDeviceLockButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_LOCK));
+      mDeviceLockButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DEVICE_LOCK));
+      mDeviceLockButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_LOCK));
       mDeviceLockLed = mHardwareSurface.createOnOffHardwareLight("DeviceLockLed");
+      mDeviceLockButton.setBackgroundLight(mDeviceLockLed);
       mDeviceLockLed.onUpdateHardware(() -> sendLedUpdate(BT_DEVICE_LOCK, mDeviceLockLed));
 
       mClipDeviceViewButton = mHardwareSurface.createHardwareButton("ClipDeviceView");
-      mClipDeviceViewButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_CLIP_DEVICE_VIEW));
-      mClipDeviceViewButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_CLIP_DEVICE_VIEW));
+      mClipDeviceViewButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_CLIP_DEVICE_VIEW));
+      mClipDeviceViewButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_CLIP_DEVICE_VIEW));
       mClipDeviceViewLed = mHardwareSurface.createOnOffHardwareLight("ClipDeviceViewLed");
+      mClipDeviceViewButton.setBackgroundLight(mClipDeviceViewLed);
       mClipDeviceViewLed.onUpdateHardware(() -> sendLedUpdate(BT_CLIP_DEVICE_VIEW, mClipDeviceViewLed));
 
       mDetailViewButton = mHardwareSurface.createHardwareButton("DetailView");
-      mDetailViewButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DETAIL_VIEW));
-      mDetailViewButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DETAIL_VIEW));
+      mDetailViewButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DETAIL_VIEW));
+      mDetailViewButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DETAIL_VIEW));
       mDetailViewLed = mHardwareSurface.createOnOffHardwareLight("DetailViewLed");
+      mDetailViewButton.setBackgroundLight(mDetailViewLed);
       mDetailViewLed.onUpdateHardware(() -> sendLedUpdate(BT_DETAIL_VIEW, mDetailViewLed));
 
       mShiftButton = mHardwareSurface.createHardwareButton("Shift");
@@ -1176,30 +1238,39 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mBankLayer.deactivate();
       });
       mBankLed = mHardwareSurface.createOnOffHardwareLight("BankLed");
+      mBankButton.setBackgroundLight(mBankLed);
       mBankLed.onUpdateHardware(() -> sendLedUpdate(BT_BANK, mBankLed));
 
       mLauncherUpButton = mHardwareSurface.createHardwareButton("LauncherUp");
-      mLauncherUpButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_UP));
-      mLauncherUpButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_UP));
+      mLauncherUpButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_UP));
+      mLauncherUpButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_UP));
 
       mLauncherDownButton = mHardwareSurface.createHardwareButton("LauncherDown");
-      mLauncherDownButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_DOWN));
-      mLauncherDownButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_DOWN));
+      mLauncherDownButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_DOWN));
+      mLauncherDownButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_DOWN));
 
       mLauncherLeftButton = mHardwareSurface.createHardwareButton("LauncherLeft");
-      mLauncherLeftButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_LEFT));
-      mLauncherLeftButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_LEFT));
+      mLauncherLeftButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_LEFT));
+      mLauncherLeftButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_LEFT));
 
       mLauncherRightButton = mHardwareSurface.createHardwareButton("LauncherRight");
-      mLauncherRightButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_RIGHT));
-      mLauncherRightButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_RIGHT));
+      mLauncherRightButton.pressedAction()
+         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_RIGHT));
+      mLauncherRightButton.releasedAction()
+         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_RIGHT));
    }
 
    private void updateTopControlRing(final int knobIndex)
    {
       final KnobLed knobLed = mTopControlKnobLeds[knobIndex];
       final AbsoluteHardwareKnob knob = mTopControlKnobs[knobIndex];
-      final int value = (int) (127 * knob.targetValue().get());
+      final int value = (int)(127 * knob.targetValue().get());
       if (!knob.isUpdatingTargetValue().get())
          knobLed.set(value);
       else
@@ -1208,21 +1279,21 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       final int ring;
       switch (mTopMode)
       {
-         case PAN:
-            ring = KnobLed.RING_PAN;
-            break;
-         case SENDS:
-            ring = KnobLed.RING_VOLUME;
-            break;
-         case USER:
-            ring = KnobLed.RING_SINGLE;
-            break;
-         case CHANNEL_STRIP:
-            ring = knobIndex < CHANNEL_STRIP_NUM_PARAMS ? KnobLed.RING_SINGLE : KnobLed.RING_VOLUME;
-            break;
-         default:
-            ring = KnobLed.RING_SINGLE;
-            break;
+      case PAN:
+         ring = KnobLed.RING_PAN;
+         break;
+      case SENDS:
+         ring = KnobLed.RING_VOLUME;
+         break;
+      case USER:
+         ring = KnobLed.RING_SINGLE;
+         break;
+      case CHANNEL_STRIP:
+         ring = knobIndex < CHANNEL_STRIP_NUM_PARAMS ? KnobLed.RING_SINGLE : KnobLed.RING_VOLUME;
+         break;
+      default:
+         ring = KnobLed.RING_SINGLE;
+         break;
       }
 
       if (knobLed.wantsFlush())
@@ -1233,7 +1304,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       final KnobLed knobLed = mDeviceControlKnobLeds[knobIndex];
       final AbsoluteHardwareKnob knob = mDeviceControlKnobs[knobIndex];
-      final int value = (int) (127 * knob.targetValue().get());
+      final int value = (int)(127 * knob.targetValue().get());
       if (!knob.isUpdatingTargetValue().get())
          knobLed.set(value);
       else
@@ -1308,7 +1379,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       updateChannelStripIndication(mTopMode == TopMode.CHANNEL_STRIP);
    }
 
-   private void updateChannelStripIndication(boolean shouldIndicate)
+   private void updateChannelStripIndication(final boolean shouldIndicate)
    {
       for (int i = 0; i < CHANNEL_STRIP_NUM_PARAMS; ++i)
          mChannelStripRemoteControls.getParameter(i).setIndication(shouldIndicate);
@@ -1317,7 +1388,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mTrackCursor.sendBank().getItemAt(i).setIndication(shouldIndicate);
    }
 
-   private void updatePanIndication(boolean shouldIndicate)
+   private void updatePanIndication(final boolean shouldIndicate)
    {
       for (int i = 0; i < 8; ++i)
       {
@@ -1377,10 +1448,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    @Override
    public void flush()
    {
-      mHardwareSurface.updateHardware();
       flushKnobs();
       paintPads();
       paintScenes();
+      mHardwareSurface.updateHardware();
    }
 
    private void paintScenes()
@@ -1411,7 +1482,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             rgbLed.setBlinkColor(RgbLed.COLOR_NONE);
          }
 
-         rgbLed.paint(mMidiOut, MSG_NOTE_ON, BT_SCENE0 + i);
+         rgbLed.paint(mMidiOut);
       }
    }
 
@@ -1460,7 +1531,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
                rgbLed.setBlinkColor(RgbLed.COLOR_NONE);
             }
 
-            rgbLed.paint(mMidiOut, MSG_NOTE_ON, BT_PAD0 + i + (4 - j) * 8);
+            rgbLed.paint(mMidiOut);
          }
       }
    }
@@ -1504,7 +1575,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
     */
    private class DoublePressedButtonState
    {
-      void stateChanged(boolean isPressed)
+      void stateChanged(final boolean isPressed)
       {
          if (!isPressed)
          {
@@ -1530,6 +1601,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       private boolean mIsOn = false;
+
       private long mLastPressTime = 0;
    }
 
@@ -1538,21 +1610,37 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    ////////////////////////
 
    private Application mApplication = null;
+
    private Transport mTransport = null;
+
    private MasterTrack mMasterTrack = null;
+
    private BooleanValue mIsMasterSelected = null;
+
    private TrackBank mTrackBank = null;
+
    private BooleanValue[] mIsTrackSelected = new BooleanValue[8];
+
    private TrackBank mSendTrackBank = null;
+
    private SceneBank mSceneBank = null;
+
    private CursorTrack mTrackCursor = null;
+
    private PinnableCursorDevice mDeviceCursor = null;
+
    private PinnableCursorDevice mChannelStripDevice;
+
    private CursorRemoteControlsPage mRemoteControls = null;
+
    private CursorRemoteControlsPage mChannelStripRemoteControls;
+
    private UserControlBank mUserControls = null;
+
    private UserControlBank mCueControl = null;
+
    private MidiIn mMidiIn = null;
+
    private MidiOut mMidiOut = null;
 
    //////////////
@@ -1560,8 +1648,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    //////////////
 
    private SettableBooleanValue mPanAsChannelStripSetting;
+
    private SettableBooleanValue mHorizontalScrollByPageSetting;
+
    private SettableBooleanValue mVerticalScrollByPageSetting;
+
    private SettableBooleanValue mControlSendEffectSetting;
 
    ///////////
@@ -1569,10 +1660,15 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    ///////////
 
    private final DoublePressedButtonState mBankOn = new DoublePressedButtonState();
+
    private final DoublePressedButtonState mUserOn = new DoublePressedButtonState();
+
    private final DoublePressedButtonState mSendsOn = new DoublePressedButtonState();
+
    private TopMode mTopMode = TopMode.PAN;
+
    private int mSendIndex = 0; // 0..4
+
    private int mUserIndex = 0; // 0..4
 
    ////////////
@@ -1580,15 +1676,25 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    ////////////
 
    private Layers mLayers;
+
    private Layer mMainLayer;
+
    private Layer mDebugLayer;
+
    private Layer mPanLayer;
+
    private Layer[] mUserLayers;
+
    private Layer[] mSendLayers;
+
    private Layer mChannelStripLayer;
+
    private Layer mShiftLayer;
+
    private Layer mBankLayer;
+
    private Layer mSendSelectLayer;
+
    private Layer mUserSelectLayer;
 
    ///////////////////////
@@ -1596,70 +1702,135 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    ///////////////////////
 
    private HardwareSurface mHardwareSurface;
+
    private AbsoluteHardwareKnob[] mTopControlKnobs;
+
    private AbsoluteHardwareKnob[] mDeviceControlKnobs;
+
    private HardwareSlider[] mTrackVolumeSliders;
+
    private HardwareSlider mMasterTrackVolumeSlider;
+
    private HardwareSlider mABCrossfadeSlider;
+
    private RelativeHardwareKnob mCueLevelKnob;
+
    private HardwareButton[] mGridButtons;
+
    private HardwareButton[] mMuteButtons;
+
    private HardwareButton[] mSoloButtons;
+
    private HardwareButton[] mArmButtons;
+
    private HardwareButton[] mABButtons;
+
    private HardwareButton[] mTrackSelectButtons;
+
    private HardwareButton mMasterTrackSelectButton;
+
    private HardwareButton[] mTrackStopButtons;
+
    private HardwareButton mMasterTrackStopButton;
+
    private HardwareButton mPlayButton;
+
    private HardwareButton mRecordButton;
+
    private HardwareButton mSessionButton;
+
    private HardwareButton mMetronomeButton;
+
    private HardwareButton mTapTempoButton;
+
    private HardwareButton mNudgePlusButton;
+
    private HardwareButton mNudgeMinusButton;
+
    private RelativeHardwareKnob mTempoKnob;
+
    private HardwareButton mPrevDeviceButton;
+
    private HardwareButton mNextDeviceButton;
+
    private HardwareButton mPrevBankButton;
+
    private HardwareButton mNextBankButton;
+
    private HardwareButton mDeviceOnOffButton;
+
    private HardwareButton mDeviceLockButton;
+
    private HardwareButton mClipDeviceViewButton;
+
    private HardwareButton mDetailViewButton;
+
    private HardwareButton mShiftButton;
+
    private HardwareButton mBankButton;
+
    private HardwareButton mLauncherUpButton;
+
    private HardwareButton mLauncherDownButton;
+
    private HardwareButton mLauncherLeftButton;
+
    private HardwareButton mLauncherRightButton;
+
    private HardwareButton[] mSceneButtons;
+
    private HardwareButton mPanButton;
+
    private HardwareButton mSendsButton;
+
    private HardwareButton mUserButton;
+
    private OnOffHardwareLight mPanLed;
+
    private OnOffHardwareLight mSendsLed;
+
    private OnOffHardwareLight mUserLed;
+
    private OnOffHardwareLight mMetronomeLed;
+
    private OnOffHardwareLight mPlayLed;
+
    private OnOffHardwareLight mRecordLed;
+
    private OnOffHardwareLight mSessionLed;
+
    private OnOffHardwareLight mPrevDeviceLed;
+
    private OnOffHardwareLight mNextDeviceLed;
+
    private OnOffHardwareLight mPrevBankLed;
+
    private OnOffHardwareLight mNextBankLed;
+
    private OnOffHardwareLight mDeviceOnOffLed;
+
    private OnOffHardwareLight mDeviceLockLed;
+
    private OnOffHardwareLight mClipDeviceViewLed;
+
    private OnOffHardwareLight mDetailViewLed;
+
    private OnOffHardwareLight mBankLed;
+
    private OnOffHardwareLight[] mMuteLeds;
+
    private OnOffHardwareLight[] mSoloLeds;
+
    private OnOffHardwareLight[] mArmLeds;
+
    private HardwareTextDisplay[] mABLeds;
+
    private OnOffHardwareLight[] mTrackSelectLeds;
+
    private OnOffHardwareLight mMasterTrackSelectLed;
+
    private OnOffHardwareLight[] mTrackStopLeds;
+
    private OnOffHardwareLight mMasterTrackStopLed;
 
    /////////////////
@@ -1667,8 +1838,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    /////////////////
 
    private final KnobLed[] mDeviceControlKnobLeds = new KnobLed[8];
-   private final KnobLed[] mTopControlKnobLeds = new KnobLed[8];
-   private final RgbLed[][] mPadLeds = new RgbLed[8][5];
-   private final RgbLed[] mSceneLeds = new RgbLed[5];
 
+   private final KnobLed[] mTopControlKnobLeds = new KnobLed[8];
+
+   private final RgbLed[][] mPadLeds = new RgbLed[8][5];
+
+   private final RgbLed[] mSceneLeds = new RgbLed[5];
 }
