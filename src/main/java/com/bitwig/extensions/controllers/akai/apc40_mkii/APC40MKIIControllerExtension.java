@@ -886,6 +886,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMasterTrackStopButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_MASTER_STOP));
       mMasterTrackStopButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_STOP));
       mMasterTrackStopLed = mHardwareSurface.createOnOffHardwareLight("MasterTrackStopLed");
+      mMasterTrackStopButton.setBackgroundLight(mMasterTrackStopLed);
       mMasterTrackStopLed.onUpdateHardware(() -> sendLedUpdate(BT_MASTER_STOP, mMasterTrackStopLed));
    }
 
@@ -911,6 +912,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMasterTrackSelectButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_MASTER_SELECT));
       mMasterTrackSelectButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_SELECT));
       mMasterTrackSelectLed = mHardwareSurface.createOnOffHardwareLight("MasterTrackSelectLed");
+      mMasterTrackSelectButton.setBackgroundLight(mMasterTrackSelectLed);
       mMasterTrackSelectLed.onUpdateHardware(() -> sendLedUpdate(BT_MASTER_SELECT, mMasterTrackSelectLed));
    }
 
@@ -998,6 +1000,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("MuteLed-" + x);
+         bt.setBackgroundLight(led);
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_MUTE, channel, led));
          mMuteLeds[x] = led;
       }
@@ -1076,6 +1079,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPanButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PAN));
       mPanButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PAN));
       mPanLed = mHardwareSurface.createOnOffHardwareLight("PanLed");
+      mPanButton.setBackgroundLight(mPanLed);
       mPanLed.onUpdateHardware(() -> sendLedUpdate(BT_PAN, mPanLed));
 
       mSendsButton = mHardwareSurface.createHardwareButton("Sends");
@@ -1089,6 +1093,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mSendSelectLayer.deactivate();
       });
       mSendsLed = mHardwareSurface.createOnOffHardwareLight("SendsLed");
+      mSendsButton.setBackgroundLight(mSendsLed);
       mSendsLed.onUpdateHardware(() -> sendLedUpdate(BT_SENDS, mSendsLed));
 
       mUserButton = mHardwareSurface.createHardwareButton("User");
@@ -1102,6 +1107,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mUserSelectLayer.deactivate();
       });
       mUserLed = mHardwareSurface.createOnOffHardwareLight("UserLed");
+      mUserButton.setBackgroundLight(mUserLed);
       mUserLed.onUpdateHardware(() -> sendLedUpdate(BT_USER, mUserLed));
    }
 
@@ -1126,6 +1132,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevDeviceButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_DEVICE));
       mPrevDeviceButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_DEVICE));
       mPrevDeviceLed = mHardwareSurface.createOnOffHardwareLight("PrevDeviceLed");
+      mPrevDeviceButton.setBackgroundLight(mPrevDeviceLed);
       mPrevDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_DEVICE, mPrevDeviceLed));
 
       mNextDeviceButton = mHardwareSurface.createHardwareButton("NextDevice");
@@ -1138,6 +1145,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_BANK));
       mPrevBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_BANK));
       mPrevBankLed = mHardwareSurface.createOnOffHardwareLight("PrevBankLed");
+      mPrevBankButton.setBackgroundLight(mPrevBankLed);
       mPrevBankLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_BANK, mPrevBankLed));
 
       mNextBankButton = mHardwareSurface.createHardwareButton("NextBank");
@@ -1150,6 +1158,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mDeviceOnOffButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DEVICE_ONOFF));
       mDeviceOnOffButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_ONOFF));
       mDeviceOnOffLed = mHardwareSurface.createOnOffHardwareLight("DeviceOnOffLed");
+      mDeviceOnOffButton.setBackgroundLight(mDeviceOnOffLed);
       mDeviceOnOffLed.onUpdateHardware(() -> sendLedUpdate(BT_DEVICE_ONOFF, mDeviceOnOffLed));
 
       mDeviceLockButton = mHardwareSurface.createHardwareButton("DeviceLock");
