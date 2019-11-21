@@ -4,13 +4,18 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
+import com.bitwig.extension.controller.api.HardwareSlider;
+import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
 
 public class EzCreatorPad extends ControllerExtension
 {
@@ -27,7 +32,6 @@ public class EzCreatorPad extends ControllerExtension
       mTransport = host.createTransport();
 
       final MidiIn midiIn = host.getMidiInPort(0);
-      midiIn.setMidiCallback(this::onMidi);
       final NoteInput noteInput = midiIn.createNoteInput("EZ-Creator Pad", "89????", "99????");
       noteInput.setShouldConsumeEvents(true);
 
@@ -52,36 +56,72 @@ public class EzCreatorPad extends ControllerExtension
       mParameter = remoteControls.getParameter(0);
       mParameter.markInterested();
       mParameter.setIndication(true);
+
+      createHardwareControls();
+      createLayers();
    }
 
-   private void onMidi(final int status, final int data1, final int data2)
+   private void createLayers()
    {
-      final int channel = status & 0xf;
-      final int msg = (status >> 4) & 0xf;
+      mLayers = new Layers(this);
+      mMainLayer = new Layer(mLayers, "Main");
 
-      // getHost().println("msg: " + msg + ", channel: " + channel + ", data1: " + data1 + ", data2: " + data2);
+      mMainLayer.bind(mSlider, mParameter);
+      mMainLayer.bindPressed(mPlayButton, mTransport.isPlaying().toggleAction());
+      mMainLayer.bindPressed(mStopButton, mTransport.stopAction());
+      mMainLayer.bindPressed(mRecordButton, mTransport.isArrangerRecordEnabled().toggleAction());
+      mMainLayer.bindPressed(mLoopButton, mTransport.isArrangerLoopEnabled().toggleAction());
+      mMainLayer.bindPressed(mFastForwardButton, mTransport.fastForwardAction());
+      mMainLayer.bindPressed(mRewindButton, mTransport.rewindAction());
+      mMainLayer.bindPressed(mNextTrackButton, mCursorTrack.selectNextAction());
+      mMainLayer.bindPressed(mPreviousTrackButton, mCursorTrack.selectPreviousAction());
+      mMainLayer.activate();
+   }
 
-      if (status == 0xB0)
-      {
-         if (data1 == 0x20 && data2 == 127)
-            mTransport.isArrangerRecordEnabled().toggle();
-         else if (data1 == 0x1C && data2 == 127)
-            mTransport.togglePlay();
-         else if (data1 == 0x1F && data2 == 127)
-            mTransport.stop();
-         else if (data1 == 0x1E && data2 == 127)
-            mTransport.isArrangerLoopEnabled().toggle();
-         else if (data1 == 0x1D && data2 == 127)
-            mTransport.fastForward();
-         else if (data1 == 0x1B && data2 == 127)
-            mTransport.rewind();
-         else if (data1 == 0x02)
-            mParameter.set(data2, 128);
-         else if (data1 == 64)
-            mCursorTrack.selectPrevious();
-         else if (data1 == 65)
-            mCursorTrack.selectNext();
-      }
+   private void createHardwareControls()
+   {
+      final HardwareSurface surface = getHost().createHardwareSurface();
+      surface.setPhysicalSize(300, 80);
+      mHardwareSurface = surface;
+
+      final MidiIn midiIn = getMidiInPort(0);
+
+      mSlider = surface.createHardwareSlider("xy");
+      mSlider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x02));
+
+      mPlayButton = surface.createHardwareButton("play");
+      mPlayButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 0x1C, 127));
+
+      mStopButton = surface.createHardwareButton("stop");
+      mStopButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 0x1F, 127));
+
+      mRecordButton = surface.createHardwareButton("record");
+      mRecordButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 0x20, 127));
+
+      mLoopButton = surface.createHardwareButton("loop");
+      mLoopButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 0x1E, 127));
+
+      mFastForwardButton = surface.createHardwareButton("fast-forward");
+      mFastForwardButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 0x1D, 127));
+
+      mRewindButton = surface.createHardwareButton("rewind");
+      mRewindButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 0x1B, 127));
+
+      mNextTrackButton = surface.createHardwareButton("next-track");
+      mNextTrackButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 65, 127));
+
+      mPreviousTrackButton = surface.createHardwareButton("previous-track");
+      mPreviousTrackButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, 64, 127));
+
+      surface.hardwareElementWithId("xy").setBounds(68.75, 6.5, 10.0, 50.0);
+      surface.hardwareElementWithId("play").setBounds(50.0, 27.0, 10.0, 5.5);
+      surface.hardwareElementWithId("stop").setBounds(38.0, 27.0, 10.0, 5.5);
+      surface.hardwareElementWithId("record").setBounds(25.75, 27.0, 10.0, 5.5);
+      surface.hardwareElementWithId("loop").setBounds(25.5, 17.25, 10.0, 5.5);
+      surface.hardwareElementWithId("fast-forward").setBounds(50.0, 17.25, 10.0, 5.5);
+      surface.hardwareElementWithId("rewind").setBounds(38.0, 17.25, 10.0, 5.5);
+      surface.hardwareElementWithId("next-track").setBounds(48.25, 62.75, 10.0, 5.5);
+      surface.hardwareElementWithId("previous-track").setBounds(60.25, 62.75, 10.0, 5.5);
    }
 
    @Override
@@ -93,11 +133,23 @@ public class EzCreatorPad extends ControllerExtension
    @Override
    public void flush()
    {
-
+      mHardwareSurface.updateHardware();
    }
 
    private Transport mTransport;
    private MidiOut mMidiOut;
    private RemoteControl mParameter;
    private CursorTrack mCursorTrack;
+   private HardwareSlider mSlider;
+   private HardwareButton mPlayButton;
+   private HardwareButton mStopButton;
+   private Layers mLayers;
+   private Layer mMainLayer;
+   private HardwareButton mRecordButton;
+   private HardwareButton mLoopButton;
+   private HardwareButton mFastForwardButton;
+   private HardwareButton mRewindButton;
+   private HardwareButton mNextTrackButton;
+   private HardwareButton mPreviousTrackButton;
+   private HardwareSurface mHardwareSurface;
 }

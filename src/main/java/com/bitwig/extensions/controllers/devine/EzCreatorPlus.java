@@ -1,13 +1,18 @@
 package com.bitwig.extensions.controllers.devine;
 
 import com.bitwig.extension.controller.ControllerExtension;
+import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareSlider;
+import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.RemoteControl;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
 
 public class EzCreatorPlus extends ControllerExtension
 {
@@ -22,7 +27,6 @@ public class EzCreatorPlus extends ControllerExtension
       final ControllerHost host = getHost();
 
       final MidiIn midiIn = host.getMidiInPort(0);
-      midiIn.setMidiCallback(this::onMidi);
       final NoteInput keysInput = midiIn.createNoteInput("EZ-Creator Plus Keys", "80????", "90????");
       final NoteInput padsInput = midiIn.createNoteInput("EZ-Creator Plus Pads", "89????", "99????");
 
@@ -49,31 +53,57 @@ public class EzCreatorPlus extends ControllerExtension
 
       mTrackCursor = host.createCursorTrack("ez-creator-plus-cursor", "EZ-Creator Plus", 0, 0, true);
       mCursorDevice = mTrackCursor.createCursorDevice();
-      mKnobs = mCursorDevice.createCursorRemoteControlsPage("EZ-Creator Plus", 8, "");
+      mRemoteControls = mCursorDevice.createCursorRemoteControlsPage("EZ-Creator Plus", 8, "");
 
       for (int i = 0; i < 8; ++i)
       {
-         final RemoteControl parameter = mKnobs.getParameter(i);
+         final RemoteControl parameter = mRemoteControls.getParameter(i);
          parameter.setIndication(true);
       }
+
+      createHardwareControls();
+      createLayers();
    }
 
-   private void onMidi(final int status, final int data1, final int data2)
+   private void createLayers()
    {
-      final int channel = status & 0xf;
-      final int msg = (status >> 4) & 0xf;
-
-      getHost().println("msg: " + msg + ", channel: " + channel + ", data1: " + data1 + ", data2: " + data2);
-
-      switch (status)
+      mLayers = new Layers(this);
+      mMainLayer = new Layer(mLayers, "Main");
+      for (int i = 0; i < 4; ++i)
       {
-         case 0xB0:
-            if (0x0E <= data1 && data1 <= 0x11)
-               mKnobs.getParameter(data1 - 0x0E).set(data2, 128);
-            else if (0x03 <= data1 && data1 <= 0x06)
-               mKnobs.getParameter(data1 - 0x03 + 4).set(data2, 128);
-            break;
+         mMainLayer.bind(mKnobs[i], mRemoteControls.getParameter(i));
+         mMainLayer.bind(mSliders[i], mRemoteControls.getParameter(i + 4));
       }
+      mMainLayer.activate();
+   }
+
+   private void createHardwareControls()
+   {
+      final MidiIn midiIn = getMidiInPort(0);
+      mHardwareSurface = getHost().createHardwareSurface();
+      mKnobs = new AbsoluteHardwareKnob[4];
+      mSliders = new HardwareSlider[4];
+      for (int i = 0; i < 4; ++i)
+      {
+         final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("Knob-" + i);
+         knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x0E + i));
+         mKnobs[i] = knob;
+
+         final HardwareSlider slider = mHardwareSurface.createHardwareSlider("Slider-" + i);
+         slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x03 + i));
+         mSliders[i] = slider;
+      }
+
+      mHardwareSurface.setPhysicalSize(250, 150);
+      final HardwareSurface surface = mHardwareSurface;
+      surface.hardwareElementWithId("Knob-0").setBounds(11.5, 12.25, 10.0, 10.0);
+      surface.hardwareElementWithId("Slider-0").setBounds(11.5, 34.75, 10.0, 50.0);
+      surface.hardwareElementWithId("Knob-1").setBounds(35.5, 12.25, 10.0, 10.0);
+      surface.hardwareElementWithId("Slider-1").setBounds(35.5, 34.75, 10.0, 50.0);
+      surface.hardwareElementWithId("Knob-2").setBounds(59.5, 12.25, 10.0, 10.0);
+      surface.hardwareElementWithId("Slider-2").setBounds(59.5, 34.75, 10.0, 50.0);
+      surface.hardwareElementWithId("Knob-3").setBounds(83.5, 12.25, 10.0, 10.0);
+      surface.hardwareElementWithId("Slider-3").setBounds(83.5, 34.75, 10.0, 50.0);
    }
 
    @Override
@@ -85,10 +115,16 @@ public class EzCreatorPlus extends ControllerExtension
    @Override
    public void flush()
    {
-
+      mHardwareSurface.updateHardware();
    }
 
    private CursorTrack mTrackCursor;
    private PinnableCursorDevice mCursorDevice;
-   private CursorRemoteControlsPage mKnobs;
+   private CursorRemoteControlsPage mRemoteControls;
+
+   private HardwareSurface mHardwareSurface;
+   private AbsoluteHardwareKnob[] mKnobs;
+   private HardwareSlider[] mSliders;
+   private Layers mLayers;
+   private Layer mMainLayer;
 }

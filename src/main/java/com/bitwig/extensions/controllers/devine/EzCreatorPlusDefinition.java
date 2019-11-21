@@ -87,7 +87,7 @@ public class EzCreatorPlusDefinition extends ControllerExtensionDefinition
    @Override
    public int getRequiredAPIVersion()
    {
-      return 7;
+      return EzCreatorCommon.REQUIRED_API_VERSION;
    }
 
    public static EzCreatorPlusDefinition getInstance()
