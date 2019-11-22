@@ -1083,7 +1083,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
             mGridButtons[y * 8 + x] = bt;
-            mPadLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_PAD0 + x + (4 - y) * 8);
+            mGridLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_PAD0 + x + (4 - y) * 8);
          }
       }
 
@@ -1578,7 +1578,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          for (int j = 0; j < 5; ++j)
          {
             final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
-            final RgbLed rgbLed = mPadLeds[i][j];
+            final RgbLed rgbLed = mGridLeds[i][j];
 
             if (slot.exists().get() && slot.hasContent().get())
                rgbLed.setColor(slot.color().red(), slot.color().green(), slot.color().blue());
@@ -1928,7 +1928,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private final KnobLed[] mTopControlKnobLeds = new KnobLed[8];
 
-   private final RgbLed[][] mPadLeds = new RgbLed[8][5];
+   private final RgbLed[][] mGridLeds = new RgbLed[8][5];
 
    private final RgbLed[] mSceneLeds = new RgbLed[5];
 }
