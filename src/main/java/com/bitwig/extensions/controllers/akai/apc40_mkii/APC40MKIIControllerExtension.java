@@ -1199,6 +1199,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mPrevDeviceButton = mHardwareSurface.createHardwareButton("PrevDevice");
+      mPrevDeviceButton.setLabel("\u2190DEVICE");
+      mPrevDeviceButton.setLabelPosition(RelativePosition.BELOW);
       mPrevDeviceButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_DEVICE));
       mPrevDeviceButton.releasedAction()
@@ -1209,6 +1211,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_DEVICE, mPrevDeviceLed));
 
       mNextDeviceButton = mHardwareSurface.createHardwareButton("NextDevice");
+      mNextDeviceButton.setLabel("DEVICE\u2192");
+      mNextDeviceButton.setLabelPosition(RelativePosition.BELOW);
       mNextDeviceButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_DEVICE));
       mNextDeviceButton.releasedAction()
@@ -1219,6 +1223,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mNextDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_DEVICE, mNextDeviceLed));
 
       mPrevBankButton = mHardwareSurface.createHardwareButton("PrevBank");
+      mPrevBankButton.setLabel("\u2190BANK");
+      mPrevBankButton.setLabelPosition(RelativePosition.BELOW);
       mPrevBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_BANK));
       mPrevBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_BANK));
       mPrevBankLed = mHardwareSurface.createOnOffHardwareLight("PrevBankLed");
@@ -1227,6 +1233,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevBankLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_BANK, mPrevBankLed));
 
       mNextBankButton = mHardwareSurface.createHardwareButton("NextBank");
+      mNextBankButton.setLabel("BANK\u2192");
+      mNextBankButton.setLabelPosition(RelativePosition.BELOW);
       mNextBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_BANK));
       mNextBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_BANK));
       mNextBankLed = mHardwareSurface.createOnOffHardwareLight("NextBankLed");
@@ -1235,6 +1243,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mNextBankLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_BANK, mNextBankLed));
 
       mDeviceOnOffButton = mHardwareSurface.createHardwareButton("DeviceOnOff");
+      mDeviceOnOffButton.setLabel("DEV ON/OFF");
+      mDeviceOnOffButton.setLabelPosition(RelativePosition.BELOW);
       mDeviceOnOffButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DEVICE_ONOFF));
       mDeviceOnOffButton.releasedAction()
@@ -1245,6 +1255,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mDeviceOnOffLed.onUpdateHardware(() -> sendLedUpdate(BT_DEVICE_ONOFF, mDeviceOnOffLed));
 
       mDeviceLockButton = mHardwareSurface.createHardwareButton("DeviceLock");
+      mDeviceLockButton.setLabel("DEV LOCK");
+      mDeviceLockButton.setLabelPosition(RelativePosition.BELOW);
       mDeviceLockButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DEVICE_LOCK));
       mDeviceLockButton.releasedAction()
@@ -1255,6 +1267,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mDeviceLockLed.onUpdateHardware(() -> sendLedUpdate(BT_DEVICE_LOCK, mDeviceLockLed));
 
       mClipDeviceViewButton = mHardwareSurface.createHardwareButton("ClipDeviceView");
+      mClipDeviceViewButton.setLabel("CLIP/DEV VIEW");
+      mClipDeviceViewButton.setLabelPosition(RelativePosition.BELOW);
       mClipDeviceViewButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_CLIP_DEVICE_VIEW));
       mClipDeviceViewButton.releasedAction()
@@ -1265,6 +1279,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mClipDeviceViewLed.onUpdateHardware(() -> sendLedUpdate(BT_CLIP_DEVICE_VIEW, mClipDeviceViewLed));
 
       mDetailViewButton = mHardwareSurface.createHardwareButton("DetailView");
+      mDetailViewButton.setLabel("DETAIL VIEW");
+      mDetailViewButton.setLabelPosition(RelativePosition.BELOW);
       mDetailViewButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_DETAIL_VIEW));
       mDetailViewButton.releasedAction()
@@ -1275,6 +1291,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mDetailViewLed.onUpdateHardware(() -> sendLedUpdate(BT_DETAIL_VIEW, mDetailViewLed));
 
       mShiftButton = mHardwareSurface.createHardwareButton("Shift");
+      mShiftButton.setLabel("SHIFT");
+      mShiftButton.setLabelPosition(RelativePosition.BELOW);
       mShiftButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SHIFT));
       mShiftButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SHIFT));
       mShiftButton.isPressed().markInterested();
