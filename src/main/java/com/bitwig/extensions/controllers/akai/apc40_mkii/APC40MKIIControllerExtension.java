@@ -97,7 +97,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private static final int BT_PLAY = 91;
 
-   private static final int BT_PAD0 = 0;
+   private static final int BT_GRID0 = 0;
 
    private static final int BT_SCENE0 = 82;
 
@@ -1078,12 +1078,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          {
             final String id = "Grid-" + x + "-" + y;
             final HardwareButton bt = mHardwareSurface.createHardwareButton(id);
-            final int note = BT_PAD0 + (4 - y) * 8 + x;
+            final int note = BT_GRID0 + (4 - y) * 8 + x;
             bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
             bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
             mGridButtons[y * 8 + x] = bt;
-            mGridLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_PAD0 + x + (4 - y) * 8);
+            mGridLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_GRID0 + x + (4 - y) * 8);
          }
       }
 
