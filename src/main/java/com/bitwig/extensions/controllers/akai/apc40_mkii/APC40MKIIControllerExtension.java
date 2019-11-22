@@ -21,7 +21,6 @@ import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Preferences;
@@ -164,6 +163,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mApplication = host.createApplication();
       mProject = host.getProject();
+      mRootTrackGroup = mProject.getRootTrackGroup();
 
       createSettingsObjects(host);
       createTransportObject(host);
@@ -540,6 +540,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mMainLayer.bind(mDeviceControlKnobs[i], mRemoteControls.getParameter(i));
          mMainLayer.bind(mTrackVolumeSliders[i], mTrackBank.getItemAt(i).volume());
       }
+
       mMainLayer.bind(mMasterTrackVolumeSlider, mMasterTrack.volume());
       mMainLayer.bind(mABCrossfadeSlider, mTransport.crossfade());
       mMainLayer.bind(mCueLevelKnob, mCueControl.getControl(0));
@@ -570,11 +571,13 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mMainLayer.bindPressed(mTrackStopButtons[x], track.stopAction());
          mMainLayer.bind(() -> track.exists().get() && !track.isStopped().get(), mTrackStopLeds[x]);
       }
+
       mMainLayer.bindPressed(mMasterTrackSelectButton,
          getHost().createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
       mMainLayer.bind(mIsMasterSelected, mMasterTrackSelectLed);
       mMainLayer.bindPressed(mMasterTrackStopButton, mProject.getRootTrackGroup().stopAction());
-      mMainLayer.bindInverted(mProject.getRootTrackGroup().isStopped(), mMasterTrackStopLed);
+      mRootTrackGroup.isStopped().markInterested();
+      mMainLayer.bindInverted(mRootTrackGroup.isStopped(), mMasterTrackStopLed);
 
       mMainLayer.bindToggle(mPlayButton, mTransport.isPlaying());
       mMainLayer.bindToggle(mRecordButton, mTransport.isClipLauncherOverdubEnabled());
@@ -1410,11 +1413,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note, led.isOn().currentValue() ? 1 : 0);
    }
 
-   private void sendLedUpdate(final int note, final int channel, final MultiStateHardwareLight led)
-   {
-      mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note, led.state().currentValue());
-   }
-
    private void sendLedUpdate(final int note, final int channel, final int color)
    {
       mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note, color);
@@ -1697,6 +1695,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private Application mApplication = null;
 
    private Project mProject;
+
+   private Track mRootTrackGroup;
 
    private Transport mTransport = null;
 
