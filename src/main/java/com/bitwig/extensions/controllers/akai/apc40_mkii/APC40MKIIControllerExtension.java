@@ -26,6 +26,7 @@ import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Preferences;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.RelativePosition;
 import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
@@ -839,6 +840,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createTransportControls()
    {
       mPlayButton = mHardwareSurface.createHardwareButton("Play");
+      mPlayButton.setLabel("PLAY");
+      mPlayButton.setLabelPosition(RelativePosition.ABOVE);
       mPlayButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PLAY));
       mPlayButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PLAY));
       mPlayLed = mHardwareSurface.createOnOffHardwareLight("PlayLed");
@@ -847,6 +850,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPlayButton.setBackgroundLight(mPlayLed);
 
       mRecordButton = mHardwareSurface.createHardwareButton("Record");
+      mRecordButton.setLabel("RECORD");
+      mRecordButton.setLabelPosition(RelativePosition.ABOVE);
       mRecordButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_RECORD));
       mRecordButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_RECORD));
       mRecordLed = mHardwareSurface.createOnOffHardwareLight("RecordLed");
@@ -855,6 +860,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mRecordButton.setBackgroundLight(mRecordLed);
 
       mSessionButton = mHardwareSurface.createHardwareButton("Session");
+      mSessionButton.setLabel("SESSION");
+      mSessionButton.setLabelPosition(RelativePosition.ABOVE);
       mSessionButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SESSION));
       mSessionButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SESSION));
       mSessionLed = mHardwareSurface.createOnOffHardwareLight("SessionLed");
@@ -863,6 +870,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mSessionButton.setBackgroundLight(mSessionLed);
 
       mMetronomeButton = mHardwareSurface.createHardwareButton("Metronome");
+      mMetronomeButton.setLabel("METRONOME");
+      mMetronomeButton.setLabelPosition(RelativePosition.ABOVE);
       mMetronomeButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_METRONOME));
       mMetronomeButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_METRONOME));
       mMetronomeLed = mHardwareSurface.createOnOffHardwareLight("MetronomeLed");
@@ -871,21 +880,29 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMetronomeButton.setBackgroundLight(mMetronomeLed);
 
       mTapTempoButton = mHardwareSurface.createHardwareButton("TapTempo");
+      mTapTempoButton.setLabel("TAP TEMPO");
+      mTapTempoButton.setLabelPosition(RelativePosition.ABOVE);
       mTapTempoButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_TAP_TEMPO));
       mTapTempoButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_TAP_TEMPO));
 
       mNudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
+      mNudgePlusButton.setLabel("NUDGE +");
+      mNudgePlusButton.setLabelPosition(RelativePosition.ABOVE);
       mNudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
       mNudgePlusButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_PLUS));
 
       mNudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
+      mNudgeMinusButton.setLabel("NUDGE -");
+      mNudgeMinusButton.setLabelPosition(RelativePosition.ABOVE);
       mNudgeMinusButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_MINUS));
       mNudgeMinusButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_MINUS));
 
       mTempoKnob = mHardwareSurface.createRelativeHardwareKnob("Tempo");
+      mTempoKnob.setLabel("TEMPO");
+      mTempoKnob.setLabelPosition(RelativePosition.ABOVE);
       mTempoKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_TEMPO));
       mTempoKnob.setSensitivity(128.0);
       mTempoKnob.setStepSize(1);
@@ -991,6 +1008,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Arm-" + x);
+         bt.setLabel("\u25CF");
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_ARM));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_ARM));
          mArmButtons[x] = bt;
@@ -1013,6 +1031,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Solo-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_SOLO));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_SOLO));
+         bt.setLabel("S");
          mSoloButtons[x] = bt;
 
          final int channel = x;
@@ -1033,6 +1052,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Mute-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_MUTE));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_MUTE));
+         bt.setLabel(String.valueOf(x + 1));
          mMuteButtons[x] = bt;
 
          final int channel = x;
@@ -1114,6 +1134,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mPanButton = mHardwareSurface.createHardwareButton("Pan");
+      mPanButton.setLabel("PAN");
+      mPanButton.setLabelPosition(RelativePosition.ABOVE);
       mPanButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PAN));
       mPanButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PAN));
       mPanLed = mHardwareSurface.createOnOffHardwareLight("PanLed");
@@ -1122,6 +1144,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPanLed.onUpdateHardware(() -> sendLedUpdate(BT_PAN, mPanLed));
 
       mSendsButton = mHardwareSurface.createHardwareButton("Sends");
+      mSendsButton.setLabel("SENDS");
+      mSendsButton.setLabelPosition(RelativePosition.ABOVE);
       mSendsButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_SENDS));
       mSendsButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SENDS));
       mSendsButton.isPressed().addValueObserver(isPressed -> {
@@ -1137,6 +1161,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mSendsLed.onUpdateHardware(() -> sendLedUpdate(BT_SENDS, mSendsLed));
 
       mUserButton = mHardwareSurface.createHardwareButton("User");
+      mUserButton.setLabel("USER");
+      mUserButton.setLabelPosition(RelativePosition.ABOVE);
       mUserButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_USER));
       mUserButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_USER));
       mUserButton.isPressed().addValueObserver(isPressed -> {
@@ -1155,6 +1181,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createDeviceControls()
    {
       mDeviceControlKnobs = new AbsoluteHardwareKnob[8];
+
       for (int i = 0; i < 8; ++i)
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("DeviceControl-" + i);
@@ -1165,6 +1192,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          knob.isUpdatingTargetValue().markInterested();
          knob.hasTargetValue().addValueObserver(newValue -> updateDeviceControlRing(I));
          knob.targetValue().addValueObserver(newValue -> updateDeviceControlRing(I));
+         knob.setLabel(String.valueOf(i + 1));
+         knob.setLabelPosition(RelativePosition.BELOW);
 
          mDeviceControlKnobs[i] = knob;
       }
@@ -1251,6 +1280,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mShiftButton.isPressed().markInterested();
 
       mBankButton = mHardwareSurface.createHardwareButton("Bank");
+      mBankButton.setLabel("BANK");
+      mBankButton.setLabelPosition(RelativePosition.BELOW);
       mBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
       mBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_BANK));
       mBankButton.isPressed().addValueObserver((isPressed) -> {
@@ -1272,24 +1303,28 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mBankLed.onUpdateHardware(() -> sendLedUpdate(BT_BANK, mBankLed));
 
       mLauncherUpButton = mHardwareSurface.createHardwareButton("LauncherUp");
+      mLauncherUpButton.setLabel("\u2191");
       mLauncherUpButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_UP));
       mLauncherUpButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_UP));
 
       mLauncherDownButton = mHardwareSurface.createHardwareButton("LauncherDown");
+      mLauncherDownButton.setLabel("\u2193");
       mLauncherDownButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_DOWN));
       mLauncherDownButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_DOWN));
 
       mLauncherLeftButton = mHardwareSurface.createHardwareButton("LauncherLeft");
+      mLauncherLeftButton.setLabel("\u2190");
       mLauncherLeftButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_LEFT));
       mLauncherLeftButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_LEFT));
 
       mLauncherRightButton = mHardwareSurface.createHardwareButton("LauncherRight");
+      mLauncherRightButton.setLabel("\u2192");
       mLauncherRightButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_RIGHT));
       mLauncherRightButton.releasedAction()
