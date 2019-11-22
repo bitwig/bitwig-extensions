@@ -551,8 +551,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mMainLayer.bindPressed(mGridButtons[offset],
                track.clipLauncherSlotBank().getItemAt(y).launchAction());
          }
-         mMainLayer.bindToggle(mMuteButtons[x], track.mute());
-         mMainLayer.bindInverted(track.mute(), mMuteLeds[x]);
+         mMainLayer.bindPressed(mMuteButtons[x], track.mute());
+         mMainLayer.bind(() -> track.exists().get() && !track.mute().get(), mMuteLeds[x]);
          mMainLayer.bindToggle(mSoloButtons[x], track.solo());
          mMainLayer.bindToggle(mArmButtons[x], track.arm());
          mMainLayer.bindPressed(mABButtons[x], getHost().createAction(() -> {
@@ -566,7 +566,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             getHost().createAction(() -> mTrackCursor.selectChannel(track), () -> "Selects the track"));
          mMainLayer.bind(mIsTrackSelected[x], mTrackSelectLeds[x]);
          mMainLayer.bindPressed(mTrackStopButtons[x], track.stopAction());
-         mMainLayer.bindInverted(track.isStopped(), mTrackStopLeds[x]);
+         mMainLayer.bind(() -> track.exists().get() && !track.isStopped().get(), mTrackStopLeds[x]);
       }
       mMainLayer.bindPressed(mMasterTrackSelectButton,
          getHost().createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
