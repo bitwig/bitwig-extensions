@@ -273,6 +273,9 @@ public class Layer
 
    public Binding bindInverted(final BooleanSupplier source, final BooleanHardwareProperty target)
    {
+      if (source instanceof BooleanValue)
+         ((BooleanValue)source).markInterested();
+
       return bind(() -> !source.getAsBoolean(), target);
    }
 

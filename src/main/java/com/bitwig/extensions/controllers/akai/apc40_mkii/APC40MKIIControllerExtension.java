@@ -25,6 +25,7 @@ import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Preferences;
+import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RelativePosition;
 import com.bitwig.extension.controller.api.RemoteControl;
@@ -162,6 +163,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       final ControllerHost host = getHost();
 
       mApplication = host.createApplication();
+      mProject = host.getProject();
 
       createSettingsObjects(host);
       createTransportObject(host);
@@ -571,8 +573,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMainLayer.bindPressed(mMasterTrackSelectButton,
          getHost().createAction(() -> mMasterTrack.selectInMixer(), () -> "Selects the master track"));
       mMainLayer.bind(mIsMasterSelected, mMasterTrackSelectLed);
-      mMainLayer.bindPressed(mMasterTrackStopButton, mSceneBank.stopAction());
-      mMainLayer.bindInverted(mMasterTrack.isStopped(), mMasterTrackStopLed);
+      mMainLayer.bindPressed(mMasterTrackStopButton, mProject.getRootTrackGroup().stopAction());
+      mMainLayer.bindInverted(mProject.getRootTrackGroup().isStopped(), mMasterTrackStopLed);
 
       mMainLayer.bindToggle(mPlayButton, mTransport.isPlaying());
       mMainLayer.bindToggle(mRecordButton, mTransport.isClipLauncherOverdubEnabled());
@@ -1693,6 +1695,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    ////////////////////////
 
    private Application mApplication = null;
+
+   private Project mProject;
 
    private Transport mTransport = null;
 
