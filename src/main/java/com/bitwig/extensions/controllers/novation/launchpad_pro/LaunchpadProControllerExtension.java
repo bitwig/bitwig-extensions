@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.DoubleConsumer;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Application;
@@ -15,6 +16,7 @@ import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
+import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
@@ -114,6 +116,65 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private void createMainLayer()
    {
       mMainLayer = new Layer(mLayers, "main");
+
+      for (int x = 0; x < 8; ++x)
+      {
+         for (int y = 0; y < 8; ++y)
+         {
+            final int X = x;
+            final int Y = y;
+            final LaunchpadButtonAndLed bt = mGridButtons[y * 8 + x];
+
+            mMainLayer.bindPressed(bt.getButton(), v -> {
+               final ButtonState padState = getPadState(X, Y);
+               padState.onButtonPressed(mHost);
+
+               final int velocity = (int)(v * 127.0);
+
+               if (Y == 0 && mBottomOverlay != null)
+                  mBottomOverlay.onPadPressed(Y, velocity);
+               else
+                  mCurrentMode.onPadPressed(X, Y, velocity);
+            });
+
+            mMainLayer.bindReleased(bt.getButton(), v -> {
+               final ButtonState padState = getPadState(X, Y);
+               final boolean wasHeld = padState.mState == ButtonState.State.HOLD;
+               padState.onButtonReleased();
+
+               final int velocity = (int)(v * 127.0);
+
+               if (Y == 0 && mBottomOverlay != null)
+                  mBottomOverlay.onPadReleased(Y, velocity);
+               else
+                  mCurrentMode.onPadReleased(X, Y, velocity, wasHeld);
+            });
+
+            mMainLayer.bind(bt.getAfterTouch(), v -> mCurrentMode.onPadPressure(X, Y, (int) (127. * v)));
+         }
+      }
+
+      for (int y = 0; y < 8; ++y)
+      {
+         final int Y = y;
+         final HardwareButton bt = mSceneButtons[y].getButton();
+         mMainLayer.bindPressed(bt, () -> mCurrentMode.onSceneButtonPressed(Y));
+         mMainLayer.bindReleased(bt, () -> mCurrentMode.onSceneButtonReleased(Y));
+      }
+
+      mMainLayer.bindPressed(mUpButton.getButton(), () -> mCurrentMode.onArrowUpPressed());
+      mMainLayer.bindReleased(mUpButton.getButton(), () -> mCurrentMode.onArrowUpReleased());
+      mMainLayer.bindPressed(mDownButton.getButton(), () -> mCurrentMode.onArrowDownPressed());
+      mMainLayer.bindReleased(mDownButton.getButton(), () -> mCurrentMode.onArrowDownReleased());
+      mMainLayer.bindPressed(mLeftButton.getButton(), () -> mCurrentMode.onArrowLeftPressed());
+      mMainLayer.bindReleased(mLeftButton.getButton(), () -> mCurrentMode.onArrowLeftReleased());
+      mMainLayer.bindPressed(mRightButton.getButton(), () -> mCurrentMode.onArrowRightPressed());
+      mMainLayer.bindReleased(mRightButton.getButton(), () -> mCurrentMode.onArrowRightReleased());
+      mMainLayer.bindPressed(mSessionButton.getButton(), () -> setMode(mSessionMode));
+      mMainLayer.bindPressed(mNoteButton.getButton(), () -> setMode(mPlayNoteModes));
+      mMainLayer.bindPressed(mDeviceButton.getButton(), () -> setMode(mDrumSequencerMode));
+      mMainLayer.bindPressed(mUserButton.getButton(), () -> setMode(mStepSequencerMode));
+
       mMainLayer.activate();
    }
 
@@ -358,6 +419,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       initMidi();
       initTrackBank();
+      initDocumentMusicalInfo();
+      initPreferences();
+
+      createHardwareControls();
+      createLayers();
 
       mSessionMode.activate();
       mSessionMode.paintModeButton();
@@ -375,10 +441,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mSendMode.paintModeButton();
       mStopClipOverlay.paintModeButton();
 
-      initDocumentMusicalInfo();
-      initPreferences();
-      createHardwareControls();
-      createLayers();
    }
 
    private void initDrumPad(final DrumPad drumPad)
@@ -622,100 +684,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       final int msg = statusByte & 0xF0;
       switch (msg)
       {
-         case 0x90: /* Note On */
-         {
-            final int x = data1 % 10 - 1;
-            final int y = data1 / 10 - 1;
-
-            final ButtonState padState = getPadState(x, y);
-            if (data2 > 0)
-            {
-               /* Pressed */
-               padState.onButtonPressed(mHost);
-
-               if (y == 0 && mBottomOverlay != null)
-                  mBottomOverlay.onPadPressed(x, data2);
-               else
-                  mCurrentMode.onPadPressed(x, y, data2);
-            }
-            else
-            {
-               /* Released */
-               final boolean wasHeld = padState.mState == ButtonState.State.HOLD;
-               padState.onButtonReleased();
-
-               if (y == 0 && mBottomOverlay != null)
-                  mBottomOverlay.onPadReleased(x, data2);
-               else
-                  mCurrentMode.onPadReleased(x, y, data2, wasHeld);
-            }
-            break;
-         }
-
-         case 0xA0: /* Polyphonic After touch */
-         {
-            final int x = data1 % 10 - 1;
-            final int y = data1 / 10 - 1;
-
-            mCurrentMode.onPadPressure(x, y, data2);
-            break;
-         }
-
          case 0xB0: /* Control Change */
          {
             switch (data1)
             {
-               case 91:
-                  if (data2 > 0)
-                     mCurrentMode.onArrowUpPressed();
-                  else
-                     mCurrentMode.onArrowUpReleased();
-                  break;
-
-               case 92:
-                  if (data2 > 0)
-                     mCurrentMode.onArrowDownPressed();
-                  else
-                     mCurrentMode.onArrowDownReleased();
-                  break;
-
-               case 93:
-                  if (data2 > 0)
-                     mCurrentMode.onArrowLeftPressed();
-                  else
-                     mCurrentMode.onArrowLeftReleased();
-                  break;
-
-               case 94:
-                  if (data2 > 0)
-                     mCurrentMode.onArrowRightPressed();
-                  else
-                     mCurrentMode.onArrowRightReleased();
-                  break;
-
-               case 95:
-                  if (data2 > 0)
-                     setMode(mSessionMode);
-                  break;
-
-               case 96:
-                  if (data2 > 0)
-                     setMode(mPlayNoteModes);
-                  break;
-
-               case 97:
-                  if (data2 > 0)
-                     setMode(mDrumSequencerMode);
-                  break;
-
-               case 98:
-                  if (data2 > 0)
-                     setMode(mStepSequencerMode);
-                  break;
-
                case 80:
-                  mIsShiftOn = data2 > 0;
-
                   if (data2 > 0)
                      mCurrentMode.onShiftPressed();
                   else
@@ -735,7 +708,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
                case 60:
                   if (data2 > 0)
                   {
-                     if (mIsShiftOn)
+                     if (isShiftOn())
                         mApplication.redo();
                      else
                         mApplication.undo();
@@ -757,7 +730,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
                case 40:
                   mIsQuantizeOn = data2 > 0;
 
-                  if (mIsShiftOn)
+                  if (isShiftOn())
                   {
                      if (data2 > 0)
                      {
@@ -852,22 +825,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
                      mCurrentMode.onStopClipReleased();
                   break;
 
-               case 19:
-               case 29:
-               case 39:
-               case 49:
-               case 59:
-               case 69:
-               case 79:
-               case 89:
-               case 99:
-                  final int col = data1 / 10 - 1;
-                  if (data2 > 0)
-                     mCurrentMode.onSceneButtonPressed(col);
-                  else
-                     mCurrentMode.onSceneButtonReleased(col);
-                  break;
-
                case 1:
                   setBottomOverlay(mRecordArmOverlay, data2 > 0, getButtonState(1, 0));
                   break;
@@ -900,7 +857,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
                   break;
 
                case 8:
-                  if (data2 > 0 && mIsShiftOn)
+                  if (data2 > 0 && isShiftOn())
                      mTrackBank.sceneBank().stop();
                   else
                      setBottomOverlay(mStopClipOverlay, data2 > 0, getButtonState(8, 0));
@@ -982,13 +939,32 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    final Led getPadLed(final int x, final int y)
    {
-      final int index = getPadIndex(x, y);
-      return mButtonStates[index].getLed();
+      return mGridButtons[8 * y + x].getLed();
    }
 
    Led getTopLed(final int x)
    {
-      return mButtonStates[getTopButtonIndex(x)].getLed();
+      switch (x)
+      {
+         case 0:
+            return mUpButton.getLed();
+         case 1:
+            return mDownButton.getLed();
+         case 2:
+            return mLeftButton.getLed();
+         case 3:
+            return mRightButton.getLed();
+         case 4:
+            return mSessionButton.getLed();
+         case 5:
+            return mNoteButton.getLed();
+         case 6:
+            return mDeviceButton.getLed();
+         case 7:
+            return mUserButton.getLed();
+         default:
+            throw new IllegalStateException();
+      }
    }
 
    Led getBottomLed(final int x)
@@ -1018,7 +994,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    boolean isShiftOn()
    {
-      return mIsShiftOn;
+      return mShiftButton.getButton().isPressed().get();
    }
 
    boolean isDeleteOn()
@@ -1236,8 +1212,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    /* Button States */
    private final ButtonState[] mButtonStates = new ButtonState[100];
-   private boolean mIsShiftOn = false;
-   private boolean mIsDeleteOn;
+   private boolean mIsDeleteOn = false;
    private boolean mIsQuantizeOn = false;
 
    /* Musical Context */

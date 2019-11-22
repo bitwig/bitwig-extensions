@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
@@ -20,14 +21,18 @@ public class LaunchpadButtonAndLed
 
       if (isPressureSensitive)
       {
-         bt.pressedAction().setActionMatcher(midiIn.createNoteOnActionMatcher(0, index));
+         bt.pressedAction().setPressureActionMatcher(midiIn.createNoteOnVelocityValueMatcher(0, index));
          bt.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(0, index));
-         bt.pressedAction().setPressureActionMatcher(midiIn.createAbsolutePolyATValueMatcher(0, index));
+
+         mAfterTouch = hardwareSurface.createAbsoluteHardwareKnob(id + "-at");
+         mAfterTouch.setAdjustValueMatcher(midiIn.createAbsolutePolyATValueMatcher(0, index));
       }
       else
       {
          bt.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0, index, 127));
          bt.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(0, index, 0));
+
+         mAfterTouch = null;
       }
 
       final MultiStateHardwareLight light =
@@ -49,7 +54,13 @@ public class LaunchpadButtonAndLed
       return mButton;
    }
 
+   public AbsoluteHardwareKnob getAfterTouch()
+   {
+      return mAfterTouch;
+   }
+
    private final Led mLed;
    private final HardwareButton mButton;
    private final MultiStateHardwareLight mLight;
+   private final AbsoluteHardwareKnob mAfterTouch;
 }
