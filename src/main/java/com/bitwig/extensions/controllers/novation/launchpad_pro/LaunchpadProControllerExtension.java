@@ -15,6 +15,7 @@ import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
+import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -33,6 +34,10 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extension.controller.api.UserControlBank;
+import com.bitwig.extensions.framework.DebugUtilities;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
+import jdk.nashorn.internal.runtime.Debug;
 
 public final class LaunchpadProControllerExtension extends ControllerExtension
 {
@@ -47,6 +52,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
    };
+
+   final double PHYSICAL_DEVICE_WIDTH = 260;
+   final double PHYSICAL_BUTTON_WIDTH = 20;
+   final double PHYSICAL_BUTTON_SPACE = 4;
+   final double PHYSICAL_BUTTON_OFFSET = 12;
 
    private static final String[] KEY_NAMES = new String[]{ "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
@@ -85,6 +95,97 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       mCurrentMode = mSessionMode;
       mPreviousMode = mPlayNoteModes;
+   }
+
+   private void createLayers()
+   {
+      mLayers = new Layers(this);
+      createMainLayer();
+      createDebugLayer();
+   }
+
+   private void createDebugLayer()
+   {
+      mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+      mDebugLayer.setShouldReplaceBindingsInLayersBelow(false);
+      mDebugLayer.activate();
+   }
+
+   private void createMainLayer()
+   {
+      mMainLayer = new Layer(mLayers, "main");
+      mMainLayer.activate();
+   }
+
+   private void createHardwareControls()
+   {
+      mHardwareSurface = getHost().createHardwareSurface();
+      mHardwareSurface.setPhysicalSize(PHYSICAL_DEVICE_WIDTH, PHYSICAL_DEVICE_WIDTH);
+
+      mShiftButton = createSideButton("shift", 0, 8);
+      mClickButton = createSideButton("click", 0, 7);
+      mUndoButton = createSideButton("undo", 0, 6);
+      mDeleteButton = createSideButton("delete", 0, 5);
+      mQuantizeButton = createSideButton("quantize", 0, 4);
+      mDuplicateButton = createSideButton("duplicate", 0, 3);
+      mDoubleButton = createSideButton("double", 0, 2);
+      mRecordButton = createSideButton("record", 0, 1);
+
+      mUpButton = createSideButton("up", 1, 9);
+      mDownButton = createSideButton("down", 2, 9);
+      mLeftButton = createSideButton("left", 3, 9);
+      mRightButton = createSideButton("right", 4, 9);
+      mSessionButton = createSideButton("session", 5, 9);
+      mNoteButton = createSideButton("note", 6, 9);
+      mDeviceButton = createSideButton("device", 7, 9);
+      mUserButton = createSideButton("user", 8, 9);
+
+      mArmButton = createSideButton("arm", 1, 0);
+      mSelectButton = createSideButton("select", 2, 0);
+      mMuteButton = createSideButton("mute", 3, 0);
+      mSoloButton = createSideButton("solo", 4, 0);
+      mVolumeButton = createSideButton("volume", 5, 0);
+      mPanButton = createSideButton("pan", 6, 0);
+      mSendsButton = createSideButton("sends", 7, 0);
+      mStopButton = createSideButton("stop", 8, 0);
+
+      mSceneButtons = new LaunchpadButtonAndLed[8];
+      for (int y = 0; y < 8; ++y)
+         mSceneButtons[y] = createSideButton("scene-" + y, 9, y + 1);
+
+      mGridButtons = new LaunchpadButtonAndLed[8 * 8];
+      for (int x = 0; x < 8; ++x)
+      {
+         for (int y = 0; y < 8; ++y)
+         {
+            final int index = (x + 1) + 10 * (y + 1);
+            final String id = "grid-" + x + "-" + y;
+
+            final LaunchpadButtonAndLed bt =
+               new LaunchpadButtonAndLed(mHardwareSurface, id, mMidiIn, index, true);
+            mGridButtons[y * 8 + x] = bt;
+            setButtonPhysicalPosition(bt, x + 1, y + 1);
+         }
+      }
+   }
+
+   private LaunchpadButtonAndLed createSideButton(final String id, final int x, final int y)
+   {
+      final int index = x + 10 * y;
+      final LaunchpadButtonAndLed bt =
+         new LaunchpadButtonAndLed(mHardwareSurface, id, mMidiIn, index, false);
+      setButtonPhysicalPosition(bt, x, y);
+      return bt;
+   }
+
+   private void setButtonPhysicalPosition(final LaunchpadButtonAndLed bt, final int x, final int y)
+   {
+      bt.getButton().setBounds(calculatePhysicalPosition(x), calculatePhysicalPosition(y), PHYSICAL_BUTTON_WIDTH, PHYSICAL_BUTTON_WIDTH);
+   }
+
+   private double calculatePhysicalPosition(final int x)
+   {
+      return PHYSICAL_BUTTON_OFFSET + x * (PHYSICAL_BUTTON_WIDTH + PHYSICAL_BUTTON_SPACE);
    }
 
    private void initButtonStates()
@@ -276,6 +377,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       initDocumentMusicalInfo();
       initPreferences();
+      createHardwareControls();
+      createLayers();
    }
 
    private void initDrumPad(final DrumPad drumPad)
@@ -1147,4 +1250,38 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private SettableBooleanValue mHighlightRootKeySetting;
    private SettableBooleanValue mHighlightScaleSetting;
    private SettableEnumValue mKeyboardLayoutSetting;
+
+   /* Layers */
+   private Layers mLayers;
+   private Layer mMainLayer;
+   private Layer mDebugLayer;
+
+   /* Hardware Controls */
+   private HardwareSurface mHardwareSurface;
+   private LaunchpadButtonAndLed[] mGridButtons;
+   private LaunchpadButtonAndLed[] mSceneButtons;
+   private LaunchpadButtonAndLed mShiftButton;
+   private LaunchpadButtonAndLed mClickButton;
+   private LaunchpadButtonAndLed mUndoButton;
+   private LaunchpadButtonAndLed mDeleteButton;
+   private LaunchpadButtonAndLed mQuantizeButton;
+   private LaunchpadButtonAndLed mDuplicateButton;
+   private LaunchpadButtonAndLed mDoubleButton;
+   private LaunchpadButtonAndLed mRecordButton;
+   private LaunchpadButtonAndLed mUpButton;
+   private LaunchpadButtonAndLed mDownButton;
+   private LaunchpadButtonAndLed mLeftButton;
+   private LaunchpadButtonAndLed mRightButton;
+   private LaunchpadButtonAndLed mSessionButton;
+   private LaunchpadButtonAndLed mNoteButton;
+   private LaunchpadButtonAndLed mDeviceButton;
+   private LaunchpadButtonAndLed mUserButton;
+   private LaunchpadButtonAndLed mArmButton;
+   private LaunchpadButtonAndLed mStopButton;
+   private LaunchpadButtonAndLed mSendsButton;
+   private LaunchpadButtonAndLed mPanButton;
+   private LaunchpadButtonAndLed mVolumeButton;
+   private LaunchpadButtonAndLed mSoloButton;
+   private LaunchpadButtonAndLed mMuteButton;
+   private LaunchpadButtonAndLed mSelectButton;
 }

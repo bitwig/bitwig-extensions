@@ -147,12 +147,31 @@ final class Color
       set(0, 0, 0);
    }
 
-   private byte mRed = 0;
-   private byte mGreen = 0;
-   private byte mBlue = 0;
-
    public boolean isBlack()
    {
       return mRed == 0 && mGreen == 0 && mBlue == 0;
    }
+
+   public com.bitwig.extension.api.Color toApiColor()
+   {
+      return com.bitwig.extension.api.Color.fromRGB255(mRed, mGreen, mBlue);
+   }
+
+   public int toInt24()
+   {
+      return (mRed << 16) | (mGreen << 8) | (mBlue);
+   }
+
+   static Color fromInt24(final int value)
+   {
+      int red = (value >> 16) & 0xff;
+      int green = (value >> 8) & 0xff;
+      int blue = value & 0xff;
+
+      return Color.fromRgb255(red, green, blue);
+   }
+
+   private byte mRed = 0;
+   private byte mGreen = 0;
+   private byte mBlue = 0;
 }
