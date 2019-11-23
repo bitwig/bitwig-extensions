@@ -797,6 +797,7 @@ public class PresonusAtom extends ControllerExtension
    {
       final HardwareButton button = createButton(id, controlNumber);
       final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight(id + "_light");
+      light.setLabelColor(BLACK);
       button.setBackgroundLight(light);
 
       light.isOn().onUpdateHardware(value -> {
@@ -812,10 +813,11 @@ public class PresonusAtom extends ControllerExtension
 
       final MultiStateHardwareLight light = mHardwareSurface
          .createMultiStateHardwareLight(id + "_light", PresonusAtom::lightStateToVisualState);
+      light.setLabelColor(BLACK);
 
       light.state().onUpdateHardware(new LightStateSender(0xB0, controlNumber));
 
-      light.setColorToStateFunction(PresonusAtom::lightColorToState);
+      light.setColorToStateFunction(PresonusAtom::colorToLightState);
 
       button.setBackgroundLight(light);
 
@@ -852,7 +854,7 @@ public class PresonusAtom extends ControllerExtension
 
       light.state().onUpdateHardware(new LightStateSender(0x90, 0x24 + index));
 
-      light.setColorToStateFunction(PresonusAtom::lightColorToState);
+      light.setColorToStateFunction(PresonusAtom::colorToLightState);
 
       pad.setBackgroundLight(light);
 
@@ -898,7 +900,7 @@ public class PresonusAtom extends ControllerExtension
       private final int[] mValues = new int[4];
    }
 
-   private static int lightColorToState(final Color color)
+   private static int colorToLightState(final Color color)
    {
       if (color == null || color.getAlpha() == 0 || color == MULTI_STATE_LIGHT_OFF)
          return 0;
@@ -915,17 +917,6 @@ public class PresonusAtom extends ControllerExtension
       return Math.max(0, Math.min((int)(127.0 * x), 127));
    }
 
-   private void createEncoder(final int index)
-   {
-      final RelativeHardwareKnob encoder = mHardwareSurface
-         .createRelativeHardwareKnob("encoder" + (index + 1));
-      encoder.setLabel(String.valueOf(index + 1));
-      encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index));
-      encoder.setSensitivity(2.5);
-
-      mEncoders[index] = encoder;
-   }
-
    private static Color lightStateToColor(final int lightState)
    {
       final int onState = (lightState & 0x7F000000) >> 24;
@@ -935,18 +926,29 @@ public class PresonusAtom extends ControllerExtension
          return MULTI_STATE_LIGHT_OFF;
       }
 
-      final int red = (lightState & 0xFF0000) >> 16;
-      final int green = (lightState & 0xFF00) >> 8;
-      final int blue = (lightState & 0xFF);
+      final int red = (lightState & 0x7F0000) >> 16;
+      final int green = (lightState & 0x7F00) >> 8;
+      final int blue = (lightState & 0x7F);
 
-      return Color.fromRGB255(red, green, blue);
+      return Color.fromRGB(red / 127.0, green / 127.0, blue / 127.0);
    }
 
    private static HardwareLightVisualState lightStateToVisualState(final int lightState)
    {
       final Color color = lightStateToColor(lightState);
 
-      return HardwareLightVisualState.createForColor(color);
+      return HardwareLightVisualState.createForColor(color, BLACK);
+   }
+
+   private void createEncoder(final int index)
+   {
+      final RelativeHardwareKnob encoder = mHardwareSurface
+         .createRelativeHardwareKnob("encoder" + (index + 1));
+      encoder.setLabel(String.valueOf(index + 1));
+      encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index));
+      encoder.setSensitivity(2.5);
+
+      mEncoders[index] = encoder;
    }
 
    private void scrollKeys(final int delta)
