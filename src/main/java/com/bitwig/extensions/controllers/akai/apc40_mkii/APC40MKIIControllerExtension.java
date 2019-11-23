@@ -97,7 +97,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private static final int BT_PLAY = 91;
 
-   private static final int BT_PAD0 = 0;
+   private static final int BT_GRID0 = 0;
 
    private static final int BT_SCENE0 = 82;
 
@@ -685,25 +685,25 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void setPhysicalPositions()
    {
       final HardwareSurface surface = mHardwareSurface;
-      surface.hardwareElementWithId("TopKnob-0").setBounds(11.25, 12.25, 20.25, 20.0);
-      surface.hardwareElementWithId("TopKnob-1").setBounds(43.25, 12.25, 20.25, 20.0);
-      surface.hardwareElementWithId("TopKnob-2").setBounds(75.0, 12.25, 20.25, 20.0);
-      surface.hardwareElementWithId("TopKnob-3").setBounds(107.0, 12.25, 20.25, 20.0);
-      surface.hardwareElementWithId("TopKnob-4").setBounds(139.0, 12.25, 20.25, 20.0);
-      surface.hardwareElementWithId("TopKnob-5").setBounds(170.75, 12.25, 20.25, 20.0);
-      surface.hardwareElementWithId("TopKnob-6").setBounds(202.75, 12.25, 20.25, 20.0);
-      surface.hardwareElementWithId("TopKnob-7").setBounds(234.75, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("DeviceControl-0").setBounds(11.25, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("DeviceControl-1").setBounds(43.25, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("DeviceControl-2").setBounds(75.0, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("DeviceControl-3").setBounds(107.0, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("DeviceControl-4").setBounds(139.0, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("DeviceControl-5").setBounds(170.75, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("DeviceControl-6").setBounds(202.75, 12.25, 20.25, 20.0);
+      surface.hardwareElementWithId("DeviceControl-7").setBounds(234.75, 12.25, 20.25, 20.0);
       surface.hardwareElementWithId("Pan").setBounds(295.5, 36.0, 13.0, 6.25);
       surface.hardwareElementWithId("Sends").setBounds(295.75, 54.5, 13.0, 6.25);
       surface.hardwareElementWithId("User").setBounds(295.75, 71.75, 13.0, 6.25);
-      surface.hardwareElementWithId("DeviceControl-0").setBounds(288.5, 90.0, 27.5, 24.25);
-      surface.hardwareElementWithId("DeviceControl-1").setBounds(320.5, 90.0, 27.5, 24.25);
-      surface.hardwareElementWithId("DeviceControl-2").setBounds(352.75, 90.0, 27.5, 24.25);
-      surface.hardwareElementWithId("DeviceControl-3").setBounds(384.75, 90.0, 27.5, 24.25);
-      surface.hardwareElementWithId("DeviceControl-4").setBounds(288.5, 122.0, 27.5, 24.25);
-      surface.hardwareElementWithId("DeviceControl-5").setBounds(320.5, 122.0, 27.5, 24.25);
-      surface.hardwareElementWithId("DeviceControl-6").setBounds(352.75, 122.0, 27.5, 24.25);
-      surface.hardwareElementWithId("DeviceControl-7").setBounds(384.75, 122.0, 27.5, 24.25);
+      surface.hardwareElementWithId("TopKnob-0").setBounds(288.5, 90.0, 27.5, 24.25);
+      surface.hardwareElementWithId("TopKnob-1").setBounds(320.5, 90.0, 27.5, 24.25);
+      surface.hardwareElementWithId("TopKnob-2").setBounds(352.75, 90.0, 27.5, 24.25);
+      surface.hardwareElementWithId("TopKnob-3").setBounds(384.75, 90.0, 27.5, 24.25);
+      surface.hardwareElementWithId("TopKnob-4").setBounds(288.5, 122.0, 27.5, 24.25);
+      surface.hardwareElementWithId("TopKnob-5").setBounds(320.5, 122.0, 27.5, 24.25);
+      surface.hardwareElementWithId("TopKnob-6").setBounds(352.75, 122.0, 27.5, 24.25);
+      surface.hardwareElementWithId("TopKnob-7").setBounds(384.75, 122.0, 27.5, 24.25);
       surface.hardwareElementWithId("PrevDevice").setBounds(296.0, 155.0, 13.0, 6.25);
       surface.hardwareElementWithId("NextDevice").setBounds(327.75, 155.0, 13.0, 6.25);
       surface.hardwareElementWithId("PrevBank").setBounds(359.75, 155.0, 13.0, 6.25);
@@ -1078,12 +1078,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          {
             final String id = "Grid-" + x + "-" + y;
             final HardwareButton bt = mHardwareSurface.createHardwareButton(id);
-            final int note = BT_PAD0 + (4 - y) * 8 + x;
+            final int note = BT_GRID0 + (4 - y) * 8 + x;
             bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, note));
             bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
             mGridButtons[y * 8 + x] = bt;
-            mPadLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_PAD0 + x + (4 - y) * 8);
+            mGridLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_GRID0 + x + (4 - y) * 8);
          }
       }
 
@@ -1578,7 +1578,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          for (int j = 0; j < 5; ++j)
          {
             final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
-            final RgbLed rgbLed = mPadLeds[i][j];
+            final RgbLed rgbLed = mGridLeds[i][j];
 
             if (slot.exists().get() && slot.hasContent().get())
                rgbLed.setColor(slot.color().red(), slot.color().green(), slot.color().blue());
@@ -1928,7 +1928,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private final KnobLed[] mTopControlKnobLeds = new KnobLed[8];
 
-   private final RgbLed[][] mPadLeds = new RgbLed[8][5];
+   private final RgbLed[][] mGridLeds = new RgbLed[8][5];
 
    private final RgbLed[] mSceneLeds = new RgbLed[5];
 }
