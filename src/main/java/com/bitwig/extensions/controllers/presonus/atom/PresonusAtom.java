@@ -937,7 +937,7 @@ public class PresonusAtom extends ControllerExtension
    {
       final Color color = lightStateToColor(lightState);
 
-      return HardwareLightVisualState.createForColor(color, BLACK);
+      return HardwareLightVisualState.createForColor(color);
    }
 
    private void createEncoder(final int index)
