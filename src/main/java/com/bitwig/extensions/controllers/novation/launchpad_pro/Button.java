@@ -114,6 +114,11 @@ public class Button
       return mY;
    }
 
+   void setColor(final Color c)
+   {
+      mLed.setColor(c);
+   }
+
    /* Hardware objects */
    private final HardwareButton mButton;
    private final MultiStateHardwareLight mLight;

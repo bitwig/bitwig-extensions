@@ -92,7 +92,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mSoloOverlay = new SoloOverlay(this);
 
       mCurrentMode = mSessionMode;
-      mPreviousMode = mPlayNoteModes;
    }
 
    private void createLayers()
@@ -678,17 +677,17 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    private void paintLeftLeds()
    {
-      getLeftLed(7).setColor(Color.WHITE); // Shift
-      getLeftLed(6).setColor(mTransport.isMetronomeEnabled().get() ? Color.YELLOW : Color.YELLOW_LOW); // Click
-      getLeftLed(5).setColor(Color.ORANGE); // Undo
-      getLeftLed(4).setColor(Color.ORANGE); // Delete
-      getLeftLed(3).setColor(Color.CYAN); // Quantize
-      getLeftLed(2).setColor(Color.CYAN); // Duplicate
+      mShiftButton.setColor(Color.WHITE);
+      mClickButton.setColor(mTransport.isMetronomeEnabled().get() ? Color.YELLOW : Color.YELLOW_LOW);
+      mUndoButton.setColor(Color.ORANGE);
+      mDeleteButton.setColor(Color.ORANGE);
+      mQuantizeButton.setColor(Color.CYAN);
+      mDuplicateButton.setColor(Color.CYAN);
       if (isShiftOn())
-         getLeftLed(1).setColor(mTransport.isArrangerRecordEnabled().get() ? Color.RED : Color.RED_LOW); // Arranger Record
+         mDoubleButton.setColor(mTransport.isArrangerRecordEnabled().get() ? Color.RED : Color.RED_LOW); // Arranger Record
       else
-         getLeftLed(1).setColor(mTransport.isPlaying().get() ? Color.GREEN : Color.GREEN_LOW); // Tranport Play
-      getLeftLed(0).setColor(isRecording() ? Color.RED : Color.RED_LOW); // Clip Launcher Record
+         mDoubleButton.setColor(mTransport.isPlaying().get() ? Color.GREEN : Color.GREEN_LOW); // Tranport Play
+      mRecordButton.setColor(isRecording() ? Color.RED : Color.RED_LOW); // Clip Launcher Record
    }
 
    private boolean isRecording()
@@ -699,25 +698,13 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    final void setMode(final Mode mode)
    {
+      if (mCurrentMode == mode)
+         return;
+
       mCurrentMode.deactivate();
-
-      /* update current/previous */
-      if (mode == mCurrentMode)
-      {
-         /* Set previous mode */
-         mCurrentMode = mPreviousMode;
-         mPreviousMode = mode;
-      }
-      else
-      {
-         /* set the new mode, and update previous mode */
-         mPreviousMode = mCurrentMode;
-         mCurrentMode = mode;
-      }
-
-      clearPads();
-
+      mCurrentMode = mode;
       mCurrentMode.activate();
+
       updateKeyTranslationTable();
    }
 
@@ -1091,7 +1078,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    /* Modes and Overlay context */
    private Mode mCurrentMode;
-   private Mode mPreviousMode;
    private Overlay mBottomOverlay;
 
    /* Modes */
