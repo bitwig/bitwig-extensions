@@ -168,7 +168,7 @@ final class Color
       int green = (value >> 8) & 0xff;
       int blue = value & 0xff;
 
-      return Color.fromRgb255(red, green, blue);
+      return Color.fromRgb255(4 * red, 4 * green, 4 * blue);
    }
 
    private byte mRed = 0;

@@ -300,7 +300,7 @@ abstract class AbstractSequencerMode extends Mode
          for (int y = 4; y < 8; ++y)
          {
             final Button padState = mDriver.getPadButton(x, y);
-            if (padState.mState == Button.State.HOLD)
+            if (padState.getState() == Button.State.HOLD)
                list.add(padState);
          }
       }
@@ -315,7 +315,7 @@ abstract class AbstractSequencerMode extends Mode
          for (int y = 4; y < 8; ++y)
          {
             final Button bt = mDriver.getPadButton(x, y);
-            if (bt.mState == Button.State.HOLD || bt.mState == Button.State.PRESSED)
+            if (bt.getState() == Button.State.HOLD || bt.getState() == Button.State.PRESSED)
                list.add(bt);
          }
       }
