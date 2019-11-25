@@ -54,9 +54,8 @@ public final class KeyboardMode extends Mode
    }
 
    @Override
-   public void deactivate()
+   protected void doDeactivate()
    {
-      super.deactivate();
       mDriver.getNoteInput().setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
       mKeyboardWidget.deactivate();
    }
@@ -65,7 +64,7 @@ public final class KeyboardMode extends Mode
    public void paintModeButton()
    {
       final Led led = mDriver.getTopLed(5);
-      led.setColor(mIsActive ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
+      led.setColor(isActive() ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
    }
 
    @Override

@@ -64,6 +64,12 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    {
       super(driverDefinition, host);
       mHost = host;
+   }
+
+   private void createLayers()
+   {
+      mLayers = new Layers(this);
+      createMainLayer();
 
       mSessionMode = new SessionMode(this);
       mDrumMode = new DrumMode(this);
@@ -92,12 +98,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mSoloOverlay = new SoloOverlay(this);
 
       mCurrentMode = mSessionMode;
-   }
 
-   private void createLayers()
-   {
-      mLayers = new Layers(this);
-      createMainLayer();
       createDebugLayer();
    }
 
@@ -1081,23 +1082,23 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private Overlay mBottomOverlay;
 
    /* Modes */
-   private final SessionMode mSessionMode;
-   private final MultiplexerMode mPlayNoteModes;
-   private final KeyboardMode mKeyboardMode;
-   private final StepSequencerMode mStepSequencerMode;
-   private final ScaleAndKeyChooserMode mScaleAndKeyChooserMode;
-   private final DrumMode mDrumMode;
-   private final DrumSequencerMode mDrumSequencerMode;
-   private final VolumeMode mVolumeMode;
-   private final SendMode mSendsMode;
-   private final PanMode mPanMode;
+   private SessionMode mSessionMode;
+   private MultiplexerMode mPlayNoteModes;
+   private KeyboardMode mKeyboardMode;
+   private StepSequencerMode mStepSequencerMode;
+   private ScaleAndKeyChooserMode mScaleAndKeyChooserMode;
+   private DrumMode mDrumMode;
+   private DrumSequencerMode mDrumSequencerMode;
+   private VolumeMode mVolumeMode;
+   private SendMode mSendsMode;
+   private PanMode mPanMode;
 
    /* Overlays */
-   private final RecordArmOverlay mRecordArmOverlay;
-   private final TrackSelectOverlay mTrackSelectOverlay;
-   private final StopClipOverlay mStopClipOverlay;
-   private final MuteOverlay mMuteOverlay;
-   private final SoloOverlay mSoloOverlay;
+   private RecordArmOverlay mRecordArmOverlay;
+   private TrackSelectOverlay mTrackSelectOverlay;
+   private StopClipOverlay mStopClipOverlay;
+   private MuteOverlay mMuteOverlay;
+   private SoloOverlay mSoloOverlay;
 
    /* Musical Context */
    private MusicalScale mMusicalScale = MusicalScaleLibrary.getInstance().getMusicalScale(0);

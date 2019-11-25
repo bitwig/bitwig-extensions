@@ -96,7 +96,7 @@ public final class SessionMode extends Mode
    }
 
    @Override
-   public void deactivate()
+   public void doDeactivate()
    {
       final TrackBank trackBank = mDriver.getTrackBank();
       final SceneBank sceneBank = mDriver.getSceneBank();
@@ -129,8 +129,6 @@ public final class SessionMode extends Mode
          scene.exists().unsubscribe();
          scene.unsubscribe();
       }
-
-      super.deactivate();
    }
 
    @Override

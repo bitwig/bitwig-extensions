@@ -7,7 +7,7 @@ public class SoloOverlay extends Overlay
 {
    public SoloOverlay(final LaunchpadProControllerExtension launchpadProControllerExtension)
    {
-      super(launchpadProControllerExtension);
+      super(launchpadProControllerExtension, "solo");
    }
 
    @Override
@@ -16,18 +16,6 @@ public class SoloOverlay extends Overlay
       final Track channel = mDriver.getTrackBank().getItemAt(x);
       final SoloValue solo = channel.solo();
       solo.toggle(mDriver.isShiftOn());
-   }
-
-   @Override
-   public void onPadReleased(final int x, final int velocity)
-   {
-
-   }
-
-   @Override
-   protected void doActivate()
-   {
-
    }
 
    @Override
@@ -47,6 +35,6 @@ public class SoloOverlay extends Overlay
    public void paintModeButton()
    {
       final Led led = mDriver.getBottomLed(3);
-      led.setColor(mIsActive ? Color.SOLO : Color.SOLO_LOW);
+      led.setColor(isActive() ? Color.SOLO : Color.SOLO_LOW);
    }
 }

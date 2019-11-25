@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extensions.framework.Layer;
 
 public class LaunchpadLayer extends Layer
@@ -13,6 +14,11 @@ public class LaunchpadLayer extends Layer
    void bindPressed(final Button bt, final Runnable runnable)
    {
       bindPressed(bt.getButton(), runnable);
+   }
+
+   void bindPressed(final Button bt, final HardwareActionBindable bindable)
+   {
+      bindPressed(bt.getButton(), bindable);
    }
 
    void bindReleased(final Button bt, final Runnable runnable)

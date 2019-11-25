@@ -8,25 +8,13 @@ public class RecordArmOverlay extends Overlay
 
    public RecordArmOverlay(final LaunchpadProControllerExtension launchpadProControllerExtension)
    {
-      super(launchpadProControllerExtension);
+      super(launchpadProControllerExtension, "record");
    }
 
    @Override
    public void onPadPressed(final int x, final int velocity)
    {
       mDriver.getTrackBank().getItemAt(x).arm().toggle();
-   }
-
-   @Override
-   public void onPadReleased(final int x, final int velocity)
-   {
-
-   }
-
-   @Override
-   protected void doActivate()
-   {
-
    }
 
    @Override
@@ -47,6 +35,6 @@ public class RecordArmOverlay extends Overlay
    public void paintModeButton()
    {
       final Led led = mDriver.getBottomLed(0);
-      led.setColor(mIsActive ? RECORD_ARM_ON_COLOR : RECORD_ARM_OFF_COLOR);
+      led.setColor(isActive() ? RECORD_ARM_ON_COLOR : RECORD_ARM_OFF_COLOR);
    }
 }

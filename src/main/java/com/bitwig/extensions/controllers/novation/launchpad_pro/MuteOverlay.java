@@ -7,7 +7,7 @@ public class MuteOverlay extends Overlay
 {
    MuteOverlay(final LaunchpadProControllerExtension driver)
    {
-      super(driver);
+      super(driver, "mute");
    }
 
    @Override
@@ -16,18 +16,6 @@ public class MuteOverlay extends Overlay
       final Track channel = mDriver.getTrackBank().getItemAt(x);
       final SettableBooleanValue mute = channel.mute();
       mute.toggle();
-   }
-
-   @Override
-   public void onPadReleased(final int x, final int velocity)
-   {
-
-   }
-
-   @Override
-   protected void doActivate()
-   {
-
    }
 
    @Override
@@ -47,6 +35,6 @@ public class MuteOverlay extends Overlay
    public void paintModeButton()
    {
       final Led led = mDriver.getBottomLed(2);
-      led.setColor(mIsActive ? Color.MUTE : Color.MUTE_LOW);
+      led.setColor(isActive() ? Color.MUTE : Color.MUTE_LOW);
    }
 }

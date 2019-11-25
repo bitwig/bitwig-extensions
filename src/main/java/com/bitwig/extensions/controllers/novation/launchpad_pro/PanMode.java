@@ -37,7 +37,7 @@ public class PanMode extends Mode
    }
 
    @Override
-   void onDeactivate()
+   protected void doDeactivate()
    {
       final TrackBank trackBank = mDriver.getTrackBank();
 
@@ -48,8 +48,6 @@ public class PanMode extends Mode
          track.pan().unsubscribe();
          track.pan().setIndication(false);
       }
-
-      super.deactivate();
    }
 
    @Override
@@ -99,7 +97,7 @@ public class PanMode extends Mode
    public void paintModeButton()
    {
       final Led led = mDriver.getBottomLed(5);
-      led.setColor(mIsActive ? Color.PAN : Color.PAN_LOW);
+      led.setColor(isActive() ? Color.PAN : Color.PAN_LOW);
    }
 
    @Override

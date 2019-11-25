@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 abstract class Mode extends LaunchpadLayer
 {
+
    Mode(final LaunchpadProControllerExtension driver, final String name)
    {
       super(driver, name);

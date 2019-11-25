@@ -39,7 +39,7 @@ public class VolumeMode extends Mode
    }
 
    @Override
-   void deactivate()
+   protected void doDeactivate()
    {
       final TrackBank trackBank = mDriver.getTrackBank();
 
@@ -50,8 +50,6 @@ public class VolumeMode extends Mode
          track.volume().unsubscribe();
          track.volume().setIndication(false);
       }
-
-      super.deactivate();
    }
 
    @Override
@@ -98,7 +96,7 @@ public class VolumeMode extends Mode
    public void paintModeButton()
    {
       final Led led = mDriver.getBottomLed(4);
-      led.setColor(mIsActive ? Color.VOLUME : Color.VOLUME_LOW);
+      led.setColor(isActive() ? Color.VOLUME : Color.VOLUME_LOW);
    }
 
    @Override

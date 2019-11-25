@@ -2,29 +2,17 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import com.bitwig.extension.controller.api.TrackBank;
 
-public class TrackSelectOverlay extends Overlay
+class TrackSelectOverlay extends Overlay
 {
-   public TrackSelectOverlay(final LaunchpadProControllerExtension launchpadProControllerExtension)
+   TrackSelectOverlay(final LaunchpadProControllerExtension launchpadProControllerExtension)
    {
-      super(launchpadProControllerExtension);
+      super(launchpadProControllerExtension, "track-select");
    }
 
    @Override
    public void onPadPressed(final int x, final int velocity)
    {
       mDriver.getTrackBank().getItemAt(x).selectInMixer();
-   }
-
-   @Override
-   public void onPadReleased(final int x, final int velocity)
-   {
-
-   }
-
-   @Override
-   protected void doActivate()
-   {
-
    }
 
    @Override
@@ -46,6 +34,6 @@ public class TrackSelectOverlay extends Overlay
    public void paintModeButton()
    {
       final Led led = mDriver.getBottomLed(1);
-      led.setColor(mIsActive ? Color.TRACK : Color.TRACK_LOW);
+      led.setColor(isActive() ? Color.TRACK : Color.TRACK_LOW);
    }
 }
