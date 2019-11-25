@@ -1,6 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.atom;
 
-import java.util.function.IntConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
@@ -20,7 +20,6 @@ import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
-import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiExpressions;
 import com.bitwig.extension.controller.api.MidiIn;
@@ -812,12 +811,12 @@ public class PresonusAtom extends ControllerExtension
       final HardwareButton button = createButton(id, controlNumber);
 
       final MultiStateHardwareLight light = mHardwareSurface
-         .createMultiStateHardwareLight(id + "_light", PresonusAtom::lightStateToVisualState);
+         .createMultiStateHardwareLight(id + "_light");
       light.setLabelColor(BLACK);
 
       light.state().onUpdateHardware(new LightStateSender(0xB0, controlNumber));
 
-      light.setColorToStateFunction(PresonusAtom::colorToLightState);
+      light.setColorToStateFunction(color -> new RGBLightState(color));
 
       button.setBackgroundLight(light);
 
@@ -850,18 +849,18 @@ public class PresonusAtom extends ControllerExtension
       mPadButtons[index] = pad;
 
       final MultiStateHardwareLight light = mHardwareSurface
-         .createMultiStateHardwareLight("pad_light" + (index + 1), PresonusAtom::lightStateToVisualState);
+         .createMultiStateHardwareLight("pad_light" + (index + 1));
 
       light.state().onUpdateHardware(new LightStateSender(0x90, 0x24 + index));
 
-      light.setColorToStateFunction(PresonusAtom::colorToLightState);
+      light.setColorToStateFunction(color -> new RGBLightState(color));
 
       pad.setBackgroundLight(light);
 
       mPadLights[index] = light;
    }
 
-   private class LightStateSender implements IntConsumer
+   private class LightStateSender implements Consumer<RGBLightState>
    {
       protected LightStateSender(final int statusStart, final int data1)
       {
@@ -871,17 +870,12 @@ public class PresonusAtom extends ControllerExtension
       }
 
       @Override
-      public void accept(final int state)
+      public void accept(final RGBLightState state)
       {
-         final int onState = (state & 0x7F000000) >> 24;
-         final int red = (state & 0x7F0000) >> 16;
-         final int green = (state & 0x7F00) >> 8;
-         final int blue = state & 0x7F;
-
-         mValues[0] = onState;
-         mValues[1] = red;
-         mValues[2] = green;
-         mValues[3] = blue;
+         mValues[0] = state.isOn() ? 127 : 0;
+         mValues[1] = state.getRed();
+         mValues[2] = state.getGreen();
+         mValues[3] = state.getBlue();
 
          for (int i = 0; i < 4; i++)
          {
@@ -898,46 +892,6 @@ public class PresonusAtom extends ControllerExtension
       private final int[] mLastSent = new int[4];
 
       private final int[] mValues = new int[4];
-   }
-
-   private static int colorToLightState(final Color color)
-   {
-      if (color == null || color.getAlpha() == 0 || color == MULTI_STATE_LIGHT_OFF)
-         return 0;
-
-      final int red = colorPartFromFloat(color.getRed());
-      final int green = colorPartFromFloat(color.getGreen());
-      final int blue = colorPartFromFloat(color.getBlue());
-
-      return 0x7F000000 | red << 16 | green << 8 | blue;
-   }
-
-   private static int colorPartFromFloat(final double x)
-   {
-      return Math.max(0, Math.min((int)(127.0 * x), 127));
-   }
-
-   private static Color lightStateToColor(final int lightState)
-   {
-      final int onState = (lightState & 0x7F000000) >> 24;
-
-      if (onState == 0)
-      {
-         return MULTI_STATE_LIGHT_OFF;
-      }
-
-      final int red = (lightState & 0x7F0000) >> 16;
-      final int green = (lightState & 0x7F00) >> 8;
-      final int blue = (lightState & 0x7F);
-
-      return Color.fromRGB(red / 127.0, green / 127.0, blue / 127.0);
-   }
-
-   private static HardwareLightVisualState lightStateToVisualState(final int lightState)
-   {
-      final Color color = lightStateToColor(lightState);
-
-      return HardwareLightVisualState.createForColor(color);
    }
 
    private void createEncoder(final int index)

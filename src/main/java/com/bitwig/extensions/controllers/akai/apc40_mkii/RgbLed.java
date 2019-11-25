@@ -1,112 +1,27 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.HardwareButton;
-import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 
 class RgbLed
 {
-   public static final int COLOR_NONE = 0;
 
-   public static final int COLOR_RED = 2;
 
-   public static final int COLOR_GREEN = 18;
-
-   public static final int COLOR_BLUE = 42;
-
-   public static final int COLOR_YELLOW = 10;
-
-   public static final int COLOR_RECORDING = COLOR_RED;
-
-   public static final int COLOR_PLAYING = COLOR_GREEN;
-
-   public static final int COLOR_STOPPING = COLOR_NONE;
-
-   public static final int COLOR_SCENE = COLOR_YELLOW;
-
-   public static final int BLINK_NONE = 0;
-
-   public static final int BLINK_PLAY_QUEUED = 12;
-
-   public static final int BLINK_ACTIVE = 9;
-
-   public static final int BLINK_RECORD_QUEUED = 12;
-
-   public static final int BLINK_STOP_QUEUED = 12;
-
-   private static final Map<Integer, Integer> RGB_TO_COLOR_VALUE_MAP = new HashMap<>();
-
-   private static final Map<Integer, Color> COLOR_VALUE_TO_COLOR_MAP = new HashMap<>();
-
-   private static void registerColor(final int rgb, final int value)
-   {
-      COLOR_VALUE_TO_COLOR_MAP.put(value,
-         Color.fromRGB255((rgb & 0xFF0000) >> 16, (rgb & 0xFF00) >> 8, rgb & 0xFF));
-
-      RGB_TO_COLOR_VALUE_MAP.put(rgb, value);
-   }
-
-   static
-   {
-      registerColor(0xFF0000, COLOR_RED);
-      registerColor(0xFF00, COLOR_GREEN);
-      registerColor(0xFF, COLOR_BLUE);
-      registerColor(0xFFD90F, COLOR_YELLOW);
-
-      registerColor(0, 0);
-
-      registerColor(14235761, 57);
-      registerColor(14771857, 107);
-      registerColor(5526612, 1);
-
-      registerColor(14233124, 6);
-      registerColor(15491415, 5);
-      registerColor(8026746, 2);
-
-      registerColor(16733958, 9);
-      registerColor(16745278, 12);
-      registerColor(13224393, 3);
-
-      registerColor(14261520, 14);
-      registerColor(14989134, 13);
-      registerColor(8817068, 104);
-
-      registerColor(7575572, 18);
-      registerColor(10534988, 17);
-      registerColor(10713411, 125);
-
-      registerColor(40263, 22);
-      registerColor(4111202, 21);
-      registerColor(13016944, 124);
-
-      registerColor(42644, 34);
-      registerColor(4444857, 33);
-      registerColor(5726662, 43);
-
-      registerColor(39385, 38);
-      registerColor(4507903, 37);
-      registerColor(8686304, 115);
-
-      registerColor(9783755, 50);
-      registerColor(12351216, 49);
-   }
-
-   protected RgbLed(final HardwareButton button, final HardwareSurface surface, final int message, final int data1)
+   protected RgbLed(
+      final HardwareButton button,
+      final HardwareSurface surface,
+      final int message,
+      final int data1)
    {
       super();
       mMessage = message;
       mData1 = data1;
 
-      mHardwareLight = surface
-         .createMultiStateHardwareLight(button.getId() + "-light", RgbLed::stateToVisualState);
-      mHardwareLight.state().setValueSupplier(this::getStateAsInt);
+      mHardwareLight = surface.createMultiStateHardwareLight(button.getId() + "-light");
+      mHardwareLight.state().setValueSupplier(this::getState);
       button.setBackgroundLight(mHardwareLight);
    }
 
@@ -117,7 +32,7 @@ class RgbLed
       {
          midiOut.sendMidi(mMessage << 4, mData1, mColor);
 
-         if (mBlinkType != BLINK_NONE)
+         if (mBlinkType != RGBLedState.BLINK_NONE)
          {
             midiOut.sendMidi(mMessage << 4, mData1, mBlinkColor);
             midiOut.sendMidi((mMessage << 4) | mBlinkType, mData1, mColor);
@@ -140,14 +55,7 @@ class RgbLed
       final int b8 = (int)(blue * 255);
       final int total = (r8 << 16) | (g8 << 8) | b8;
 
-      final Integer color = RGB_TO_COLOR_VALUE_MAP.get(total);
-      if (color != null)
-      {
-         mColor = color;
-         return;
-      }
-
-      mColor = 13;
+      mColor = RGBLedState.getColorValueForRGB(total);
    }
 
    public void setColor(final int color)
@@ -170,47 +78,24 @@ class RgbLed
       mBlinkColor = blinkColor;
    }
 
-   private static HardwareLightVisualState stateToVisualState(final int state)
+   public RGBLedState getState()
    {
-      final int blinkType = (state & 0xFF0000) >> 16;
-      final int colorValue = state & 0xFF;
-      final Color color = COLOR_VALUE_TO_COLOR_MAP.get(colorValue);
-
-      if (blinkType == BLINK_NONE)
-         return HardwareLightVisualState.createForColor(color);
-
-      final int offColorValue = (state & 0xFF00) >> 8;
-      final Color offColor = COLOR_VALUE_TO_COLOR_MAP.get(offColorValue);
-
-      if (blinkType == BLINK_PLAY_QUEUED)
-         return HardwareLightVisualState.createBlinking(color, offColor, 0.2, 0.2);
-
-      return HardwareLightVisualState.createBlinking(color, offColor, 0.5, 0.5);
-   }
-
-   private int getStateAsInt()
-   {
-      if (mDisplayedBlinkType != BLINK_NONE)
-      {
-         return mDisplayedBlinkType << 16 | mDisplayedBlinkColor << 8 | mDisplayedColor;
-      }
-
-      return mDisplayedColor;
+      return new RGBLedState(mDisplayedColor, mDisplayedBlinkColor, mDisplayedBlinkType);
    }
 
    private final int mMessage, mData1;
 
    private final MultiStateHardwareLight mHardwareLight;
 
-   private int mColor = COLOR_NONE;
+   private int mColor = RGBLedState.COLOR_NONE;
 
    private int mDisplayedColor = -1;
 
-   private int mBlinkColor = COLOR_NONE;
+   private int mBlinkColor = RGBLedState.COLOR_NONE;
 
    private int mDisplayedBlinkColor = -1;
 
-   private int mBlinkType = BLINK_NONE;
+   private int mBlinkType = RGBLedState.BLINK_NONE;
 
    private int mDisplayedBlinkType = -1;
 }

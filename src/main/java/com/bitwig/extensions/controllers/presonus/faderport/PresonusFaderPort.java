@@ -1,6 +1,6 @@
 package com.bitwig.extensions.controllers.presonus.faderport;
 
-import java.util.function.IntConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
@@ -18,7 +18,6 @@ import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
-import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
@@ -245,21 +244,19 @@ public abstract class PresonusFaderPort extends ControllerExtension
    {
       final HardwareButton button = createButton(id, note);
 
-      final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight(id + "_light",
-         PresonusFaderPort::stateToVisualState);
+      final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight(id + "_light");
       button.setBackgroundLight(light);
 
-      light.setColorToStateFunction(PresonusFaderPort::colorToState);
+      light.setColorToStateFunction(color -> new RGBLightState(color));
 
-      final IntConsumer sendState = new IntConsumer()
+      final Consumer<RGBLightState> sendState = new Consumer<RGBLightState>()
       {
          @Override
-         public void accept(final int state)
+         public void accept(final RGBLightState state)
          {
             for (int i = 0; i < 4; i++)
             {
-               final int shift = 24 - 8 * i;
-               final int byteValue = (state & (0x7F << shift)) >> shift;
+               final int byteValue = state.getForByte(i);
 
                assert byteValue >= 0 && byteValue <= 127;
 
@@ -352,34 +349,6 @@ public abstract class PresonusFaderPort extends ControllerExtension
       encoder.setHardwareButton(clickButton);
 
       return encoder;
-   }
-
-   private static int colorToState(final Color c)
-   {
-      if (c == null) // Off
-         return 0;
-
-      return 0x7F000000 | colorPartFromDouble(c.getRed()) << 16 | colorPartFromDouble(c.getGreen()) << 8
-         | colorPartFromDouble(c.getBlue());
-   }
-
-   private static Color stateToColor(final int state)
-   {
-      final int red = (state & 0x7F0000) >> 16;
-      final int green = (state & 0x7F00) >> 8;
-      final int blue = (state & 0x7F);
-
-      return Color.fromRGB(red / 127.0, green / 127.0, blue / 127.0);
-   }
-
-   private static HardwareLightVisualState stateToVisualState(final int state)
-   {
-      return HardwareLightVisualState.createForColor(stateToColor(state));
-   }
-
-   private static int colorPartFromDouble(final double x)
-   {
-      return Math.max(0, Math.min((int)(127.0 * x), 127));
    }
 
    private void initLayers()
