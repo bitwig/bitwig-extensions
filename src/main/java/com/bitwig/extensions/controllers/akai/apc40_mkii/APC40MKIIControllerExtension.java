@@ -1543,15 +1543,15 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final RgbLed rgbLed = mSceneLeds[i];
          if (mSendsOn.isOn())
          {
-            rgbLed.setColor(mSendIndex == i ? RgbLed.COLOR_PLAYING : RgbLed.COLOR_STOPPING);
-            rgbLed.setBlinkType(RgbLed.BLINK_NONE);
-            rgbLed.setBlinkColor(RgbLed.COLOR_NONE);
+            rgbLed.setColor(mSendIndex == i ? RGBLedState.COLOR_PLAYING : RGBLedState.COLOR_STOPPING);
+            rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
+            rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
          }
          else if (mUserOn.isOn())
          {
-            rgbLed.setColor(mUserIndex == i ? RgbLed.COLOR_PLAYING : RgbLed.COLOR_STOPPING);
-            rgbLed.setBlinkType(RgbLed.BLINK_NONE);
-            rgbLed.setBlinkColor(RgbLed.COLOR_NONE);
+            rgbLed.setColor(mUserIndex == i ? RGBLedState.COLOR_PLAYING : RGBLedState.COLOR_STOPPING);
+            rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
+            rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
          }
          else
          {
@@ -1559,9 +1559,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             if (scene.exists().get())
                rgbLed.setColor(scene.color());
             else
-               rgbLed.setColor(RgbLed.COLOR_NONE);
-            rgbLed.setBlinkType(RgbLed.BLINK_NONE);
-            rgbLed.setBlinkColor(RgbLed.COLOR_NONE);
+               rgbLed.setColor(RGBLedState.COLOR_NONE);
+            rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
+            rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
          }
 
          rgbLed.paint(mMidiOut);
@@ -1582,35 +1582,35 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             if (slot.exists().get() && slot.hasContent().get())
                rgbLed.setColor(slot.color().red(), slot.color().green(), slot.color().blue());
             else
-               rgbLed.setColor(RgbLed.COLOR_NONE);
+               rgbLed.setColor(RGBLedState.COLOR_NONE);
 
             /*
              * if (slot.isStopQueued().get()) { rgbLed.setBlinkType(RgbLed.BLINK_STOP_QUEUED);
              * rgbLed.setBlinkColor(RgbLed.COLOR_STOPPING); } else
              */if (slot.isRecordingQueued().get())
             {
-               rgbLed.setBlinkType(RgbLed.BLINK_RECORD_QUEUED);
-               rgbLed.setBlinkColor(RgbLed.COLOR_RECORDING);
+               rgbLed.setBlinkType(RGBLedState.BLINK_RECORD_QUEUED);
+               rgbLed.setBlinkColor(RGBLedState.COLOR_RECORDING);
             }
             else if (slot.isPlaybackQueued().get())
             {
-               rgbLed.setBlinkType(RgbLed.BLINK_PLAY_QUEUED);
-               rgbLed.setBlinkColor(RgbLed.COLOR_PLAYING);
+               rgbLed.setBlinkType(RGBLedState.BLINK_PLAY_QUEUED);
+               rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING);
             }
             else if (slot.isRecording().get())
             {
-               rgbLed.setBlinkType(RgbLed.BLINK_ACTIVE);
-               rgbLed.setBlinkColor(RgbLed.COLOR_RECORDING);
+               rgbLed.setBlinkType(RGBLedState.BLINK_ACTIVE);
+               rgbLed.setBlinkColor(RGBLedState.COLOR_RECORDING);
             }
             else if (slot.isPlaying().get())
             {
-               rgbLed.setBlinkType(RgbLed.BLINK_ACTIVE);
-               rgbLed.setBlinkColor(RgbLed.COLOR_PLAYING);
+               rgbLed.setBlinkType(RGBLedState.BLINK_ACTIVE);
+               rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING);
             }
             else /* stopped */
             {
-               rgbLed.setBlinkType(RgbLed.BLINK_NONE);
-               rgbLed.setBlinkColor(RgbLed.COLOR_NONE);
+               rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
+               rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
             }
 
             rgbLed.paint(mMidiOut);

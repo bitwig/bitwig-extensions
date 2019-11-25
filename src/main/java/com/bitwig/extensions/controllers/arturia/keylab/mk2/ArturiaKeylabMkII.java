@@ -2,7 +2,6 @@ package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
-import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
@@ -25,7 +24,6 @@ import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
-import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.HardwareTextDisplay;
@@ -278,7 +276,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
       mBaseLayer.activate();
 
-      //DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
+      // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
 
    private void initBaseLayer()
@@ -487,7 +485,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    /** Called when we receive short MIDI message on port 0. */
    private void onMidi(final ShortMidiMessage msg)
    {
-      //getHost().println(msg.toString());
+      // getHost().println(msg.toString());
    }
 
    private void onSysex(final String s)
@@ -720,31 +718,21 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
       if (id.isRGB())
       {
-         final MultiStateHardwareLight light = mHardwareSurface
-            .createMultiStateHardwareLight(id + "_light", ArturiaKeylabMkII::stateToVisualState);
+         final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight(id + "_light");
 
-         light.setColorToStateFunction(ArturiaKeylabMkII::colorToState);
+         light.setColorToStateFunction(color -> new RGBLightState(color));
 
          button.setBackgroundLight(light);
 
-         final IntConsumer sendColor = new IntConsumer()
+         final Consumer<RGBLightState> sendColor = new Consumer<RGBLightState>()
          {
 
             @Override
-            public void accept(final int state)
+            public void accept(final RGBLightState state)
             {
-               Color c = stateToColor(state);
-
-               if (c == null)
-                  c = BLACK;
-
-               final int red = colorPartFromDouble(c.getRed());
-               final int green = colorPartFromDouble(c.getGreen());
-               final int blue = colorPartFromDouble(c.getBlue());
-
-               assert red >= 0 && red <= 127;
-               assert green >= 0 && green <= 127;
-               assert blue >= 0 && blue <= 127;
+               final int red = state != null ? state.getRed() : 0;
+               final int green = state != null ? state.getGreen() : 0;
+               final int blue = state != null ? state.getBlue() : 0;
 
                final byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 16")
                   .addByte(id.getSysexID()).addByte(red).addByte(green).addByte(blue).terminate();
@@ -794,43 +782,6 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       }
 
       return button;
-   }
-
-   private static int colorToState(final Color c)
-   {
-      if (c == null) // Off
-         return 0;
-
-      return colorPartFromDouble(c.getRed()) << 16 | colorPartFromDouble(c.getGreen()) << 8
-         | colorPartFromDouble(c.getBlue());
-   }
-
-   private static Color stateToColor(final int state)
-   {
-      if (state == 0)
-         return null;
-
-      final int red = (state & 0x7F0000) >> 16;
-      final int green = (state & 0x7F00) >> 8;
-      final int blue = (state & 0x7F);
-
-      assert red >= 0 && red <= 127;
-      assert green >= 0 && green <= 127;
-      assert blue >= 0 && blue <= 127;
-
-      return Color.fromRGB(red / 127.0, green / 127.0, blue / 127.0);
-   }
-
-   private static HardwareLightVisualState stateToVisualState(final int state)
-   {
-      final Color color = stateToColor(state);
-
-      return HardwareLightVisualState.createForColor(color);
-   }
-
-   private static int colorPartFromDouble(final double x)
-   {
-      return Math.max(0, Math.min((int)(31.0 * x), 31));
    }
 
    private void clearDisplay()
