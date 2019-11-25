@@ -352,12 +352,12 @@ public class Layer
       bind(source, textDisplay, 0);
    }
 
-   public boolean isActive()
+   public final boolean isActive()
    {
       return mIsActive;
    }
 
-   public void setIsActive(final boolean isActive)
+   public final void setIsActive(final boolean isActive)
    {
       if (isActive != mIsActive)
       {
@@ -375,10 +375,15 @@ public class Layer
          mIsActive = isActive;
 
          mLayers.activeLayersChanged();
+
+         if (isActive)
+            onActivate();
+         else
+            onDeactivate();
       }
    }
 
-   public void toggleIsActive()
+   public final void toggleIsActive()
    {
       if (mIsActive && mLayerGroup != null)
          return;
@@ -386,14 +391,24 @@ public class Layer
       setIsActive(!mIsActive);
    }
 
-   public void activate()
+   public final void activate()
    {
       setIsActive(true);
    }
 
-   public void deactivate()
+   public final void deactivate()
    {
       setIsActive(false);
+   }
+
+   protected void onActivate()
+   {
+      /* reserved for subclasses */
+   }
+
+   protected void onDeactivate()
+   {
+      /* reserved for subclasses */
    }
 
    void setLayerGroup(final LayerGroup layerGroup)

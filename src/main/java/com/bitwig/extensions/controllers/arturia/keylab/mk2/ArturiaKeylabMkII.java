@@ -257,10 +257,14 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       mMultiLayer = new Layer(mLayers, "Multi")
       {
          @Override
-         public void setIsActive(final boolean active)
+         protected void onActivate()
          {
-            super.setIsActive(active);
+            updateIndications();
+         }
 
+         @Override
+         protected void onDeactivate()
+         {
             updateIndications();
          }
       };
