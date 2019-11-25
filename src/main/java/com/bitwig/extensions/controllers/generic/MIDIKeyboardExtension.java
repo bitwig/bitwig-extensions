@@ -5,10 +5,16 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extension.controller.api.UserControlBank;
 
 public class MIDIKeyboardExtension extends ControllerExtension
 {
+   private static final int LOWEST_CC = 1;
+
+   private static final int HIGHEST_CC = 119;
+
    protected MIDIKeyboardExtension(
       final MIDIKeyboardExtensionDefinition definition,
       final ControllerHost host)
@@ -25,7 +31,8 @@ public class MIDIKeyboardExtension extends ControllerExtension
       mMidiIn.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi(msg));
       mMidiIn.setSysexCallback((final String data) -> onSysex(data));
 
-      mMidiIn.createNoteInput("All Channels", "??????");
+      final NoteInput allChannels = mMidiIn.createNoteInput("All Channels", "??????");
+      allChannels.setShouldConsumeEvents(false);
 
       for (int i = 0; i < 16; i++)
       {
@@ -33,6 +40,14 @@ public class MIDIKeyboardExtension extends ControllerExtension
       }
 
       mTransport = host.createTransport();
+
+      // Make CCs 1-119 freely mappable
+      mUserControls = host.createUserControls(HIGHEST_CC - LOWEST_CC + 1);
+
+      for (int i = LOWEST_CC; i <= HIGHEST_CC; i++)
+      {
+         mUserControls.getControl(i - LOWEST_CC).setLabel("CC" + i);
+      }
    }
 
    @Override
@@ -48,6 +63,17 @@ public class MIDIKeyboardExtension extends ControllerExtension
    /** Called when we receive short MIDI message on port 0. */
    private void onMidi(final ShortMidiMessage msg)
    {
+      if (msg.isControlChange())
+      {
+         final int data1 = msg.getData1();
+         final int data2 = msg.getData2();
+
+         if (data1 >= LOWEST_CC && data1 <= HIGHEST_CC)
+         {
+            final int index = data1 - LOWEST_CC;
+            mUserControls.getControl(index).set(data2, 128);
+         }
+      }
    }
 
    /** Called when we receive sysex MIDI message on port 0. */
@@ -69,4 +95,6 @@ public class MIDIKeyboardExtension extends ControllerExtension
    private Transport mTransport;
 
    private MidiIn mMidiIn;
+
+   private UserControlBank mUserControls;
 }
