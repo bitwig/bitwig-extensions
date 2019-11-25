@@ -872,10 +872,10 @@ public class PresonusAtom extends ControllerExtension
       @Override
       public void accept(final RGBLightState state)
       {
-         mValues[0] = state.isOn() ? 127 : 0;
-         mValues[1] = state.getRed();
-         mValues[2] = state.getGreen();
-         mValues[3] = state.getBlue();
+         mValues[0] = state != null ? (state.isOn() ? 127 : 0) : 0;
+         mValues[1] = state != null ? state.getRed() : 0;
+         mValues[2] = state != null ? state.getGreen() : 0;
+         mValues[3] = state != null ? state.getBlue() : 0;
 
          for (int i = 0; i < 4; i++)
          {
