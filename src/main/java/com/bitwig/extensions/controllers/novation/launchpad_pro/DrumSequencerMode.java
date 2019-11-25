@@ -163,11 +163,11 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private void onMixDataPressed(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
-      final List<ButtonState> padsInHoldState = findStepsInPressedOrHoldState();
+      final List<Button> padsInHoldState = findStepsInPressedOrHoldState();
 
-      for (ButtonState buttonState : padsInHoldState)
+      for (Button button : padsInHoldState)
       {
-         final int absoluteStepIndex = calculateAbsoluteStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final int absoluteStepIndex = calculateAbsoluteStepIndex(button.getX() - 1, 8 - button.getY());
          final NoteStep noteStep = clip.getStep(0, absoluteStepIndex, mCurrentPitch);
 
          switch (y)
@@ -190,9 +190,9 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private void onSoundDataPressed(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
-      final List<ButtonState> padsInHoldState = findStepsInPressedOrHoldState();
+      final List<Button> padsInHoldState = findStepsInPressedOrHoldState();
 
-      for (ButtonState buttonState : padsInHoldState)
+      for (Button buttonState : padsInHoldState)
       {
          final int absoluteStepIndex = calculateAbsoluteStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
          final NoteStep noteStep = clip.getStep(0, absoluteStepIndex, mCurrentPitch);
@@ -485,8 +485,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
       if (mDataMode != DataMode.Main)
          return false;
 
-      final ButtonState padState = mDriver.getPadState(x, y);
-      return padState.isPressed();
+      final Button button = mDriver.getPadButton(x, y);
+      return button.isPressed();
    }
 
    private boolean isDrumPadSelectOn()
@@ -612,7 +612,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
             if (playingStep == mPage * 32 + 8 * y + x)
                led.setColor(noteStep.state() == NoteStep.State.NoteOn ? Color.STEP_PLAY : Color.STEP_PLAY_HEAD);
-            else if (mDriver.getPadState(x, 7- y).mState == ButtonState.State.HOLD)
+            else if (mDriver.getPadButton(x, 7- y).getState() == Button.State.HOLD)
                led.setColor(Color.STEP_HOLD);
             else switch (noteStep.state())
             {

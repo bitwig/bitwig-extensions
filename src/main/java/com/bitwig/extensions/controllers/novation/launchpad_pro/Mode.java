@@ -99,80 +99,6 @@ abstract class Mode
    {
    }
 
-   void onSceneButtonReleased(final int column)
-   {
-   }
-
-   void onTrackSelectPressed()
-   {
-
-   }
-
-   void onTrackSelectReleased()
-   {
-
-   }
-
-   void onMutePressed()
-   {
-
-   }
-
-   void onMuteReleased()
-   {
-
-   }
-
-   void onSoloPressed()
-   {
-
-   }
-
-   void onSoloReleased()
-   {
-
-   }
-
-   void onVolumePressed()
-   {
-
-   }
-
-   void onVolumeReleased()
-   {
-
-   }
-
-   void onPanPressed()
-   {
-
-   }
-
-   void onPanReleased()
-   {
-
-   }
-
-   void onSendPressed()
-   {
-
-   }
-
-   void onSendReleased()
-   {
-
-   }
-
-   void onStopClipPressed()
-   {
-
-   }
-
-   void onStopClipReleased()
-   {
-
-   }
-
    void onShiftPressed()
    {
    }
@@ -185,15 +111,7 @@ abstract class Mode
    {
    }
 
-   void onDeleteReleased()
-   {
-   }
-
    void onQuantizePressed()
-   {
-   }
-
-   void onQuantizeReleased()
    {
    }
 

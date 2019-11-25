@@ -2,7 +2,6 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.DoubleConsumer;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Application;
@@ -39,7 +38,6 @@ import com.bitwig.extension.controller.api.UserControlBank;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import jdk.nashorn.internal.runtime.Debug;
 
 public final class LaunchpadProControllerExtension extends ControllerExtension
 {
@@ -67,8 +65,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       super(driverDefinition, host);
       mHost = host;
 
-      initButtonStates();
-
       mSessionMode = new SessionMode(this);
       mDrumMode = new DrumMode(this);
 
@@ -76,7 +72,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       mVolumeMode = new VolumeMode(this);
       mScaleAndKeyChooserMode = new ScaleAndKeyChooserMode(this);
-      mSendMode = new SendMode(this);
+      mSendsMode = new SendMode(this);
       mPanMode = new PanMode(this);
       mDrumSequencerMode = new DrumSequencerMode(this);
       mStepSequencerMode = new StepSequencerMode(this);
@@ -115,7 +111,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    private void createMainLayer()
    {
-      mMainLayer = new Layer(mLayers, "main");
+      mMainLayer = new LaunchpadLayer(this, "main");
 
       for (int x = 0; x < 8; ++x)
       {
@@ -123,11 +119,10 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
          {
             final int X = x;
             final int Y = y;
-            final LaunchpadButtonAndLed bt = mGridButtons[y * 8 + x];
+            final Button bt = mGridButtons[y * 8 + x];
 
             mMainLayer.bindPressed(bt.getButton(), v -> {
-               final ButtonState padState = getPadState(X, Y);
-               padState.onButtonPressed(mHost);
+               bt.onButtonPressed(mHost);
 
                final int velocity = (int)(v * 127.0);
 
@@ -138,9 +133,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
             });
 
             mMainLayer.bindReleased(bt.getButton(), v -> {
-               final ButtonState padState = getPadState(X, Y);
-               final boolean wasHeld = padState.mState == ButtonState.State.HOLD;
-               padState.onButtonReleased();
+               final boolean wasHeld = bt.mState == Button.State.HOLD;
+               bt.onButtonReleased();
 
                final int velocity = (int)(v * 127.0);
 
@@ -159,7 +153,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
          final int Y = y;
          final HardwareButton bt = mSceneButtons[y].getButton();
          mMainLayer.bindPressed(bt, () -> mCurrentMode.onSceneButtonPressed(Y));
-         mMainLayer.bindReleased(bt, () -> mCurrentMode.onSceneButtonReleased(Y));
       }
 
       mMainLayer.bindPressed(mUpButton.getButton(), () -> mCurrentMode.onArrowUpPressed());
@@ -170,10 +163,56 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mMainLayer.bindReleased(mLeftButton.getButton(), () -> mCurrentMode.onArrowLeftReleased());
       mMainLayer.bindPressed(mRightButton.getButton(), () -> mCurrentMode.onArrowRightPressed());
       mMainLayer.bindReleased(mRightButton.getButton(), () -> mCurrentMode.onArrowRightReleased());
-      mMainLayer.bindPressed(mSessionButton.getButton(), () -> setMode(mSessionMode));
-      mMainLayer.bindPressed(mNoteButton.getButton(), () -> setMode(mPlayNoteModes));
-      mMainLayer.bindPressed(mDeviceButton.getButton(), () -> setMode(mDrumSequencerMode));
-      mMainLayer.bindPressed(mUserButton.getButton(), () -> setMode(mStepSequencerMode));
+      mMainLayer.bindMode(mSessionButton, mSessionMode);
+      mMainLayer.bindMode(mNoteButton, mPlayNoteModes);
+      mMainLayer.bindMode(mDeviceButton, mDrumSequencerMode);
+      mMainLayer.bindMode(mUserButton, mStepSequencerMode);
+
+      mMainLayer.bindPressed(mShiftButton.getButton(), () -> mCurrentMode.onShiftPressed());
+      mMainLayer.bindReleased(mShiftButton.getButton(), () -> mCurrentMode.onShiftReleased());
+      mMainLayer.bindPressed(mClickButton.getButton(), () -> {
+         if (isShiftOn())
+            mTransport.tapTempo();
+         else
+            mTransport.isMetronomeEnabled().toggle();
+      });
+      mMainLayer.bindPressed(mUndoButton.getButton(), () -> {
+         if (isShiftOn())
+            mApplication.redo();
+         else
+            mApplication.undo();
+      });
+      mMainLayer.bindPressed(mDeleteButton.getButton(), () -> mCurrentMode.onDeletePressed());
+      mMainLayer.bindPressed(mQuantizeButton.getButton(), () -> {
+         if (isShiftOn())
+         {
+            final SettableEnumValue recordQuantizationGrid = mApplication.recordQuantizationGrid();
+            recordQuantizationGrid.set(recordQuantizationGrid.get().equals("OFF") ? "1/16" : "OFF");
+         }
+         else
+            mCurrentMode.onQuantizePressed();
+      });
+      mMainLayer.bindPressed(mDuplicateButton.getButton(), mApplication.duplicateAction());
+      mMainLayer.bindPressed(mDoubleButton.getButton(), () -> {
+         if (isShiftOn())
+            mTransport.isArrangerRecordEnabled().toggle();
+         else
+            mTransport.togglePlay();
+      });
+      mMainLayer.bindPressed(mRecordButton.getButton(), () -> {
+         final boolean enabled = isRecording();
+         mTransport.isClipLauncherOverdubEnabled().set(!enabled);
+         mTransport.isClipLauncherAutomationWriteEnabled().set(!enabled);
+      });
+
+      mMainLayer.bindOverlay(mArmButton, mRecordArmOverlay);
+      mMainLayer.bindOverlay(mSelectButton, mTrackSelectOverlay);
+      mMainLayer.bindOverlay(mMuteButton, mMuteOverlay);
+      mMainLayer.bindOverlay(mSoloButton, mSoloOverlay);
+      mMainLayer.bindOverlay(mStopButton, mStopClipOverlay);
+      mMainLayer.bindMode(mVolumeButton, mVolumeMode);
+      mMainLayer.bindMode(mPanButton, mPanMode);
+      mMainLayer.bindMode(mSendsButton, mSendsMode);
 
       mMainLayer.activate();
    }
@@ -184,10 +223,13 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mHardwareSurface.setPhysicalSize(PHYSICAL_DEVICE_WIDTH, PHYSICAL_DEVICE_WIDTH);
 
       mShiftButton = createSideButton("shift", 0, 8);
+      mShiftButton.getButton().isPressed().markInterested();
       mClickButton = createSideButton("click", 0, 7);
       mUndoButton = createSideButton("undo", 0, 6);
       mDeleteButton = createSideButton("delete", 0, 5);
+      mDeleteButton.getButton().isPressed().markInterested();
       mQuantizeButton = createSideButton("quantize", 0, 4);
+      mQuantizeButton.getButton().isPressed().markInterested();
       mDuplicateButton = createSideButton("duplicate", 0, 3);
       mDoubleButton = createSideButton("double", 0, 2);
       mRecordButton = createSideButton("record", 0, 1);
@@ -210,11 +252,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mSendsButton = createSideButton("sends", 7, 0);
       mStopButton = createSideButton("stop", 8, 0);
 
-      mSceneButtons = new LaunchpadButtonAndLed[8];
+      mSceneButtons = new Button[8];
       for (int y = 0; y < 8; ++y)
          mSceneButtons[y] = createSideButton("scene-" + y, 9, y + 1);
 
-      mGridButtons = new LaunchpadButtonAndLed[8 * 8];
+      mGridButtons = new Button[8 * 8];
       for (int x = 0; x < 8; ++x)
       {
          for (int y = 0; y < 8; ++y)
@@ -222,24 +264,24 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
             final int index = (x + 1) + 10 * (y + 1);
             final String id = "grid-" + x + "-" + y;
 
-            final LaunchpadButtonAndLed bt =
-               new LaunchpadButtonAndLed(mHardwareSurface, id, mMidiIn, index, true);
+            final Button bt =
+               new Button(mHardwareSurface, id, mMidiIn, index, true, x + 1, y + 1);
             mGridButtons[y * 8 + x] = bt;
             setButtonPhysicalPosition(bt, x + 1, y + 1);
          }
       }
    }
 
-   private LaunchpadButtonAndLed createSideButton(final String id, final int x, final int y)
+   private Button createSideButton(final String id, final int x, final int y)
    {
       final int index = x + 10 * y;
-      final LaunchpadButtonAndLed bt =
-         new LaunchpadButtonAndLed(mHardwareSurface, id, mMidiIn, index, false);
+      final Button bt =
+         new Button(mHardwareSurface, id, mMidiIn, index, false, x, y);
       setButtonPhysicalPosition(bt, x, y);
       return bt;
    }
 
-   private void setButtonPhysicalPosition(final LaunchpadButtonAndLed bt, final int x, final int y)
+   private void setButtonPhysicalPosition(final Button bt, final int x, final int y)
    {
       bt.getButton().setBounds(calculatePhysicalPosition(x), calculatePhysicalPosition(y), PHYSICAL_BUTTON_WIDTH, PHYSICAL_BUTTON_WIDTH);
    }
@@ -249,56 +291,14 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return PHYSICAL_BUTTON_OFFSET + x * (PHYSICAL_BUTTON_WIDTH + PHYSICAL_BUTTON_SPACE);
    }
 
-   private void initButtonStates()
+   List<Button> findPadsInHoldState()
    {
-      for (int x = 0; x < 8; ++x)
-      {
-         // Grid
-         for (int y = 0; y < 8; ++y)
-            mButtonStates[getPadIndex(x, y)] = new ButtonState(1 + x, 1 + y);
+      final ArrayList<Button> buttons = new ArrayList<>();
+      for (Button bt : mGridButtons)
+         if (bt.mState == Button.State.HOLD)
+            buttons.add(bt);
 
-         // Top and Bottom
-         mButtonStates[getTopButtonIndex(x)] = new ButtonState(1 + x, 9);
-         mButtonStates[getBottomButtonIndex(x)] = new ButtonState(1 + x, 0);
-         mButtonStates[getLeftButtonIndex(x)] = new ButtonState(0, 1 + x);
-         mButtonStates[getRightButtonIndex(x)] = new ButtonState(9, 1 + x);
-      }
-
-      assert checkButtonStatesIndex();
-   }
-
-   private boolean checkButtonStatesIndex()
-   {
-      for (int i = 0; i < mButtonStates.length; ++i)
-      {
-         final ButtonState buttonState = mButtonStates[i];
-         if (buttonState == null)
-            continue;
-
-         final int buttonIndex = getButtonIndex(buttonState.getX(), buttonState.getY());
-         assert buttonIndex == i;
-      }
-      return true;
-   }
-
-   ButtonState getButtonState(final int x, final int y)
-   {
-      return mButtonStates[x + 10 * y];
-   }
-
-   ButtonState getPadState(final int x, final int y)
-   {
-      return mButtonStates[getPadIndex(x, y)];
-   }
-
-   List<ButtonState> findPadsInHoldState()
-   {
-      final ArrayList<ButtonState> buttonStates = new ArrayList<>();
-      for (ButtonState buttonState : mButtonStates)
-         if (buttonState != null && buttonState.mState == ButtonState.State.HOLD)
-            buttonStates.add(buttonState);
-
-      return buttonStates;
+      return buttons;
    }
 
    private int getButtonIndex(final int x, final int y)
@@ -438,7 +438,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mSoloOverlay.paintModeButton();
       mVolumeMode.paintModeButton();
       mPanMode.paintModeButton();
-      mSendMode.paintModeButton();
+      mSendsMode.paintModeButton();
       mStopClipOverlay.paintModeButton();
 
    }
@@ -483,8 +483,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mMidiIn = mHost.getMidiInPort(0);
       mMidiOut = mHost.getMidiOutPort(0);
 
-      mMidiIn.setMidiCallback(LaunchpadProControllerExtension.this::onMidiReceived);
-      mMidiIn.setSysexCallback(LaunchpadProControllerExtension.this::onSysexReceived);
       mNoteInput = mMidiIn.createNoteInput("Input", "??????");
       mNoteInput.setShouldConsumeEvents(false);
       mNoteInput.setKeyTranslationTable(FILTER_ALL_NOTE_MAP);
@@ -623,23 +621,15 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       StringBuilder ledUpdate = new StringBuilder();
       final StringBuilder ledPulseUpdate = new StringBuilder();
 
-      for (final ButtonState buttonState : mButtonStates)
+      for (Button gridButton : mGridButtons)
+         flushButton(ledClear, ledUpdate, ledPulseUpdate, gridButton);
+
+      for (int i = 0; i < 8; ++i)
       {
-         if (buttonState == null)
-            continue;
-
-         final Led led = buttonState.getLed();
-
-         ledClear.append(led.updateClearSysex());
-         ledUpdate.append(led.updateLightLEDSysex());
-         ledPulseUpdate.append(led.updatePulseSysex());
-
-         // Lets not send sysex that are too big
-         if (ledUpdate.length() >= 4 * 3 * 48)
-         {
-            sendLedUpdateSysex(ledUpdate.toString());
-            ledUpdate = new StringBuilder();
-         }
+         flushButton(ledClear, ledUpdate, ledPulseUpdate, getTopButton(i));
+         flushButton(ledClear, ledUpdate, ledPulseUpdate, getBottomButton(i));
+         flushButton(ledClear, ledUpdate, ledPulseUpdate, getLeftButton(i));
+         flushButton(ledClear, ledUpdate, ledPulseUpdate, getRightButton(i));
       }
 
       if (ledClear.length() > 0)
@@ -650,6 +640,27 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       if (ledPulseUpdate.length() > 0)
          mMidiOut.sendSysex("F0 00 20 29 02 10 28" + ledPulseUpdate + " F7");
+   }
+
+   private StringBuilder flushButton(
+      final StringBuilder ledClear,
+      StringBuilder ledUpdate,
+      final StringBuilder ledPulseUpdate,
+      final Button button)
+   {
+      final Led led = button.getLed();
+
+      ledClear.append(led.updateClearSysex());
+      ledUpdate.append(led.updateLightLEDSysex());
+      ledPulseUpdate.append(led.updatePulseSysex());
+
+      // Lets not send sysex that are too big
+      if (ledUpdate.length() >= 4 * 3 * 48)
+      {
+         sendLedUpdateSysex(ledUpdate.toString());
+         ledUpdate = new StringBuilder();
+      }
+      return ledUpdate;
    }
 
    private boolean isRecording()
@@ -673,204 +684,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       getLeftLed(0).setColor(isRecording() ? Color.RED : Color.RED_LOW); // Clip Launcher Record
    }
 
-   private void onSysexReceived(final String data)
-   {
-   }
-
-   private void onMidiReceived(final int statusByte, final int data1, final int data2)
-   {
-      // mHost.println("MIDI: " + statusByte + ", " + data1 + ", " + data2);
-
-      final int msg = statusByte & 0xF0;
-      switch (msg)
-      {
-         case 0xB0: /* Control Change */
-         {
-            switch (data1)
-            {
-               case 80:
-                  if (data2 > 0)
-                     mCurrentMode.onShiftPressed();
-                  else
-                     mCurrentMode.onShiftReleased();
-                  break;
-
-               case 70:
-                  if (data2 > 0)
-                  {
-                     if (isShiftOn())
-                        mTransport.tapTempo();
-                     else
-                        mTransport.isMetronomeEnabled().toggle();
-                  }
-                  break;
-
-               case 60:
-                  if (data2 > 0)
-                  {
-                     if (isShiftOn())
-                        mApplication.redo();
-                     else
-                        mApplication.undo();
-                  }
-                  break;
-
-               case 50:
-                  //if (data2 > 0)
-                  //   mApplication.remove();
-
-                  mIsDeleteOn = data2 > 0;
-
-                  if (mIsDeleteOn)
-                     mCurrentMode.onDeletePressed();
-                  else
-                     mCurrentMode.onDeleteReleased();
-                  break;
-
-               case 40:
-                  mIsQuantizeOn = data2 > 0;
-
-                  if (isShiftOn())
-                  {
-                     if (data2 > 0)
-                     {
-                        final SettableEnumValue recordQuantizationGrid = mApplication.recordQuantizationGrid();
-                        recordQuantizationGrid.set(recordQuantizationGrid.get().equals("OFF") ? "1/16" : "OFF");
-                     }
-                  }
-                  else
-                  {
-                     if (mIsQuantizeOn)
-                        mCurrentMode.onQuantizePressed();
-                     else
-                        mCurrentMode.onQuantizeReleased();
-                  }
-                  break;
-
-               case 30:
-                  if (data2 > 0)
-                     mApplication.duplicate();
-                  break;
-
-               case 20:
-                  /* double */
-                  if (data2 > 0)
-                  {
-                     if (isShiftOn())
-                        mTransport.isArrangerRecordEnabled().toggle();
-                     else
-                        mTransport.togglePlay();
-                  }
-                  break;
-
-               case 10:
-                  if (data2 > 0)
-                  {
-                     final boolean enabled = isRecording();
-                     mTransport.isClipLauncherOverdubEnabled().set(!enabled);
-                     mTransport.isClipLauncherAutomationWriteEnabled().set(!enabled);
-                  }
-                  break;
-
-               case 11:
-                  /* record arm */
-                  break;
-
-               case 12:
-                  if (data2 > 0)
-                     mCurrentMode.onTrackSelectPressed();
-                  else
-                     mCurrentMode.onTrackSelectReleased();
-                  break;
-
-               case 13:
-                  if (data2 > 0)
-                     mCurrentMode.onMutePressed();
-                  else
-                     mCurrentMode.onMuteReleased();
-                  break;
-
-               case 14:
-                  if (data2 > 0)
-                     mCurrentMode.onSoloPressed();
-                  else
-                     mCurrentMode.onSoloReleased();
-                  break;
-
-               case 15:
-                  if (data2 > 0)
-                     mCurrentMode.onVolumePressed();
-                  else
-                     mCurrentMode.onVolumeReleased();
-                  break;
-
-               case 16:
-                  if (data2 > 0)
-                     mCurrentMode.onPanPressed();
-                  else
-                     mCurrentMode.onPanReleased();
-                  break;
-
-               case 17:
-                  if (data2 > 0)
-                     mCurrentMode.onSendPressed();
-                  else
-                     mCurrentMode.onSendReleased();
-                  break;
-
-               case 18:
-                  if (data2 > 0)
-                     mCurrentMode.onStopClipPressed();
-                  else
-                     mCurrentMode.onStopClipReleased();
-                  break;
-
-               case 1:
-                  setBottomOverlay(mRecordArmOverlay, data2 > 0, getButtonState(1, 0));
-                  break;
-
-               case 2:
-                  setBottomOverlay(mTrackSelectOverlay, data2 > 0, getButtonState(2, 0));
-                  break;
-
-               case 3:
-                  setBottomOverlay(mMuteOverlay, data2 > 0, getButtonState(3, 0));
-                  break;
-
-               case 4:
-                  setBottomOverlay(mSoloOverlay, data2 > 0, getButtonState(4, 0));
-                  break;
-
-               case 5:
-                  if (data2 > 0)
-                     setMode(mVolumeMode);
-                  break;
-
-               case 6:
-                  if (data2 > 0)
-                     setMode(mPanMode);
-                  break;
-
-               case 7:
-                  if (data2 > 0)
-                     setMode(mSendMode);
-                  break;
-
-               case 8:
-                  if (data2 > 0 && isShiftOn())
-                     mTrackBank.sceneBank().stop();
-                  else
-                     setBottomOverlay(mStopClipOverlay, data2 > 0, getButtonState(8, 0));
-                  break;
-
-               default:
-               break;
-            }
-         }
-      }
-   }
-
-   private final void setMode(final Mode mode)
+   final void setMode(final Mode mode)
    {
       mCurrentMode.deactivate();
 
@@ -894,10 +708,10 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       updateKeyTranslationTable();
    }
 
-   private final void setBottomOverlay(final Overlay overlay, final boolean isPressed, final ButtonState buttonState)
+   final void setBottomOverlay(final Overlay overlay, final boolean isPressed, final Button bt)
    {
       if (isPressed)
-         buttonState.onButtonPressed(mHost);
+         bt.onButtonPressed(mHost);
 
       if (mBottomOverlay != null)
          mBottomOverlay.deactivate();
@@ -911,7 +725,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       }
       else
       {
-         if (mBottomOverlay == overlay && buttonState.mState == ButtonState.State.HOLD)
+         if (mBottomOverlay == overlay && bt.mState == Button.State.HOLD)
             mBottomOverlay = null;
       }
 
@@ -937,49 +751,114 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
             getPadLed(x, y).setColor(0.f, 0.f, 0.f);
    }
 
-   final Led getPadLed(final int x, final int y)
+   final Button getPadButton(final int x, final int y)
    {
-      return mGridButtons[8 * y + x].getLed();
+      return mGridButtons[8 * y + x];
    }
 
-   Led getTopLed(final int x)
+   final Led getPadLed(final int x, final int y)
+   {
+      return getPadButton(x, y).getLed();
+   }
+
+   Button getTopButton(final int x)
    {
       switch (x)
       {
          case 0:
-            return mUpButton.getLed();
+            return mUpButton;
          case 1:
-            return mDownButton.getLed();
+            return mDownButton;
          case 2:
-            return mLeftButton.getLed();
+            return mLeftButton;
          case 3:
-            return mRightButton.getLed();
+            return mRightButton;
          case 4:
-            return mSessionButton.getLed();
+            return mSessionButton;
          case 5:
-            return mNoteButton.getLed();
+            return mNoteButton;
          case 6:
-            return mDeviceButton.getLed();
+            return mDeviceButton;
          case 7:
-            return mUserButton.getLed();
+            return mUserButton;
          default:
             throw new IllegalStateException();
       }
    }
 
+   Button getBottomButton(final int x)
+   {
+      switch (x)
+      {
+         case 0:
+            return mArmButton;
+         case 1:
+            return mSelectButton;
+         case 2:
+            return mMuteButton;
+         case 3:
+            return mSoloButton;
+         case 4:
+            return mVolumeButton;
+         case 5:
+            return mPanButton;
+         case 6:
+            return mSendsButton;
+         case 7:
+            return mStopButton;
+         default:
+            throw new IllegalStateException();
+      }
+   }
+
+   Button getLeftButton(final int y)
+   {
+      switch (y)
+      {
+         case 0:
+            return mShiftButton;
+         case 1:
+            return mClickButton;
+         case 2:
+            return mUndoButton;
+         case 3:
+            return mDeleteButton;
+         case 4:
+            return mQuantizeButton;
+         case 5:
+            return mDuplicateButton;
+         case 6:
+            return mDoubleButton;
+         case 7:
+            return mRecordButton;
+         default:
+            throw new IllegalStateException();
+      }
+   }
+
+   Button getRightButton(final int y)
+   {
+      return mSceneButtons[y];
+   }
+
+   Led getTopLed(final int x)
+   {
+      return getTopButton(x).getLed();
+   }
+
    Led getBottomLed(final int x)
    {
-      return mButtonStates[getBottomButtonIndex(x)].getLed();
+      return getBottomButton(x).getLed();
    }
 
    Led getLeftLed(final int y)
    {
-      return mButtonStates[getLeftButtonIndex(y)].getLed();
+      return getLeftButton(y).getLed();
    }
 
    Led getRightLed(final int y)
    {
-      return mButtonStates[getRightButtonIndex(y)].getLed();
+      return getRightButton(y).getLed();
    }
 
    TrackBank getTrackBank()
@@ -999,12 +878,12 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    boolean isDeleteOn()
    {
-      return mIsDeleteOn;
+      return mDeleteButton.getButton().isPressed().get();
    }
 
    public boolean isQuantizeOn()
    {
-      return mIsQuantizeOn;
+      return mQuantizeButton.getButton().isPressed().get();
    }
 
    CursorDevice getCursorDevice()
@@ -1159,6 +1038,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mArpeggiator;
    }
 
+   public Layers getLayers()
+   {
+      return mLayers;
+   }
+
    /* API Objects */
    private final ControllerHost mHost;
    private Application mApplication;
@@ -1200,7 +1084,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private final DrumMode mDrumMode;
    private final DrumSequencerMode mDrumSequencerMode;
    private final VolumeMode mVolumeMode;
-   private final SendMode mSendMode;
+   private final SendMode mSendsMode;
    private final PanMode mPanMode;
 
    /* Overlays */
@@ -1209,11 +1093,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private final StopClipOverlay mStopClipOverlay;
    private final MuteOverlay mMuteOverlay;
    private final SoloOverlay mSoloOverlay;
-
-   /* Button States */
-   private final ButtonState[] mButtonStates = new ButtonState[100];
-   private boolean mIsDeleteOn = false;
-   private boolean mIsQuantizeOn = false;
 
    /* Musical Context */
    private MusicalScale mMusicalScale = MusicalScaleLibrary.getInstance().getMusicalScale(0);
@@ -1228,35 +1107,35 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    /* Layers */
    private Layers mLayers;
-   private Layer mMainLayer;
+   private LaunchpadLayer mMainLayer;
    private Layer mDebugLayer;
 
    /* Hardware Controls */
    private HardwareSurface mHardwareSurface;
-   private LaunchpadButtonAndLed[] mGridButtons;
-   private LaunchpadButtonAndLed[] mSceneButtons;
-   private LaunchpadButtonAndLed mShiftButton;
-   private LaunchpadButtonAndLed mClickButton;
-   private LaunchpadButtonAndLed mUndoButton;
-   private LaunchpadButtonAndLed mDeleteButton;
-   private LaunchpadButtonAndLed mQuantizeButton;
-   private LaunchpadButtonAndLed mDuplicateButton;
-   private LaunchpadButtonAndLed mDoubleButton;
-   private LaunchpadButtonAndLed mRecordButton;
-   private LaunchpadButtonAndLed mUpButton;
-   private LaunchpadButtonAndLed mDownButton;
-   private LaunchpadButtonAndLed mLeftButton;
-   private LaunchpadButtonAndLed mRightButton;
-   private LaunchpadButtonAndLed mSessionButton;
-   private LaunchpadButtonAndLed mNoteButton;
-   private LaunchpadButtonAndLed mDeviceButton;
-   private LaunchpadButtonAndLed mUserButton;
-   private LaunchpadButtonAndLed mArmButton;
-   private LaunchpadButtonAndLed mStopButton;
-   private LaunchpadButtonAndLed mSendsButton;
-   private LaunchpadButtonAndLed mPanButton;
-   private LaunchpadButtonAndLed mVolumeButton;
-   private LaunchpadButtonAndLed mSoloButton;
-   private LaunchpadButtonAndLed mMuteButton;
-   private LaunchpadButtonAndLed mSelectButton;
+   private Button[] mGridButtons;
+   private Button[] mSceneButtons;
+   private Button mShiftButton;
+   private Button mClickButton;
+   private Button mUndoButton;
+   private Button mDeleteButton;
+   private Button mQuantizeButton;
+   private Button mDuplicateButton;
+   private Button mDoubleButton;
+   private Button mRecordButton;
+   private Button mUpButton;
+   private Button mDownButton;
+   private Button mLeftButton;
+   private Button mRightButton;
+   private Button mSessionButton;
+   private Button mNoteButton;
+   private Button mDeviceButton;
+   private Button mUserButton;
+   private Button mArmButton;
+   private Button mStopButton;
+   private Button mSendsButton;
+   private Button mPanButton;
+   private Button mVolumeButton;
+   private Button mSoloButton;
+   private Button mMuteButton;
+   private Button mSelectButton;
 }

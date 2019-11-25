@@ -115,7 +115,7 @@ abstract class AbstractSequencerMode extends Mode
 
    protected void paintMixData()
    {
-      final List<ButtonState> pads = findStepsInPressedOrHoldState();
+      final List<Button> pads = findStepsInPressedOrHoldState();
 
       if (pads.isEmpty())
       {
@@ -129,7 +129,7 @@ abstract class AbstractSequencerMode extends Mode
          return;
       }
 
-      final ButtonState pad = pads.get(0);
+      final Button pad = pads.get(0);
       final int absoluteStepIndex = calculateAbsoluteStepIndex(pad.getX() - 1, 8 - pad.getY());
       final NoteStep noteStep = findStepInfo(absoluteStepIndex);
 
@@ -152,7 +152,7 @@ abstract class AbstractSequencerMode extends Mode
 
    protected void paintSoundData()
    {
-      final List<ButtonState> padsInHoldState = mDriver.findPadsInHoldState();
+      final List<Button> padsInHoldState = mDriver.findPadsInHoldState();
 
       if (padsInHoldState.isEmpty())
       {
@@ -166,8 +166,7 @@ abstract class AbstractSequencerMode extends Mode
          return;
       }
 
-      final ButtonState pad = padsInHoldState.get(0);
-      final Clip clip = mDriver.getCursorClip();
+      final Button pad = padsInHoldState.get(0);
       final int absoluteStepIndex = calculateAbsoluteStepIndex(pad.getX() - 1, 8 - pad.getY());
       final NoteStep noteStep = findStepInfo(absoluteStepIndex);
 
@@ -293,31 +292,31 @@ abstract class AbstractSequencerMode extends Mode
       }
    }
 
-   List<ButtonState> findStepsInHoldState()
+   List<Button> findStepsInHoldState()
    {
-      final ArrayList<ButtonState> list = new ArrayList<>();
+      final ArrayList<Button> list = new ArrayList<>();
       for (int x = 0; x < 8; ++x)
       {
          for (int y = 4; y < 8; ++y)
          {
-            final ButtonState padState = mDriver.getPadState(x, y);
-            if (padState.mState == ButtonState.State.HOLD)
+            final Button padState = mDriver.getPadButton(x, y);
+            if (padState.mState == Button.State.HOLD)
                list.add(padState);
          }
       }
       return list;
    }
 
-   List<ButtonState> findStepsInPressedOrHoldState()
+   List<Button> findStepsInPressedOrHoldState()
    {
-      final ArrayList<ButtonState> list = new ArrayList<>();
+      final ArrayList<Button> list = new ArrayList<>();
       for (int x = 0; x < 8; ++x)
       {
          for (int y = 4; y < 8; ++y)
          {
-            final ButtonState padState = mDriver.getPadState(x, y);
-            if (padState.mState == ButtonState.State.HOLD || padState.mState == ButtonState.State.PRESSED)
-               list.add(padState);
+            final Button bt = mDriver.getPadButton(x, y);
+            if (bt.mState == Button.State.HOLD || bt.mState == Button.State.PRESSED)
+               list.add(bt);
          }
       }
       return list;

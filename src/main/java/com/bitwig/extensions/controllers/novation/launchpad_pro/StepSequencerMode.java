@@ -108,10 +108,10 @@ public class StepSequencerMode extends AbstractSequencerMode
    private void paintCurrentKeysOnStep()
    {
       final Clip cursorClip = mDriver.getCursorClip();
-      final List<ButtonState> stepsInHoldState = findStepsInHoldState();
-      for (ButtonState buttonState : stepsInHoldState)
+      final List<Button> stepsInHoldState = findStepsInHoldState();
+      for (Button button : stepsInHoldState)
       {
-         final int absoluteStepIndex = calculateAbsoluteStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final int absoluteStepIndex = calculateAbsoluteStepIndex(button.getX() - 1, 8 - button.getY());
 
          for (int x = 0; x < 8; ++x)
          {
@@ -147,7 +147,7 @@ public class StepSequencerMode extends AbstractSequencerMode
 
             if (playingStep == mPage * 32 + 8 * y + x)
                led.setColor(Color.GREEN);
-            else if (mDriver.getPadState(x, 7- y).mState == ButtonState.State.HOLD)
+            else if (mDriver.getPadButton(x, 7- y).mState == Button.State.HOLD)
                led.setColor(Color.STEP_HOLD);
             else switch (noteStep.state())
             {
@@ -227,9 +227,9 @@ public class StepSequencerMode extends AbstractSequencerMode
    private void onMixDataPressed(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
-      final List<ButtonState> padsInHoldState = mDriver.findPadsInHoldState();
+      final List<Button> padsInHoldState = mDriver.findPadsInHoldState();
 
-      for (ButtonState buttonState : padsInHoldState)
+      for (Button buttonState : padsInHoldState)
       {
          final int absoluteStepIndex = calculateAbsoluteStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
 
@@ -260,9 +260,9 @@ public class StepSequencerMode extends AbstractSequencerMode
    private void onSoundDataPressed(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
-      final List<ButtonState> padsInHoldState = mDriver.findPadsInHoldState();
+      final List<Button> padsInHoldState = mDriver.findPadsInHoldState();
 
-      for (ButtonState buttonState : padsInHoldState)
+      for (Button buttonState : padsInHoldState)
       {
          final int absoluteStepIndex = calculateAbsoluteStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
 
@@ -297,7 +297,7 @@ public class StepSequencerMode extends AbstractSequencerMode
          return;
 
       final Clip cursorClip = mDriver.getCursorClip();
-      for (ButtonState buttonState : findStepsInPressedOrHoldState())
+      for (Button buttonState : findStepsInPressedOrHoldState())
       {
          final int absoluteStepIndex = calculateAbsoluteStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
          cursorClip.toggleStep(absoluteStepIndex, key, velocity);
