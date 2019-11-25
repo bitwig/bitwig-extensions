@@ -367,7 +367,6 @@ public class StepSequencerMode extends AbstractSequencerMode
       switch (dataMode)
       {
          case Main:
-            return "Step Sequencer: Keys";
          case MainAlt:
             return "Step Sequencer: Keys";
          case MixData:
