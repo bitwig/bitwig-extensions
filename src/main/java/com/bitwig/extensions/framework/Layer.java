@@ -375,6 +375,11 @@ public class Layer
          mIsActive = isActive;
 
          mLayers.activeLayersChanged();
+         
+         if (isActive)
+            onActivate();
+         else
+            onDeactivate();
       }
    }
 
@@ -394,6 +399,16 @@ public class Layer
    public void deactivate()
    {
       setIsActive(false);
+   }
+
+   protected void onActivate()
+   {
+      /* reserved for subclasses */
+   }
+
+   protected void onDeactivate()
+   {
+      /* reserved for subclasses */
    }
 
    void setLayerGroup(final LayerGroup layerGroup)
