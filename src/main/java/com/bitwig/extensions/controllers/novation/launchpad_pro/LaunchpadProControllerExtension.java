@@ -133,7 +133,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
             });
 
             mMainLayer.bindReleased(bt.getButton(), v -> {
-               final boolean wasHeld = bt.mState == Button.State.HOLD;
+               final boolean wasHeld = bt.getState() == Button.State.HOLD;
                bt.onButtonReleased();
 
                final int velocity = (int)(v * 127.0);
@@ -266,7 +266,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
             final Button bt =
                new Button(mHardwareSurface, id, mMidiIn, index, true, x + 1, y + 1);
-            mGridButtons[y * 8 + x] = bt;
+            mGridButtons[8 * y + x] = bt;
             setButtonPhysicalPosition(bt, x + 1, y + 1);
          }
       }
@@ -274,6 +274,9 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    private Button createSideButton(final String id, final int x, final int y)
    {
+      assert x >= 1 && x < 9 && (y == 0 || y == 9);
+      assert y >= 1 && y < 9 && (x == 0 || x == 9);
+
       final int index = x + 10 * y;
       final Button bt =
          new Button(mHardwareSurface, id, mMidiIn, index, false, x, y);
@@ -283,19 +286,22 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    private void setButtonPhysicalPosition(final Button bt, final int x, final int y)
    {
-      bt.getButton().setBounds(calculatePhysicalPosition(x), calculatePhysicalPosition(y), PHYSICAL_BUTTON_WIDTH, PHYSICAL_BUTTON_WIDTH);
+      assert x >= 0 && x < 10;
+      assert y >= 0 && y < 10;
+
+      bt.getButton().setBounds(calculatePhysicalPosition(x), calculatePhysicalPosition(9 - y), PHYSICAL_BUTTON_WIDTH, PHYSICAL_BUTTON_WIDTH);
    }
 
-   private double calculatePhysicalPosition(final int x)
+   private double calculatePhysicalPosition(final int i)
    {
-      return PHYSICAL_BUTTON_OFFSET + x * (PHYSICAL_BUTTON_WIDTH + PHYSICAL_BUTTON_SPACE);
+      return PHYSICAL_BUTTON_OFFSET + i * (PHYSICAL_BUTTON_WIDTH + PHYSICAL_BUTTON_SPACE);
    }
 
    List<Button> findPadsInHoldState()
    {
       final ArrayList<Button> buttons = new ArrayList<>();
       for (Button bt : mGridButtons)
-         if (bt.mState == Button.State.HOLD)
+         if (bt.getState() == Button.State.HOLD)
             buttons.add(bt);
 
       return buttons;
@@ -612,24 +618,23 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    @Override
    public void flush()
    {
-      paintLeftLeds();
-      mCurrentMode.paint();
-      if (mBottomOverlay != null)
-         mBottomOverlay.paint();
+      mHardwareSurface.updateHardware();
+      paint();
 
+      /* Sysex buffer */
       final StringBuilder ledClear = new StringBuilder();
       StringBuilder ledUpdate = new StringBuilder();
       final StringBuilder ledPulseUpdate = new StringBuilder();
 
       for (Button gridButton : mGridButtons)
-         flushButton(ledClear, ledUpdate, ledPulseUpdate, gridButton);
+         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, gridButton);
 
       for (int i = 0; i < 8; ++i)
       {
-         flushButton(ledClear, ledUpdate, ledPulseUpdate, getTopButton(i));
-         flushButton(ledClear, ledUpdate, ledPulseUpdate, getBottomButton(i));
-         flushButton(ledClear, ledUpdate, ledPulseUpdate, getLeftButton(i));
-         flushButton(ledClear, ledUpdate, ledPulseUpdate, getRightButton(i));
+         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getTopButton(i));
+         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getBottomButton(i));
+         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getLeftButton(i));
+         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getRightButton(i));
       }
 
       if (ledClear.length() > 0)
@@ -642,7 +647,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
          mMidiOut.sendSysex("F0 00 20 29 02 10 28" + ledPulseUpdate + " F7");
    }
 
-   private StringBuilder flushButton(
+   private StringBuilder flushButtonLed(
       final StringBuilder ledClear,
       StringBuilder ledUpdate,
       final StringBuilder ledPulseUpdate,
@@ -663,10 +668,12 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return ledUpdate;
    }
 
-   private boolean isRecording()
+   private void paint()
    {
-      return mTransport.isClipLauncherOverdubEnabled().get() |
-         mTransport.isClipLauncherAutomationWriteEnabled().get();
+      paintLeftLeds();
+      mCurrentMode.paint();
+      if (mBottomOverlay != null)
+         mBottomOverlay.paint();
    }
 
    private void paintLeftLeds()
@@ -682,6 +689,12 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       else
          getLeftLed(1).setColor(mTransport.isPlaying().get() ? Color.GREEN : Color.GREEN_LOW); // Tranport Play
       getLeftLed(0).setColor(isRecording() ? Color.RED : Color.RED_LOW); // Clip Launcher Record
+   }
+
+   private boolean isRecording()
+   {
+      return mTransport.isClipLauncherOverdubEnabled().get() |
+         mTransport.isClipLauncherAutomationWriteEnabled().get();
    }
 
    final void setMode(final Mode mode)
@@ -725,7 +738,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       }
       else
       {
-         if (mBottomOverlay == overlay && bt.mState == Button.State.HOLD)
+         if (mBottomOverlay == overlay && bt.getState() == Button.State.HOLD)
             mBottomOverlay = null;
       }
 
@@ -751,8 +764,14 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
             getPadLed(x, y).setColor(0.f, 0.f, 0.f);
    }
 
+   /**
+    * x and y must be in the top left coords (natural coords).
+    */
    final Button getPadButton(final int x, final int y)
    {
+      assert x >= 0 && x < 8;
+      assert y >= 0 && y < 8;
+
       return mGridButtons[8 * y + x];
    }
 

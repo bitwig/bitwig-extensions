@@ -25,6 +25,7 @@ public class Button
       final int x,
       final int y)
    {
+      mIsPressureSensitive = isPressureSensitive;
       mLed = new Led(index);
 
       final HardwareButton bt = hardwareSurface.createHardwareButton(id);
@@ -113,13 +114,16 @@ public class Button
       return mY;
    }
 
-   private final Led mLed;
+   /* Hardware objects */
    private final HardwareButton mButton;
    private final MultiStateHardwareLight mLight;
    private final AbsoluteHardwareKnob mAfterTouch;
+
+   /* State */
+   private final Led mLed;
    private final int mX;
    private final int mY;
-
-   State mState = State.RELEASED;
-   Boolean mCancelHoldTask = false;
+   private final boolean mIsPressureSensitive;
+   private State mState = State.RELEASED;
+   private Boolean mCancelHoldTask = false;
 }
