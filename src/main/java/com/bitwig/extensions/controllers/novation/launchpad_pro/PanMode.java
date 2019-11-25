@@ -7,7 +7,7 @@ public class PanMode extends Mode
 {
    public PanMode(final LaunchpadProControllerExtension launchpadProControllerExtension)
    {
-      super(launchpadProControllerExtension);
+      super(launchpadProControllerExtension, "pan");
    }
 
    @Override
@@ -37,7 +37,7 @@ public class PanMode extends Mode
    }
 
    @Override
-   void deactivate()
+   void onDeactivate()
    {
       final TrackBank trackBank = mDriver.getTrackBank();
 

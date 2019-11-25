@@ -7,7 +7,7 @@ public class VolumeMode extends Mode
 {
    public VolumeMode(final LaunchpadProControllerExtension driver)
    {
-      super(driver);
+      super(driver, "volume");
    }
 
    @Override

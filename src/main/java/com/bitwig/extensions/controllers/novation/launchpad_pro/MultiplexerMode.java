@@ -17,9 +17,8 @@ public class MultiplexerMode extends Mode
    }
 
    @Override
-   public void deactivate()
+   public void doDeactivate()
    {
-      super.deactivate();
       mModes[mSelectedIndex].deactivate();
    }
 

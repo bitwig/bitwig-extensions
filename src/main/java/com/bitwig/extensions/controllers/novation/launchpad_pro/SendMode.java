@@ -153,7 +153,7 @@ public class SendMode extends Mode
    public void paintModeButton()
    {
       final Led led = mDriver.getBottomLed(6);
-      led.setColor(mIsActive ? Color.SEND : Color.SEND_LOW);
+      led.setColor(isActive() ? Color.SEND : Color.SEND_LOW);
    }
 
    @Override

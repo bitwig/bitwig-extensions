@@ -77,7 +77,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mDrumSequencerMode = new DrumSequencerMode(this);
       mStepSequencerMode = new StepSequencerMode(this);
 
-      mPlayNoteModes = new MultiplexerMode(this);
+      mPlayNoteModes = new MultiplexerMode(this, "Play");
       mPlayNoteModes.setMode(0, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.GUITAR));
       mPlayNoteModes.setMode(1, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.LINE_3));
       mPlayNoteModes.setMode(2, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.LINE_7));

@@ -25,7 +25,7 @@ public final class KeyboardMode extends Mode
 
    public KeyboardMode(final LaunchpadProControllerExtension launchpadProControllerExtension)
    {
-      super(launchpadProControllerExtension);
+      super(launchpadProControllerExtension, "keyboard");
 
       mKeyboardWidget = new KeyboardWidget(launchpadProControllerExtension, 0, 0, 8, 8);
    }

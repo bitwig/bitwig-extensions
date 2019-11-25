@@ -23,12 +23,20 @@ abstract class Mode extends LaunchpadLayer
 
    protected abstract String getModeDescription();
 
-   protected abstract void doActivate();
+   protected void doActivate()
+   {
+      /* for subclasses */
+   }
 
    @Override
    final protected void onDeactivate()
    {
       paintModeButton();
+   }
+
+   protected void doDeactivate()
+   {
+      /* for subclasses */
    }
 
    void paint()

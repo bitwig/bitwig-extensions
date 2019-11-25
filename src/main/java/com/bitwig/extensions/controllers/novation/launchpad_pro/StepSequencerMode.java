@@ -11,7 +11,7 @@ public class StepSequencerMode extends AbstractSequencerMode
 {
    StepSequencerMode(final LaunchpadProControllerExtension driver)
    {
-      super(driver);
+      super(driver, "step-sequencer");
 
       mKeyboardWidget = new KeyboardWidget(driver, 0, 0, 8, 4);
    }
@@ -41,7 +41,7 @@ public class StepSequencerMode extends AbstractSequencerMode
    }
 
    @Override
-   public void deactivate()
+   protected void doDeactivate()
    {
       final Track track = mDriver.getCursorClipTrack();
       track.unsubscribe();
@@ -51,7 +51,7 @@ public class StepSequencerMode extends AbstractSequencerMode
 
       mKeyboardWidget.deactivate();
 
-      super.deactivate();
+      super.doDeactivate();
    }
 
    @Override

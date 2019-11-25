@@ -47,7 +47,7 @@ abstract class AbstractSequencerMode extends Mode
    }
 
    @Override
-   public void deactivate()
+   protected void doDeactivate()
    {
       final Clip clip = mDriver.getCursorClip();
       clip.color().unsubscribe();
@@ -58,8 +58,6 @@ abstract class AbstractSequencerMode extends Mode
       final Track cursorClipTrack = mDriver.getCursorClipTrack();
       final PlayingNoteArrayValue playingNotes = cursorClipTrack.playingNotes();
       playingNotes.unsubscribe();
-
-      super.deactivate();
    }
 
    @Override

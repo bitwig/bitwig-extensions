@@ -20,7 +20,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 {
    DrumSequencerMode(final LaunchpadProControllerExtension driver)
    {
-      super(driver);
+      super(driver, "drum-sequencer");
    }
 
    @Override
@@ -42,7 +42,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    }
 
    @Override
-   public void deactivate()
+   protected void doDeactivate()
    {
       final Track track = mDriver.getCursorClipTrack();
       track.unsubscribe();
@@ -53,7 +53,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final DrumPadBank cursorClipDrumPads = mDriver.getCursorClipDrumPads();
       cursorClipDrumPads.setIndication(false);
 
-      super.deactivate();
+      super.doDeactivate();
    }
 
    @Override

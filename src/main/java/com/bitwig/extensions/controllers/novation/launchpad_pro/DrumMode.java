@@ -21,17 +21,6 @@ public final class DrumMode extends Mode
       return "Play: 64 Drum Pads";
    }
 
-   @Override
-   public void doActivate()
-   {
-   }
-
-   @Override
-   public void deactivate()
-   {
-      super.deactivate();
-   }
-
    private int calculatePitch(final int x, final int y)
    {
       final int subX = x % 4;
