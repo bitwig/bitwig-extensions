@@ -9,11 +9,9 @@ abstract class Mode extends LaunchpadLayer
       mDriver = driver;
    }
 
-   final void activate()
+   @Override
+   final protected void onActivate()
    {
-      assert !mIsActive;
-      mIsActive = true;
-
       doActivate();
 
       paint();
@@ -27,11 +25,9 @@ abstract class Mode extends LaunchpadLayer
 
    protected abstract void doActivate();
 
-   void deactivate()
+   @Override
+   final protected void onDeactivate()
    {
-      assert mIsActive;
-      mIsActive = false;
-
       paintModeButton();
    }
 
@@ -52,12 +48,6 @@ abstract class Mode extends LaunchpadLayer
 
    void onPadReleased(final int x, final int y, final int velocity, final boolean wasHeld) {}
 
-   final boolean isActive()
-   {
-      return mIsActive;
-   }
-
-   boolean mIsActive = false;
    final LaunchpadProControllerExtension mDriver;
 
    void onArrowUpReleased()

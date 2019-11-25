@@ -5,9 +5,9 @@ public class MultiplexerMode extends Mode
    private static final Color ACTIVE_MODE_COLOR = Color.fromRgb255(255, 255, 255);
    private static final Color INACTIVE_MODE_COLOR = Color.scale(ACTIVE_MODE_COLOR, 0.2f);
 
-   MultiplexerMode(final LaunchpadProControllerExtension driver)
+   MultiplexerMode(final LaunchpadProControllerExtension driver, final String name)
    {
-      super(driver);
+      super(driver, name);
    }
 
    @Override

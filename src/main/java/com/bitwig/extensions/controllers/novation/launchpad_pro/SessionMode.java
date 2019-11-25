@@ -16,7 +16,7 @@ public final class SessionMode extends Mode
 
    public SessionMode(final LaunchpadProControllerExtension launchpadProControllerExtension)
    {
-      super(launchpadProControllerExtension);
+      super(launchpadProControllerExtension, "session");
    }
 
    @Override
@@ -29,7 +29,7 @@ public final class SessionMode extends Mode
    public void paintModeButton()
    {
       final Led led = mDriver.getTopLed(4);
-      led.setColor(mIsActive ? SESSION_ON_COLOR : SESSION_OFF_COLOR);
+      led.setColor(isActive() ? SESSION_ON_COLOR : SESSION_OFF_COLOR);
    }
 
    @Override

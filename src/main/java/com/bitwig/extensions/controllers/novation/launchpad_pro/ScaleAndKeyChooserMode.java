@@ -17,7 +17,7 @@ public class ScaleAndKeyChooserMode extends Mode
 
    ScaleAndKeyChooserMode(final LaunchpadProControllerExtension driver)
    {
-      super(driver);
+      super(driver, "scale-key-chooser");
    }
 
    @Override

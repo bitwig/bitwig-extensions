@@ -2,9 +2,9 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 public abstract class Overlay extends Mode
 {
-   Overlay(final LaunchpadProControllerExtension driver)
+   Overlay(final LaunchpadProControllerExtension driver, final String name)
    {
-      super(driver);
+      super(driver, name);
    }
 
    @Override

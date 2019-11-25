@@ -12,7 +12,7 @@ public final class DrumMode extends Mode
 
    public DrumMode(final LaunchpadProControllerExtension launchpadProControllerExtension)
    {
-      super(launchpadProControllerExtension);
+      super(launchpadProControllerExtension, "drum");
    }
 
    @Override

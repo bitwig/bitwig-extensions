@@ -15,9 +15,9 @@ import com.bitwig.extension.controller.api.Track;
 
 abstract class AbstractSequencerMode extends Mode
 {
-   protected AbstractSequencerMode(final LaunchpadProControllerExtension driver)
+   protected AbstractSequencerMode(final LaunchpadProControllerExtension driver, final String name)
    {
-      super(driver);
+      super(driver, name);
    }
 
    protected enum DataMode

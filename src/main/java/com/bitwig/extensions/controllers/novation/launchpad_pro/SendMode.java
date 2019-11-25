@@ -9,7 +9,7 @@ public class SendMode extends Mode
 {
    SendMode(final LaunchpadProControllerExtension driver)
    {
-      super(driver);
+      super(driver, "send");
    }
 
    @Override
@@ -78,7 +78,7 @@ public class SendMode extends Mode
    }
 
    @Override
-   void deactivate()
+   protected void doDeactivate()
    {
       final TrackBank trackBank = mDriver.getTrackBank();
 
