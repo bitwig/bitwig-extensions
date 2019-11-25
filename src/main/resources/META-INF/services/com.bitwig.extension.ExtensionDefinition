@@ -1,3 +1,5 @@
+com.bitwig.extensions.controllers.generic.MIDIKeyboardExtensionDefinition
+
 com.bitwig.extensions.controllers.akai.advance.AdvanceControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.apc40_mkii.APC40MKIIControllerExtensionDefinition
 
