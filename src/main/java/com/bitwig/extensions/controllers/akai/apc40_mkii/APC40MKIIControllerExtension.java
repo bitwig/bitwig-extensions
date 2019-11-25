@@ -44,7 +44,7 @@ import com.bitwig.extensions.framework.Layers;
 
 public class APC40MKIIControllerExtension extends ControllerExtension
 {
-   private static final boolean ENABLE_DEBUG_LAYER = false;
+   private static final boolean ENABLE_DEBUG_LAYER = true;
 
    private static final int CHANNEL_STRIP_NUM_PARAMS = 4;
 
@@ -1373,15 +1373,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       case SENDS:
          ring = KnobLed.RING_VOLUME;
          break;
-      case USER:
-         ring = KnobLed.RING_SINGLE;
-         break;
       case CHANNEL_STRIP:
          ring = knobIndex < CHANNEL_STRIP_NUM_PARAMS ? KnobLed.RING_SINGLE : KnobLed.RING_VOLUME;
          break;
-      default:
+      case USER:
          ring = KnobLed.RING_SINGLE;
          break;
+      default:
+         throw new IllegalStateException();
       }
 
       if (knobLed.wantsFlush())
