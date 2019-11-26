@@ -142,10 +142,6 @@ class Button
    {
    }
 
-   public void setPulse(final int pulse)
-   {
-   }
-
    void clear()
    {
       mLight.state().setValue(LedState.OFF);
@@ -180,6 +176,18 @@ class Button
    public MultiStateHardwareLight getLight()
    {
       return mLight;
+   }
+
+   public boolean isPressureSensitive()
+   {
+      return mIsPressureSensitive;
+   }
+
+   // For debugging
+   @Override
+   public String toString()
+   {
+      return mButton.getId();
    }
 
    private final LaunchpadProControllerExtension mDriver;
