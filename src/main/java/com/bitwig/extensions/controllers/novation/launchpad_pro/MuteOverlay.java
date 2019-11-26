@@ -34,7 +34,7 @@ public class MuteOverlay extends Overlay
    @Override
    public void paintModeButton()
    {
-      final Button button = mDriver.getBottomButton(2);
+      final Button button = mDriver.getButtonOnTheBottom(2);
       button.setColor(isActive() ? Color.MUTE : Color.MUTE_LOW);
    }
 }

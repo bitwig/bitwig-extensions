@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
-import java.util.function.Supplier;
-
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ClipLauncherSlotOrSceneBank;
@@ -11,7 +9,6 @@ import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extensions.framework.Layer;
 
 public final class SessionMode extends Mode
 {
@@ -27,6 +24,7 @@ public final class SessionMode extends Mode
       mQuantizeLayer = new LaunchpadLayer(driver, "session-quantize");
 
       final TrackBank trackBank = driver.getTrackBank();
+      final SceneBank sceneBank = trackBank.sceneBank();
       for (int x = 0; x < 8; ++x)
       {
          final Track track = trackBank.getItemAt(x);
@@ -49,6 +47,16 @@ public final class SessionMode extends Mode
       bindLayer(driver.getShiftButton(), mShiftLayer);
       bindLayer(driver.getDeleteButton(), mDeleteLayer);
       bindLayer(driver.getQuantizeButton(), mQuantizeLayer);
+
+      bindPressed(driver.getRightButton(), trackBank.scrollForwardsAction());
+      bindPressed(driver.getLeftButton(), trackBank.scrollBackwardsAction());
+      bindPressed(driver.getUpButton(), sceneBank.scrollBackwardsAction());
+      bindPressed(driver.getDownButton(), sceneBank.scrollForwardsAction());
+
+      mShiftLayer.bindPressed(driver.getRightButton(), trackBank.scrollPageForwardsAction());
+      mShiftLayer.bindPressed(driver.getLeftButton(), trackBank.scrollPageBackwardsAction());
+      mShiftLayer.bindPressed(driver.getUpButton(), sceneBank.scrollPageBackwardsAction());
+      mShiftLayer.bindPressed(driver.getDownButton(), sceneBank.scrollPageForwardsAction());
    }
 
    private InternalHardwareLightState computeGridLightState(final ClipLauncherSlot slot, final Button button)
@@ -81,7 +89,7 @@ public final class SessionMode extends Mode
    @Override
    public void paintModeButton()
    {
-      final Button button = mDriver.getTopButton(4);
+      final Button button = mDriver.getButtonOnTheTop(4);
       button.setColor(isActive() ? SESSION_ON_COLOR : SESSION_OFF_COLOR);
    }
 
@@ -200,10 +208,10 @@ public final class SessionMode extends Mode
    private void paintArrows()
    {
       final TrackBank trackBank = mDriver.getTrackBank();
-      mDriver.getTopButton(0).setColor(trackBank.sceneBank().canScrollBackwards().get() ? Color.SCENE : Color.SCENE_LOW);
-      mDriver.getTopButton(1).setColor(trackBank.sceneBank().canScrollForwards().get() ? Color.SCENE : Color.SCENE_LOW);
-      mDriver.getTopButton(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getTopButton(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getButtonOnTheTop(0).setColor(trackBank.sceneBank().canScrollBackwards().get() ? Color.SCENE : Color.SCENE_LOW);
+      mDriver.getButtonOnTheTop(1).setColor(trackBank.sceneBank().canScrollForwards().get() ? Color.SCENE : Color.SCENE_LOW);
+      mDriver.getButtonOnTheTop(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getButtonOnTheTop(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
    }
 
    private void paintSlots()
@@ -246,7 +254,7 @@ public final class SessionMode extends Mode
       for (int i = 0; i < 8; ++i)
       {
          final Scene scene = sceneBank.getItemAt(i);
-         final Button button = mDriver.getRightButton(7 - i);
+         final Button button = mDriver.getButtonOnTheRight(7 - i);
          if (scene.exists().get())
          {
             Color sceneColor = new Color(scene.color());

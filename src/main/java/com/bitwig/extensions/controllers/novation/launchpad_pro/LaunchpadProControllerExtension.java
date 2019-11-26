@@ -634,10 +634,10 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       for (int i = 0; i < 8; ++i)
       {
-         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getTopButton(i));
-         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getBottomButton(i));
-         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getLeftButton(i));
-         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getRightButton(i));
+         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getButtonOnTheTop(i));
+         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getButtonOnTheBottom(i));
+         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getButtonOnTheLeft(i));
+         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getButtonOnTheRight(i));
       }
 
       if (ledClear.length() > 0)
@@ -762,7 +762,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mGridButtons[8 * y + x];
    }
 
-   Button getTopButton(final int x)
+   Button getButtonOnTheTop(final int x)
    {
       switch (x)
       {
@@ -787,7 +787,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       }
    }
 
-   Button getBottomButton(final int x)
+   Button getButtonOnTheBottom(final int x)
    {
       switch (x)
       {
@@ -812,7 +812,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       }
    }
 
-   Button getLeftButton(final int y)
+   Button getButtonOnTheLeft(final int y)
    {
       switch (y)
       {
@@ -837,9 +837,29 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       }
    }
 
-   Button getRightButton(final int y)
+   Button getButtonOnTheRight(final int y)
    {
       return mSceneButtons[y];
+   }
+
+   public Button getUpButton()
+   {
+      return mUpButton;
+   }
+
+   public Button getDownButton()
+   {
+      return mDownButton;
+   }
+
+   public Button getLeftButton()
+   {
+      return mLeftButton;
+   }
+
+   public Button getRightButton()
+   {
+      return mRightButton;
    }
 
    TrackBank getTrackBank()

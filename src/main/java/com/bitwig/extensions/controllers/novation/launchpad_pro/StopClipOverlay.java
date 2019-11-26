@@ -37,7 +37,7 @@ class StopClipOverlay extends Overlay
    @Override
    public void paintModeButton()
    {
-      final Button button = mDriver.getBottomButton(7);
+      final Button button = mDriver.getButtonOnTheBottom(7);
       button.setColor(isActive() ? STOP_CLIP_ON_COLOR : STOP_CLIP_OFF_COLOR);
    }
 }

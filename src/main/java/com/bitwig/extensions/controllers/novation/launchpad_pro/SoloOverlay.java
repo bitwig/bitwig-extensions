@@ -34,7 +34,7 @@ public class SoloOverlay extends Overlay
    @Override
    public void paintModeButton()
    {
-      final Button button = mDriver.getBottomButton(3);
+      final Button button = mDriver.getButtonOnTheBottom(3);
       button.setColor(isActive() ? Color.SOLO : Color.SOLO_LOW);
    }
 }

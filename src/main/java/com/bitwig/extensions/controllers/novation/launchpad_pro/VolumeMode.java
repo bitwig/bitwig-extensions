@@ -79,23 +79,23 @@ public class VolumeMode extends Mode
                button.clear();
          }
 
-         mDriver.getRightButton(i).clear();
+         mDriver.getButtonOnTheRight(i).clear();
       }
    }
 
    private void paintArrows()
    {
       final TrackBank trackBank = mDriver.getTrackBank();
-      mDriver.getTopButton(0).setColor(Color.OFF);
-      mDriver.getTopButton(1).setColor(Color.OFF);
-      mDriver.getTopButton(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getTopButton(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getButtonOnTheTop(0).setColor(Color.OFF);
+      mDriver.getButtonOnTheTop(1).setColor(Color.OFF);
+      mDriver.getButtonOnTheTop(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getButtonOnTheTop(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
    }
 
    @Override
    public void paintModeButton()
    {
-      final Button button = mDriver.getBottomButton(4);
+      final Button button = mDriver.getButtonOnTheBottom(4);
       button.setColor(isActive() ? Color.VOLUME : Color.VOLUME_LOW);
    }
 

@@ -130,7 +130,7 @@ public class SendMode extends Mode
          final SendBank sendBank = trackBank.getItemAt(i).sendBank();
          final Send send = sendBank.getItemAt(i);
          if (!send.exists().get())
-            mDriver.getRightButton(7 - i).clear();
+            mDriver.getButtonOnTheRight(7 - i).clear();
          else
          {
             Color sendColor = new Color(send.sendChannelColor());
@@ -139,20 +139,20 @@ public class SendMode extends Mode
                sendColor = Color.WHITE;
 
             final Color sendColorLow = new Color(sendColor, 0.1f);
-            mDriver.getRightButton(7 - i).setColor(i == mSendIndex ? sendColor : sendColorLow);
+            mDriver.getButtonOnTheRight(7 - i).setColor(i == mSendIndex ? sendColor : sendColorLow);
          }
       }
 
-      mDriver.getTopButton(0).setColor(Color.OFF);
-      mDriver.getTopButton(1).setColor(Color.OFF);
-      mDriver.getTopButton(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getTopButton(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getButtonOnTheTop(0).setColor(Color.OFF);
+      mDriver.getButtonOnTheTop(1).setColor(Color.OFF);
+      mDriver.getButtonOnTheTop(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getButtonOnTheTop(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
    }
 
    @Override
    public void paintModeButton()
    {
-      final Button button = mDriver.getBottomButton(6);
+      final Button button = mDriver.getButtonOnTheBottom(6);
       button.setColor(isActive() ? Color.SEND : Color.SEND_LOW);
    }
 

@@ -65,7 +65,7 @@ public class PanMode extends Mode
          final Color colorOn = mDriver.getTrackColor(i);
          final Color colorOff = Color.scale(colorOn, 0.2f);
 
-         final Button centerButton = mDriver.getRightButton(7 - i);
+         final Button centerButton = mDriver.getButtonOnTheRight(7 - i);
          if (pan == 0)
             centerButton.setColor(colorOn);
          else
@@ -87,16 +87,16 @@ public class PanMode extends Mode
    private void paintArrows()
    {
       final TrackBank trackBank = mDriver.getTrackBank();
-      mDriver.getTopButton(0).setColor(Color.OFF);
-      mDriver.getTopButton(1).setColor(Color.OFF);
-      mDriver.getTopButton(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getTopButton(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getButtonOnTheTop(0).setColor(Color.OFF);
+      mDriver.getButtonOnTheTop(1).setColor(Color.OFF);
+      mDriver.getButtonOnTheTop(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getButtonOnTheTop(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
    }
 
    @Override
    public void paintModeButton()
    {
-      final Button button = mDriver.getBottomButton(5);
+      final Button button = mDriver.getButtonOnTheBottom(5);
       button.setColor(isActive() ? Color.PAN : Color.PAN_LOW);
    }
 

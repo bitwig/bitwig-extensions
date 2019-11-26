@@ -83,7 +83,7 @@ public final class DrumMode extends Mode
                }
          }
 
-         mDriver.getRightButton(i).clear();
+         mDriver.getButtonOnTheRight(i).clear();
       }
    }
 }

@@ -33,7 +33,7 @@ class TrackSelectOverlay extends Overlay
    @Override
    public void paintModeButton()
    {
-      final Button button = mDriver.getBottomButton(1);
+      final Button button = mDriver.getButtonOnTheBottom(1);
       button.setColor(isActive() ? Color.TRACK : Color.TRACK_LOW);
    }
 }

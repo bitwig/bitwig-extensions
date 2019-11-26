@@ -54,7 +54,7 @@ public class MultiplexerMode extends Mode
 
       for (int i = 0; i < 8; ++i)
       {
-         final Button button = mDriver.getRightButton(7 - i);
+         final Button button = mDriver.getButtonOnTheRight(7 - i);
 
          if (mModes[i] == null)
             button.clear();

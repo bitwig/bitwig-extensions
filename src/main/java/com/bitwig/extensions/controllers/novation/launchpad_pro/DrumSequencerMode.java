@@ -592,10 +592,10 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final DrumPadBank drumPads = mDriver.getCursorClipDrumPads();
       final int pos = drumPads.scrollPosition().get();
 
-      mDriver.getTopButton(0).setColor(pos < 116 ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getTopButton(1).setColor(pos > 0 ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getTopButton(2).setColor(Color.OFF);
-      mDriver.getTopButton(3).setColor(Color.OFF);
+      mDriver.getButtonOnTheTop(0).setColor(pos < 116 ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getButtonOnTheTop(1).setColor(pos > 0 ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getButtonOnTheTop(2).setColor(Color.OFF);
+      mDriver.getButtonOnTheTop(3).setColor(Color.OFF);
    }
 
    private void paintSteps()
@@ -672,7 +672,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    @Override
    void paintModeButton()
    {
-      mDriver.getTopButton(6).setColor(isActive() ? MODE_COLOR : MODE_COLOR_LOW);
+      mDriver.getButtonOnTheTop(6).setColor(isActive() ? MODE_COLOR : MODE_COLOR_LOW);
    }
 
    @Override

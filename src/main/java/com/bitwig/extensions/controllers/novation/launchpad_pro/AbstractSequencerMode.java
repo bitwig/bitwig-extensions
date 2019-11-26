@@ -196,10 +196,10 @@ abstract class AbstractSequencerMode extends Mode
 
    protected void paintDataChoice()
    {
-      mDriver.getRightButton(0).setColor(mDataMode == DataMode.SoundData ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getRightButton(1).setColor(mDataMode == DataMode.MixData ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getRightButton(2).setColor(hasMainAltMode() ? mDataMode == DataMode.MainAlt ? Color.YELLOW : Color.YELLOW_LOW : Color.OFF);
-      mDriver.getRightButton(3).setColor(mDataMode == DataMode.Main ? Color.YELLOW : Color.YELLOW_LOW);
+      mDriver.getButtonOnTheRight(0).setColor(mDataMode == DataMode.SoundData ? Color.YELLOW : Color.YELLOW_LOW);
+      mDriver.getButtonOnTheRight(1).setColor(mDataMode == DataMode.MixData ? Color.YELLOW : Color.YELLOW_LOW);
+      mDriver.getButtonOnTheRight(2).setColor(hasMainAltMode() ? mDataMode == DataMode.MainAlt ? Color.YELLOW : Color.YELLOW_LOW : Color.OFF);
+      mDriver.getButtonOnTheRight(3).setColor(mDataMode == DataMode.Main ? Color.YELLOW : Color.YELLOW_LOW);
    }
 
    protected void paintScenes()
@@ -225,7 +225,7 @@ abstract class AbstractSequencerMode extends Mode
 
       for (int i = 0; i < 4; ++i)
       {
-         final Button button = mDriver.getRightButton(7 - i);
+         final Button button = mDriver.getButtonOnTheRight(7 - i);
 
          if (playingStep / 32 == i)
             button.setColor(mPage == i ? Color.GREEN : Color.GREEN_LOW);
@@ -244,7 +244,7 @@ abstract class AbstractSequencerMode extends Mode
 
       for (int i = 0; i < 8; ++i)
       {
-         final Button button = mDriver.getRightButton(7 - i);
+         final Button button = mDriver.getButtonOnTheRight(7 - i);
          button.setColor((i + 1) * 4 <= duration ? Color.WHITE : Color.WHITE_LOW);
       }
    }

@@ -34,7 +34,7 @@ public class RecordArmOverlay extends Overlay
    @Override
    public void paintModeButton()
    {
-      final Button button = mDriver.getBottomButton(0);
+      final Button button = mDriver.getButtonOnTheBottom(0);
       button.setColor(isActive() ? RECORD_ARM_ON_COLOR : RECORD_ARM_OFF_COLOR);
    }
 }

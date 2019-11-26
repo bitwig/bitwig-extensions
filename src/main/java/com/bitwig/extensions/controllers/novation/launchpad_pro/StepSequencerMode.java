@@ -86,10 +86,10 @@ public class StepSequencerMode extends AbstractSequencerMode
 
    private void paintArrows()
    {
-      mDriver.getTopButton(0).setColor(mKeyboardWidget.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getTopButton(1).setColor(mKeyboardWidget.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getTopButton(2).setColor(Color.OFF);
-      mDriver.getTopButton(3).setColor(Color.OFF);
+      mDriver.getButtonOnTheTop(0).setColor(mKeyboardWidget.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getButtonOnTheTop(1).setColor(mKeyboardWidget.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getButtonOnTheTop(2).setColor(Color.OFF);
+      mDriver.getButtonOnTheTop(3).setColor(Color.OFF);
    }
 
    @Override
@@ -188,7 +188,7 @@ public class StepSequencerMode extends AbstractSequencerMode
    @Override
    void paintModeButton()
    {
-      mDriver.getTopButton(7).setColor(isActive() ? MODE_COLOR : MODE_COLOR_LOW);
+      mDriver.getButtonOnTheTop(7).setColor(isActive() ? MODE_COLOR : MODE_COLOR_LOW);
    }
 
    void invalidate()

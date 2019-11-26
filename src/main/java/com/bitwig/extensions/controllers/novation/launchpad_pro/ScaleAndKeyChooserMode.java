@@ -39,7 +39,7 @@ public class ScaleAndKeyChooserMode extends Mode
 
       // light off the scene buttons
       for (int i = 0; i < 8; ++i)
-         mDriver.getRightButton(i).clear();
+         mDriver.getButtonOnTheRight(i).clear();
    }
 
    private void paintKeyboard()
