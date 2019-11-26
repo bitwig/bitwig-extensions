@@ -212,7 +212,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    {
       mHardwareSurface = getHost().createHardwareSurface();
 
-      final PianoKeyboard pianoKeyboard = mHardwareSurface.createPianoKeyboard("piano", mNumberOfKeys);
+      final PianoKeyboard pianoKeyboard = mHardwareSurface.createPianoKeyboard("piano", mNumberOfKeys, 3, 0);
       pianoKeyboard.setMidiIn(getHost().getMidiInPort(0));
 
       createButtons();
