@@ -54,14 +54,14 @@ public class MultiplexerMode extends Mode
 
       for (int i = 0; i < 8; ++i)
       {
-         final Led led = mDriver.getRightLed(7 - i);
+         final Button button = mDriver.getRightButton(7 - i);
 
          if (mModes[i] == null)
-            led.clear();
+            button.clear();
          else if (mSelectedIndex == i)
-            led.setColor(ACTIVE_MODE_COLOR);
+            button.setColor(ACTIVE_MODE_COLOR);
          else
-            led.setColor(INACTIVE_MODE_COLOR);
+            button.setColor(INACTIVE_MODE_COLOR);
       }
    }
 

@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
+import com.bitwig.extensions.controllers.akai.apc40_mkii.Led;
 
 final class KeyboardWidget
 {
@@ -103,20 +104,20 @@ final class KeyboardWidget
       for (int i = mX0; i < mX0 + mWidth; ++i)
          for (int j = mY0; j < mY0 + mHeight; ++j)
          {
-            final Led led = mDriver.getPadLed(i, j);
+            final Button bt = mDriver.getPadButton(i, j);
             final int midiNote = calculateGuitarKey(i, j);
             final int midiNoteBase = midiNote % 12;
 
             if (midiNote < 0 || midiNote > 127)
-               led.setColor(Color.OFF);
+               bt.setColor(Color.OFF);
             else if (playingNotes.isNotePlaying(midiNote))
-               led.setColor(PLAYING_KEY_COLOR);
+               bt.setColor(PLAYING_KEY_COLOR);
             else if (mDriver.shouldHihlightRootKey() && midiNoteBase == mDriver.getMusicalKey())
-               led.setColor(trackColor);
+               bt.setColor(trackColor);
             else if (!mDriver.shouldHighlightScale() || scale.isMidiNoteInScale(mDriver.getMusicalKey(), midiNoteBase))
-               led.setColor(isBlackKey(midiNote) ? USED_BLACK_KEY_COLOR : USED_WHITE_KEY_COLOR);
+               bt.setColor(isBlackKey(midiNote) ? USED_BLACK_KEY_COLOR : USED_WHITE_KEY_COLOR);
             else
-               led.setColor(Color.OFF);
+               bt.setColor(Color.OFF);
          }
    }
 
@@ -135,27 +136,27 @@ final class KeyboardWidget
             if (noteIndex == -1)
             {
                /* dead led */
-               mDriver.getPadLed(x, y).clear();
+               mDriver.getPadButton(x, y).clear();
             }
             else if (playingNotes.isNotePlaying(pitch))
             {
                /* playing note */
-               mDriver.getPadLed(x, y).setColor(PLAYING_KEY_COLOR);
+               mDriver.getPadButton(x, y).setColor(PLAYING_KEY_COLOR);
             }
             else if ((noteIndex % 12) == mDriver.getMusicalKey())
             {
                /* root key */
-               mDriver.getPadLed(x, y).setColor(trackColor);
+               mDriver.getPadButton(x, y).setColor(trackColor);
             }
             else if (scale.isMidiNoteInScale(mDriver.getMusicalKey(), noteIndex))
             {
                /* note in scale */
-               mDriver.getPadLed(x, y).setColor(isBlackKey(pitch) ? USED_BLACK_KEY_COLOR : USED_WHITE_KEY_COLOR);
+               mDriver.getPadButton(x, y).setColor(isBlackKey(pitch) ? USED_BLACK_KEY_COLOR : USED_WHITE_KEY_COLOR);
             }
             else
             {
                /* note not in scale */
-               mDriver.getPadLed(x, y).setColor(UNUSED_KEY_COLOR);
+               mDriver.getPadButton(x, y).setColor(UNUSED_KEY_COLOR);
             }
          }
       }
@@ -170,17 +171,17 @@ final class KeyboardWidget
       for (int i = mX0; i < mX0 + mWidth; ++i)
          for (int j = mY0; j < mY0 + mHeight; ++j)
          {
-            final Led led = mDriver.getPadLed(i, j);
+            final Button button = mDriver.getPadButton(i, j);
             final int noteIndex = i + X * j;
             final int midiNode = musicalScale.computeNote(mDriver.getMusicalKey(), mOctave, noteIndex);
             if (midiNode < 0 || midiNode > 127)
-               led.clear();
+               button.clear();
             else if (playingNotes.isNotePlaying(midiNode))
-               led.setColor(PLAYING_KEY_COLOR);
+               button.setColor(PLAYING_KEY_COLOR);
             else if (noteIndex % scaleSize == 0)
-               led.setColor(trackColor);
+               button.setColor(trackColor);
             else
-               led.setColor(USED_WHITE_KEY_COLOR);
+               button.setColor(USED_WHITE_KEY_COLOR);
          }
    }
 

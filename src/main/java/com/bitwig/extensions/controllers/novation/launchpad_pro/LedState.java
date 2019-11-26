@@ -10,10 +10,10 @@ public class LedState implements InternalHardwareLightState
       this(color, 0);
    }
 
-   LedState(final Color color, final int pulseColor)
+   LedState(final Color color, final int pulse)
    {
       mColor = color;
-      mPulseColor = pulseColor;
+      mPulse = pulse;
    }
 
    @Override
@@ -37,14 +37,14 @@ public class LedState implements InternalHardwareLightState
       return mColor;
    }
 
-   public void setPulseColor(final int pulseColor)
+   public void setPulse(final int pulseColor)
    {
-      mPulseColor = pulseColor;
+      mPulse = pulseColor;
    }
 
-   public int getPulseColor()
+   public int getPulse()
    {
-      return mPulseColor;
+      return mPulse;
    }
 
    @Override
@@ -58,15 +58,15 @@ public class LedState implements InternalHardwareLightState
       if (obj == this)
          return true;
 
-      return mColor.equals(obj.mColor) && mPulseColor == obj.mPulseColor;
+      return mColor.equals(obj.mColor) && mPulse == obj.mPulse;
    }
 
    public void set(final LedState other)
    {
       mColor.set(other.mColor);
-      mPulseColor = other.mPulseColor;
+      mPulse = other.mPulse;
    }
 
    private Color mColor;
-   private int mPulseColor;
+   private int mPulse;
 }

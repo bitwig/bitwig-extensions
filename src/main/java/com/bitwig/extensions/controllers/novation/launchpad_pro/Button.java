@@ -136,6 +136,17 @@ class Button
       mDesiredLedState.setColor(c);
    }
 
+   public void setPulse(final int pulse)
+   {
+      mDesiredLedState.setPulse(pulse);
+   }
+
+   void clear()
+   {
+      mDesiredLedState.setColor(Color.OFF);
+      mDesiredLedState.setPulse(NO_PULSE);
+   }
+
    public String updateClearSysex()
    {
       final Color color = mDesiredLedState.getColor();
@@ -158,11 +169,11 @@ class Button
 
    public String updatePulseSysex()
    {
-      final int pulseColor = mDesiredLedState.getPulseColor();
-      if (pulseColor == mCurrentLedState.getPulseColor())
+      final int pulseColor = mDesiredLedState.getPulse();
+      if (pulseColor == mCurrentLedState.getPulse())
          return "";
 
-      mCurrentLedState.setPulseColor(pulseColor);
+      mCurrentLedState.setPulse(pulseColor);
       if (pulseColor == 0)
          return "";
       return String.format(" %02x %02x", mIndex, pulseColor);

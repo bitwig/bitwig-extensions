@@ -27,14 +27,14 @@ public class MuteOverlay extends Overlay
       {
          final boolean isMuted = mDriver.getTrackBank().getItemAt(x).mute().get();
          final boolean exists = mDriver.getTrackBank().getItemAt(x).exists().get();
-         mDriver.getPadLed(x, 0).setColor(!exists ? Color.OFF : isMuted ? Color.MUTE : Color.MUTE_LOW);
+         mDriver.getPadButton(x, 0).setColor(!exists ? Color.OFF : isMuted ? Color.MUTE : Color.MUTE_LOW);
       }
    }
 
    @Override
    public void paintModeButton()
    {
-      final Led led = mDriver.getBottomLed(2);
-      led.setColor(isActive() ? Color.MUTE : Color.MUTE_LOW);
+      final Button button = mDriver.getBottomButton(2);
+      button.setColor(isActive() ? Color.MUTE : Color.MUTE_LOW);
    }
 }

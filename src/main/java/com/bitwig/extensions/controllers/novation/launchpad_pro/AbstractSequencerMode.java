@@ -119,10 +119,10 @@ abstract class AbstractSequencerMode extends Mode
       {
          for (int i = 0; i < 8; ++i)
          {
-            mDriver.getPadLed(i, 3).setColor(Color.WHITE_LOW);
-            mDriver.getPadLed(i, 2).setColor(Color.CYAN_LOW);
-            mDriver.getPadLed(i, 1).setColor(Color.PAN_LOW);
-            mDriver.getPadLed(i, 0).setColor(Color.OFF);
+            mDriver.getPadButton(i, 3).setColor(Color.WHITE_LOW);
+            mDriver.getPadButton(i, 2).setColor(Color.CYAN_LOW);
+            mDriver.getPadButton(i, 1).setColor(Color.PAN_LOW);
+            mDriver.getPadButton(i, 0).setColor(Color.OFF);
          }
          return;
       }
@@ -137,14 +137,14 @@ abstract class AbstractSequencerMode extends Mode
 
       for (int i = 0; i < 8; ++i)
       {
-         mDriver.getPadLed(i, 3).setColor(i <= velocity * 7 ? Color.WHITE : Color.WHITE_LOW);
-         mDriver.getPadLed(i, 2).setColor(computeDuration(i) <= duration ? Color.CYAN : Color.CYAN_LOW);
+         mDriver.getPadButton(i, 3).setColor(i <= velocity * 7 ? Color.WHITE : Color.WHITE_LOW);
+         mDriver.getPadButton(i, 2).setColor(computeDuration(i) <= duration ? Color.CYAN : Color.CYAN_LOW);
          final double ipan = (i - 3.5) / 3.5;
          if ((pan > 0 && ipan > 0 && ipan <= pan) || (pan < 0 && ipan < 0 && pan <= ipan))
-            mDriver.getPadLed(i, 1).setColor(Color.PAN);
+            mDriver.getPadButton(i, 1).setColor(Color.PAN);
          else
-            mDriver.getPadLed(i, 1).setColor(Color.PAN_LOW);
-         mDriver.getPadLed(i, 0).setColor(Color.OFF);
+            mDriver.getPadButton(i, 1).setColor(Color.PAN_LOW);
+         mDriver.getPadButton(i, 0).setColor(Color.OFF);
       }
    }
 
@@ -156,10 +156,10 @@ abstract class AbstractSequencerMode extends Mode
       {
          for (int i = 0; i < 8; ++i)
          {
-            mDriver.getPadLed(i, 3).setColor(Color.WHITE_LOW);
-            mDriver.getPadLed(i, 2).setColor(Color.YELLOW_LOW);
-            mDriver.getPadLed(i, 1).setColor(Color.BLUE_LOW);
-            mDriver.getPadLed(i, 0).setColor(Color.OFF);
+            mDriver.getPadButton(i, 3).setColor(Color.WHITE_LOW);
+            mDriver.getPadButton(i, 2).setColor(Color.YELLOW_LOW);
+            mDriver.getPadButton(i, 1).setColor(Color.BLUE_LOW);
+            mDriver.getPadButton(i, 0).setColor(Color.OFF);
          }
          return;
       }
@@ -177,18 +177,18 @@ abstract class AbstractSequencerMode extends Mode
          final double itranspose = computeTranspoose(i);
 
          if ((transpose > 0 && itranspose > 0 && itranspose <= transpose) || (transpose < 0 && itranspose < 0 && transpose <= itranspose))
-            mDriver.getPadLed(i, 3).setColor(Color.WHITE);
+            mDriver.getPadButton(i, 3).setColor(Color.WHITE);
          else
-            mDriver.getPadLed(i, 3).setColor(Color.WHITE_LOW);
+            mDriver.getPadButton(i, 3).setColor(Color.WHITE_LOW);
 
          final double itimbre = (i - 3.5) / 3.5;
          if ((timbre > 0 && itimbre > 0 && itimbre <= timbre) || (timbre < 0 && itimbre < 0 && timbre <= itimbre))
-            mDriver.getPadLed(i, 2).setColor(Color.YELLOW);
+            mDriver.getPadButton(i, 2).setColor(Color.YELLOW);
          else
-            mDriver.getPadLed(i, 2).setColor(Color.YELLOW_LOW);
+            mDriver.getPadButton(i, 2).setColor(Color.YELLOW_LOW);
 
-         mDriver.getPadLed(i, 1).setColor(i <= pressure * 7 ? Color.BLUE : Color.BLUE_LOW);
-         mDriver.getPadLed(i, 0).setColor(Color.OFF);
+         mDriver.getPadButton(i, 1).setColor(i <= pressure * 7 ? Color.BLUE : Color.BLUE_LOW);
+         mDriver.getPadButton(i, 0).setColor(Color.OFF);
       }
    }
 
@@ -196,10 +196,10 @@ abstract class AbstractSequencerMode extends Mode
 
    protected void paintDataChoice()
    {
-      mDriver.getRightLed(0).setColor(mDataMode == DataMode.SoundData ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getRightLed(1).setColor(mDataMode == DataMode.MixData ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getRightLed(2).setColor(hasMainAltMode() ? mDataMode == DataMode.MainAlt ? Color.YELLOW : Color.YELLOW_LOW : Color.OFF);
-      mDriver.getRightLed(3).setColor(mDataMode == DataMode.Main ? Color.YELLOW : Color.YELLOW_LOW);
+      mDriver.getRightButton(0).setColor(mDataMode == DataMode.SoundData ? Color.YELLOW : Color.YELLOW_LOW);
+      mDriver.getRightButton(1).setColor(mDataMode == DataMode.MixData ? Color.YELLOW : Color.YELLOW_LOW);
+      mDriver.getRightButton(2).setColor(hasMainAltMode() ? mDataMode == DataMode.MainAlt ? Color.YELLOW : Color.YELLOW_LOW : Color.OFF);
+      mDriver.getRightButton(3).setColor(mDataMode == DataMode.Main ? Color.YELLOW : Color.YELLOW_LOW);
    }
 
    protected void paintScenes()
@@ -225,14 +225,14 @@ abstract class AbstractSequencerMode extends Mode
 
       for (int i = 0; i < 4; ++i)
       {
-         final Led led = mDriver.getRightLed(7 - i);
+         final Button button = mDriver.getRightButton(7 - i);
 
          if (playingStep / 32 == i)
-            led.setColor(mPage == i ? Color.GREEN : Color.GREEN_LOW);
+            button.setColor(mPage == i ? Color.GREEN : Color.GREEN_LOW);
          else if (8 * i < length)
-            led.setColor(mPage == i ? Color.WHITE : Color.WHITE_LOW);
+            button.setColor(mPage == i ? Color.WHITE : Color.WHITE_LOW);
          else
-            led.setColor(Color.OFF);
+            button.setColor(Color.OFF);
       }
    }
 
@@ -244,8 +244,8 @@ abstract class AbstractSequencerMode extends Mode
 
       for (int i = 0; i < 8; ++i)
       {
-         final Led led = mDriver.getRightLed(7 - i);
-         led.setColor((i + 1) * 4 <= duration ? Color.WHITE : Color.WHITE_LOW);
+         final Button button = mDriver.getRightButton(7 - i);
+         button.setColor((i + 1) * 4 <= duration ? Color.WHITE : Color.WHITE_LOW);
       }
    }
 

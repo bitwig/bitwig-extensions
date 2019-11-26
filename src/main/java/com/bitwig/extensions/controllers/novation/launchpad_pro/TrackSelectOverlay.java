@@ -26,14 +26,14 @@ class TrackSelectOverlay extends Overlay
       {
          final boolean isSelected = selectedTrackIndex == x;
          final boolean exists = trackBank.getItemAt(x).exists().get();
-         mDriver.getPadLed(x, 0).setColor(!exists ? Color.OFF : (isSelected ? Color.TRACK : Color.TRACK_LOW));
+         mDriver.getPadButton(x, 0).setColor(!exists ? Color.OFF : (isSelected ? Color.TRACK : Color.TRACK_LOW));
       }
    }
 
    @Override
    public void paintModeButton()
    {
-      final Led led = mDriver.getBottomLed(1);
-      led.setColor(isActive() ? Color.TRACK : Color.TRACK_LOW);
+      final Button button = mDriver.getBottomButton(1);
+      button.setColor(isActive() ? Color.TRACK : Color.TRACK_LOW);
    }
 }

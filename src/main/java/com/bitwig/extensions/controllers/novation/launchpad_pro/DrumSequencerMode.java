@@ -536,25 +536,25 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       final boolean isDeleteOn = mDriver.isDeleteOn();
 
-      mDriver.getPadLed(4, 0).setColor(isDrumPadSelectOn() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getPadLed(5, 0).setColor(isDrumPadMuteOn() || isDeleteOn ? Color.MUTE : Color.MUTE_LOW);
-      mDriver.getPadLed(6, 0).setColor(isDrumPadSoloOn() || isDeleteOn  ? Color.SOLO : Color.SOLO_LOW);
-      mDriver.getPadLed(7, 0).setColor(Color.OFF);
+      mDriver.getPadButton(4, 0).setColor(isDrumPadSelectOn() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getPadButton(5, 0).setColor(isDrumPadMuteOn() || isDeleteOn ? Color.MUTE : Color.MUTE_LOW);
+      mDriver.getPadButton(6, 0).setColor(isDrumPadSoloOn() || isDeleteOn  ? Color.SOLO : Color.SOLO_LOW);
+      mDriver.getPadButton(7, 0).setColor(Color.OFF);
 
-      mDriver.getPadLed(4, 1).setColor(Color.OFF);
-      mDriver.getPadLed(5, 1).setColor(isActionOn(5, 1) ? Color.BLUE : Color.BLUE_LOW);
-      mDriver.getPadLed(6, 1).setColor(isActionOn(6, 1) ? Color.RED : Color.RED_LOW);
-      mDriver.getPadLed(7, 1).setColor(isActionOn(7, 1) ? Color.GREEN : Color.GREEN_LOW);
+      mDriver.getPadButton(4, 1).setColor(Color.OFF);
+      mDriver.getPadButton(5, 1).setColor(isActionOn(5, 1) ? Color.BLUE : Color.BLUE_LOW);
+      mDriver.getPadButton(6, 1).setColor(isActionOn(6, 1) ? Color.RED : Color.RED_LOW);
+      mDriver.getPadButton(7, 1).setColor(isActionOn(7, 1) ? Color.GREEN : Color.GREEN_LOW);
 
-      mDriver.getPadLed(4, 2).setColor(isActionOn(4, 2) ? Color.PURPLE : Color.PURPLE_LOW);
-      mDriver.getPadLed(5, 2).setColor(isActionOn(5, 2) ? Color.ORANGE : Color.ORANGE_LOW);
-      mDriver.getPadLed(6, 2).setColor(isActionOn(6, 2) ? Color.ORANGE : Color.ORANGE_LOW);
-      mDriver.getPadLed(7, 2).setColor(isActionOn(7, 2) ? Color.ORANGE : Color.ORANGE_LOW);
+      mDriver.getPadButton(4, 2).setColor(isActionOn(4, 2) ? Color.PURPLE : Color.PURPLE_LOW);
+      mDriver.getPadButton(5, 2).setColor(isActionOn(5, 2) ? Color.ORANGE : Color.ORANGE_LOW);
+      mDriver.getPadButton(6, 2).setColor(isActionOn(6, 2) ? Color.ORANGE : Color.ORANGE_LOW);
+      mDriver.getPadButton(7, 2).setColor(isActionOn(7, 2) ? Color.ORANGE : Color.ORANGE_LOW);
 
-      mDriver.getPadLed(4, 3).setColor(isActionOn(4, 3) ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getPadLed(5, 3).setColor(isActionOn(5, 3) ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getPadLed(6, 3).setColor(isActionOn(6, 3) ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getPadLed(7, 3).setColor(isActionOn(7, 3) ? Color.YELLOW : Color.YELLOW_LOW);
+      mDriver.getPadButton(4, 3).setColor(isActionOn(4, 3) ? Color.YELLOW : Color.YELLOW_LOW);
+      mDriver.getPadButton(5, 3).setColor(isActionOn(5, 3) ? Color.YELLOW : Color.YELLOW_LOW);
+      mDriver.getPadButton(6, 3).setColor(isActionOn(6, 3) ? Color.YELLOW : Color.YELLOW_LOW);
+      mDriver.getPadButton(7, 3).setColor(isActionOn(7, 3) ? Color.YELLOW : Color.YELLOW_LOW);
    }
 
    @Override
@@ -570,20 +570,20 @@ final class DrumSequencerMode extends AbstractSequencerMode
       for (int i = 0; i < 8; ++i)
       {
          final RemoteControl perfParam = drumPerfsRemoteControls.getParameter(i);
-         final Led perfLed = mDriver.getPadLed(4 + (i % 4), 3 - i / 4);
+         final Button perfButton = mDriver.getPadButton(4 + (i % 4), 3 - i / 4);
 
          final RemoteControl sceneParam = drumScenesRemoteControls.getParameter(i);
-         final Led sceneLed = mDriver.getPadLed(4 + (i % 4), 1 - i / 4);
+         final Button sceneButton = mDriver.getPadButton(4 + (i % 4), 1 - i / 4);
 
          if (perfParam.exists().get())
-            perfLed.setColor(Color.scale(Color.CYAN, (float) (0.95 * perfParam.get() + 0.05)));
+            perfButton.setColor(Color.scale(Color.CYAN, (float) (0.95 * perfParam.get() + 0.05)));
          else
-            perfLed.setColor(Color.OFF);
+            perfButton.setColor(Color.OFF);
 
          if (sceneParam.exists().get())
-            sceneLed.setColor(Color.scale(Color.YELLOW, (float) (0.9 * sceneParam.get() + 0.1)));
+            sceneButton.setColor(Color.scale(Color.YELLOW, (float) (0.9 * sceneParam.get() + 0.1)));
          else
-            sceneLed.setColor(Color.OFF);
+            sceneButton.setColor(Color.OFF);
       }
    }
 
@@ -592,10 +592,10 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final DrumPadBank drumPads = mDriver.getCursorClipDrumPads();
       final int pos = drumPads.scrollPosition().get();
 
-      mDriver.getTopLed(0).setColor(pos < 116 ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getTopLed(1).setColor(pos > 0 ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getTopLed(2).setColor(Color.OFF);
-      mDriver.getTopLed(3).setColor(Color.OFF);
+      mDriver.getTopButton(0).setColor(pos < 116 ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getTopButton(1).setColor(pos > 0 ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getTopButton(2).setColor(Color.OFF);
+      mDriver.getTopButton(3).setColor(Color.OFF);
    }
 
    private void paintSteps()
@@ -608,22 +608,22 @@ final class DrumSequencerMode extends AbstractSequencerMode
          for (int y = 0; y < 4; ++y)
          {
             final NoteStep noteStep = clip.getStep(0, calculateAbsoluteStepIndex(x, y), mCurrentPitch);
-            final Led led = mDriver.getPadLed(x, 7 - y);
+            final Button button = mDriver.getPadButton(x, 7 - y);
 
             if (playingStep == mPage * 32 + 8 * y + x)
-               led.setColor(noteStep.state() == NoteStep.State.NoteOn ? Color.STEP_PLAY : Color.STEP_PLAY_HEAD);
+               button.setColor(noteStep.state() == NoteStep.State.NoteOn ? Color.STEP_PLAY : Color.STEP_PLAY_HEAD);
             else if (mDriver.getPadButton(x, 7- y).getButtonState() == Button.State.HOLD)
-               led.setColor(Color.STEP_HOLD);
+               button.setColor(Color.STEP_HOLD);
             else switch (noteStep.state())
             {
                case NoteOn:
-                  led.setColor(Color.STEP_ON);
+                  button.setColor(Color.STEP_ON);
                   break;
                case NoteSustain:
-                  led.setColor(Color.STEP_SUSTAIN);
+                  button.setColor(Color.STEP_SUSTAIN);
                   break;
                case Empty:
-                  led.setColor(Color.STEP_OFF);
+                  button.setColor(Color.STEP_OFF);
                   break;
             }
          }
@@ -645,7 +645,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
          {
             final int pitch = calculateDrumPadKey(i, j);
             final boolean isPlaying = playingNotes.isNotePlaying(pitch);
-            final Led led = mDriver.getPadLed(i, j);
+            final Button button = mDriver.getPadButton(i, j);
             final DrumPad drumPad = drumPads.getItemAt(i + 4 * j);
             final boolean drumPadExists = hasDrumPads & drumPad.exists().get();
             final boolean drumPadIsSolo = drumPadExists & drumPad.solo().get();
@@ -653,18 +653,18 @@ final class DrumSequencerMode extends AbstractSequencerMode
             final Color color = new Color(drumPad.color());
 
             if (isPlaying)
-               led.setColor(drumPadIsMuted ? Color.GREEN_LOW : Color.GREEN);
+               button.setColor(drumPadIsMuted ? Color.GREEN_LOW : Color.GREEN);
             else if (mCurrentPitch == pitch)
-               led.setColor(drumPadIsMuted ? Color.TRACK_LOW : Color.TRACK);
+               button.setColor(drumPadIsMuted ? Color.TRACK_LOW : Color.TRACK);
             else if (hasDrumPads)
             {
                if (drumPadExists)
-                  led.setColor(drumPadIsSolo ? Color.YELLOW : drumPadIsMuted ? Color.scale(color, .1f) : color);
+                  button.setColor(drumPadIsSolo ? Color.YELLOW : drumPadIsMuted ? Color.scale(color, .1f) : color);
                else
-                  led.setColor(Color.WHITE_LOW);
+                  button.setColor(Color.WHITE_LOW);
             }
             else
-               led.setColor(clip.color());
+               button.setColor(clip.color());
          }
       }
    }
@@ -672,7 +672,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    @Override
    void paintModeButton()
    {
-      mDriver.getTopLed(6).setColor(isActive() ? MODE_COLOR : MODE_COLOR_LOW);
+      mDriver.getTopButton(6).setColor(isActive() ? MODE_COLOR : MODE_COLOR_LOW);
    }
 
    @Override

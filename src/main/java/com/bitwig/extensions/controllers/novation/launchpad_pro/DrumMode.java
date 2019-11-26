@@ -59,31 +59,31 @@ public final class DrumMode extends Mode
       {
          for (int j = 0; j < 8; ++j)
          {
-            final Led led = mDriver.getPadLed(i, j);
+            final Button bt = mDriver.getPadButton(i, j);
 
             final int pitch = calculatePitch(i, j);
 
             if (playingNotes.isNotePlaying(pitch))
-               led.setColor(PLAYING_DRUM_COLOR);
+               bt.setColor(PLAYING_DRUM_COLOR);
             else
                switch (i / 4 + 2 * (j / 4))
                {
                   case 0:
-                     led.setColor(DRUM1_COLOR);
+                     bt.setColor(DRUM1_COLOR);
                      break;
                   case 1:
-                     led.setColor(DRUM2_COLOR);
+                     bt.setColor(DRUM2_COLOR);
                      break;
                   case 2:
-                     led.setColor(DRUM3_COLOR);
+                     bt.setColor(DRUM3_COLOR);
                      break;
                   case 3:
-                     led.setColor(DRUM4_COLOR);
+                     bt.setColor(DRUM4_COLOR);
                      break;
                }
          }
 
-         mDriver.getRightLed(i).clear();
+         mDriver.getRightButton(i).clear();
       }
    }
 }

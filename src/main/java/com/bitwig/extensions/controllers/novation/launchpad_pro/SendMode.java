@@ -117,11 +117,11 @@ public class SendMode extends Mode
 
          for (int y = 0; y < 8; ++y)
          {
-            final Led led = mDriver.getPadLed(i, y);
+            final Button button = mDriver.getPadButton(i, y);
             if (value >= y / 7.0)
-               led.setColor(colorOn);
+               button.setColor(colorOn);
             else
-               led.clear();
+               button.clear();
          }
       }
 
@@ -130,7 +130,7 @@ public class SendMode extends Mode
          final SendBank sendBank = trackBank.getItemAt(i).sendBank();
          final Send send = sendBank.getItemAt(i);
          if (!send.exists().get())
-            mDriver.getRightLed(7 - i).clear();
+            mDriver.getRightButton(7 - i).clear();
          else
          {
             Color sendColor = new Color(send.sendChannelColor());
@@ -139,21 +139,21 @@ public class SendMode extends Mode
                sendColor = Color.WHITE;
 
             final Color sendColorLow = new Color(sendColor, 0.1f);
-            mDriver.getRightLed(7 - i).setColor(i == mSendIndex ? sendColor : sendColorLow);
+            mDriver.getRightButton(7 - i).setColor(i == mSendIndex ? sendColor : sendColorLow);
          }
       }
 
-      mDriver.getTopLed(0).setColor(Color.OFF);
-      mDriver.getTopLed(1).setColor(Color.OFF);
-      mDriver.getTopLed(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getTopLed(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getTopButton(0).setColor(Color.OFF);
+      mDriver.getTopButton(1).setColor(Color.OFF);
+      mDriver.getTopButton(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getTopButton(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
    }
 
    @Override
    public void paintModeButton()
    {
-      final Led led = mDriver.getBottomLed(6);
-      led.setColor(isActive() ? Color.SEND : Color.SEND_LOW);
+      final Button button = mDriver.getBottomButton(6);
+      button.setColor(isActive() ? Color.SEND : Color.SEND_LOW);
    }
 
    @Override

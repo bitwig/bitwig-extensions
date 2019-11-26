@@ -26,7 +26,7 @@ public class RecordArmOverlay extends Overlay
       {
          final boolean isArmed = mDriver.getTrackBank().getItemAt(x).arm().get();
          final boolean exists = mDriver.getTrackBank().getItemAt(x).exists().get();
-         mDriver.getPadLed(x, 0).setColor(!exists ? NO_TRACK_COLOR :
+         mDriver.getPadButton(x, 0).setColor(!exists ? NO_TRACK_COLOR :
             isArmed ? RECORD_ARM_ON_COLOR : RECORD_ARM_OFF_COLOR);
       }
    }
@@ -34,7 +34,7 @@ public class RecordArmOverlay extends Overlay
    @Override
    public void paintModeButton()
    {
-      final Led led = mDriver.getBottomLed(0);
-      led.setColor(isActive() ? RECORD_ARM_ON_COLOR : RECORD_ARM_OFF_COLOR);
+      final Button button = mDriver.getBottomButton(0);
+      button.setColor(isActive() ? RECORD_ARM_ON_COLOR : RECORD_ARM_OFF_COLOR);
    }
 }

@@ -86,10 +86,10 @@ public class StepSequencerMode extends AbstractSequencerMode
 
    private void paintArrows()
    {
-      mDriver.getTopLed(0).setColor(mKeyboardWidget.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getTopLed(1).setColor(mKeyboardWidget.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getTopLed(2).setColor(Color.OFF);
-      mDriver.getTopLed(3).setColor(Color.OFF);
+      mDriver.getTopButton(0).setColor(mKeyboardWidget.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getTopButton(1).setColor(mKeyboardWidget.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getTopButton(2).setColor(Color.OFF);
+      mDriver.getTopButton(3).setColor(Color.OFF);
    }
 
    @Override
@@ -126,7 +126,7 @@ public class StepSequencerMode extends AbstractSequencerMode
 
                final NoteStep noteStep = cursorClip.getStep(0, absoluteStepIndex, key);
                if (noteStep.state() == NoteStep.State.NoteOn)
-                  mDriver.getPadLed(x, y).setColor(Color.GREEN);
+                  mDriver.getPadButton(x, y).setColor(Color.GREEN);
             }
          }
       }
@@ -143,22 +143,22 @@ public class StepSequencerMode extends AbstractSequencerMode
          {
             final int absoluteStepIndex = calculateAbsoluteStepIndex(x, y);
             final NoteStep noteStep = computeVerticalStepState(absoluteStepIndex);
-            final Led led = mDriver.getPadLed(x, 7 - y);
+            final Button button = mDriver.getPadButton(x, 7 - y);
 
             if (playingStep == mPage * 32 + 8 * y + x)
-               led.setColor(Color.GREEN);
+               button.setColor(Color.GREEN);
             else if (mDriver.getPadButton(x, 7- y).getButtonState() == Button.State.HOLD)
-               led.setColor(Color.STEP_HOLD);
+               button.setColor(Color.STEP_HOLD);
             else switch (noteStep.state())
             {
                case NoteOn:
-                  led.setColor(Color.STEP_ON);
+                  button.setColor(Color.STEP_ON);
                   break;
                case NoteSustain:
-                  led.setColor(Color.STEP_SUSTAIN);
+                  button.setColor(Color.STEP_SUSTAIN);
                   break;
                case Empty:
-                  led.setColor(Color.STEP_OFF);
+                  button.setColor(Color.STEP_OFF);
                   break;
             }
          }
@@ -188,7 +188,7 @@ public class StepSequencerMode extends AbstractSequencerMode
    @Override
    void paintModeButton()
    {
-      mDriver.getTopLed(7).setColor(isActive() ? MODE_COLOR : MODE_COLOR_LOW);
+      mDriver.getTopButton(7).setColor(isActive() ? MODE_COLOR : MODE_COLOR_LOW);
    }
 
    void invalidate()

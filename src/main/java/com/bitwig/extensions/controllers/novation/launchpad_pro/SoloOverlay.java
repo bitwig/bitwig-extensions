@@ -27,14 +27,14 @@ public class SoloOverlay extends Overlay
       {
          final boolean isSolo = mDriver.getTrackBank().getItemAt(x).solo().get();
          final boolean exists = mDriver.getTrackBank().getItemAt(x).exists().get();
-         mDriver.getPadLed(x, 0).setColor(!exists ? Color.OFF : isSolo ? Color.SOLO : Color.SOLO_LOW);
+         mDriver.getPadButton(x, 0).setColor(!exists ? Color.OFF : isSolo ? Color.SOLO : Color.SOLO_LOW);
       }
    }
 
    @Override
    public void paintModeButton()
    {
-      final Led led = mDriver.getBottomLed(3);
-      led.setColor(isActive() ? Color.SOLO : Color.SOLO_LOW);
+      final Button button = mDriver.getBottomButton(3);
+      button.setColor(isActive() ? Color.SOLO : Color.SOLO_LOW);
    }
 }

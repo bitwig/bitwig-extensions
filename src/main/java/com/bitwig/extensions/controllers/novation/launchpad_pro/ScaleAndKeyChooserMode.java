@@ -39,7 +39,7 @@ public class ScaleAndKeyChooserMode extends Mode
 
       // light off the scene buttons
       for (int i = 0; i < 8; ++i)
-         mDriver.getRightLed(i).clear();
+         mDriver.getRightButton(i).clear();
    }
 
    private void paintKeyboard()
@@ -54,22 +54,22 @@ public class ScaleAndKeyChooserMode extends Mode
             if (noteIndex == -1)
             {
                /* dead led */
-               mDriver.getPadLed(x, 6 + y).clear();
+               mDriver.getPadButton(x, 6 + y).clear();
             }
             else if ((noteIndex % 12) == mDriver.getMusicalKey())
             {
                /* root key */
-               mDriver.getPadLed(x, 6 + y).setColor(ROOT_KEY_COLOR);
+               mDriver.getPadButton(x, 6 + y).setColor(ROOT_KEY_COLOR);
             }
             else if (scale.isMidiNoteInScale(mDriver.getMusicalKey(), noteIndex))
             {
                /* note in scale */
-               mDriver.getPadLed(x, 6 + y).setColor(USED_KEY_COLOR);
+               mDriver.getPadButton(x, 6 + y).setColor(USED_KEY_COLOR);
             }
             else
             {
                /* note not in scale */
-               mDriver.getPadLed(x, 6 + y).setColor(UNUSED_KEY_COLOR);
+               mDriver.getPadButton(x, 6 + y).setColor(UNUSED_KEY_COLOR);
             }
          }
       }
@@ -84,14 +84,14 @@ public class ScaleAndKeyChooserMode extends Mode
       {
          for (int j = 0; j < 6; ++j)
          {
-            final Led led = mDriver.getPadLed(i, 5 - j);
+            final Button button = mDriver.getPadButton(i, 5 - j);
             final int index = i + 8 * j;
             if (index >= librarySize)
-               led.clear();
+               button.clear();
             else if (indexInLibrary == index)
-               led.setColor(SCALE_ON_COLOR);
+               button.setColor(SCALE_ON_COLOR);
             else
-               led.setColor(SCALE_OFF_COLOR);
+               button.setColor(SCALE_OFF_COLOR);
          }
       }
    }

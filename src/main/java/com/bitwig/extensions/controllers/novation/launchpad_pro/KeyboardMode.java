@@ -63,8 +63,8 @@ public final class KeyboardMode extends Mode
    @Override
    public void paintModeButton()
    {
-      final Led led = mDriver.getTopLed(5);
-      led.setColor(isActive() ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
+      final Button button = mDriver.getTopButton(5);
+      button.setColor(isActive() ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
    }
 
    @Override
@@ -76,17 +76,17 @@ public final class KeyboardMode extends Mode
 
       mKeyboardWidget.paint(mDriver.getCursorTrack().color());
 
-      mDriver.getRightLed(7).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.GUITAR ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
-      mDriver.getRightLed(6).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.LINE_3 ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
-      mDriver.getRightLed(5).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.LINE_7 ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
-      mDriver.getRightLed(4).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.PIANO ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
+      mDriver.getRightButton(7).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.GUITAR ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
+      mDriver.getRightButton(6).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.LINE_3 ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
+      mDriver.getRightButton(5).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.LINE_7 ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
+      mDriver.getRightButton(4).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.PIANO ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
       for (int i = 0; i < 4; ++i)
-         mDriver.getRightLed(i).clear();
+         mDriver.getRightButton(i).clear();
 
-      mDriver.getTopLed(0).setColor(mKeyboardWidget.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getTopLed(1).setColor(mKeyboardWidget.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getTopLed(2).setColor(cursorTrack.hasPrevious().get() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getTopLed(3).setColor(cursorTrack.hasNext().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getTopButton(0).setColor(mKeyboardWidget.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getTopButton(1).setColor(mKeyboardWidget.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getTopButton(2).setColor(cursorTrack.hasPrevious().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getTopButton(3).setColor(cursorTrack.hasNext().get() ? Color.TRACK : Color.TRACK_LOW);
    }
 
    @Override

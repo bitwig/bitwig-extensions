@@ -29,7 +29,7 @@ class StopClipOverlay extends Overlay
       {
          final boolean isPlaying = false;
          final boolean exists = mDriver.getTrackBank().getItemAt(x).exists().get();
-         mDriver.getPadLed(x, 0).setColor(!exists ? NO_TRACK_COLOR :
+         mDriver.getPadButton(x, 0).setColor(!exists ? NO_TRACK_COLOR :
             isPlaying ? STOP_CLIP_ON_COLOR : STOP_CLIP_OFF_COLOR);
       }
    }
@@ -37,7 +37,7 @@ class StopClipOverlay extends Overlay
    @Override
    public void paintModeButton()
    {
-      final Led led = mDriver.getBottomLed(7);
-      led.setColor(isActive() ? STOP_CLIP_ON_COLOR : STOP_CLIP_OFF_COLOR);
+      final Button button = mDriver.getBottomButton(7);
+      button.setColor(isActive() ? STOP_CLIP_ON_COLOR : STOP_CLIP_OFF_COLOR);
    }
 }

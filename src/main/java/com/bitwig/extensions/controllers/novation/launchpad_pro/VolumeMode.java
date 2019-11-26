@@ -72,31 +72,31 @@ public class VolumeMode extends Mode
 
          for (int y = 0; y < 8; ++y)
          {
-            final Led led = mDriver.getPadLed(i, y);
+            final Button button = mDriver.getPadButton(i, y);
             if (value >= y / 7.0)
-               led.setColor(colorOn);
+               button.setColor(colorOn);
             else
-               led.clear();
+               button.clear();
          }
 
-         mDriver.getRightLed(i).clear();
+         mDriver.getRightButton(i).clear();
       }
    }
 
    private void paintArrows()
    {
       final TrackBank trackBank = mDriver.getTrackBank();
-      mDriver.getTopLed(0).setColor(Color.OFF);
-      mDriver.getTopLed(1).setColor(Color.OFF);
-      mDriver.getTopLed(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getTopLed(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getTopButton(0).setColor(Color.OFF);
+      mDriver.getTopButton(1).setColor(Color.OFF);
+      mDriver.getTopButton(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getTopButton(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
    }
 
    @Override
    public void paintModeButton()
    {
-      final Led led = mDriver.getBottomLed(4);
-      led.setColor(isActive() ? Color.VOLUME : Color.VOLUME_LOW);
+      final Button button = mDriver.getBottomButton(4);
+      button.setColor(isActive() ? Color.VOLUME : Color.VOLUME_LOW);
    }
 
    @Override

@@ -28,8 +28,8 @@ public final class SessionMode extends Mode
    @Override
    public void paintModeButton()
    {
-      final Led led = mDriver.getTopLed(4);
-      led.setColor(isActive() ? SESSION_ON_COLOR : SESSION_OFF_COLOR);
+      final Button button = mDriver.getTopButton(4);
+      button.setColor(isActive() ? SESSION_ON_COLOR : SESSION_OFF_COLOR);
    }
 
    @Override
@@ -144,10 +144,10 @@ public final class SessionMode extends Mode
    private void paintArrows()
    {
       final TrackBank trackBank = mDriver.getTrackBank();
-      mDriver.getTopLed(0).setColor(trackBank.sceneBank().canScrollBackwards().get() ? Color.SCENE : Color.SCENE_LOW);
-      mDriver.getTopLed(1).setColor(trackBank.sceneBank().canScrollForwards().get() ? Color.SCENE : Color.SCENE_LOW);
-      mDriver.getTopLed(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getTopLed(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getTopButton(0).setColor(trackBank.sceneBank().canScrollBackwards().get() ? Color.SCENE : Color.SCENE_LOW);
+      mDriver.getTopButton(1).setColor(trackBank.sceneBank().canScrollForwards().get() ? Color.SCENE : Color.SCENE_LOW);
+      mDriver.getTopButton(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
+      mDriver.getTopButton(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
    }
 
    private void paintSlots()
@@ -164,21 +164,21 @@ public final class SessionMode extends Mode
             final ClipLauncherSlot slot = slotBank.getItemAt(7 - j);
             final ColorValue slotColor = slot.color();
 
-            final Led padLed = mDriver.getPadLed(i, j);
-            padLed.setColor(slotColor.red(), slotColor.green(), slotColor.blue());
+            final Button button = mDriver.getPadButton(i, j);
+            button.setColor(slotColor.red(), slotColor.green(), slotColor.blue());
 
             if (slot.isStopQueued().get())
-               padLed.setPulse(padLed.PULSE_STOP_QUEUED);
+               button.setPulse(button.PULSE_STOP_QUEUED);
             else if (slot.isRecordingQueued().get())
-               padLed.setPulse(padLed.PULSE_RECORDING_QUEUED);
+               button.setPulse(button.PULSE_RECORDING_QUEUED);
             else if (slot.isPlaybackQueued().get())
-               padLed.setPulse(padLed.PULSE_PLAYBACK_QUEUED);
+               button.setPulse(button.PULSE_PLAYBACK_QUEUED);
             else if (slot.isRecording().get())
-               padLed.setPulse(padLed.PULSE_RECORDING);
+               button.setPulse(button.PULSE_RECORDING);
             else if (slot.isPlaying().get())
-               padLed.setPulse(padLed.PULSE_PLAYING);
+               button.setPulse(button.PULSE_PLAYING);
             else
-               padLed.setPulse(Led.NO_PULSE);
+               button.setPulse(button.NO_PULSE);
          }
       }
    }
@@ -190,16 +190,16 @@ public final class SessionMode extends Mode
       for (int i = 0; i < 8; ++i)
       {
          final Scene scene = sceneBank.getItemAt(i);
-         final Led led = mDriver.getRightLed(7 - i);
+         final Button button = mDriver.getRightButton(7 - i);
          if (scene.exists().get())
          {
             Color sceneColor = new Color(scene.color());
             if (sceneColor.isBlack())
                sceneColor = Color.SCENE;
-            led.setColor(sceneColor);
+            button.setColor(sceneColor);
          }
          else
-            led.setColor(Color.OFF);
+            button.setColor(Color.OFF);
       }
    }
 
