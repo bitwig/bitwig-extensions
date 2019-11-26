@@ -22,7 +22,9 @@ import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControl;
 import com.bitwig.extension.controller.api.HardwareLight;
 import com.bitwig.extension.controller.api.HardwareTextDisplay;
+import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
+import com.bitwig.extension.controller.api.ObjectHardwareProperty;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
@@ -322,6 +324,13 @@ public class Layer
 
       addBinding(binding);
 
+      return binding;
+   }
+
+   public Binding bindLightState(final Supplier<InternalHardwareLightState> supplier, final MultiStateHardwareLight light)
+   {
+      final InternalLightStateBinding binding = new InternalLightStateBinding(supplier, light);
+      addBinding(binding);
       return binding;
    }
 

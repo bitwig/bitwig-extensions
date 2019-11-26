@@ -61,13 +61,18 @@ final class Color
    static final Color STEP_SUSTAIN = Color.scale(STEP_ON, 0.1f);
    static final Color STEP_OFF = OFF;
 
-   Color()
+   Color(final float red, final float green, final float blue)
    {
-   }
+      assert red >= 0;
+      assert red <= 1.0f;
+      assert green >= 0;
+      assert green <= 1.0f;
+      assert blue >= 0;
+      assert blue <= 1.0f;
 
-   Color(final float r, final float g, final float b)
-   {
-      set(r, g, b);
+      mRed = (byte)(63 * red);
+      mGreen = (byte)(63 * green);
+      mBlue = (byte)(63 * blue);
    }
 
    public Color(final byte red, final byte green, final byte blue)
@@ -109,27 +114,6 @@ final class Color
       return mBlue;
    }
 
-   public void set(final Color color)
-   {
-      mRed = color.mRed;
-      mGreen = color.mGreen;
-      mBlue = color.mBlue;
-   }
-
-   public void set(final float red, final float green, final float blue)
-   {
-      assert red >= 0;
-      assert red <= 1.0f;
-      assert green >= 0;
-      assert green <= 1.0f;
-      assert blue >= 0;
-      assert blue <= 1.0f;
-
-      mRed = (byte)(63 * red);
-      mGreen = (byte)(63 * green);
-      mBlue = (byte)(63 * blue);
-   }
-
    public boolean equals(final Color color)
    {
       return mRed == color.mRed && mGreen == color.mGreen && mBlue == color.mBlue;
@@ -140,11 +124,6 @@ final class Color
       return new Color((byte) (color.mRed * scale),
          (byte) (color.mGreen * scale),
          (byte) (color.mBlue * scale));
-   }
-
-   public void clear()
-   {
-      set(0, 0, 0);
    }
 
    public boolean isBlack()
@@ -171,7 +150,7 @@ final class Color
       return Color.fromRgb255(4 * red, 4 * green, 4 * blue);
    }
 
-   private byte mRed = 0;
-   private byte mGreen = 0;
-   private byte mBlue = 0;
+   private final byte mRed;
+   private final byte mGreen;
+   private final byte mBlue;
 }

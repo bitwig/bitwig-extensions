@@ -27,24 +27,9 @@ public class LedState implements InternalHardwareLightState
       return null;
    }
 
-   public void setColor(final Color color)
-   {
-      mColor = color;
-   }
-
-   public void setColor(final float red, final float green, final float blue)
-   {
-      mColor.set(red, green, blue);
-   }
-
    public Color getColor()
    {
       return mColor;
-   }
-
-   public void setPulse(final int pulseColor)
-   {
-      mPulse = pulseColor;
    }
 
    public int getPulse()
@@ -66,12 +51,7 @@ public class LedState implements InternalHardwareLightState
       return mColor.equals(obj.mColor) && mPulse == obj.mPulse;
    }
 
-   public void set(final LedState other)
-   {
-      mColor.set(other.mColor);
-      mPulse = other.mPulse;
-   }
-
-   private Color mColor;
-   private int mPulse;
+   private final Color mColor;
+   private final int mPulse;
+   public static final InternalHardwareLightState OFF = new LedState();
 }

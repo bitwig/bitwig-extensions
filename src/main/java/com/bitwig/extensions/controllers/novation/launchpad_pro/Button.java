@@ -5,8 +5,10 @@ import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
+import com.bitwig.extension.controller.api.ObjectHardwareProperty;
 
 class Button
 {
@@ -121,7 +123,6 @@ class Button
 
    public void setColor(final float red, final float green, final float blue)
    {
-      mDesiredLedState.setColor(red, green, blue);
    }
 
    public void setColor(final ColorValue color)
@@ -133,50 +134,46 @@ class Button
 
    void setColor(final Color c)
    {
-      mDesiredLedState.setColor(c);
    }
 
    public void setPulse(final int pulse)
    {
-      mDesiredLedState.setPulse(pulse);
    }
 
    void clear()
    {
-      mDesiredLedState.setColor(Color.OFF);
-      mDesiredLedState.setPulse(NO_PULSE);
+      mLight.state().setValue(LedState.OFF);
    }
 
-   public String updateClearSysex()
+   public void appendLedUpdate(
+      final StringBuilder ledClear, final StringBuilder ledUpdate, final StringBuilder ledPulseUpdate)
    {
-      final Color color = mDesiredLedState.getColor();
-      if (color.equals(mCurrentLedState.getColor()) || !color.isBlack())
-         return "";
+      final ObjectHardwareProperty<InternalHardwareLightState> state = mLight.state();
+      final LedState currentState = (LedState)state.currentValue();
+      final LedState lastSent = (LedState)state.lastSentValue();
 
-      mCurrentLedState.set(mDesiredLedState);
-      return String.format(" %02x 00", mIndex);
+      assert lastSent != null ? currentState != null : true;
+
+      if (currentState == null || currentState.equals(lastSent))
+         return;
+
+      final Color color = currentState.getColor();
+      if (lastSent == null || !color.equals(lastSent.getColor()))
+      {
+         if (color.isBlack())
+            ledClear.append(String.format(" %02x 00", mIndex));
+         else
+            ledUpdate.append(String.format(" %02x %02x %02x %02x", mIndex, color.getRed(), color.getGreen(), color.getBlue()));
+      }
+
+      final int pulse = currentState.getPulse();
+      if ((lastSent != null || pulse != lastSent.getPulse()) && pulse != Button.NO_PULSE)
+         ledPulseUpdate.append(String.format(" %02x %02x", mIndex, pulse));
    }
 
-   public String updateLightLEDSysex()
+   public MultiStateHardwareLight getLight()
    {
-      final Color color = mDesiredLedState.getColor();
-      if (mCurrentLedState.getColor().equals(color) || color.isBlack())
-         return "";
-
-      mCurrentLedState.getColor().set(color);
-      return String.format(" %02x %02x %02x %02x", mIndex, color.getRed(), color.getGreen(), color.getBlue());
-   }
-
-   public String updatePulseSysex()
-   {
-      final int pulseColor = mDesiredLedState.getPulse();
-      if (pulseColor == mCurrentLedState.getPulse())
-         return "";
-
-      mCurrentLedState.setPulse(pulseColor);
-      if (pulseColor == 0)
-         return "";
-      return String.format(" %02x %02x", mIndex, pulseColor);
+      return mLight;
    }
 
    /* Hardware objects */
@@ -189,8 +186,6 @@ class Button
    private final int mY;
    private final int mIndex;
    private final boolean mIsPressureSensitive;
-   private final LedState mDesiredLedState = new LedState();
-   private final LedState mCurrentLedState = new LedState();
 
    private State mButtonState = State.RELEASED;
    private Boolean mCancelHoldTask = false;

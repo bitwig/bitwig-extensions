@@ -622,7 +622,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    public void flush()
    {
       mHardwareSurface.updateHardware();
-      paint();
+      //paint();
 
       /* Sysex buffer */
       final StringBuilder ledClear = new StringBuilder();
@@ -656,9 +656,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       final StringBuilder ledPulseUpdate,
       final Button button)
    {
-      ledClear.append(button.updateClearSysex());
-      ledUpdate.append(button.updateLightLEDSysex());
-      ledPulseUpdate.append(button.updatePulseSysex());
+      button.appendLedUpdate(ledClear, ledUpdate, ledPulseUpdate);
 
       // Lets not send sysex that are too big
       if (ledUpdate.length() >= 4 * 3 * 48)
@@ -1024,6 +1022,21 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    public Layers getLayers()
    {
       return mLayers;
+   }
+
+   public Button getShiftButton()
+   {
+      return mShiftButton;
+   }
+
+   public Button getDeleteButton()
+   {
+      return mDeleteButton;
+   }
+
+   public Button getQuantizeButton()
+   {
+      return mQuantizeButton;
    }
 
    /* API Objects */

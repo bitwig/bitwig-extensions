@@ -1,9 +1,12 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import java.util.function.Supplier;
+
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ClipLauncherSlotOrSceneBank;
 import com.bitwig.extension.controller.api.ColorValue;
+import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
@@ -20,6 +23,8 @@ public final class SessionMode extends Mode
       super(driver, "session");
 
       mShiftLayer = new LaunchpadLayer(driver, "session-shift");
+      mDeleteLayer = new LaunchpadLayer(driver, "session-delete");
+      mQuantizeLayer = new LaunchpadLayer(driver, "session-quantize");
 
       final TrackBank trackBank = driver.getTrackBank();
       for (int x = 0; x < 8; ++x)
@@ -32,8 +37,39 @@ public final class SessionMode extends Mode
             final Button button = driver.getPadButton(x, y);
             bindPressed(button, slot.launchAction());
             mShiftLayer.bindPressed(button, slot.selectAction());
+            mDeleteLayer.bindPressed(button, slot::deleteObject);
+            mQuantizeLayer.bindReleased(button, () -> {
+               slot.select();
+               mDriver.getCursorClip().quantize(1);
+            });
+            bindLightState(() -> computeGridLightState(slot, button), button.getLight());
          }
       }
+
+      bindLayer(driver.getShiftButton(), mShiftLayer);
+      bindLayer(driver.getDeleteButton(), mDeleteLayer);
+      bindLayer(driver.getQuantizeButton(), mQuantizeLayer);
+   }
+
+   private InternalHardwareLightState computeGridLightState(final ClipLauncherSlot slot, final Button button)
+   {
+      final Color color = new Color(slot.color());
+      final int pulse;
+
+      if (slot.isStopQueued().get())
+         pulse = button.PULSE_STOP_QUEUED;
+      else if (slot.isRecordingQueued().get())
+         pulse = button.PULSE_RECORDING_QUEUED;
+      else if (slot.isPlaybackQueued().get())
+         pulse = button.PULSE_PLAYBACK_QUEUED;
+      else if (slot.isRecording().get())
+         pulse = button.PULSE_RECORDING;
+      else if (slot.isPlaying().get())
+         pulse = button.PULSE_PLAYING;
+      else
+         pulse = button.NO_PULSE;
+
+      return new LedState(color, pulse);
    }
 
    @Override
@@ -151,11 +187,14 @@ public final class SessionMode extends Mode
    @Override
    public void paint()
    {
-      super.paint();
+      if (false)
+      {
+         super.paint();
 
-      paintSlots();
-      paintSceneButtons();
-      paintArrows();
+         paintSlots();
+         paintSceneButtons();
+         paintArrows();
+      }
    }
 
    private void paintArrows()
@@ -257,4 +296,6 @@ public final class SessionMode extends Mode
    }
 
    final private LaunchpadLayer mShiftLayer;
+   final private LaunchpadLayer mDeleteLayer;
+   final private LaunchpadLayer mQuantizeLayer;
 }
