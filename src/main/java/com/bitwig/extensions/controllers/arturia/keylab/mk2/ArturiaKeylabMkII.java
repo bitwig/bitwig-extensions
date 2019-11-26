@@ -33,6 +33,7 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
+import com.bitwig.extension.controller.api.PianoKeyboard;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
@@ -211,7 +212,8 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    {
       mHardwareSurface = getHost().createHardwareSurface();
 
-      mHardwareSurface.createPianoKeyboard("piano", mNumberOfKeys);
+      final PianoKeyboard pianoKeyboard = mHardwareSurface.createPianoKeyboard("piano", mNumberOfKeys);
+      pianoKeyboard.setMidiIn(getHost().getMidiInPort(0));
 
       createButtons();
 
