@@ -54,7 +54,7 @@ class Button
          bt.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(0, index));
 
          mAfterTouch = hardwareSurface.createAbsoluteHardwareKnob(id + "-at");
-         mAfterTouch.setAdjustValueMatcher(midiIn.createAbsolutePolyATValueMatcher(0, index));
+         mAfterTouch.setAdjustValueMatcher(midiIn.createPolyAftertouchValueMatcher(0, index));
       }
       else
       {

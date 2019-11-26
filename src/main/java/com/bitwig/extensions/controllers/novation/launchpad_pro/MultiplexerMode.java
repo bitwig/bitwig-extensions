@@ -136,10 +136,10 @@ public class MultiplexerMode extends Mode
    @Override
    public void onSceneButtonPressed(final int column)
    {
-      selectMode(7 - column);
+      selectMinorMode(7 - column);
    }
 
-   public void selectMode(final int index)
+   public void selectMinorMode(final int index)
    {
       if ((index < 0 && 7 < index) ||
          index == mSelectedIndex ||

@@ -204,18 +204,32 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
          mTransport.isClipLauncherAutomationWriteEnabled().set(!enabled);
       });
 
-      mMainLayer.bindOverlay(mArmButton, mRecordArmOverlay);
-      mMainLayer.bindOverlay(mSelectButton, mTrackSelectOverlay);
-      mMainLayer.bindOverlay(mMuteButton, mMuteOverlay);
-      mMainLayer.bindOverlay(mSoloButton, mSoloOverlay);
-      mMainLayer.bindOverlay(mStopButton, mStopClipOverlay);
+      mMainLayer.bindOverlay(mArmButton, mRecordArmOverlay, LedState.REC_OFF);
+      mMainLayer.bindOverlay(mSelectButton, mTrackSelectOverlay, LedState.TRACK);
+      mMainLayer.bindOverlay(mMuteButton, mMuteOverlay, LedState.MUTE);
+      mMainLayer.bindOverlay(mSoloButton, mSoloOverlay, LedState.SOLO);
+      mMainLayer.bindOverlay(mStopButton, mStopClipOverlay, LedState.STOP_CLIP_ON);
       mMainLayer.bindMode(mSessionButton, mSessionMode, LedState.SESSION_MODE_OFF);
       mMainLayer.bindMode(mNoteButton, mPlayNoteModes, LedState.PLAY_MODE_OFF);
       mMainLayer.bindMode(mDeviceButton, mDrumSequencerMode, LedState.DRUM_SEQ_MODE_OFF);
       mMainLayer.bindMode(mUserButton, mStepSequencerMode, LedState.STEP_SEQ_MODE_OFF);
-      mMainLayer.bindMode(mVolumeButton, mVolumeMode, LedState.VOLUME_LOW);
-      mMainLayer.bindMode(mPanButton, mPanMode, LedState.PAN_LOW);
-      mMainLayer.bindMode(mSendsButton, mSendsMode, LedState.SENDS_LOW);
+      mMainLayer.bindMode(mVolumeButton, mVolumeMode, LedState.VOLUME_MODE_LOW);
+      mMainLayer.bindMode(mPanButton, mPanMode, LedState.PAN_MODE_LOW);
+      mMainLayer.bindMode(mSendsButton, mSendsMode, LedState.SENDS_MODE_LOW);
+
+      mMainLayer.bindLightState(LedState.SHIFT_OFF, mShiftButton);
+      mMainLayer.bindLightState(() -> mTransport.isMetronomeEnabled().get() ? LedState.CLICK_ON : LedState.CLICK_OFF, mClickButton);
+      mMainLayer.bindLightState(LedState.UNDO_ON, mUndoButton);
+      mMainLayer.bindLightState(LedState.DELETE_ON, mDeleteButton);
+      mMainLayer.bindLightState(LedState.QUANTIZE_ON, mQuantizeButton);
+      mMainLayer.bindLightState(LedState.DUPLICATE_ON, mDuplicateButton);
+      mMainLayer.bindLightState(() -> {
+         if (isShiftOn())
+            return mTransport.isArrangerRecordEnabled().get() ? LedState.REC_ON : LedState.REC_OFF;
+         else
+            return mTransport.isPlaying().get() ? LedState.PLAY_ON : LedState.PLAY_OFF;
+      }, mDoubleButton);
+      mMainLayer.bindLightState(() -> isRecording() ? LedState.REC_ON : LedState.REC_OFF, mRecordButton);
 
       mMainLayer.activate();
    }
@@ -326,31 +340,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return x + y * 10;
    }
 
-   private int getPadIndex(final int x, final int y)
-   {
-      return getButtonIndex(x + 1, y + 1);
-   }
-
-   private int getTopButtonIndex(final int x)
-   {
-      return getButtonIndex(x + 1, 9);
-   }
-
-   private int getBottomButtonIndex(final int x)
-   {
-      return getButtonIndex(x + 1, 0);
-   }
-
-   private int getLeftButtonIndex(final int y)
-   {
-      return getButtonIndex(0, y + 1);
-   }
-
-   private int getRightButtonIndex(final int y)
-   {
-      return getButtonIndex(9, y + 1);
-   }
-
    @Override
    public void init()
    {
@@ -443,20 +432,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       createLayers();
 
       mSessionMode.activate();
-      mSessionMode.paintModeButton();
-      mPlayNoteModes.selectMode(0);
-      mPlayNoteModes.paintModeButton();
-      mDrumSequencerMode.paintModeButton();
-      mStepSequencerMode.paintModeButton();
-
-      mRecordArmOverlay.paintModeButton();
-      mTrackSelectOverlay.paintModeButton();
-      mMuteOverlay.paintModeButton();
-      mSoloOverlay.paintModeButton();
-      mVolumeMode.paintModeButton();
-      mPanMode.paintModeButton();
-      mSendsMode.paintModeButton();
-      mStopClipOverlay.paintModeButton();
+      mPlayNoteModes.selectMinorMode(0);
    }
 
    private void initDrumPad(final DrumPad drumPad)

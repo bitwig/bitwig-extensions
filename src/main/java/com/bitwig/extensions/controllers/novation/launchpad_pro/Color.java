@@ -30,11 +30,11 @@ final class Color
    static final Color PURPLE = Color.fromRgb255(219, 3, 252);
    static final Color PURPLE_LOW = Color.scale(PURPLE, 0.1f);
 
-   static final Color PAN = fromRgb255(255, 85, 127);
-   static final Color PAN_LOW = scale(PAN, 0.1f);
+   static final Color PAN_MODE = fromRgb255(255, 85, 127);
+   static final Color PAN_MODE_LOW = scale(PAN_MODE, 0.1f);
 
-   static final Color SENDS = new Color(1.f, 1.f, 0.f);
-   static final Color SENDS_LOW = new Color(SENDS, 0.1f);
+   static final Color SENDS_MODE = new Color(1.f, 1.f, 0.f);
+   static final Color SENDS_MODE_LOW = new Color(SENDS_MODE, 0.1f);
 
    static final Color TRACK = CYAN;
    static final Color TRACK_LOW = new Color(TRACK, 0.1f);
@@ -42,8 +42,8 @@ final class Color
    static final Color SCENE = WHITE;
    static final Color SCENE_LOW = new Color(SCENE, 0.1f);
 
-   static final Color VOLUME = Color.fromRgb255(126, 87, 20);
-   static final Color VOLUME_LOW = Color.scale(VOLUME, 0.1f);
+   static final Color VOLUME_MODE = Color.fromRgb255(126, 87, 20);
+   static final Color VOLUME_MODE_LOW = Color.scale(VOLUME_MODE, 0.1f);
 
    static final Color SOLO = YELLOW;
    static final Color SOLO_LOW = Color.scale(SOLO, 0.1f);
@@ -64,14 +64,41 @@ final class Color
    static final Color SESSION_MODE_ON = new Color(1.f, 1.f, 0.f);
    static final Color SESSION_MODE_OFF = new Color(SESSION_MODE_ON, 0.1f);
 
-   public final static Color PLAY_MODE = Color.fromRgb255(11, 100, 63);
-   public final static Color PLAY_MODE_OFF = Color.scale(PLAY_MODE, 0.2f);
+   final static Color PLAY_MODE = Color.fromRgb255(11, 100, 63);
+   final static Color PLAY_MODE_OFF = Color.scale(PLAY_MODE, 0.2f);
 
-   public final static Color DRUM_SEQ_MODE = Color.fromRgb255(255, 183, 0);
-   public final static Color DRUM_SEQ_MODE_OFF = new Color(DRUM_SEQ_MODE, .1f);
+   final static Color DRUM_SEQ_MODE = Color.fromRgb255(255, 183, 0);
+   final static Color DRUM_SEQ_MODE_OFF = new Color(DRUM_SEQ_MODE, .1f);
 
-   public static final Color STEP_SEQ_MODE = Color.fromRgb255(255, 183, 0);
-   public static final Color STEP_SEQ_MODE_OFF = new Color(STEP_SEQ_MODE, .1f);
+   static final Color STEP_SEQ_MODE = Color.fromRgb255(255, 183, 0);
+   static final Color STEP_SEQ_MODE_OFF = new Color(STEP_SEQ_MODE, .1f);
+
+   static final Color SHIFT_ON = WHITE;
+   static final Color SHIFT_OFF = WHITE_LOW;
+
+   static final Color CLICK_ON = YELLOW;
+   static final Color CLICK_OFF = YELLOW_LOW;
+
+   static final Color UNDO_ON = ORANGE;
+   static final Color UNDO_OFF = ORANGE_LOW;
+
+   static final Color REC_ON = RED;
+   static final Color REC_OFF = RED_LOW;
+
+   static final Color PLAY_ON = GREEN;
+   static final Color PLAY_OFF = GREEN_LOW;
+
+   static final Color DELETE_ON = ORANGE;
+   static final Color DELETE_OFF = ORANGE_LOW;
+
+   static final Color QUANTIZE_ON = ORANGE;
+   static final Color QUANTIZE_OFF = ORANGE_LOW;
+
+   static final Color DUPLICATE_ON = ORANGE;
+   static final Color DUPLICATE_OFF = ORANGE_LOW;
+
+   static final Color STOP_CLIP_ON = Color.fromRgb255(180, 180, 180);
+   static final Color STOP_CLIP_OFF = Color.scale(STOP_CLIP_ON, 0.3f);
 
    Color(final float red, final float green, final float blue)
    {

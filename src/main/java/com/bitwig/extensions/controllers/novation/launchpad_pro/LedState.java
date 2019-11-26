@@ -6,25 +6,19 @@ import com.bitwig.extension.controller.api.InternalHardwareLightState;
 
 public class LedState implements InternalHardwareLightState
 {
-   public static final LedState OFF = new LedState();
+   public static final LedState OFF = new LedState(Color.OFF, 0);
 
    public static final LedState SESSION_MODE_ON = new LedState(Color.SESSION_MODE_ON);
    public static final LedState SESSION_MODE_OFF = new LedState(Color.SESSION_MODE_OFF);
 
-   public static final LedState TRACK = new LedState(Color.TRACK);
-   public static final LedState TRACK_LOW = new LedState(Color.TRACK_LOW);
+   public static final LedState PAN_MODE = new LedState(Color.PAN_MODE);
+   public static final LedState PAN_MODE_LOW = new LedState(Color.PAN_MODE_LOW);
 
-   public static final LedState SCENE = new LedState(Color.SCENE);
-   public static final LedState SCENE_LOW = new LedState(Color.SCENE_LOW);
+   public static final LedState SENDS_MODE = new LedState(Color.SENDS_MODE);
+   public static final LedState SENDS_MODE_LOW = new LedState(Color.SENDS_MODE_LOW);
 
-   public static final LedState PAN = new LedState(Color.PAN);
-   public static final LedState PAN_LOW = new LedState(Color.PAN_LOW);
-
-   public static final LedState SENDS = new LedState(Color.SENDS);
-   public static final LedState SENDS_LOW = new LedState(Color.SENDS_LOW);
-
-   public static final LedState VOLUME = new LedState(Color.VOLUME);
-   public static final LedState VOLUME_LOW = new LedState(Color.VOLUME_LOW);
+   public static final LedState VOLUME_MODE = new LedState(Color.VOLUME_MODE);
+   public static final LedState VOLUME_MODE_LOW = new LedState(Color.VOLUME_MODE_LOW);
 
    public static final LedState PLAY_MODE = new LedState(Color.PLAY_MODE);
    public static final LedState PLAY_MODE_OFF = new LedState(Color.PLAY_MODE_OFF);
@@ -35,10 +29,44 @@ public class LedState implements InternalHardwareLightState
    public static final LedState STEP_SEQ_MODE = new LedState(Color.STEP_SEQ_MODE);
    public static final LedState STEP_SEQ_MODE_OFF = new LedState(Color.STEP_SEQ_MODE_OFF);
 
-   LedState()
-   {
-      this(Color.OFF, 0);
-   }
+   public static final LedState TRACK = new LedState(Color.TRACK);
+   public static final LedState TRACK_LOW = new LedState(Color.TRACK_LOW);
+
+   public static final LedState SCENE = new LedState(Color.SCENE);
+   public static final LedState SCENE_LOW = new LedState(Color.SCENE_LOW);
+
+   public static final LedState SHIFT_ON = new LedState(Color.SHIFT_ON);
+   public static final LedState SHIFT_OFF = new LedState(Color.SHIFT_OFF);
+
+   public static final LedState CLICK_ON = new LedState(Color.CLICK_ON);
+   public static final LedState CLICK_OFF = new LedState(Color.CLICK_OFF);
+
+   public static final LedState UNDO_ON = new LedState(Color.UNDO_ON);
+   public static final LedState UNDO_OFF = new LedState(Color.UNDO_OFF);
+
+   public static final LedState REC_ON = new LedState(Color.REC_ON);
+   public static final LedState REC_OFF = new LedState(Color.REC_OFF);
+
+   public static final LedState PLAY_ON = new LedState(Color.PLAY_ON);
+   public static final LedState PLAY_OFF = new LedState(Color.PLAY_OFF);
+
+   public static final LedState DELETE_ON = new LedState(Color.DELETE_ON);
+   public static final LedState DELETE_OFF = new LedState(Color.DELETE_OFF);
+
+   public static final LedState QUANTIZE_ON = new LedState(Color.QUANTIZE_ON);
+   public static final LedState QUANTIZE_OFF = new LedState(Color.QUANTIZE_OFF);
+
+   public static final LedState DUPLICATE_ON = new LedState(Color.DUPLICATE_ON);
+   public static final LedState DUPLICATE_OFF = new LedState(Color.DUPLICATE_OFF);
+
+   public static final LedState MUTE = new LedState(Color.MUTE);
+   public static final LedState MUTE_LOW = new LedState(Color.MUTE_LOW);
+
+   public static final LedState SOLO = new LedState(Color.SOLO);
+   public static final LedState SOLO_LOW = new LedState(Color.SOLO_LOW);
+
+   public static final LedState STOP_CLIP_ON = new LedState(Color.STOP_CLIP_ON);
+   public static final LedState STOP_CLIP_OFF = new LedState(Color.STOP_CLIP_OFF);
 
    public LedState(final ColorValue color)
    {

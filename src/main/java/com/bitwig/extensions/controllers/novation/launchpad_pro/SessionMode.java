@@ -50,7 +50,7 @@ public final class SessionMode extends Mode
       bindLayer(driver.getDeleteButton(), mDeleteLayer);
       bindLayer(driver.getQuantizeButton(), mQuantizeLayer);
 
-      bindLightState(() -> LedState.SESSION_MODE_ON, driver.getSessionButton());
+      bindLightState(LedState.SESSION_MODE_ON, driver.getSessionButton());
       bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
       bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
       bindLightState(() -> sceneBank.canScrollForwards().get() ? LedState.SCENE : LedState.SCENE_LOW, driver.getDownButton());

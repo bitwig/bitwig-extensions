@@ -30,11 +30,4 @@ public class RecordArmOverlay extends Overlay
             isArmed ? RECORD_ARM_ON_COLOR : RECORD_ARM_OFF_COLOR);
       }
    }
-
-   @Override
-   public void paintModeButton()
-   {
-      final Button button = mDriver.getButtonOnTheBottom(0);
-      button.setColor(isActive() ? RECORD_ARM_ON_COLOR : RECORD_ARM_OFF_COLOR);
-   }
 }

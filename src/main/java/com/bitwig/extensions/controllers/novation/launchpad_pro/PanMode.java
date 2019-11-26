@@ -97,7 +97,7 @@ public class PanMode extends Mode
    public void paintModeButton()
    {
       final Button button = mDriver.getButtonOnTheBottom(5);
-      button.setColor(isActive() ? Color.PAN : Color.PAN_LOW);
+      button.setColor(isActive() ? Color.PAN_MODE : Color.PAN_MODE_LOW);
    }
 
    @Override

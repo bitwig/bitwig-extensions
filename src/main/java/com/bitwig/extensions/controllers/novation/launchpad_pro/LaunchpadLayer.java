@@ -35,18 +35,18 @@ public class LaunchpadLayer extends Layer
       bindReleased(bt.getButton(), bindable);
    }
 
-   void bindOverlay(final Button bt, final Overlay overlay)
+   void bindOverlay(final Button bt, final Overlay overlay, final LedState ledStateOff)
    {
       bindPressed(bt, () -> mLaunchpad.setBottomOverlay(overlay, true, bt));
       bindReleased(bt, () -> mLaunchpad.setBottomOverlay(overlay, false, bt));
+      bindLightState(ledStateOff, bt);
    }
 
-   void bindMode(
-      final Button bt, final Mode mode, final LedState ledState)
+   void bindMode(final Button bt, final Mode mode, final LedState ledState)
    {
       assert mode != null;
       bindPressed(bt, () -> mLaunchpad.setMode(mode));
-      bindLightState(() -> ledState, bt);
+      bindLightState(ledState, bt);
    }
 
    void bindLayer(final Button button, final Layer layer)
@@ -58,6 +58,11 @@ public class LaunchpadLayer extends Layer
    public Binding bindLightState(final Supplier<InternalHardwareLightState> supplier, final Button button)
    {
       return bindLightState(supplier, button.getLight());
+   }
+
+   public Binding bindLightState(final LedState state, final Button button)
+   {
+      return bindLightState(() -> state, button);
    }
 
    private final LaunchpadProControllerExtension mLaunchpad;

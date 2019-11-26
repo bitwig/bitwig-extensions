@@ -96,7 +96,7 @@ public class VolumeMode extends Mode
    public void paintModeButton()
    {
       final Button button = mDriver.getButtonOnTheBottom(4);
-      button.setColor(isActive() ? Color.VOLUME : Color.VOLUME_LOW);
+      button.setColor(isActive() ? Color.VOLUME_MODE : Color.VOLUME_MODE_LOW);
    }
 
    @Override

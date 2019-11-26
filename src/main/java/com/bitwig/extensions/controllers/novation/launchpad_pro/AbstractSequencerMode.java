@@ -121,7 +121,7 @@ abstract class AbstractSequencerMode extends Mode
          {
             mDriver.getPadButton(i, 3).setColor(Color.WHITE_LOW);
             mDriver.getPadButton(i, 2).setColor(Color.CYAN_LOW);
-            mDriver.getPadButton(i, 1).setColor(Color.PAN_LOW);
+            mDriver.getPadButton(i, 1).setColor(Color.PAN_MODE_LOW);
             mDriver.getPadButton(i, 0).setColor(Color.OFF);
          }
          return;
@@ -141,9 +141,9 @@ abstract class AbstractSequencerMode extends Mode
          mDriver.getPadButton(i, 2).setColor(computeDuration(i) <= duration ? Color.CYAN : Color.CYAN_LOW);
          final double ipan = (i - 3.5) / 3.5;
          if ((pan > 0 && ipan > 0 && ipan <= pan) || (pan < 0 && ipan < 0 && pan <= ipan))
-            mDriver.getPadButton(i, 1).setColor(Color.PAN);
+            mDriver.getPadButton(i, 1).setColor(Color.PAN_MODE);
          else
-            mDriver.getPadButton(i, 1).setColor(Color.PAN_LOW);
+            mDriver.getPadButton(i, 1).setColor(Color.PAN_MODE_LOW);
          mDriver.getPadButton(i, 0).setColor(Color.OFF);
       }
    }
