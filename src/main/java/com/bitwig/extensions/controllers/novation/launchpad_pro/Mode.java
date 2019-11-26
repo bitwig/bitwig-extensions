@@ -42,7 +42,6 @@ abstract class Mode extends LaunchpadLayer
 
    void paint()
    {
-      paintModeButton();
    }
 
    void paintModeButton()

@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ClipLauncherSlotOrSceneBank;
-import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
@@ -37,13 +36,13 @@ public final class SessionMode extends Mode
                slot.select();
                mDriver.getCursorClip().quantize(1);
             });
-            bindLightState(() -> computeGridLightState(slot, button), button.getLight());
+            bindLightState(() -> computeGridLedState(slot, button), button.getLight());
          }
 
          final Scene scene = sceneBank.getItemAt(7 - x);
          final Button sceneButton = driver.getSceneButton(x);
          bindPressed(sceneButton, scene.launchAction());
-         bindLightState(() -> new LedState(scene.color()), sceneButton.getLight());
+         bindLightState(() -> computeSceneLedState(scene), sceneButton.getLight());
       }
 
       bindLayer(driver.getShiftButton(), mShiftLayer);
@@ -67,7 +66,22 @@ public final class SessionMode extends Mode
       mShiftLayer.bindPressed(driver.getDownButton(), sceneBank.scrollPageForwardsAction());
    }
 
-   private InternalHardwareLightState computeGridLightState(final ClipLauncherSlot slot, final Button button)
+   private InternalHardwareLightState computeSceneLedState(final Scene scene)
+   {
+      Color color;
+      if (scene.exists().get())
+      {
+         color = new Color(scene.color());
+         if (color.isBlack())
+            color = Color.SCENE;
+      }
+      else
+         color = Color.OFF;
+
+      return new LedState(color);
+   }
+
+   private InternalHardwareLightState computeGridLedState(final ClipLauncherSlot slot, final Button button)
    {
       final Color color = new Color(slot.color());
       final int pulse;
@@ -92,33 +106,6 @@ public final class SessionMode extends Mode
    protected String getModeDescription()
    {
       return "Clip Launcher";
-   }
-
-   @Override
-   public void onPadPressed(final int x, final int y, final int velocity)
-   {
-      final Track channel = mDriver.getTrackBank().getItemAt(x);
-      final ClipLauncherSlotBank clipLauncherSlots = channel.clipLauncherSlotBank();
-      final int slotIndex = 7 - y;
-
-      if (mDriver.isShiftOn())
-         clipLauncherSlots.select(slotIndex);
-      else if (mDriver.isDeleteOn())
-         clipLauncherSlots.getItemAt(slotIndex).deleteObject();
-      else if (mDriver.isQuantizeOn())
-      {
-         clipLauncherSlots.select(slotIndex);
-         mDriver.getCursorClip().quantize(1);
-      }
-      else
-         clipLauncherSlots.launch(slotIndex);
-   }
-
-   @Override
-   public void onSceneButtonPressed(final int column)
-   {
-      final ClipLauncherSlotOrSceneBank clipLauncherScenes = mDriver.getTrackBank().sceneBank();
-      clipLauncherScenes.launch(7 - column);
    }
 
    @Override
@@ -160,6 +147,10 @@ public final class SessionMode extends Mode
    @Override
    public void doDeactivate()
    {
+      mShiftLayer.deactivate();
+      mQuantizeLayer.deactivate();
+      mDeleteLayer.deactivate();
+
       final TrackBank trackBank = mDriver.getTrackBank();
       final SceneBank sceneBank = mDriver.getSceneBank();
       sceneBank.setIndication(false);
@@ -191,117 +182,6 @@ public final class SessionMode extends Mode
          scene.exists().unsubscribe();
          scene.unsubscribe();
       }
-   }
-
-   @Override
-   public void paint()
-   {
-      if (false)
-      {
-         super.paint();
-
-         paintSlots();
-         paintSceneButtons();
-         paintArrows();
-      }
-   }
-
-   private void paintArrows()
-   {
-      final TrackBank trackBank = mDriver.getTrackBank();
-      mDriver.getButtonOnTheTop(0).setColor(trackBank.sceneBank().canScrollBackwards().get() ? Color.SCENE : Color.SCENE_LOW);
-      mDriver.getButtonOnTheTop(1).setColor(trackBank.sceneBank().canScrollForwards().get() ? Color.SCENE : Color.SCENE_LOW);
-      mDriver.getButtonOnTheTop(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getButtonOnTheTop(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
-   }
-
-   private void paintSlots()
-   {
-      final TrackBank trackBank = mDriver.getTrackBank();
-
-      for (int i = 0; i < 8; ++i)
-      {
-         final Track channel = trackBank.getItemAt(i);
-
-         for (int j = 0; j < 8; ++j)
-         {
-            final ClipLauncherSlotBank slotBank = channel.clipLauncherSlotBank();
-            final ClipLauncherSlot slot = slotBank.getItemAt(7 - j);
-            final ColorValue slotColor = slot.color();
-
-            final Button button = mDriver.getPadButton(i, j);
-            button.setColor(slotColor.red(), slotColor.green(), slotColor.blue());
-
-            if (slot.isStopQueued().get())
-               button.setPulse(button.PULSE_STOP_QUEUED);
-            else if (slot.isRecordingQueued().get())
-               button.setPulse(button.PULSE_RECORDING_QUEUED);
-            else if (slot.isPlaybackQueued().get())
-               button.setPulse(button.PULSE_PLAYBACK_QUEUED);
-            else if (slot.isRecording().get())
-               button.setPulse(button.PULSE_RECORDING);
-            else if (slot.isPlaying().get())
-               button.setPulse(button.PULSE_PLAYING);
-            else
-               button.setPulse(button.NO_PULSE);
-         }
-      }
-   }
-
-   private void paintSceneButtons()
-   {
-      final SceneBank sceneBank = mDriver.getSceneBank();
-
-      for (int i = 0; i < 8; ++i)
-      {
-         final Scene scene = sceneBank.getItemAt(i);
-         final Button button = mDriver.getButtonOnTheRight(7 - i);
-         if (scene.exists().get())
-         {
-            Color sceneColor = new Color(scene.color());
-            if (sceneColor.isBlack())
-               sceneColor = Color.SCENE;
-            button.setColor(sceneColor);
-         }
-         else
-            button.setColor(Color.OFF);
-      }
-   }
-
-   @Override
-   public void onArrowDownPressed()
-   {
-      if (mDriver.isShiftOn())
-         mDriver.getTrackBank().sceneBank().scrollPageForwards();
-      else
-         mDriver.getTrackBank().sceneBank().scrollForwards();
-   }
-
-   @Override
-   public void onArrowUpPressed()
-   {
-      if (mDriver.isShiftOn())
-         mDriver.getTrackBank().sceneBank().scrollPageBackwards();
-      else
-         mDriver.getTrackBank().sceneBank().scrollBackwards();
-   }
-
-   @Override
-   public void onArrowLeftPressed()
-   {
-      if (mDriver.isShiftOn())
-         mDriver.getTrackBank().scrollPageBackwards();
-      else
-         mDriver.getTrackBank().scrollBackwards();
-   }
-
-   @Override
-   public void onArrowRightPressed()
-   {
-      if (mDriver.isShiftOn())
-         mDriver.getTrackBank().scrollPageForwards();
-      else
-         mDriver.getTrackBank().scrollForwards();
    }
 
    final private LaunchpadLayer mShiftLayer;
