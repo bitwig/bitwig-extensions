@@ -113,56 +113,60 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    {
       mMainLayer = new LaunchpadLayer(this, "main");
 
-      for (int x = 0; x < 8; ++x)
+      if (false)
       {
+         for (int x = 0; x < 8; ++x)
+         {
+            for (int y = 0; y < 8; ++y)
+            {
+               final int X = x;
+               final int Y = y;
+               final Button bt = mGridButtons[y * 8 + x];
+
+               mMainLayer.bindPressed(bt.getButton(), v -> {
+                  bt.onButtonPressed(mHost);
+
+                  final int velocity = (int) (v * 127.0);
+
+                  if (Y == 0 && mBottomOverlay != null)
+                     mBottomOverlay.onPadPressed(Y, velocity);
+                  else
+                     mCurrentMode.onPadPressed(X, Y, velocity);
+               });
+
+               mMainLayer.bindReleased(bt.getButton(), v -> {
+                  final boolean wasHeld = bt.getButtonState() == Button.State.HOLD;
+                  bt.onButtonReleased();
+
+                  final int velocity = (int) (v * 127.0);
+
+                  if (Y == 0 && mBottomOverlay != null)
+                     mBottomOverlay.onPadReleased(Y, velocity);
+                  else
+                     mCurrentMode.onPadReleased(X, Y, velocity, wasHeld);
+               });
+
+               mMainLayer.bind(bt.getAfterTouch(), v -> mCurrentMode.onPadPressure(X, Y, (int) (127. * v)));
+            }
+         }
+
          for (int y = 0; y < 8; ++y)
          {
-            final int X = x;
             final int Y = y;
-            final Button bt = mGridButtons[y * 8 + x];
-
-            mMainLayer.bindPressed(bt.getButton(), v -> {
-               bt.onButtonPressed(mHost);
-
-               final int velocity = (int)(v * 127.0);
-
-               if (Y == 0 && mBottomOverlay != null)
-                  mBottomOverlay.onPadPressed(Y, velocity);
-               else
-                  mCurrentMode.onPadPressed(X, Y, velocity);
-            });
-
-            mMainLayer.bindReleased(bt.getButton(), v -> {
-               final boolean wasHeld = bt.getButtonState() == Button.State.HOLD;
-               bt.onButtonReleased();
-
-               final int velocity = (int)(v * 127.0);
-
-               if (Y == 0 && mBottomOverlay != null)
-                  mBottomOverlay.onPadReleased(Y, velocity);
-               else
-                  mCurrentMode.onPadReleased(X, Y, velocity, wasHeld);
-            });
-
-            mMainLayer.bind(bt.getAfterTouch(), v -> mCurrentMode.onPadPressure(X, Y, (int) (127. * v)));
+            final HardwareButton bt = mSceneButtons[y].getButton();
+            mMainLayer.bindPressed(bt, () -> mCurrentMode.onSceneButtonPressed(Y));
          }
+
+         mMainLayer.bindPressed(mUpButton.getButton(), () -> mCurrentMode.onArrowUpPressed());
+         mMainLayer.bindReleased(mUpButton.getButton(), () -> mCurrentMode.onArrowUpReleased());
+         mMainLayer.bindPressed(mDownButton.getButton(), () -> mCurrentMode.onArrowDownPressed());
+         mMainLayer.bindReleased(mDownButton.getButton(), () -> mCurrentMode.onArrowDownReleased());
+         mMainLayer.bindPressed(mLeftButton.getButton(), () -> mCurrentMode.onArrowLeftPressed());
+         mMainLayer.bindReleased(mLeftButton.getButton(), () -> mCurrentMode.onArrowLeftReleased());
+         mMainLayer.bindPressed(mRightButton.getButton(), () -> mCurrentMode.onArrowRightPressed());
+         mMainLayer.bindReleased(mRightButton.getButton(), () -> mCurrentMode.onArrowRightReleased());
       }
 
-      for (int y = 0; y < 8; ++y)
-      {
-         final int Y = y;
-         final HardwareButton bt = mSceneButtons[y].getButton();
-         mMainLayer.bindPressed(bt, () -> mCurrentMode.onSceneButtonPressed(Y));
-      }
-
-      mMainLayer.bindPressed(mUpButton.getButton(), () -> mCurrentMode.onArrowUpPressed());
-      mMainLayer.bindReleased(mUpButton.getButton(), () -> mCurrentMode.onArrowUpReleased());
-      mMainLayer.bindPressed(mDownButton.getButton(), () -> mCurrentMode.onArrowDownPressed());
-      mMainLayer.bindReleased(mDownButton.getButton(), () -> mCurrentMode.onArrowDownReleased());
-      mMainLayer.bindPressed(mLeftButton.getButton(), () -> mCurrentMode.onArrowLeftPressed());
-      mMainLayer.bindReleased(mLeftButton.getButton(), () -> mCurrentMode.onArrowLeftReleased());
-      mMainLayer.bindPressed(mRightButton.getButton(), () -> mCurrentMode.onArrowRightPressed());
-      mMainLayer.bindReleased(mRightButton.getButton(), () -> mCurrentMode.onArrowRightReleased());
       mMainLayer.bindMode(mSessionButton, mSessionMode);
       mMainLayer.bindMode(mNoteButton, mPlayNoteModes);
       mMainLayer.bindMode(mDeviceButton, mDrumSequencerMode);
@@ -383,7 +387,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       mCursorClip = mHost.createLauncherCursorClip(8 * 16, 128);
       mCursorClip.exists().markInterested();
-      mCursorClip.exists().addValueObserver(mCurrentMode::onCursorClipExists);
+      mCursorClip.exists().addValueObserver(exists -> mCurrentMode.onCursorClipExists(exists));
       mCursorClip.color().markInterested();
       mCursorClip.getPlayStart().markInterested();
       mCursorClip.getPlayStop().markInterested();
@@ -414,8 +418,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mCursorClipDrumPads = mCursorClipDevice.createDrumPadBank(16);
       mCursorClipDrumPads.setIndication(false);
       mCursorClipDrumPads.exists().markInterested();
+      mCursorClipDrumPads.scrollPosition().addValueObserver(exists -> mDrumSequencerMode.invalidateDrumPosition(exists));
       mCursorClipDrumPads.scrollPosition().markInterested();
-      mCursorClipDrumPads.scrollPosition().addValueObserver(mDrumSequencerMode::invalidateDrumPosition);
 
       for (int i = 0; i < 16; ++i)
       {
@@ -446,7 +450,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mPanMode.paintModeButton();
       mSendsMode.paintModeButton();
       mStopClipOverlay.paintModeButton();
-
    }
 
    private void initDrumPad(final DrumPad drumPad)

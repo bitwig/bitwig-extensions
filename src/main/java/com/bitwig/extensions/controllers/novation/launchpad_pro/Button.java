@@ -189,8 +189,8 @@ class Button
    private final int mY;
    private final int mIndex;
    private final boolean mIsPressureSensitive;
-   private LedState mDesiredLedState;
-   private LedState mCurrentLedState;
+   private final LedState mDesiredLedState = new LedState();
+   private final LedState mCurrentLedState = new LedState();
 
    private State mButtonState = State.RELEASED;
    private Boolean mCancelHoldTask = false;

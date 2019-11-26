@@ -5,6 +5,11 @@ import com.bitwig.extension.controller.api.InternalHardwareLightState;
 
 public class LedState implements InternalHardwareLightState
 {
+   LedState()
+   {
+      this(Color.OFF, 0);
+   }
+
    LedState(final Color color)
    {
       this(color, 0);

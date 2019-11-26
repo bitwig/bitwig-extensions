@@ -8,15 +8,32 @@ import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extensions.framework.Layer;
 
 public final class SessionMode extends Mode
 {
    private final Color SESSION_ON_COLOR = new Color(1.f, 1.f, 0.f);
    private final Color SESSION_OFF_COLOR = new Color(SESSION_ON_COLOR, 0.1f);
 
-   public SessionMode(final LaunchpadProControllerExtension launchpadProControllerExtension)
+   public SessionMode(final LaunchpadProControllerExtension driver)
    {
-      super(launchpadProControllerExtension, "session");
+      super(driver, "session");
+
+      mShiftLayer = new LaunchpadLayer(driver, "session-shift");
+
+      final TrackBank trackBank = driver.getTrackBank();
+      for (int x = 0; x < 8; ++x)
+      {
+         final Track track = trackBank.getItemAt(x);
+         final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
+         for (int y = 0; y < 8; ++y)
+         {
+            final ClipLauncherSlot slot = slotBank.getItemAt(7 - y);
+            final Button button = driver.getPadButton(x, y);
+            bindPressed(button, slot.launchAction());
+            mShiftLayer.bindPressed(button, slot.selectAction());
+         }
+      }
    }
 
    @Override
@@ -238,4 +255,6 @@ public final class SessionMode extends Mode
       else
          mDriver.getTrackBank().scrollForwards();
    }
+
+   final private LaunchpadLayer mShiftLayer;
 }
