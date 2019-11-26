@@ -222,6 +222,8 @@ public abstract class PresonusFaderPort extends ControllerExtension
       }
 
       initHardwareLayout();
+
+      mPlayButton.setRoundedCornerRadius(mPlayButton.getWidth() / 2.0);
    }
 
    protected abstract void initHardwareLayout();
@@ -256,7 +258,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
          {
             for (int i = 0; i < 4; i++)
             {
-               final int byteValue = state.getForByte(i);
+               final int byteValue = state != null ? state.getForByte(i) : 0;
 
                assert byteValue >= 0 && byteValue <= 127;
 

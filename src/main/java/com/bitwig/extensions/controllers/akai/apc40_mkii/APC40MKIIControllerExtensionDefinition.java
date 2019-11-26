@@ -15,7 +15,7 @@ public class APC40MKIIControllerExtensionDefinition extends ControllerExtensionD
    @Override
    public String getName()
    {
-      return "APC40 MKII";
+      return "APC40 mkII";
    }
 
    @Override

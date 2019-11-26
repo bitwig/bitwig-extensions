@@ -853,7 +853,7 @@ public class PresonusAtom extends ControllerExtension
 
       private final int mStatusStart, mData1;
 
-      private final int[] mLastSent = new int[4];
+      private final int[] mLastSent = {-1, -1, -1, -1};
 
       private final int[] mValues = new int[4];
    }
