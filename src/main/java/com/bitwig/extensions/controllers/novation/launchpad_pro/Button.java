@@ -1,15 +1,23 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 
-public class Button
+class Button
 {
    private final int HOLD_DELAY_MS = 250;
+
+   static final int NO_PULSE = 0;
+   static final int PULSE_PLAYING = 88;
+   static final int PULSE_RECORDING = 72;
+   static final int PULSE_PLAYBACK_QUEUED = 89;
+   static final int PULSE_RECORDING_QUEUED = 56;
+   static final int PULSE_STOP_QUEUED = 118;
 
    enum State
    {
@@ -25,8 +33,11 @@ public class Button
       final int x,
       final int y)
    {
+      assert index >= 0;
+      assert index < 100;
+
       mIsPressureSensitive = isPressureSensitive;
-      mLed = new Led(index);
+      mIndex = index;
 
       final HardwareButton bt = hardwareSurface.createHardwareButton(id);
 
@@ -46,20 +57,14 @@ public class Button
          mAfterTouch = null;
       }
 
-      final MultiStateHardwareLight light =
-         hardwareSurface.createMultiStateHardwareLight(id + "-light", Led::stateToVisualState);
-      light.state().setValueSupplier(mLed::getState);
+      final MultiStateHardwareLight light = hardwareSurface.createMultiStateHardwareLight(id + "-light");
+      light.state().currentValue();
       bt.setBackgroundLight(light);
 
       mButton = bt;
       mLight = light;
       mX = x;
       mY = y;
-   }
-
-   public Led getLed()
-   {
-      return mLed;
    }
 
    public HardwareButton getButton()
@@ -72,36 +77,36 @@ public class Button
       return mAfterTouch;
    }
 
-   State getState()
+   State getButtonState()
    {
-      return mState;
+      return mButtonState;
    }
 
-   void setState(final State state)
+   void setButtonState(final State buttonState)
    {
-      mState = state;
+      mButtonState = buttonState;
    }
 
    void onButtonPressed(ControllerHost host)
    {
-      mState = State.PRESSED;
+      mButtonState = State.PRESSED;
 
       final Boolean cancelHoldTask = false;
       host.scheduleTask(() -> {
-         if (!cancelHoldTask && mState == State.PRESSED)
-            mState = State.HOLD;
+         if (!cancelHoldTask && mButtonState == State.PRESSED)
+            mButtonState = State.HOLD;
       }, HOLD_DELAY_MS);
    }
 
    void onButtonReleased()
    {
-      mState = State.RELEASED;
+      mButtonState = State.RELEASED;
       mCancelHoldTask = false;
    }
 
    boolean isPressed()
    {
-      return mState == State.PRESSED || mState == State.HOLD;
+      return mButtonState == State.PRESSED || mButtonState == State.HOLD;
    }
 
    public int getX()
@@ -114,9 +119,53 @@ public class Button
       return mY;
    }
 
+   public void setColor(final float red, final float green, final float blue)
+   {
+      mDesiredLedState.setColor(red, green, blue);
+   }
+
+   public void setColor(final ColorValue color)
+   {
+      assert color.isSubscribed();
+
+      setColor(color.red(), color.green(), color.blue());
+   }
+
    void setColor(final Color c)
    {
-      mLed.setColor(c);
+      mDesiredLedState.setColor(c);
+   }
+
+   public String updateClearSysex()
+   {
+      final Color color = mDesiredLedState.getColor();
+      if (color.equals(mCurrentLedState.getColor()) || !color.isBlack())
+         return "";
+
+      mCurrentLedState.set(mDesiredLedState);
+      return String.format(" %02x 00", mIndex);
+   }
+
+   public String updateLightLEDSysex()
+   {
+      final Color color = mDesiredLedState.getColor();
+      if (mCurrentLedState.getColor().equals(color) || color.isBlack())
+         return "";
+
+      mCurrentLedState.getColor().set(color);
+      return String.format(" %02x %02x %02x %02x", mIndex, color.getRed(), color.getGreen(), color.getBlue());
+   }
+
+   public String updatePulseSysex()
+   {
+      final int pulseColor = mDesiredLedState.getPulseColor();
+      if (pulseColor == mCurrentLedState.getPulseColor())
+         return "";
+
+      mCurrentLedState.setPulseColor(pulseColor);
+      if (pulseColor == 0)
+         return "";
+      return String.format(" %02x %02x", mIndex, pulseColor);
    }
 
    /* Hardware objects */
@@ -125,10 +174,13 @@ public class Button
    private final AbsoluteHardwareKnob mAfterTouch;
 
    /* State */
-   private final Led mLed;
    private final int mX;
    private final int mY;
+   private final int mIndex;
    private final boolean mIsPressureSensitive;
-   private State mState = State.RELEASED;
+   private LedState mDesiredLedState;
+   private LedState mCurrentLedState;
+
+   private State mButtonState = State.RELEASED;
    private Boolean mCancelHoldTask = false;
 }

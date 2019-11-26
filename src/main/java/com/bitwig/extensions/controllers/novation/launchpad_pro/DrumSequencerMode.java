@@ -612,7 +612,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
             if (playingStep == mPage * 32 + 8 * y + x)
                led.setColor(noteStep.state() == NoteStep.State.NoteOn ? Color.STEP_PLAY : Color.STEP_PLAY_HEAD);
-            else if (mDriver.getPadButton(x, 7- y).getState() == Button.State.HOLD)
+            else if (mDriver.getPadButton(x, 7- y).getButtonState() == Button.State.HOLD)
                led.setColor(Color.STEP_HOLD);
             else switch (noteStep.state())
             {

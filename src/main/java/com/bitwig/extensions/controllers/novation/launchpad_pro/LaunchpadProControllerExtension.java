@@ -133,7 +133,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
             });
 
             mMainLayer.bindReleased(bt.getButton(), v -> {
-               final boolean wasHeld = bt.getState() == Button.State.HOLD;
+               final boolean wasHeld = bt.getButtonState() == Button.State.HOLD;
                bt.onButtonReleased();
 
                final int velocity = (int)(v * 127.0);
@@ -301,7 +301,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    {
       final ArrayList<Button> buttons = new ArrayList<>();
       for (Button bt : mGridButtons)
-         if (bt.getState() == Button.State.HOLD)
+         if (bt.getButtonState() == Button.State.HOLD)
             buttons.add(bt);
 
       return buttons;
@@ -653,11 +653,9 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       final StringBuilder ledPulseUpdate,
       final Button button)
    {
-      final Led led = button.getLed();
-
-      ledClear.append(led.updateClearSysex());
-      ledUpdate.append(led.updateLightLEDSysex());
-      ledPulseUpdate.append(led.updatePulseSysex());
+      ledClear.append(button.updateClearSysex());
+      ledUpdate.append(button.updateLightLEDSysex());
+      ledPulseUpdate.append(button.updatePulseSysex());
 
       // Lets not send sysex that are too big
       if (ledUpdate.length() >= 4 * 3 * 48)
@@ -726,7 +724,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       }
       else
       {
-         if (mBottomOverlay == overlay && bt.getState() == Button.State.HOLD)
+         if (mBottomOverlay == overlay && bt.getButtonState() == Button.State.HOLD)
             mBottomOverlay = null;
       }
 
@@ -749,7 +747,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    {
       for (int x = 0; x < 8; ++x)
          for (int y = 0; y < 8; ++y)
-            getPadLed(x, y).setColor(0.f, 0.f, 0.f);
+            getPadButton(x, y).setColor(0.f, 0.f, 0.f);
    }
 
    /**
@@ -761,11 +759,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       assert y >= 0 && y < 8;
 
       return mGridButtons[8 * y + x];
-   }
-
-   final Led getPadLed(final int x, final int y)
-   {
-      return getPadButton(x, y).getLed();
    }
 
    Button getTopButton(final int x)
@@ -846,26 +839,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    Button getRightButton(final int y)
    {
       return mSceneButtons[y];
-   }
-
-   Led getTopLed(final int x)
-   {
-      return getTopButton(x).getLed();
-   }
-
-   Led getBottomLed(final int x)
-   {
-      return getBottomButton(x).getLed();
-   }
-
-   Led getLeftLed(final int y)
-   {
-      return getLeftButton(y).getLed();
-   }
-
-   Led getRightLed(final int y)
-   {
-      return getRightButton(y).getLed();
    }
 
    TrackBank getTrackBank()
