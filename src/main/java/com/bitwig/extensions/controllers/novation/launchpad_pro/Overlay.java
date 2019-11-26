@@ -23,7 +23,9 @@ abstract class Overlay extends Mode
    {
    }
 
-   abstract void onPadPressed(final int x, final int velocity);
+   void onPadPressed(final int x, final int velocity)
+   {
+   }
 
    void onPadReleased(final int x, final int velocity)
    {

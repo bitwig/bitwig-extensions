@@ -69,8 +69,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private void createLayers()
    {
       mLayers = new Layers(this);
-      createMainLayer();
 
+      mMainLayer = new LaunchpadLayer(this, "main");
       mSessionMode = new SessionMode(this);
       mDrumMode = new DrumMode(this);
 
@@ -99,6 +99,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       mCurrentMode = mSessionMode;
 
+      createMainLayer();
       createDebugLayer();
    }
 
@@ -111,8 +112,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    private void createMainLayer()
    {
-      mMainLayer = new LaunchpadLayer(this, "main");
-
       if (false)
       {
          for (int x = 0; x < 8; ++x)
@@ -677,6 +676,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    final void setBottomOverlay(final Overlay overlay, final boolean isPressed, final Button bt)
    {
+      assert overlay != null;
+
       if (isPressed)
          bt.onButtonPressed(mHost);
 
@@ -1019,6 +1020,16 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    public Button getSceneButton(int y)
    {
       return mSceneButtons[y];
+   }
+
+   public Button getRecordButton()
+   {
+      return mRecordButton;
+   }
+
+   public Button getArmButton()
+   {
+      return mArmButton;
    }
 
    public Button getDeleteButton()
