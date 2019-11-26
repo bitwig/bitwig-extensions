@@ -51,7 +51,7 @@ public class APC40MKIIControllerExtensionDefinition extends ControllerExtensionD
    @Override
    public String getHardwareModel()
    {
-      return "APC40 MKII";
+      return getName();
    }
 
    @Override
