@@ -10,7 +10,7 @@ public class InternalLightStateBinding extends Binding<Supplier<InternalHardware
    protected InternalLightStateBinding(
       final Supplier<InternalHardwareLightState> source, final MultiStateHardwareLight target)
    {
-      super(source, target);
+      super(target, source, target);
    }
 
    @Override
