@@ -84,5 +84,8 @@ public class ArturiaKeylab49MkII extends ArturiaKeylabMkII
       surface.hardwareElementWithId("fader9").setBounds(744.5, 56.75, 10.0, 51.0);
       surface.hardwareElementWithId("wheel").setBounds(386.75, 77.25, 38.5, 28.0);
       surface.hardwareElementWithId("display").setBounds(375.5, 41.75, 67.25, 15.5);
+      surface.hardwareElementWithId("display").setBounds(375.5, 41.75, 67.25, 15.5);
+      surface.hardwareElementWithId("piano").setBounds(101.0, 157.75, 669.0, 138.75);
+
    }
 }

@@ -52,6 +52,7 @@ public class ArturiaKeylab61MkII extends ArturiaKeylabMkII
       surface.hardwareElementWithId("PLAY_OR_PAUSE").setBounds(338.5, 114.0, 13.0, 10.5);
       surface.hardwareElementWithId("RECORD").setBounds(359.25, 114.0, 13.0, 10.5);
       surface.hardwareElementWithId("LOOP").setBounds(379.75, 114.0, 13.0, 10.5);
+      surface.hardwareElementWithId("WHEEL_CLICK").setBounds(488.0, 82.5, 10.0, 10.0);
       surface.hardwareElementWithId("NEXT").setBounds(553.25, 35.0, 10.0, 10.0);
       surface.hardwareElementWithId("PREVIOUS").setBounds(553.25, 63.5, 10.0, 10.0);
       surface.hardwareElementWithId("SELECT1").setBounds(581.75, 121.0, 10.0, 10.0);
@@ -83,7 +84,9 @@ public class ArturiaKeylab61MkII extends ArturiaKeylabMkII
       surface.hardwareElementWithId("fader9").setBounds(821.25, 53.25, 10.0, 51.0);
       surface.hardwareElementWithId("wheel").setBounds(447.5, 73.25, 38.5, 28.0);
       surface.hardwareElementWithId("display").setBounds(435.0, 38.25, 67.25, 15.5);
-      surface.hardwareElementWithId("WHEEL_CLICK").setBounds(488.0, 82.5, 10.0, 10.0);
+      surface.hardwareElementWithId("display").setBounds(435.0, 38.25, 67.25, 15.5);
+      surface.hardwareElementWithId("piano").setBounds(25.0, 154.0, 831.25, 138.5);
+
 
    }
 }
