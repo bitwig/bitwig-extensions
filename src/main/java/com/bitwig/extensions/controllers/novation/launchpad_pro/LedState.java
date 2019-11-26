@@ -24,7 +24,7 @@ public class LedState implements InternalHardwareLightState
    @Override
    public HardwareLightVisualState getVisualState()
    {
-      return null;
+      return HardwareLightVisualState.createForColor(mColor.toApiColor());
    }
 
    public Color getColor()
