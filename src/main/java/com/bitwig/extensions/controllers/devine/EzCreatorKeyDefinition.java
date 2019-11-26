@@ -103,5 +103,5 @@ public class EzCreatorKeyDefinition extends ControllerExtensionDefinition
 
    private static final EzCreatorKeyDefinition INSTANCE = new EzCreatorKeyDefinition();
 
-   private static final UUID EXTENSION_UUID = UUID.fromString("3be22ab5-b159-4bd4-b88b-1c0fe6ce56fb");
+   private static final UUID EXTENSION_UUID = UUID.fromString("0f5fb728-6c41-489f-a98a-5b7ed019550f");
 }
