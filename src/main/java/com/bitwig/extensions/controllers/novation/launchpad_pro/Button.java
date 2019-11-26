@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import java.util.function.Consumer;
+
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -27,7 +29,7 @@ class Button
    }
 
    Button(
-      final HardwareSurface hardwareSurface,
+      final LaunchpadProControllerExtension driver,
       final String id,
       final MidiIn midiIn,
       final int index,
@@ -38,6 +40,9 @@ class Button
       assert index >= 0;
       assert index < 100;
 
+      mDriver = driver;
+
+      final HardwareSurface hardwareSurface = driver.getHardwareSurface();
       mIsPressureSensitive = isPressureSensitive;
       mIndex = index;
 
@@ -60,7 +65,8 @@ class Button
       }
 
       final MultiStateHardwareLight light = hardwareSurface.createMultiStateHardwareLight(id + "-light");
-      light.state().currentValue();
+      light.state().setValue(LedState.OFF);
+      light.state().onUpdateHardware(internalHardwareLightState -> mDriver.updateButtonLed(Button.this));
       bt.setBackgroundLight(light);
 
       mButton = bt;
@@ -154,7 +160,7 @@ class Button
 
       assert lastSent != null ? currentState != null : true;
 
-      if (currentState == null || currentState.equals(lastSent))
+      if (currentState == null || (lastSent != null && currentState.equals(lastSent)))
          return;
 
       final Color color = currentState.getColor();
@@ -167,7 +173,7 @@ class Button
       }
 
       final int pulse = currentState.getPulse();
-      if ((lastSent != null || pulse != lastSent.getPulse()) && pulse != Button.NO_PULSE)
+      if ((lastSent == null || pulse != lastSent.getPulse()) && pulse != Button.NO_PULSE)
          ledPulseUpdate.append(String.format(" %02x %02x", mIndex, pulse));
    }
 
@@ -175,6 +181,8 @@ class Button
    {
       return mLight;
    }
+
+   private final LaunchpadProControllerExtension mDriver;
 
    /* Hardware objects */
    private final HardwareButton mButton;

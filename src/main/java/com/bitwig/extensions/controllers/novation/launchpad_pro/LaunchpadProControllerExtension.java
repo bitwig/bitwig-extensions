@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.Arpeggiator;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
@@ -21,7 +22,6 @@ import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
-import com.bitwig.extension.controller.api.Arpeggiator;
 import com.bitwig.extension.controller.api.Preferences;
 import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extension.controller.api.RemoteControl;
@@ -269,9 +269,9 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
             final String id = "grid-" + x + "-" + y;
 
             final Button bt =
-               new Button(mHardwareSurface, id, mMidiIn, index, true, x + 1, y + 1);
+               new Button(this, id, mMidiIn, index, true, x + 1, y + 1);
             mGridButtons[8 * y + x] = bt;
-            setButtonPhysicalPosition(bt, x + 1, y + 1);
+            setButtonPhysicalPosition(bt, x + 1, y + 1, false);
          }
       }
    }
@@ -283,17 +283,25 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       final int index = x + 10 * y;
       final Button bt =
-         new Button(mHardwareSurface, id, mMidiIn, index, false, x, y);
-      setButtonPhysicalPosition(bt, x, y);
+         new Button(this, id, mMidiIn, index, false, x, y);
+      setButtonPhysicalPosition(bt, x, y, true);
       return bt;
    }
 
-   private void setButtonPhysicalPosition(final Button bt, final int x, final int y)
+   private void setButtonPhysicalPosition(final Button bt, final int x, final int y, final boolean isRound)
    {
       assert x >= 0 && x < 10;
       assert y >= 0 && y < 10;
 
-      bt.getButton().setBounds(calculatePhysicalPosition(x), calculatePhysicalPosition(9 - y), PHYSICAL_BUTTON_WIDTH, PHYSICAL_BUTTON_WIDTH);
+      final HardwareButton button = bt.getButton();
+      button.setBounds(
+         calculatePhysicalPosition(x),
+         calculatePhysicalPosition(9 - y),
+         PHYSICAL_BUTTON_WIDTH,
+         PHYSICAL_BUTTON_WIDTH);
+
+      if (isRound)
+         button.setRoundedCornerRadius(PHYSICAL_BUTTON_WIDTH / 2);
    }
 
    private double calculatePhysicalPosition(final int i)
@@ -618,53 +626,35 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mMidiOut.sendSysex("F0 00 20 29 02 10 0E 00 F7");
    }
 
+   public void updateButtonLed(final Button button)
+   {
+      button.appendLedUpdate(mLedClearSysexBuffer, mLedColorUpdateSysexBuffer, mLedPulseUpdateSysexBuffer);
+
+      // Lets not send sysex that are too big
+      if (mLedColorUpdateSysexBuffer.length() >= 4 * 3 * 48)
+      {
+         sendLedUpdateSysex(mLedColorUpdateSysexBuffer.toString());
+         mLedColorUpdateSysexBuffer.setLength(0); // clears it
+      }
+   }
+
    @Override
    public void flush()
    {
+      mLedClearSysexBuffer.setLength(0);
+      mLedColorUpdateSysexBuffer.setLength(0);
+      mLedPulseUpdateSysexBuffer.setLength(0);
+
       mHardwareSurface.updateHardware();
-      //paint();
 
-      /* Sysex buffer */
-      final StringBuilder ledClear = new StringBuilder();
-      StringBuilder ledUpdate = new StringBuilder();
-      final StringBuilder ledPulseUpdate = new StringBuilder();
+      if (mLedClearSysexBuffer.length() > 0)
+         mMidiOut.sendSysex("F0 00 20 29 02 10 0A" + mLedClearSysexBuffer + " F7");
 
-      for (Button gridButton : mGridButtons)
-         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, gridButton);
+      if (mLedColorUpdateSysexBuffer.length() > 0)
+         sendLedUpdateSysex(mLedColorUpdateSysexBuffer.toString());
 
-      for (int i = 0; i < 8; ++i)
-      {
-         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getButtonOnTheTop(i));
-         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getButtonOnTheBottom(i));
-         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getButtonOnTheLeft(i));
-         flushButtonLed(ledClear, ledUpdate, ledPulseUpdate, getButtonOnTheRight(i));
-      }
-
-      if (ledClear.length() > 0)
-         mMidiOut.sendSysex("F0 00 20 29 02 10 0A" + ledClear + " F7");
-
-      if (ledUpdate.length() > 0)
-         sendLedUpdateSysex(ledUpdate.toString());
-
-      if (ledPulseUpdate.length() > 0)
-         mMidiOut.sendSysex("F0 00 20 29 02 10 28" + ledPulseUpdate + " F7");
-   }
-
-   private StringBuilder flushButtonLed(
-      final StringBuilder ledClear,
-      StringBuilder ledUpdate,
-      final StringBuilder ledPulseUpdate,
-      final Button button)
-   {
-      button.appendLedUpdate(ledClear, ledUpdate, ledPulseUpdate);
-
-      // Lets not send sysex that are too big
-      if (ledUpdate.length() >= 4 * 3 * 48)
-      {
-         sendLedUpdateSysex(ledUpdate.toString());
-         ledUpdate = new StringBuilder();
-      }
-      return ledUpdate;
+      if (mLedPulseUpdateSysexBuffer.length() > 0)
+         mMidiOut.sendSysex("F0 00 20 29 02 10 28" + mLedPulseUpdateSysexBuffer + " F7");
    }
 
    private void paint()
@@ -1059,6 +1049,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mQuantizeButton;
    }
 
+   public HardwareSurface getHardwareSurface()
+   {
+      return mHardwareSurface;
+   }
+
    /* API Objects */
    private final ControllerHost mHost;
    private Application mApplication;
@@ -1153,4 +1148,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private Button mSoloButton;
    private Button mMuteButton;
    private Button mSelectButton;
+
+   private StringBuilder mLedClearSysexBuffer = new StringBuilder();
+   private StringBuilder mLedColorUpdateSysexBuffer = new StringBuilder();
+   private StringBuilder mLedPulseUpdateSysexBuffer = new StringBuilder();
 }

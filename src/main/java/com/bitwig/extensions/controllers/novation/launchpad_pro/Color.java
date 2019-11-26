@@ -116,7 +116,7 @@ final class Color
 
    public boolean equals(final Color color)
    {
-      return mRed == color.mRed && mGreen == color.mGreen && mBlue == color.mBlue;
+      return this == color || (mRed == color.mRed && mGreen == color.mGreen && mBlue == color.mBlue);
    }
 
    public static Color scale(final Color color, final float scale)
