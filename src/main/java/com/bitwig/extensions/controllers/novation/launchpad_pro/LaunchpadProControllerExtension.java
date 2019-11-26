@@ -167,11 +167,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
          mMainLayer.bindReleased(mRightButton.getButton(), () -> mCurrentMode.onArrowRightReleased());
       }
 
-      mMainLayer.bindMode(mSessionButton, mSessionMode);
-      mMainLayer.bindMode(mNoteButton, mPlayNoteModes);
-      mMainLayer.bindMode(mDeviceButton, mDrumSequencerMode);
-      mMainLayer.bindMode(mUserButton, mStepSequencerMode);
-
       mMainLayer.bindPressed(mShiftButton.getButton(), () -> mCurrentMode.onShiftPressed());
       mMainLayer.bindReleased(mShiftButton.getButton(), () -> mCurrentMode.onShiftReleased());
       mMainLayer.bindPressed(mClickButton.getButton(), () -> {
@@ -214,9 +209,13 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mMainLayer.bindOverlay(mMuteButton, mMuteOverlay);
       mMainLayer.bindOverlay(mSoloButton, mSoloOverlay);
       mMainLayer.bindOverlay(mStopButton, mStopClipOverlay);
-      mMainLayer.bindMode(mVolumeButton, mVolumeMode);
-      mMainLayer.bindMode(mPanButton, mPanMode);
-      mMainLayer.bindMode(mSendsButton, mSendsMode);
+      mMainLayer.bindMode(mSessionButton, mSessionMode, LedState.SESSION_MODE_OFF);
+      mMainLayer.bindMode(mNoteButton, mPlayNoteModes, LedState.PLAY_MODE_OFF);
+      mMainLayer.bindMode(mDeviceButton, mDrumSequencerMode, LedState.DRUM_SEQ_MODE_OFF);
+      mMainLayer.bindMode(mUserButton, mStepSequencerMode, LedState.STEP_SEQ_MODE_OFF);
+      mMainLayer.bindMode(mVolumeButton, mVolumeMode, LedState.VOLUME_LOW);
+      mMainLayer.bindMode(mPanButton, mPanMode, LedState.PAN_LOW);
+      mMainLayer.bindMode(mSendsButton, mSendsMode, LedState.SENDS_LOW);
 
       mMainLayer.activate();
    }
@@ -688,6 +687,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    final void setMode(final Mode mode)
    {
+      assert mode != null;
+
       if (mCurrentMode == mode)
          return;
 
@@ -1039,6 +1040,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mShiftButton;
    }
 
+   public Button getSceneButton(int y)
+   {
+      return mSceneButtons[y];
+   }
+
    public Button getDeleteButton()
    {
       return mDeleteButton;
@@ -1052,6 +1058,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    public HardwareSurface getHardwareSurface()
    {
       return mHardwareSurface;
+   }
+
+   public Button getSessionButton()
+   {
+      return mSessionButton;
    }
 
    /* API Objects */

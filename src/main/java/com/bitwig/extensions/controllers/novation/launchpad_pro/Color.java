@@ -33,8 +33,8 @@ final class Color
    static final Color PAN = fromRgb255(255, 85, 127);
    static final Color PAN_LOW = scale(PAN, 0.1f);
 
-   static final Color SEND = new Color(1.f, 1.f, 0.f);
-   static final Color SEND_LOW = new Color(SEND, 0.1f);
+   static final Color SENDS = new Color(1.f, 1.f, 0.f);
+   static final Color SENDS_LOW = new Color(SENDS, 0.1f);
 
    static final Color TRACK = CYAN;
    static final Color TRACK_LOW = new Color(TRACK, 0.1f);
@@ -60,6 +60,18 @@ final class Color
    static final Color STEP_ON = Color.fromRgb255(255, 255, 127);
    static final Color STEP_SUSTAIN = Color.scale(STEP_ON, 0.1f);
    static final Color STEP_OFF = OFF;
+
+   static final Color SESSION_MODE_ON = new Color(1.f, 1.f, 0.f);
+   static final Color SESSION_MODE_OFF = new Color(SESSION_MODE_ON, 0.1f);
+
+   public final static Color PLAY_MODE = Color.fromRgb255(11, 100, 63);
+   public final static Color PLAY_MODE_OFF = Color.scale(PLAY_MODE, 0.2f);
+
+   public final static Color DRUM_SEQ_MODE = Color.fromRgb255(255, 183, 0);
+   public final static Color DRUM_SEQ_MODE_OFF = new Color(DRUM_SEQ_MODE, .1f);
+
+   public static final Color STEP_SEQ_MODE = Color.fromRgb255(255, 183, 0);
+   public static final Color STEP_SEQ_MODE_OFF = new Color(STEP_SEQ_MODE, .1f);
 
    Color(final float red, final float green, final float blue)
    {

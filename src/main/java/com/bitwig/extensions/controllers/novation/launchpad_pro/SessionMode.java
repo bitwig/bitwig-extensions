@@ -12,9 +12,6 @@ import com.bitwig.extension.controller.api.TrackBank;
 
 public final class SessionMode extends Mode
 {
-   private final Color SESSION_ON_COLOR = new Color(1.f, 1.f, 0.f);
-   private final Color SESSION_OFF_COLOR = new Color(SESSION_ON_COLOR, 0.1f);
-
    public SessionMode(final LaunchpadProControllerExtension driver)
    {
       super(driver, "session");
@@ -42,11 +39,22 @@ public final class SessionMode extends Mode
             });
             bindLightState(() -> computeGridLightState(slot, button), button.getLight());
          }
+
+         final Scene scene = sceneBank.getItemAt(7 - x);
+         final Button sceneButton = driver.getSceneButton(x);
+         bindPressed(sceneButton, scene.launchAction());
+         bindLightState(() -> new LedState(scene.color()), sceneButton.getLight());
       }
 
       bindLayer(driver.getShiftButton(), mShiftLayer);
       bindLayer(driver.getDeleteButton(), mDeleteLayer);
       bindLayer(driver.getQuantizeButton(), mQuantizeLayer);
+
+      bindLightState(() -> LedState.SESSION_MODE_ON, driver.getSessionButton());
+      bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
+      bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
+      bindLightState(() -> sceneBank.canScrollForwards().get() ? LedState.SCENE : LedState.SCENE_LOW, driver.getDownButton());
+      bindLightState(() -> sceneBank.canScrollBackwards().get() ? LedState.SCENE : LedState.SCENE_LOW, driver.getUpButton());
 
       bindPressed(driver.getRightButton(), trackBank.scrollForwardsAction());
       bindPressed(driver.getLeftButton(), trackBank.scrollBackwardsAction());
@@ -84,13 +92,6 @@ public final class SessionMode extends Mode
    protected String getModeDescription()
    {
       return "Clip Launcher";
-   }
-
-   @Override
-   public void paintModeButton()
-   {
-      final Button button = mDriver.getButtonOnTheTop(4);
-      button.setColor(isActive() ? SESSION_ON_COLOR : SESSION_OFF_COLOR);
    }
 
    @Override
