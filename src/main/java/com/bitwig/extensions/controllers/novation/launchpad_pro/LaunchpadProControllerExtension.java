@@ -1019,6 +1019,21 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mShiftButton;
    }
 
+   public Button getPanButton()
+   {
+      return mPanButton;
+   }
+
+   public Button getSendsButton()
+   {
+      return mSendsButton;
+   }
+
+   public Button getVolumeButton()
+   {
+      return mVolumeButton;
+   }
+
    public Button getSceneButton(int y)
    {
       return mSceneButtons[y];
