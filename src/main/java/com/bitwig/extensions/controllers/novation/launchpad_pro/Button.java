@@ -151,12 +151,13 @@ class Button
       final StringBuilder ledClear, final StringBuilder ledUpdate, final StringBuilder ledPulseUpdate)
    {
       final ObjectHardwareProperty<InternalHardwareLightState> state = mLight.state();
-      final LedState currentState = (LedState)state.currentValue();
+      LedState currentState = (LedState)state.currentValue();
       final LedState lastSent = (LedState)state.lastSentValue();
 
-      assert lastSent != null ? currentState != null : true;
+      if (currentState == null)
+         currentState = LedState.OFF;
 
-      if (currentState == null || (lastSent != null && currentState.equals(lastSent)))
+      if (lastSent != null && currentState.equals(lastSent))
          return;
 
       final Color color = currentState.getColor();
