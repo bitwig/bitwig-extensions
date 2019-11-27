@@ -5,104 +5,68 @@ public class ScaleAndKeyChooserMode extends Mode
    private static final int[] CHROMATIC_NOTE_INDEXES = new int[] { 0, 2, 4, 5, 7, 9, 11, 12, -1, 1, 3, -1, 6, 8, 10,
          -1, };
 
-   private final static Color ROOT_KEY_COLOR = Color.fromRgb255(11, 100, 63);
+   private final static LedState ROOT_KEY_COLOR = new LedState(Color.fromRgb255(11, 100, 63));
 
-   private final static Color USED_KEY_COLOR = Color.fromRgb255(255, 240, 240);
+   private final static LedState USED_KEY_COLOR = new LedState(Color.fromRgb255(255, 240, 240));
 
-   private final static Color UNUSED_KEY_COLOR = Color.fromRgb255(40, 40, 40);
+   private final static LedState UNUSED_KEY_COLOR = new LedState(Color.fromRgb255(40, 40, 40));
 
-   private final static Color SCALE_ON_COLOR = Color.fromRgb255(50, 167, 202);
+   private final static LedState SCALE_ON_COLOR = new LedState(Color.fromRgb255(50, 167, 202));
 
-   private final static Color SCALE_OFF_COLOR = Color.scale(SCALE_ON_COLOR, 0.2f);
+   private final static LedState SCALE_OFF_COLOR = new LedState(Color.scale(SCALE_ON_COLOR.getColor(), 0.2f));
 
    ScaleAndKeyChooserMode(final LaunchpadProControllerExtension driver)
    {
       super(driver, "scale-key-chooser");
+
+      for (int x = 0; x < 8; ++x)
+      {
+         for (int y = 0; y < 2; ++y)
+         {
+            final int noteIndex = CHROMATIC_NOTE_INDEXES[x + 8 * (y - 6)];
+            final Button bt = driver.getPadButton(x, 6 + y);
+            bindPressed(bt, () -> selectKey(noteIndex));
+            bindLightState(() -> {
+               if (noteIndex == -1)
+                  return LedState.OFF;
+               if ((noteIndex % 12) == mDriver.getMusicalKey())
+                  return ROOT_KEY_COLOR;
+
+               final MusicalScale scale = mDriver.getMusicalScale();
+               if (scale.isMidiNoteInScale(mDriver.getMusicalKey(), noteIndex))
+                  return USED_KEY_COLOR;
+               return UNUSED_KEY_COLOR;
+            }, bt);
+         }
+      }
+
+      for (int x = 0; x < 8; ++x)
+      {
+         for (int y = 0; y < 6; ++y)
+         {
+            final int X = x;
+            final int Y = y;
+            final Button bt = driver.getPadButton(x, y);
+            bindPressed(bt, () -> selectScale(X + (5 - Y) * 8));
+            bindLightState(() -> {
+               final int librarySize = MusicalScaleLibrary.getInstance().getMusicalScalesCount();
+               final int indexInLibrary = mDriver.getMusicalScale().getIndexInLibrary();
+
+               final int index = X + 8 * Y;
+               if (index >= librarySize)
+                  return LedState.OFF;
+               if (indexInLibrary == index)
+                  return SCALE_ON_COLOR;
+               return SCALE_OFF_COLOR;
+            }, bt);
+         }
+      }
    }
 
    @Override
    protected String getModeDescription()
    {
       return "Scale and Key Chooser";
-   }
-
-   @Override
-   protected void doActivate()
-   {
-   }
-
-   @Override
-   public void paint()
-   {
-      paintKeyboard();
-      paintScales();
-
-      // light off the scene buttons
-      for (int i = 0; i < 8; ++i)
-         mDriver.getButtonOnTheRight(i).clear();
-   }
-
-   private void paintKeyboard()
-   {
-      final MusicalScale scale = mDriver.getMusicalScale();
-
-      for (int x = 0; x < 8; ++x)
-      {
-         for (int y = 0; y < 2; ++y)
-         {
-            final int noteIndex = CHROMATIC_NOTE_INDEXES[x + 8 * y];
-            if (noteIndex == -1)
-            {
-               /* dead led */
-               mDriver.getPadButton(x, 6 + y).clear();
-            }
-            else if ((noteIndex % 12) == mDriver.getMusicalKey())
-            {
-               /* root key */
-               mDriver.getPadButton(x, 6 + y).setColor(ROOT_KEY_COLOR);
-            }
-            else if (scale.isMidiNoteInScale(mDriver.getMusicalKey(), noteIndex))
-            {
-               /* note in scale */
-               mDriver.getPadButton(x, 6 + y).setColor(USED_KEY_COLOR);
-            }
-            else
-            {
-               /* note not in scale */
-               mDriver.getPadButton(x, 6 + y).setColor(UNUSED_KEY_COLOR);
-            }
-         }
-      }
-   }
-
-   private void paintScales()
-   {
-      final int librarySize = MusicalScaleLibrary.getInstance().getMusicalScalesCount();
-      final int indexInLibrary = mDriver.getMusicalScale().getIndexInLibrary();
-
-      for (int i = 0; i < 8; ++i)
-      {
-         for (int j = 0; j < 6; ++j)
-         {
-            final Button button = mDriver.getPadButton(i, 5 - j);
-            final int index = i + 8 * j;
-            if (index >= librarySize)
-               button.clear();
-            else if (indexInLibrary == index)
-               button.setColor(SCALE_ON_COLOR);
-            else
-               button.setColor(SCALE_OFF_COLOR);
-         }
-      }
-   }
-
-   @Override
-   public void onPadPressed(final int x, final int y, final int velocity)
-   {
-      if (y < 6)
-         selectScale(x + (5 - y) * 8);
-      else
-         selectKey(CHROMATIC_NOTE_INDEXES[x + 8 * (y - 6)]);
    }
 
    private void selectScale(final int i)

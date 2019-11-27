@@ -23,7 +23,7 @@ public final class KeyboardMode extends Mode
          mDriver.updateKeyTranslationTable();
       });
 
-      bindLightState(LedState.PLAY_MODE, driver.getDeviceButton());
+      bindLightState(LedState.PLAY_MODE, driver.getNoteButton());
       bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
       bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
       bindLightState(() -> mKeyboardLayer.canOctaveDown() ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
