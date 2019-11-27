@@ -15,8 +15,6 @@ abstract class Mode extends LaunchpadLayer
    {
       doActivate();
 
-      paint();
-
       final String modeDescription = getModeDescription();
       if (modeDescription != null)
          mDriver.getHost().showPopupNotification(modeDescription);

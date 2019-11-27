@@ -75,8 +75,8 @@ public final class KeyboardMode extends Mode
    @Override
    protected void doDeactivate()
    {
-      mDriver.getNoteInput().setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
       mKeyboardLayer.deactivate();
+      mDriver.getNoteInput().setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
    }
 
    @Override

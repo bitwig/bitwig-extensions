@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 
 public final class DrumMode extends Mode
@@ -23,6 +24,22 @@ public final class DrumMode extends Mode
             bindLightState(() -> computeGridLedState(X, Y), button.getLight());
          }
       }
+   }
+
+   @Override
+   protected void doActivate()
+   {
+      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      cursorTrack.subscribe();
+      cursorTrack.playingNotes().subscribe();
+   }
+
+   @Override
+   protected void doDeactivate()
+   {
+      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      cursorTrack.unsubscribe();
+      cursorTrack.playingNotes().unsubscribe();
    }
 
    private LedState computeGridLedState(final int x, final int y)
