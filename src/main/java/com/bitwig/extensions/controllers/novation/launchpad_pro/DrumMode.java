@@ -21,7 +21,7 @@ public final class DrumMode extends Mode
             final int X = x;
             final int Y = y;
             final Button button = driver.getPadButton(x, y);
-            bindLightState(() -> computeGridLedState(X, Y), button.getLight());
+            bindLightState(() -> computeGridLedState(X, Y), button);
          }
       }
    }
