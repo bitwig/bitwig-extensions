@@ -18,7 +18,6 @@ public class PanMode extends Mode
       mShiftLayer = new LaunchpadLayer(driver, "pan-shift");
 
       final TrackBank trackBank = driver.getTrackBank();
-      final SceneBank sceneBank = trackBank.sceneBank();
       for (int y = 0; y < 8; ++y)
       {
          final Track track = trackBank.getItemAt(y);
@@ -52,7 +51,6 @@ public class PanMode extends Mode
 
       bindLightState(LedState.PAN_MODE, driver.getPanButton());
 
-      bindLightState(LedState.SESSION_MODE_ON, driver.getSessionButton());
       bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
       bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
       bindLightState(() -> LedState.OFF, driver.getDownButton());
