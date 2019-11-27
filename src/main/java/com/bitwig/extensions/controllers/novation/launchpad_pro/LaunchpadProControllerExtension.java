@@ -71,11 +71,10 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mLayers = new Layers(this);
 
       mMainLayer = new LaunchpadLayer(this, "main");
+
       mSessionMode = new SessionMode(this);
-      mDrumMode = new DrumMode(this);
-
       mKeyboardMode = new KeyboardMode(this);
-
+      mDrumMode = new DrumMode(this);
       mVolumeMode = new VolumeMode(this);
       mScaleAndKeyChooserMode = new ScaleAndKeyChooserMode(this);
       mSendsMode = new SendsMode(this);
@@ -83,13 +82,13 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mDrumSequencerMode = new DrumSequencerMode(this);
       mStepSequencerMode = new StepSequencerMode(this);
 
-      mPlayNoteModes = new MultiplexerMode(this, "Play");
-      mPlayNoteModes.setMode(0, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.GUITAR));
-      mPlayNoteModes.setMode(1, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.LINE_3));
-      mPlayNoteModes.setMode(2, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.LINE_7));
-      mPlayNoteModes.setMode(3, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.PIANO));
-      mPlayNoteModes.setMode(4, mDrumMode);
-      mPlayNoteModes.setMode(7, mScaleAndKeyChooserMode);
+      mPlayModes = new MultiplexerMode(this, "Play");
+      mPlayModes.setMode(0, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.GUITAR));
+      mPlayModes.setMode(1, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.LINE_3));
+      mPlayModes.setMode(2, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.LINE_7));
+      mPlayModes.setMode(3, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.PIANO));
+      mPlayModes.setMode(4, mDrumMode);
+      mPlayModes.setMode(7, mScaleAndKeyChooserMode);
 
       mRecordArmOverlay = new RecordArmOverlay(this);
       mTrackSelectOverlay = new TrackSelectOverlay(this);
@@ -212,7 +211,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mMainLayer.bindOverlay(mSoloButton, mSoloOverlay, LedState.SOLO_LOW);
       mMainLayer.bindOverlay(mStopButton, mStopClipOverlay, LedState.STOP_CLIP_OFF);
       mMainLayer.bindMode(mSessionButton, mSessionMode, LedState.SESSION_MODE_OFF);
-      mMainLayer.bindMode(mNoteButton, mPlayNoteModes, LedState.PLAY_MODE_OFF);
+      mMainLayer.bindMode(mNoteButton, mPlayModes, LedState.PLAY_MODE_OFF);
       mMainLayer.bindMode(mDeviceButton, mDrumSequencerMode, LedState.DRUM_SEQ_MODE_OFF);
       mMainLayer.bindMode(mUserButton, mStepSequencerMode, LedState.STEP_SEQ_MODE_OFF);
       mMainLayer.bindMode(mVolumeButton, mVolumeMode, LedState.VOLUME_MODE_LOW);
@@ -438,7 +437,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       createLayers();
 
       mSessionMode.activate();
-      mPlayNoteModes.selectMinorMode(0);
+      mPlayModes.selectMinorMode(0);
    }
 
    private void initDrumPad(final DrumPad drumPad)
@@ -1139,7 +1138,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    /* Modes */
    private SessionMode mSessionMode;
-   private MultiplexerMode mPlayNoteModes;
+   private MultiplexerMode mPlayModes;
    private KeyboardMode mKeyboardMode;
    private StepSequencerMode mStepSequencerMode;
    private ScaleAndKeyChooserMode mScaleAndKeyChooserMode;
