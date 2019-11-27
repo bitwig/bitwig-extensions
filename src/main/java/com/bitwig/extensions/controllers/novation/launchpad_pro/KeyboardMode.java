@@ -27,7 +27,26 @@ public final class KeyboardMode extends Mode
    {
       super(driver, "keyboard");
 
+      final CursorTrack cursorTrack = driver.getCursorTrack();
+
       mKeyboardLayer = new KeyboardLayer(driver, "keyboard", 0, 0, 8, 8, () -> new Color(mDriver.getCursorTrack().color()));
+
+      bindPressed(driver.getRightButton(), cursorTrack.selectNextAction());
+      bindPressed(driver.getLeftButton(), cursorTrack.selectPreviousAction());
+      bindPressed(driver.getUpButton(), () -> {
+         mKeyboardLayer.octaveUp();
+         mDriver.updateKeyTranslationTable();
+      });
+      bindPressed(driver.getDownButton(), () -> {
+         mKeyboardLayer.octaveDown();
+         mDriver.updateKeyTranslationTable();
+      });
+
+      bindLightState(LedState.PLAY_MODE, driver.getDeviceButton());
+      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
+      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
+      bindLightState(() -> mKeyboardLayer.canOctaveDown() ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
+      bindLightState(() -> mKeyboardLayer.canOctaveUp() ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
    }
 
    @Override

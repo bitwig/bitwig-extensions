@@ -1096,6 +1096,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mSessionButton;
    }
 
+   public Button getDeviceButton()
+   {
+      return mDeviceButton;
+   }
+
    /* API Objects */
    private final ControllerHost mHost;
    private Application mApplication;
