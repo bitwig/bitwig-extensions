@@ -129,7 +129,7 @@ public class XControllerExtension extends ControllerExtension
       mMainLayer.bindPressed(mLoopButton, mTransport.isArrangerLoopEnabled().toggleAction());
       mMainLayer.bindPressed(mRecordButton, mTransport.recordAction());
 
-      for (int i = 0; i < mNumKnobs; ++i)
+      for (int i = 0; i < mRemoteControls.getParameterCount(); ++i)
          mMainLayer.bind(mKnobs[i], mRemoteControls.getParameter(i));
 
       for (int i = 0; i < 8; ++i)
@@ -185,8 +185,9 @@ public class XControllerExtension extends ControllerExtension
 
    private void createKnobs()
    {
-      mKnobs = new AbsoluteHardwareKnob[mNumKnobs];
-      for (int i = 0; i < mNumKnobs; ++i)
+      final int parameterCount = mRemoteControls.getParameterCount();
+      mKnobs = new AbsoluteHardwareKnob[parameterCount];
+      for (int i = 0; i < parameterCount; ++i)
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("Knob-" + i);
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, 0x10 + i));
