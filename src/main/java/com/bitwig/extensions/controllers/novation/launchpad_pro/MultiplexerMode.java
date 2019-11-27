@@ -14,7 +14,7 @@ class MultiplexerMode extends Mode
          bindLightState(() -> {
             if (mModes[I] == null)
                return LedState.OFF;
-            return mSelectedIndex == I ? LedState.SHIFT_ON : LedState.SHIFT_OFF;
+            return mSelectedIndex == I ? mModesLedOn[I] : mModesLedOff[I];
          }, button);
       }
    }
@@ -37,17 +37,24 @@ class MultiplexerMode extends Mode
       return mModes[mSelectedIndex].getModeDescription();
    }
 
-   void setMode(final int index, final Mode mode, final Runnable action)
+   void setMode(final int index, final Mode mode, final Runnable action, final LedState ledOn, final LedState ledOff)
    {
       assert 0 <= index && index < 8;
 
       mModes[index] = mode;
       mModesAction[index] = action;
+      mModesLedOn[index] = ledOn == null ? LedState.SHIFT_ON : ledOn;
+      mModesLedOff[index] = ledOff == null ? LedState.SHIFT_OFF : ledOn;
+   }
+
+   void setMode(final int index, final Mode mode, final Runnable action)
+   {
+      setMode(index, mode, action, null, null);
    }
 
    void setMode(final int index, final Mode mode)
    {
-      setMode(index, mode, null);
+      setMode(index, mode, null, null, null);
    }
 
    public void selectMinorMode(final int index)
@@ -80,4 +87,6 @@ class MultiplexerMode extends Mode
 
    private final Mode[] mModes = {null, null, null, null, null, null, null, null};
    private final Runnable[] mModesAction = {null, null, null, null, null, null, null, null};
+   private LedState[] mModesLedOn = {null, null, null, null, null, null, null, null};
+   private LedState[] mModesLedOff = {null, null, null, null, null, null, null, null};
 }

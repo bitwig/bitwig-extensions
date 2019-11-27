@@ -4,15 +4,48 @@ import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 
 public final class DrumMode extends Mode
 {
-   private static final Color DRUM1_COLOR = Color.fromRgb255(255, 170, 0);
-   private static final Color DRUM2_COLOR = Color.fromRgb255(0, 170, 127);
-   private static final Color DRUM3_COLOR = Color.fromRgb255(255, 0, 255);
-   private static final Color DRUM4_COLOR = Color.fromRgb255(255, 0, 0);
-   private final static Color PLAYING_DRUM_COLOR = Color.fromRgb255(0, 255, 0);
+   private static final LedState DRUM1_LED = new LedState(Color.fromRgb255(255, 170, 0));
+   private static final LedState DRUM2_LED = new LedState(Color.fromRgb255(0, 170, 127));
+   private static final LedState DRUM3_LED = new LedState(Color.fromRgb255(255, 0, 255));
+   private static final LedState DRUM4_LED = new LedState(Color.fromRgb255(255, 0, 0));
 
-   public DrumMode(final LaunchpadProControllerExtension launchpadProControllerExtension)
+   public DrumMode(final LaunchpadProControllerExtension driver)
    {
-      super(launchpadProControllerExtension, "drum");
+      super(driver, "drum");
+
+      for (int x = 0; x < 8; ++x)
+      {
+         for (int y = 0; y < 8; ++y)
+         {
+            final int X = x;
+            final int Y = y;
+            final Button button = driver.getPadButton(x, y);
+            bindLightState(() -> computeGridLedState(X, Y), button.getLight());
+         }
+      }
+   }
+
+   private LedState computeGridLedState(final int x, final int y)
+   {
+      final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
+      final int pitch = calculatePitch(x, y);
+
+      if (playingNotes.isNotePlaying(pitch))
+         return LedState.STEP_PLAY;
+
+      switch (x / 4 + 2 * (y / 4))
+      {
+         case 0:
+            return DRUM1_LED;
+         case 1:
+            return DRUM2_LED;
+         case 2:
+            return DRUM3_LED;
+         case 3:
+            return DRUM4_LED;
+      }
+
+      throw new IllegalStateException();
    }
 
    @Override
@@ -45,45 +78,6 @@ public final class DrumMode extends Mode
 
             table[tableIndex] = note;
          }
-      }
-   }
-
-   @Override
-   public void paint()
-   {
-      super.paint();
-
-      final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
-
-      for (int i = 0; i < 8; ++i)
-      {
-         for (int j = 0; j < 8; ++j)
-         {
-            final Button bt = mDriver.getPadButton(i, j);
-
-            final int pitch = calculatePitch(i, j);
-
-            if (playingNotes.isNotePlaying(pitch))
-               bt.setColor(PLAYING_DRUM_COLOR);
-            else
-               switch (i / 4 + 2 * (j / 4))
-               {
-                  case 0:
-                     bt.setColor(DRUM1_COLOR);
-                     break;
-                  case 1:
-                     bt.setColor(DRUM2_COLOR);
-                     break;
-                  case 2:
-                     bt.setColor(DRUM3_COLOR);
-                     break;
-                  case 3:
-                     bt.setColor(DRUM4_COLOR);
-                     break;
-               }
-         }
-
-         mDriver.getButtonOnTheRight(i).clear();
       }
    }
 }

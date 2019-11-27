@@ -68,6 +68,13 @@ public class LedState implements InternalHardwareLightState
    public static final LedState STOP_CLIP_ON = new LedState(Color.STOP_CLIP_ON);
    public static final LedState STOP_CLIP_OFF = new LedState(Color.STOP_CLIP_OFF);
 
+   public static final LedState STEP_HOLD = new LedState(Color.STEP_HOLD);
+   public static final LedState STEP_PLAY_HEAD = new LedState(Color.STEP_PLAY_HEAD);
+   public static final LedState STEP_PLAY = new LedState(Color.STEP_PLAY);
+   public static final LedState STEP_ON = new LedState(Color.STEP_ON);
+   public static final LedState STEP_SUSTAIN = new LedState(Color.STEP_SUSTAIN);
+   public static final LedState STEP_OFF = new LedState(Color.STEP_SUSTAIN);
+
    public LedState(final ColorValue color)
    {
       this(new Color(color));

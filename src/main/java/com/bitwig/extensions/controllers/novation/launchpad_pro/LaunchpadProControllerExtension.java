@@ -88,8 +88,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mPlayNoteModes.setMode(1, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.LINE_3));
       mPlayNoteModes.setMode(2, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.LINE_7));
       mPlayNoteModes.setMode(3, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.PIANO));
-      mPlayNoteModes.setMode(4, mScaleAndKeyChooserMode);
-      mPlayNoteModes.setMode(5, mDrumMode);
+      mPlayNoteModes.setMode(4, mDrumMode);
+      mPlayNoteModes.setMode(7, mScaleAndKeyChooserMode);
 
       mRecordArmOverlay = new RecordArmOverlay(this);
       mTrackSelectOverlay = new TrackSelectOverlay(this);
