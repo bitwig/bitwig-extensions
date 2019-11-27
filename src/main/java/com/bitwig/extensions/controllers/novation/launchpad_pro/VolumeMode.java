@@ -34,7 +34,7 @@ public class VolumeMode extends Mode
          }
       }
 
-      bindLightState(LedState.VOLUME_MODE, driver.getPanButton());
+      bindLightState(LedState.VOLUME_MODE, driver.getVolumeButton());
 
       bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
       bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());

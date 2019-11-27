@@ -78,7 +78,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       mVolumeMode = new VolumeMode(this);
       mScaleAndKeyChooserMode = new ScaleAndKeyChooserMode(this);
-      mSendsMode = new SendMode(this);
+      mSendsMode = new SendsMode(this);
       mPanMode = new PanMode(this);
       mDrumSequencerMode = new DrumSequencerMode(this);
       mStepSequencerMode = new StepSequencerMode(this);
@@ -1129,7 +1129,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private DrumMode mDrumMode;
    private DrumSequencerMode mDrumSequencerMode;
    private VolumeMode mVolumeMode;
-   private SendMode mSendsMode;
+   private SendsMode mSendsMode;
    private PanMode mPanMode;
 
    /* Overlays */
