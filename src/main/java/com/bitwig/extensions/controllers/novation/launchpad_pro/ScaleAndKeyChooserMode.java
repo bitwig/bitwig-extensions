@@ -23,7 +23,7 @@ public class ScaleAndKeyChooserMode extends Mode
       {
          for (int y = 0; y < 2; ++y)
          {
-            final int noteIndex = CHROMATIC_NOTE_INDEXES[x + 8 * (y - 6)];
+            final int noteIndex = CHROMATIC_NOTE_INDEXES[x + 8 * y];
             final Button bt = driver.getPadButton(x, 6 + y);
             bindPressed(bt, () -> selectKey(noteIndex));
             bindLightState(() -> {
@@ -46,8 +46,8 @@ public class ScaleAndKeyChooserMode extends Mode
          {
             final int X = x;
             final int Y = y;
-            final Button bt = driver.getPadButton(x, y);
-            bindPressed(bt, () -> selectScale(X + (5 - Y) * 8));
+            final Button bt = driver.getPadButton(x, 5 - y);
+            bindPressed(bt, () -> selectScale(X + Y * 8));
             bindLightState(() -> {
                final int librarySize = MusicalScaleLibrary.getInstance().getMusicalScalesCount();
                final int indexInLibrary = mDriver.getMusicalScale().getIndexInLibrary();
