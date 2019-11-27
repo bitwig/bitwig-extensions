@@ -191,7 +191,8 @@ final class KeyboardLayer extends LaunchpadLayer
          final int x = (i % 10) - 1;
          final int y = (i / 10) - 1;
 
-         table[i] = calculateKeyForPosition(x, y);
+         final int key = calculateKeyForPosition(x, y);
+         table[i] = (key >= 0 && key < 128) ? key : -1;
       }
    }
 

@@ -59,19 +59,16 @@ class MultiplexerMode extends Mode
 
    public void selectMinorMode(final int index)
    {
-      if ((index < 0 && 7 < index) ||
-         index == mSelectedIndex ||
-         mModes[index] == null)
+      if ((index < 0 && 8 < index) || index == mSelectedIndex || mModes[index] == null)
          return;
 
       if (mModes[mSelectedIndex] != null)
          mModes[mSelectedIndex].deactivate();
 
+      mSelectedIndex = index;
       if (mModesAction[index] != null)
          mModesAction[index].run();
-
       mModes[index].activate();
-      mSelectedIndex = index;
 
       mDriver.updateKeyTranslationTable();
       mDriver.scheduleFlush();
