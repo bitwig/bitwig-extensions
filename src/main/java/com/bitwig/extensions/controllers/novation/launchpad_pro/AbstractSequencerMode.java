@@ -259,16 +259,16 @@ abstract class AbstractSequencerMode extends Mode
    }
 
    @Override
-   public void onSceneButtonPressed(final int column)
+   public void onSceneButtonPressed(final int row)
    {
       if (mDriver.isShiftOn())
-         setClipLength((8 - column) * 4);
-      else if (4 <= column && column <= 7)
-         mPage = 7 - column;
+         setClipLength((8 - row) * 4);
+      else if (4 <= row && row <= 7)
+         mPage = 7 - row;
       else
       {
-         assert 0 <= column && column <= 3;
-         switch (column)
+         assert 0 <= row && row <= 3;
+         switch (row)
          {
             case 0:
                setDataMode(DataMode.SoundData);

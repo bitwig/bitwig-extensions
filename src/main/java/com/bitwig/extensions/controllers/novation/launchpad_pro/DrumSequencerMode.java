@@ -22,9 +22,14 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       super(driver, "drum-sequencer");
 
-      for (int x = 0; x < 8; ++x)
+      mShiftLayer = new LaunchpadLayer(driver, "drum-sequencer-shift");
+      mDrumPadsLayer = new LaunchpadLayer(driver, "drum-pads");
+      mSceneAndPerfsLayer = new LaunchpadLayer(driver, "drum-scenes-and-perfs");
+
+
+      for (int y = 0; y < 4; ++y)
       {
-         for (int y = 0; y < 4; ++y)
+         for (int x = 0; x < 8; ++x)
          {
             final Button bt = driver.getPadButton(x, y + 4);
             final int absoluteStepIndex = calculateAbsoluteStepIndex(x, 3 - y);
@@ -38,7 +43,14 @@ final class DrumSequencerMode extends AbstractSequencerMode
                onStepReleased(absoluteStepIndex, wasHeld);
             });
          }
+
+         final Button sceneButton = driver.getSceneButton(y + 4);
+         final int page = 3 - y;
+         bindPressed(sceneButton, () -> mPage = page);
+         mShiftLayer.bindPressed(sceneButton, () -> setClipLength(page * 4));
       }
+
+      bindLayer(driver.getShiftButton(), mShiftLayer);
    }
 
    @Override
@@ -62,6 +74,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
    @Override
    protected void doDeactivate()
    {
+      mShiftLayer.deactivate();
+
       final Track track = mDriver.getCursorClipTrack();
       track.unsubscribe();
 
@@ -731,4 +745,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private List<Coord> mNoteRepeatStack = new ArrayList<>();
    private int mCurrentPitch = 36;
+   private final LaunchpadLayer mShiftLayer;
+   private final LaunchpadLayer mDrumPadsLayer;
+   private final LaunchpadLayer mSceneAndPerfsLayer;
 }
