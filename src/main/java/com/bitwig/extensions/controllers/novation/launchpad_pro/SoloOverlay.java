@@ -2,39 +2,27 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import com.bitwig.extension.controller.api.SoloValue;
 import com.bitwig.extension.controller.api.Track;
+import com.bitwig.extension.controller.api.TrackBank;
 
 public class SoloOverlay extends Overlay
 {
-   public SoloOverlay(final LaunchpadProControllerExtension launchpadProControllerExtension)
+   public SoloOverlay(final LaunchpadProControllerExtension driver)
    {
-      super(launchpadProControllerExtension, "solo");
-   }
+      super(driver, "solo");
 
-   @Override
-   public void onPadPressed(final int x, final int velocity)
-   {
-      final Track channel = mDriver.getTrackBank().getItemAt(x);
-      final SoloValue solo = channel.solo();
-      solo.toggle(mDriver.isShiftOn());
-   }
-
-   @Override
-   public void paint()
-   {
-      super.paint();
-
+      final TrackBank trackBank = driver.getTrackBank();
       for (int x = 0; x < 8; ++x)
       {
-         final boolean isSolo = mDriver.getTrackBank().getItemAt(x).solo().get();
-         final boolean exists = mDriver.getTrackBank().getItemAt(x).exists().get();
-         mDriver.getPadButton(x, 0).setColor(!exists ? Color.OFF : isSolo ? Color.SOLO : Color.SOLO_LOW);
+         final Track track = trackBank.getItemAt(x);
+         final Button button = driver.getPadButton(x, 0);
+         bindPressed(button, track.solo().toggleAction());
+         bindLightState(() -> {
+            if (track.exists().get())
+               return track.solo().get() ? LedState.SOLO : LedState.SOLO_LOW;
+            return LedState.OFF;
+         }, button);
       }
-   }
 
-   @Override
-   public void paintModeButton()
-   {
-      final Button button = mDriver.getButtonOnTheBottom(3);
-      button.setColor(isActive() ? Color.SOLO : Color.SOLO_LOW);
+      bindLightState(LedState.SOLO, driver.getSoloButton());
    }
 }

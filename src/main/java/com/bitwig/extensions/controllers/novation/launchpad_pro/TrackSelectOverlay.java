@@ -1,39 +1,29 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import com.bitwig.extension.controller.api.SettableBooleanValue;
+import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
 class TrackSelectOverlay extends Overlay
 {
-   TrackSelectOverlay(final LaunchpadProControllerExtension launchpadProControllerExtension)
+   TrackSelectOverlay(final LaunchpadProControllerExtension driver)
    {
-      super(launchpadProControllerExtension, "track-select");
-   }
+      super(driver, "track-select");
 
-   @Override
-   public void onPadPressed(final int x, final int velocity)
-   {
-      mDriver.getTrackBank().getItemAt(x).selectInMixer();
-   }
-
-   @Override
-   public void paint()
-   {
-      super.paint();
-
-      final TrackBank trackBank = mDriver.getTrackBank();
-      final int selectedTrackIndex = trackBank.cursorIndex().get();
+      final TrackBank trackBank = driver.getTrackBank();
       for (int x = 0; x < 8; ++x)
       {
-         final boolean isSelected = selectedTrackIndex == x;
-         final boolean exists = trackBank.getItemAt(x).exists().get();
-         mDriver.getPadButton(x, 0).setColor(!exists ? Color.OFF : (isSelected ? Color.TRACK : Color.TRACK_LOW));
+         final int X = x;
+         final Track track = trackBank.getItemAt(x);
+         final Button button = driver.getPadButton(x, 0);
+         bindPressed(button, () -> track.selectInMixer());
+         bindLightState(() -> {
+            if (track.exists().get())
+               return trackBank.cursorIndex().get() == X ? LedState.TRACK : LedState.TRACK_LOW;
+            return LedState.OFF;
+         }, button);
       }
-   }
 
-   @Override
-   public void paintModeButton()
-   {
-      final Button button = mDriver.getButtonOnTheBottom(1);
-      button.setColor(isActive() ? Color.TRACK : Color.TRACK_LOW);
+      bindLightState(LedState.TRACK, driver.getSelectButton());
    }
 }

@@ -204,10 +204,10 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       });
 
       mMainLayer.bindOverlay(mArmButton, mRecordArmOverlay, LedState.REC_OFF);
-      mMainLayer.bindOverlay(mSelectButton, mTrackSelectOverlay, LedState.TRACK);
-      mMainLayer.bindOverlay(mMuteButton, mMuteOverlay, LedState.MUTE);
-      mMainLayer.bindOverlay(mSoloButton, mSoloOverlay, LedState.SOLO);
-      mMainLayer.bindOverlay(mStopButton, mStopClipOverlay, LedState.STOP_CLIP_ON);
+      mMainLayer.bindOverlay(mSelectButton, mTrackSelectOverlay, LedState.TRACK_LOW);
+      mMainLayer.bindOverlay(mMuteButton, mMuteOverlay, LedState.MUTE_LOW);
+      mMainLayer.bindOverlay(mSoloButton, mSoloOverlay, LedState.SOLO_LOW);
+      mMainLayer.bindOverlay(mStopButton, mStopClipOverlay, LedState.STOP_CLIP_OFF);
       mMainLayer.bindMode(mSessionButton, mSessionMode, LedState.SESSION_MODE_OFF);
       mMainLayer.bindMode(mNoteButton, mPlayNoteModes, LedState.PLAY_MODE_OFF);
       mMainLayer.bindMode(mDeviceButton, mDrumSequencerMode, LedState.DRUM_SEQ_MODE_OFF);
@@ -520,6 +520,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
          channel.volume().value().markInterested();
          channel.pan().value().markInterested();
          channel.color().markInterested();
+         channel.isStopped().markInterested();
+         channel.isQueuedForStop().markInterested();
 
          final ClipLauncherSlotBank clipLauncherSlots = channel.clipLauncherSlotBank();
          clipLauncherSlots.setIndication(false);
@@ -1032,9 +1034,29 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mArmButton;
    }
 
+   public Button getMuteButton()
+   {
+      return mMuteButton;
+   }
+
+   public Button getStopButton()
+   {
+      return mStopButton;
+   }
+
+   public Button getSelectButton()
+   {
+      return mSelectButton;
+   }
+
    public Button getDeleteButton()
    {
       return mDeleteButton;
+   }
+
+   public Button getSoloButton()
+   {
+      return mSoloButton;
    }
 
    public Button getQuantizeButton()
