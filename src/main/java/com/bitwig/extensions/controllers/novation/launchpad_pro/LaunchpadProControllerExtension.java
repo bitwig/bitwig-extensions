@@ -296,8 +296,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    private Button createSideButton(final String id, final int x, final int y)
    {
-      assert x >= 1 && x < 9 && (y == 0 || y == 9);
-      assert y >= 1 && y < 9 && (x == 0 || x == 9);
+      assert (x >= 1 && x < 9 && (y == 0 || y == 9)) || (y >= 1 && y < 9 && (x == 0 || x == 9));
 
       final int index = x + 10 * y;
       final Button bt =

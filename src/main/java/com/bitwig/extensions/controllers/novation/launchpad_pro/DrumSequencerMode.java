@@ -21,6 +21,24 @@ final class DrumSequencerMode extends AbstractSequencerMode
    DrumSequencerMode(final LaunchpadProControllerExtension driver)
    {
       super(driver, "drum-sequencer");
+
+      for (int x = 0; x < 8; ++x)
+      {
+         for (int y = 0; y < 4; ++y)
+         {
+            final Button bt = driver.getPadButton(x, y + 4);
+            final int absoluteStepIndex = calculateAbsoluteStepIndex(x, 3 - y);
+            bindPressed(bt, v -> {
+               bt.onButtonPressed(driver.getHost());
+               onStepPressed(absoluteStepIndex, (int) (v * 127.0));
+            });
+            bindReleased(bt, () -> {
+               final boolean wasHeld = bt.getButtonState() == Button.State.HOLD;
+               bt.onButtonReleased();
+               onStepReleased(absoluteStepIndex, wasHeld);
+            });
+         }
+      }
    }
 
    @Override

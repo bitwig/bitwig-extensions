@@ -1,8 +1,10 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extensions.framework.Binding;
 import com.bitwig.extensions.framework.Layer;
@@ -18,6 +20,11 @@ public class LaunchpadLayer extends Layer
    void bindPressed(final Button bt, final Runnable runnable)
    {
       bindPressed(bt.getButton(), runnable);
+   }
+
+   void bindPressed(final Button bt, final DoubleConsumer pressedPressureConsumer)
+   {
+      bindPressed(bt.getButton(), pressedPressureConsumer);
    }
 
    void bindReleased(final Button bt, final Runnable runnable)
