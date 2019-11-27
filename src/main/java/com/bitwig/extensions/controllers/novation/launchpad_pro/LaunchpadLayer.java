@@ -9,10 +9,10 @@ import com.bitwig.extensions.framework.Layer;
 
 public class LaunchpadLayer extends Layer
 {
-   public LaunchpadLayer(final LaunchpadProControllerExtension launchpad, final String name)
+   public LaunchpadLayer(final LaunchpadProControllerExtension driver, final String name)
    {
-      super(launchpad.getLayers(), name);
-      mLaunchpad = launchpad;
+      super(driver.getLayers(), name);
+      mDriver = driver;
    }
 
    void bindPressed(final Button bt, final Runnable runnable)
@@ -37,15 +37,15 @@ public class LaunchpadLayer extends Layer
 
    void bindOverlay(final Button bt, final Overlay overlay, final LedState ledStateOff)
    {
-      bindPressed(bt, () -> mLaunchpad.setBottomOverlay(overlay, true, bt));
-      bindReleased(bt, () -> mLaunchpad.setBottomOverlay(overlay, false, bt));
+      bindPressed(bt, () -> mDriver.setBottomOverlay(overlay, true, bt));
+      bindReleased(bt, () -> mDriver.setBottomOverlay(overlay, false, bt));
       bindLightState(ledStateOff, bt);
    }
 
    void bindMode(final Button bt, final Mode mode, final LedState ledState)
    {
       assert mode != null;
-      bindPressed(bt, () -> mLaunchpad.setMode(mode));
+      bindPressed(bt, () -> mDriver.setMode(mode));
       bindLightState(ledState, bt);
    }
 
@@ -65,5 +65,5 @@ public class LaunchpadLayer extends Layer
       return bindLightState(() -> state, button);
    }
 
-   private final LaunchpadProControllerExtension mLaunchpad;
+   protected final LaunchpadProControllerExtension mDriver;
 }

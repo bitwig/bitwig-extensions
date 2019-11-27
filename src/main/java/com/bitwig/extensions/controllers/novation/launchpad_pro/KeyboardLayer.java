@@ -1,10 +1,11 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import java.util.function.Supplier;
+
 import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
-import com.bitwig.extensions.controllers.akai.apc40_mkii.Led;
 
-final class KeyboardWidget
+final class KeyboardLayer extends LaunchpadLayer
 {
    private static final int[] CHROMATIC_NOTE_INDEXES = new int[]{
       0,  2, 4,  5, 7, 9, 11, 12,
@@ -33,45 +34,61 @@ final class KeyboardWidget
       return pitch == 1 || pitch == 3 || pitch == 6 || pitch == 8 || pitch == 10;
    }
 
-   KeyboardWidget(final LaunchpadProControllerExtension driver, final int x0, final int y0, final int w0, final int h0)
+   KeyboardLayer(final LaunchpadProControllerExtension driver, final String name, final int x0, final int y0, final int w0, final int h0, final Supplier<Color> trackColorSupplier)
    {
-      mDriver = driver;
+      super(driver, name);
+
       mX0 = x0;
       mY0 = y0;
       mWidth = w0;
       mHeight = h0;
+      mTrackColorSupplier = trackColorSupplier;
+
+      for (int x = x0; x < x0 + w0; ++x)
+      {
+         for (int y = y0; y < y0 + h0; ++y)
+         {
+            final int X = x;
+            final int Y = y;
+
+            final Button padButton = driver.getPadButton(x, y);
+            bindLightState(() -> computeLedState(X, Y), padButton);
+         }
+      }
    }
 
-   void activate()
+   private LedState computeLedState(final int x, final int y)
+   {
+      final Color trackColor = mTrackColorSupplier.get();
+
+      switch (mDriver.getKeyboardLayout())
+      {
+         case GUITAR:
+            return computeGuitarLedState(x, y, trackColor);
+
+         case LINE_3:
+            return computeLineLedState(3, x, y, trackColor);
+
+         case LINE_7:
+            return computeLineLedState(7, x, y, trackColor);
+
+         case PIANO:
+            return computePianoLedState(x, y, trackColor);
+      }
+
+      throw new IllegalStateException();
+   }
+
+   @Override
+   protected void onActivate()
    {
       mDriver.getCursorTrack().playingNotes().subscribe();
    }
 
-   void deactivate()
+   @Override
+   protected void onDeactivate()
    {
       mDriver.getCursorTrack().playingNotes().unsubscribe();
-   }
-
-   void paint(final ColorValue trackColor)
-   {
-      switch (mDriver.getKeyboardLayout())
-      {
-         case GUITAR:
-            paintGuitar(trackColor);
-            break;
-
-         case LINE_3:
-            paintLine(3, trackColor);
-            break;
-
-         case LINE_7:
-            paintLine(7, trackColor);
-            break;
-
-         case PIANO:
-            paintPiano(trackColor);
-            break;
-      }
    }
 
    boolean canOctaveUp()
@@ -96,93 +113,67 @@ final class KeyboardWidget
          ++mOctave;
    }
 
-   private void paintGuitar(final ColorValue trackColor)
+   private LedState computeGuitarLedState(final int x, final int y, final Color trackColor)
    {
       final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
       final MusicalScale scale = mDriver.getMusicalScale();
 
-      for (int i = mX0; i < mX0 + mWidth; ++i)
-         for (int j = mY0; j < mY0 + mHeight; ++j)
-         {
-            final Button bt = mDriver.getPadButton(i, j);
-            final int midiNote = calculateGuitarKey(i, j);
-            final int midiNoteBase = midiNote % 12;
+      final int midiNote = calculateGuitarKey(x, y);
+      final int midiNoteBase = midiNote % 12;
 
-            if (midiNote < 0 || midiNote > 127)
-               bt.setColor(Color.OFF);
-            else if (playingNotes.isNotePlaying(midiNote))
-               bt.setColor(PLAYING_KEY_COLOR);
-            else if (mDriver.shouldHihlightRootKey() && midiNoteBase == mDriver.getMusicalKey())
-               bt.setColor(trackColor);
-            else if (!mDriver.shouldHighlightScale() || scale.isMidiNoteInScale(mDriver.getMusicalKey(), midiNoteBase))
-               bt.setColor(isBlackKey(midiNote) ? USED_BLACK_KEY_COLOR : USED_WHITE_KEY_COLOR);
-            else
-               bt.setColor(Color.OFF);
-         }
+      if (midiNote < 0 || midiNote > 127)
+         return LedState.OFF;
+      if (playingNotes.isNotePlaying(midiNote))
+         return LedState.STEP_PLAY;
+      if (mDriver.shouldHihlightRootKey() && midiNoteBase == mDriver.getMusicalKey())
+         return new LedState(trackColor);
+      else if (!mDriver.shouldHighlightScale() || scale.isMidiNoteInScale(mDriver.getMusicalKey(), midiNoteBase))
+         return new LedState(isBlackKey(midiNote) ? USED_BLACK_KEY_COLOR : USED_WHITE_KEY_COLOR);
+      return LedState.OFF;
    }
 
-   private void paintPiano(final ColorValue trackColor)
+   private LedState computePianoLedState(final int x, final int y, final Color trackColor)
    {
       final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
       final MusicalScale scale = mDriver.getMusicalScale();
 
-      for (int x = mX0; x < mX0 + mWidth; ++x)
+      final int noteIndex = CHROMATIC_NOTE_INDEXES[x + 8 * (y % 2)];
+      final int pitch = calculateKeyboardKey(x, y);
+
+      if (noteIndex == -1)
+         return LedState.OFF;
+      if (playingNotes.isNotePlaying(pitch))
+         return LedState.STEP_PLAY;
+      if ((noteIndex % 12) == mDriver.getMusicalKey())
+         return new LedState(trackColor);
+      else if (scale.isMidiNoteInScale(mDriver.getMusicalKey(), noteIndex))
       {
-         for (int y = mY0; y < mY0 + mHeight; ++y)
-         {
-            final int noteIndex = CHROMATIC_NOTE_INDEXES[x + 8 * (y % 2)];
-            final int pitch = calculateKeyboardKey(x, y);
-
-            if (noteIndex == -1)
-            {
-               /* dead led */
-               mDriver.getPadButton(x, y).clear();
-            }
-            else if (playingNotes.isNotePlaying(pitch))
-            {
-               /* playing note */
-               mDriver.getPadButton(x, y).setColor(PLAYING_KEY_COLOR);
-            }
-            else if ((noteIndex % 12) == mDriver.getMusicalKey())
-            {
-               /* root key */
-               mDriver.getPadButton(x, y).setColor(trackColor);
-            }
-            else if (scale.isMidiNoteInScale(mDriver.getMusicalKey(), noteIndex))
-            {
-               /* note in scale */
-               mDriver.getPadButton(x, y).setColor(isBlackKey(pitch) ? USED_BLACK_KEY_COLOR : USED_WHITE_KEY_COLOR);
-            }
-            else
-            {
-               /* note not in scale */
-               mDriver.getPadButton(x, y).setColor(UNUSED_KEY_COLOR);
-            }
-         }
+         /* note in scale */
+         return new LedState(isBlackKey(pitch) ? USED_BLACK_KEY_COLOR : USED_WHITE_KEY_COLOR);
       }
+
+      /* note not in scale */
+      return new LedState(UNUSED_KEY_COLOR);
    }
 
-   private void paintLine(final int X, final ColorValue trackColor)
+   private LedState computeLineLedState(final int X, final int x, final int y, final Color trackColor)
    {
       final MusicalScale musicalScale = mDriver.getMusicalScale();
       final int scaleSize = musicalScale.getNotesCount();
       final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
 
-      for (int i = mX0; i < mX0 + mWidth; ++i)
-         for (int j = mY0; j < mY0 + mHeight; ++j)
-         {
-            final Button button = mDriver.getPadButton(i, j);
-            final int noteIndex = i + X * j;
-            final int midiNode = musicalScale.computeNote(mDriver.getMusicalKey(), mOctave, noteIndex);
-            if (midiNode < 0 || midiNode > 127)
-               button.clear();
-            else if (playingNotes.isNotePlaying(midiNode))
-               button.setColor(PLAYING_KEY_COLOR);
-            else if (noteIndex % scaleSize == 0)
-               button.setColor(trackColor);
-            else
-               button.setColor(USED_WHITE_KEY_COLOR);
-         }
+      final Button button = mDriver.getPadButton(x, y);
+      final int noteIndex = x + X * y;
+      final int midiNode = musicalScale.computeNote(mDriver.getMusicalKey(), mOctave, noteIndex);
+
+      if (midiNode < 0 || midiNode > 127)
+         return LedState.OFF;
+      if (playingNotes.isNotePlaying(midiNode))
+         return LedState.STEP_PLAY;
+      if (noteIndex % scaleSize == 0)
+         return new LedState(trackColor);
+      else
+         return new LedState(USED_WHITE_KEY_COLOR);
    }
 
    void updateKeyTranslationTable(final Integer[] table)
@@ -269,6 +260,6 @@ final class KeyboardWidget
    private final int mY0;
    private final int mWidth;
    private final int mHeight;
-   private final LaunchpadProControllerExtension mDriver;
    private int mOctave = 3;
+   private final Supplier<Color> mTrackColorSupplier;
 }

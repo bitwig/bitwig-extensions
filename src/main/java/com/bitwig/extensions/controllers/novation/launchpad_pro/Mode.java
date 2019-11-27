@@ -6,7 +6,7 @@ abstract class Mode extends LaunchpadLayer
 
    Mode(final LaunchpadProControllerExtension driver, final String name)
    {
-      super(driver, name);
+      super(driver, name + "-mode");
       mDriver = driver;
    }
 

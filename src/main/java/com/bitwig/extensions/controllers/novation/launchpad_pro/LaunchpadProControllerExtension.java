@@ -146,14 +146,17 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
                });
 
                mMainLayer.bind(bt.getAfterTouch(), v -> mCurrentMode.onPadPressure(X, Y, (int) (127. * v)));
+               mMainLayer.bindLightState(LedState.OFF, bt);
             }
          }
 
          for (int y = 0; y < 8; ++y)
          {
             final int Y = y;
-            final HardwareButton bt = mSceneButtons[y].getButton();
+            final Button sceneButton = mSceneButtons[y];
+            final HardwareButton bt = sceneButton.getButton();
             mMainLayer.bindPressed(bt, () -> mCurrentMode.onSceneButtonPressed(Y));
+            mMainLayer.bindLightState(LedState.OFF, sceneButton);
          }
 
          mMainLayer.bindPressed(mUpButton.getButton(), () -> mCurrentMode.onArrowUpPressed());
@@ -216,6 +219,10 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mMainLayer.bindMode(mPanButton, mPanMode, LedState.PAN_MODE_LOW);
       mMainLayer.bindMode(mSendsButton, mSendsMode, LedState.SENDS_MODE_LOW);
 
+      mMainLayer.bindLightState(LedState.OFF, mUpButton);
+      mMainLayer.bindLightState(LedState.OFF, mDownButton);
+      mMainLayer.bindLightState(LedState.OFF, mLeftButton);
+      mMainLayer.bindLightState(LedState.OFF, mRightButton);
       mMainLayer.bindLightState(LedState.SHIFT_OFF, mShiftButton);
       mMainLayer.bindLightState(() -> mTransport.isMetronomeEnabled().get() ? LedState.CLICK_ON : LedState.CLICK_OFF, mClickButton);
       mMainLayer.bindLightState(LedState.UNDO_ON, mUndoButton);

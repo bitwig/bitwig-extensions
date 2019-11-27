@@ -3,8 +3,9 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import java.util.List;
 
 import com.bitwig.extension.controller.api.Clip;
-import com.bitwig.extension.controller.api.SettableColorValue;
+import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.NoteStep;
+import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.Track;
 
 public class StepSequencerMode extends AbstractSequencerMode
@@ -13,14 +14,18 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       super(driver, "step-sequencer");
 
-      mKeyboardWidget = new KeyboardWidget(driver, 0, 0, 8, 4);
+      mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4, () -> {
+         final boolean cursorClipExists = mDriver.getCursorClip().exists().get();
+         final ColorValue trackColor = (cursorClipExists ? mDriver.getCursorClipTrack() : mDriver.getCursorTrack()).color();
+         return new Color(trackColor);
+      });
    }
 
    @Override
    void updateKeyTranslationTable(final Integer[] table)
    {
       if (mDataMode == DataMode.Main)
-         mKeyboardWidget.updateKeyTranslationTable(table);
+         mKeyboardLayer.updateKeyTranslationTable(table);
 
       mDriver.getNoteInput().setKeyTranslationTable(table);
    }
@@ -37,7 +42,7 @@ public class StepSequencerMode extends AbstractSequencerMode
       trackColor.subscribe();
 
       track.selectInMixer();
-      mKeyboardWidget.activate();
+      mKeyboardLayer.activate();
    }
 
    @Override
@@ -49,7 +54,7 @@ public class StepSequencerMode extends AbstractSequencerMode
       final SettableColorValue trackColor = track.color();
       trackColor.unsubscribe();
 
-      mKeyboardWidget.deactivate();
+      mKeyboardLayer.deactivate();
 
       super.doDeactivate();
    }
@@ -71,7 +76,7 @@ public class StepSequencerMode extends AbstractSequencerMode
             final boolean cursorClipExists = mDriver.getCursorClip().exists().get();
             final SettableColorValue trackColor =
                (cursorClipExists ? mDriver.getCursorClipTrack() : mDriver.getCursorTrack()).color();
-            mKeyboardWidget.paint(trackColor);
+            //mKeyboardLayer.paint(trackColor);
             paintCurrentKeysOnStep();
             break;
          }
@@ -86,8 +91,8 @@ public class StepSequencerMode extends AbstractSequencerMode
 
    private void paintArrows()
    {
-      mDriver.getButtonOnTheTop(0).setColor(mKeyboardWidget.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getButtonOnTheTop(1).setColor(mKeyboardWidget.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getButtonOnTheTop(0).setColor(mKeyboardLayer.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getButtonOnTheTop(1).setColor(mKeyboardLayer.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
       mDriver.getButtonOnTheTop(2).setColor(Color.OFF);
       mDriver.getButtonOnTheTop(3).setColor(Color.OFF);
    }
@@ -117,7 +122,7 @@ public class StepSequencerMode extends AbstractSequencerMode
          {
             for (int y = 0; y < 4; ++y)
             {
-               final int key = mKeyboardWidget.calculateKeyForPosition(x, y);
+               final int key = mKeyboardLayer.calculateKeyForPosition(x, y);
                if (key == -1)
                   continue;
 
@@ -292,7 +297,7 @@ public class StepSequencerMode extends AbstractSequencerMode
 
    private void onKeyDataPressed(final int x, final int y, final int velocity)
    {
-      final int key = mKeyboardWidget.calculateKeyForPosition(x, y);
+      final int key = mKeyboardLayer.calculateKeyForPosition(x, y);
       if (key == -1)
          return;
 
@@ -350,14 +355,14 @@ public class StepSequencerMode extends AbstractSequencerMode
    @Override
    public void onArrowDownPressed()
    {
-      mKeyboardWidget.octaveDown();
+      mKeyboardLayer.octaveDown();
       mDriver.updateKeyTranslationTable();
    }
 
    @Override
    public void onArrowUpPressed()
    {
-      mKeyboardWidget.octaveUp();
+      mKeyboardLayer.octaveUp();
       mDriver.updateKeyTranslationTable();
    }
 
@@ -384,5 +389,5 @@ public class StepSequencerMode extends AbstractSequencerMode
       return false;
    }
 
-   private final KeyboardWidget mKeyboardWidget;
+   private final KeyboardLayer mKeyboardLayer;
 }

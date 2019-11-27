@@ -23,11 +23,11 @@ public final class KeyboardMode extends Mode
    private final static Color PLAYING_KEY_COLOR = Color.fromRgb255(0, 255, 0);
    private final static Color INVALID_KEY_COLOR = Color.RED_LOW;
 
-   public KeyboardMode(final LaunchpadProControllerExtension launchpadProControllerExtension)
+   public KeyboardMode(final LaunchpadProControllerExtension driver)
    {
-      super(launchpadProControllerExtension, "keyboard");
+      super(driver, "keyboard");
 
-      mKeyboardWidget = new KeyboardWidget(launchpadProControllerExtension, 0, 0, 8, 8);
+      mKeyboardLayer = new KeyboardLayer(driver, "keyboard", 0, 0, 8, 8, () -> new Color(mDriver.getCursorTrack().color()));
    }
 
    @Override
@@ -50,14 +50,14 @@ public final class KeyboardMode extends Mode
    @Override
    public void doActivate()
    {
-      mKeyboardWidget.activate();
+      mKeyboardLayer.activate();
    }
 
    @Override
    protected void doDeactivate()
    {
       mDriver.getNoteInput().setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
-      mKeyboardWidget.deactivate();
+      mKeyboardLayer.deactivate();
    }
 
    @Override
@@ -74,8 +74,6 @@ public final class KeyboardMode extends Mode
 
       final CursorTrack cursorTrack = mDriver.getCursorTrack();
 
-      mKeyboardWidget.paint(mDriver.getCursorTrack().color());
-
       mDriver.getButtonOnTheRight(7).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.GUITAR ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
       mDriver.getButtonOnTheRight(6).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.LINE_3 ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
       mDriver.getButtonOnTheRight(5).setColor(mDriver.getKeyboardLayout() == KeyboardLayout.LINE_7 ? KEYBOARD_ON_COLOR : KEYBOARD_OFF_COLOR);
@@ -83,8 +81,8 @@ public final class KeyboardMode extends Mode
       for (int i = 0; i < 4; ++i)
          mDriver.getButtonOnTheRight(i).clear();
 
-      mDriver.getButtonOnTheTop(0).setColor(mKeyboardWidget.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getButtonOnTheTop(1).setColor(mKeyboardWidget.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getButtonOnTheTop(0).setColor(mKeyboardLayer.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
+      mDriver.getButtonOnTheTop(1).setColor(mKeyboardLayer.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
       mDriver.getButtonOnTheTop(2).setColor(cursorTrack.hasPrevious().get() ? Color.TRACK : Color.TRACK_LOW);
       mDriver.getButtonOnTheTop(3).setColor(cursorTrack.hasNext().get() ? Color.TRACK : Color.TRACK_LOW);
    }
@@ -92,7 +90,7 @@ public final class KeyboardMode extends Mode
    @Override
    void updateKeyTranslationTable(final Integer[] table)
    {
-      mKeyboardWidget.updateKeyTranslationTable(table);
+      mKeyboardLayer.updateKeyTranslationTable(table);
    }
 
    public void invalidate()
@@ -107,14 +105,14 @@ public final class KeyboardMode extends Mode
    @Override
    public void onArrowDownPressed()
    {
-      mKeyboardWidget.octaveDown();
+      mKeyboardLayer.octaveDown();
       mDriver.updateKeyTranslationTable();
    }
 
    @Override
    public void onArrowUpPressed()
    {
-      mKeyboardWidget.octaveUp();
+      mKeyboardLayer.octaveUp();
       mDriver.updateKeyTranslationTable();
    }
 
@@ -136,5 +134,5 @@ public final class KeyboardMode extends Mode
          mDriver.getCursorTrack().selectNext();
    }
 
-   private final KeyboardWidget mKeyboardWidget;
+   private final KeyboardLayer mKeyboardLayer;
 }
