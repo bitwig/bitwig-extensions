@@ -1,2 +1,2 @@
 # bitwig-extensions
-Bitwig Studio Exensions
+Bitwig Studio Controller Extensions
