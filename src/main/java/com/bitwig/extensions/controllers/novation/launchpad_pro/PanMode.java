@@ -25,7 +25,7 @@ public class PanMode extends Mode
          for (int x = 0; x < 8; ++x)
          {
             final double padValue = padToPan(x);
-            final Button button = driver.getPadButton(x, y);
+            final Button button = driver.getPadButton(x, 7 - y);
             bindPressed(button, () -> pan.setRaw(padValue));
             bindLightState(() -> {
                final double value = pan.getRaw();
@@ -38,7 +38,7 @@ public class PanMode extends Mode
             }, button.getLight());
          }
 
-         final Button sceneButton = driver.getSceneButton(y);
+         final Button sceneButton = driver.getSceneButton(7 - y);
          bindPressed(sceneButton, () -> pan.setRaw(0));
          bindLightState(() -> {
             if (!track.exists().get())
