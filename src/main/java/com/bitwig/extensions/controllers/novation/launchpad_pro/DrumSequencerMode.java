@@ -26,11 +26,13 @@ final class DrumSequencerMode extends AbstractSequencerMode
       mDrumPadsLayer = new LaunchpadLayer(driver, "drum-pads");
       mSceneAndPerfsLayer = new LaunchpadLayer(driver, "drum-scenes-and-perfs");
 
-
+      // Step sequencer
       for (int y = 0; y < 4; ++y)
       {
          for (int x = 0; x < 8; ++x)
          {
+            final int X = x;
+            final int Y = y;
             final Button bt = driver.getPadButton(x, y + 4);
             final int absoluteStepIndex = calculateAbsoluteStepIndex(x, 3 - y);
             bindPressed(bt, v -> {
@@ -42,12 +44,26 @@ final class DrumSequencerMode extends AbstractSequencerMode
                bt.onButtonReleased();
                onStepReleased(absoluteStepIndex, wasHeld);
             });
+            bindLightState(() -> computeStepSeqLedState(X, 3 - Y), bt);
          }
 
          final Button sceneButton = driver.getSceneButton(y + 4);
          final int page = 3 - y;
          bindPressed(sceneButton, () -> mPage = page);
          mShiftLayer.bindPressed(sceneButton, () -> setClipLength(page * 4));
+      }
+
+      // Drum Pads
+      for (int x = 0; x < 4; ++x)
+      {
+         for (int y = 0; y < 4; ++y)
+         {
+            final int X = x;
+            final int Y = y;
+            final Button bt = driver.getPadButton(x, y);
+            mDrumPadsLayer.bindPressed(bt, () -> onDrumPadPressed(X, Y));
+            mDrumPadsLayer.bindLightState(() -> computeDrumPadLedState(X, Y), bt);
+         }
       }
 
       bindLayer(driver.getShiftButton(), mShiftLayer);
@@ -57,6 +73,9 @@ final class DrumSequencerMode extends AbstractSequencerMode
    protected void doActivate()
    {
       super.doActivate();
+
+      mShiftLayer.activate();
+      mDrumPadsLayer.activate();
 
       final Track track = mDriver.getCursorClipTrack();
       track.subscribe();
@@ -74,6 +93,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
    @Override
    protected void doDeactivate()
    {
+      mShiftLayer.deactivate();
+      mDrumPadsLayer.deactivate();
       mShiftLayer.deactivate();
 
       final Track track = mDriver.getCursorClipTrack();
@@ -542,17 +563,14 @@ final class DrumSequencerMode extends AbstractSequencerMode
       super.paint();
 
       paintArrows();
-      paintSteps();
       paintScenes();
 
       switch (mDataMode)
       {
          case Main:
-            paintDrumPads();
             paintMainActions();
             break;
          case MainAlt:
-            paintDrumPads();
             paintPerfAndScenes();
             break;
          case MixData:
@@ -630,39 +648,31 @@ final class DrumSequencerMode extends AbstractSequencerMode
       mDriver.getButtonOnTheTop(3).setColor(Color.OFF);
    }
 
-   private void paintSteps()
+   private LedState computeStepSeqLedState(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
       final int playingStep = clip.playingStep().get();
 
-      for (int x = 0; x < 8; ++x)
-      {
-         for (int y = 0; y < 4; ++y)
-         {
-            final NoteStep noteStep = clip.getStep(0, calculateAbsoluteStepIndex(x, y), mCurrentPitch);
-            final Button button = mDriver.getPadButton(x, 7 - y);
+      final NoteStep noteStep = clip.getStep(0, calculateAbsoluteStepIndex(x, y), mCurrentPitch);
 
-            if (playingStep == mPage * 32 + 8 * y + x)
-               button.setColor(noteStep.state() == NoteStep.State.NoteOn ? Color.STEP_PLAY : Color.STEP_PLAY_HEAD);
-            else if (mDriver.getPadButton(x, 7- y).getButtonState() == Button.State.HOLD)
-               button.setColor(Color.STEP_HOLD);
-            else switch (noteStep.state())
-            {
-               case NoteOn:
-                  button.setColor(Color.STEP_ON);
-                  break;
-               case NoteSustain:
-                  button.setColor(Color.STEP_SUSTAIN);
-                  break;
-               case Empty:
-                  button.setColor(Color.STEP_OFF);
-                  break;
-            }
-         }
+      if (playingStep == mPage * 32 + 8 * y + x)
+         return new LedState(noteStep.state() == NoteStep.State.NoteOn ? Color.STEP_PLAY : Color.STEP_PLAY_HEAD);
+      if (mDriver.getPadButton(x, 7- y).getButtonState() == Button.State.HOLD)
+         return new LedState(Color.STEP_HOLD);
+      switch (noteStep.state())
+      {
+         case NoteOn:
+            return new LedState(Color.STEP_ON);
+         case NoteSustain:
+            return new LedState(Color.STEP_SUSTAIN);
+         case Empty:
+            return new LedState(Color.STEP_OFF);
       }
+
+      throw new IllegalStateException();
    }
 
-   private void paintDrumPads()
+   private final LedState computeDrumPadLedState(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
       final boolean clipExists = clip.exists().get();
@@ -671,40 +681,27 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final boolean hasDrumPads = cursorDevice.hasDrumPads().get();
       final DrumPadBank drumPads = clipExists ? mDriver.getCursorClipDrumPads() : mDriver.getCursorTrackDrumPads();
 
-      for (int i = 0; i < 4; ++i)
+      final int pitch = calculateDrumPadKey(x, y);
+      final boolean isPlaying = playingNotes.isNotePlaying(pitch);
+      final Button button = mDriver.getPadButton(x, y);
+      final DrumPad drumPad = drumPads.getItemAt(x + 4 * y);
+      final boolean drumPadExists = hasDrumPads & drumPad.exists().get();
+      final boolean drumPadIsSolo = drumPadExists & drumPad.solo().get();
+      final boolean drumPadIsMuted = drumPadExists & !drumPadIsSolo & (drumPad.mute().get() | drumPad.isMutedBySolo().get());
+      final Color color = new Color(drumPad.color());
+
+      if (isPlaying)
+         return new LedState(drumPadIsMuted ? Color.GREEN_LOW : Color.GREEN);
+      if (mCurrentPitch == pitch)
+         return new LedState(drumPadIsMuted ? Color.TRACK_LOW : Color.TRACK);
+      if (hasDrumPads)
       {
-         for (int j = 0; j < 4; ++j)
-         {
-            final int pitch = calculateDrumPadKey(i, j);
-            final boolean isPlaying = playingNotes.isNotePlaying(pitch);
-            final Button button = mDriver.getPadButton(i, j);
-            final DrumPad drumPad = drumPads.getItemAt(i + 4 * j);
-            final boolean drumPadExists = hasDrumPads & drumPad.exists().get();
-            final boolean drumPadIsSolo = drumPadExists & drumPad.solo().get();
-            final boolean drumPadIsMuted = drumPadExists & !drumPadIsSolo & (drumPad.mute().get() | drumPad.isMutedBySolo().get());
-            final Color color = new Color(drumPad.color());
-
-            if (isPlaying)
-               button.setColor(drumPadIsMuted ? Color.GREEN_LOW : Color.GREEN);
-            else if (mCurrentPitch == pitch)
-               button.setColor(drumPadIsMuted ? Color.TRACK_LOW : Color.TRACK);
-            else if (hasDrumPads)
-            {
-               if (drumPadExists)
-                  button.setColor(drumPadIsSolo ? Color.YELLOW : drumPadIsMuted ? Color.scale(color, .1f) : color);
-               else
-                  button.setColor(Color.WHITE_LOW);
-            }
-            else
-               button.setColor(clip.color());
-         }
+         if (drumPadExists)
+            return new LedState(drumPadIsSolo ? Color.YELLOW : drumPadIsMuted ? Color.scale(color, .1f) : color);
+         else
+            return new LedState(Color.WHITE_LOW);
       }
-   }
-
-   @Override
-   void paintModeButton()
-   {
-      mDriver.getButtonOnTheTop(6).setColor(isActive() ? MODE_COLOR : MODE_COLOR_LOW);
+      return new LedState(clip.color());
    }
 
    @Override

@@ -20,10 +20,13 @@ public class StepSequencerMode extends AbstractSequencerMode
          return new Color(trackColor);
       });
 
-      for (int x = 0; x < 8; ++x)
+      // Step sequencer
+      for (int y = 0; y < 4; ++y)
       {
-         for (int y = 0; y < 4; ++y)
+         for (int x = 0; x < 8; ++x)
          {
+            final int X = x;
+            final int Y = y;
             final Button bt = driver.getPadButton(x, y + 4);
             final int absoluteStepIndex = calculateAbsoluteStepIndex(x, 3 - y);
             bindPressed(bt, v -> {
@@ -35,6 +38,7 @@ public class StepSequencerMode extends AbstractSequencerMode
                bt.onButtonReleased();
                onStepReleased(absoluteStepIndex, wasHeld);
             });
+            //bindLightState(() -> computeStepSeqLedState(X, 3 - Y), bt);
          }
       }
    }
@@ -66,13 +70,13 @@ public class StepSequencerMode extends AbstractSequencerMode
    @Override
    protected void doDeactivate()
    {
+      mKeyboardLayer.deactivate();
+
       final Track track = mDriver.getCursorClipTrack();
       track.unsubscribe();
 
       final SettableColorValue trackColor = track.color();
       trackColor.unsubscribe();
-
-      mKeyboardLayer.deactivate();
 
       super.doDeactivate();
    }
@@ -206,12 +210,6 @@ public class StepSequencerMode extends AbstractSequencerMode
          }
       }
       return value;
-   }
-
-   @Override
-   void paintModeButton()
-   {
-      mDriver.getButtonOnTheTop(7).setColor(isActive() ? MODE_COLOR : MODE_COLOR_LOW);
    }
 
    void invalidate()
