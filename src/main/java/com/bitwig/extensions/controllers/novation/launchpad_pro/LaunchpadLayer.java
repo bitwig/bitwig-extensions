@@ -4,6 +4,7 @@ import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extensions.framework.Binding;

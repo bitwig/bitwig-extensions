@@ -6,9 +6,11 @@ import java.util.List;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.Arpeggiator;
+import com.bitwig.extension.controller.api.PinnableCursorClip;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SettableColorValue;
@@ -21,6 +23,9 @@ final class DrumSequencerMode extends AbstractSequencerMode
    DrumSequencerMode(final LaunchpadProControllerExtension driver)
    {
       super(driver, "drum-sequencer");
+
+      final CursorTrack cursorTrack = driver.getCursorTrack();
+      final PinnableCursorClip cursorClip = driver.getCursorClip();
 
       mShiftLayer = new LaunchpadLayer(driver, "drum-sequencer-shift");
       mDrumPadsLayer = new LaunchpadLayer(driver, "drum-pads");
@@ -117,6 +122,17 @@ final class DrumSequencerMode extends AbstractSequencerMode
       mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(5, 3) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(5, 3));
       mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(6, 3) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(6, 3));
       mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(7, 3) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(7, 3));
+
+      bindPressed(driver.getUpButton(), cursorClip.selectPreviousAction());
+      bindPressed(driver.getDownButton(), cursorClip.selectNextAction());
+      bindPressed(driver.getLeftButton(), cursorTrack.selectPreviousAction());
+      bindPressed(driver.getRightButton(), cursorTrack.selectNextAction());
+
+      bindLightState(() -> cursorClip.hasPrevious().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), driver.getUpButton());
+      bindLightState(() -> cursorClip.hasNext().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), driver.getDownButton());
+      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
+      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
+
 
       bindLayer(driver.getShiftButton(), mShiftLayer);
    }
@@ -755,11 +771,10 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private final LedState computeDrumPadLedState(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
-      final boolean clipExists = clip.exists().get();
-      final PlayingNoteArrayValue playingNotes = (clipExists ? mDriver.getCursorTrack() : mDriver.getCursorTrack()).playingNotes();
-      final CursorDevice cursorDevice = clipExists ? mDriver.getCursorDevice() : mDriver.getCursorDevice();
+      final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
+      final CursorDevice cursorDevice = mDriver.getCursorDevice();
       final boolean hasDrumPads = cursorDevice.hasDrumPads().get();
-      final DrumPadBank drumPads = clipExists ? mDriver.getDrumPadBank() : mDriver.getDrumPadBank();
+      final DrumPadBank drumPads = mDriver.getDrumPadBank();
 
       final int pitch = calculateDrumPadKey(x, y);
       final boolean isPlaying = playingNotes.isNotePlaying(pitch);

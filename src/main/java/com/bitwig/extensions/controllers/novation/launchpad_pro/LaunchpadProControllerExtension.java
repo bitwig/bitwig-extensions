@@ -389,6 +389,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mCursorClip = mCursorTrack.createLauncherCursorClip("launchpad-pro", "Launchpad Pro", 8 * 16, 128);
       mCursorClip.exists().markInterested();
       mCursorClip.exists().addValueObserver(exists -> mCurrentMode.onCursorClipExists(exists));
+      mCursorClip.hasPrevious().markInterested();
+      mCursorClip.hasNext().markInterested();
       mCursorClip.color().markInterested();
       mCursorClip.getPlayStart().markInterested();
       mCursorClip.getPlayStop().markInterested();
@@ -929,7 +931,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mApplication;
    }
 
-   Clip getCursorClip()
+   PinnableCursorClip getCursorClip()
    {
       return mCursorClip;
    }

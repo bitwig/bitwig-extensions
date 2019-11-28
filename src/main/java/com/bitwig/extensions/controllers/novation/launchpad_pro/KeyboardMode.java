@@ -51,6 +51,11 @@ public final class KeyboardMode extends Mode
    public void doActivate()
    {
       mKeyboardLayer.activate();
+
+      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      cursorTrack.subscribe();
+      cursorTrack.playingNotes().subscribe();
+      cursorTrack.color().subscribe();
    }
 
    @Override
@@ -58,6 +63,11 @@ public final class KeyboardMode extends Mode
    {
       mKeyboardLayer.deactivate();
       mDriver.getNoteInput().setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
+
+      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      cursorTrack.playingNotes().unsubscribe();
+      cursorTrack.color().unsubscribe();
+      cursorTrack.unsubscribe();
    }
 
    @Override
