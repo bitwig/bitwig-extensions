@@ -30,7 +30,7 @@ abstract class Mode extends LaunchpadLayer
    @Override
    final protected void onDeactivate()
    {
-      paintModeButton();
+      doDeactivate();
    }
 
    protected void doDeactivate()
@@ -39,10 +39,6 @@ abstract class Mode extends LaunchpadLayer
    }
 
    void paint()
-   {
-   }
-
-   void paintModeButton()
    {
    }
 
