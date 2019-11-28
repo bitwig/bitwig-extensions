@@ -34,15 +34,11 @@ abstract class AbstractSequencerMode extends Mode
       if (clip.exists().get())
          setNoteInputRouting();
 
-      final Track cursorClipTrack = mDriver.getCursorClipTrack();
-      cursorClipTrack.subscribe();
-      cursorClipTrack.color().subscribe();
-
-      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      final Track cursorTrack = mDriver.getCursorTrack();
       cursorTrack.subscribe();
       cursorTrack.color().subscribe();
 
-      final PlayingNoteArrayValue playingNotes = cursorClipTrack.playingNotes();
+      final PlayingNoteArrayValue playingNotes = cursorTrack.playingNotes();
       playingNotes.subscribe();
    }
 
@@ -55,8 +51,8 @@ abstract class AbstractSequencerMode extends Mode
       if (clip.exists().get())
          clearNoteInputRouting();
 
-      final Track cursorClipTrack = mDriver.getCursorClipTrack();
-      final PlayingNoteArrayValue playingNotes = cursorClipTrack.playingNotes();
+      final Track cursorTrack = mDriver.getCursorTrack();
+      final PlayingNoteArrayValue playingNotes = cursorTrack.playingNotes();
       playingNotes.unsubscribe();
    }
 
@@ -74,8 +70,8 @@ abstract class AbstractSequencerMode extends Mode
       final NoteInput noteInput = mDriver.getNoteInput();
       noteInput.includeInAllInputs().set(false);
 
-      final Track cursorClipTrack = mDriver.getCursorClipTrack();
-      cursorClipTrack.addNoteSource(noteInput);
+      final Track cursorTrack = mDriver.getCursorTrack();
+      cursorTrack.addNoteSource(noteInput);
    }
 
    private void clearNoteInputRouting()
@@ -83,8 +79,8 @@ abstract class AbstractSequencerMode extends Mode
       final NoteInput noteInput = mDriver.getNoteInput();
       noteInput.includeInAllInputs().set(true);
 
-      final Track cursorClipTrack = mDriver.getCursorClipTrack();
-      cursorClipTrack.removeNoteSource(noteInput);
+      final Track cursorTrack = mDriver.getCursorTrack();
+      cursorTrack.removeNoteSource(noteInput);
    }
 
    protected void setDataMode(final DataMode dataMode)

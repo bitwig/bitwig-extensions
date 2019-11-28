@@ -22,6 +22,7 @@ import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.PinnableCursorClip;
 import com.bitwig.extension.controller.api.Preferences;
 import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extension.controller.api.RemoteControl;
@@ -380,12 +381,12 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       mCursorDevice = mCursorTrack.createCursorDevice();
       mCursorDevice.hasDrumPads().markInterested();
-      mCursorTrackDrumPads = mCursorDevice.createDrumPadBank(16);
-      mCursorTrackDrumPads.setIndication(false);
-      mCursorTrackDrumPads.exists().markInterested();
-      mCursorTrackDrumPads.scrollPosition().markInterested();
+      mDrumPadBank = mCursorDevice.createDrumPadBank(16);
+      mDrumPadBank.setIndication(false);
+      mDrumPadBank.exists().markInterested();
+      mDrumPadBank.scrollPosition().markInterested();
 
-      mCursorClip = mHost.createLauncherCursorClip(8 * 16, 128);
+      mCursorClip = mCursorTrack.createLauncherCursorClip("launchpad-pro", "Launchpad Pro", 8 * 16, 128);
       mCursorClip.exists().markInterested();
       mCursorClip.exists().addValueObserver(exists -> mCurrentMode.onCursorClipExists(exists));
       mCursorClip.color().markInterested();
@@ -396,14 +397,9 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mCursorClip.playingStep().markInterested();
       mCursorClipSlot = mCursorClip.clipLauncherSlot();
       mCursorClipSlot.sceneIndex().markInterested();
-      mCursorClipTrack = mCursorClip.getTrack();
-      mCursorClipTrack.playingNotes().markInterested();
-      mCursorClipTrack.color().markInterested();
-      mCursorClipDevice = mCursorClipTrack.createCursorDevice();
-      mCursorClipDevice.hasDrumPads().markInterested();
-      mDrumScenesRemoteControls = mCursorClipDevice.createCursorRemoteControlsPage("scenes", 8, "drum-scenes");
-      mDrumPerfsRemoteControls = mCursorClipDevice.createCursorRemoteControlsPage("perfs", 8, "drum-perfs");
 
+      mDrumScenesRemoteControls = mCursorDevice.createCursorRemoteControlsPage("scenes", 8, "drum-scenes");
+      mDrumPerfsRemoteControls = mCursorDevice.createCursorRemoteControlsPage("perfs", 8, "drum-perfs");
       for (int i = 0; i < 8; ++i)
       {
          final RemoteControl sceneParam = mDrumScenesRemoteControls.getParameter(i);
@@ -415,17 +411,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
          perfParam.value().markInterested();
       }
 
-      mCursorClipDrumPads = mCursorClipDevice.createDrumPadBank(16);
-      mCursorClipDrumPads.setIndication(false);
-      mCursorClipDrumPads.exists().markInterested();
-      mCursorClipDrumPads.scrollPosition().addValueObserver(exists -> mDrumSequencerMode.invalidateDrumPosition(exists));
-      mCursorClipDrumPads.scrollPosition().markInterested();
-
       for (int i = 0; i < 16; ++i)
-      {
-         initDrumPad(mCursorClipDrumPads.getItemAt(i));
-         initDrumPad(mCursorTrackDrumPads.getItemAt(i));
-      }
+         initDrumPad(mDrumPadBank.getItemAt(i));
 
       initMidi();
       initTrackBank();
@@ -872,9 +859,9 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mCursorTrack;
    }
 
-   public DrumPadBank getCursorTrackDrumPads()
+   public DrumPadBank getDrumPadBank()
    {
-      return mCursorTrackDrumPads;
+      return mDrumPadBank;
    }
 
    UserControlBank getUserControls()
@@ -945,21 +932,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    Clip getCursorClip()
    {
       return mCursorClip;
-   }
-
-   CursorDevice getCursorClipDevice()
-   {
-      return mCursorClipDevice;
-   }
-
-   Track getCursorClipTrack()
-   {
-      return mCursorClipTrack;
-   }
-
-   DrumPadBank getCursorClipDrumPads()
-   {
-      return mCursorClipDrumPads;
    }
 
    Color getTrackColor(final int i)
@@ -1121,15 +1093,12 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private DocumentState mDocumentState;
    private SettableEnumValue mMusicalKeySetting;
    private SettableEnumValue mMusicalScaleSetting;
-   private Clip mCursorClip;
-   private CursorDevice mCursorClipDevice;
-   private Track mCursorClipTrack;
-   private DrumPadBank mCursorClipDrumPads;
+   private PinnableCursorClip mCursorClip;
    private CursorRemoteControlsPage mDrumScenesRemoteControls;
    private CursorRemoteControlsPage mDrumPerfsRemoteControls;
    private Arpeggiator mArpeggiator;
    private ClipLauncherSlot mCursorClipSlot;
-   private DrumPadBank mCursorTrackDrumPads;
+   private DrumPadBank mDrumPadBank;
 
    /* Modes and Overlay context */
    private Mode mCurrentMode;

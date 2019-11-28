@@ -14,11 +14,7 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       super(driver, "step-sequencer");
 
-      mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4, () -> {
-         final boolean cursorClipExists = mDriver.getCursorClip().exists().get();
-         final ColorValue trackColor = (cursorClipExists ? mDriver.getCursorClipTrack() : mDriver.getCursorTrack()).color();
-         return new Color(trackColor);
-      });
+      mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4, () -> new Color(mDriver.getCursorTrack().color()));
 
       // Step sequencer
       for (int y = 0; y < 4; ++y)
@@ -57,7 +53,7 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       super.doActivate();
 
-      final Track track = mDriver.getCursorClipTrack();
+      final Track track = mDriver.getCursorTrack();
       track.subscribe();
 
       final SettableColorValue trackColor = track.color();
@@ -72,7 +68,7 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       mKeyboardLayer.deactivate();
 
-      final Track track = mDriver.getCursorClipTrack();
+      final Track track = mDriver.getCursorTrack();
       track.unsubscribe();
 
       final SettableColorValue trackColor = track.color();
@@ -94,10 +90,6 @@ public class StepSequencerMode extends AbstractSequencerMode
          case Main:
          case MainAlt:
          {
-            final boolean cursorClipExists = mDriver.getCursorClip().exists().get();
-            final SettableColorValue trackColor =
-               (cursorClipExists ? mDriver.getCursorClipTrack() : mDriver.getCursorTrack()).color();
-            //mKeyboardLayer.paint(trackColor);
             paintCurrentKeysOnStep();
             break;
          }

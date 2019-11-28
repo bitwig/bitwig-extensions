@@ -126,15 +126,15 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       super.doActivate();
 
-      final Track track = mDriver.getCursorClipTrack();
+      final Track track = mDriver.getCursorTrack();
       track.subscribe();
 
       final SettableColorValue trackColor = track.color();
       trackColor.subscribe();
 
-      mDriver.getCursorClipTrack().selectInMixer();
-      final DrumPadBank cursorClipDrumPads = mDriver.getCursorClipDrumPads();
-      cursorClipDrumPads.setIndication(true);
+      mDriver.getCursorTrack().selectInMixer();
+      final DrumPadBank drumPads = mDriver.getDrumPadBank();
+      drumPads.setIndication(true);
 
       updateDrumPadsBankPosition();
 
@@ -146,14 +146,14 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       deactivateEveryLayers();
 
-      final Track track = mDriver.getCursorClipTrack();
+      final Track track = mDriver.getCursorTrack();
       track.unsubscribe();
 
       final SettableColorValue trackColor = track.color();
       trackColor.unsubscribe();
 
-      final DrumPadBank cursorClipDrumPads = mDriver.getCursorClipDrumPads();
-      cursorClipDrumPads.setIndication(false);
+      final DrumPadBank drumPads = mDriver.getDrumPadBank();
+      drumPads.setIndication(false);
 
       super.doDeactivate();
    }
@@ -198,7 +198,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    @Override
    public void onArrowUpPressed()
    {
-      final DrumPadBank drumPads = mDriver.getCursorClipDrumPads();
+      final DrumPadBank drumPads = mDriver.getDrumPadBank();
       final SettableIntegerValue position = drumPads.scrollPosition();
 
       if (position.get() == 0)
@@ -211,7 +211,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    @Override
    public void onArrowDownPressed()
    {
-      final DrumPadBank drumPads = mDriver.getCursorClipDrumPads();
+      final DrumPadBank drumPads = mDriver.getDrumPadBank();
       final SettableIntegerValue position = drumPads.scrollPosition();
 
       position.set(Math.max(0, position.get() - 16));
@@ -258,10 +258,10 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private int calculateDrumPadKey(final int x, final int y)
    {
-      final DrumPadBank cursorClipDrumPads = mDriver.getCursorClipDrumPads();
+      final DrumPadBank drumPadBank = mDriver.getDrumPadBank();
 
-      if (cursorClipDrumPads.exists().get())
-         return x + 4 * y + cursorClipDrumPads.scrollPosition().get();
+      if (drumPadBank.exists().get())
+         return x + 4 * y + drumPadBank.scrollPosition().get();
       return x + 4 * y + 36;
    }
 
@@ -407,9 +407,9 @@ final class DrumSequencerMode extends AbstractSequencerMode
       if (y == 0 && (x >= 0 && x <= 2))
       {
          if (mDriver.isDeleteOn() && x == 1 && y == 0)
-            mDriver.getCursorClipDrumPads().clearMutedPads();
+            mDriver.getDrumPadBank().clearMutedPads();
          if (mDriver.isDeleteOn() && x == 2 && y == 0)
-            mDriver.getCursorClipDrumPads().clearSoloedPads();
+            mDriver.getDrumPadBank().clearSoloedPads();
          mDriver.getNoteInput().setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
       }
       else if (y == 1)
@@ -600,20 +600,20 @@ final class DrumSequencerMode extends AbstractSequencerMode
          mDriver.getCursorClip().clearSteps(key);
       else if (isDrumPadMuteOn())
       {
-         final DrumPadBank cursorClipDrumPads = mDriver.getCursorClipDrumPads();
-         final DrumPad drumPad = cursorClipDrumPads.getItemAt(x + 4 * y);
+         final DrumPadBank drumPadBank = mDriver.getDrumPadBank();
+         final DrumPad drumPad = drumPadBank.getItemAt(x + 4 * y);
          drumPad.mute().toggle();
       }
       else if (isDrumPadSoloOn())
       {
-         final DrumPadBank cursorClipDrumPads = mDriver.getCursorClipDrumPads();
-         final DrumPad drumPad = cursorClipDrumPads.getItemAt(x + 4 * y);
+         final DrumPadBank drumPadBank = mDriver.getDrumPadBank();
+         final DrumPad drumPad = drumPadBank.getItemAt(x + 4 * y);
          drumPad.solo().toggle();
       }
       else if (isDrumPadSelectOn())
       {
-         final DrumPadBank cursorClipDrumPads = mDriver.getCursorClipDrumPads();
-         final DrumPad drumPad = cursorClipDrumPads.getItemAt(x + 4 * y);
+         final DrumPadBank drumPadBank = mDriver.getDrumPadBank();
+         final DrumPad drumPad = drumPadBank.getItemAt(x + 4 * y);
          drumPad.selectInEditor();
          mCurrentPitch = key;
       }
@@ -719,7 +719,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private void paintArrows()
    {
-      final DrumPadBank drumPads = mDriver.getCursorClipDrumPads();
+      final DrumPadBank drumPads = mDriver.getDrumPadBank();
       final int pos = drumPads.scrollPosition().get();
 
       mDriver.getButtonOnTheTop(0).setColor(pos < 116 ? Color.PITCH : Color.PITCH_LOW);
@@ -756,14 +756,13 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       final Clip clip = mDriver.getCursorClip();
       final boolean clipExists = clip.exists().get();
-      final PlayingNoteArrayValue playingNotes = (clipExists ? mDriver.getCursorClipTrack() :mDriver.getCursorTrack()).playingNotes();
-      final CursorDevice cursorDevice = clipExists ? mDriver.getCursorClipDevice() : mDriver.getCursorDevice();
+      final PlayingNoteArrayValue playingNotes = (clipExists ? mDriver.getCursorTrack() : mDriver.getCursorTrack()).playingNotes();
+      final CursorDevice cursorDevice = clipExists ? mDriver.getCursorDevice() : mDriver.getCursorDevice();
       final boolean hasDrumPads = cursorDevice.hasDrumPads().get();
-      final DrumPadBank drumPads = clipExists ? mDriver.getCursorClipDrumPads() : mDriver.getCursorTrackDrumPads();
+      final DrumPadBank drumPads = clipExists ? mDriver.getDrumPadBank() : mDriver.getDrumPadBank();
 
       final int pitch = calculateDrumPadKey(x, y);
       final boolean isPlaying = playingNotes.isNotePlaying(pitch);
-      final Button button = mDriver.getPadButton(x, y);
       final DrumPad drumPad = drumPads.getItemAt(x + 4 * y);
       final boolean drumPadExists = hasDrumPads & drumPad.exists().get();
       final boolean drumPadIsSolo = drumPadExists & drumPad.solo().get();
