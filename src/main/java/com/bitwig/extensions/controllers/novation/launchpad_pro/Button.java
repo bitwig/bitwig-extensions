@@ -47,6 +47,7 @@ class Button
       mIndex = index;
 
       final HardwareButton bt = hardwareSurface.createHardwareButton(id);
+      bt.isPressed().markInterested();
 
       if (isPressureSensitive)
       {

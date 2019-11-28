@@ -113,10 +113,10 @@ final class DrumSequencerMode extends AbstractSequencerMode
       mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(6, 2) ? Color.ORANGE : Color.ORANGE_LOW), mDriver.getPadButton(6, 2));
       mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(7, 2) ? Color.ORANGE : Color.ORANGE_LOW), mDriver.getPadButton(7, 2));
 
-      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(4, 2) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(4, 3));
-      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(5, 2) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(5, 3));
-      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(6, 2) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(6, 3));
-      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(7, 2) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(7, 3));
+      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(4, 3) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(4, 3));
+      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(5, 3) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(5, 3));
+      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(6, 3) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(6, 3));
+      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(7, 3) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(7, 3));
 
       bindLayer(driver.getShiftButton(), mShiftLayer);
    }
@@ -625,7 +625,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
          return false;
 
       final Button button = mDriver.getPadButton(x, y);
-      return button.isPressed();
+      return button.getButton().isPressed().get();
    }
 
    private boolean isDrumPadSelectOn()
