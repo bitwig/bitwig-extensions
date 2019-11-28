@@ -48,9 +48,19 @@ final class DrumSequencerMode extends AbstractSequencerMode
          }
 
          final Button sceneButton = driver.getSceneButton(y + 4);
-         final int page = 3 - y;
+         final int page = 4 - y;
+         final int Y = y;
          bindPressed(sceneButton, () -> mPage = page);
+         bindLightState(() -> computePatternOffsetLedState(3 - Y), sceneButton);
+      }
+
+      for (int y = 0; y < 8; ++y)
+      {
+         final Button sceneButton = driver.getSceneButton(y);
+         final int page = 8 - y;
+         final int Y = y;
          mShiftLayer.bindPressed(sceneButton, () -> setClipLength(page * 4));
+         mShiftLayer.bindLightState(() -> computeClipLengthSelectionLedState(7 - Y), sceneButton);
       }
 
       // Drum Pads
@@ -74,7 +84,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       super.doActivate();
 
-      mShiftLayer.activate();
       mDrumPadsLayer.activate();
 
       final Track track = mDriver.getCursorClipTrack();

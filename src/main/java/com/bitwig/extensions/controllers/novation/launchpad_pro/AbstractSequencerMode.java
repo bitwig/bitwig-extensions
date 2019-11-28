@@ -204,9 +204,7 @@ abstract class AbstractSequencerMode extends Mode
 
    protected void paintScenes()
    {
-      if (mDriver.isShiftOn())
-         paintClipLengthSelection();
-      else
+      if (!mDriver.isShiftOn())
       {
          paintPatternOffset();
          paintDataChoice();
@@ -236,17 +234,29 @@ abstract class AbstractSequencerMode extends Mode
       }
    }
 
-   protected void paintClipLengthSelection()
+   protected LedState computePatternOffsetLedState(final int y)
+   {
+      final Clip clip = mDriver.getCursorClip();
+
+      final SettableBeatTimeValue playStart = clip.getPlayStart();
+      final SettableBeatTimeValue playStopTime = clip.getPlayStop();
+      final double length = playStopTime.get() - playStart.get();
+      final int playingStep = clip.playingStep().get();
+
+      if (playingStep / 32 == y)
+         return new LedState(mPage == y ? Color.GREEN : Color.GREEN_LOW);
+      else if (8 * y < length)
+         return new LedState(mPage == y ? Color.WHITE : Color.WHITE_LOW);
+      return LedState.OFF;
+   }
+
+   protected LedState computeClipLengthSelectionLedState(final int y)
    {
       final Clip clip = mDriver.getCursorClip();
       final SettableBeatTimeValue loopLength = clip.getLoopLength();
       final double duration = loopLength.get();
 
-      for (int i = 0; i < 8; ++i)
-      {
-         final Button button = mDriver.getButtonOnTheRight(7 - i);
-         button.setColor((i + 1) * 4 <= duration ? Color.WHITE : Color.WHITE_LOW);
-      }
+      return new LedState((y + 1) * 4 <= duration ? Color.WHITE : Color.WHITE_LOW);
    }
 
    protected void setClipLength(final double lengthInBars)
