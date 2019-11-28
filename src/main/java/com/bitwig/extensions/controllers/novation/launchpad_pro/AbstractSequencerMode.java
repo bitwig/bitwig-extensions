@@ -95,7 +95,6 @@ abstract class AbstractSequencerMode extends Mode
       mDriver.getHost().showPopupNotification(getDataModeDescription(dataMode));
       mDataMode = dataMode;
       mDriver.updateKeyTranslationTable();
-      paint();
    }
 
    @Override
@@ -194,44 +193,20 @@ abstract class AbstractSequencerMode extends Mode
 
    abstract protected NoteStep findStepInfo(int absoluteStepIndex);
 
-   protected void paintDataChoice()
+   protected LedState computeDataChoiceLedState(final int y)
    {
-      mDriver.getButtonOnTheRight(0).setColor(mDataMode == DataMode.SoundData ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getButtonOnTheRight(1).setColor(mDataMode == DataMode.MixData ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getButtonOnTheRight(2).setColor(hasMainAltMode() ? mDataMode == DataMode.MainAlt ? Color.YELLOW : Color.YELLOW_LOW : Color.OFF);
-      mDriver.getButtonOnTheRight(3).setColor(mDataMode == DataMode.Main ? Color.YELLOW : Color.YELLOW_LOW);
-   }
-
-   protected void paintScenes()
-   {
-      if (!mDriver.isShiftOn())
+      switch (y)
       {
-         paintPatternOffset();
-         paintDataChoice();
+         case 0:
+            return new LedState(mDataMode == DataMode.SoundData ? Color.YELLOW : Color.YELLOW_LOW);
+         case 1:
+            return new LedState(mDataMode == DataMode.MixData ? Color.YELLOW : Color.YELLOW_LOW);
+         case 2:
+            return new LedState(hasMainAltMode() ? mDataMode == DataMode.MainAlt ? Color.YELLOW : Color.YELLOW_LOW : Color.OFF);
+         case 3:
+            return new LedState(mDataMode == DataMode.Main ? Color.YELLOW : Color.YELLOW_LOW);
       }
-   }
-
-   protected void paintPatternOffset()
-   {
-      final Clip clip = mDriver.getCursorClip();
-
-      final SettableBeatTimeValue playStart = clip.getPlayStart();
-      final SettableBeatTimeValue playStopTime = clip.getPlayStop();
-      final double length = playStopTime.get() - playStart.get();
-
-      final int playingStep = clip.playingStep().get();
-
-      for (int i = 0; i < 4; ++i)
-      {
-         final Button button = mDriver.getButtonOnTheRight(7 - i);
-
-         if (playingStep / 32 == i)
-            button.setColor(mPage == i ? Color.GREEN : Color.GREEN_LOW);
-         else if (8 * i < length)
-            button.setColor(mPage == i ? Color.WHITE : Color.WHITE_LOW);
-         else
-            button.setColor(Color.OFF);
-      }
+      throw new IllegalStateException();
    }
 
    protected LedState computePatternOffsetLedState(final int y)
@@ -268,35 +243,27 @@ abstract class AbstractSequencerMode extends Mode
       cursorClip.getLoopLength().set(lengthInBars);
    }
 
-   @Override
-   public void onSceneButtonPressed(final int row)
+   protected void setDataMode(final int Y)
    {
-      if (mDriver.isShiftOn())
-         setClipLength((8 - row) * 4);
-      else if (4 <= row && row <= 7)
-         mPage = 7 - row;
-      else
+      assert 0 <= Y && Y <= 3;
+      switch (Y)
       {
-         assert 0 <= row && row <= 3;
-         switch (row)
-         {
-            case 0:
-               setDataMode(DataMode.SoundData);
-               break;
+         case 0:
+            setDataMode(DataMode.SoundData);
+            break;
 
-            case 1:
-               setDataMode(DataMode.MixData);
-               break;
+         case 1:
+            setDataMode(DataMode.MixData);
+            break;
 
-            case 2:
-               if (hasMainAltMode())
-                  setDataMode(DataMode.MainAlt);
-               break;
+         case 2:
+            if (hasMainAltMode())
+               setDataMode(DataMode.MainAlt);
+            break;
 
-            case 3:
-               setDataMode(DataMode.Main);
-               break;
-         }
+         case 3:
+            setDataMode(DataMode.Main);
+            break;
       }
    }
 

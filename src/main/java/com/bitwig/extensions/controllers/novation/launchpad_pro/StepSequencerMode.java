@@ -86,7 +86,6 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       super.paint();
 
-      paintScenes();
       paintSteps();
       paintArrows();
 

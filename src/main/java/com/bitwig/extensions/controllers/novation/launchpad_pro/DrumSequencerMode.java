@@ -24,7 +24,10 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
       mShiftLayer = new LaunchpadLayer(driver, "drum-sequencer-shift");
       mDrumPadsLayer = new LaunchpadLayer(driver, "drum-pads");
+      mMainActionsLayer = new LaunchpadLayer(driver, "drum-main-actions");
       mSceneAndPerfsLayer = new LaunchpadLayer(driver, "drum-scenes-and-perfs");
+      mMixDataLayer = new LaunchpadLayer(driver, "drum-seq-mix-data");
+      mSoundDataLayer = new LaunchpadLayer(driver, "drum-seq-sound-data");
 
       // Step sequencer
       for (int y = 0; y < 4; ++y)
@@ -48,10 +51,14 @@ final class DrumSequencerMode extends AbstractSequencerMode
          }
 
          final Button sceneButton = driver.getSceneButton(y + 4);
-         final int page = 4 - y;
+         final int page = 3 - y;
          final int Y = y;
          bindPressed(sceneButton, () -> mPage = page);
          bindLightState(() -> computePatternOffsetLedState(3 - Y), sceneButton);
+
+         final Button dataChoiceBt = driver.getSceneButton(y);
+         bindPressed(dataChoiceBt, () -> setDataMode(Y));
+         bindLightState(() -> computeDataChoiceLedState(Y), dataChoiceBt);
       }
 
       for (int y = 0; y < 8; ++y)
@@ -73,6 +80,9 @@ final class DrumSequencerMode extends AbstractSequencerMode
             final Button bt = driver.getPadButton(x, y);
             mDrumPadsLayer.bindPressed(bt, () -> onDrumPadPressed(X, Y));
             mDrumPadsLayer.bindLightState(() -> computeDrumPadLedState(X, Y), bt);
+
+            final Button actionBt = driver.getPadButton(x + 4, y);
+            mSceneAndPerfsLayer.bindLightState(() -> computePerfAndScenesLedState(X, Y), actionBt);
          }
       }
 
@@ -83,8 +93,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
    protected void doActivate()
    {
       super.doActivate();
-
-      mDrumPadsLayer.activate();
 
       final Track track = mDriver.getCursorClipTrack();
       track.subscribe();
@@ -97,14 +105,14 @@ final class DrumSequencerMode extends AbstractSequencerMode
       cursorClipDrumPads.setIndication(true);
 
       updateDrumPadsBankPosition();
+
+      setDataMode(mDataMode);
    }
 
    @Override
    protected void doDeactivate()
    {
-      mShiftLayer.deactivate();
-      mDrumPadsLayer.deactivate();
-      mShiftLayer.deactivate();
+      deactivateEveryLayers();
 
       final Track track = mDriver.getCursorClipTrack();
       track.unsubscribe();
@@ -116,6 +124,43 @@ final class DrumSequencerMode extends AbstractSequencerMode
       cursorClipDrumPads.setIndication(false);
 
       super.doDeactivate();
+   }
+
+   void deactivateEveryLayers()
+   {
+      mShiftLayer.deactivate();
+      mDrumPadsLayer.deactivate();
+      mShiftLayer.deactivate();
+      mMainActionsLayer.deactivate();
+      mSceneAndPerfsLayer.deactivate();
+      mSoundDataLayer.deactivate();
+      mMixDataLayer.deactivate();
+   }
+
+   @Override
+   protected void setDataMode(final DataMode dataMode)
+   {
+      super.setDataMode(dataMode);
+
+      deactivateEveryLayers();
+
+      switch (mDataMode)
+      {
+         case Main:
+            mDrumPadsLayer.activate();
+            mMainActionsLayer.activate();
+            break;
+         case MixData:
+            mMixDataLayer.activate();
+            break;
+         case SoundData:
+            mSoundDataLayer.activate();
+            break;
+         case MainAlt:
+            mDrumPadsLayer.activate();
+            mSceneAndPerfsLayer.activate();
+            break;
+      }
    }
 
    @Override
@@ -572,15 +617,11 @@ final class DrumSequencerMode extends AbstractSequencerMode
       super.paint();
 
       paintArrows();
-      paintScenes();
 
       switch (mDataMode)
       {
          case Main:
             paintMainActions();
-            break;
-         case MainAlt:
-            paintPerfAndScenes();
             break;
          case MixData:
             paintMixData();
@@ -622,28 +663,24 @@ final class DrumSequencerMode extends AbstractSequencerMode
       return mDriver.getCursorClip().getStep(0, absoluteStepIndex, mCurrentPitch);
    }
 
-   private void paintPerfAndScenes()
+   protected LedState computePerfAndScenesLedState(final int x, final int y)
    {
       final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
       final CursorRemoteControlsPage drumScenesRemoteControls = mDriver.getDrumScenesRemoteControls();
-      for (int i = 0; i < 8; ++i)
+
+      if (y > 1)
       {
-         final RemoteControl perfParam = drumPerfsRemoteControls.getParameter(i);
-         final Button perfButton = mDriver.getPadButton(4 + (i % 4), 3 - i / 4);
-
-         final RemoteControl sceneParam = drumScenesRemoteControls.getParameter(i);
-         final Button sceneButton = mDriver.getPadButton(4 + (i % 4), 1 - i / 4);
-
+         final RemoteControl perfParam = drumPerfsRemoteControls.getParameter(x + (3 - y) * 4);
          if (perfParam.exists().get())
-            perfButton.setColor(Color.scale(Color.CYAN, (float) (0.95 * perfParam.get() + 0.05)));
-         else
-            perfButton.setColor(Color.OFF);
-
-         if (sceneParam.exists().get())
-            sceneButton.setColor(Color.scale(Color.YELLOW, (float) (0.9 * sceneParam.get() + 0.1)));
-         else
-            sceneButton.setColor(Color.OFF);
+            return new LedState(Color.scale(Color.CYAN, (float) (0.95 * perfParam.get() + 0.05)));
       }
+      else
+      {
+         final RemoteControl sceneParam = drumScenesRemoteControls.getParameter(x + (1 - y) * 4);
+         if (sceneParam.exists().get())
+            return new LedState(Color.scale(Color.YELLOW, (float) (0.9 * sceneParam.get() + 0.1)));
+      }
+      return LedState.OFF;
    }
 
    private void paintArrows()
@@ -754,4 +791,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private final LaunchpadLayer mShiftLayer;
    private final LaunchpadLayer mDrumPadsLayer;
    private final LaunchpadLayer mSceneAndPerfsLayer;
+   private final LaunchpadLayer mMainActionsLayer;
+   private final LaunchpadLayer mMixDataLayer;
+   private final LaunchpadLayer mSoundDataLayer;
 }
