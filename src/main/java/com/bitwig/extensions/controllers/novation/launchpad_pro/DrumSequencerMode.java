@@ -83,6 +83,13 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
             final Button actionBt = driver.getPadButton(x + 4, y);
             mSceneAndPerfsLayer.bindLightState(() -> computePerfAndScenesLedState(X, Y), actionBt);
+            if (y < 2)
+               mSceneAndPerfsLayer.bindPressed(actionBt, () -> onDrumScenePressed(X, Y));
+            else
+            {
+               mSceneAndPerfsLayer.bind(actionBt.getAfterTouch(), v -> onDrumPerfPressure(X, Y, (int) (127. * v)));
+               mSceneAndPerfsLayer.bindReleased(actionBt, () -> onDrumPerfReleased(X, Y));
+            }
          }
       }
 
@@ -485,7 +492,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private void onDrumPerfPressure(final int x, final int y, final int pressure)
    {
       final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
-      final RemoteControl parameter = drumPerfsRemoteControls.getParameter(x - 4 + 4 * (3 - y));
+      final RemoteControl parameter = drumPerfsRemoteControls.getParameter(x + 4 * (3 - y));
 
       if (!mDriver.isShiftOn() && parameter.exists().get())
          parameter.set(pressure / 127.0);
@@ -498,7 +505,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private void onDrumScenePressed(final int x, final int y)
    {
-      final int paramIndex = x - 4 + 4 * (1 - y);
+      final int paramIndex = x + 4 * (1 - y);
       final CursorRemoteControlsPage scenesRemoteControls = mDriver.getDrumScenesRemoteControls();
 
       final RemoteControl parameter = scenesRemoteControls.getParameter(paramIndex);
