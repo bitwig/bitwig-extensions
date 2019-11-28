@@ -55,6 +55,7 @@ class Button
 
          mAfterTouch = hardwareSurface.createAbsoluteHardwareKnob(id + "-at");
          mAfterTouch.setAdjustValueMatcher(midiIn.createPolyAftertouchValueMatcher(0, index));
+         bt.setAftertouchControl(mAfterTouch);
       }
       else
       {

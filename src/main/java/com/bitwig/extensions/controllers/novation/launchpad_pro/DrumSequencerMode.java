@@ -483,7 +483,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private void onDrumPerfReleased(final int x, final int y)
    {
       final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
-      final RemoteControl parameter = drumPerfsRemoteControls.getParameter(x - 4 + 4 * (3 - y));
+      final RemoteControl parameter = drumPerfsRemoteControls.getParameter(x + 4 * (3 - y));
 
       if (!mDriver.isShiftOn() && parameter.exists().get())
          parameter.set(0);
