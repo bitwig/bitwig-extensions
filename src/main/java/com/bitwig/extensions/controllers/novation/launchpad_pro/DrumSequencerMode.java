@@ -103,10 +103,10 @@ final class DrumSequencerMode extends AbstractSequencerMode
       mMainActionsLayer.bindLightState(() -> new LedState(isDrumPadSoloOn() || mDriver.isDeleteOn() ? Color.SOLO : Color.SOLO_LOW), mDriver.getPadButton(6, 0));
       mMainActionsLayer.bindLightState(LedState.OFF, mDriver.getPadButton(7, 0));
 
-      mMainActionsLayer.bindLightState(LedState.OFF, mDriver.getPadButton(4, 1));
-      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(5, 1) ? Color.BLUE : Color.BLUE_LOW), mDriver.getPadButton(5, 1));
-      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(6, 1) ? Color.RED : Color.RED_LOW), mDriver.getPadButton(6, 1));
-      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(7, 1) ? Color.GREEN : Color.GREEN_LOW), mDriver.getPadButton(7, 1));
+      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(4, 1) ? Color.BLUE : Color.BLUE_LOW), mDriver.getPadButton(4, 1));
+      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(5, 1) ? Color.RED : Color.RED_LOW), mDriver.getPadButton(5, 1));
+      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(6, 1) ? Color.GREEN : Color.GREEN_LOW), mDriver.getPadButton(6, 1));
+      mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(7, 1) ? Color.WHITE : Color.WHITE_LOW), mDriver.getPadButton(7, 1));
 
       mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(4, 2) ? Color.PURPLE : Color.PURPLE_LOW), mDriver.getPadButton(4, 2));
       mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(5, 2) ? Color.ORANGE : Color.ORANGE_LOW), mDriver.getPadButton(5, 2));
@@ -419,12 +419,14 @@ final class DrumSequencerMode extends AbstractSequencerMode
          final int sceneIndex = cursorClipExists ? cursorClip.clipLauncherSlot().sceneIndex().get() : 0;
          final Track track = cursorClipExists ? cursorClip.getTrack() : mDriver.getCursorTrack();
 
-         if (x == 1)
+         if (x == 0)
             track.createNewClip(sceneIndex, 8);
-         else if (x == 2)
+         else if (x == 1)
             track.recordNewClip(sceneIndex);
-         else if (x == 3 && cursorClipExists)
+         else if (x == 2 && cursorClipExists)
             cursorClip.launch();
+         else if (x == 3)
+            track.stop();
       }
       else if (y == 2 || y == 3)
       {
