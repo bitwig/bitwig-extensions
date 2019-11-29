@@ -18,7 +18,7 @@ public class StepSequencerMode extends AbstractSequencerMode
       final CursorTrack cursorTrack = driver.getCursorTrack();
       final PinnableCursorClip cursorClip = driver.getCursorClip();
 
-      mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4, () -> new Color(mDriver.getCursorTrack().color()), key -> isKeyOn(key));
+      mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4, () -> new Color(mDriver.getCursorTrack().color()), key -> isKeyOn(key), ((key, velocity) -> onKeyDataPressed(key, velocity)));
       mShiftLayer = new LaunchpadLayer(driver, "drum-sequencer-shift");
       mMixDataLayer = new LaunchpadLayer(driver, "drum-seq-mix-data");
       mSoundDataLayer = new LaunchpadLayer(driver, "drum-seq-sound-data");
@@ -231,30 +231,6 @@ public class StepSequencerMode extends AbstractSequencerMode
       paint();
    }
 
-   @Override
-   void onPadPressed(final int x, final int y, final int velocity)
-   {
-      if (y >= 4)
-      {
-         onStepPressed(calculateAbsoluteStepIndex(x, 7 - y), velocity);
-         return;
-      }
-
-      switch (mDataMode)
-      {
-         case Main:
-         case MainAlt:
-            onKeyDataPressed(x, y, velocity);
-            break;
-         case MixData:
-            onMixDataPressed(x, 3 - y);
-            break;
-         case SoundData:
-            onSoundDataPressed(x, 3 - y);
-            break;
-      }
-   }
-
    private void onMixDataPressed(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
@@ -321,17 +297,15 @@ public class StepSequencerMode extends AbstractSequencerMode
       }
    }
 
-   private void onKeyDataPressed(final int x, final int y, final int velocity)
+   private void onKeyDataPressed(final int key, final double velocity)
    {
-      final int key = mKeyboardLayer.calculateKeyForPosition(x, y);
-      if (key == -1)
-         return;
+      assert 0 <= key && key < 128;
 
       final Clip cursorClip = mDriver.getCursorClip();
       for (Button buttonState : findStepsInPressedOrHoldState())
       {
          final int absoluteStepIndex = calculateAbsoluteStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
-         cursorClip.toggleStep(absoluteStepIndex, key, velocity);
+         cursorClip.toggleStep(absoluteStepIndex, key, (int) (127 * velocity));
       }
    }
 

@@ -1,16 +1,13 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import com.bitwig.extension.controller.api.ColorValue;
-import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
-
 final class KeyboardLayer extends LaunchpadLayer
 {
-   private static final int[] CHROMATIC_NOTE_INDEXES = new int[]{
-      0,  2, 4,  5, 7, 9, 11, 12,
-      -1, 1, 3, -1, 6, 8, 10, -1,
+   private static final int[] CHROMATIC_NOTE_INDEXES = new int[] {
+      0, 2, 4, 5, 7, 9, 11, 12, -1, 1, 3, -1, 6, 8, 10, -1,
    };
 
    private final Color UP_DOWN_ON_COLOR = new Color(0.f, 0.f, 1.f);
@@ -35,7 +32,22 @@ final class KeyboardLayer extends LaunchpadLayer
       return pitch == 1 || pitch == 3 || pitch == 6 || pitch == 8 || pitch == 10;
    }
 
-   KeyboardLayer(final LaunchpadProControllerExtension driver, final String name, final int x0, final int y0, final int w0, final int h0, final Supplier<Color> trackColorSupplier, final Function<Integer /* Key */, Boolean> isPlaying)
+   @FunctionalInterface
+   interface KeyPressedCallback
+   {
+      void onKeyPressed(int key, double velocity);
+   }
+
+   KeyboardLayer(
+      final LaunchpadProControllerExtension driver,
+      final String name,
+      final int x0,
+      final int y0,
+      final int w0,
+      final int h0,
+      final Supplier<Color> trackColorSupplier,
+      final Function<Integer /* Key */, Boolean> isPlaying,
+      final KeyPressedCallback onKeyPlayed)
    {
       super(driver, name);
 
@@ -45,6 +57,7 @@ final class KeyboardLayer extends LaunchpadLayer
       mHeight = h0;
       mTrackColorSupplier = trackColorSupplier;
       mIsPlaying = isPlaying;
+      mOnKeyPlayed = onKeyPlayed;
 
       for (int x = x0; x < x0 + w0; ++x)
       {
@@ -55,6 +68,14 @@ final class KeyboardLayer extends LaunchpadLayer
 
             final Button padButton = driver.getPadButton(x, y);
             bindLightState(() -> computeLedState(X, Y), padButton);
+            bindPressed(padButton, v -> {
+               if (onKeyPlayed != null)
+               {
+                  final int key = calculateKeyboardKey(X, Y);
+                  if (key >= 0 && key < 127)
+                     onKeyPlayed.onKeyPressed(key, v);
+               }
+            });
          }
       }
    }
@@ -262,4 +283,5 @@ final class KeyboardLayer extends LaunchpadLayer
    private int mOctave = 3;
    private final Supplier<Color> mTrackColorSupplier;
    private final Function<Integer, Boolean> mIsPlaying;
+   private final KeyPressedCallback mOnKeyPlayed;
 }
