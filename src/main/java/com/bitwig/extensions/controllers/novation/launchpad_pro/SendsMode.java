@@ -105,9 +105,11 @@ public class SendsMode extends Mode
       {
          final Track track = trackBank.getItemAt(i);
          track.subscribe();
+         track.color().subscribe();
 
          final SendBank sendBank = track.sendBank();
          sendBank.subscribe();
+
          for (int j = 0; j < 8; ++j)
          {
             final Send send = sendBank.getItemAt(j);
@@ -131,6 +133,7 @@ public class SendsMode extends Mode
       {
          final Track track = trackBank.getItemAt(i);
          track.unsubscribe();
+         track.color().unsubscribe();
 
          final SendBank sendBank = track.sendBank();
          sendBank.unsubscribe();

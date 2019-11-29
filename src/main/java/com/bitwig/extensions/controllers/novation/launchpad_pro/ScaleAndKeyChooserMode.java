@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extensions.framework.MusicalScale;
 import com.bitwig.extensions.framework.MusicalScaleLibrary;
 
@@ -64,6 +65,20 @@ public class ScaleAndKeyChooserMode extends Mode
             }, bt);
          }
       }
+   }
+
+   @Override
+   protected void doActivate()
+   {
+      final Parameter tempo = mDriver.getTransport().tempo();
+      tempo.subscribe();
+   }
+
+   @Override
+   protected void doDeactivate()
+   {
+      final Parameter tempo = mDriver.getTransport().tempo();
+      tempo.unsubscribe();
    }
 
    @Override

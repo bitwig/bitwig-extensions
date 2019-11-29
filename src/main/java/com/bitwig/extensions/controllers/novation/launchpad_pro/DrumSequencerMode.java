@@ -155,14 +155,10 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       super.doActivate();
 
-      final Track track = mDriver.getCursorTrack();
-      track.subscribe();
-
-      final SettableColorValue trackColor = track.color();
-      trackColor.subscribe();
-
-      mDriver.getCursorTrack().selectInMixer();
       final DrumPadBank drumPads = mDriver.getDrumPadBank();
+      drumPads.exists().subscribe();
+      drumPads.scrollPosition().subscribe();
+      drumPads.subscribe();
       drumPads.setIndication(true);
 
       updateDrumPadsBankPosition();
@@ -175,13 +171,10 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       deactivateEveryLayers();
 
-      final Track track = mDriver.getCursorTrack();
-      track.unsubscribe();
-
-      final SettableColorValue trackColor = track.color();
-      trackColor.unsubscribe();
-
       final DrumPadBank drumPads = mDriver.getDrumPadBank();
+      drumPads.exists().unsubscribe();
+      drumPads.scrollPosition().unsubscribe();
+      drumPads.unsubscribe();
       drumPads.setIndication(false);
 
       super.doDeactivate();

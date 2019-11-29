@@ -58,6 +58,8 @@ public final class KeyboardMode extends Mode
       cursorTrack.subscribe();
       cursorTrack.playingNotes().subscribe();
       cursorTrack.color().subscribe();
+      cursorTrack.hasNext().subscribe();
+      cursorTrack.hasPrevious().subscribe();
    }
 
    @Override
@@ -69,6 +71,8 @@ public final class KeyboardMode extends Mode
       final CursorTrack cursorTrack = mDriver.getCursorTrack();
       cursorTrack.playingNotes().unsubscribe();
       cursorTrack.color().unsubscribe();
+      cursorTrack.hasPrevious().unsubscribe();
+      cursorTrack.hasNext().unsubscribe();
       cursorTrack.unsubscribe();
    }
 

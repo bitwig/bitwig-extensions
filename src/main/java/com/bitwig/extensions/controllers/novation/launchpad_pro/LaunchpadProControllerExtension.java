@@ -66,6 +66,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    {
       super(driverDefinition, host);
       mHost = host;
+
+      host.setShouldSubscribeCreatedObjects(false);
    }
 
    private void createLayers()
@@ -177,6 +179,12 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mMainLayer.bindLightState(() -> isRecording() ? LedState.REC_ON : LedState.REC_OFF, mRecordButton);
 
       mMainLayer.activate();
+
+      /* Needed by the main layer */
+      mTransport.isMetronomeEnabled().subscribe();
+      mTransport.isPlaying().subscribe();
+      mTransport.isClipLauncherOverdubEnabled().subscribe();
+      mTransport.isClipLauncherAutomationWriteEnabled().subscribe();
    }
 
    private void createHardwareControls()

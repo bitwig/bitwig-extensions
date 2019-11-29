@@ -64,12 +64,12 @@ abstract class AbstractSequencerMode extends Mode
       if (clip.exists().get())
          setNoteInputRouting();
 
-      final Track cursorTrack = mDriver.getCursorTrack();
+      final CursorTrack cursorTrack = mDriver.getCursorTrack();
       cursorTrack.subscribe();
       cursorTrack.color().subscribe();
-
-      final PlayingNoteArrayValue playingNotes = cursorTrack.playingNotes();
-      playingNotes.subscribe();
+      cursorTrack.hasNext().subscribe();
+      cursorTrack.hasPrevious().subscribe();
+      cursorTrack.playingNotes().subscribe();
    }
 
    @Override
@@ -81,9 +81,12 @@ abstract class AbstractSequencerMode extends Mode
       if (clip.exists().get())
          clearNoteInputRouting();
 
-      final Track cursorTrack = mDriver.getCursorTrack();
-      final PlayingNoteArrayValue playingNotes = cursorTrack.playingNotes();
-      playingNotes.unsubscribe();
+      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      cursorTrack.color().unsubscribe();
+      cursorTrack.hasNext().unsubscribe();
+      cursorTrack.hasPrevious().unsubscribe();
+      cursorTrack.playingNotes().unsubscribe();
+      cursorTrack.unsubscribe();
    }
 
    @Override

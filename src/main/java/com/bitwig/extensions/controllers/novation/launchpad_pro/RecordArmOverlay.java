@@ -26,4 +26,20 @@ class RecordArmOverlay extends Overlay
 
       bindLightState(LedState.REC_ON, driver.getArmButton());
    }
+
+   @Override
+   protected void doActivate()
+   {
+      final TrackBank trackBank = mDriver.getTrackBank();
+      for (int i = 0; i < 8; ++i)
+         trackBank.getItemAt(i).arm().subscribe();
+   }
+
+   @Override
+   protected void doDeactivate()
+   {
+      final TrackBank trackBank = mDriver.getTrackBank();
+      for (int i = 0; i < 8; ++i)
+         trackBank.getItemAt(i).arm().unsubscribe();
+   }
 }

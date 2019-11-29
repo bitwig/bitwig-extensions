@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
+import sun.security.util.ArrayUtil;
 
 public class VolumeMode extends Mode
 {
@@ -63,9 +64,8 @@ public class VolumeMode extends Mode
          track.subscribe();
          track.volume().subscribe();
          track.volume().setIndication(true);
+         track.color().subscribe();
       }
-
-      mDriver.getNoteInput().setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
    }
 
    @Override
@@ -77,10 +77,18 @@ public class VolumeMode extends Mode
       for (int i = 0; i < 8; ++i)
       {
          final Track track = trackBank.getItemAt(i);
-         track.subscribe();
          track.volume().unsubscribe();
          track.volume().setIndication(false);
+         track.color().unsubscribe();
+         track.unsubscribe();
       }
+   }
+
+   @Override
+   void updateKeyTranslationTable(final Integer[] table)
+   {
+      for (int i = 0; i < 128; ++i)
+         table[i] = -1;
    }
 
    private final LaunchpadLayer mShiftLayer;

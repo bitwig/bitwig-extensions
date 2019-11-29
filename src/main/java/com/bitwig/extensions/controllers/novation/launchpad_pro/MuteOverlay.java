@@ -31,10 +31,7 @@ class MuteOverlay extends Overlay
    {
       final TrackBank trackBank = mDriver.getTrackBank();
       for (int i = 0; i < 8; ++i)
-      {
-         final SettableBooleanValue mute = trackBank.getItemAt(i).mute();
-         mute.subscribe();
-      }
+         trackBank.getItemAt(i).mute().subscribe();
    }
 
    @Override
@@ -42,9 +39,6 @@ class MuteOverlay extends Overlay
    {
       final TrackBank trackBank = mDriver.getTrackBank();
       for (int i = 0; i < 8; ++i)
-      {
-         final SettableBooleanValue mute = trackBank.getItemAt(i).mute();
-         mute.unsubscribe();
-      }
+         trackBank.getItemAt(i).mute().subscribe();
    }
 }

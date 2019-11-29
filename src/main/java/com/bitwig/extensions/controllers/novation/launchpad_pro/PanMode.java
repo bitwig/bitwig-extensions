@@ -80,6 +80,7 @@ public class PanMode extends Mode
          track.subscribe();
          track.pan().subscribe();
          track.pan().setIndication(true);
+         track.color().subscribe();
       }
    }
 
@@ -93,9 +94,10 @@ public class PanMode extends Mode
       for (int i = 0; i < 8; ++i)
       {
          final Track track = trackBank.getItemAt(i);
-         track.unsubscribe();
          track.pan().unsubscribe();
          track.pan().setIndication(false);
+         track.color().unsubscribe();
+         track.unsubscribe();
       }
    }
 

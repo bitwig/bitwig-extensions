@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
@@ -23,5 +24,31 @@ class StopClipOverlay extends Overlay
       }
 
       bindLightState(LedState.STOP_CLIP_ON, driver.getStopButton());
+   }
+
+   @Override
+   protected void doActivate()
+   {
+      final TrackBank trackBank = mDriver.getTrackBank();
+      for (int i = 0; i < 8; ++i)
+      {
+         final Track track = trackBank.getItemAt(i);
+         track.subscribe();
+         track.isStopped().subscribe();
+         track.exists().subscribe();
+      }
+   }
+
+   @Override
+   protected void doDeactivate()
+   {
+      final TrackBank trackBank = mDriver.getTrackBank();
+      for (int i = 0; i < 8; ++i)
+      {
+         final Track track = trackBank.getItemAt(i);
+         track.exists().unsubscribe();
+         track.isStopped().unsubscribe();
+         track.unsubscribe();
+      }
    }
 }

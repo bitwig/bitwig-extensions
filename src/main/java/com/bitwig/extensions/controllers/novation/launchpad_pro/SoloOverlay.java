@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
@@ -23,5 +24,21 @@ class SoloOverlay extends Overlay
       }
 
       bindLightState(LedState.SOLO, driver.getSoloButton());
+   }
+
+   @Override
+   protected void doActivate()
+   {
+      final TrackBank trackBank = mDriver.getTrackBank();
+      for (int i = 0; i < 8; ++i)
+         trackBank.getItemAt(i).solo().subscribe();
+   }
+
+   @Override
+   protected void doDeactivate()
+   {
+      final TrackBank trackBank = mDriver.getTrackBank();
+      for (int i = 0; i < 8; ++i)
+         trackBank.getItemAt(i).solo().unsubscribe();
    }
 }
