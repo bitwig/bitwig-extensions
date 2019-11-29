@@ -67,6 +67,11 @@ public class StepSequencerMode extends AbstractSequencerMode
          mShiftLayer.bindLightState(() -> computeClipLengthSelectionLedState(7 - Y), sceneButton);
       }
 
+      mShiftLayer.bindPressed(driver.getUpButton(), () -> mKeyboardLayer.octaveUp());
+      mShiftLayer.bindPressed(driver.getDownButton(), () -> mKeyboardLayer.octaveDown());
+      bindLightState(() -> mKeyboardLayer.canOctaveUp() ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
+      bindLightState(() -> mKeyboardLayer.canOctaveDown() ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
+
       // Step Data
       for (int x = 0; x < 8; ++x)
       {

@@ -78,6 +78,12 @@ final class DrumSequencerMode extends AbstractSequencerMode
          mShiftLayer.bindLightState(() -> computeClipLengthSelectionLedState(7 - Y), sceneButton);
       }
 
+      final SettableIntegerValue drumPosition = driver.getDrumPadBank().scrollPosition();
+      mShiftLayer.bindPressed(driver.getUpButton(), () -> invalidateDrumPosition(drumPosition.get() + 16));
+      mShiftLayer.bindPressed(driver.getDownButton(), () -> invalidateDrumPosition(drumPosition.get() - 16));
+      bindLightState(() -> drumPosition.get() < 116 ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
+      bindLightState(() -> drumPosition.get() > 0 ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
+
       // Drum Pads
       for (int x = 0; x < 4; ++x)
       {
@@ -705,17 +711,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
             return new LedState(Color.scale(Color.YELLOW, (float) (0.9 * sceneParam.get() + 0.1)));
       }
       return LedState.OFF;
-   }
-
-   private void paintArrows()
-   {
-      final DrumPadBank drumPads = mDriver.getDrumPadBank();
-      final int pos = drumPads.scrollPosition().get();
-
-      mDriver.getButtonOnTheTop(0).setColor(pos < 116 ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getButtonOnTheTop(1).setColor(pos > 0 ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getButtonOnTheTop(2).setColor(Color.OFF);
-      mDriver.getButtonOnTheTop(3).setColor(Color.OFF);
    }
 
    private LedState computeStepSeqLedState(final int x, final int y)
