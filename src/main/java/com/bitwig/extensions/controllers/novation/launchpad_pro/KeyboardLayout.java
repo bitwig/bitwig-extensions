@@ -21,7 +21,7 @@ enum KeyboardLayout
             return LINE_7;
 
          default:
-            return GUITAR;
+            throw new IllegalStateException();
       }
    }
 
@@ -39,7 +39,7 @@ enum KeyboardLayout
          case PIANO:
             return "Piano";
          default:
-            return "Guitar";
+            throw new IllegalStateException();
       }
    }
 
