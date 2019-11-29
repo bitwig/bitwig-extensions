@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.bitwig.extension.controller.api.Clip;
-import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 import com.bitwig.extension.controller.api.SettableBeatTimeValue;
@@ -101,7 +100,7 @@ abstract class AbstractSequencerMode extends Mode
 
    protected abstract String getDataModeDescription(final DataMode dataMode);
 
-   protected int calculateAbsoluteStepIndex(int x, int y)
+   protected int calculateAbsoluteStepIndex(final int x, final int y)
    {
       return mPage * 32 + x + 8 * y;
    }

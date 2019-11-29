@@ -73,7 +73,7 @@ public class SendsMode extends Mode
       return "Sends";
    }
 
-   private void setSendIndex(int index)
+   private void setSendIndex(final int index)
    {
       if (index == mSendIndex)
          return;

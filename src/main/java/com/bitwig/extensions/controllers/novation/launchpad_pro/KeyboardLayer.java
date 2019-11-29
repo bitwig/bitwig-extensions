@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -57,7 +56,6 @@ final class KeyboardLayer extends LaunchpadLayer
       mHeight = h0;
       mTrackColorSupplier = trackColorSupplier;
       mIsPlaying = isPlaying;
-      mOnKeyPlayed = onKeyPlayed;
 
       for (int x = x0; x < x0 + w0; ++x)
       {
@@ -283,5 +281,4 @@ final class KeyboardLayer extends LaunchpadLayer
    private int mOctave = 3;
    private final Supplier<Color> mTrackColorSupplier;
    private final Function<Integer, Boolean> mIsPlaying;
-   private final KeyPressedCallback mOnKeyPlayed;
 }

@@ -11,7 +11,8 @@ public final class KeyboardMode extends Mode
 
       final CursorTrack cursorTrack = driver.getCursorTrack();
       final PlayingNoteArrayValue playingNotes = cursorTrack.playingNotes();
-      mKeyboardLayer = new KeyboardLayer(driver, "keyboard", 0, 0, 8, 8, () -> new Color(cursorTrack.color()), key -> playingNotes.isNotePlaying(key), null);
+      mKeyboardLayer = new KeyboardLayer(driver, "keyboard", 0, 0, 8, 8, () -> new Color(cursorTrack.color()),
+         playingNotes::isNotePlaying, null);
 
       bindPressed(driver.getRightButton(), cursorTrack.selectNextAction());
       bindPressed(driver.getLeftButton(), cursorTrack.selectPreviousAction());

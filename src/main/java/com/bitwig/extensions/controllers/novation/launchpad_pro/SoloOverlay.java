@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
-import com.bitwig.extension.controller.api.SoloValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 

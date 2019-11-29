@@ -84,6 +84,6 @@ class MultiplexerMode extends Mode
 
    private final Mode[] mModes = {null, null, null, null, null, null, null, null};
    private final Runnable[] mModesAction = {null, null, null, null, null, null, null, null};
-   private LedState[] mModesLedOn = {null, null, null, null, null, null, null, null};
-   private LedState[] mModesLedOff = {null, null, null, null, null, null, null, null};
+   private final LedState[] mModesLedOn = {null, null, null, null, null, null, null, null};
+   private final LedState[] mModesLedOff = {null, null, null, null, null, null, null, null};
 }

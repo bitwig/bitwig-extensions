@@ -6,7 +6,6 @@ import java.util.List;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arpeggiator;
-import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -75,9 +74,9 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       mSessionMode = new SessionMode(this);
       mKeyboardMode = new KeyboardMode(this);
-      mDrumMode = new DrumMode(this);
+      final DrumMode drumMode = new DrumMode(this);
       mVolumeMode = new VolumeMode(this);
-      mScaleAndKeyChooserMode = new ScaleAndKeyChooserMode(this);
+      final ScaleAndKeyChooserMode scaleAndKeyChooserMode = new ScaleAndKeyChooserMode(this);
       mSendsMode = new SendsMode(this);
       mPanMode = new PanMode(this);
       mDrumSequencerMode = new DrumSequencerMode(this);
@@ -88,8 +87,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mPlayModes.setMode(1, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.LINE_3));
       mPlayModes.setMode(2, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.LINE_7));
       mPlayModes.setMode(3, mKeyboardMode, () -> setKeyboardLayout(KeyboardLayout.PIANO));
-      mPlayModes.setMode(4, mDrumMode);
-      mPlayModes.setMode(7, mScaleAndKeyChooserMode);
+      mPlayModes.setMode(4, drumMode);
+      mPlayModes.setMode(7, scaleAndKeyChooserMode);
 
       mRecordArmOverlay = new RecordArmOverlay(this);
       mTrackSelectOverlay = new TrackSelectOverlay(this);
@@ -105,9 +104,9 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    private void createDebugLayer()
    {
-      mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-      mDebugLayer.setShouldReplaceBindingsInLayersBelow(false);
-      mDebugLayer.activate();
+      final Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+      debugLayer.setShouldReplaceBindingsInLayersBelow(false);
+      debugLayer.activate();
    }
 
    private void createMainLayer()
@@ -330,7 +329,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    List<Button> findPadsInHoldState()
    {
       final ArrayList<Button> buttons = new ArrayList<>();
-      for (Button bt : mGridButtons)
+      for (final Button bt : mGridButtons)
          if (bt.getButtonState() == Button.State.HOLD)
             buttons.add(bt);
 
@@ -360,7 +359,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mApplication = mHost.createApplication();
       mApplication.recordQuantizationGrid().markInterested();
 
-      mProject = mHost.getProject();
+      final Project project = mHost.getProject();
       mDocumentState = mHost.getDocumentState();
 
       mUserControls = mHost.createUserControls(64);
@@ -397,8 +396,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mCursorClip.getLoopStart().markInterested();
       mCursorClip.getLoopLength().markInterested();
       mCursorClip.playingStep().markInterested();
-      mCursorClipSlot = mCursorClip.clipLauncherSlot();
-      mCursorClipSlot.sceneIndex().markInterested();
+      final ClipLauncherSlot cursorClipSlot = mCursorClip.clipLauncherSlot();
+      cursorClipSlot.sceneIndex().markInterested();
 
       mDrumScenesRemoteControls = mCursorDevice.createCursorRemoteControlsPage("scenes", 8, "drum-scenes");
       mDrumPerfsRemoteControls = mCursorDevice.createCursorRemoteControlsPage("perfs", 8, "drum-perfs");
@@ -1014,7 +1013,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mVolumeButton;
    }
 
-   public Button getSceneButton(int y)
+   public Button getSceneButton(final int y)
    {
       return mSceneButtons[y];
    }
@@ -1097,7 +1096,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private CursorTrack mCursorTrack;
    private CursorDevice mCursorDevice;
    private UserControlBank mUserControls;
-   private Project mProject;
    private DocumentState mDocumentState;
    private SettableEnumValue mMusicalKeySetting;
    private SettableEnumValue mMusicalScaleSetting;
@@ -1105,7 +1103,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private CursorRemoteControlsPage mDrumScenesRemoteControls;
    private CursorRemoteControlsPage mDrumPerfsRemoteControls;
    private Arpeggiator mArpeggiator;
-   private ClipLauncherSlot mCursorClipSlot;
    private DrumPadBank mDrumPadBank;
 
    /* Modes and Overlay context */
@@ -1117,8 +1114,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private MultiplexerMode mPlayModes;
    private KeyboardMode mKeyboardMode;
    private StepSequencerMode mStepSequencerMode;
-   private ScaleAndKeyChooserMode mScaleAndKeyChooserMode;
-   private DrumMode mDrumMode;
    private DrumSequencerMode mDrumSequencerMode;
    private VolumeMode mVolumeMode;
    private SendsMode mSendsMode;
@@ -1145,7 +1140,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    /* Layers */
    private Layers mLayers;
    private LaunchpadLayer mMainLayer;
-   private Layer mDebugLayer;
 
    /* Hardware Controls */
    private HardwareSurface mHardwareSurface;
@@ -1180,7 +1174,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private long mFlushIteration = 0;
 
    /* Sysex buffer for flushing */
-   private StringBuilder mLedClearSysexBuffer = new StringBuilder();
-   private StringBuilder mLedColorUpdateSysexBuffer = new StringBuilder();
-   private StringBuilder mLedPulseUpdateSysexBuffer = new StringBuilder();
+   private final StringBuilder mLedClearSysexBuffer = new StringBuilder();
+   private final StringBuilder mLedColorUpdateSysexBuffer = new StringBuilder();
+   private final StringBuilder mLedPulseUpdateSysexBuffer = new StringBuilder();
 }

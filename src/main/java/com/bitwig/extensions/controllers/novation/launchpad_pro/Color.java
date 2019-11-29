@@ -182,9 +182,9 @@ final class Color
 
    static Color fromInt24(final int value)
    {
-      int red = (value >> 16) & 0xff;
-      int green = (value >> 8) & 0xff;
-      int blue = value & 0xff;
+      final int red = (value >> 16) & 0xff;
+      final int green = (value >> 8) & 0xff;
+      final int blue = value & 0xff;
 
       return Color.fromRgb255(4 * red, 4 * green, 4 * blue);
    }

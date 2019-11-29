@@ -18,7 +18,7 @@ public final class MusicalScale
       return mName;
    }
 
-   public final boolean isRootMidiNote(int midiRootKey, int midiNote)
+   public final boolean isRootMidiNote(final int midiRootKey, final int midiNote)
    {
       return (midiNote - midiRootKey) % 12 == 0;
    }

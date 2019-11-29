@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
-import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
@@ -16,7 +15,7 @@ class TrackSelectOverlay extends Overlay
          final int X = x;
          final Track track = trackBank.getItemAt(x);
          final Button button = driver.getPadButton(x, 0);
-         bindPressed(button, () -> track.selectInMixer());
+         bindPressed(button, track::selectInMixer);
          bindLightState(() -> {
             if (track.exists().get())
                return trackBank.cursorIndex().get() == X ? LedState.TRACK : LedState.TRACK_LOW;

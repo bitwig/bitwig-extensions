@@ -113,7 +113,7 @@ public class LedState extends InternalHardwareLightState
    @Override
    public boolean equals(final Object obj)
    {
-      return obj instanceof LedState ? equals((LedState)obj) : false;
+      return obj instanceof LedState && equals((LedState) obj);
    }
    public boolean equals(final LedState obj)
    {

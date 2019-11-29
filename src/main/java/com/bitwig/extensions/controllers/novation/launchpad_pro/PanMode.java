@@ -1,11 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
-import com.bitwig.extension.controller.api.ClipLauncherSlot;
-import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extension.controller.api.Scene;
-import com.bitwig.extension.controller.api.SceneBank;
-import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
@@ -68,7 +63,7 @@ public class PanMode extends Mode
       return "Pan";
    }
 
-   private final double padToPan(final int x)
+   private double padToPan(final int x)
    {
       return x / 3.5 - 1.0;
    }

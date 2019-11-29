@@ -58,7 +58,7 @@ public final class MusicalScaleLibrary
          mScalesName[i] = mMusicalScales.get(i).getName();
    }
 
-   private final void addScale(final MusicalScale musicalScale)
+   private void addScale(final MusicalScale musicalScale)
    {
       assert !mMusicalScaleHashMap.containsKey(musicalScale.getName());
       assert !mMusicalScales.contains(musicalScale);
@@ -72,7 +72,7 @@ public final class MusicalScaleLibrary
       mMusicalScaleHashMap.put(musicalScale.getName(), musicalScale);
    }
 
-   static public final MusicalScaleLibrary getInstance()
+   static public MusicalScaleLibrary getInstance()
    {
       return mInstance;
    }

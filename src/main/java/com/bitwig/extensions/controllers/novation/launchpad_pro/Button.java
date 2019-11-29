@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
-import java.util.function.Consumer;
-
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -14,7 +12,6 @@ import com.bitwig.extension.controller.api.ObjectHardwareProperty;
 
 class Button
 {
-   private final int HOLD_DELAY_MS = 250;
 
    static final int NO_PULSE = 0;
    static final int PULSE_PLAYING = 88;
@@ -97,11 +94,12 @@ class Button
       mButtonState = buttonState;
    }
 
-   void onButtonPressed(ControllerHost host)
+   void onButtonPressed(final ControllerHost host)
    {
       mButtonState = State.PRESSED;
 
       final Boolean cancelHoldTask = false;
+      final int HOLD_DELAY_MS = 250;
       host.scheduleTask(() -> {
          if (!cancelHoldTask && mButtonState == State.PRESSED)
             mButtonState = State.HOLD;
@@ -111,7 +109,7 @@ class Button
    void onButtonReleased()
    {
       mButtonState = State.RELEASED;
-      mCancelHoldTask = false;
+      final Boolean cancelHoldTask = false;
    }
 
    boolean isPressed()
@@ -207,5 +205,4 @@ class Button
    private final boolean mIsPressureSensitive;
 
    private State mButtonState = State.RELEASED;
-   private Boolean mCancelHoldTask = false;
 }

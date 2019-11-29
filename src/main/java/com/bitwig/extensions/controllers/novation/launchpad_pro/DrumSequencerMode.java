@@ -346,7 +346,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final Clip clip = mDriver.getCursorClip();
       final List<Button> padsInHoldState = findStepsInPressedOrHoldState();
 
-      for (Button button : padsInHoldState)
+      for (final Button button : padsInHoldState)
       {
          final int absoluteStepIndex = calculateAbsoluteStepIndex(button.getX() - 1, 8 - button.getY());
          final NoteStep noteStep = clip.getStep(0, absoluteStepIndex, mCurrentPitch);
@@ -373,7 +373,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final Clip clip = mDriver.getCursorClip();
       final List<Button> padsInHoldState = findStepsInPressedOrHoldState();
 
-      for (Button buttonState : padsInHoldState)
+      for (final Button buttonState : padsInHoldState)
       {
          final int absoluteStepIndex = calculateAbsoluteStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
          final NoteStep noteStep = clip.getStep(0, absoluteStepIndex, mCurrentPitch);
@@ -490,7 +490,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       }
    }
 
-   private double calculateNoteRepeatPeriodForPad(int x, int y)
+   private double calculateNoteRepeatPeriodForPad(final int x, final int y)
    {
       if (y == 3)
          return 1.0 / 8.0 * (1 << x);
@@ -639,7 +639,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final int key = calculateDrumPadKey(x, y);
 
       if (mDriver.isDeleteOn())
-         mDriver.getCursorClip().clearSteps(key);
+         mDriver.getCursorClip().clearStepsAtY(0, key);
       else if (isDrumPadMuteOn())
       {
          final DrumPadBank drumPadBank = mDriver.getDrumPadBank();
@@ -663,7 +663,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
          mCurrentPitch = key;
    }
 
-   private boolean isActionOn(int x, int y)
+   private boolean isActionOn(final int x, final int y)
    {
       if (mDataMode != DataMode.Main)
          return false;
@@ -737,7 +737,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       throw new IllegalStateException();
    }
 
-   private final LedState computeDrumPadLedState(final int x, final int y)
+   private LedState computeDrumPadLedState(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
       final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
@@ -803,7 +803,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final int y;
    }
 
-   private List<Coord> mNoteRepeatStack = new ArrayList<>();
+   private final List<Coord> mNoteRepeatStack = new ArrayList<>();
    private int mCurrentPitch = 36;
    private final LaunchpadLayer mShiftLayer;
    private final LaunchpadLayer mDrumPadsLayer;

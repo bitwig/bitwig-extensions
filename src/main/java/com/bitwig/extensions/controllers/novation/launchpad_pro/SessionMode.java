@@ -2,7 +2,6 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
-import com.bitwig.extension.controller.api.ClipLauncherSlotOrSceneBank;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
@@ -87,17 +86,17 @@ public final class SessionMode extends Mode
       final int pulse;
 
       if (slot.isStopQueued().get())
-         pulse = button.PULSE_STOP_QUEUED;
+         pulse = Button.PULSE_STOP_QUEUED;
       else if (slot.isRecordingQueued().get())
-         pulse = button.PULSE_RECORDING_QUEUED;
+         pulse = Button.PULSE_RECORDING_QUEUED;
       else if (slot.isPlaybackQueued().get())
-         pulse = button.PULSE_PLAYBACK_QUEUED;
+         pulse = Button.PULSE_PLAYBACK_QUEUED;
       else if (slot.isRecording().get())
-         pulse = button.PULSE_RECORDING;
+         pulse = Button.PULSE_RECORDING;
       else if (slot.isPlaying().get())
-         pulse = button.PULSE_PLAYING;
+         pulse = Button.PULSE_PLAYING;
       else
-         pulse = button.NO_PULSE;
+         pulse = Button.NO_PULSE;
 
       return new LedState(color, pulse);
    }
