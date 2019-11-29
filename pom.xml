@@ -3,7 +3,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.bitiwg.extensions</groupId>
+	<groupId>com.bitwig.extensions</groupId>
 	<artifactId>bitwig-extensions</artifactId>
 	<packaging>jar</packaging>
 	<name>Bitwig Studio Extensions (Github)</name>
@@ -59,7 +59,7 @@
 			<id>use-local-bitwig-extension-api</id>
 			<activation>
 				<file>
-					<exists>../is-buliding-bitwig.txt</exists>
+					<exists>../is-building-bitwig.txt</exists>
 				</file>
 			</activation>
 			<dependencies>
@@ -74,7 +74,7 @@
 			<id>use-published-extension-api</id>
 			<activation>
 				<file>
-					<missing>../is-buliding-bitwig.txt</missing>
+					<missing>../is-building-bitwig.txt</missing>
 				</file>
 			</activation>
 			<dependencies>
@@ -86,6 +86,5 @@
 			</dependencies>
 		</profile>
 	</profiles>
-
 </project>
 

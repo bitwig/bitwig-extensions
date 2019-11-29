@@ -7,7 +7,7 @@ import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 
-class RGBLedState implements InternalHardwareLightState
+class RGBLedState extends InternalHardwareLightState
 {
    public static final int COLOR_NONE = 0;
 
