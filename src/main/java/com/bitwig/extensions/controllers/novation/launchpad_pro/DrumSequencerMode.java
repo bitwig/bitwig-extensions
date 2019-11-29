@@ -81,8 +81,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final SettableIntegerValue drumPosition = driver.getDrumPadBank().scrollPosition();
       mShiftLayer.bindPressed(driver.getUpButton(), () -> invalidateDrumPosition(drumPosition.get() + 16));
       mShiftLayer.bindPressed(driver.getDownButton(), () -> invalidateDrumPosition(drumPosition.get() - 16));
-      bindLightState(() -> drumPosition.get() < 116 ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
-      bindLightState(() -> drumPosition.get() > 0 ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
+      mShiftLayer.bindLightState(() -> drumPosition.get() < 116 ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
+      mShiftLayer.bindLightState(() -> drumPosition.get() > 0 ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
 
       // Drum Pads
       for (int x = 0; x < 4; ++x)
