@@ -623,13 +623,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mNoteInput.setKeyTranslationTable(table);
    }
 
-   private void clearPads()
-   {
-      for (int x = 0; x < 8; ++x)
-         for (int y = 0; y < 8; ++y)
-            getPadButton(x, y).setColor(0.f, 0.f, 0.f);
-   }
-
    /**
     * x and y must be in the top left coords (natural coords).
     */

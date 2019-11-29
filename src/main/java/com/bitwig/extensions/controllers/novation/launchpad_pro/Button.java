@@ -89,19 +89,14 @@ class Button
       return mButtonState;
    }
 
-   void setButtonState(final State buttonState)
-   {
-      mButtonState = buttonState;
-   }
-
    void onButtonPressed(final ControllerHost host)
    {
       mButtonState = State.PRESSED;
 
-      final boolean cancelHoldTask = false;
+      mCancelHoldTask = false;
       final int HOLD_DELAY_MS = 250;
       host.scheduleTask(() -> {
-         if (!cancelHoldTask && mButtonState == State.PRESSED)
+         if (!mCancelHoldTask && mButtonState == State.PRESSED)
             mButtonState = State.HOLD;
       }, HOLD_DELAY_MS);
    }
@@ -109,7 +104,7 @@ class Button
    void onButtonReleased()
    {
       mButtonState = State.RELEASED;
-      final Boolean cancelHoldTask = false;
+      mCancelHoldTask = false;
    }
 
    boolean isPressed()
@@ -127,26 +122,6 @@ class Button
       return mY;
    }
 
-   public void setColor(final float red, final float green, final float blue)
-   {
-   }
-
-   public void setColor(final ColorValue color)
-   {
-      assert color.isSubscribed();
-
-      setColor(color.red(), color.green(), color.blue());
-   }
-
-   void setColor(final Color c)
-   {
-   }
-
-   void clear()
-   {
-      mLight.state().setValue(LedState.OFF);
-   }
-
    public void appendLedUpdate(
       final StringBuilder ledClear, final StringBuilder ledUpdate, final StringBuilder ledPulseUpdate)
    {
@@ -161,16 +136,16 @@ class Button
          return;
 
       final Color color = currentState.getColor();
-      if (lastSent == null || !color.equals(lastSent.getColor()))
+      final int pulse = currentState.getPulse();
+
+      if (pulse == NO_PULSE)
       {
          if (color.isBlack())
             ledClear.append(String.format(" %02x 00", mIndex));
          else
             ledUpdate.append(String.format(" %02x %02x %02x %02x", mIndex, color.getRed(), color.getGreen(), color.getBlue()));
       }
-
-      final int pulse = currentState.getPulse();
-      if ((lastSent == null || pulse != lastSent.getPulse()) && pulse != Button.NO_PULSE)
+      else
          ledPulseUpdate.append(String.format(" %02x %02x", mIndex, pulse));
    }
 
@@ -188,7 +163,7 @@ class Button
    @Override
    public String toString()
    {
-      return mButton.getId();
+      return mButton.getId() + " [" + mX + "; " + mY + "]";
    }
 
    private final LaunchpadProControllerExtension mDriver;
@@ -205,4 +180,5 @@ class Button
    private final boolean mIsPressureSensitive;
 
    private State mButtonState = State.RELEASED;
+   private boolean mCancelHoldTask = false;
 }
