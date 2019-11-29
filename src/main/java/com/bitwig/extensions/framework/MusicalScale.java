@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.novation.launchpad_pro;
+package com.bitwig.extensions.framework;
 
 public final class MusicalScale
 {

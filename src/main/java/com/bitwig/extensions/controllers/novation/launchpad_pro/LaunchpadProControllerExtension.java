@@ -38,6 +38,8 @@ import com.bitwig.extension.controller.api.UserControlBank;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.framework.MusicalScale;
+import com.bitwig.extensions.framework.MusicalScaleLibrary;
 
 public final class LaunchpadProControllerExtension extends ControllerExtension
 {

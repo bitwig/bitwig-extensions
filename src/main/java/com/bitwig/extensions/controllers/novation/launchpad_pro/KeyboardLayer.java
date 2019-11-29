@@ -3,6 +3,8 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.bitwig.extensions.framework.MusicalScale;
+
 final class KeyboardLayer extends LaunchpadLayer
 {
    private static final int[] CHROMATIC_NOTE_INDEXES = new int[] {
