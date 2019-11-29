@@ -34,6 +34,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
       mMixDataLayer = new LaunchpadLayer(driver, "drum-seq-mix-data");
       mSoundDataLayer = new LaunchpadLayer(driver, "drum-seq-sound-data");
 
+      bindLightState(LedState.DRUM_SEQ_MODE, driver.getDeviceButton());
+
       // Step sequencer
       for (int y = 0; y < 4; ++y)
       {
