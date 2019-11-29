@@ -185,6 +185,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mTransport.isPlaying().subscribe();
       mTransport.isClipLauncherOverdubEnabled().subscribe();
       mTransport.isClipLauncherAutomationWriteEnabled().subscribe();
+      mTransport.isArrangerRecordEnabled().subscribe();
    }
 
    private void createHardwareControls()

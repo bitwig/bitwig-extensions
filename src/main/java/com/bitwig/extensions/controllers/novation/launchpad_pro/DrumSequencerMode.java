@@ -158,8 +158,44 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final DrumPadBank drumPads = mDriver.getDrumPadBank();
       drumPads.exists().subscribe();
       drumPads.scrollPosition().subscribe();
+      drumPads.hasMutedPads().subscribe();
+      drumPads.hasSoloedPads().subscribe();
       drumPads.subscribe();
       drumPads.setIndication(true);
+
+      for (int i = 0; i < 16; ++i)
+      {
+         final DrumPad drumPad = drumPads.getItemAt(i);
+         drumPad.subscribe();
+         drumPad.exists().subscribe();
+         drumPad.color().subscribe();
+         drumPad.mute().subscribe();
+         drumPad.isMutedBySolo().subscribe();
+         drumPad.solo().subscribe();
+      }
+
+      final CursorDevice cursorDevice = mDriver.getCursorDevice();
+      cursorDevice.hasDrumPads().subscribe();
+      cursorDevice.subscribe();
+
+      final CursorRemoteControlsPage drumScenesRemoteControls = mDriver.getDrumScenesRemoteControls();
+      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
+      for (int i = 0; i < 8; ++i)
+      {
+         {
+            final RemoteControl parameter = drumScenesRemoteControls.getParameter(i);
+            parameter.exists().subscribe();
+            parameter.value().subscribe();
+            parameter.subscribe();
+         }
+
+         {
+            final RemoteControl parameter = drumPerfsRemoteControls.getParameter(i);
+            parameter.exists().subscribe();
+            parameter.value().subscribe();
+            parameter.subscribe();
+         }
+      }
 
       updateDrumPadsBankPosition();
 
@@ -174,8 +210,44 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final DrumPadBank drumPads = mDriver.getDrumPadBank();
       drumPads.exists().unsubscribe();
       drumPads.scrollPosition().unsubscribe();
+      drumPads.hasMutedPads().unsubscribe();
+      drumPads.hasSoloedPads().unsubscribe();
       drumPads.unsubscribe();
       drumPads.setIndication(false);
+
+      for (int i = 0; i < 16; ++i)
+      {
+         final DrumPad drumPad = drumPads.getItemAt(i);
+         drumPad.exists().unsubscribe();
+         drumPad.color().unsubscribe();
+         drumPad.mute().unsubscribe();
+         drumPad.isMutedBySolo().unsubscribe();
+         drumPad.solo().unsubscribe();
+         drumPad.unsubscribe();
+      }
+
+      final CursorDevice cursorDevice = mDriver.getCursorDevice();
+      cursorDevice.hasDrumPads().unsubscribe();
+      cursorDevice.unsubscribe();
+
+      final CursorRemoteControlsPage drumScenesRemoteControls = mDriver.getDrumScenesRemoteControls();
+      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
+      for (int i = 0; i < 8; ++i)
+      {
+         {
+            final RemoteControl parameter = drumScenesRemoteControls.getParameter(i);
+            parameter.exists().unsubscribe();
+            parameter.value().unsubscribe();
+            parameter.unsubscribe();
+         }
+
+         {
+            final RemoteControl parameter = drumPerfsRemoteControls.getParameter(i);
+            parameter.exists().unsubscribe();
+            parameter.value().unsubscribe();
+            parameter.unsubscribe();
+         }
+      }
 
       super.doDeactivate();
    }

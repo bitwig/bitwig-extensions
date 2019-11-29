@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.bitwig.extension.controller.api.Clip;
+import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorClip;
@@ -58,8 +59,14 @@ abstract class AbstractSequencerMode extends Mode
    @Override
    protected void doActivate()
    {
-      final Clip clip = mDriver.getCursorClip();
+      final PinnableCursorClip clip = mDriver.getCursorClip();
       clip.color().subscribe();
+      clip.exists().subscribe();
+      clip.hasNext().subscribe();
+      clip.hasPrevious().subscribe();
+      clip.playingStep().subscribe();
+      clip.getPlayStart().subscribe();
+      clip.getPlayStop().subscribe();
 
       if (clip.exists().get())
          setNoteInputRouting();
@@ -75,8 +82,14 @@ abstract class AbstractSequencerMode extends Mode
    @Override
    protected void doDeactivate()
    {
-      final Clip clip = mDriver.getCursorClip();
+      final PinnableCursorClip clip = mDriver.getCursorClip();
       clip.color().unsubscribe();
+      clip.exists().unsubscribe();
+      clip.hasNext().unsubscribe();
+      clip.hasPrevious().unsubscribe();
+      clip.playingStep().unsubscribe();
+      clip.getPlayStart().unsubscribe();
+      clip.getPlayStop().unsubscribe();
 
       if (clip.exists().get())
          clearNoteInputRouting();
