@@ -4,7 +4,9 @@ import java.util.List;
 
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ColorValue;
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.NoteStep;
+import com.bitwig.extension.controller.api.PinnableCursorClip;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.Track;
 
@@ -14,7 +16,15 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       super(driver, "step-sequencer");
 
+      final CursorTrack cursorTrack = driver.getCursorTrack();
+      final PinnableCursorClip cursorClip = driver.getCursorClip();
+
       mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4, () -> new Color(mDriver.getCursorTrack().color()));
+      mShiftLayer = new LaunchpadLayer(driver, "drum-sequencer-shift");
+      mMixDataLayer = new LaunchpadLayer(driver, "drum-seq-mix-data");
+      mSoundDataLayer = new LaunchpadLayer(driver, "drum-seq-sound-data");
+
+      bindLightState(LedState.STEP_SEQ_MODE, driver.getUserButton());
 
       // Step sequencer
       for (int y = 0; y < 4; ++y)
@@ -34,9 +44,58 @@ public class StepSequencerMode extends AbstractSequencerMode
                bt.onButtonReleased();
                onStepReleased(absoluteStepIndex, wasHeld);
             });
-            //bindLightState(() -> computeStepSeqLedState(X, 3 - Y), bt);
+            bindLightState(() -> computeStepSeqLedState(X, 3 - Y), bt);
+         }
+
+         final Button sceneButton = driver.getSceneButton(y + 4);
+         final int page = 3 - y;
+         final int Y = y;
+         bindPressed(sceneButton, () -> mPage = page);
+         bindLightState(() -> computePatternOffsetLedState(3 - Y), sceneButton);
+
+         final Button dataChoiceBt = driver.getSceneButton(y);
+         bindPressed(dataChoiceBt, () -> setDataMode(Y));
+         bindLightState(() -> computeDataChoiceLedState(Y), dataChoiceBt);
+      }
+
+      // Scene buttons in shift layer
+      for (int y = 0; y < 8; ++y)
+      {
+         final Button sceneButton = driver.getSceneButton(y);
+         final int page = 8 - y;
+         final int Y = y;
+         mShiftLayer.bindPressed(sceneButton, () -> setClipLength(page * 4));
+         mShiftLayer.bindLightState(() -> computeClipLengthSelectionLedState(7 - Y), sceneButton);
+      }
+
+      // Step Data
+      for (int x = 0; x < 8; ++x)
+      {
+         for (int y = 0; y < 4; ++y)
+         {
+            final int X = x;
+            final int Y = y;
+            final Button bt = driver.getPadButton(x, y);
+
+            mMixDataLayer.bindPressed(bt, () -> onMixDataPressed(X, 3 - Y));
+            mMixDataLayer.bindLightState(() -> computeMixDataLedState(X, Y), bt);
+
+            mSoundDataLayer.bindPressed(bt, () -> onSoundDataPressed(X, 3 - Y));
+            mSoundDataLayer.bindLightState(() -> computeSoundDataLedState(X, Y), bt);
          }
       }
+
+      bindPressed(driver.getUpButton(), cursorClip.selectPreviousAction());
+      bindPressed(driver.getDownButton(), cursorClip.selectNextAction());
+      bindPressed(driver.getLeftButton(), cursorTrack.selectPreviousAction());
+      bindPressed(driver.getRightButton(), cursorTrack.selectNextAction());
+
+      bindLightState(() -> cursorClip.hasPrevious().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), driver.getUpButton());
+      bindLightState(() -> cursorClip.hasNext().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), driver.getDownButton());
+      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
+      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
+
+      bindLayer(driver.getShiftButton(), mShiftLayer);
    }
 
    @Override
@@ -125,36 +184,29 @@ public class StepSequencerMode extends AbstractSequencerMode
       }
    }
 
-   private void paintSteps()
+   protected LedState computeStepSeqLedState(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
       final int playingStep = clip.playingStep().get();
 
-      for (int x = 0; x < 8; ++x)
-      {
-         for (int y = 0; y < 4; ++y)
-         {
-            final int absoluteStepIndex = calculateAbsoluteStepIndex(x, y);
-            final NoteStep noteStep = computeVerticalStepState(absoluteStepIndex);
-            final Button button = mDriver.getPadButton(x, 7 - y);
+      final int absoluteStepIndex = calculateAbsoluteStepIndex(x, y);
+      final NoteStep noteStep = computeVerticalStepState(absoluteStepIndex);
+      final Button button = mDriver.getPadButton(x, 7 - y);
 
-            if (playingStep == mPage * 32 + 8 * y + x)
-               button.setColor(Color.GREEN);
-            else if (mDriver.getPadButton(x, 7- y).getButtonState() == Button.State.HOLD)
-               button.setColor(Color.STEP_HOLD);
-            else switch (noteStep.state())
-            {
-               case NoteOn:
-                  button.setColor(Color.STEP_ON);
-                  break;
-               case NoteSustain:
-                  button.setColor(Color.STEP_SUSTAIN);
-                  break;
-               case Empty:
-                  button.setColor(Color.STEP_OFF);
-                  break;
-            }
-         }
+      if (playingStep == mPage * 32 + 8 * y + x)
+         return new LedState(Color.GREEN);
+      if (mDriver.getPadButton(x, 7- y).getButtonState() == Button.State.HOLD)
+         return new LedState(Color.STEP_HOLD);
+      switch (noteStep.state())
+      {
+         case NoteOn:
+            return new LedState(Color.STEP_ON);
+         case NoteSustain:
+            return new LedState(Color.STEP_SUSTAIN);
+         case Empty:
+            return new LedState(Color.STEP_OFF);
+         default:
+            throw new IllegalStateException();
       }
    }
 
@@ -372,4 +424,7 @@ public class StepSequencerMode extends AbstractSequencerMode
    }
 
    private final KeyboardLayer mKeyboardLayer;
+   private final LaunchpadLayer mMixDataLayer;
+   private final LaunchpadLayer mSoundDataLayer;
+   private final LaunchpadLayer mShiftLayer;
 }
