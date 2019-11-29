@@ -56,10 +56,6 @@ public final class MusicalScale
       return mNotes.length;
    }
 
-   private final int[] mNotes;
-   private final String mName;
-   private int mIndexInLibrary;
-
    public int computeNote(final int rootNote, int octave, int offset)
    {
       octave += offset / getNotesCount();
@@ -79,4 +75,8 @@ public final class MusicalScale
          return -1;
       return note;
    }
+
+   private final int[] mNotes;
+   private final String mName;
+   private int mIndexInLibrary;
 }

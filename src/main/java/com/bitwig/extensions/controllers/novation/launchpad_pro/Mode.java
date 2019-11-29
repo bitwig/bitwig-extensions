@@ -22,7 +22,7 @@ abstract class Mode extends LaunchpadLayer
 
    protected abstract String getModeDescription();
 
-   void doActivate()
+   protected void doActivate()
    {
       /* for subclasses */
    }
@@ -33,18 +33,18 @@ abstract class Mode extends LaunchpadLayer
       doDeactivate();
    }
 
-   void doDeactivate()
+   protected void doDeactivate()
    {
       /* for subclasses */
    }
-
-   final LaunchpadProControllerExtension mDriver;
 
    void updateKeyTranslationTable(final Integer[] table)
    {
    }
 
-   public void onCursorClipExists(final boolean exists)
+   void onCursorClipExists(final boolean exists)
    {
    }
+
+   final LaunchpadProControllerExtension mDriver;
 }
