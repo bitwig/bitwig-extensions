@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 
 public final class KeyboardMode extends Mode
 {
@@ -9,8 +10,8 @@ public final class KeyboardMode extends Mode
       super(driver, "keyboard");
 
       final CursorTrack cursorTrack = driver.getCursorTrack();
-
-      mKeyboardLayer = new KeyboardLayer(driver, "keyboard", 0, 0, 8, 8, () -> new Color(mDriver.getCursorTrack().color()));
+      final PlayingNoteArrayValue playingNotes = cursorTrack.playingNotes();
+      mKeyboardLayer = new KeyboardLayer(driver, "keyboard", 0, 0, 8, 8, () -> new Color(cursorTrack.color()), key -> playingNotes.isNotePlaying(key));
 
       bindPressed(driver.getRightButton(), cursorTrack.selectNextAction());
       bindPressed(driver.getLeftButton(), cursorTrack.selectPreviousAction());

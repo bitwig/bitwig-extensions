@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.controller.api.ColorValue;
@@ -34,7 +35,7 @@ final class KeyboardLayer extends LaunchpadLayer
       return pitch == 1 || pitch == 3 || pitch == 6 || pitch == 8 || pitch == 10;
    }
 
-   KeyboardLayer(final LaunchpadProControllerExtension driver, final String name, final int x0, final int y0, final int w0, final int h0, final Supplier<Color> trackColorSupplier)
+   KeyboardLayer(final LaunchpadProControllerExtension driver, final String name, final int x0, final int y0, final int w0, final int h0, final Supplier<Color> trackColorSupplier, final Function<Integer /* Key */, Boolean> isPlaying)
    {
       super(driver, name);
 
@@ -43,6 +44,7 @@ final class KeyboardLayer extends LaunchpadLayer
       mWidth = w0;
       mHeight = h0;
       mTrackColorSupplier = trackColorSupplier;
+      mIsPlaying = isPlaying;
 
       for (int x = x0; x < x0 + w0; ++x)
       {
@@ -115,7 +117,6 @@ final class KeyboardLayer extends LaunchpadLayer
 
    private LedState computeGuitarLedState(final int x, final int y, final Color trackColor)
    {
-      final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
       final MusicalScale scale = mDriver.getMusicalScale();
 
       final int midiNote = calculateGuitarKey(x, y);
@@ -123,7 +124,7 @@ final class KeyboardLayer extends LaunchpadLayer
 
       if (midiNote < 0 || midiNote > 127)
          return LedState.OFF;
-      if (playingNotes.isNotePlaying(midiNote))
+      if (mIsPlaying.apply(midiNote))
          return LedState.STEP_PLAY;
       if (mDriver.shouldHihlightRootKey() && midiNoteBase == mDriver.getMusicalKey())
          return new LedState(trackColor);
@@ -134,7 +135,6 @@ final class KeyboardLayer extends LaunchpadLayer
 
    private LedState computePianoLedState(final int x, final int y, final Color trackColor)
    {
-      final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
       final MusicalScale scale = mDriver.getMusicalScale();
 
       final int noteIndex = CHROMATIC_NOTE_INDEXES[x + 8 * (y % 2)];
@@ -142,7 +142,7 @@ final class KeyboardLayer extends LaunchpadLayer
 
       if (noteIndex == -1)
          return LedState.OFF;
-      if (playingNotes.isNotePlaying(pitch))
+      if (mIsPlaying.apply(pitch))
          return LedState.STEP_PLAY;
       if ((noteIndex % 12) == mDriver.getMusicalKey())
          return new LedState(trackColor);
@@ -160,15 +160,13 @@ final class KeyboardLayer extends LaunchpadLayer
    {
       final MusicalScale musicalScale = mDriver.getMusicalScale();
       final int scaleSize = musicalScale.getNotesCount();
-      final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
 
-      final Button button = mDriver.getPadButton(x, y);
       final int noteIndex = x + X * y;
       final int midiNode = musicalScale.computeNote(mDriver.getMusicalKey(), mOctave, noteIndex);
 
       if (midiNode < 0 || midiNode > 127)
          return LedState.OFF;
-      if (playingNotes.isNotePlaying(midiNode))
+      if (mIsPlaying.apply(midiNode))
          return LedState.STEP_PLAY;
       if (noteIndex % scaleSize == 0)
          return new LedState(trackColor);
@@ -263,4 +261,5 @@ final class KeyboardLayer extends LaunchpadLayer
    private final int mHeight;
    private int mOctave = 3;
    private final Supplier<Color> mTrackColorSupplier;
+   private final Function<Integer, Boolean> mIsPlaying;
 }

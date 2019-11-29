@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import java.util.List;
 
 import com.bitwig.extension.controller.api.Clip;
-import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.PinnableCursorClip;
@@ -19,7 +18,7 @@ public class StepSequencerMode extends AbstractSequencerMode
       final CursorTrack cursorTrack = driver.getCursorTrack();
       final PinnableCursorClip cursorClip = driver.getCursorClip();
 
-      mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4, () -> new Color(mDriver.getCursorTrack().color()));
+      mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4, () -> new Color(mDriver.getCursorTrack().color()), key -> isKeyOn(key));
       mShiftLayer = new LaunchpadLayer(driver, "drum-sequencer-shift");
       mMixDataLayer = new LaunchpadLayer(driver, "drum-seq-mix-data");
       mSoundDataLayer = new LaunchpadLayer(driver, "drum-seq-sound-data");
@@ -157,31 +156,24 @@ public class StepSequencerMode extends AbstractSequencerMode
       return cursorClip.getStep(0, absoluteStepIndex, 0);
    }
 
-   private void paintCurrentKeysOnStep()
+   boolean isKeyOn(final int key)
    {
+      assert key >= 0 && key < 127;
+
+      if (mDriver.getCursorTrack().playingNotes().isNotePlaying(key))
+         return true;
+
       final Clip cursorClip = mDriver.getCursorClip();
       final List<Button> stepsInHoldState = findStepsInHoldState();
       for (Button button : stepsInHoldState)
       {
          final int absoluteStepIndex = calculateAbsoluteStepIndex(button.getX() - 1, 8 - button.getY());
 
-         for (int x = 0; x < 8; ++x)
-         {
-            for (int y = 0; y < 4; ++y)
-            {
-               final int key = mKeyboardLayer.calculateKeyForPosition(x, y);
-               if (key == -1)
-                  continue;
-
-               assert key >= 0;
-               assert key < 127;
-
-               final NoteStep noteStep = cursorClip.getStep(0, absoluteStepIndex, key);
-               if (noteStep.state() == NoteStep.State.NoteOn)
-                  mDriver.getPadButton(x, y).setColor(Color.GREEN);
-            }
-         }
+         final NoteStep noteStep = cursorClip.getStep(0, absoluteStepIndex, key);
+         return noteStep.state() == NoteStep.State.NoteOn;
       }
+
+      return false;
    }
 
    protected LedState computeStepSeqLedState(final int x, final int y)
