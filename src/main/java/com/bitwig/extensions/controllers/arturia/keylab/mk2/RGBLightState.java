@@ -4,7 +4,7 @@ import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 
-class RGBLightState implements InternalHardwareLightState
+class RGBLightState extends InternalHardwareLightState
 {
    private static int colorPartFromDouble(final double x)
    {
