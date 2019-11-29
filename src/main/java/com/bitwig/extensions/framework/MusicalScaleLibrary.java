@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.novation.launchpad_pro;
+package com.bitwig.extensions.framework;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,7 +9,7 @@ public final class MusicalScaleLibrary
 {
    private MusicalScaleLibrary()
    {
-      /* Foundation */
+      /* Classic */
       addScale(new MusicalScale("Chromatic", new int[]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 }));
       addScale(new MusicalScale("Ionan (Major)", new int[]{ 0, 2, 4, 5, 7, 9, 11 }));
       addScale(new MusicalScale("Dorian", new int[]{ 0, 2, 3, 5, 7, 9, 10 }));
@@ -58,7 +58,7 @@ public final class MusicalScaleLibrary
          mScalesName[i] = mMusicalScales.get(i).getName();
    }
 
-   private final void addScale(final MusicalScale musicalScale)
+   private void addScale(final MusicalScale musicalScale)
    {
       assert !mMusicalScaleHashMap.containsKey(musicalScale.getName());
       assert !mMusicalScales.contains(musicalScale);
@@ -72,7 +72,7 @@ public final class MusicalScaleLibrary
       mMusicalScaleHashMap.put(musicalScale.getName(), musicalScale);
    }
 
-   static public final MusicalScaleLibrary getInstance()
+   static public MusicalScaleLibrary getInstance()
    {
       return mInstance;
    }

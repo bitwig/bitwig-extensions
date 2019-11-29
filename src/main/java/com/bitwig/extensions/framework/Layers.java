@@ -49,13 +49,13 @@ public class Layers
             {
                if (layer.shouldReplaceBindingsInLayersBelow())
                {
-                  final Object source = binding.getExclusivityObject();
+                  final Object exclusivityObject = binding.getExclusivityObject();
 
                   for (final Iterator<Binding> i = mActiveBindings.iterator(); i.hasNext();)
                   {
                      final Binding activeBinding = i.next();
 
-                     if (Objects.equals(activeBinding.getExclusivityObject(), source)
+                     if (Objects.equals(activeBinding.getExclusivityObject(), exclusivityObject)
                         && activeBinding.getLayer() != layer)
                      {
                         i.remove();

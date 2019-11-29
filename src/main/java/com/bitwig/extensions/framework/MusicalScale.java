@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.novation.launchpad_pro;
+package com.bitwig.extensions.framework;
 
 public final class MusicalScale
 {
@@ -18,7 +18,7 @@ public final class MusicalScale
       return mName;
    }
 
-   public final boolean isRootMidiNote(int midiRootKey, int midiNote)
+   public final boolean isRootMidiNote(final int midiRootKey, final int midiNote)
    {
       return (midiNote - midiRootKey) % 12 == 0;
    }
@@ -56,10 +56,6 @@ public final class MusicalScale
       return mNotes.length;
    }
 
-   private final int[] mNotes;
-   private final String mName;
-   private int mIndexInLibrary;
-
    public int computeNote(final int rootNote, int octave, int offset)
    {
       octave += offset / getNotesCount();
@@ -79,4 +75,8 @@ public final class MusicalScale
          return -1;
       return note;
    }
+
+   private final int[] mNotes;
+   private final String mName;
+   private int mIndexInLibrary;
 }

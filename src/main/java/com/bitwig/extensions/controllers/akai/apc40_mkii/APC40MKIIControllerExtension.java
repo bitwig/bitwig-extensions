@@ -436,6 +436,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             setLaunchQuantizationFromTrackSelect(x);
          }, () -> "Configures the default launch quantization"));
          mShiftLayer.bind(() -> x == computeLaunchQuantizationIndex(), mTrackSelectLeds[x]);
+
+         final Track track = mTrackBank.getItemAt(i);
+         final ClipLauncherSlotBank clipLauncherSlotBank = track.clipLauncherSlotBank();
+         for (int j = 0; j < 5; ++j)
+         {
+            final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
+            mShiftLayer.bindPressed(mGridButtons[i + 8 * j], () -> slot.select());
+         }
       }
    }
 

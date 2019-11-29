@@ -1,13 +1,60 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
 public class PanMode extends Mode
 {
-   public PanMode(final LaunchpadProControllerExtension launchpadProControllerExtension)
+   public PanMode(final LaunchpadProControllerExtension driver)
    {
-      super(launchpadProControllerExtension);
+      super(driver, "pan");
+
+      mShiftLayer = new LaunchpadLayer(driver, "pan-shift");
+
+      final TrackBank trackBank = driver.getTrackBank();
+      for (int y = 0; y < 8; ++y)
+      {
+         final Track track = trackBank.getItemAt(y);
+         final Parameter pan = track.pan();
+         for (int x = 0; x < 8; ++x)
+         {
+            final double padValue = padToPan(x);
+            final Button button = driver.getPadButton(x, 7 - y);
+            bindPressed(button, () -> pan.setRaw(padValue));
+            bindLightState(() -> {
+               final double value = pan.getRaw();
+               if (!track.exists().get())
+                  return LedState.OFF;
+               if ((value < 0 && padValue < 0 && padValue >= value) ||
+                  (value > 0 && padValue > 0 && padValue <= value))
+                  return new LedState(track.color());
+               return LedState.OFF;
+            }, button.getLight());
+         }
+
+         final Button sceneButton = driver.getSceneButton(7 - y);
+         bindPressed(sceneButton, () -> pan.setRaw(0));
+         bindLightState(() -> {
+            if (!track.exists().get())
+               return LedState.OFF;
+            if (pan.get() == 0)
+               return new LedState(track.color());
+            return new LedState(Color.scale(new Color(track.color()), .2f));
+         }, sceneButton.getLight());
+      }
+
+      bindLightState(LedState.PAN_MODE, driver.getPanButton());
+
+      bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
+      bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
+      bindLightState(() -> LedState.OFF, driver.getDownButton());
+      bindLightState(() -> LedState.OFF, driver.getUpButton());
+
+      bindPressed(driver.getRightButton(), trackBank.scrollForwardsAction());
+      bindPressed(driver.getLeftButton(), trackBank.scrollBackwardsAction());
+      mShiftLayer.bindPressed(driver.getRightButton(), trackBank.scrollPageForwardsAction());
+      mShiftLayer.bindPressed(driver.getLeftButton(), trackBank.scrollPageBackwardsAction());
    }
 
    @Override
@@ -16,7 +63,7 @@ public class PanMode extends Mode
       return "Pan";
    }
 
-   private final double padToPan(final int x)
+   private double padToPan(final int x)
    {
       return x / 3.5 - 1.0;
    }
@@ -37,8 +84,10 @@ public class PanMode extends Mode
    }
 
    @Override
-   void deactivate()
+   protected void doDeactivate()
    {
+      mShiftLayer.deactivate();
+
       final TrackBank trackBank = mDriver.getTrackBank();
 
       for (int i = 0; i < 8; ++i)
@@ -48,87 +97,7 @@ public class PanMode extends Mode
          track.pan().unsubscribe();
          track.pan().setIndication(false);
       }
-
-      super.deactivate();
    }
 
-   @Override
-   public void paint()
-   {
-      super.paint();
-
-      paintArrows();
-
-      for (int i = 0; i < 8; ++i) // track iterator
-      {
-         final Track track = mDriver.getTrackBank().getItemAt(i);
-         final double pan = track.pan().value().getRaw();
-
-         final Color colorOn = mDriver.getTrackColor(i);
-         final Color colorOff = Color.scale(colorOn, 0.2f);
-
-         final Led centerLed = mDriver.getRightLed(7 - i);
-         if (pan == 0)
-            centerLed.setColor(colorOn);
-         else
-            centerLed.setColor(colorOff);
-
-         for (int j = 0; j < 8; ++j) // pad iterator
-         {
-            final Led led = mDriver.getPadLed(j, 7 - i);
-            final double padValue = padToPan(j);
-            if ((pan < 0 && padValue < 0 && padValue >= pan) ||
-                (pan > 0 && padValue > 0 && padValue <= pan))
-               led.setColor(colorOn);
-            else
-               led.clear();
-         }
-      }
-   }
-
-   private void paintArrows()
-   {
-      final TrackBank trackBank = mDriver.getTrackBank();
-      mDriver.getTopLed(0).setColor(Color.OFF);
-      mDriver.getTopLed(1).setColor(Color.OFF);
-      mDriver.getTopLed(2).setColor(trackBank.canScrollChannelsUp().get() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getTopLed(3).setColor(trackBank.canScrollChannelsDown().get() ? Color.TRACK : Color.TRACK_LOW);
-   }
-
-   @Override
-   public void paintModeButton()
-   {
-      final Led led = mDriver.getBottomLed(5);
-      led.setColor(mIsActive ? Color.PAN : Color.PAN_LOW);
-   }
-
-   @Override
-   public void onPadPressed(final int x, final int y, final int velocity)
-   {
-      mDriver.getTrackBank().getItemAt(7 - y).pan().value().setRaw(padToPan(x));
-   }
-
-   @Override
-   public void onSceneButtonPressed(final int column)
-   {
-      mDriver.getTrackBank().getItemAt(7 - column).pan().reset();
-   }
-
-   @Override
-   public void onArrowLeftPressed()
-   {
-      if (mDriver.isShiftOn())
-         mDriver.getTrackBank().scrollPageBackwards();
-      else
-         mDriver.getTrackBank().scrollBackwards();
-   }
-
-   @Override
-   public void onArrowRightPressed()
-   {
-      if (mDriver.isShiftOn())
-         mDriver.getTrackBank().scrollPageForwards();
-      else
-         mDriver.getTrackBank().scrollForwards();
-   }
+   private final LaunchpadLayer mShiftLayer;
 }
