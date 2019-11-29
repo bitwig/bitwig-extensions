@@ -99,15 +99,6 @@ public class StepSequencerMode extends AbstractSequencerMode
    }
 
    @Override
-   void updateKeyTranslationTable(final Integer[] table)
-   {
-      if (mDataMode == DataMode.Main)
-         mKeyboardLayer.updateKeyTranslationTable(table);
-
-      mDriver.getNoteInput().setKeyTranslationTable(table);
-   }
-
-   @Override
    protected void doActivate()
    {
       super.doActivate();
@@ -125,7 +116,7 @@ public class StepSequencerMode extends AbstractSequencerMode
    @Override
    protected void doDeactivate()
    {
-      mKeyboardLayer.deactivate();
+      deactivateEveryLayers();
 
       final Track track = mDriver.getCursorTrack();
       track.unsubscribe();
@@ -136,12 +127,21 @@ public class StepSequencerMode extends AbstractSequencerMode
       super.doDeactivate();
    }
 
-   private void paintArrows()
+   private void deactivateEveryLayers()
    {
-      mDriver.getButtonOnTheTop(0).setColor(mKeyboardLayer.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getButtonOnTheTop(1).setColor(mKeyboardLayer.canOctaveDown() ? Color.PITCH : Color.PITCH_LOW);
-      mDriver.getButtonOnTheTop(2).setColor(Color.OFF);
-      mDriver.getButtonOnTheTop(3).setColor(Color.OFF);
+      mShiftLayer.deactivate();
+      mKeyboardLayer.deactivate();
+      mMixDataLayer.deactivate();
+      mSoundDataLayer.deactivate();
+   }
+
+   @Override
+   void updateKeyTranslationTable(final Integer[] table)
+   {
+      if (mDataMode == DataMode.Main)
+         mKeyboardLayer.updateKeyTranslationTable(table);
+
+      mDriver.getNoteInput().setKeyTranslationTable(table);
    }
 
    @Override
