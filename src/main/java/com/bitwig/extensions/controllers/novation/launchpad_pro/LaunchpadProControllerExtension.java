@@ -111,65 +111,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    private void createMainLayer()
    {
-      if (false)
-      {
-         for (int x = 0; x < 8; ++x)
-         {
-            for (int y = 0; y < 8; ++y)
-            {
-               final int X = x;
-               final int Y = y;
-               final Button bt = mGridButtons[y * 8 + x];
-
-               mMainLayer.bindPressed(bt.getButton(), v -> {
-                  bt.onButtonPressed(mHost);
-
-                  final int velocity = (int) (v * 127.0);
-
-                  if (Y == 0 && mBottomOverlay != null)
-                     mBottomOverlay.onPadPressed(Y, velocity);
-                  else
-                     mCurrentMode.onPadPressed(X, Y, velocity);
-               });
-
-               mMainLayer.bindReleased(bt.getButton(), v -> {
-                  final boolean wasHeld = bt.getButtonState() == Button.State.HOLD;
-                  bt.onButtonReleased();
-
-                  final int velocity = (int) (v * 127.0);
-
-                  if (Y == 0 && mBottomOverlay != null)
-                     mBottomOverlay.onPadReleased(Y, velocity);
-                  else
-                     mCurrentMode.onPadReleased(X, Y, velocity, wasHeld);
-               });
-
-               mMainLayer.bind(bt.getAfterTouch(), v -> mCurrentMode.onPadPressure(X, Y, (int) (127. * v)));
-               mMainLayer.bindLightState(LedState.OFF, bt);
-            }
-         }
-
-         for (int y = 0; y < 8; ++y)
-         {
-            final int Y = y;
-            final Button sceneButton = mSceneButtons[y];
-            final HardwareButton bt = sceneButton.getButton();
-            mMainLayer.bindPressed(bt, () -> mCurrentMode.onSceneButtonPressed(Y));
-            mMainLayer.bindLightState(LedState.OFF, sceneButton);
-         }
-
-         mMainLayer.bindPressed(mUpButton.getButton(), () -> mCurrentMode.onArrowUpPressed());
-         mMainLayer.bindReleased(mUpButton.getButton(), () -> mCurrentMode.onArrowUpReleased());
-         mMainLayer.bindPressed(mDownButton.getButton(), () -> mCurrentMode.onArrowDownPressed());
-         mMainLayer.bindReleased(mDownButton.getButton(), () -> mCurrentMode.onArrowDownReleased());
-         mMainLayer.bindPressed(mLeftButton.getButton(), () -> mCurrentMode.onArrowLeftPressed());
-         mMainLayer.bindReleased(mLeftButton.getButton(), () -> mCurrentMode.onArrowLeftReleased());
-         mMainLayer.bindPressed(mRightButton.getButton(), () -> mCurrentMode.onArrowRightPressed());
-         mMainLayer.bindReleased(mRightButton.getButton(), () -> mCurrentMode.onArrowRightReleased());
-      }
-
-      mMainLayer.bindPressed(mShiftButton.getButton(), () -> mCurrentMode.onShiftPressed());
-      mMainLayer.bindReleased(mShiftButton.getButton(), () -> mCurrentMode.onShiftReleased());
       mMainLayer.bindPressed(mClickButton.getButton(), () -> {
          if (isShiftOn())
             mTransport.tapTempo();
@@ -182,15 +123,12 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
          else
             mApplication.undo();
       });
-      mMainLayer.bindPressed(mDeleteButton.getButton(), () -> mCurrentMode.onDeletePressed());
       mMainLayer.bindPressed(mQuantizeButton.getButton(), () -> {
          if (isShiftOn())
          {
             final SettableEnumValue recordQuantizationGrid = mApplication.recordQuantizationGrid();
             recordQuantizationGrid.set(recordQuantizationGrid.get().equals("OFF") ? "1/16" : "OFF");
          }
-         else
-            mCurrentMode.onQuantizePressed();
       });
       mMainLayer.bindPressed(mDuplicateButton.getButton(), mApplication.duplicateAction());
       mMainLayer.bindPressed(mDoubleButton.getButton(), () -> {
@@ -625,29 +563,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       if (mLedPulseUpdateSysexBuffer.length() > 0)
          mMidiOut.sendSysex("F0 00 20 29 02 10 28" + mLedPulseUpdateSysexBuffer + " F7");
-   }
-
-   private void paint()
-   {
-      paintLeftLeds();
-      mCurrentMode.paint();
-      if (mBottomOverlay != null)
-         mBottomOverlay.paint();
-   }
-
-   private void paintLeftLeds()
-   {
-      mShiftButton.setColor(Color.WHITE);
-      mClickButton.setColor(mTransport.isMetronomeEnabled().get() ? Color.YELLOW : Color.YELLOW_LOW);
-      mUndoButton.setColor(Color.ORANGE);
-      mDeleteButton.setColor(Color.ORANGE);
-      mQuantizeButton.setColor(Color.CYAN);
-      mDuplicateButton.setColor(Color.CYAN);
-      if (isShiftOn())
-         mDoubleButton.setColor(mTransport.isArrangerRecordEnabled().get() ? Color.RED : Color.RED_LOW); // Arranger Record
-      else
-         mDoubleButton.setColor(mTransport.isPlaying().get() ? Color.GREEN : Color.GREEN_LOW); // Tranport Play
-      mRecordButton.setColor(isRecording() ? Color.RED : Color.RED_LOW); // Clip Launcher Record
    }
 
    private boolean isRecording()

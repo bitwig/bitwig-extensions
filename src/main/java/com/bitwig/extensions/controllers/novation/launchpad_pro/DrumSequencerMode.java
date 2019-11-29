@@ -79,8 +79,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
       }
 
       final SettableIntegerValue drumPosition = driver.getDrumPadBank().scrollPosition();
-      mShiftLayer.bindPressed(driver.getUpButton(), () -> invalidateDrumPosition(drumPosition.get() + 16));
-      mShiftLayer.bindPressed(driver.getDownButton(), () -> invalidateDrumPosition(drumPosition.get() - 16));
+      mShiftLayer.bindPressed(driver.getUpButton(), this::drumpPadsUp);
+      mShiftLayer.bindPressed(driver.getDownButton(), this::drumpPadsDown);
       mShiftLayer.bindLightState(() -> drumPosition.get() < 116 ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
       mShiftLayer.bindLightState(() -> drumPosition.get() > 0 ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
 
@@ -148,19 +148,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
       mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(5, 3) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(5, 3));
       mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(6, 3) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(6, 3));
       mMainActionsLayer.bindLightState(() -> new LedState(isActionOn(7, 3) ? Color.YELLOW : Color.YELLOW_LOW), mDriver.getPadButton(7, 3));
-
-      bindPressed(driver.getUpButton(), cursorClip.selectPreviousAction());
-      bindPressed(driver.getDownButton(), cursorClip.selectNextAction());
-      bindPressed(driver.getLeftButton(), cursorTrack.selectPreviousAction());
-      bindPressed(driver.getRightButton(), cursorTrack.selectNextAction());
-
-      bindLightState(() -> cursorClip.hasPrevious().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), driver.getUpButton());
-      bindLightState(() -> cursorClip.hasNext().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), driver.getDownButton());
-      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
-      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
-
-
-      bindLayer(driver.getShiftButton(), mShiftLayer);
    }
 
    @Override
@@ -237,8 +224,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       }
    }
 
-   @Override
-   public void onArrowUpPressed()
+   void drumpPadsUp()
    {
       final DrumPadBank drumPads = mDriver.getDrumPadBank();
       final SettableIntegerValue position = drumPads.scrollPosition();
@@ -250,8 +236,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       updateDrumPadsBankPosition();
    }
 
-   @Override
-   public void onArrowDownPressed()
+   void drumpPadsDown()
    {
       final DrumPadBank drumPads = mDriver.getDrumPadBank();
       final SettableIntegerValue position = drumPads.scrollPosition();
@@ -261,18 +246,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
    }
 
    private void updateDrumPadsBankPosition()
-   {
-      mDriver.updateKeyTranslationTable();
-   }
-
-   @Override
-   void onShiftPressed()
-   {
-      mDriver.updateKeyTranslationTable();
-   }
-
-   @Override
-   void onShiftReleased()
    {
       mDriver.updateKeyTranslationTable();
    }
@@ -305,40 +278,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
       if (drumPadBank.exists().get())
          return x + 4 * y + drumPadBank.scrollPosition().get();
       return x + 4 * y + 36;
-   }
-
-   @Override
-   public void onPadPressed(final int x, final int y, final int velocity)
-   {
-      if (y >= 4)
-      {
-         onStepPressed(calculateAbsoluteStepIndex(x, 7 - y), velocity);
-         return;
-      }
-
-      switch (mDataMode)
-      {
-         case Main:
-            if (x < 4)
-               onDrumPadPressed(x, y);
-            else
-               onDrumActionPressed(x - 4, y, velocity);
-            break;
-         case MainAlt:
-            if (x < 4)
-               onDrumPadPressed(x, y);
-            else if (y < 2)
-               onDrumScenePressed(x, y);
-            else
-               onDrumPerfPressed(x, y - 2);
-            break;
-         case MixData:
-            onMixDataPressed(x, 3 - y);
-            break;
-         case SoundData:
-            onSoundDataPressed(x, 3 - y);
-            break;
-      }
    }
 
    private void onMixDataPressed(final int x, final int y)
@@ -392,55 +331,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
                noteStep.setPressure(x / 7.0);
                break;
          }
-      }
-   }
-
-   @Override
-   void onPadPressure(final int x, final int y, final int pressure)
-   {
-      if (y >= 4)
-         return;
-
-      switch (mDataMode)
-      {
-         case Main:
-            if (x == 4 && y == 2)
-               onAutoNoteRepeatPressure(pressure);
-            break;
-         case MainAlt:
-            if (x >= 4 && y >= 2)
-               onDrumPerfPressure(x, y, pressure);
-            break;
-         case MixData:
-            break;
-         case SoundData:
-            break;
-      }
-   }
-
-   @Override
-   void onPadReleased(final int x, final int y, final int velocity, final boolean wasHeld)
-   {
-      if (y >= 4)
-      {
-         onStepReleased(calculateAbsoluteStepIndex(x, 7 - y), wasHeld);
-         return;
-      }
-
-      switch (mDataMode)
-      {
-         case Main:
-            if (x >= 4)
-               onDrumActionReleased(x - 4, y);
-            break;
-         case MixData:
-            if (x >= 4 && y >= 2)
-               onDrumPerfReleased(x, y);
-            break;
-         case SoundData:
-            break;
-         case MainAlt:
-            break;
       }
    }
 

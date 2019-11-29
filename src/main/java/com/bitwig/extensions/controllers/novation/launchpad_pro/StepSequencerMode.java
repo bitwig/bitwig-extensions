@@ -20,7 +20,6 @@ public class StepSequencerMode extends AbstractSequencerMode
 
       mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4, () -> new Color(mDriver.getCursorTrack().color()),
          this::isKeyOn, (this::onKeyDataPressed));
-      mShiftLayer = new LaunchpadLayer(driver, "drum-sequencer-shift");
       mMixDataLayer = new LaunchpadLayer(driver, "drum-seq-mix-data");
       mSoundDataLayer = new LaunchpadLayer(driver, "drum-seq-sound-data");
 
@@ -68,8 +67,14 @@ public class StepSequencerMode extends AbstractSequencerMode
          mShiftLayer.bindLightState(() -> computeClipLengthSelectionLedState(7 - Y), sceneButton);
       }
 
-      mShiftLayer.bindPressed(driver.getUpButton(), mKeyboardLayer::octaveUp);
-      mShiftLayer.bindPressed(driver.getDownButton(), mKeyboardLayer::octaveDown);
+      mShiftLayer.bindPressed(driver.getUpButton(), () -> {
+         mKeyboardLayer.octaveUp();
+         mDriver.updateKeyTranslationTable();
+      });
+      mShiftLayer.bindPressed(driver.getDownButton(), () -> {
+         mKeyboardLayer.octaveDown();
+         mDriver.updateKeyTranslationTable();
+      });
       mShiftLayer.bindLightState(() -> mKeyboardLayer.canOctaveUp() ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
       mShiftLayer.bindLightState(() -> mKeyboardLayer.canOctaveDown() ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
 
@@ -89,18 +94,6 @@ public class StepSequencerMode extends AbstractSequencerMode
             mSoundDataLayer.bindLightState(() -> computeSoundDataLedState(X, Y), bt);
          }
       }
-
-      bindPressed(driver.getUpButton(), cursorClip.selectPreviousAction());
-      bindPressed(driver.getDownButton(), cursorClip.selectNextAction());
-      bindPressed(driver.getLeftButton(), cursorTrack.selectPreviousAction());
-      bindPressed(driver.getRightButton(), cursorTrack.selectNextAction());
-
-      bindLightState(() -> cursorClip.hasPrevious().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), driver.getUpButton());
-      bindLightState(() -> cursorClip.hasNext().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), driver.getDownButton());
-      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
-      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
-
-      bindLayer(driver.getShiftButton(), mShiftLayer);
    }
 
    @Override
@@ -236,7 +229,6 @@ public class StepSequencerMode extends AbstractSequencerMode
          return;
 
       mDriver.updateKeyTranslationTable();
-      paint();
    }
 
    private void onMixDataPressed(final int x, final int y)
@@ -317,27 +309,6 @@ public class StepSequencerMode extends AbstractSequencerMode
       }
    }
 
-   @Override
-   void onPadReleased(final int x, final int y, final int velocity, final boolean wasHeld)
-   {
-      if (y >= 4)
-      {
-         onStepReleased(calculateAbsoluteStepIndex(x, 7 - y), wasHeld);
-         return;
-      }
-
-      switch (mDataMode)
-      {
-         case Main:
-         case MainAlt:
-            break;
-         case MixData:
-            break;
-         case SoundData:
-            break;
-      }
-   }
-
    private void onStepPressed(final int absoluteStep, final int velocity)
    {
       final Clip cursorClip = mDriver.getCursorClip();
@@ -358,20 +329,6 @@ public class StepSequencerMode extends AbstractSequencerMode
       final NoteStep noteStep = computeVerticalStepState(absoluteStep);
       if (noteStep.state() == NoteStep.State.NoteOn && !wasHeld)
          cursorClip.clearStepsAtX(0, absoluteStep);
-   }
-
-   @Override
-   public void onArrowDownPressed()
-   {
-      mKeyboardLayer.octaveDown();
-      mDriver.updateKeyTranslationTable();
-   }
-
-   @Override
-   public void onArrowUpPressed()
-   {
-      mKeyboardLayer.octaveUp();
-      mDriver.updateKeyTranslationTable();
    }
 
    @Override
@@ -400,5 +357,4 @@ public class StepSequencerMode extends AbstractSequencerMode
    private final KeyboardLayer mKeyboardLayer;
    private final LaunchpadLayer mMixDataLayer;
    private final LaunchpadLayer mSoundDataLayer;
-   private final LaunchpadLayer mShiftLayer;
 }

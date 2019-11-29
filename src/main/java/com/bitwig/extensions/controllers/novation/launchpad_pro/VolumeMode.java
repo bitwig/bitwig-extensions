@@ -53,12 +53,6 @@ public class VolumeMode extends Mode
    }
 
    @Override
-   public void onPadPressed(final int x, final int y, final int velocity)
-   {
-      mDriver.getTrackBank().getItemAt(x).volume().value().setRaw(y / 7.0);
-   }
-
-   @Override
    protected void doActivate()
    {
       final TrackBank trackBank = mDriver.getTrackBank();

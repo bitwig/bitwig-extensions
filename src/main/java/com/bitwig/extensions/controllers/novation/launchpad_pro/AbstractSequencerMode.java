@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Set;
 
 import com.bitwig.extension.controller.api.Clip;
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.PinnableCursorClip;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.NoteStep;
@@ -17,6 +19,35 @@ abstract class AbstractSequencerMode extends Mode
    protected AbstractSequencerMode(final LaunchpadProControllerExtension driver, final String name)
    {
       super(driver, name);
+
+      mShiftLayer = new LaunchpadLayer(driver, name + "-shift");
+      bindMainLayer();
+      bindShiftLayer();
+   }
+
+   private void bindMainLayer()
+   {
+      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      final PinnableCursorClip cursorClip = mDriver.getCursorClip();
+
+      bindPressed(mDriver.getLeftButton(), cursorTrack.selectPreviousAction());
+      bindPressed(mDriver.getRightButton(), cursorTrack.selectNextAction());
+      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, mDriver.getRightButton());
+      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, mDriver.getLeftButton());
+
+      bindPressed(mDriver.getUpButton(), cursorClip.selectPreviousAction());
+      bindPressed(mDriver.getDownButton(), cursorClip.selectNextAction());
+      bindLightState(() -> cursorClip.hasPrevious().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), mDriver.getUpButton());
+      bindLightState(() -> cursorClip.hasNext().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), mDriver.getDownButton());
+
+      bindLayer(mDriver.getShiftButton(), mShiftLayer);
+   }
+
+   private void bindShiftLayer()
+   {
+      final PinnableCursorClip cursorClip = mDriver.getCursorClip();
+      mShiftLayer.bindPressed(mDriver.getDeleteButton(), () -> cursorClip.clearSteps());
+      mShiftLayer.bindPressed(mDriver.getQuantizeButton(), () -> cursorClip.quantize(1));
    }
 
    protected enum DataMode
@@ -328,28 +359,14 @@ abstract class AbstractSequencerMode extends Mode
       return 1.0 / 16.0 * (1 << x);
    }
 
-   @Override
-   void onDeletePressed()
-   {
-      if (mDriver.isShiftOn())
-         mDriver.getCursorClip().clearSteps();
-   }
-
-   @Override
-   void onQuantizePressed()
-   {
-      mDriver.getCursorClip().quantize(1);
-   }
-
    protected boolean hasMainAltMode()
    {
       return true;
    }
 
-   protected final Color MODE_COLOR = Color.fromRgb255(255, 183, 0);
-   protected final Color MODE_COLOR_LOW = new Color(MODE_COLOR, .1f);
-
    protected DataMode mDataMode = DataMode.Main;
    protected int mPage = 0;
    protected Set<Integer> mStepsBeingAdded = new HashSet<>();
+
+   protected final LaunchpadLayer mShiftLayer;
 }

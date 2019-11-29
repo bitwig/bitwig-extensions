@@ -38,75 +38,7 @@ abstract class Mode extends LaunchpadLayer
       /* for subclasses */
    }
 
-   void paint()
-   {
-   }
-
-   void onPadPressed(final int x, final int y, final int velocity)
-   {}
-
-   void onPadPressure(final int x, final int y, final int pressure)
-   {}
-
-   void onPadReleased(final int x, final int y, final int velocity, final boolean wasHeld) {}
-
    final LaunchpadProControllerExtension mDriver;
-
-   void onArrowUpReleased()
-   {
-   }
-
-   void onArrowUpPressed()
-   {
-   }
-
-   void onArrowDownReleased()
-   {
-   }
-
-   void onArrowDownPressed()
-   {
-   }
-
-   void onArrowRightPressed()
-   {
-
-   }
-
-   void onArrowRightReleased()
-   {
-
-   }
-
-   void onArrowLeftPressed()
-   {
-
-   }
-
-   void onArrowLeftReleased()
-   {
-
-   }
-
-   void onSceneButtonPressed(final int column)
-   {
-   }
-
-   void onShiftPressed()
-   {
-   }
-
-   void onShiftReleased()
-   {
-   }
-
-   void onDeletePressed()
-   {
-   }
-
-   void onQuantizePressed()
-   {
-   }
 
    void updateKeyTranslationTable(final Integer[] table)
    {

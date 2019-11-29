@@ -8,27 +8,9 @@ abstract class Overlay extends Mode
    }
 
    @Override
-   protected String getModeDescription()
+   final protected String getModeDescription()
    {
       return null;
-   }
-
-   @Override
-   final void onPadPressed(final int x, final int y, final int velocity)
-   {
-   }
-
-   @Override
-   final void onPadReleased(final int x, final int y, final int velocity, final boolean wasHeld)
-   {
-   }
-
-   void onPadPressed(final int x, final int velocity)
-   {
-   }
-
-   void onPadReleased(final int x, final int velocity)
-   {
    }
 
    @Override
