@@ -98,7 +98,7 @@ class Button
    {
       mButtonState = State.PRESSED;
 
-      final Boolean cancelHoldTask = false;
+      final boolean cancelHoldTask = false;
       final int HOLD_DELAY_MS = 250;
       host.scheduleTask(() -> {
          if (!cancelHoldTask && mButtonState == State.PRESSED)

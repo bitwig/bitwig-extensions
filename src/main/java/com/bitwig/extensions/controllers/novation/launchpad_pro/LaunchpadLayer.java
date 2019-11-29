@@ -8,7 +8,7 @@ import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extensions.framework.Binding;
 import com.bitwig.extensions.framework.Layer;
 
-public class LaunchpadLayer extends Layer
+class LaunchpadLayer extends Layer
 {
    public LaunchpadLayer(final LaunchpadProControllerExtension driver, final String name)
    {
@@ -36,7 +36,7 @@ public class LaunchpadLayer extends Layer
       bindPressed(bt.getButton(), bindable);
    }
 
-   void bindReleased(final Button bt, final HardwareActionBindable bindable)
+   private void bindReleased(final Button bt, final HardwareActionBindable bindable)
    {
       bindReleased(bt.getButton(), bindable);
    }
@@ -71,5 +71,5 @@ public class LaunchpadLayer extends Layer
       return bindLightState(() -> state, button);
    }
 
-   protected final LaunchpadProControllerExtension mDriver;
+   final LaunchpadProControllerExtension mDriver;
 }

@@ -53,10 +53,10 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
    };
 
-   final double PHYSICAL_DEVICE_WIDTH = 260;
-   final double PHYSICAL_BUTTON_WIDTH = 20;
-   final double PHYSICAL_BUTTON_SPACE = 4;
-   final double PHYSICAL_BUTTON_OFFSET = 12;
+   private final double PHYSICAL_DEVICE_WIDTH = 260;
+   private final double PHYSICAL_BUTTON_WIDTH = 20;
+   private final double PHYSICAL_BUTTON_SPACE = 4;
+   private final double PHYSICAL_BUTTON_OFFSET = 12;
 
    private static final String[] KEY_NAMES = new String[]{ "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
@@ -893,7 +893,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mMusicalScaleSetting;
    }
 
-   SettableEnumValue getMusicalKeySetting()
+   private SettableEnumValue getMusicalKeySetting()
    {
       return mMusicalKeySetting;
    }
@@ -971,7 +971,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mHighlightRootKeySetting.get();
    }
 
-   void setKeyboardLayout(final KeyboardLayout keyboardLayout)
+   private void setKeyboardLayout(final KeyboardLayout keyboardLayout)
    {
       mKeyboardLayout = keyboardLayout;
       mKeyboardLayoutSetting.set(keyboardLayout.toString());

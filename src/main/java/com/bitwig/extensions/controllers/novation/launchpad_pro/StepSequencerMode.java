@@ -162,7 +162,7 @@ public class StepSequencerMode extends AbstractSequencerMode
       return cursorClip.getStep(0, absoluteStepIndex, 0);
    }
 
-   boolean isKeyOn(final int key)
+   private boolean isKeyOn(final int key)
    {
       assert key >= 0 && key < 127;
 
@@ -182,7 +182,7 @@ public class StepSequencerMode extends AbstractSequencerMode
       return false;
    }
 
-   protected LedState computeStepSeqLedState(final int x, final int y)
+   private LedState computeStepSeqLedState(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
       final int playingStep = clip.playingStep().get();
@@ -224,7 +224,7 @@ public class StepSequencerMode extends AbstractSequencerMode
                value = noteStep;
                break;
             case Empty:
-               /* Nothing to do */;
+               /* Nothing to do */
          }
       }
       return value;

@@ -37,7 +37,12 @@ class MultiplexerMode extends Mode
       return mModes[mSelectedIndex].getModeDescription();
    }
 
-   void setMode(final int index, final Mode mode, final Runnable action, final LedState ledOn, final LedState ledOff)
+   private void setMode(
+      final int index,
+      final Mode mode,
+      final Runnable action,
+      final LedState ledOn,
+      final LedState ledOff)
    {
       assert 0 <= index && index < 8;
 

@@ -3,7 +3,7 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-public class SoloOverlay extends Overlay
+class SoloOverlay extends Overlay
 {
    public SoloOverlay(final LaunchpadProControllerExtension driver)
    {

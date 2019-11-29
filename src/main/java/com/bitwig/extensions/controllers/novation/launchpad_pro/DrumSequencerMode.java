@@ -200,7 +200,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       super.doDeactivate();
    }
 
-   void deactivateEveryLayers()
+   private void deactivateEveryLayers()
    {
       mShiftLayer.deactivate();
       mDrumPadsLayer.deactivate();
@@ -693,7 +693,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       return mDriver.getCursorClip().getStep(0, absoluteStepIndex, mCurrentPitch);
    }
 
-   protected LedState computePerfAndScenesLedState(final int x, final int y)
+   private LedState computePerfAndScenesLedState(final int x, final int y)
    {
       final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
       final CursorRemoteControlsPage drumScenesRemoteControls = mDriver.getDrumScenesRemoteControls();
@@ -785,7 +785,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       }
    }
 
-   public void invalidateDrumPosition(final int newPosition)
+   private void invalidateDrumPosition(final int newPosition)
    {
       mCurrentPitch = newPosition;
       updateDrumPadsBankPosition();

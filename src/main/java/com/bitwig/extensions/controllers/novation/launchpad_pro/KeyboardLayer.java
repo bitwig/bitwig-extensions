@@ -213,7 +213,7 @@ final class KeyboardLayer extends LaunchpadLayer
       }
    }
 
-   int calculateKeyForPosition(final int x, final int y)
+   private int calculateKeyForPosition(final int x, final int y)
    {
       if (x < mX0 || mX0 + mWidth <= x || y < mY0 || mY0 + mHeight <= y)
          return -1;

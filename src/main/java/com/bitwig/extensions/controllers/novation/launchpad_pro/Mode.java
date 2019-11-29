@@ -22,7 +22,7 @@ abstract class Mode extends LaunchpadLayer
 
    protected abstract String getModeDescription();
 
-   protected void doActivate()
+   void doActivate()
    {
       /* for subclasses */
    }
@@ -33,7 +33,7 @@ abstract class Mode extends LaunchpadLayer
       doDeactivate();
    }
 
-   protected void doDeactivate()
+   void doDeactivate()
    {
       /* for subclasses */
    }

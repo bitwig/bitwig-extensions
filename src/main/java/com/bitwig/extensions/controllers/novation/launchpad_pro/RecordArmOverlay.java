@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-public class RecordArmOverlay extends Overlay
+class RecordArmOverlay extends Overlay
 {
    public RecordArmOverlay(final LaunchpadProControllerExtension driver)
    {

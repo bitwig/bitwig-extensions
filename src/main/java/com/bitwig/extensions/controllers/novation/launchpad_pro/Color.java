@@ -114,7 +114,7 @@ final class Color
       mBlue = (byte)(63 * blue);
    }
 
-   public Color(final byte red, final byte green, final byte blue)
+   private Color(final byte red, final byte green, final byte blue)
    {
       mRed = red;
       mGreen = green;
