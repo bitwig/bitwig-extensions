@@ -223,7 +223,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mMainLayer.bindLightState(LedState.OFF, mDownButton);
       mMainLayer.bindLightState(LedState.OFF, mLeftButton);
       mMainLayer.bindLightState(LedState.OFF, mRightButton);
-      mMainLayer.bindLightState(LedState.SHIFT_OFF, mShiftButton);
+      mMainLayer.bindLightState(() -> isShiftOn() ? LedState.SHIFT_ON : LedState.SHIFT_OFF, mShiftButton);
       mMainLayer.bindLightState(() -> mTransport.isMetronomeEnabled().get() ? LedState.CLICK_ON : LedState.CLICK_OFF, mClickButton);
       mMainLayer.bindLightState(LedState.UNDO_ON, mUndoButton);
       mMainLayer.bindLightState(LedState.DELETE_ON, mDeleteButton);
@@ -611,6 +611,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    @Override
    public void flush()
    {
+      ++mFlushIteration;
       mLedClearSysexBuffer.setLength(0);
       mLedColorUpdateSysexBuffer.setLength(0);
       mLedPulseUpdateSysexBuffer.setLength(0);
@@ -1170,6 +1171,10 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private Button mMuteButton;
    private Button mSelectButton;
 
+   /* Used to cache complex computed values during the flush required for painting */
+   private long mFlushIteration = 0;
+
+   /* Sysex buffer for flushing */
    private StringBuilder mLedClearSysexBuffer = new StringBuilder();
    private StringBuilder mLedColorUpdateSysexBuffer = new StringBuilder();
    private StringBuilder mLedPulseUpdateSysexBuffer = new StringBuilder();

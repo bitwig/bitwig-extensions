@@ -66,6 +66,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
          bindLightState(() -> computeDataChoiceLedState(Y), dataChoiceBt);
       }
 
+      // Scene buttons in shift layer
       for (int y = 0; y < 8; ++y)
       {
          final Button sceneButton = driver.getSceneButton(y);
@@ -100,6 +101,23 @@ final class DrumSequencerMode extends AbstractSequencerMode
             mMainActionsLayer.bindReleased(actionBt, () -> onDrumActionReleased(X, Y));
             if (X == 0 && Y == 2)
                mMainActionsLayer.bind(actionBt.getAfterTouch(), v -> onAutoNoteRepeatPressure((int) (127. * v)));
+         }
+      }
+
+      // Step Data
+      for (int x = 0; x < 8; ++x)
+      {
+         for (int y = 0; y < 4; ++y)
+         {
+            final int X = x;
+            final int Y = y;
+            final Button bt = driver.getPadButton(x, y);
+
+            mMixDataLayer.bindPressed(bt, () -> onMixDataPressed(X, 3 - Y));
+            mMixDataLayer.bindLightState(() -> computeMixDataLedState(X, Y), bt);
+
+            mSoundDataLayer.bindPressed(bt, () -> onSoundDataPressed(X, 3 - Y));
+            mSoundDataLayer.bindLightState(() -> computeSoundDataLedState(X, Y), bt);
          }
       }
 
@@ -659,52 +677,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private boolean isDrumPadMuteOn()
    {
       return isActionOn(5, 0);
-   }
-
-   @Override
-   public void paint()
-   {
-      super.paint();
-
-      paintArrows();
-
-      switch (mDataMode)
-      {
-         case Main:
-            paintMainActions();
-            break;
-         case MixData:
-            paintMixData();
-            break;
-         case SoundData:
-            paintSoundData();
-            break;
-      }
-   }
-
-   private void paintMainActions()
-   {
-      final boolean isDeleteOn = mDriver.isDeleteOn();
-
-      mDriver.getPadButton(4, 0).setColor(isDrumPadSelectOn() ? Color.TRACK : Color.TRACK_LOW);
-      mDriver.getPadButton(5, 0).setColor(isDrumPadMuteOn() || isDeleteOn ? Color.MUTE : Color.MUTE_LOW);
-      mDriver.getPadButton(6, 0).setColor(isDrumPadSoloOn() || isDeleteOn  ? Color.SOLO : Color.SOLO_LOW);
-      mDriver.getPadButton(7, 0).setColor(Color.OFF);
-
-      mDriver.getPadButton(4, 1).setColor(Color.OFF);
-      mDriver.getPadButton(5, 1).setColor(isActionOn(5, 1) ? Color.BLUE : Color.BLUE_LOW);
-      mDriver.getPadButton(6, 1).setColor(isActionOn(6, 1) ? Color.RED : Color.RED_LOW);
-      mDriver.getPadButton(7, 1).setColor(isActionOn(7, 1) ? Color.GREEN : Color.GREEN_LOW);
-
-      mDriver.getPadButton(4, 2).setColor(isActionOn(4, 2) ? Color.PURPLE : Color.PURPLE_LOW);
-      mDriver.getPadButton(5, 2).setColor(isActionOn(5, 2) ? Color.ORANGE : Color.ORANGE_LOW);
-      mDriver.getPadButton(6, 2).setColor(isActionOn(6, 2) ? Color.ORANGE : Color.ORANGE_LOW);
-      mDriver.getPadButton(7, 2).setColor(isActionOn(7, 2) ? Color.ORANGE : Color.ORANGE_LOW);
-
-      mDriver.getPadButton(4, 3).setColor(isActionOn(4, 3) ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getPadButton(5, 3).setColor(isActionOn(5, 3) ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getPadButton(6, 3).setColor(isActionOn(6, 3) ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getPadButton(7, 3).setColor(isActionOn(7, 3) ? Color.YELLOW : Color.YELLOW_LOW);
    }
 
    @Override

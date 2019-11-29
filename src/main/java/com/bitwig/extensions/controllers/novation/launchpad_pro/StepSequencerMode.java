@@ -77,31 +77,6 @@ public class StepSequencerMode extends AbstractSequencerMode
       super.doDeactivate();
    }
 
-   @Override
-   public void paint()
-   {
-      super.paint();
-
-      paintSteps();
-      paintArrows();
-
-      switch (mDataMode)
-      {
-         case Main:
-         case MainAlt:
-         {
-            paintCurrentKeysOnStep();
-            break;
-         }
-         case MixData:
-            paintMixData();
-            break;
-         case SoundData:
-            paintSoundData();
-            break;
-      }
-   }
-
    private void paintArrows()
    {
       mDriver.getButtonOnTheTop(0).setColor(mKeyboardLayer.canOctaveUp() ? Color.PITCH : Color.PITCH_LOW);

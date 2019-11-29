@@ -106,20 +106,21 @@ abstract class AbstractSequencerMode extends Mode
       return mPage * 32 + x + 8 * y;
    }
 
-   protected void paintMixData()
+   protected LedState computeMixDataLedState(final int x, final int y)
    {
+      // TODO: cache it using the flush iteration
       final List<Button> pads = findStepsInPressedOrHoldState();
 
       if (pads.isEmpty())
       {
-         for (int i = 0; i < 8; ++i)
+         switch (y)
          {
-            mDriver.getPadButton(i, 3).setColor(Color.WHITE_LOW);
-            mDriver.getPadButton(i, 2).setColor(Color.CYAN_LOW);
-            mDriver.getPadButton(i, 1).setColor(Color.PAN_MODE_LOW);
-            mDriver.getPadButton(i, 0).setColor(Color.OFF);
+            case 0: return LedState.OFF;
+            case 1: return LedState.PAN_MODE_LOW;
+            case 2: return new LedState(Color.CYAN_LOW);
+            case 3: return new LedState(Color.WHITE_LOW);
+            default: throw new IllegalStateException();
          }
-         return;
       }
 
       final Button pad = pads.get(0);
@@ -130,36 +131,42 @@ abstract class AbstractSequencerMode extends Mode
       final double duration = noteStep.duration();
       final double pan = noteStep.pan();
 
-      for (int i = 0; i < 8; ++i)
+      switch (y)
       {
-         mDriver.getPadButton(i, 3).setColor(i <= velocity * 7 ? Color.WHITE : Color.WHITE_LOW);
-         mDriver.getPadButton(i, 2).setColor(computeDuration(i) <= duration ? Color.CYAN : Color.CYAN_LOW);
-         final double ipan = (i - 3.5) / 3.5;
-         if ((pan > 0 && ipan > 0 && ipan <= pan) || (pan < 0 && ipan < 0 && pan <= ipan))
-            mDriver.getPadButton(i, 1).setColor(Color.PAN_MODE);
-         else
-            mDriver.getPadButton(i, 1).setColor(Color.PAN_MODE_LOW);
-         mDriver.getPadButton(i, 0).setColor(Color.OFF);
+         case 0:
+            return LedState.OFF;
+         case 1:
+            final double ipan = (x - 3.5) / 3.5;
+            if ((pan > 0 && ipan > 0 && ipan <= pan) || (pan < 0 && ipan < 0 && pan <= ipan))
+               return LedState.PAN_MODE;
+            return LedState.PAN_MODE_LOW;
+         case 2:
+            return new LedState(computeDuration(x) <= duration ? Color.CYAN : Color.CYAN_LOW);
+         case 3:
+            return new LedState(x <= velocity * 7 ? Color.WHITE : Color.WHITE_LOW);
+         default:
+            throw new IllegalStateException();
       }
    }
 
-   protected void paintSoundData()
+   protected LedState computeSoundDataLedState(final int x, final int y)
    {
-      final List<Button> padsInHoldState = mDriver.findPadsInHoldState();
+      // TODO: cache it using the flush iteration
+      final List<Button> pads = findStepsInPressedOrHoldState();
 
-      if (padsInHoldState.isEmpty())
+      if (pads.isEmpty())
       {
-         for (int i = 0; i < 8; ++i)
+         switch (y)
          {
-            mDriver.getPadButton(i, 3).setColor(Color.WHITE_LOW);
-            mDriver.getPadButton(i, 2).setColor(Color.YELLOW_LOW);
-            mDriver.getPadButton(i, 1).setColor(Color.BLUE_LOW);
-            mDriver.getPadButton(i, 0).setColor(Color.OFF);
+            case 0: return LedState.OFF;
+            case 1: return new LedState(Color.BLUE_LOW);
+            case 2: return new LedState(Color.YELLOW_LOW);
+            case 3: return new LedState(Color.WHITE_LOW);
+            default: throw new IllegalStateException();
          }
-         return;
       }
 
-      final Button pad = padsInHoldState.get(0);
+      final Button pad = pads.get(0);
       final int absoluteStepIndex = calculateAbsoluteStepIndex(pad.getX() - 1, 8 - pad.getY());
       final NoteStep noteStep = findStepInfo(absoluteStepIndex);
 
@@ -167,23 +174,24 @@ abstract class AbstractSequencerMode extends Mode
       final double pressure = noteStep.pressure();
       final double timbre = noteStep.timbre();
 
-      for (int i = 0; i < 8; ++i)
+      switch (y)
       {
-         final double itranspose = computeTranspoose(i);
-
-         if ((transpose > 0 && itranspose > 0 && itranspose <= transpose) || (transpose < 0 && itranspose < 0 && transpose <= itranspose))
-            mDriver.getPadButton(i, 3).setColor(Color.WHITE);
-         else
-            mDriver.getPadButton(i, 3).setColor(Color.WHITE_LOW);
-
-         final double itimbre = (i - 3.5) / 3.5;
-         if ((timbre > 0 && itimbre > 0 && itimbre <= timbre) || (timbre < 0 && itimbre < 0 && timbre <= itimbre))
-            mDriver.getPadButton(i, 2).setColor(Color.YELLOW);
-         else
-            mDriver.getPadButton(i, 2).setColor(Color.YELLOW_LOW);
-
-         mDriver.getPadButton(i, 1).setColor(i <= pressure * 7 ? Color.BLUE : Color.BLUE_LOW);
-         mDriver.getPadButton(i, 0).setColor(Color.OFF);
+         case 0:
+            return LedState.OFF;
+         case 1:
+            return new LedState(x <= pressure * 7 ? Color.BLUE : Color.BLUE_LOW);
+         case 2:
+            final double itimbre = (x - 3.5) / 3.5;
+            if ((timbre > 0 && itimbre > 0 && itimbre <= timbre) || (timbre < 0 && itimbre < 0 && timbre <= itimbre))
+               return new LedState(Color.YELLOW);
+            return new LedState(Color.YELLOW_LOW);
+         case 3:
+            final double itranspose = computeTranspoose(x);
+            if ((transpose > 0 && itranspose > 0 && itranspose <= transpose) || (transpose < 0 && itranspose < 0 && transpose <= itranspose))
+               return new LedState(Color.WHITE);
+            return new LedState(Color.WHITE_LOW);
+         default:
+            throw new IllegalStateException();
       }
    }
 
