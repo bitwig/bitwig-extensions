@@ -35,13 +35,13 @@ public final class SessionMode extends Mode
                slot.select();
                mDriver.getCursorClip().quantize(1);
             });
-            bindLightState(() -> computeGridLedState(slot, button), button.getLight());
+            bindLightState(() -> computeGridLedState(slot), button);
          }
 
          final Scene scene = sceneBank.getItemAt(7 - x);
          final Button sceneButton = driver.getSceneButton(x);
          bindPressed(sceneButton, scene.launchAction());
-         bindLightState(() -> computeSceneLedState(scene), sceneButton.getLight());
+         bindLightState(() -> computeSceneLedState(scene), sceneButton);
       }
 
       bindLayer(driver.getShiftButton(), mShiftLayer);
@@ -80,8 +80,10 @@ public final class SessionMode extends Mode
       return new LedState(color);
    }
 
-   private InternalHardwareLightState computeGridLedState(final ClipLauncherSlot slot, final Button button)
+   private InternalHardwareLightState computeGridLedState(final ClipLauncherSlot slot)
    {
+      assert slot.isSubscribed();
+
       final Color color = new Color(slot.color());
       final int pulse;
 
