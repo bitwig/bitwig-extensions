@@ -264,12 +264,18 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          @Override
          protected void onActivate()
          {
+            mDevice.subscribe();
+            mCursorTrack.subscribe();
+
             updateIndications();
          }
 
          @Override
          protected void onDeactivate()
          {
+            mDevice.unsubscribe();
+            mCursorTrack.unsubscribe();
+
             updateIndications();
          }
       };
@@ -552,9 +558,6 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       mCursorTrack.volume().setIndication(mDawMode);
 
       final boolean isMixer = mMultiLayer.isActive();
-
-      mDevice.setIsSubscribed(!isMixer && mDawMode);
-      mCursorTrack.setIsSubscribed(mDawMode);
 
       for (int i = 0; i < 8; i++)
       {
