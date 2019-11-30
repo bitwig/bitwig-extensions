@@ -258,7 +258,22 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    private void initLayers()
    {
       mLayers = new Layers(this);
-      mBaseLayer = new Layer(mLayers, "Base");
+      
+      mBaseLayer = new Layer(mLayers, "Base")
+      {
+         @Override
+         protected void onActivate()
+         {
+            mCursorTrack.subscribe();
+         }
+
+         @Override
+         protected void onDeactivate()
+         {
+            mCursorTrack.unsubscribe();
+         }
+      };
+
       mMultiLayer = new Layer(mLayers, "Multi")
       {
          @Override
