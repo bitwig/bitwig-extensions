@@ -155,6 +155,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mCursorTrack = host.createCursorTrack(0, 0);
 
       mTrackBank = host.createTrackBank(mChannelCount, 1, 0, false);
+      mTrackBank.followCursorTrack(mCursorTrack);
       mMasterTrack = host.createMasterTrack(0);
 
       mCursorDevice = mCursorTrack.createCursorDevice("main", "Main", 0,
