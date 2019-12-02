@@ -348,7 +348,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private void onMixDataPressed(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
-      final List<Button> padsInHoldState = findStepsInPressedOrHoldState();
+      final List<Button> padsInHoldState = getStepsInPressedOrHoldState();
 
       for (final Button button : padsInHoldState)
       {
@@ -375,7 +375,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private void onSoundDataPressed(final int x, final int y)
    {
       final Clip clip = mDriver.getCursorClip();
-      final List<Button> padsInHoldState = findStepsInPressedOrHoldState();
+      final List<Button> padsInHoldState = getStepsInPressedOrHoldState();
 
       for (final Button buttonState : padsInHoldState)
       {

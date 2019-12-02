@@ -556,6 +556,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       }
    }
 
+   public int getFlushIteration()
+   {
+      return mFlushIteration;
+   }
+
    @Override
    public void flush()
    {
@@ -1090,7 +1095,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private Button mSelectButton;
 
    /* Used to cache complex computed values during the flush required for painting */
-   private long mFlushIteration = 0;
+   private int mFlushIteration = 0;
 
    /* Sysex buffer for flushing */
    private final StringBuilder mLedClearSysexBuffer = new StringBuilder();

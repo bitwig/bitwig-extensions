@@ -6,11 +6,9 @@ import java.util.List;
 import java.util.Set;
 
 import com.bitwig.extension.controller.api.Clip;
-import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorClip;
-import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.Track;
@@ -154,8 +152,7 @@ abstract class AbstractSequencerMode extends Mode
 
    protected LedState computeMixDataLedState(final int x, final int y)
    {
-      // TODO: cache it using the flush iteration
-      final List<Button> pads = findStepsInPressedOrHoldState();
+      final List<Button> pads = getStepsInPressedOrHoldState();
 
       if (pads.isEmpty())
       {
@@ -197,8 +194,7 @@ abstract class AbstractSequencerMode extends Mode
 
    protected LedState computeSoundDataLedState(final int x, final int y)
    {
-      // TODO: cache it using the flush iteration
-      final List<Button> pads = findStepsInPressedOrHoldState();
+      final List<Button> pads = getStepsInPressedOrHoldState();
 
       if (pads.isEmpty())
       {
@@ -317,6 +313,17 @@ abstract class AbstractSequencerMode extends Mode
       }
    }
 
+   List<Button> getStepsInHoldState()
+   {
+      final int flushIteration = mDriver.getFlushIteration();
+      if (flushIteration != mStepsInHoldStateFlushIteration)
+      {
+         mStepsInHoldState = findStepsInHoldState();
+         mStepsInHoldStateFlushIteration = flushIteration;
+      }
+      return mStepsInHoldState;
+   }
+
    List<Button> findStepsInHoldState()
    {
       final ArrayList<Button> list = new ArrayList<>();
@@ -330,6 +337,17 @@ abstract class AbstractSequencerMode extends Mode
          }
       }
       return list;
+   }
+
+   List<Button> getStepsInPressedOrHoldState()
+   {
+      final int flushIteration = mDriver.getFlushIteration();
+      if (flushIteration != mStepsInPressedOrHoldStateFlushIteration)
+      {
+         mStepsInPressedOrHoldState = findStepsInPressedOrHoldState();
+         mStepsInPressedOrHoldStateFlushIteration = flushIteration;
+      }
+      return mStepsInPressedOrHoldState;
    }
 
    List<Button> findStepsInPressedOrHoldState()
@@ -385,4 +403,8 @@ abstract class AbstractSequencerMode extends Mode
    protected Set<Integer> mStepsBeingAdded = new HashSet<>();
 
    protected final LaunchpadLayer mShiftLayer;
+   private int mStepsInHoldStateFlushIteration = -1;
+   private List<Button> mStepsInHoldState;
+   private int mStepsInPressedOrHoldStateFlushIteration = -1;
+   private List<Button> mStepsInPressedOrHoldState;
 }
