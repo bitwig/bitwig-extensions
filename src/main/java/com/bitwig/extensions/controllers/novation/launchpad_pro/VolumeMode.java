@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
-import sun.security.util.ArrayUtil;
 
 public class VolumeMode extends Mode
 {
