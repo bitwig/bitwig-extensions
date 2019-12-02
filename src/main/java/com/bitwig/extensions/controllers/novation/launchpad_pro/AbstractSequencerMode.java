@@ -19,7 +19,20 @@ abstract class AbstractSequencerMode extends Mode
    {
       super(driver, name);
 
-      mShiftLayer = new LaunchpadLayer(driver, name + "-shift");
+      mShiftLayer = new LaunchpadLayer(driver, name + "-shift")
+      {
+         @Override
+         protected void onActivate()
+         {
+            mDriver.getCursorClip().getLoopLength().subscribe();
+         }
+
+         @Override
+         protected void onDeactivate()
+         {
+            mDriver.getCursorClip().getLoopLength().unsubscribe();
+         }
+      };
       bindMainLayer();
       bindShiftLayer();
    }

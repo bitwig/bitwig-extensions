@@ -71,7 +71,7 @@ final class KeyboardLayer extends LaunchpadLayer
             bindPressed(padButton, v -> {
                if (onKeyPlayed != null)
                {
-                  final int key = calculateKeyboardKey(X, Y);
+                  final int key = calculateKeyForPosition(X, Y);
                   if (key >= 0 && key < 127)
                      onKeyPlayed.onKeyPressed(key, v);
                }

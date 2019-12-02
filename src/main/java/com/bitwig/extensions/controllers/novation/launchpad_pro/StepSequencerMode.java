@@ -18,8 +18,8 @@ public class StepSequencerMode extends AbstractSequencerMode
       final CursorTrack cursorTrack = driver.getCursorTrack();
       final PinnableCursorClip cursorClip = driver.getCursorClip();
 
-      mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4, () -> new Color(mDriver.getCursorTrack().color()),
-         this::isKeyOn, this::onKeyDataPressed);
+      mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4,
+         () -> new Color(mDriver.getCursorTrack().color()), this::isKeyOn, this::onKeyDataPressed);
       mMixDataLayer = new LaunchpadLayer(driver, "drum-seq-mix-data");
       mSoundDataLayer = new LaunchpadLayer(driver, "drum-seq-sound-data");
 
@@ -36,7 +36,7 @@ public class StepSequencerMode extends AbstractSequencerMode
             final int absoluteStepIndex = calculateAbsoluteStepIndex(x, 3 - y);
             bindPressed(bt, v -> {
                bt.onButtonPressed(driver.getHost());
-               onStepPressed(absoluteStepIndex, (int) (v * 127.0));
+               onStepPressed(absoluteStepIndex);
             });
             bindReleased(bt, () -> {
                final boolean wasHeld = bt.getButtonState() == Button.State.HOLD;
@@ -309,7 +309,7 @@ public class StepSequencerMode extends AbstractSequencerMode
       }
    }
 
-   private void onStepPressed(final int absoluteStep, final int velocity)
+   private void onStepPressed(final int absoluteStep)
    {
       final Clip cursorClip = mDriver.getCursorClip();
 
