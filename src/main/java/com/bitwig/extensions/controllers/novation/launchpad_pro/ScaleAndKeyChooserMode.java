@@ -6,18 +6,7 @@ import com.bitwig.extensions.framework.MusicalScaleLibrary;
 
 public class ScaleAndKeyChooserMode extends Mode
 {
-   private static final int[] CHROMATIC_NOTE_INDEXES = new int[] { 0, 2, 4, 5, 7, 9, 11, 12, -1, 1, 3, -1, 6, 8, 10,
-         -1, };
-
-   private final static LedState ROOT_KEY_COLOR = new LedState(Color.fromRgb255(11, 100, 63));
-
-   private final static LedState USED_KEY_COLOR = new LedState(Color.fromRgb255(255, 240, 240));
-
-   private final static LedState UNUSED_KEY_COLOR = new LedState(Color.fromRgb255(40, 40, 40));
-
-   private final static LedState SCALE_ON_COLOR = new LedState(Color.fromRgb255(50, 167, 202));
-
-   private final static LedState SCALE_OFF_COLOR = new LedState(Color.scale(SCALE_ON_COLOR.getColor(), 0.2f));
+   private static final int[] CHROMATIC_NOTE_INDEXES = new int[] {0, 2, 4, 5, 7, 9, 11, 12, -1, 1, 3, -1, 6, 8, 10, -1};
 
    ScaleAndKeyChooserMode(final LaunchpadProControllerExtension driver)
    {
@@ -34,12 +23,12 @@ public class ScaleAndKeyChooserMode extends Mode
                if (noteIndex == -1)
                   return LedState.OFF;
                if ((noteIndex % 12) == mDriver.getMusicalKey())
-                  return ROOT_KEY_COLOR;
+                  return LedState.ROOT_KEY_COLOR;
 
                final MusicalScale scale = mDriver.getMusicalScale();
                if (scale.isMidiNoteInScale(mDriver.getMusicalKey(), noteIndex))
-                  return USED_KEY_COLOR;
-               return UNUSED_KEY_COLOR;
+                  return LedState.USED_KEY_COLOR;
+               return LedState.UNUSED_KEY_COLOR;
             }, bt);
          }
       }
@@ -60,8 +49,8 @@ public class ScaleAndKeyChooserMode extends Mode
                if (index >= librarySize)
                   return LedState.OFF;
                if (indexInLibrary == index)
-                  return SCALE_ON_COLOR;
-               return SCALE_OFF_COLOR;
+                  return LedState.SCALE_ON_COLOR;
+               return LedState.SCALE_OFF_COLOR;
             }, bt);
          }
       }

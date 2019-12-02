@@ -78,6 +78,13 @@ public class LedState extends InternalHardwareLightState
    public static final LedState PITCH = new LedState(Color.PITCH);
    public static final LedState PITCH_LOW = new LedState(Color.PITCH_LOW);
 
+   final static LedState ROOT_KEY_COLOR = new LedState(Color.fromRgb255(11, 100, 63));
+   final static LedState USED_KEY_COLOR = new LedState(Color.fromRgb255(255, 240, 240));
+   final static LedState UNUSED_KEY_COLOR = new LedState(Color.fromRgb255(40, 40, 40));
+   final static LedState SCALE_ON_COLOR = new LedState(Color.fromRgb255(50, 167, 202));
+   final static LedState SCALE_OFF_COLOR = new LedState(Color.scale(SCALE_ON_COLOR.getColor(), 0.2f));
+
+
    public LedState(final ColorValue color)
    {
       this(new Color(color));
@@ -109,12 +116,12 @@ public class LedState extends InternalHardwareLightState
    {
       return mPulse;
    }
-
    @Override
    public boolean equals(final Object obj)
    {
       return obj instanceof LedState && equals((LedState) obj);
    }
+
    public boolean equals(final LedState obj)
    {
       if (obj == this)
@@ -122,7 +129,6 @@ public class LedState extends InternalHardwareLightState
 
       return mColor.equals(obj.mColor) && mPulse == obj.mPulse;
    }
-
    private final Color mColor;
 
    private final int mPulse;
