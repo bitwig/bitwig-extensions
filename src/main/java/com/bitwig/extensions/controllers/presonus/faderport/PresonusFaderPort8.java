@@ -46,9 +46,10 @@ public class PresonusFaderPort8 extends PresonusFaderPort
       surface.hardwareElementWithId("marker").setBounds(303.5, 141.25, 13.5, 8.5);
       surface.hardwareElementWithId("display").setBounds(18.25, 22.75, 13.25, 11.5);
       surface.hardwareElementWithId("transport").setBounds(268.75, 96.25, 21.0, 21.75);
-      surface.hardwareElementWithId("automation_on_off").setBounds(294.25, 63.75, 16.0, 7.5);
       surface.hardwareElementWithId("automation_write").setBounds(270.25, 81.75, 16.0, 7.5);
       surface.hardwareElementWithId("automation_touch").setBounds(247.25, 82.0, 16.0, 7.5);
+      surface.hardwareElementWithId("automation_latch").setBounds(247.25, 63.75, 16.0, 7.5);
+      surface.hardwareElementWithId("automation_on_off").setBounds(294.25, 63.75, 16.0, 7.5);
       surface.hardwareElementWithId("solo1").setBounds(59.0, 81.25, 6.5, 7.0);
       surface.hardwareElementWithId("mute1").setBounds(48.25, 81.25, 6.5, 7.0);
       surface.hardwareElementWithId("select1").setBounds(50.0, 61.75, 13.5, 10.0);
@@ -97,9 +98,16 @@ public class PresonusFaderPort8 extends PresonusFaderPort
       surface.hardwareElementWithId("display7").setBounds(171.0, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display8").setBounds(191.25, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display8").setBounds(191.25, 20.0, 16.0, 19.25);
-      surface.hardwareElementWithId("automation_latch").setBounds(247.25, 63.75, 16.0, 7.5);
-
-
+      surface.hardwareElementWithId("bypass").setBounds(19.75, 111.75, 12.5, 7.5);
+      surface.hardwareElementWithId("macro").setBounds(19.75, 126.5, 12.5, 7.5);
+      surface.hardwareElementWithId("link").setBounds(19.75, 141.5, 12.5, 7.5);
+      surface.hardwareElementWithId("audio").setBounds(222.25, 81.5, 12.5, 7.5);
+      surface.hardwareElementWithId("VI").setBounds(222.25, 96.5, 12.5, 7.5);
+      surface.hardwareElementWithId("bus").setBounds(222.25, 111.5, 12.5, 7.5);
+      surface.hardwareElementWithId("VCA").setBounds(222.25, 126.75, 12.5, 7.5);
+      surface.hardwareElementWithId("all").setBounds(222.25, 141.75, 12.5, 7.5);
+      surface.hardwareElementWithId("automation_read").setBounds(294.25, 81.75, 16.0, 7.5);
+      surface.hardwareElementWithId("automation_trim").setBounds(270.25, 63.75, 16.0, 7.5);
    }
 
 }

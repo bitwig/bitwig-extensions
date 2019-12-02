@@ -107,6 +107,10 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
    private HardwareButton mMarkerButton;
 
+   private HardwareButton mAutomationReadButton;
+
+   private HardwareButton mAutomationTrimButton;
+
    private HardwareButton mAutomationOffButton;
 
    private HardwareButton mAutomationLatchButton;
@@ -116,6 +120,14 @@ public abstract class PresonusFaderPort extends ControllerExtension
    private HardwareButton mAutomationTouchButton;
 
    private HardwareButton mFastForwardButton;
+
+   private HardwareButton mBypassButton;
+
+   private HardwareButton mMacroButton;
+
+   private HardwareButton mLinkButton;
+
+   private HardwareButton mAudioButton, mVIButton, mBusButton, mVCAButton, mAllButton;
 
    public PresonusFaderPort(final PresonusFaderPortDefinition definition, final ControllerHost host)
    {
@@ -194,6 +206,16 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mClearSoloButton = createToggleButton("clear_solo", 0x01);
       mClearMuteButton = createToggleButton("clear_mute", 0x02);
 
+      mBypassButton = createRGBButton("bypass", 0x03);
+      mMacroButton = createRGBButton("macro", 0x04);
+      mLinkButton = createRGBButton("link", 0x05);
+
+      mAudioButton = createRGBButton("audio", 0x3E);
+      mVIButton = createRGBButton("VI", 0x3F);
+      mBusButton = createRGBButton("bus", 0x40);
+      mVCAButton = createRGBButton("VCA", 0x41);
+      mAllButton = createRGBButton("all", 0x42);
+
       mTrackModeButton = createToggleButton("track_mode", 0x28);
       mPluginModeButton = createToggleButton("plugin_mode", 0x2B);
       mSendsModeButton = createToggleButton("sends_mode", 0x29);
@@ -212,10 +234,13 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mDisplayEncoder = createClickEncoder("display", 0x20, 0x10);
       mTransportEncoder = createClickEncoder("transport", 0x53, 0x3C);
 
+      mAutomationReadButton = createRGBButton("automation_read", 0x4A);
+      mAutomationWriteButton = createRGBButton("automation_write", 0x4B);
+      mAutomationTrimButton = createRGBButton("automation_trim", 0x4C);
+      mAutomationTouchButton = createRGBButton("automation_touch", 0x4D);
       mAutomationLatchButton = createRGBButton("automation_latch", 0x4E);
       mAutomationOffButton = createRGBButton("automation_on_off", 0x4F);
-      mAutomationWriteButton = createRGBButton("automation_write", 0x4B);
-      mAutomationTouchButton = createRGBButton("automation_touch", 0x4D);
+
 
       for (int index = 0; index < mChannelCount; index++)
       {

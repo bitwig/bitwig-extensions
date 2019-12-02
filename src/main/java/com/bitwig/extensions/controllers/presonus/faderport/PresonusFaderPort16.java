@@ -31,10 +31,10 @@ public class PresonusFaderPort16 extends PresonusFaderPort
       surface.hardwareElementWithId("fast_forward").setBounds(459.5, 167.75, 12.5, 12.25);
       surface.hardwareElementWithId("clear_solo").setBounds(19.75, 81.25, 12.5, 7.5);
       surface.hardwareElementWithId("clear_mute").setBounds(19.75, 96.0, 12.5, 7.5);
-      surface.hardwareElementWithId("track_mode").setBounds(385.75, 17.5, 12.5, 7.5);
-      surface.hardwareElementWithId("plugin_mode").setBounds(385.75, 32.5, 12.5, 7.5);
-      surface.hardwareElementWithId("sends_mode").setBounds(385.75, 47.5, 12.5, 7.5);
-      surface.hardwareElementWithId("pan_mode").setBounds(385.75, 61.75, 12.5, 7.5);
+      surface.hardwareElementWithId("track_mode").setBounds(386.5, 17.5, 12.5, 7.5);
+      surface.hardwareElementWithId("plugin_mode").setBounds(386.5, 32.5, 12.5, 7.5);
+      surface.hardwareElementWithId("sends_mode").setBounds(386.5, 47.5, 12.5, 7.5);
+      surface.hardwareElementWithId("pan_mode").setBounds(386.5, 61.75, 12.5, 7.5);
       surface.hardwareElementWithId("scroll_left").setBounds(413.75, 102.0, 12.75, 9.25);
       surface.hardwareElementWithId("scroll_right").setBounds(462.25, 102.0, 12.75, 9.25);
       surface.hardwareElementWithId("channel").setBounds(407.0, 125.5, 13.5, 8.5);
@@ -45,9 +45,10 @@ public class PresonusFaderPort16 extends PresonusFaderPort
       surface.hardwareElementWithId("marker").setBounds(468.5, 139.75, 13.5, 8.5);
       surface.hardwareElementWithId("display").setBounds(18.25, 22.75, 13.25, 11.5);
       surface.hardwareElementWithId("transport").setBounds(433.75, 94.75, 21.0, 21.75);
-      surface.hardwareElementWithId("automation_on_off").setBounds(458.75, 62.25, 16.0, 7.5);
       surface.hardwareElementWithId("automation_write").setBounds(435.25, 80.25, 16.0, 7.5);
       surface.hardwareElementWithId("automation_touch").setBounds(412.25, 80.25, 16.0, 7.5);
+      surface.hardwareElementWithId("automation_latch").setBounds(412.25, 62.25, 16.0, 7.5);
+      surface.hardwareElementWithId("automation_on_off").setBounds(458.75, 62.25, 16.0, 7.5);
       surface.hardwareElementWithId("solo1").setBounds(59.0, 81.25, 6.5, 7.0);
       surface.hardwareElementWithId("mute1").setBounds(48.25, 81.25, 6.5, 7.0);
       surface.hardwareElementWithId("select1").setBounds(50.0, 61.75, 13.5, 10.0);
@@ -144,8 +145,13 @@ public class PresonusFaderPort16 extends PresonusFaderPort
       surface.hardwareElementWithId("display15").setBounds(333.25, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display16").setBounds(353.75, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display16").setBounds(353.75, 20.0, 16.0, 19.25);
-      surface.hardwareElementWithId("automation_latch").setBounds(412.25, 62.25, 16.0, 7.5);
-
-
+      surface.hardwareElementWithId("audio").setBounds(386.5, 80.25, 12.5, 7.5);
+      surface.hardwareElementWithId("VI").setBounds(386.5, 95.25, 12.5, 7.5);
+      surface.hardwareElementWithId("bus").setBounds(386.5, 110.5, 12.5, 7.5);
+      surface.hardwareElementWithId("VCA").setBounds(386.5, 125.5, 12.5, 7.5);
+      surface.hardwareElementWithId("all").setBounds(386.5, 140.75, 12.5, 7.5);
+      surface.hardwareElementWithId("bypass").setBounds(19.75, 111.25, 12.5, 7.5);
+      surface.hardwareElementWithId("macro").setBounds(19.75, 126.5, 12.5, 7.5);
+      surface.hardwareElementWithId("link").setBounds(19.75, 141.5, 12.5, 7.5);
    }
 }
