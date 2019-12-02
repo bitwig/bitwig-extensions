@@ -185,17 +185,17 @@ public class StepSequencerMode extends AbstractSequencerMode
       final Button button = mDriver.getPadButton(x, 7 - y);
 
       if (playingStep == mPage * 32 + 8 * y + x)
-         return new LedState(Color.GREEN);
+         return LedState.STEP_PLAY_HEAD;
       if (mDriver.getPadButton(x, 7- y).getButtonState() == Button.State.HOLD)
-         return new LedState(Color.STEP_HOLD);
+         return LedState.STEP_HOLD;
       switch (noteStep.state())
       {
          case NoteOn:
-            return new LedState(Color.STEP_ON);
+            return LedState.STEP_ON;
          case NoteSustain:
-            return new LedState(Color.STEP_SUSTAIN);
+            return LedState.STEP_SUSTAIN;
          case Empty:
-            return new LedState(Color.STEP_OFF);
+            return LedState.STEP_OFF;
          default:
             throw new IllegalStateException();
       }

@@ -73,7 +73,7 @@ public class LedState extends InternalHardwareLightState
    public static final LedState STEP_PLAY = new LedState(Color.STEP_PLAY);
    public static final LedState STEP_ON = new LedState(Color.STEP_ON);
    public static final LedState STEP_SUSTAIN = new LedState(Color.STEP_SUSTAIN);
-   public static final LedState STEP_OFF = new LedState(Color.STEP_SUSTAIN);
+   public static final LedState STEP_OFF = new LedState(Color.STEP_OFF);
 
    public static final LedState PITCH = new LedState(Color.PITCH);
    public static final LedState PITCH_LOW = new LedState(Color.PITCH_LOW);
