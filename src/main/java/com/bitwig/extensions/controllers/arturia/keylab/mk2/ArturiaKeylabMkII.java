@@ -258,7 +258,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    private void initLayers()
    {
       mLayers = new Layers(this);
-      
+
       mBaseLayer = new Layer(mLayers, "Base")
       {
          @Override
