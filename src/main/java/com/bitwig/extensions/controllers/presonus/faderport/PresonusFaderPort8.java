@@ -48,7 +48,7 @@ public class PresonusFaderPort8 extends PresonusFaderPort
       surface.hardwareElementWithId("transport").setBounds(268.75, 96.25, 21.0, 21.75);
       surface.hardwareElementWithId("automation_on_off").setBounds(294.25, 63.75, 16.0, 7.5);
       surface.hardwareElementWithId("automation_write").setBounds(270.25, 81.75, 16.0, 7.5);
-      surface.hardwareElementWithId("automation_touch").setBounds(247.25, 81.75, 16.0, 7.5);
+      surface.hardwareElementWithId("automation_touch").setBounds(247.25, 82.0, 16.0, 7.5);
       surface.hardwareElementWithId("solo1").setBounds(59.0, 81.25, 6.5, 7.0);
       surface.hardwareElementWithId("mute1").setBounds(48.25, 81.25, 6.5, 7.0);
       surface.hardwareElementWithId("select1").setBounds(50.0, 61.75, 13.5, 10.0);
@@ -82,13 +82,22 @@ public class PresonusFaderPort8 extends PresonusFaderPort
       surface.hardwareElementWithId("select8").setBounds(192.75, 61.75, 13.5, 10.0);
       surface.hardwareElementWithId("fader8").setBounds(192.25, 112.25, 14.25, 130.0);
       surface.hardwareElementWithId("display1").setBounds(49.25, 20.0, 16.0, 19.25);
+      surface.hardwareElementWithId("display1").setBounds(49.25, 20.0, 16.0, 19.25);
+      surface.hardwareElementWithId("display2").setBounds(69.5, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display2").setBounds(69.5, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display3").setBounds(89.75, 20.0, 16.0, 19.25);
+      surface.hardwareElementWithId("display3").setBounds(89.75, 20.0, 16.0, 19.25);
+      surface.hardwareElementWithId("display4").setBounds(110.25, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display4").setBounds(110.25, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display5").setBounds(130.5, 20.0, 16.0, 19.25);
+      surface.hardwareElementWithId("display5").setBounds(130.5, 20.0, 16.0, 19.25);
+      surface.hardwareElementWithId("display6").setBounds(150.75, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display6").setBounds(150.75, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display7").setBounds(171.0, 20.0, 16.0, 19.25);
+      surface.hardwareElementWithId("display7").setBounds(171.0, 20.0, 16.0, 19.25);
       surface.hardwareElementWithId("display8").setBounds(191.25, 20.0, 16.0, 19.25);
+      surface.hardwareElementWithId("display8").setBounds(191.25, 20.0, 16.0, 19.25);
+      surface.hardwareElementWithId("automation_latch").setBounds(247.25, 63.75, 16.0, 7.5);
 
 
    }

@@ -109,6 +109,8 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
    private HardwareButton mAutomationOffButton;
 
+   private HardwareButton mAutomationLatchButton;
+
    private HardwareButton mAutomationWriteButton;
 
    private HardwareButton mAutomationTouchButton;
@@ -210,6 +212,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mDisplayEncoder = createClickEncoder("display", 0x20, 0x10);
       mTransportEncoder = createClickEncoder("transport", 0x53, 0x3C);
 
+      mAutomationLatchButton = createRGBButton("automation_latch", 0x4E);
       mAutomationOffButton = createRGBButton("automation_on_off", 0x4F);
       mAutomationWriteButton = createRGBButton("automation_write", 0x4B);
       mAutomationTouchButton = createRGBButton("automation_touch", 0x4D);
@@ -444,6 +447,17 @@ public abstract class PresonusFaderPort extends ControllerExtension
          final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
          return isEnabled ? ARM_HIGH : DIM_WHITE;
       }, mAutomationOffButton);
+
+      mDefaultLayer.bindPressed(mAutomationLatchButton, () -> mTransport.automationWriteMode().set("latch"));
+      mDefaultLayer.bind(() -> {
+         if (mTransport.automationWriteMode().get().equals("latch"))
+         {
+            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
+            return isEnabled ? ARM_HIGH : DIM_WHITE;
+         }
+
+         return null;
+      }, mAutomationLatchButton);
 
       mDefaultLayer.bindPressed(mAutomationWriteButton, () -> mTransport.automationWriteMode().set("write"));
       mDefaultLayer.bind(() -> {
