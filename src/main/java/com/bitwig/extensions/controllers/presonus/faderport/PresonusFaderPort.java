@@ -445,8 +445,16 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.bindToggle(mRecordButton, mTransport.isArrangerRecordEnabled());
       mDefaultLayer.bindToggle(mMetronomeButton, mTransport.isMetronomeEnabled());
       mDefaultLayer.bindToggle(mLoopButton, mTransport.isArrangerLoopEnabled());
-      mDefaultLayer.bindPressed(mRewindButton, mTransport.rewindAction());
-      mDefaultLayer.bindPressed(mFastForwardButton, mTransport.fastForwardAction());
+      mDefaultLayer.bindIsPressed(mRewindButton, p ->
+      {
+         mIsRewinding = p;
+         if (p) repeatForwardRewind();
+      });
+      mDefaultLayer.bindIsPressed(mFastForwardButton, p ->
+      {
+         mIsForwarding = p;
+         if (p) repeatForwardRewind();
+      });
       mDefaultLayer.bindToggle(mClearSoloButton, mClearSolo, mClearSolo.isEnabled());
       mDefaultLayer.bindToggle(mClearMuteButton, mClearMute, mClearMute.isEnabled());
 
@@ -532,7 +540,15 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
    private void initScrollLayer()
    {
+      mScrollLayer.bind(mTransportEncoder, d ->
+         mTransport.setPosition(d * 1));
       mScrollLayer.bindPressed(mTransportEncoder, mApplication.zoomToFitAction());
+   }
+
+   private void initZoomLayer()
+   {
+      mZoomLayer.bind(mTransportEncoder, mApplication.zoomInAction(), mApplication.zoomOutAction());
+      mZoomLayer.bindPressed(mTransportEncoder, mApplication.zoomToSelectionAction());
    }
 
    private void initMarkerLayer()
@@ -589,12 +605,6 @@ public abstract class PresonusFaderPort extends ControllerExtension
             return null;
          }, channel.select);
       }
-   }
-
-   private void initZoomLayer()
-   {
-      mZoomLayer.bind(mTransportEncoder, mApplication.zoomInAction(), mApplication.zoomOutAction());
-      mZoomLayer.bindPressed(mTransportEncoder, mApplication.zoomToSelectionAction());
    }
 
    private void initMasterLayer()
@@ -955,6 +965,33 @@ public abstract class PresonusFaderPort extends ControllerExtension
    private HardwareButton mArmButton;
 
    private MidiIn mMidiIn;
+
+
+   private void repeatForwardRewind()
+   {
+      if (mIsForwarding && mIsRewinding)
+      {
+         mTransport.setPosition(0);
+         return; // stop repeat
+      }
+      else if (mIsForwarding)
+      {
+         mTransport.fastForward();
+      }
+      else if (mIsRewinding)
+      {
+         mTransport.rewind();
+      }
+      else
+      {
+         return;
+      }
+
+      getHost().scheduleTask(this::repeatForwardRewind, 100);
+   }
+
+   private boolean mIsRewinding;
+   private boolean mIsForwarding;
 
    private final Layers mLayers = new Layers(this);
 }
