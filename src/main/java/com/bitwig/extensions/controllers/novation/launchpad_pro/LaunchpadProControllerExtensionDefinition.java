@@ -69,8 +69,8 @@ public class LaunchpadProControllerExtensionDefinition extends ControllerExtensi
       final AutoDetectionMidiPortNamesList list,
       final PlatformType platformType)
    {
-      final String inputNames[] = new String[1];
-      final String outputNames[] = new String[1];
+      final String[] inputNames = new String[1];
+      final String[] outputNames = new String[1];
 
       switch (platformType)
       {

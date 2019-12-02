@@ -1,55 +1,54 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Track;
+import com.bitwig.extension.controller.api.TrackBank;
 
-public class StopClipOverlay extends Overlay
+class StopClipOverlay extends Overlay
 {
-   private static final Color NO_TRACK_COLOR = Color.fromRgb255(0, 0, 0);
-   private static final Color STOP_CLIP_ON_COLOR = Color.fromRgb255(180, 180, 180);
-   private static final Color STOP_CLIP_OFF_COLOR = Color.scale(STOP_CLIP_ON_COLOR, 0.3f);
-
-   public StopClipOverlay(final LaunchpadProControllerExtension launchpadProControllerExtension)
+   StopClipOverlay(final LaunchpadProControllerExtension driver)
    {
-      super(launchpadProControllerExtension);
-   }
+      super(driver, "stop-clip");
 
-   @Override
-   public void onPadPressed(final int x, final int velocity)
-   {
-      final Track channel = mDriver.getTrackBank().getItemAt(x);
-      channel.stop();
-   }
+      final TrackBank trackBank = driver.getTrackBank();
+      for (int x = 0; x < 8; ++x)
+      {
+         final Track track = trackBank.getItemAt(x);
+         final Button button = driver.getPadButton(x, 0);
+         bindPressed(button, track.stopAction());
+         bindLightState(() -> {
+            if (track.exists().get())
+               return !track.isStopped().get() ? LedState.STOP_CLIP_ON : LedState.STOP_CLIP_OFF;
+            return LedState.OFF;
+         }, button);
+      }
 
-   @Override
-   public void onPadReleased(final int x, final int velocity)
-   {
-
+      bindLightState(LedState.STOP_CLIP_ON, driver.getStopButton());
    }
 
    @Override
    protected void doActivate()
    {
-
-   }
-
-   @Override
-   public void paint()
-   {
-      super.paint();
-
-      for (int x = 0; x < 8; ++x)
+      final TrackBank trackBank = mDriver.getTrackBank();
+      for (int i = 0; i < 8; ++i)
       {
-         final boolean isPlaying = false;
-         final boolean exists = mDriver.getTrackBank().getItemAt(x).exists().get();
-         mDriver.getPadLed(x, 0).setColor(!exists ? NO_TRACK_COLOR :
-            isPlaying ? STOP_CLIP_ON_COLOR : STOP_CLIP_OFF_COLOR);
+         final Track track = trackBank.getItemAt(i);
+         track.subscribe();
+         track.isStopped().subscribe();
+         track.exists().subscribe();
       }
    }
 
    @Override
-   public void paintModeButton()
+   protected void doDeactivate()
    {
-      final Led led = mDriver.getBottomLed(7);
-      led.setColor(mIsActive ? STOP_CLIP_ON_COLOR : STOP_CLIP_OFF_COLOR);
+      final TrackBank trackBank = mDriver.getTrackBank();
+      for (int i = 0; i < 8; ++i)
+      {
+         final Track track = trackBank.getItemAt(i);
+         track.exists().unsubscribe();
+         track.isStopped().unsubscribe();
+         track.unsubscribe();
+      }
    }
 }

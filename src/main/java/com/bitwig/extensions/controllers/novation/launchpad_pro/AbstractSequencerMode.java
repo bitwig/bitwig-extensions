@@ -8,16 +8,58 @@ import java.util.Set;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.NoteInput;
-import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
+import com.bitwig.extension.controller.api.PinnableCursorClip;
 import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.Track;
 
 abstract class AbstractSequencerMode extends Mode
 {
-   protected AbstractSequencerMode(final LaunchpadProControllerExtension driver)
+   protected AbstractSequencerMode(final LaunchpadProControllerExtension driver, final String name)
    {
-      super(driver);
+      super(driver, name);
+
+      mShiftLayer = new LaunchpadLayer(driver, name + "-shift")
+      {
+         @Override
+         protected void onActivate()
+         {
+            mDriver.getCursorClip().getLoopLength().subscribe();
+         }
+
+         @Override
+         protected void onDeactivate()
+         {
+            mDriver.getCursorClip().getLoopLength().unsubscribe();
+         }
+      };
+      bindMainLayer();
+      bindShiftLayer();
+   }
+
+   private void bindMainLayer()
+   {
+      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      final PinnableCursorClip cursorClip = mDriver.getCursorClip();
+
+      bindPressed(mDriver.getLeftButton(), cursorTrack.selectPreviousAction());
+      bindPressed(mDriver.getRightButton(), cursorTrack.selectNextAction());
+      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, mDriver.getRightButton());
+      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, mDriver.getLeftButton());
+
+      bindPressed(mDriver.getUpButton(), cursorClip.selectPreviousAction());
+      bindPressed(mDriver.getDownButton(), cursorClip.selectNextAction());
+      bindLightState(() -> cursorClip.hasPrevious().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), mDriver.getUpButton());
+      bindLightState(() -> cursorClip.hasNext().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), mDriver.getDownButton());
+
+      bindLayer(mDriver.getShiftButton(), mShiftLayer);
+   }
+
+   private void bindShiftLayer()
+   {
+      final PinnableCursorClip cursorClip = mDriver.getCursorClip();
+      mShiftLayer.bindPressed(mDriver.getDeleteButton(), () -> cursorClip.clearSteps());
+      mShiftLayer.bindPressed(mDriver.getQuantizeButton(), () -> cursorClip.quantize(1));
    }
 
    protected enum DataMode
@@ -28,38 +70,47 @@ abstract class AbstractSequencerMode extends Mode
    @Override
    protected void doActivate()
    {
-      final Clip clip = mDriver.getCursorClip();
+      final PinnableCursorClip clip = mDriver.getCursorClip();
       clip.color().subscribe();
+      clip.exists().subscribe();
+      clip.hasNext().subscribe();
+      clip.hasPrevious().subscribe();
+      clip.playingStep().subscribe();
+      clip.getPlayStart().subscribe();
+      clip.getPlayStop().subscribe();
 
       if (clip.exists().get())
          setNoteInputRouting();
 
-      final Track cursorClipTrack = mDriver.getCursorClipTrack();
-      cursorClipTrack.subscribe();
-      cursorClipTrack.color().subscribe();
-
       final CursorTrack cursorTrack = mDriver.getCursorTrack();
       cursorTrack.subscribe();
       cursorTrack.color().subscribe();
-
-      final PlayingNoteArrayValue playingNotes = cursorClipTrack.playingNotes();
-      playingNotes.subscribe();
+      cursorTrack.hasNext().subscribe();
+      cursorTrack.hasPrevious().subscribe();
+      cursorTrack.playingNotes().subscribe();
    }
 
    @Override
-   public void deactivate()
+   protected void doDeactivate()
    {
-      final Clip clip = mDriver.getCursorClip();
+      final PinnableCursorClip clip = mDriver.getCursorClip();
       clip.color().unsubscribe();
+      clip.exists().unsubscribe();
+      clip.hasNext().unsubscribe();
+      clip.hasPrevious().unsubscribe();
+      clip.playingStep().unsubscribe();
+      clip.getPlayStart().unsubscribe();
+      clip.getPlayStop().unsubscribe();
 
       if (clip.exists().get())
          clearNoteInputRouting();
 
-      final Track cursorClipTrack = mDriver.getCursorClipTrack();
-      final PlayingNoteArrayValue playingNotes = cursorClipTrack.playingNotes();
-      playingNotes.unsubscribe();
-
-      super.deactivate();
+      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      cursorTrack.color().unsubscribe();
+      cursorTrack.hasNext().unsubscribe();
+      cursorTrack.hasPrevious().unsubscribe();
+      cursorTrack.playingNotes().unsubscribe();
+      cursorTrack.unsubscribe();
    }
 
    @Override
@@ -76,8 +127,8 @@ abstract class AbstractSequencerMode extends Mode
       final NoteInput noteInput = mDriver.getNoteInput();
       noteInput.includeInAllInputs().set(false);
 
-      final Track cursorClipTrack = mDriver.getCursorClipTrack();
-      cursorClipTrack.addNoteSource(noteInput);
+      final Track cursorTrack = mDriver.getCursorTrack();
+      cursorTrack.addNoteSource(noteInput);
    }
 
    private void clearNoteInputRouting()
@@ -85,8 +136,8 @@ abstract class AbstractSequencerMode extends Mode
       final NoteInput noteInput = mDriver.getNoteInput();
       noteInput.includeInAllInputs().set(true);
 
-      final Track cursorClipTrack = mDriver.getCursorClipTrack();
-      cursorClipTrack.removeNoteSource(noteInput);
+      final Track cursorTrack = mDriver.getCursorTrack();
+      cursorTrack.removeNoteSource(noteInput);
    }
 
    protected void setDataMode(final DataMode dataMode)
@@ -97,7 +148,6 @@ abstract class AbstractSequencerMode extends Mode
       mDriver.getHost().showPopupNotification(getDataModeDescription(dataMode));
       mDataMode = dataMode;
       mDriver.updateKeyTranslationTable();
-      paint();
    }
 
    @Override
@@ -108,28 +158,28 @@ abstract class AbstractSequencerMode extends Mode
 
    protected abstract String getDataModeDescription(final DataMode dataMode);
 
-   protected int calculateAbsoluteStepIndex(int x, int y)
+   protected int calculateAbsoluteStepIndex(final int x, final int y)
    {
       return mPage * 32 + x + 8 * y;
    }
 
-   protected void paintMixData()
+   protected LedState computeMixDataLedState(final int x, final int y)
    {
-      final List<ButtonState> pads = findStepsInPressedOrHoldState();
+      final List<Button> pads = getStepsInPressedOrHoldState();
 
       if (pads.isEmpty())
       {
-         for (int i = 0; i < 8; ++i)
+         switch (y)
          {
-            mDriver.getPadLed(i, 3).setColor(Color.WHITE_LOW);
-            mDriver.getPadLed(i, 2).setColor(Color.CYAN_LOW);
-            mDriver.getPadLed(i, 1).setColor(Color.PAN_LOW);
-            mDriver.getPadLed(i, 0).setColor(Color.OFF);
+            case 0: return LedState.OFF;
+            case 1: return LedState.PAN_MODE_LOW;
+            case 2: return new LedState(Color.CYAN_LOW);
+            case 3: return new LedState(Color.WHITE_LOW);
+            default: throw new IllegalStateException();
          }
-         return;
       }
 
-      final ButtonState pad = pads.get(0);
+      final Button pad = pads.get(0);
       final int absoluteStepIndex = calculateAbsoluteStepIndex(pad.getX() - 1, 8 - pad.getY());
       final NoteStep noteStep = findStepInfo(absoluteStepIndex);
 
@@ -137,37 +187,41 @@ abstract class AbstractSequencerMode extends Mode
       final double duration = noteStep.duration();
       final double pan = noteStep.pan();
 
-      for (int i = 0; i < 8; ++i)
+      switch (y)
       {
-         mDriver.getPadLed(i, 3).setColor(i <= velocity * 7 ? Color.WHITE : Color.WHITE_LOW);
-         mDriver.getPadLed(i, 2).setColor(computeDuration(i) <= duration ? Color.CYAN : Color.CYAN_LOW);
-         final double ipan = (i - 3.5) / 3.5;
-         if ((pan > 0 && ipan > 0 && ipan <= pan) || (pan < 0 && ipan < 0 && pan <= ipan))
-            mDriver.getPadLed(i, 1).setColor(Color.PAN);
-         else
-            mDriver.getPadLed(i, 1).setColor(Color.PAN_LOW);
-         mDriver.getPadLed(i, 0).setColor(Color.OFF);
+         case 0:
+            return LedState.OFF;
+         case 1:
+            final double ipan = (x - 3.5) / 3.5;
+            if ((pan > 0 && ipan > 0 && ipan <= pan) || (pan < 0 && ipan < 0 && pan <= ipan))
+               return LedState.PAN_MODE;
+            return LedState.PAN_MODE_LOW;
+         case 2:
+            return new LedState(computeDuration(x) <= duration ? Color.CYAN : Color.CYAN_LOW);
+         case 3:
+            return new LedState(x <= velocity * 7 ? Color.WHITE : Color.WHITE_LOW);
+         default:
+            throw new IllegalStateException();
       }
    }
 
-   protected void paintSoundData()
+   protected LedState computeSoundDataLedState(final int x, final int y)
    {
-      final List<ButtonState> padsInHoldState = mDriver.findPadsInHoldState();
+      final List<Button> pads = getStepsInPressedOrHoldState();
 
-      if (padsInHoldState.isEmpty())
+      if (pads.isEmpty())
       {
-         for (int i = 0; i < 8; ++i)
+         switch (y)
          {
-            mDriver.getPadLed(i, 3).setColor(Color.WHITE_LOW);
-            mDriver.getPadLed(i, 2).setColor(Color.YELLOW_LOW);
-            mDriver.getPadLed(i, 1).setColor(Color.BLUE_LOW);
-            mDriver.getPadLed(i, 0).setColor(Color.OFF);
+            case 0: return LedState.OFF;
+            case 1: return new LedState(Color.BLUE_LOW);
+            case 2: return new LedState(Color.YELLOW_LOW);
+            case 3: return new LedState(Color.WHITE_LOW);
+            default: throw new IllegalStateException();
          }
-         return;
       }
 
-      final ButtonState pad = padsInHoldState.get(0);
-      final Clip clip = mDriver.getCursorClip();
+      final Button pad = pads.get(0);
       final int absoluteStepIndex = calculateAbsoluteStepIndex(pad.getX() - 1, 8 - pad.getY());
       final NoteStep noteStep = findStepInfo(absoluteStepIndex);
 
@@ -175,81 +229,68 @@ abstract class AbstractSequencerMode extends Mode
       final double pressure = noteStep.pressure();
       final double timbre = noteStep.timbre();
 
-      for (int i = 0; i < 8; ++i)
+      switch (y)
       {
-         final double itranspose = computeTranspoose(i);
-
-         if ((transpose > 0 && itranspose > 0 && itranspose <= transpose) || (transpose < 0 && itranspose < 0 && transpose <= itranspose))
-            mDriver.getPadLed(i, 3).setColor(Color.WHITE);
-         else
-            mDriver.getPadLed(i, 3).setColor(Color.WHITE_LOW);
-
-         final double itimbre = (i - 3.5) / 3.5;
-         if ((timbre > 0 && itimbre > 0 && itimbre <= timbre) || (timbre < 0 && itimbre < 0 && timbre <= itimbre))
-            mDriver.getPadLed(i, 2).setColor(Color.YELLOW);
-         else
-            mDriver.getPadLed(i, 2).setColor(Color.YELLOW_LOW);
-
-         mDriver.getPadLed(i, 1).setColor(i <= pressure * 7 ? Color.BLUE : Color.BLUE_LOW);
-         mDriver.getPadLed(i, 0).setColor(Color.OFF);
+         case 0:
+            return LedState.OFF;
+         case 1:
+            return new LedState(x <= pressure * 7 ? Color.BLUE : Color.BLUE_LOW);
+         case 2:
+            final double itimbre = (x - 3.5) / 3.5;
+            if ((timbre > 0 && itimbre > 0 && itimbre <= timbre) || (timbre < 0 && itimbre < 0 && timbre <= itimbre))
+               return new LedState(Color.YELLOW);
+            return new LedState(Color.YELLOW_LOW);
+         case 3:
+            final double itranspose = computeTranspoose(x);
+            if ((transpose > 0 && itranspose > 0 && itranspose <= transpose) || (transpose < 0 && itranspose < 0 && transpose <= itranspose))
+               return new LedState(Color.WHITE);
+            return new LedState(Color.WHITE_LOW);
+         default:
+            throw new IllegalStateException();
       }
    }
 
    abstract protected NoteStep findStepInfo(int absoluteStepIndex);
 
-   protected void paintDataChoice()
+   protected LedState computeDataChoiceLedState(final int y)
    {
-      mDriver.getRightLed(0).setColor(mDataMode == DataMode.SoundData ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getRightLed(1).setColor(mDataMode == DataMode.MixData ? Color.YELLOW : Color.YELLOW_LOW);
-      mDriver.getRightLed(2).setColor(hasMainAltMode() ? mDataMode == DataMode.MainAlt ? Color.YELLOW : Color.YELLOW_LOW : Color.OFF);
-      mDriver.getRightLed(3).setColor(mDataMode == DataMode.Main ? Color.YELLOW : Color.YELLOW_LOW);
-   }
-
-   protected void paintScenes()
-   {
-      if (mDriver.isShiftOn())
-         paintClipLengthSelection();
-      else
+      switch (y)
       {
-         paintPatternOffset();
-         paintDataChoice();
+         case 0:
+            return new LedState(mDataMode == DataMode.SoundData ? Color.YELLOW : Color.YELLOW_LOW);
+         case 1:
+            return new LedState(mDataMode == DataMode.MixData ? Color.YELLOW : Color.YELLOW_LOW);
+         case 2:
+            return new LedState(hasMainAltMode() ? mDataMode == DataMode.MainAlt ? Color.YELLOW : Color.YELLOW_LOW : Color.OFF);
+         case 3:
+            return new LedState(mDataMode == DataMode.Main ? Color.YELLOW : Color.YELLOW_LOW);
       }
+      throw new IllegalStateException();
    }
 
-   protected void paintPatternOffset()
+   protected LedState computePatternOffsetLedState(final int y)
    {
       final Clip clip = mDriver.getCursorClip();
 
       final SettableBeatTimeValue playStart = clip.getPlayStart();
       final SettableBeatTimeValue playStopTime = clip.getPlayStop();
       final double length = playStopTime.get() - playStart.get();
-
       final int playingStep = clip.playingStep().get();
 
-      for (int i = 0; i < 4; ++i)
-      {
-         final Led led = mDriver.getRightLed(7 - i);
-
-         if (playingStep / 32 == i)
-            led.setColor(mPage == i ? Color.GREEN : Color.GREEN_LOW);
-         else if (8 * i < length)
-            led.setColor(mPage == i ? Color.WHITE : Color.WHITE_LOW);
-         else
-            led.setColor(Color.OFF);
-      }
+      if (playingStep / 32 == y)
+         return new LedState(mPage == y ? Color.GREEN : Color.GREEN_LOW);
+      else if (8 * y < length)
+         return new LedState(mPage == y ? Color.WHITE : Color.WHITE_LOW);
+      return LedState.OFF;
    }
 
-   protected void paintClipLengthSelection()
+   protected LedState computeClipLengthSelectionLedState(final int y)
    {
       final Clip clip = mDriver.getCursorClip();
       final SettableBeatTimeValue loopLength = clip.getLoopLength();
       final double duration = loopLength.get();
 
-      for (int i = 0; i < 8; ++i)
-      {
-         final Led led = mDriver.getRightLed(7 - i);
-         led.setColor((i + 1) * 4 <= duration ? Color.WHITE : Color.WHITE_LOW);
-      }
+      return new LedState((y + 1) * 4 <= duration ? Color.WHITE : Color.WHITE_LOW);
    }
 
    protected void setClipLength(final double lengthInBars)
@@ -261,63 +302,77 @@ abstract class AbstractSequencerMode extends Mode
       cursorClip.getLoopLength().set(lengthInBars);
    }
 
-   @Override
-   public void onSceneButtonPressed(final int column)
+   protected void setDataMode(final int Y)
    {
-      if (mDriver.isShiftOn())
-         setClipLength((8 - column) * 4);
-      else if (4 <= column && column <= 7)
-         mPage = 7 - column;
-      else
+      assert 0 <= Y && Y <= 3;
+      switch (Y)
       {
-         assert 0 <= column && column <= 3;
-         switch (column)
-         {
-            case 0:
-               setDataMode(DataMode.SoundData);
-               break;
+         case 0:
+            setDataMode(DataMode.SoundData);
+            break;
 
-            case 1:
-               setDataMode(DataMode.MixData);
-               break;
+         case 1:
+            setDataMode(DataMode.MixData);
+            break;
 
-            case 2:
-               if (hasMainAltMode())
-                  setDataMode(DataMode.MainAlt);
-               break;
+         case 2:
+            if (hasMainAltMode())
+               setDataMode(DataMode.MainAlt);
+            break;
 
-            case 3:
-               setDataMode(DataMode.Main);
-               break;
-         }
+         case 3:
+            setDataMode(DataMode.Main);
+            break;
       }
    }
 
-   List<ButtonState> findStepsInHoldState()
+   List<Button> getStepsInHoldState()
    {
-      final ArrayList<ButtonState> list = new ArrayList<>();
+      final int flushIteration = mDriver.getFlushIteration();
+      if (flushIteration != mStepsInHoldStateFlushIteration)
+      {
+         mStepsInHoldState = findStepsInHoldState();
+         mStepsInHoldStateFlushIteration = flushIteration;
+      }
+      return mStepsInHoldState;
+   }
+
+   List<Button> findStepsInHoldState()
+   {
+      final ArrayList<Button> list = new ArrayList<>();
       for (int x = 0; x < 8; ++x)
       {
          for (int y = 4; y < 8; ++y)
          {
-            final ButtonState padState = mDriver.getPadState(x, y);
-            if (padState.mState == ButtonState.State.HOLD)
+            final Button padState = mDriver.getPadButton(x, y);
+            if (padState.getButtonState() == Button.State.HOLD)
                list.add(padState);
          }
       }
       return list;
    }
 
-   List<ButtonState> findStepsInPressedOrHoldState()
+   List<Button> getStepsInPressedOrHoldState()
    {
-      final ArrayList<ButtonState> list = new ArrayList<>();
+      final int flushIteration = mDriver.getFlushIteration();
+      if (flushIteration != mStepsInPressedOrHoldStateFlushIteration)
+      {
+         mStepsInPressedOrHoldState = findStepsInPressedOrHoldState();
+         mStepsInPressedOrHoldStateFlushIteration = flushIteration;
+      }
+      return mStepsInPressedOrHoldState;
+   }
+
+   List<Button> findStepsInPressedOrHoldState()
+   {
+      final ArrayList<Button> list = new ArrayList<>();
       for (int x = 0; x < 8; ++x)
       {
          for (int y = 4; y < 8; ++y)
          {
-            final ButtonState padState = mDriver.getPadState(x, y);
-            if (padState.mState == ButtonState.State.HOLD || padState.mState == ButtonState.State.PRESSED)
-               list.add(padState);
+            final Button bt = mDriver.getPadButton(x, y);
+            if (bt.getButtonState() == Button.State.HOLD || bt.getButtonState() == Button.State.PRESSED)
+               list.add(bt);
          }
       }
       return list;
@@ -351,28 +406,18 @@ abstract class AbstractSequencerMode extends Mode
       return 1.0 / 16.0 * (1 << x);
    }
 
-   @Override
-   void onDeletePressed()
-   {
-      if (mDriver.isShiftOn())
-         mDriver.getCursorClip().clearSteps();
-   }
-
-   @Override
-   void onQuantizePressed()
-   {
-      mDriver.getCursorClip().quantize(1);
-   }
-
    protected boolean hasMainAltMode()
    {
       return true;
    }
 
-   protected final Color MODE_COLOR = Color.fromRgb255(255, 183, 0);
-   protected final Color MODE_COLOR_LOW = new Color(MODE_COLOR, .1f);
-
    protected DataMode mDataMode = DataMode.Main;
    protected int mPage = 0;
    protected Set<Integer> mStepsBeingAdded = new HashSet<>();
+
+   protected final LaunchpadLayer mShiftLayer;
+   private int mStepsInHoldStateFlushIteration = -1;
+   private List<Button> mStepsInHoldState;
+   private int mStepsInPressedOrHoldStateFlushIteration = -1;
+   private List<Button> mStepsInPressedOrHoldState;
 }

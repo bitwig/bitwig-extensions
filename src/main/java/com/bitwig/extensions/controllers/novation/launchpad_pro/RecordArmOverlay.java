@@ -1,52 +1,45 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
-public class RecordArmOverlay extends Overlay
+import com.bitwig.extension.controller.api.SettableBooleanValue;
+import com.bitwig.extension.controller.api.Track;
+import com.bitwig.extension.controller.api.TrackBank;
+
+class RecordArmOverlay extends Overlay
 {
-   private static final Color NO_TRACK_COLOR = Color.fromRgb255(0, 0, 0);
-   private static final Color RECORD_ARM_ON_COLOR = Color.fromRgb255(255, 0, 0);
-   private static final Color RECORD_ARM_OFF_COLOR = Color.scale(RECORD_ARM_ON_COLOR, 0.2f);
-
-   public RecordArmOverlay(final LaunchpadProControllerExtension launchpadProControllerExtension)
+   public RecordArmOverlay(final LaunchpadProControllerExtension driver)
    {
-      super(launchpadProControllerExtension);
-   }
+      super(driver, "record");
 
-   @Override
-   public void onPadPressed(final int x, final int velocity)
-   {
-      mDriver.getTrackBank().getItemAt(x).arm().toggle();
-   }
+      final TrackBank trackBank = driver.getTrackBank();
+      for (int x = 0; x < 8; ++x)
+      {
+         final Track track = trackBank.getItemAt(x);
+         final Button button = driver.getPadButton(x, 0);
+         final SettableBooleanValue arm = track.arm();
+         bindPressed(button, arm.toggleAction());
+         bindLightState(() -> {
+            if (track.exists().get())
+               return arm.get() ? LedState.REC_ON : LedState.REC_OFF;
+            return LedState.OFF;
+         }, button);
+      }
 
-   @Override
-   public void onPadReleased(final int x, final int velocity)
-   {
-
+      bindLightState(LedState.REC_ON, driver.getArmButton());
    }
 
    @Override
    protected void doActivate()
    {
-
+      final TrackBank trackBank = mDriver.getTrackBank();
+      for (int i = 0; i < 8; ++i)
+         trackBank.getItemAt(i).arm().subscribe();
    }
 
    @Override
-   public void paint()
+   protected void doDeactivate()
    {
-      super.paint();
-
-      for (int x = 0; x < 8; ++x)
-      {
-         final boolean isArmed = mDriver.getTrackBank().getItemAt(x).arm().get();
-         final boolean exists = mDriver.getTrackBank().getItemAt(x).exists().get();
-         mDriver.getPadLed(x, 0).setColor(!exists ? NO_TRACK_COLOR :
-            isArmed ? RECORD_ARM_ON_COLOR : RECORD_ARM_OFF_COLOR);
-      }
-   }
-
-   @Override
-   public void paintModeButton()
-   {
-      final Led led = mDriver.getBottomLed(0);
-      led.setColor(mIsActive ? RECORD_ARM_ON_COLOR : RECORD_ARM_OFF_COLOR);
+      final TrackBank trackBank = mDriver.getTrackBank();
+      for (int i = 0; i < 8; ++i)
+         trackBank.getItemAt(i).arm().unsubscribe();
    }
 }
