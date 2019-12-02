@@ -441,7 +441,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.bindReleased(mShiftRightButton, () -> mShift = false);
       mDefaultLayer.bind(() -> mShift, mShiftRightButton);
 
-      mDefaultLayer.bindToggle(mPlayButton, mTransport.isPlaying());
+      mDefaultLayer.bindToggle(mPlayButton, mTransport.playAction(), mTransport.isPlaying());
       mDefaultLayer.bindToggle(mStopButton, mTransport.stopAction(), () -> !mTransport.isPlaying().get());
       mDefaultLayer.bindToggle(mRecordButton, mTransport.isArrangerRecordEnabled());
       mDefaultLayer.bindToggle(mMetronomeButton, mTransport.isMetronomeEnabled());
