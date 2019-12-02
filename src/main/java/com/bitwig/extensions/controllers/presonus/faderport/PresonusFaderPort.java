@@ -479,40 +479,46 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.bindPressed(mAutomationOffButton, mTransport.isArrangerAutomationWriteEnabled());
       mDefaultLayer.bind(() -> {
          final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
-         return isEnabled ? ARM_HIGH : DIM_WHITE;
+         return isEnabled ? ARM_LOW : ARM_HIGH;
       }, mAutomationOffButton);
 
-      mDefaultLayer.bindPressed(mAutomationLatchButton, () -> mTransport.automationWriteMode().set("latch"));
+      mDefaultLayer.bindPressed(mAutomationLatchButton, () ->
+      {
+         mTransport.isArrangerAutomationWriteEnabled().set(true);
+         mTransport.automationWriteMode().set("latch");
+      });
       mDefaultLayer.bind(() -> {
+         final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
          if (mTransport.automationWriteMode().get().equals("latch"))
-         {
-            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
-            return isEnabled ? ARM_HIGH : DIM_WHITE;
-         }
+            return isEnabled ? ARM_HIGH : HALF_WHITE;
 
-         return null;
+         return isEnabled ? ARM_LOW : DIM_WHITE;
       }, mAutomationLatchButton);
 
-      mDefaultLayer.bindPressed(mAutomationWriteButton, () -> mTransport.automationWriteMode().set("write"));
+      mDefaultLayer.bindPressed(mAutomationWriteButton, () ->
+      {
+         mTransport.isArrangerAutomationWriteEnabled().set(true);
+         mTransport.automationWriteMode().set("write");
+      });
       mDefaultLayer.bind(() -> {
+         final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
          if (mTransport.automationWriteMode().get().equals("write"))
-         {
-            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
-            return isEnabled ? ARM_HIGH : DIM_WHITE;
-         }
+            return isEnabled ? ARM_HIGH : HALF_WHITE;
 
-         return null;
+         return isEnabled ? ARM_LOW : DIM_WHITE;
       }, mAutomationWriteButton);
 
-      mDefaultLayer.bindPressed(mAutomationTouchButton, () -> mTransport.automationWriteMode().set("touch"));
+      mDefaultLayer.bindPressed(mAutomationTouchButton, () ->
+      {
+         mTransport.isArrangerAutomationWriteEnabled().set(true);
+         mTransport.automationWriteMode().set("touch");
+      });
       mDefaultLayer.bind(() -> {
+         final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
          if (mTransport.automationWriteMode().get().equals("touch"))
-         {
-            final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
-            return isEnabled ? ARM_HIGH : DIM_WHITE;
-         }
+            return isEnabled ? ARM_HIGH : HALF_WHITE;
 
-         return null;
+         return isEnabled ? ARM_LOW : DIM_WHITE;
       }, mAutomationTouchButton);
 
       for (int channelIndex = 0; channelIndex < mChannelCount; channelIndex++)
