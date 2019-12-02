@@ -158,9 +158,9 @@ abstract class AbstractSequencerMode extends Mode
 
    protected abstract String getDataModeDescription(final DataMode dataMode);
 
-   protected int calculateAbsoluteStepIndex(final int x, final int y)
+   protected int calculateClipStepIndex(final int x, final int y)
    {
-      return mPage * 32 + x + 8 * y;
+      return x + 8 * y;
    }
 
    protected LedState computeMixDataLedState(final int x, final int y)
@@ -180,8 +180,8 @@ abstract class AbstractSequencerMode extends Mode
       }
 
       final Button pad = pads.get(0);
-      final int absoluteStepIndex = calculateAbsoluteStepIndex(pad.getX() - 1, 8 - pad.getY());
-      final NoteStep noteStep = findStepInfo(absoluteStepIndex);
+      final int clipStepIndex = calculateClipStepIndex(pad.getX() - 1, 8 - pad.getY());
+      final NoteStep noteStep = findStepInfo(clipStepIndex);
 
       final double velocity = noteStep.velocity();
       final double duration = noteStep.duration();
@@ -222,8 +222,8 @@ abstract class AbstractSequencerMode extends Mode
       }
 
       final Button pad = pads.get(0);
-      final int absoluteStepIndex = calculateAbsoluteStepIndex(pad.getX() - 1, 8 - pad.getY());
-      final NoteStep noteStep = findStepInfo(absoluteStepIndex);
+      final int clipStepIndex = calculateClipStepIndex(pad.getX() - 1, 8 - pad.getY());
+      final NoteStep noteStep = findStepInfo(clipStepIndex);
 
       final double transpose = noteStep.transpose();
       final double pressure = noteStep.pressure();
@@ -250,7 +250,7 @@ abstract class AbstractSequencerMode extends Mode
       }
    }
 
-   abstract protected NoteStep findStepInfo(int absoluteStepIndex);
+   abstract protected NoteStep findStepInfo(int clipStepIndex);
 
    protected LedState computeDataChoiceLedState(final int y)
    {

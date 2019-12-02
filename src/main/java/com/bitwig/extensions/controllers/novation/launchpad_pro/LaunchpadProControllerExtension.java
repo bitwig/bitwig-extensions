@@ -334,7 +334,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mDrumPadBank.exists().markInterested();
       mDrumPadBank.scrollPosition().markInterested();
 
-      mCursorClip = mCursorTrack.createLauncherCursorClip("launchpad-pro", "Launchpad Pro", 8 * 16, 128);
+      mCursorClip = mCursorTrack.createLauncherCursorClip("launchpad-pro", "Launchpad Pro", 32, 128);
       mCursorClip.exists().markInterested();
       mCursorClip.exists().addValueObserver(exists -> mCurrentMode.onCursorClipExists(exists));
       mCursorClip.hasPrevious().markInterested();

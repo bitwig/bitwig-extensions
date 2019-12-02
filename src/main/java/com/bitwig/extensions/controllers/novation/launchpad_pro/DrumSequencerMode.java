@@ -13,7 +13,6 @@ import com.bitwig.extension.controller.api.Arpeggiator;
 import com.bitwig.extension.controller.api.PinnableCursorClip;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 import com.bitwig.extension.controller.api.RemoteControl;
-import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.Track;
@@ -44,15 +43,15 @@ final class DrumSequencerMode extends AbstractSequencerMode
             final int X = x;
             final int Y = y;
             final Button bt = driver.getPadButton(x, y + 4);
-            final int absoluteStepIndex = calculateAbsoluteStepIndex(x, 3 - y);
+            final int clipStepIndex = calculateClipStepIndex(x, 3 - y);
             bindPressed(bt, v -> {
                bt.onButtonPressed(driver.getHost());
-               onStepPressed(absoluteStepIndex, (int) (v * 127.0));
+               onStepPressed(clipStepIndex, (int) (v * 127.0));
             });
             bindReleased(bt, () -> {
                final boolean wasHeld = bt.getButtonState() == Button.State.HOLD;
                bt.onButtonReleased();
-               onStepReleased(absoluteStepIndex, wasHeld);
+               onStepReleased(clipStepIndex, wasHeld);
             });
             bindLightState(() -> computeStepSeqLedState(X, 3 - Y), bt);
          }
@@ -60,7 +59,10 @@ final class DrumSequencerMode extends AbstractSequencerMode
          final Button sceneButton = driver.getSceneButton(y + 4);
          final int page = 3 - y;
          final int Y = y;
-         bindPressed(sceneButton, () -> mPage = page);
+         bindPressed(sceneButton, () -> {
+            mPage = page;
+            cursorClip.scrollToStep(32 * page);
+         });
          bindLightState(() -> computePatternOffsetLedState(3 - Y), sceneButton);
 
          final Button dataChoiceBt = driver.getSceneButton(y);
@@ -352,8 +354,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
       for (final Button button : padsInHoldState)
       {
-         final int absoluteStepIndex = calculateAbsoluteStepIndex(button.getX() - 1, 8 - button.getY());
-         final NoteStep noteStep = clip.getStep(0, absoluteStepIndex, mCurrentPitch);
+         final int clipStepIndex = calculateClipStepIndex(button.getX() - 1, 8 - button.getY());
+         final NoteStep noteStep = clip.getStep(0, clipStepIndex, mCurrentPitch);
 
          switch (y)
          {
@@ -379,8 +381,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
       for (final Button buttonState : padsInHoldState)
       {
-         final int absoluteStepIndex = calculateAbsoluteStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
-         final NoteStep noteStep = clip.getStep(0, absoluteStepIndex, mCurrentPitch);
+         final int clipStepIndex = calculateClipStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final NoteStep noteStep = clip.getStep(0, clipStepIndex, mCurrentPitch);
 
          switch (y)
          {
@@ -643,9 +645,9 @@ final class DrumSequencerMode extends AbstractSequencerMode
    }
 
    @Override
-   protected NoteStep findStepInfo(final int absoluteStepIndex)
+   protected NoteStep findStepInfo(final int clipStepIndex)
    {
-      return mDriver.getCursorClip().getStep(0, absoluteStepIndex, mCurrentPitch);
+      return mDriver.getCursorClip().getStep(0, clipStepIndex, mCurrentPitch);
    }
 
    private LedState computePerfAndScenesLedState(final int x, final int y)
@@ -673,7 +675,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final Clip clip = mDriver.getCursorClip();
       final int playingStep = clip.playingStep().get();
 
-      final NoteStep noteStep = clip.getStep(0, calculateAbsoluteStepIndex(x, y), mCurrentPitch);
+      final NoteStep noteStep = clip.getStep(0, calculateClipStepIndex(x, y), mCurrentPitch);
 
       if (playingStep == mPage * 32 + 8 * y + x)
          return new LedState(noteStep.state() == NoteStep.State.NoteOn ? Color.STEP_PLAY : Color.STEP_PLAY_HEAD);
