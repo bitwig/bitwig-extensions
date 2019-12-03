@@ -105,12 +105,14 @@ final class KeyboardLayer extends LaunchpadLayer
    @Override
    protected void onActivate()
    {
+      mDriver.wantsSafePitches().subscribe();
       mDriver.getCursorTrack().playingNotes().subscribe();
    }
 
    @Override
    protected void onDeactivate()
    {
+      mDriver.wantsSafePitches().unsubscribe();
       mDriver.getCursorTrack().playingNotes().unsubscribe();
    }
 
@@ -271,7 +273,7 @@ final class KeyboardLayer extends LaunchpadLayer
       final int musicalKey = mDriver.getMusicalKey();
       final MusicalScale musicalScale = mDriver.getMusicalScale();
 
-      if (mDriver.wantsSafePitches() && !musicalScale.isMidiNoteInScale(musicalKey, key))
+      if (mDriver.wantsSafePitches().get() && !musicalScale.isMidiNoteInScale(musicalKey, key))
          return -1;
       return key;
    }

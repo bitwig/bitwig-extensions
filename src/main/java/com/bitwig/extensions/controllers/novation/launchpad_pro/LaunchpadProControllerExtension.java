@@ -6,6 +6,7 @@ import java.util.List;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arpeggiator;
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -880,9 +881,9 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mDrumScenesRemoteControls;
    }
 
-   boolean wantsSafePitches()
+   BooleanValue wantsSafePitches()
    {
-      return mSafePitchesSetting.get();
+      return mSafePitchesSetting;
    }
 
    boolean shouldHighlightScale()
