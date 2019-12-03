@@ -436,11 +436,13 @@ final class DrumSequencerMode extends AbstractSequencerMode
          else
             period = calculateAutoNoteRepeatPeriod(velocity);
 
+         // Configure the Arp as a note repeat
          final Arpeggiator arpeggiator = mDriver.getArpeggiator();
          arpeggiator.period().set(period);
          arpeggiator.usePressureToVelocity().set(true);
          arpeggiator.shuffle().set(true);
          arpeggiator.mode().set("all"); // that's the note repeat way
+         arpeggiator.octaves().set(0);
          arpeggiator.isEnabled().set(true);
 
          mNoteRepeatStack.add(new Coord(x, y));
