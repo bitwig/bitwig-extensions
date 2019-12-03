@@ -361,8 +361,6 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       super.setDataMode(dataMode);
 
-
-
       deactivateEveryLayers();
 
       switch (mDataMode)
