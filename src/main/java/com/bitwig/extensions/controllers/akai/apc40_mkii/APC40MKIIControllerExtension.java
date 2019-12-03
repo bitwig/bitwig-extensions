@@ -916,9 +916,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTempoKnob = mHardwareSurface.createRelativeHardwareKnob("Tempo");
       mTempoKnob.setLabel("TEMPO");
       mTempoKnob.setLabelPosition(RelativePosition.ABOVE);
-      mTempoKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_TEMPO));
-      mTempoKnob.setSensitivity(128.0);
-      mTempoKnob.setStepSize(1);
+      mTempoKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_TEMPO, 128));
+      mTempoKnob.setStepSize(1 / 128.0);
    }
 
    private void createTrackStopButtons()
@@ -1128,7 +1127,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mABCrossfadeSlider.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_AB_CROSSFADE));
 
       mCueLevelKnob = mHardwareSurface.createRelativeHardwareKnob("Cue-Level");
-      mCueLevelKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_CUE));
+      mCueLevelKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_CUE, 128));
    }
 
    private void createTopControls()

@@ -367,9 +367,8 @@ public abstract class PresonusFaderPort extends ControllerExtension
    {
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
 
-      encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC));
+      encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC, 100));
 
-      encoder.setSensitivity(128.0 / 100.0);
       encoder.setStepSize(1 / 100.0);
 
       final HardwareButton clickButton = mHardwareSurface.createHardwareButton(id + "_click");

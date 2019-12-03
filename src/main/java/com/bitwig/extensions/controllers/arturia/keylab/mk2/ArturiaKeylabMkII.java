@@ -697,9 +697,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    {
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
 
-      encoder.setAdjustValueMatcher(getMidiInPort(1).createRelativeSignedBitCCValueMatcher(0, cc));
-      encoder.setSensitivity(128.0 / 100.0);
-      encoder.setStepSize(1 / 100.0);
+      encoder.setAdjustValueMatcher(getMidiInPort(1).createRelativeSignedBitCCValueMatcher(0, cc, 100));
 
       return encoder;
    }
