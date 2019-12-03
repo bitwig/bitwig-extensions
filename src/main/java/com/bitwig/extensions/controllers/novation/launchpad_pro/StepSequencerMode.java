@@ -356,6 +356,30 @@ public class StepSequencerMode extends AbstractSequencerMode
       return false;
    }
 
+   @Override
+   protected void setDataMode(final DataMode dataMode)
+   {
+      super.setDataMode(dataMode);
+
+
+
+      deactivateEveryLayers();
+
+      switch (mDataMode)
+      {
+         case Main:
+         case MainAlt:
+            mKeyboardLayer.activate();
+            break;
+         case MixData:
+            mMixDataLayer.activate();
+            break;
+         case SoundData:
+            mSoundDataLayer.activate();
+            break;
+      }
+   }
+
    private final KeyboardLayer mKeyboardLayer;
    private final LaunchpadLayer mMixDataLayer;
    private final LaunchpadLayer mSoundDataLayer;
