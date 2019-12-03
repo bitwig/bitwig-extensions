@@ -376,14 +376,22 @@ public class Layer
             {
                if (other != this)
                {
-                  other.setIsActive(false);
+                  other.doSetIsActive(false);
                }
             }
          }
 
-         mIsActive = isActive;
+         doSetIsActive(isActive);
 
          mLayers.activeLayersChanged();
+      }
+   }
+
+   private final void doSetIsActive(final boolean isActive)
+   {
+      if (isActive != mIsActive)
+      {
+         mIsActive = isActive;
 
          if (isActive)
             onActivate();

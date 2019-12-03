@@ -89,9 +89,9 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
    private HardwareButton mPanModeButton;
 
-   private HardwareButton mScrollLeftButton;
+   private HardwareButton mPreviousButton;
 
-   private HardwareButton mScrollRightButton;
+   private HardwareButton mNextButton;
 
    private RelativeHardwareKnob mTransportEncoder;
 
@@ -222,8 +222,8 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mSendsModeButton = createToggleButton("sends_mode", 0x29);
       mPanModeButton = createToggleButton("pan_mode", 0x2A);
 
-      mScrollLeftButton = createToggleButton("scroll_left", 0x2E);
-      mScrollRightButton = createToggleButton("scroll_right", 0x2F);
+      mPreviousButton = createToggleButton("scroll_left", 0x2E);
+      mNextButton = createToggleButton("scroll_right", 0x2F);
 
       mChannelButton = createToggleButton("channel", 0x36);
       mZoomButton = createToggleButton("zoom", 0x37);
@@ -464,16 +464,16 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.bindToggle(mSendsModeButton, mSendsLayer);
       mDefaultLayer.bindToggle(mPanModeButton, mPanLayer);
 
-      mDefaultLayer.bindToggle(mScrollLeftButton, mTrackBank.scrollBackwardsAction(),
+      mDefaultLayer.bindToggle(mPreviousButton, mTrackBank.scrollBackwardsAction(),
          mTrackBank.canScrollBackwards());
-      mDefaultLayer.bindToggle(mScrollRightButton, mTrackBank.scrollForwardsAction(),
+      mDefaultLayer.bindToggle(mNextButton, mTrackBank.scrollForwardsAction(),
          mTrackBank.canScrollForwards());
 
       mDefaultLayer.bindToggle(mChannelButton, mChannelLayer);
       mDefaultLayer.bindToggle(mZoomButton, mZoomLayer);
       mDefaultLayer.bindToggle(mScrollButton, mScrollLayer);
       mDefaultLayer.bindToggle(mBankButton, mBankLayer);
-      mDefaultLayer.bindToggle(mScrollButton, mSectionLayer);
+      mDefaultLayer.bindToggle(mSectionButton, mSectionLayer);
       mDefaultLayer.bindToggle(mMarkerButton, mMarkerLayer);
 
       mDefaultLayer.bindPressed(mAutomationOffButton, mTransport.isArrangerAutomationWriteEnabled());
@@ -547,22 +547,23 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
    private void initScrollLayer()
    {
-      mScrollLayer.bind(mTransportEncoder, d ->
-         mTransport.setPosition(d * 1));
+      mScrollLayer.bind(mTransportEncoder, mTransport.getPosition().beatStepper());
       mScrollLayer.bindPressed(mTransportEncoder, mApplication.zoomToFitAction());
    }
 
    private void initZoomLayer()
    {
       mZoomLayer.bind(mTransportEncoder, mApplication.zoomInAction(), mApplication.zoomOutAction());
-      mZoomLayer.bindPressed(mTransportEncoder, mApplication.zoomToSelectionAction());
+      mZoomLayer.bindPressed(mTransportEncoder, mApplication.zoomToSelectionOrAllAction());
+      mZoomLayer.bindPressed(mPreviousButton, mApplication.selectPreviousAction());
+      mZoomLayer.bindPressed(mNextButton, mApplication.selectNextAction());
    }
 
    private void initMarkerLayer()
    {
-      mMarkerLayer.bindToggle(mScrollLeftButton, mCueMarkerBank.scrollPageBackwardsAction(),
+      mMarkerLayer.bindToggle(mPreviousButton, mCueMarkerBank.scrollPageBackwardsAction(),
          mCueMarkerBank.canScrollBackwards());
-      mMarkerLayer.bindToggle(mScrollRightButton, mCueMarkerBank.scrollPageForwardsAction(),
+      mMarkerLayer.bindToggle(mNextButton, mCueMarkerBank.scrollPageForwardsAction(),
          mCueMarkerBank.canScrollForwards());
 
       mMarkerLayer.bindPressed(mTransportEncoder, () -> mCueMarkerBank.getItemAt(0).launch(true));
