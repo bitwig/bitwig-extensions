@@ -4,7 +4,9 @@ import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extensions.framework.Binding;
 import com.bitwig.extensions.framework.Layer;
 
@@ -69,6 +71,11 @@ class LaunchpadLayer extends Layer
    public Binding bindLightState(final LedState state, final Button button)
    {
       return bindLightState(() -> state, button);
+   }
+
+   public void bindToggle(final Button button, final SettableBooleanValue target)
+   {
+      bindToggle(button.getButton(), target);
    }
 
    final LaunchpadProControllerExtension mDriver;

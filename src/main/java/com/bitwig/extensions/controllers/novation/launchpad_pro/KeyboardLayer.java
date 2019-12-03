@@ -11,19 +11,9 @@ final class KeyboardLayer extends LaunchpadLayer
       0, 2, 4, 5, 7, 9, 11, 12, -1, 1, 3, -1, 6, 8, 10, -1,
    };
 
-   private final Color UP_DOWN_ON_COLOR = new Color(0.f, 0.f, 1.f);
-   private final Color UP_DOWN_OFF_COLOR = new Color(0.f, 0.f, 0.2f);
-   private final Color LEFT_RIGHT_ON_COLOR = new Color(0.f, 1.f, 0.f);
-   private final Color LEFT_RIGHT_OFF_COLOR = new Color(0.f, 0.2f, 0.f);
-
-   private final static Color KEYBOARD_ON_COLOR = Color.fromRgb255(11, 100, 63);
-   private final static Color KEYBOARD_OFF_COLOR = Color.scale(KEYBOARD_ON_COLOR, 0.2f);
-   private final static Color ROOT_KEY_COLOR = Color.fromRgb255(11, 100, 63);
    private final static Color USED_WHITE_KEY_COLOR = Color.fromRgb255(255, 240, 240);
    private final static Color UNUSED_KEY_COLOR = Color.fromRgb255(50, 50, 55);
    private final static Color USED_BLACK_KEY_COLOR = Color.fromRgb255(120, 85, 42);
-   private final static Color PLAYING_KEY_COLOR = Color.fromRgb255(0, 255, 0);
-   private final static Color INVALID_KEY_COLOR = Color.RED_LOW;
 
    private final static int MAX_OCTAVE = 10;
 
@@ -106,6 +96,8 @@ final class KeyboardLayer extends LaunchpadLayer
    protected void onActivate()
    {
       mDriver.wantsSafePitches().subscribe();
+      mDriver.shouldHighlightScale().subscribe();
+      mDriver.shouldHihlightRootKey().subscribe();
       mDriver.getCursorTrack().playingNotes().subscribe();
    }
 
@@ -113,6 +105,8 @@ final class KeyboardLayer extends LaunchpadLayer
    protected void onDeactivate()
    {
       mDriver.wantsSafePitches().unsubscribe();
+      mDriver.shouldHighlightScale().unsubscribe();
+      mDriver.shouldHihlightRootKey().unsubscribe();
       mDriver.getCursorTrack().playingNotes().unsubscribe();
    }
 
@@ -149,9 +143,9 @@ final class KeyboardLayer extends LaunchpadLayer
          return LedState.OFF;
       if (mIsPlaying.apply(midiNote))
          return LedState.STEP_PLAY;
-      if (mDriver.shouldHihlightRootKey() && midiNoteBase == mDriver.getMusicalKey())
+      if (mDriver.shouldHihlightRootKey().get() && midiNoteBase == mDriver.getMusicalKey())
          return new LedState(trackColor);
-      else if (!mDriver.shouldHighlightScale() || scale.isMidiNoteInScale(mDriver.getMusicalKey(), midiNoteBase))
+      else if (!mDriver.shouldHighlightScale().get() || scale.isMidiNoteInScale(mDriver.getMusicalKey(), midiNoteBase))
          return new LedState(isBlackKey(midiNote) ? USED_BLACK_KEY_COLOR : USED_WHITE_KEY_COLOR);
       return LedState.OFF;
    }

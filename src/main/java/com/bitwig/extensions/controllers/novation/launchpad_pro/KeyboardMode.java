@@ -1,7 +1,11 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
+import com.bitwig.extension.controller.api.Arpeggiator;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.NoteLatch;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
+import com.bitwig.extension.controller.api.SettableIntegerValue;
 
 public final class KeyboardMode extends Mode
 {
@@ -30,6 +34,15 @@ public final class KeyboardMode extends Mode
       bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
       bindLightState(() -> mKeyboardLayer.canOctaveDown() ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
       bindLightState(() -> mKeyboardLayer.canOctaveUp() ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
+
+      final NoteInput noteInput = driver.getNoteInput();
+      final NoteLatch noteLatch = noteInput.noteLatch();
+      final Arpeggiator arpeggiator = noteInput.arpeggiator();
+      final SettableIntegerValue octaves = arpeggiator.octaves();
+
+      mConfigLayer = new NoteLatchAndArpeggiatorConfigLayer(driver, "keyboard-config");
+
+      bindPressed(driver.getShiftButton(), mConfigLayer.getToggleAction());
    }
 
    @Override
@@ -65,6 +78,7 @@ public final class KeyboardMode extends Mode
    @Override
    protected void doDeactivate()
    {
+      mConfigLayer.deactivate();
       mKeyboardLayer.deactivate();
       mDriver.getNoteInput().setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
 
@@ -80,6 +94,8 @@ public final class KeyboardMode extends Mode
    void updateKeyTranslationTable(final Integer[] table)
    {
       mKeyboardLayer.updateKeyTranslationTable(table);
+      if (mConfigLayer.isActive())
+         mConfigLayer.updateKeyTranslationTable(table);
    }
 
    public void invalidate()
@@ -91,4 +107,5 @@ public final class KeyboardMode extends Mode
    }
 
    private final KeyboardLayer mKeyboardLayer;
+   private final NoteLatchAndArpeggiatorConfigLayer mConfigLayer;
 }

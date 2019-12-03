@@ -22,6 +22,7 @@ import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.NoteLatch;
 import com.bitwig.extension.controller.api.PinnableCursorClip;
 import com.bitwig.extension.controller.api.Preferences;
 import com.bitwig.extension.controller.api.Project;
@@ -422,7 +423,20 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mNoteInput.setKeyTranslationTable(FILTER_ALL_NOTE_MAP);
       mNoteInput.includeInAllInputs().markInterested();
 
+      mNoteLatch = mNoteInput.noteLatch();
+      mNoteLatch.isEnabled().markInterested();
+      mNoteLatch.mono().markInterested();
+      mNoteLatch.mode().markInterested();
+
       mArpeggiator = mNoteInput.arpeggiator();
+      mArpeggiator.gateLength().markInterested();
+      mArpeggiator.period().markInterested();
+      mArpeggiator.isEnabled().markInterested();
+      mArpeggiator.octaves().markInterested();
+      mArpeggiator.mode().markInterested();
+      mArpeggiator.usePressureToVelocity().markInterested();
+      mArpeggiator.shuffle().markInterested();
+      mArpeggiator.isFreeRunning().markInterested();
 
       /* select the programmer layout */
       mMidiOut.sendSysex("F0 00 20 29 02 10 2C 03 F7");
@@ -881,19 +895,19 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mDrumScenesRemoteControls;
    }
 
-   BooleanValue wantsSafePitches()
+   SettableBooleanValue wantsSafePitches()
    {
       return mSafePitchesSetting;
    }
 
-   boolean shouldHighlightScale()
+   SettableBooleanValue shouldHighlightScale()
    {
-      return mHighlightScaleSetting.get();
+      return mHighlightScaleSetting;
    }
 
-   boolean shouldHihlightRootKey()
+   BooleanValue shouldHihlightRootKey()
    {
-      return mHighlightRootKeySetting.get();
+      return mHighlightRootKeySetting;
    }
 
    private void setKeyboardLayout(final KeyboardLayout keyboardLayout)
@@ -911,6 +925,11 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    public Arpeggiator getArpeggiator()
    {
       return mArpeggiator;
+   }
+
+   public NoteLatch getNoteLatch()
+   {
+      return mNoteLatch;
    }
 
    public Layers getLayers()
@@ -1028,6 +1047,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private CursorRemoteControlsPage mDrumScenesRemoteControls;
    private CursorRemoteControlsPage mDrumPerfsRemoteControls;
    private Arpeggiator mArpeggiator;
+   private NoteLatch mNoteLatch;
    private DrumPadBank mDrumPadBank;
 
    /* Modes and Overlay context */
