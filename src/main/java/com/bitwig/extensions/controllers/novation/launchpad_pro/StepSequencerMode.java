@@ -261,6 +261,10 @@ public class StepSequencerMode extends AbstractSequencerMode
                case 2:
                   noteStep.setPan((3 <= x && x <= 4) ? 0 : (x - 3.5) / 3.5);
                   break;
+
+               case 3:
+                  noteStep.setVolume(x / 7.0);
+                  break;
             }
          }
       }
