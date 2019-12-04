@@ -13,7 +13,7 @@ public class X6ProControllerExtensionDefinition extends ControllerExtensionDefin
    @Override
    public String getHardwareVendor()
    {
-      return "MIDIPLUS";
+      return "Midiplus";
    }
 
    @Override
