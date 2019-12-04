@@ -86,10 +86,13 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       arpeggiator.isEnabled().subscribe();
       arpeggiator.rate().subscribe();
       arpeggiator.gateLength().subscribe();
+      arpeggiator.usePressureToVelocity().subscribe();
 
       setArpOctaves(mArpOctave);
       setArpeggiatorMode(mArpModeIndex);
       setArpGateLen(mArpGateLengthIndex);
+      setArpRate(mArpRateIndex);
+      arpeggiator.usePressureToVelocity().set(true);
 
       mDriver.updateKeyTranslationTable();
    }
@@ -111,6 +114,7 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       arpeggiator.isEnabled().unsubscribe();
       arpeggiator.rate().unsubscribe();
       arpeggiator.gateLength().unsubscribe();
+      arpeggiator.usePressureToVelocity().unsubscribe();
 
       mDriver.updateKeyTranslationTable();
    }
