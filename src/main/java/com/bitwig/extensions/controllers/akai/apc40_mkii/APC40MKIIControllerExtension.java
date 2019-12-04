@@ -172,8 +172,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 8 * 5; ++i)
          mUserControls.getControl(i).markInterested();
 
-      mCueControl = host.createUserControls(1);
-
       mMasterTrack = host.createMasterTrack(5);
       mMasterTrack.isStopped().markInterested();
       mMasterTrack.volume().setIndication(true);
@@ -551,7 +549,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mMainLayer.bind(mMasterTrackVolumeSlider, mMasterTrack.volume());
       mMainLayer.bind(mABCrossfadeSlider, mTransport.crossfade());
-      mMainLayer.bind(mCueLevelKnob, mCueControl.getControl(0));
+      mMainLayer.bind(mCueLevelKnob, mProject.cueVolume());
 
       for (int x = 0; x < 8; ++x)
       {
@@ -1729,8 +1727,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private CursorRemoteControlsPage mChannelStripRemoteControls;
 
    private UserControlBank mUserControls = null;
-
-   private UserControlBank mCueControl = null;
 
    private MidiIn mMidiIn = null;
 
