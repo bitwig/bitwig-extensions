@@ -110,6 +110,12 @@ public class LaunchpadProControllerExtensionDefinition extends ControllerExtensi
       return INSTANCE;
    }
 
+   @Override
+   public boolean shouldBeSubscribedByDefault()
+   {
+      return false;
+   }
+
    private static final LaunchpadProControllerExtensionDefinition INSTANCE = new LaunchpadProControllerExtensionDefinition();
 
    private static final UUID EXTENSION_UUID = java.util.UUID
