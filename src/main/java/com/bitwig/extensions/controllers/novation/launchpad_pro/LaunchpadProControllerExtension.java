@@ -67,8 +67,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    {
       super(driverDefinition, host);
       mHost = host;
-
-      host.setShouldSubscribeCreatedObjects(false);
    }
 
    private void createLayers()
