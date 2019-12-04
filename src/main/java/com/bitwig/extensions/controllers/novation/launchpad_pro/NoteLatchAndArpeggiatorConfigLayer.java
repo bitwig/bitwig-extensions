@@ -1,9 +1,11 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import com.bitwig.extension.controller.api.Arpeggiator;
+import com.bitwig.extension.controller.api.EnumDefinition;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.NoteLatch;
-import com.bitwig.extension.controller.api.SettableIntegerValue;
+import com.bitwig.extension.controller.api.SettableDoubleValue;
+import com.bitwig.extension.controller.api.SettableEnumValue;
 
 public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
 {
@@ -31,32 +33,34 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       bindPressed(driver.getPadButton(1, 6), this::panic);
       bindLightState(LedState.REC_ON, driver.getPadButton(1, 6));
 
+      // Arp Mode
+      bindPressed(driver.getPadButton(2, 7), () -> setArpeggiatorMode(mArpModeIndex + 1));
+      bindLightState(LedState.STEP_PLAY, driver.getPadButton(2, 7));
+      bindPressed(driver.getPadButton(2, 6), () -> setArpeggiatorMode(mArpModeIndex - 1));
+      bindLightState(LedState.STEP_PLAY, driver.getPadButton(2, 6));
+
       // Arp octave
-      bindPressed(driver.getPadButton(2, 7), this::selectNextArpOctave);
-      bindLightState(LedState.PITCH, driver.getPadButton(2, 6));
-      bindPressed(driver.getPadButton(2, 6), this::selectPreviousArpOctave);
-      bindLightState(LedState.PITCH, driver.getPadButton(2, 6));
+      bindPressed(driver.getPadButton(3, 7), () -> setArpOctaves(mArpOctave + 1));
+      bindLightState(LedState.PITCH, driver.getPadButton(3, 7));
+      bindPressed(driver.getPadButton(3, 6), () -> setArpOctaves(mArpOctave - 1));
+      bindLightState(LedState.PITCH, driver.getPadButton(3, 6));
 
       // Arp gate length
-      bindPressed(driver.getPadButton(3, 7), this::selectNextArpGateLen);
-      bindLightState(LedState.VOLUME_MODE, driver.getPadButton(3, 7));
-      bindPressed(driver.getPadButton(3, 6), this::selectPreviousArpGateLen);
-      bindLightState(LedState.VOLUME_MODE, driver.getPadButton(3, 6));
+      bindPressed(driver.getPadButton(4, 7), () -> setArpGateLen(mArpGateLengthIndex + 1));
+      bindLightState(LedState.VOLUME_MODE, driver.getPadButton(4, 7));
+      bindPressed(driver.getPadButton(4, 6), () -> setArpGateLen(mArpGateLengthIndex - 1));
+      bindLightState(LedState.VOLUME_MODE, driver.getPadButton(4, 6));
 
       // Arp speed
-      bindPressed(driver.getPadButton(4, 7), this::selectNextArpSpeed);
-      bindLightState(LedState.STEP_PLAY, driver.getPadButton(4, 7));
-      bindPressed(driver.getPadButton(4, 6), this::selectPreviousArpSpeed);
-      bindLightState(LedState.STEP_PLAY, driver.getPadButton(4, 6));
-   }
+      bindPressed(driver.getPadButton(5, 7), () -> setArpRate(mArpRateIndex + 1));
+      bindLightState(LedState.STEP_PLAY, driver.getPadButton(5, 7));
+      bindPressed(driver.getPadButton(5, 6), () -> setArpRate(mArpRateIndex - 1));
+      bindLightState(LedState.STEP_PLAY, driver.getPadButton(5, 6));
 
-   private void selectPreviousArpSpeed()
-   {
-   }
-
-   private void selectNextArpSpeed()
-   {
-
+      bindLightState(LedState.OFF, driver.getPadButton(6, 7));
+      bindLightState(LedState.OFF, driver.getPadButton(6, 6));
+      bindLightState(LedState.OFF, driver.getPadButton(7, 7));
+      bindLightState(LedState.OFF, driver.getPadButton(7, 6));
    }
 
    private void panic()
@@ -80,10 +84,12 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       arpeggiator.octaves().subscribe();
       arpeggiator.mode().subscribe();
       arpeggiator.isEnabled().subscribe();
-      arpeggiator.period().subscribe();
+      arpeggiator.rate().subscribe();
       arpeggiator.gateLength().subscribe();
 
-      arpeggiator.mode().set("flow");
+      setArpOctaves(mArpOctave);
+      setArpeggiatorMode(mArpModeIndex);
+      setArpGateLen(mArpGateLengthIndex);
 
       mDriver.updateKeyTranslationTable();
    }
@@ -103,7 +109,7 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       arpeggiator.octaves().unsubscribe();
       arpeggiator.mode().unsubscribe();
       arpeggiator.isEnabled().unsubscribe();
-      arpeggiator.period().unsubscribe();
+      arpeggiator.rate().unsubscribe();
       arpeggiator.gateLength().unsubscribe();
 
       mDriver.updateKeyTranslationTable();
@@ -116,33 +122,49 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
             table[10 * (y + 7) + x + 1] = -1;
    }
 
-   private void selectNextArpGateLen()
+   private void setArpeggiatorMode(int modeIndex)
    {
+      final SettableEnumValue mode = mDriver.getArpeggiator().mode();
+      final EnumDefinition enumDefinition = mode.enumDefinition();
+
+      final int entryCount = enumDefinition.entryCount();
+      mArpModeIndex = (modeIndex + entryCount) % entryCount;
+
+      final String arpMode = enumDefinition.entryValue(mArpModeIndex);
+      mode.set(arpMode);
+      mDriver.getHost().showPopupNotification("Arpeggiator Mode: " + arpMode);
    }
 
-   private void selectPreviousArpGateLen()
+   private void setArpOctaves(int value)
    {
+      mArpOctave = Math.min(Math.max(value, 0), 4);
+      mDriver.getArpeggiator().octaves().set(mArpOctave);
+      mDriver.getHost().showPopupNotification("Arpeggiator Octave: " + mArpOctave);
    }
 
-   private void selectNextArpeggiatorMode()
+   private void setArpGateLen(int index)
    {
-      mDriver.getArpeggiator().mode().set("up");
+      final SettableDoubleValue gateLength = mDriver.getArpeggiator().gateLength();
+      mArpGateLengthIndex = Math.max(Math.min(index, GATE_LENGTHS.length - 1), 0);
+      final double length = GATE_LENGTHS[mArpGateLengthIndex];
+      gateLength.set(length);
+      mDriver.getHost().showPopupNotification("Arpeggiator Gate Length: " + length);
    }
 
-   private void selectPreviousArpeggiatorMode()
+   private void setArpRate(int index)
    {
-      mDriver.getArpeggiator().mode().set("down");
+      final SettableDoubleValue rate = mDriver.getArpeggiator().rate();
+      mArpRateIndex = Math.max(Math.min(index, ARP_RATE.length - 1), 0);
+      final double value = ARP_RATE[mArpRateIndex];
+      rate.set(value);
+      mDriver.getHost().showPopupNotification("Arpeggiator Rate: " + value);
    }
 
-   private void selectNextArpOctave()
-   {
-      final SettableIntegerValue octaves = mDriver.getArpeggiator().octaves();
-      octaves.set(Math.min(octaves.get() + 1, 4));
-   }
+   private static final double GATE_LENGTHS[] = new double[]{ 0.125, 0.25, 0.5, 0.75, 1 };
+   private static final double ARP_RATE[] = new double[]{ 1./32., 1./16., 1./8., 1./4., 1./2., 1., 2, 4, 8 };
 
-   private void selectPreviousArpOctave()
-   {
-      final SettableIntegerValue octaves = mDriver.getArpeggiator().octaves();
-      octaves.set(Math.max(octaves.get() - 1, 0));
-   }
+   int mArpOctave = 0;
+   int mArpModeIndex = 1;
+   int mArpGateLengthIndex = 2;
+   int mArpRateIndex = 1;
 }

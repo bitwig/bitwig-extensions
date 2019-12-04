@@ -428,7 +428,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
       mArpeggiator = mNoteInput.arpeggiator();
       mArpeggiator.gateLength().markInterested();
-      mArpeggiator.period().markInterested();
+      mArpeggiator.rate().markInterested();
       mArpeggiator.isEnabled().markInterested();
       mArpeggiator.octaves().markInterested();
       mArpeggiator.mode().markInterested();
