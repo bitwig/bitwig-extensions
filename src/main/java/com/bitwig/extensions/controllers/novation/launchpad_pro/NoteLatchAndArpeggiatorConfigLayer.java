@@ -20,30 +20,34 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       bindLightState(() -> noteLatch.isEnabled().get() ? LedState.PLAY_MODE : LedState.PLAY_MODE_OFF, driver.getPadButton(0, 7));
 
       // NoteLatch mono
-      bindToggle(driver.getPadButton(1, 7), noteLatch.mono());
-      bindLightState(() -> noteLatch.mono().get() ? LedState.SHIFT_ON : LedState.SHIFT_OFF, driver.getPadButton(1, 7));
+      bindToggle(driver.getPadButton(0, 6), noteLatch.mono());
+      bindLightState(() -> noteLatch.mono().get() ? LedState.SHIFT_ON : LedState.SHIFT_OFF, driver.getPadButton(0, 6));
 
       // Arp enable
-      bindToggle(driver.getPadButton(2, 7), arpeggiator.isEnabled());
-      bindLightState(() -> arpeggiator.isEnabled().get() ? LedState.PLAY_MODE : LedState.PLAY_MODE_OFF, driver.getPadButton(2, 7));
-
-      // Arp octave
-      bindPressed(driver.getPadButton(3, 7), this::selectNextArpOctave);
-      bindLightState(LedState.PITCH, driver.getPadButton(3, 7));
-
-      // Arp gate length
-      bindPressed(driver.getPadButton(4, 7), this::selectNextArpGateLen);
-      bindLightState(LedState.VOLUME_MODE, driver.getPadButton(4, 7));
-
-      // Arp speed
-      bindPressed(driver.getPadButton(5, 7), this::selectNextArpSpeed);
-      bindLightState(LedState.STEP_PLAY, driver.getPadButton(5, 7));
-      bindPressed(driver.getPadButton(6, 7), this::selectPreviousArpSpeed);
-      bindLightState(LedState.STEP_PLAY, driver.getPadButton(6, 7));
+      bindToggle(driver.getPadButton(1, 7), arpeggiator.isEnabled());
+      bindLightState(() -> arpeggiator.isEnabled().get() ? LedState.PLAY_MODE : LedState.PLAY_MODE_OFF, driver.getPadButton(1, 7));
 
       // Panic
-      bindPressed(driver.getPadButton(7, 7), this::panic);
-      bindLightState(LedState.REC_ON, driver.getPadButton(7, 7));
+      bindPressed(driver.getPadButton(1, 6), this::panic);
+      bindLightState(LedState.REC_ON, driver.getPadButton(1, 6));
+
+      // Arp octave
+      bindPressed(driver.getPadButton(2, 7), this::selectNextArpOctave);
+      bindLightState(LedState.PITCH, driver.getPadButton(2, 6));
+      bindPressed(driver.getPadButton(2, 6), this::selectPreviousArpOctave);
+      bindLightState(LedState.PITCH, driver.getPadButton(2, 6));
+
+      // Arp gate length
+      bindPressed(driver.getPadButton(3, 7), this::selectNextArpGateLen);
+      bindLightState(LedState.VOLUME_MODE, driver.getPadButton(3, 7));
+      bindPressed(driver.getPadButton(3, 6), this::selectPreviousArpGateLen);
+      bindLightState(LedState.VOLUME_MODE, driver.getPadButton(3, 6));
+
+      // Arp speed
+      bindPressed(driver.getPadButton(4, 7), this::selectNextArpSpeed);
+      bindLightState(LedState.STEP_PLAY, driver.getPadButton(4, 7));
+      bindPressed(driver.getPadButton(4, 6), this::selectPreviousArpSpeed);
+      bindLightState(LedState.STEP_PLAY, driver.getPadButton(4, 6));
    }
 
    private void selectPreviousArpSpeed()
@@ -108,8 +112,8 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
    public void updateKeyTranslationTable(final Integer[] table)
    {
       for (int x = 0; x < 8; ++x)
-         for (int y = 0; y < 1; ++y)
-            table[10 * (y + 8) + x + 1] = -1;
+         for (int y = 0; y < 2; ++y)
+            table[10 * (y + 7) + x + 1] = -1;
    }
 
    private void selectNextArpGateLen()
