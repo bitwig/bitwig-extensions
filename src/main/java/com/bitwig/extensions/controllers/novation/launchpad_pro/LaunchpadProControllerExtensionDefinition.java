@@ -110,11 +110,11 @@ public class LaunchpadProControllerExtensionDefinition extends ControllerExtensi
       return INSTANCE;
    }
 
-   @Override
-   public boolean shouldBeSubscribedByDefault()
-   {
-      return false;
-   }
+//   @Override
+//   public boolean shouldBeSubscribedByDefault()
+//   {
+//      return false;
+//   }
 
    private static final LaunchpadProControllerExtensionDefinition INSTANCE = new LaunchpadProControllerExtensionDefinition();
 
