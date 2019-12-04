@@ -172,8 +172,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 8 * 5; ++i)
          mUserControls.getControl(i).markInterested();
 
-      mCueControl = host.createUserControls(1);
-
       mMasterTrack = host.createMasterTrack(5);
       mMasterTrack.isStopped().markInterested();
       mMasterTrack.volume().setIndication(true);
@@ -551,7 +549,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mMainLayer.bind(mMasterTrackVolumeSlider, mMasterTrack.volume());
       mMainLayer.bind(mABCrossfadeSlider, mTransport.crossfade());
-      mMainLayer.bind(mCueLevelKnob, mCueControl.getControl(0));
+      mMainLayer.bind(mCueLevelKnob, mProject.cueVolume());
 
       for (int x = 0; x < 8; ++x)
       {
@@ -916,9 +914,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTempoKnob = mHardwareSurface.createRelativeHardwareKnob("Tempo");
       mTempoKnob.setLabel("TEMPO");
       mTempoKnob.setLabelPosition(RelativePosition.ABOVE);
-      mTempoKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_TEMPO));
-      mTempoKnob.setSensitivity(128.0);
-      mTempoKnob.setStepSize(1);
+      mTempoKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_TEMPO, 128));
+      mTempoKnob.setStepSize(1 / 128.0);
    }
 
    private void createTrackStopButtons()
@@ -1128,7 +1125,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mABCrossfadeSlider.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC_AB_CROSSFADE));
 
       mCueLevelKnob = mHardwareSurface.createRelativeHardwareKnob("Cue-Level");
-      mCueLevelKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_CUE));
+      mCueLevelKnob.setAdjustValueMatcher(mMidiIn.createRelative2sComplementCCValueMatcher(0, CC_CUE, 128));
    }
 
    private void createTopControls()
@@ -1730,8 +1727,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private CursorRemoteControlsPage mChannelStripRemoteControls;
 
    private UserControlBank mUserControls = null;
-
-   private UserControlBank mCueControl = null;
 
    private MidiIn mMidiIn = null;
 

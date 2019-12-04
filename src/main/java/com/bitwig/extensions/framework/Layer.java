@@ -24,7 +24,6 @@ import com.bitwig.extension.controller.api.HardwareLight;
 import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
-import com.bitwig.extension.controller.api.ObjectHardwareProperty;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
@@ -216,13 +215,21 @@ public class Layer
    {
       bind(button, button.pressedAction(), target.setToTrueAction());
       bind(button, button.releasedAction(), target.setToFalseAction());
-
+      bind(button.isPressed(), button);
    }
 
    public void bindIsPressed(final HardwareButton button, final Consumer<Boolean> target)
    {
       bind(button, button.pressedAction(), () -> target.accept(true));
       bind(button, button.releasedAction(), () -> target.accept(false));
+      bind(button.isPressed(), button);
+   }
+
+   public void bindIsPressed(final HardwareButton button, final Layer layer)
+   {
+      bind(button, button.pressedAction(), () -> layer.setIsActive(true));
+      bind(button, button.releasedAction(), () -> layer.setIsActive(false));
+      bind(button.isPressed(), button);
    }
 
    public void bindPressed(final ContinuousHardwareControl control, final HardwareActionBindable target)
@@ -376,14 +383,22 @@ public class Layer
             {
                if (other != this)
                {
-                  other.setIsActive(false);
+                  other.doSetIsActive(false);
                }
             }
          }
 
-         mIsActive = isActive;
+         doSetIsActive(isActive);
 
          mLayers.activeLayersChanged();
+      }
+   }
+
+   private final void doSetIsActive(final boolean isActive)
+   {
+      if (isActive != mIsActive)
+      {
+         mIsActive = isActive;
 
          if (isActive)
             onActivate();

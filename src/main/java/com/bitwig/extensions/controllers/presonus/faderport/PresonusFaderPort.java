@@ -11,8 +11,10 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arranger;
+import com.bitwig.extension.controller.api.BeatTimeFormatter;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.CueMarker;
 import com.bitwig.extension.controller.api.CueMarkerBank;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
@@ -89,9 +91,9 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
    private HardwareButton mPanModeButton;
 
-   private HardwareButton mScrollLeftButton;
+   private HardwareButton mPreviousButton;
 
-   private HardwareButton mScrollRightButton;
+   private HardwareButton mNextButton;
 
    private RelativeHardwareKnob mTransportEncoder;
 
@@ -145,7 +147,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
       final ControllerHost host = getHost();
       mApplication = host.createApplication();
       mArranger = host.createArranger();
-      mCueMarkerBank = mArranger.createCueMarkerBank(1);
+      mCueMarkerBank = mArranger.createCueMarkerBank(mChannelCount);
 
       mMidiIn = host.getMidiInPort(0);
       mMidiIn.setMidiCallback((ShortMidiMessageReceivedCallback)this::onMidi);
@@ -222,8 +224,8 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mSendsModeButton = createToggleButton("sends_mode", 0x29);
       mPanModeButton = createToggleButton("pan_mode", 0x2A);
 
-      mScrollLeftButton = createToggleButton("scroll_left", 0x2E);
-      mScrollRightButton = createToggleButton("scroll_right", 0x2F);
+      mPreviousButton = createToggleButton("scroll_left", 0x2E);
+      mNextButton = createToggleButton("scroll_right", 0x2F);
 
       mChannelButton = createToggleButton("channel", 0x36);
       mZoomButton = createToggleButton("zoom", 0x37);
@@ -245,7 +247,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
       for (int index = 0; index < mChannelCount; index++)
       {
-         final Channel channel = new Channel(index);
+         final Channel channel = new Channel(index                                                                      );
 
          mChannels[index] = channel;
       }
@@ -285,17 +287,28 @@ public abstract class PresonusFaderPort extends ControllerExtension
          @Override
          public void accept(final RGBLightState state)
          {
+            int[] byteValuesToSend = {0, 0, 0, 0};
+            boolean shouldSend = false;
+
             for (int i = 0; i < 4; i++)
             {
                final int byteValue = state != null ? state.getForByte(i) : 0;
 
                assert byteValue >= 0 && byteValue <= 127;
 
+               byteValuesToSend[i] = byteValue;
+
                if (mLastSent[i] != byteValue)
                {
-                  mMidiOut.sendMidi(0x90 + i, note, byteValue);
+                  shouldSend = true;
                   mLastSent[i] = byteValue;
                }
+            }
+
+            if (shouldSend)
+            {
+               for (int i = 0; i < 4; i++)
+                  mMidiOut.sendMidi(0x90 + i, note, byteValuesToSend[i]);
             }
          }
 
@@ -367,9 +380,8 @@ public abstract class PresonusFaderPort extends ControllerExtension
    {
       final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
 
-      encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC));
+      encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC, 100));
 
-      encoder.setSensitivity(128.0 / 100.0);
       encoder.setStepSize(1 / 100.0);
 
       final HardwareButton clickButton = mHardwareSurface.createHardwareButton(id + "_click");
@@ -399,7 +411,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
       new LayerGroup(mTrackLayer, mDeviceLayer, mSendsLayer, mPanLayer);
 
-      new LayerGroup(mChannelLayer, mZoomLayer, mScrollLayer, mBankLayer, mSectionLayer, mMarkerLayer);
+      new LayerGroup(mChannelLayer, mZoomLayer, mScrollLayer, mBankLayer, mSectionLayer);
 
       initDefaultLayer();
       initSendsLayer();
@@ -414,6 +426,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
       mDefaultLayer.activate();
       mTrackLayer.activate();
+      mChannelLayer.activate();
 
       // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
@@ -464,22 +477,22 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mDefaultLayer.bindToggle(mSendsModeButton, mSendsLayer);
       mDefaultLayer.bindToggle(mPanModeButton, mPanLayer);
 
-      mDefaultLayer.bindToggle(mScrollLeftButton, mTrackBank.scrollBackwardsAction(),
+      mDefaultLayer.bindToggle(mPreviousButton, mTrackBank.scrollBackwardsAction(),
          mTrackBank.canScrollBackwards());
-      mDefaultLayer.bindToggle(mScrollRightButton, mTrackBank.scrollForwardsAction(),
+      mDefaultLayer.bindToggle(mNextButton, mTrackBank.scrollForwardsAction(),
          mTrackBank.canScrollForwards());
 
       mDefaultLayer.bindToggle(mChannelButton, mChannelLayer);
       mDefaultLayer.bindToggle(mZoomButton, mZoomLayer);
       mDefaultLayer.bindToggle(mScrollButton, mScrollLayer);
       mDefaultLayer.bindToggle(mBankButton, mBankLayer);
-      mDefaultLayer.bindToggle(mScrollButton, mSectionLayer);
-      mDefaultLayer.bindToggle(mMarkerButton, mMarkerLayer);
+      mDefaultLayer.bindToggle(mSectionButton, mSectionLayer);
+      mDefaultLayer.bindIsPressed(mMarkerButton, mMarkerLayer);
 
       mDefaultLayer.bindPressed(mAutomationOffButton, mTransport.isArrangerAutomationWriteEnabled());
       mDefaultLayer.bind(() -> {
          final boolean isEnabled = mTransport.isArrangerAutomationWriteEnabled().get();
-         return isEnabled ? ARM_LOW : ARM_HIGH;
+         return isEnabled ? ARM_LOW : WHITE;
       }, mAutomationOffButton);
 
       mDefaultLayer.bindPressed(mAutomationLatchButton, () ->
@@ -547,23 +560,105 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
    private void initScrollLayer()
    {
-      mScrollLayer.bind(mTransportEncoder, d ->
-         mTransport.setPosition(d * 1));
-      mScrollLayer.bindPressed(mTransportEncoder, mApplication.zoomToFitAction());
+      mScrollLayer.bind(mTransportEncoder, mTransport.playStartPosition().beatStepper());
+      mScrollLayer.bindPressed(mTransportEncoder, mTransport.jumpToPlayStartPositionAction());
    }
 
    private void initZoomLayer()
    {
       mZoomLayer.bind(mTransportEncoder, mApplication.zoomInAction(), mApplication.zoomOutAction());
-      mZoomLayer.bindPressed(mTransportEncoder, mApplication.zoomToSelectionAction());
+      mZoomLayer.bindPressed(mTransportEncoder, mApplication.zoomToSelectionOrAllAction());
+      mZoomLayer.bindPressed(mPreviousButton, mApplication.selectPreviousAction());
+      mZoomLayer.bindPressed(mNextButton, mApplication.selectNextAction());
    }
 
    private void initMarkerLayer()
    {
-      mMarkerLayer.bindToggle(mScrollLeftButton, mCueMarkerBank.scrollPageBackwardsAction(),
-         mCueMarkerBank.canScrollBackwards());
-      mMarkerLayer.bindToggle(mScrollRightButton, mCueMarkerBank.scrollPageForwardsAction(),
-         mCueMarkerBank.canScrollForwards());
+      mMarkerLayer.bindPressed(mPreviousButton, mTransport.jumpToPreviousCueMarkerAction());
+      mMarkerLayer.bindPressed(mNextButton, mTransport.jumpToNextCueMarkerAction());
+
+      for (int c = 0; c < mChannelCount; c++)
+      {
+         final int channelIndex = c;
+         final CueMarker cueMarker = mCueMarkerBank.getItemAt(c);
+         cueMarker.exists().markInterested();
+         cueMarker.getName().markInterested();
+         cueMarker.getColor().markInterested();
+         cueMarker.position().markInterested();
+
+         final Channel channel = mChannels[c];
+
+         mMarkerLayer.bindPressed(channel.select, () -> cueMarker.launch(false));
+         mMarkerLayer.bind((Supplier<Color>)() -> {
+            if (cueMarker.exists().get())
+            {
+               return cueMarker.getColor().get();
+            }
+
+            return BLACK;
+         }, channel.select);
+
+         mMarkerLayer.bind(channel.display, new DisplayTarget()
+         {
+            @Override
+            public int getBarValue()
+            {
+               return 0;
+            }
+
+            @Override
+            public int getTextAlignment(final int line)
+            {
+
+               return 0;
+            }
+
+            @Override
+            public String getText(final int line)
+            {
+               if (cueMarker.exists().get())
+               {
+                  String beatTimeString = cueMarker.position().getFormatted();
+                  String[] beatTimeParts = beatTimeString.split(":");
+
+                  if (line == 0 && cueMarker.exists().get())
+                  {
+                     return cueMarker.getName().get();
+                  }
+
+                  if (beatTimeParts.length >= 3)
+                  {
+                     if (line == 4)
+                     {
+                        return beatTimeParts[0];
+                     }
+                     else if (line == 5)
+                     {
+                        return beatTimeParts[1];
+                     }
+                     else if (line == 6)
+                     {
+                        return beatTimeParts[2];
+                     }
+                  }
+               }
+
+               return null;
+            }
+
+            @Override
+            public ValueBarMode getValueBarMode()
+            {
+               return ValueBarMode.Off;
+            }
+
+            @Override
+            public DisplayMode getMode()
+            {
+               return DisplayMode.Menu;
+            }
+         });
+      }
 
       mMarkerLayer.bindPressed(mTransportEncoder, () -> mCueMarkerBank.getItemAt(0).launch(true));
       mMarkerLayer.bind(mTransportEncoder, mCueMarkerBank);

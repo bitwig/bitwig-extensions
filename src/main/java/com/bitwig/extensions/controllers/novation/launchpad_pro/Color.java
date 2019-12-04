@@ -172,7 +172,7 @@ final class Color
 
    public com.bitwig.extension.api.Color toApiColor()
    {
-      return com.bitwig.extension.api.Color.fromRGB255(mRed, mGreen, mBlue);
+      return com.bitwig.extension.api.Color.fromRGB255(4 * mRed, 4 * mGreen, 4 * mBlue);
    }
 
    public int toInt24()
