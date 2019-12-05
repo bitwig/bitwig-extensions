@@ -172,5 +172,5 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
    int mArpOctave = 0;
    int mArpModeIndex = 1;
    int mArpGateLengthIndex = 2;
-   int mArpRateIndex = 1;
+   int mArpRateIndex = 4;
 }
