@@ -110,7 +110,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    {
       final Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
       debugLayer.setShouldReplaceBindingsInLayersBelow(false);
-      debugLayer.activate();
+      //debugLayer.activate();
    }
 
    private void createMainLayer()
