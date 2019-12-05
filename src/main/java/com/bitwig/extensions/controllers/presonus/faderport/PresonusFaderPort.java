@@ -11,7 +11,6 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arranger;
-import com.bitwig.extension.controller.api.BeatTimeFormatter;
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CueMarker;
@@ -561,12 +560,12 @@ public abstract class PresonusFaderPort extends ControllerExtension
    private void initScrollLayer()
    {
       mScrollLayer.bind(mTransportEncoder, mTransport.playStartPosition().beatStepper());
-      mScrollLayer.bindPressed(mTransportEncoder, mTransport.jumpToPlayStartPositionAction());
+      mScrollLayer.bindPressed(mTransportEncoder, mTransport.launchFromPlayStartPositionAction());
    }
 
    private void initZoomLayer()
    {
-      mZoomLayer.bind(mTransportEncoder, mApplication.zoomInAction(), mApplication.zoomOutAction());
+      mZoomLayer.bind(mTransportEncoder, mApplication.zoomOutAction(), mApplication.zoomInAction());
       mZoomLayer.bindPressed(mTransportEncoder, mApplication.zoomToSelectionOrAllAction());
       mZoomLayer.bindPressed(mPreviousButton, mApplication.selectPreviousAction());
       mZoomLayer.bindPressed(mNextButton, mApplication.selectNextAction());
@@ -574,8 +573,12 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
    private void initMarkerLayer()
    {
+      mScrollLayer.bind(mTransportEncoder,
+         mTransport.jumpToPreviousCueMarkerAction(),
+         mTransport.jumpToNextCueMarkerAction());
       mMarkerLayer.bindPressed(mPreviousButton, mTransport.jumpToPreviousCueMarkerAction());
       mMarkerLayer.bindPressed(mNextButton, mTransport.jumpToNextCueMarkerAction());
+      mScrollLayer.bindPressed(mTransportEncoder, mTransport.launchFromPlayStartPositionAction());
 
       for (int c = 0; c < mChannelCount; c++)
       {

@@ -138,8 +138,8 @@ public class Layer
 
    public RelativeHardwareControlBinding bind(
       final RelativeHardwareControl source,
-      final HardwareActionBindable stepForwardsAction,
-      final HardwareActionBindable stepBackwardsAction)
+      final HardwareActionBindable stepBackwardsAction,
+      final HardwareActionBindable stepForwardsAction)
    {
       final RelativeHardwarControlBindable target = getLayers().getControllerExtension().getHost()
          .createRelativeHardwareControlStepTarget(stepForwardsAction, stepBackwardsAction);
