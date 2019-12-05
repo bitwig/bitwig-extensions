@@ -13,7 +13,7 @@ public class X4MiniControllerExtensionDefinition extends ControllerExtensionDefi
    @Override
    public String getHardwareVendor()
    {
-      return "MIDIPLUS";
+      return "Midiplus";
    }
 
    @Override

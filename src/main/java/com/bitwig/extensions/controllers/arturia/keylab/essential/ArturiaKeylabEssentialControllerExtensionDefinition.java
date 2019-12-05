@@ -92,6 +92,14 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
             new String[] {name + " MIDI In", name + " DAW In"},
             new String[] {name + " MIDI Out", name + " DAW Out"});
       }
+      else if (platformType == PlatformType.LINUX)
+      {
+         final String name = "Arturia KeyLab Essential " + getNumberOfKeys() + "MID";
+
+         list.add(
+            new String[] {name, name + " #2"},
+            new String[] {name, name + " #2"});
+      }
    }
 
    @Override

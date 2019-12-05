@@ -13,7 +13,7 @@ public class X8ProControllerExtensionDefinition extends ControllerExtensionDefin
    @Override
    public String getHardwareVendor()
    {
-      return "MIDIPLUS";
+      return "Midiplus";
    }
 
    @Override

@@ -13,7 +13,7 @@ public class SeaboardRISEDefinition extends ControllerExtensionDefinition
    @Override
    public String getHardwareVendor()
    {
-      return "ROLI";
+      return "Roli";
    }
 
    @Override
