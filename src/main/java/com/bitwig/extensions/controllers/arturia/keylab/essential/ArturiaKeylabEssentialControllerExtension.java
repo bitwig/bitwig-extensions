@@ -157,8 +157,6 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
          definition.getHardwareVendor(),
          definition.getHardwareModel() + " " + definition.getVersion());
 
-      updateIndications();
-
       host.scheduleTask(this::displayRefreshTimer, 1000);
 
       reset();
@@ -234,12 +232,6 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
       }
 
       getHost().scheduleTask(this::displayRefreshTimer, 100);
-   }
-
-   private void updateIndications()
-   {
-      mDevice.setIsSubscribed(true);
-      mCursorTrack.setIsSubscribed(true);
    }
 
    private void onNotePortMidi(final ShortMidiMessage data)

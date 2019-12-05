@@ -31,7 +31,7 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
    @Override
    public int getRequiredAPIVersion()
    {
-      return 9;
+      return 10;
    }
 
    @Override
@@ -91,6 +91,14 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
          list.add(
             new String[] {name + " MIDI In", name + " DAW In"},
             new String[] {name + " MIDI Out", name + " DAW Out"});
+      }
+      else if (platformType == PlatformType.LINUX)
+      {
+         final String name = "Arturia KeyLab Essential " + getNumberOfKeys() + "MID";
+
+         list.add(
+            new String[] {name, name + " #2"},
+            new String[] {name, name + " #2"});
       }
    }
 
