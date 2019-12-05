@@ -93,6 +93,8 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       setArpGateLen(mArpGateLengthIndex);
       setArpRate(mArpRateIndex);
       arpeggiator.usePressureToVelocity().set(true);
+      arpeggiator.isFreeRunning().set(false);
+      arpeggiator.shuffle().set(true);
 
       mDriver.updateKeyTranslationTable();
    }
