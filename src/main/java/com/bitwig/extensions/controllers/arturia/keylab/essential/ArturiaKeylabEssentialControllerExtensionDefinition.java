@@ -31,7 +31,7 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
    @Override
    public int getRequiredAPIVersion()
    {
-      return 10;
+      return 9;
    }
 
    @Override
