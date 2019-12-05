@@ -17,6 +17,9 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       final NoteLatch noteLatch = noteInput.noteLatch();
       final Arpeggiator arpeggiator = noteInput.arpeggiator();
 
+      mDriver.getArpModeSetting().addValueObserver(this::arpModeSettingChanged);
+      mDriver.getArpOctaveSetting().addRawValueObserver(this::arpOctavesChanged);
+
       // NoteLatch enable
       bindToggle(driver.getPadButton(0, 7), noteLatch.isEnabled());
       bindLightState(() -> noteLatch.isEnabled().get() ? LedState.PLAY_MODE : LedState.PLAY_MODE_OFF, driver.getPadButton(0, 7));
@@ -63,6 +66,21 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       bindLightState(LedState.OFF, driver.getPadButton(7, 6));
    }
 
+   private void arpOctavesChanged(final double v)
+   {
+      if (isActive())
+         mDriver.getArpeggiator().octaves().set((int) v);
+      mArpOctave = (int) v;
+   }
+
+   private void arpModeSettingChanged(final String arpMode)
+   {
+      final SettableEnumValue mode = mDriver.getArpeggiator().mode();
+      if (isActive())
+         mode.set(arpMode);
+      mArpModeIndex = mode.enumDefinition().entryIndex(arpMode);
+   }
+
    private void panic()
    {
       mDriver.getNoteLatch().releaseNotes();
@@ -75,6 +93,8 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       final NoteInput noteInput = mDriver.getNoteInput();
       final NoteLatch noteLatch = noteInput.noteLatch();
       final Arpeggiator arpeggiator = noteInput.arpeggiator();
+
+      mDriver.getArpModeSetting().subscribe();
 
       noteLatch.subscribe();
       noteLatch.isEnabled().subscribe();
@@ -106,10 +126,13 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       final NoteLatch noteLatch = noteInput.noteLatch();
       final Arpeggiator arpeggiator = noteInput.arpeggiator();
 
+      mDriver.getArpModeSetting().unsubscribe();
+
       noteLatch.unsubscribe();
       noteLatch.isEnabled().unsubscribe();
       noteLatch.mono().unsubscribe();
 
+      arpeggiator.isEnabled().set(false);
       arpeggiator.unsubscribe();
       arpeggiator.octaves().unsubscribe();
       arpeggiator.mode().unsubscribe();
@@ -139,6 +162,7 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       final String arpMode = enumDefinition.entryValue(mArpModeIndex);
       mode.set(arpMode);
       mDriver.getHost().showPopupNotification("Arpeggiator Mode: " + arpMode);
+      mDriver.getArpModeSetting().set(arpMode);
    }
 
    private void setArpOctaves(int value)
@@ -146,6 +170,7 @@ public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       mArpOctave = Math.min(Math.max(value, 0), 4);
       mDriver.getArpeggiator().octaves().set(mArpOctave);
       mDriver.getHost().showPopupNotification("Arpeggiator Octave: " + mArpOctave);
+      mDriver.getArpOctaveSetting().setRaw(value);
    }
 
    private void setArpGateLen(int index)

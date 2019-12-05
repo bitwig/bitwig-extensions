@@ -33,6 +33,7 @@ import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.SettableEnumValue;
+import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -409,6 +410,14 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
          mKeyboardLayout = KeyboardLayout.fromString(newValue);
          invalidateKeyboardModes();
       });
+
+      final String ARP_CATEGORY = "Arpeggiator";
+
+      mArpModeSetting = mDocumentState.getEnumSetting("Mode", ARP_CATEGORY, mArpeggiator.mode().enumDefinition(), "flow");
+      mArpModeSetting.markInterested();
+
+      mArpOctaveSetting = mDocumentState.getNumberSetting("Octave", ARP_CATEGORY, 0, 4, 1, "", 1);
+      mArpOctaveSetting.markInterested();
    }
 
    private void initMidi()
@@ -848,6 +857,16 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       getMusicalKeySetting().set(keyName);
    }
 
+   SettableEnumValue getArpModeSetting()
+   {
+      return mArpModeSetting;
+   }
+
+   SettableRangedValue getArpOctaveSetting()
+   {
+      return mArpOctaveSetting;
+   }
+
    NoteInput getNoteInput()
    {
       return mNoteInput;
@@ -1039,14 +1058,17 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private CursorDevice mCursorDevice;
    private UserControlBank mUserControls;
    private DocumentState mDocumentState;
-   private SettableEnumValue mMusicalKeySetting;
-   private SettableEnumValue mMusicalScaleSetting;
    private PinnableCursorClip mCursorClip;
    private CursorRemoteControlsPage mDrumScenesRemoteControls;
    private CursorRemoteControlsPage mDrumPerfsRemoteControls;
    private Arpeggiator mArpeggiator;
    private NoteLatch mNoteLatch;
    private DrumPadBank mDrumPadBank;
+
+   /* Settings */
+   private SettableEnumValue mMusicalKeySetting;
+   private SettableEnumValue mMusicalScaleSetting;
+   private SettableEnumValue mArpModeSetting;
 
    /* Modes and Overlay context */
    private Mode mCurrentMode;
@@ -1120,4 +1142,5 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private final StringBuilder mLedClearSysexBuffer = new StringBuilder();
    private final StringBuilder mLedColorUpdateSysexBuffer = new StringBuilder();
    private final StringBuilder mLedPulseUpdateSysexBuffer = new StringBuilder();
+   private SettableRangedValue mArpOctaveSetting;
 }
