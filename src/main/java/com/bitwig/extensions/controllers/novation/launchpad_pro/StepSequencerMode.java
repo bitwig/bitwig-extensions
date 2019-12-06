@@ -265,7 +265,7 @@ final class StepSequencerMode extends AbstractSequencerMode
                   break;
 
                case 3:
-                  noteStep.setVolume(x / 7.0);
+                  noteStep.setGain(x / 7.0);
                   break;
             }
          }

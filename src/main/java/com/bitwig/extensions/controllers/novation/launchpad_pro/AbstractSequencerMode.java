@@ -185,7 +185,7 @@ abstract class AbstractSequencerMode extends Mode
       final int clipStepIndex = calculateClipStepIndex(pad.mX - 1, 8 - pad.mY);
       final NoteStep noteStep = findStepInfo(clipStepIndex);
 
-      final double volume = noteStep.volume();
+      final double volume = noteStep.gain();
       final double velocity = noteStep.velocity();
       final double duration = noteStep.duration();
       final double pan = noteStep.pan();
