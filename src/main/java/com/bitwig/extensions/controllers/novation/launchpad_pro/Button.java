@@ -10,7 +10,7 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.ObjectHardwareProperty;
 
-class Button
+final class Button
 {
 
    static final int NO_PULSE = 0;

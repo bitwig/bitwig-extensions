@@ -7,7 +7,7 @@ import com.bitwig.extension.controller.api.NoteLatch;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
 
-public final class KeyboardMode extends Mode
+final class KeyboardMode extends Mode
 {
    public KeyboardMode(final LaunchpadProControllerExtension driver)
    {

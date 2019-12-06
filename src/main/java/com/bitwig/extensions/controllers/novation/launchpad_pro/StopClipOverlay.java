@@ -1,10 +1,9 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
-import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-class StopClipOverlay extends Overlay
+final class StopClipOverlay extends Overlay
 {
    StopClipOverlay(final LaunchpadProControllerExtension driver)
    {

@@ -9,7 +9,7 @@ import com.bitwig.extension.controller.api.PinnableCursorClip;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.Track;
 
-public class StepSequencerMode extends AbstractSequencerMode
+final class StepSequencerMode extends AbstractSequencerMode
 {
    StepSequencerMode(final LaunchpadProControllerExtension driver)
    {

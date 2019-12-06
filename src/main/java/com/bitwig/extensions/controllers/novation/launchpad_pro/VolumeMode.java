@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-public class VolumeMode extends Mode
+final class VolumeMode extends Mode
 {
    public VolumeMode(final LaunchpadProControllerExtension driver)
    {

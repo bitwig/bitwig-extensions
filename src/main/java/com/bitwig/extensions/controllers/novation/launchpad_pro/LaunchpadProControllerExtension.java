@@ -44,7 +44,7 @@ import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.MusicalScale;
 import com.bitwig.extensions.framework.MusicalScaleLibrary;
 
-public final class LaunchpadProControllerExtension extends ControllerExtension
+final class LaunchpadProControllerExtension extends ControllerExtension
 {
    /* Helper used to prevent Bitwig Studio from receiving MIDI notes. */
    public static final Integer[] FILTER_ALL_NOTE_MAP = {

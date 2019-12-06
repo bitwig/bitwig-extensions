@@ -3,7 +3,7 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 
-public final class DrumMode extends Mode
+final class DrumMode extends Mode
 {
    private static final LedState DRUM1_LED = new LedState(Color.fromRgb255(255, 170, 0));
    private static final LedState DRUM2_LED = new LedState(Color.fromRgb255(0, 170, 127));

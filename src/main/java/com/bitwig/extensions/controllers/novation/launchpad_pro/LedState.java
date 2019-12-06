@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 
-public class LedState extends InternalHardwareLightState
+final class LedState extends InternalHardwareLightState
 {
    public static final LedState OFF = new LedState(Color.OFF, 0);
 

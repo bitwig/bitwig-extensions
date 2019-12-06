@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-public class PanMode extends Mode
+final class PanMode extends Mode
 {
    public PanMode(final LaunchpadProControllerExtension driver)
    {

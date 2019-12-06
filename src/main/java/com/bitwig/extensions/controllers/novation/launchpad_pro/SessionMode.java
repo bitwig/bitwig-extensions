@@ -8,7 +8,7 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-public final class SessionMode extends Mode
+final class SessionMode extends Mode
 {
    public SessionMode(final LaunchpadProControllerExtension driver)
    {

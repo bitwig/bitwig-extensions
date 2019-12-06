@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extensions.framework.MusicalScale;
 import com.bitwig.extensions.framework.MusicalScaleLibrary;
 
-public class ScaleAndKeyChooserMode extends Mode
+final class ScaleAndKeyChooserMode extends Mode
 {
    private static final int[] CHROMATIC_NOTE_INDEXES = new int[] {0, 2, 4, 5, 7, 9, 11, 12, -1, 1, 3, -1, 6, 8, 10, -1};
 

@@ -7,7 +7,7 @@ import com.bitwig.extension.controller.api.NoteLatch;
 import com.bitwig.extension.controller.api.SettableDoubleValue;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 
-public class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
+final class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
 {
    public NoteLatchAndArpeggiatorConfigLayer(final LaunchpadProControllerExtension driver, final String name)
    {

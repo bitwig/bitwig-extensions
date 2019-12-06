@@ -3,7 +3,7 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-class TrackSelectOverlay extends Overlay
+final class TrackSelectOverlay extends Overlay
 {
    TrackSelectOverlay(final LaunchpadProControllerExtension driver)
    {

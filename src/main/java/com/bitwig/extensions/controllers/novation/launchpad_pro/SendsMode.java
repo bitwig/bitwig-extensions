@@ -5,7 +5,7 @@ import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-public class SendsMode extends Mode
+final class SendsMode extends Mode
 {
    SendsMode(final LaunchpadProControllerExtension driver)
    {
