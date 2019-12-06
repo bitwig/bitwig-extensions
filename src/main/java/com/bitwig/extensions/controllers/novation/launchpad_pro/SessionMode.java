@@ -18,7 +18,7 @@ final class SessionMode extends Mode
       mDeleteLayer = new LaunchpadLayer(driver, "session-delete");
       mQuantizeLayer = new LaunchpadLayer(driver, "session-quantize");
 
-      final TrackBank trackBank = driver.getTrackBank();
+      final TrackBank trackBank = driver.mTrackBank;
       final SceneBank sceneBank = trackBank.sceneBank();
       for (int x = 0; x < 8; ++x)
       {
@@ -33,36 +33,39 @@ final class SessionMode extends Mode
             mDeleteLayer.bindPressed(button, slot::deleteObject);
             mQuantizeLayer.bindReleased(button, () -> {
                slot.select();
-               mDriver.getCursorClip().quantize(1);
+               mDriver.mCursorClip.quantize(1);
             });
             bindLightState(() -> computeGridLedState(slot), button);
          }
 
          final Scene scene = sceneBank.getItemAt(7 - x);
-         final Button sceneButton = driver.getSceneButton(x);
+         final Button sceneButton = driver.mSceneButtons[x];
          bindPressed(sceneButton, scene.launchAction());
          bindLightState(() -> computeSceneLedState(scene), sceneButton);
       }
 
-      bindLayer(driver.getShiftButton(), mShiftLayer);
-      bindLayer(driver.getDeleteButton(), mDeleteLayer);
-      bindLayer(driver.getQuantizeButton(), mQuantizeLayer);
+      bindLayer(driver.mShiftButton, mShiftLayer);
+      bindLayer(driver.mDeleteButton, mDeleteLayer);
+      bindLayer(driver.mQuantizeButton, mQuantizeLayer);
 
-      bindLightState(LedState.SESSION_MODE_ON, driver.getSessionButton());
-      bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
-      bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
-      bindLightState(() -> sceneBank.canScrollForwards().get() ? LedState.SCENE : LedState.SCENE_LOW, driver.getDownButton());
-      bindLightState(() -> sceneBank.canScrollBackwards().get() ? LedState.SCENE : LedState.SCENE_LOW, driver.getUpButton());
+      bindLightState(LedState.SESSION_MODE_ON, driver.mSessionButton);
+      bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW,
+         driver.mRightButton);
+      bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW,
+         driver.mLeftButton);
+      bindLightState(() -> sceneBank.canScrollForwards().get() ? LedState.SCENE : LedState.SCENE_LOW,
+         driver.mDownButton);
+      bindLightState(() -> sceneBank.canScrollBackwards().get() ? LedState.SCENE : LedState.SCENE_LOW, driver.mUpButton);
 
-      bindPressed(driver.getRightButton(), trackBank.scrollForwardsAction());
-      bindPressed(driver.getLeftButton(), trackBank.scrollBackwardsAction());
-      bindPressed(driver.getUpButton(), sceneBank.scrollBackwardsAction());
-      bindPressed(driver.getDownButton(), sceneBank.scrollForwardsAction());
+      bindPressed(driver.mRightButton, trackBank.scrollForwardsAction());
+      bindPressed(driver.mLeftButton, trackBank.scrollBackwardsAction());
+      bindPressed(driver.mUpButton, sceneBank.scrollBackwardsAction());
+      bindPressed(driver.mDownButton, sceneBank.scrollForwardsAction());
 
-      mShiftLayer.bindPressed(driver.getRightButton(), trackBank.scrollPageForwardsAction());
-      mShiftLayer.bindPressed(driver.getLeftButton(), trackBank.scrollPageBackwardsAction());
-      mShiftLayer.bindPressed(driver.getUpButton(), sceneBank.scrollPageBackwardsAction());
-      mShiftLayer.bindPressed(driver.getDownButton(), sceneBank.scrollPageForwardsAction());
+      mShiftLayer.bindPressed(driver.mRightButton, trackBank.scrollPageForwardsAction());
+      mShiftLayer.bindPressed(driver.mLeftButton, trackBank.scrollPageBackwardsAction());
+      mShiftLayer.bindPressed(driver.mUpButton, sceneBank.scrollPageBackwardsAction());
+      mShiftLayer.bindPressed(driver.mDownButton, sceneBank.scrollPageForwardsAction());
    }
 
    private InternalHardwareLightState computeSceneLedState(final Scene scene)
@@ -112,8 +115,8 @@ final class SessionMode extends Mode
    @Override
    public void doActivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
-      final SceneBank sceneBank = mDriver.getSceneBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
+      final SceneBank sceneBank = mDriver.mSceneBank;
       sceneBank.setIndication(true);
 
       for (int i = 0; i < 8; ++i)
@@ -152,8 +155,8 @@ final class SessionMode extends Mode
       mQuantizeLayer.deactivate();
       mDeleteLayer.deactivate();
 
-      final TrackBank trackBank = mDriver.getTrackBank();
-      final SceneBank sceneBank = mDriver.getSceneBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
+      final SceneBank sceneBank = mDriver.mSceneBank;
       sceneBank.setIndication(false);
 
       for (int i = 0; i < 8; ++i)

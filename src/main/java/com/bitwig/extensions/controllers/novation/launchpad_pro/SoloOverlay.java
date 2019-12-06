@@ -9,7 +9,7 @@ final class SoloOverlay extends Overlay
    {
       super(driver, "solo");
 
-      final TrackBank trackBank = driver.getTrackBank();
+      final TrackBank trackBank = driver.mTrackBank;
       for (int x = 0; x < 8; ++x)
       {
          final Track track = trackBank.getItemAt(x);
@@ -22,13 +22,13 @@ final class SoloOverlay extends Overlay
          }, button);
       }
 
-      bindLightState(LedState.SOLO, driver.getSoloButton());
+      bindLightState(LedState.SOLO, driver.mSoloButton);
    }
 
    @Override
    protected void doActivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
       for (int i = 0; i < 8; ++i)
          trackBank.getItemAt(i).solo().subscribe();
    }
@@ -36,7 +36,7 @@ final class SoloOverlay extends Overlay
    @Override
    protected void doDeactivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
       for (int i = 0; i < 8; ++i)
          trackBank.getItemAt(i).solo().unsubscribe();
    }

@@ -9,7 +9,7 @@ final class TrackSelectOverlay extends Overlay
    {
       super(driver, "track-select");
 
-      final TrackBank trackBank = driver.getTrackBank();
+      final TrackBank trackBank = driver.mTrackBank;
       for (int x = 0; x < 8; ++x)
       {
          final int X = x;
@@ -23,6 +23,6 @@ final class TrackSelectOverlay extends Overlay
          }, button);
       }
 
-      bindLightState(LedState.TRACK, driver.getSelectButton());
+      bindLightState(LedState.TRACK, driver.mSelectButton);
    }
 }

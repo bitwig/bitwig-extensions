@@ -95,19 +95,19 @@ final class KeyboardLayer extends LaunchpadLayer
    @Override
    protected void onActivate()
    {
-      mDriver.wantsSafePitches().subscribe();
-      mDriver.shouldHighlightScale().subscribe();
-      mDriver.shouldHihlightRootKey().subscribe();
-      mDriver.getCursorTrack().playingNotes().subscribe();
+      mDriver.mSafePitchesSetting.subscribe();
+      mDriver.mHighlightScaleSetting.subscribe();
+      mDriver.mHighlightRootKeySetting.subscribe();
+      mDriver.mCursorTrack.playingNotes().subscribe();
    }
 
    @Override
    protected void onDeactivate()
    {
-      mDriver.wantsSafePitches().unsubscribe();
-      mDriver.shouldHighlightScale().unsubscribe();
-      mDriver.shouldHihlightRootKey().unsubscribe();
-      mDriver.getCursorTrack().playingNotes().unsubscribe();
+      mDriver.mSafePitchesSetting.unsubscribe();
+      mDriver.mHighlightScaleSetting.unsubscribe();
+      mDriver.mHighlightRootKeySetting.unsubscribe();
+      mDriver.mCursorTrack.playingNotes().unsubscribe();
    }
 
    boolean canOctaveUp()
@@ -143,9 +143,9 @@ final class KeyboardLayer extends LaunchpadLayer
          return LedState.OFF;
       if (mIsPlaying.apply(midiNote))
          return LedState.STEP_PLAY;
-      if (mDriver.shouldHihlightRootKey().get() && midiNoteBase == mDriver.getMusicalKey())
+      if (mDriver.mHighlightRootKeySetting.get() && midiNoteBase == mDriver.getMusicalKey())
          return new LedState(trackColor);
-      else if (!mDriver.shouldHighlightScale().get() || scale.isMidiNoteInScale(mDriver.getMusicalKey(), midiNoteBase))
+      else if (!mDriver.mHighlightScaleSetting.get() || scale.isMidiNoteInScale(mDriver.getMusicalKey(), midiNoteBase))
          return new LedState(isBlackKey(midiNote) ? USED_BLACK_KEY_COLOR : USED_WHITE_KEY_COLOR);
       return LedState.OFF;
    }
@@ -267,7 +267,7 @@ final class KeyboardLayer extends LaunchpadLayer
       final int musicalKey = mDriver.getMusicalKey();
       final MusicalScale musicalScale = mDriver.getMusicalScale();
 
-      if (mDriver.wantsSafePitches().get() && !musicalScale.isMidiNoteInScale(musicalKey, key))
+      if (mDriver.mSafePitchesSetting.get() && !musicalScale.isMidiNoteInScale(musicalKey, key))
          return -1;
       return key;
    }

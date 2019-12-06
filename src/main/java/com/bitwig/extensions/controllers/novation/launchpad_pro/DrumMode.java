@@ -29,7 +29,7 @@ final class DrumMode extends Mode
    @Override
    protected void doActivate()
    {
-      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      final CursorTrack cursorTrack = mDriver.mCursorTrack;
       cursorTrack.subscribe();
       cursorTrack.playingNotes().subscribe();
    }
@@ -37,14 +37,14 @@ final class DrumMode extends Mode
    @Override
    protected void doDeactivate()
    {
-      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      final CursorTrack cursorTrack = mDriver.mCursorTrack;
       cursorTrack.unsubscribe();
       cursorTrack.playingNotes().unsubscribe();
    }
 
    private LedState computeGridLedState(final int x, final int y)
    {
-      final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
+      final PlayingNoteArrayValue playingNotes = mDriver.mCursorTrack.playingNotes();
       final int pitch = calculatePitch(x, y);
 
       if (playingNotes.isNotePlaying(pitch))

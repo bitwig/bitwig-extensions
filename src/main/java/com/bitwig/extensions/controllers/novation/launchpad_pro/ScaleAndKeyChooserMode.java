@@ -59,14 +59,14 @@ final class ScaleAndKeyChooserMode extends Mode
    @Override
    protected void doActivate()
    {
-      final Parameter tempo = mDriver.getTransport().tempo();
+      final Parameter tempo = mDriver.mTransport.tempo();
       tempo.subscribe();
    }
 
    @Override
    protected void doDeactivate()
    {
-      final Parameter tempo = mDriver.getTransport().tempo();
+      final Parameter tempo = mDriver.mTransport.tempo();
       tempo.unsubscribe();
    }
 
@@ -97,11 +97,11 @@ final class ScaleAndKeyChooserMode extends Mode
          return;
 
       final int note = musicalScale.computeNote(mDriver.getMusicalKey(), 6, i);
-      mDriver.getCursorTrack().playNote(note, 100);
+      mDriver.mCursorTrack.playNote(note, 100);
 
       if (i + 1 <= musicalScale.getNotesCount())
       {
-         final double duration = 60 / mDriver.getTransport().tempo().value().getRaw() / 2 * 1000;
+         final double duration = 60 / mDriver.mTransport.tempo().value().getRaw() / 2 * 1000;
 
          mDriver.getHost().scheduleTask(() -> playScale(i + 1, playScaleCount), (long)duration);
       }

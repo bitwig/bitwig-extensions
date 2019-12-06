@@ -12,7 +12,7 @@ final class PanMode extends Mode
 
       mShiftLayer = new LaunchpadLayer(driver, "pan-shift");
 
-      final TrackBank trackBank = driver.getTrackBank();
+      final TrackBank trackBank = driver.mTrackBank;
       for (int y = 0; y < 8; ++y)
       {
          final Track track = trackBank.getItemAt(y);
@@ -33,7 +33,7 @@ final class PanMode extends Mode
             }, button.getLight());
          }
 
-         final Button sceneButton = driver.getSceneButton(7 - y);
+         final Button sceneButton = driver.mSceneButtons[7 - y];
          bindPressed(sceneButton, () -> pan.setRaw(0));
          bindLightState(() -> {
             if (!track.exists().get())
@@ -44,17 +44,19 @@ final class PanMode extends Mode
          }, sceneButton.getLight());
       }
 
-      bindLightState(LedState.PAN_MODE, driver.getPanButton());
+      bindLightState(LedState.PAN_MODE, driver.mPanButton);
 
-      bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
-      bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
-      bindLightState(() -> LedState.OFF, driver.getDownButton());
-      bindLightState(() -> LedState.OFF, driver.getUpButton());
+      bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW,
+         driver.mRightButton);
+      bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW,
+         driver.mLeftButton);
+      bindLightState(() -> LedState.OFF, driver.mDownButton);
+      bindLightState(() -> LedState.OFF, driver.mUpButton);
 
-      bindPressed(driver.getRightButton(), trackBank.scrollForwardsAction());
-      bindPressed(driver.getLeftButton(), trackBank.scrollBackwardsAction());
-      mShiftLayer.bindPressed(driver.getRightButton(), trackBank.scrollPageForwardsAction());
-      mShiftLayer.bindPressed(driver.getLeftButton(), trackBank.scrollPageBackwardsAction());
+      bindPressed(driver.mRightButton, trackBank.scrollForwardsAction());
+      bindPressed(driver.mLeftButton, trackBank.scrollBackwardsAction());
+      mShiftLayer.bindPressed(driver.mRightButton, trackBank.scrollPageForwardsAction());
+      mShiftLayer.bindPressed(driver.mLeftButton, trackBank.scrollPageBackwardsAction());
    }
 
    @Override
@@ -71,7 +73,7 @@ final class PanMode extends Mode
    @Override
    protected void doActivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
       trackBank.subscribe();
 
       for (int i = 0; i < 8; ++i)
@@ -89,7 +91,7 @@ final class PanMode extends Mode
    {
       mShiftLayer.deactivate();
 
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
 
       for (int i = 0; i < 8; ++i)
       {

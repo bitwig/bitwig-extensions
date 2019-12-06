@@ -9,7 +9,7 @@ final class MuteOverlay extends Overlay
    {
       super(driver, "mute");
 
-      final TrackBank trackBank = driver.getTrackBank();
+      final TrackBank trackBank = driver.mTrackBank;
       for (int x = 0; x < 8; ++x)
       {
          final Track track = trackBank.getItemAt(x);
@@ -22,13 +22,13 @@ final class MuteOverlay extends Overlay
          }, button);
       }
 
-      bindLightState(LedState.MUTE, driver.getMuteButton());
+      bindLightState(LedState.MUTE, driver.mMuteButton);
    }
 
    @Override
    protected void doActivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
       for (int i = 0; i < 8; ++i)
          trackBank.getItemAt(i).mute().subscribe();
    }
@@ -36,7 +36,7 @@ final class MuteOverlay extends Overlay
    @Override
    protected void doDeactivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
       for (int i = 0; i < 8; ++i)
          trackBank.getItemAt(i).mute().subscribe();
    }

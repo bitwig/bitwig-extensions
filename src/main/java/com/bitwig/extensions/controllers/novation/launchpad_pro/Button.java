@@ -1,7 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
-import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -39,7 +38,7 @@ final class Button
 
       mDriver = driver;
 
-      final HardwareSurface hardwareSurface = driver.getHardwareSurface();
+      final HardwareSurface hardwareSurface = driver.mHardwareSurface;
       mIsPressureSensitive = isPressureSensitive;
       mIndex = index;
 

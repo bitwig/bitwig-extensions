@@ -13,36 +13,36 @@ final class KeyboardMode extends Mode
    {
       super(driver, "keyboard");
 
-      final CursorTrack cursorTrack = driver.getCursorTrack();
+      final CursorTrack cursorTrack = driver.mCursorTrack;
       final PlayingNoteArrayValue playingNotes = cursorTrack.playingNotes();
       mKeyboardLayer = new KeyboardLayer(driver, "keyboard", 0, 0, 8, 8, () -> new Color(cursorTrack.color()),
          playingNotes::isNotePlaying, null);
 
-      bindPressed(driver.getRightButton(), cursorTrack.selectNextAction());
-      bindPressed(driver.getLeftButton(), cursorTrack.selectPreviousAction());
-      bindPressed(driver.getUpButton(), () -> {
+      bindPressed(driver.mRightButton, cursorTrack.selectNextAction());
+      bindPressed(driver.mLeftButton, cursorTrack.selectPreviousAction());
+      bindPressed(driver.mUpButton, () -> {
          mKeyboardLayer.octaveUp();
          mDriver.updateKeyTranslationTable();
       });
-      bindPressed(driver.getDownButton(), () -> {
+      bindPressed(driver.mDownButton, () -> {
          mKeyboardLayer.octaveDown();
          mDriver.updateKeyTranslationTable();
       });
 
-      bindLightState(LedState.PLAY_MODE, driver.getNoteButton());
-      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
-      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
-      bindLightState(() -> mKeyboardLayer.canOctaveDown() ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
-      bindLightState(() -> mKeyboardLayer.canOctaveUp() ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
+      bindLightState(LedState.PLAY_MODE, driver.mNoteButton);
+      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.mRightButton);
+      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.mLeftButton);
+      bindLightState(() -> mKeyboardLayer.canOctaveDown() ? LedState.PITCH : LedState.PITCH_LOW, driver.mDownButton);
+      bindLightState(() -> mKeyboardLayer.canOctaveUp() ? LedState.PITCH : LedState.PITCH_LOW, driver.mUpButton);
 
-      final NoteInput noteInput = driver.getNoteInput();
+      final NoteInput noteInput = driver.mNoteInput;
       final NoteLatch noteLatch = noteInput.noteLatch();
       final Arpeggiator arpeggiator = noteInput.arpeggiator();
       final SettableIntegerValue octaves = arpeggiator.octaves();
 
       mConfigLayer = new NoteLatchAndArpeggiatorConfigLayer(driver, "keyboard-config");
 
-      bindPressed(driver.getShiftButton(), mConfigLayer.getToggleAction());
+      bindPressed(driver.mShiftButton, mConfigLayer.getToggleAction());
    }
 
    @Override
@@ -67,7 +67,7 @@ final class KeyboardMode extends Mode
    {
       mKeyboardLayer.activate();
 
-      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      final CursorTrack cursorTrack = mDriver.mCursorTrack;
       cursorTrack.subscribe();
       cursorTrack.playingNotes().subscribe();
       cursorTrack.color().subscribe();
@@ -80,9 +80,9 @@ final class KeyboardMode extends Mode
    {
       mConfigLayer.deactivate();
       mKeyboardLayer.deactivate();
-      mDriver.getNoteInput().setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
+      mDriver.mNoteInput.setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
 
-      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      final CursorTrack cursorTrack = mDriver.mCursorTrack;
       cursorTrack.playingNotes().unsubscribe();
       cursorTrack.color().unsubscribe();
       cursorTrack.hasPrevious().unsubscribe();

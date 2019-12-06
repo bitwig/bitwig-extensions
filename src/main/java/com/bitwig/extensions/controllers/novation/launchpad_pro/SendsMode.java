@@ -13,7 +13,7 @@ final class SendsMode extends Mode
 
       mShiftLayer = new LaunchpadLayer(driver, "volume-shift");
 
-      final TrackBank trackBank = driver.getTrackBank();
+      final TrackBank trackBank = driver.mTrackBank;
       for (int x = 0; x < 8; ++x)
       {
          final Track track = trackBank.getItemAt(x);
@@ -39,7 +39,7 @@ final class SendsMode extends Mode
          final int Y = y;
          final SendBank sendBank = trackBank.getItemAt(y).sendBank();
          final Send send = sendBank.getItemAt(y);
-         final Button sceneButton = driver.getSceneButton(7 - y);
+         final Button sceneButton = driver.mSceneButtons[7 - y];
          bindLightState(() -> {
             if (!send.exists().get())
                return LedState.OFF;
@@ -54,17 +54,19 @@ final class SendsMode extends Mode
          bindPressed(sceneButton, () -> setSendIndex(Y));
       }
 
-      bindLightState(LedState.SENDS_MODE, driver.getSendsButton());
+      bindLightState(LedState.SENDS_MODE, driver.mSendsButton);
 
-      bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
-      bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
-      bindLightState(() -> LedState.OFF, driver.getDownButton());
-      bindLightState(() -> LedState.OFF, driver.getUpButton());
+      bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW,
+         driver.mRightButton);
+      bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW,
+         driver.mLeftButton);
+      bindLightState(() -> LedState.OFF, driver.mDownButton);
+      bindLightState(() -> LedState.OFF, driver.mUpButton);
 
-      bindPressed(driver.getRightButton(), trackBank.scrollForwardsAction());
-      bindPressed(driver.getLeftButton(), trackBank.scrollBackwardsAction());
-      mShiftLayer.bindPressed(driver.getRightButton(), trackBank.scrollPageForwardsAction());
-      mShiftLayer.bindPressed(driver.getLeftButton(), trackBank.scrollPageBackwardsAction());
+      bindPressed(driver.mRightButton, trackBank.scrollForwardsAction());
+      bindPressed(driver.mLeftButton, trackBank.scrollBackwardsAction());
+      mShiftLayer.bindPressed(driver.mRightButton, trackBank.scrollPageForwardsAction());
+      mShiftLayer.bindPressed(driver.mLeftButton, trackBank.scrollPageBackwardsAction());
    }
 
    @Override
@@ -84,7 +86,7 @@ final class SendsMode extends Mode
 
    private void updateIndications()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
       for (int i = 0; i < 8; ++i)
       {
          final Track track = trackBank.getItemAt(i);
@@ -99,7 +101,7 @@ final class SendsMode extends Mode
    @Override
    protected void doActivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
 
       for (int i = 0; i < 8; ++i)
       {
@@ -127,7 +129,7 @@ final class SendsMode extends Mode
    {
       mShiftLayer.deactivate();
 
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
 
       for (int i = 0; i < 8; ++i)
       {
