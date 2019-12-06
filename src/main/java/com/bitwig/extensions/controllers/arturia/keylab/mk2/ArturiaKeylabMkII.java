@@ -228,7 +228,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          mFaders[i] = createFader(i);
       }
 
-      mWheel = createEncoder("wheel", 0x3C);
+      mWheel = createClickEncoder("wheel", 0x3C, 20);
 
       mDisplay = mHardwareSurface.createHardwareTextDisplay("display", 2);
       mDisplay.line(0).text().setMaxChars(16);
@@ -259,7 +259,9 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    {
       mLayers = new Layers(this);
 
-      mBaseLayer = new Layer(mLayers, "Base")
+      mBaseLayer = new Layer(mLayers, "Base");
+
+      mDAWLayer = new Layer(mLayers, "DAW")
       {
          @Override
          protected void onActivate()
@@ -297,10 +299,12 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       mBrowserLayer = new Layer(mLayers, "Browser");
 
       initBaseLayer();
+      initDAWLayer();
       initBrowserLayer();
       initMultiLayer();
 
       mBaseLayer.activate();
+      mDAWLayer.activate();
 
       // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
@@ -328,11 +332,6 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       });
       mBaseLayer.bind(() -> mIsForwarding, ButtonId.FORWARD);
 
-      mBaseLayer.bindPressed(ButtonId.STOP, mTransport.stopAction());
-      mBaseLayer.bindToggle(ButtonId.PLAY_OR_PAUSE, mTransport.playAction(), mTransport.isPlaying());
-      mBaseLayer.bindToggle(ButtonId.RECORD, mTransport.recordAction(), mTransport.isArrangerRecordEnabled());
-      mBaseLayer.bindToggle(ButtonId.LOOP, mTransport.isArrangerLoopEnabled());
-      mBaseLayer.bindToggle(ButtonId.METRO, mTransport.isMetronomeEnabled());
       mBaseLayer.bindPressed(ButtonId.UNDO, mApplication.undoAction());
       mBaseLayer.bindPressed(ButtonId.SAVE, mSaveAction::invoke);
 
@@ -393,6 +392,15 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          () -> mCursorTrack.exists().get()
             ? mDevice.exists().get() ? (mDevice.name().getLimited(16)) : "No Device"
             : "");
+   }
+
+   private void initDAWLayer()
+   {
+      mBaseLayer.bindPressed(ButtonId.STOP, mTransport.stopAction());
+      mBaseLayer.bindToggle(ButtonId.PLAY_OR_PAUSE, mTransport.playAction(), mTransport.isPlaying());
+      mBaseLayer.bindToggle(ButtonId.RECORD, mTransport.recordAction(), mTransport.isArrangerRecordEnabled());
+      mBaseLayer.bindToggle(ButtonId.LOOP, mTransport.isArrangerLoopEnabled());
+      mBaseLayer.bindToggle(ButtonId.METRO, mTransport.isMetronomeEnabled());
    }
 
    private void initBrowserLayer()
@@ -523,7 +531,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       {
          mDawMode = true;
 
-         mBaseLayer.activate();
+         mDAWLayer.activate();
 
          getHost().scheduleTask(() -> {
             reset();
@@ -532,7 +540,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       else if (s.equals(EXIT_DAW_MODE))
       {
          mDawMode = false;
-         mBaseLayer.deactivate();
+         mDAWLayer.deactivate();
       }
 
       updateIndications();
@@ -702,6 +710,20 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       return encoder;
    }
 
+   private RelativeHardwareControl createClickEncoder(
+      final String id,
+      final int cc,
+      final int clicksForOneRotation)
+   {
+      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
+
+      encoder.setAdjustValueMatcher(
+         getMidiInPort(1).createRelativeSignedBitCCValueMatcher(0, cc, clicksForOneRotation));
+      encoder.setStepSize(1.0 / clicksForOneRotation);
+
+      return encoder;
+   }
+
    private AbsoluteHardwareControl createFader(final int index)
    {
       final HardwareSlider fader = mHardwareSurface.createHardwareSlider("fader" + (index + 1));
@@ -842,6 +864,8 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    private Action mSaveAction;
 
    private Layer mBaseLayer;
+
+   private Layer mDAWLayer;
 
    private Layer mBrowserLayer;
 
