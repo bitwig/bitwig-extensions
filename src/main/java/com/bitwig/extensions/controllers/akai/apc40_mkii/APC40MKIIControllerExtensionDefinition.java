@@ -57,7 +57,7 @@ public class APC40MKIIControllerExtensionDefinition extends ControllerExtensionD
    @Override
    public String getHelpFilePath()
    {
-      return "Controllers/Akai/APC40 MKII.pdf";
+      return "Documentation/Controllers/Akai/APC40 MKII.pdf";
    }
 
    @Override
