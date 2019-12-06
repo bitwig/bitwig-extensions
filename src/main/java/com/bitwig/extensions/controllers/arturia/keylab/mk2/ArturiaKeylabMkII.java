@@ -314,37 +314,6 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       mBaseLayer.bindPressed(ButtonId.SELECT_MULTI, mMultiLayer.getToggleAction());
       mBaseLayer.bind((Supplier<Color>)() -> mMultiLayer.isActive() ? BLUEY : ORANGE, ButtonId.SELECT_MULTI);
 
-      mBaseLayer.bindPressed(ButtonId.REWIND, () -> {
-         mIsRewinding = true;
-         repeatRewind();
-      });
-      mBaseLayer.bindReleased(ButtonId.REWIND, () -> {
-         mIsRewinding = false;
-      });
-      mBaseLayer.bind(() -> mIsRewinding, ButtonId.REWIND);
-
-      mBaseLayer.bindPressed(ButtonId.FORWARD, () -> {
-         mIsForwarding = true;
-         repeatForward();
-      });
-      mBaseLayer.bindReleased(ButtonId.FORWARD, () -> {
-         mIsForwarding = false;
-      });
-      mBaseLayer.bind(() -> mIsForwarding, ButtonId.FORWARD);
-
-      mBaseLayer.bindPressed(ButtonId.UNDO, mApplication.undoAction());
-      mBaseLayer.bindPressed(ButtonId.SAVE, mSaveAction::invoke);
-
-      mBaseLayer.bindToggle(ButtonId.PUNCH_IN, mTransport.isPunchInEnabled());
-      mBaseLayer.bindToggle(ButtonId.PUNCH_OUT, mTransport.isPunchOutEnabled());
-
-      mBaseLayer.bindToggle(ButtonId.SOLO, mCursorTrack.solo());
-      mBaseLayer.bindToggle(ButtonId.MUTE, mCursorTrack.mute());
-      mBaseLayer.bindToggle(ButtonId.RECORD_ARM, mCursorTrack.arm());
-      mBaseLayer.bindToggle(ButtonId.WRITE, mTransport.isArrangerAutomationWriteEnabled());
-
-      mBaseLayer.bindToggle(ButtonId.READ, mTransport.isClipLauncherOverdubEnabled());
-
       mBaseLayer.bindPressed(ButtonId.PREVIOUS, mRemoteControls::selectPrevious);
       mBaseLayer.bindPressed(ButtonId.NEXT, mRemoteControls::selectNext);
 
@@ -396,11 +365,39 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
    private void initDAWLayer()
    {
+      mBaseLayer.bindPressed(ButtonId.REWIND, () -> {
+         mIsRewinding = true;
+         repeatRewind();
+      });
+      mBaseLayer.bindReleased(ButtonId.REWIND, () -> {
+         mIsRewinding = false;
+      });
+      mBaseLayer.bind(() -> mIsRewinding, ButtonId.REWIND);
+
+      mBaseLayer.bindPressed(ButtonId.FORWARD, () -> {
+         mIsForwarding = true;
+         repeatForward();
+      });
+      mBaseLayer.bindReleased(ButtonId.FORWARD, () -> {
+         mIsForwarding = false;
+      });
+      mBaseLayer.bind(() -> mIsForwarding, ButtonId.FORWARD);
       mBaseLayer.bindPressed(ButtonId.STOP, mTransport.stopAction());
       mBaseLayer.bindToggle(ButtonId.PLAY_OR_PAUSE, mTransport.playAction(), mTransport.isPlaying());
       mBaseLayer.bindToggle(ButtonId.RECORD, mTransport.recordAction(), mTransport.isArrangerRecordEnabled());
       mBaseLayer.bindToggle(ButtonId.LOOP, mTransport.isArrangerLoopEnabled());
+
+      mBaseLayer.bindToggle(ButtonId.SOLO, mCursorTrack.solo());
+      mBaseLayer.bindToggle(ButtonId.MUTE, mCursorTrack.mute());
+      mBaseLayer.bindToggle(ButtonId.RECORD_ARM, mCursorTrack.arm());
+      mBaseLayer.bindToggle(ButtonId.READ, mTransport.isClipLauncherOverdubEnabled());
+      mBaseLayer.bindToggle(ButtonId.WRITE, mTransport.isArrangerAutomationWriteEnabled());
+
+      mBaseLayer.bindPressed(ButtonId.SAVE, mSaveAction::invoke);
+      mBaseLayer.bindToggle(ButtonId.PUNCH_IN, mTransport.isPunchInEnabled());
+      mBaseLayer.bindToggle(ButtonId.PUNCH_OUT, mTransport.isPunchOutEnabled());
       mBaseLayer.bindToggle(ButtonId.METRO, mTransport.isMetronomeEnabled());
+      mBaseLayer.bindPressed(ButtonId.UNDO, mApplication.undoAction());
    }
 
    private void initBrowserLayer()
