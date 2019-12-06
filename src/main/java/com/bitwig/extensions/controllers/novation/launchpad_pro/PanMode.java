@@ -30,7 +30,7 @@ final class PanMode extends Mode
                   (value > 0 && padValue > 0 && padValue <= value))
                   return new LedState(track.color());
                return LedState.OFF;
-            }, button.getLight());
+            }, button.mLight);
          }
 
          final Button sceneButton = driver.mSceneButtons[7 - y];
@@ -41,7 +41,7 @@ final class PanMode extends Mode
             if (pan.get() == 0)
                return new LedState(track.color());
             return new LedState(Color.scale(new Color(track.color()), .2f));
-         }, sceneButton.getLight());
+         }, sceneButton.mLight);
       }
 
       bindLightState(LedState.PAN_MODE, driver.mPanButton);

@@ -171,7 +171,7 @@ final class StepSequencerMode extends AbstractSequencerMode
       final List<Button> stepsInHoldState = getStepsInHoldState();
       for (final Button button : stepsInHoldState)
       {
-         final int clipStepIndex = calculateClipStepIndex(button.getX() - 1, 8 - button.getY());
+         final int clipStepIndex = calculateClipStepIndex(button.mX - 1, 8 - button.mY);
 
          final NoteStep noteStep = cursorClip.getStep(0, clipStepIndex, key);
          return noteStep.state() == NoteStep.State.NoteOn;
@@ -242,7 +242,7 @@ final class StepSequencerMode extends AbstractSequencerMode
 
       for (final Button buttonState : padsInHoldState)
       {
-         final int clipStepIndex = calculateClipStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final int clipStepIndex = calculateClipStepIndex(buttonState.mX - 1, 8 - buttonState.mY);
 
          for (int key = 0; key < 128; ++key)
          {
@@ -279,7 +279,7 @@ final class StepSequencerMode extends AbstractSequencerMode
 
       for (final Button buttonState : padsInHoldState)
       {
-         final int clipStepIndex = calculateClipStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final int clipStepIndex = calculateClipStepIndex(buttonState.mX - 1, 8 - buttonState.mY);
 
          for (int key = 0; key < 128; ++key)
          {
@@ -312,7 +312,7 @@ final class StepSequencerMode extends AbstractSequencerMode
       final Clip cursorClip = mDriver.mCursorClip;
       for (final Button buttonState : getStepsInPressedOrHoldState())
       {
-         final int clipStepIndex = calculateClipStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final int clipStepIndex = calculateClipStepIndex(buttonState.mX - 1, 8 - buttonState.mY);
          cursorClip.toggleStep(clipStepIndex, key, (int) (127 * velocity));
       }
    }

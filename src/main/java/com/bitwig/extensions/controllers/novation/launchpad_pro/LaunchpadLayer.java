@@ -4,7 +4,6 @@ import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.controller.api.HardwareActionBindable;
-import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extensions.framework.Binding;
@@ -20,27 +19,27 @@ class LaunchpadLayer extends Layer
 
    void bindPressed(final Button bt, final Runnable runnable)
    {
-      bindPressed(bt.getButton(), runnable);
+      bindPressed(bt.mButton, runnable);
    }
 
    void bindPressed(final Button bt, final DoubleConsumer pressedPressureConsumer)
    {
-      bindPressed(bt.getButton(), pressedPressureConsumer);
+      bindPressed(bt.mButton, pressedPressureConsumer);
    }
 
    void bindReleased(final Button bt, final Runnable runnable)
    {
-      bindReleased(bt.getButton(), runnable);
+      bindReleased(bt.mButton, runnable);
    }
 
    void bindPressed(final Button bt, final HardwareActionBindable bindable)
    {
-      bindPressed(bt.getButton(), bindable);
+      bindPressed(bt.mButton, bindable);
    }
 
    private void bindReleased(final Button bt, final HardwareActionBindable bindable)
    {
-      bindReleased(bt.getButton(), bindable);
+      bindReleased(bt.mButton, bindable);
    }
 
    void bindOverlay(final Button bt, final Overlay overlay, final LedState ledStateOff)
@@ -65,7 +64,7 @@ class LaunchpadLayer extends Layer
 
    public Binding bindLightState(final Supplier<InternalHardwareLightState> supplier, final Button button)
    {
-      return bindLightState(supplier, button.getLight());
+      return bindLightState(supplier, button.mLight);
    }
 
    public Binding bindLightState(final LedState state, final Button button)
@@ -75,7 +74,7 @@ class LaunchpadLayer extends Layer
 
    public void bindToggle(final Button button, final SettableBooleanValue target)
    {
-      bindToggle(button.getButton(), target);
+      bindToggle(button.mButton, target);
    }
 
    final LaunchpadProControllerExtension mDriver;

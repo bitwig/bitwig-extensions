@@ -30,7 +30,7 @@ final class SendsMode extends Mode
                if (value >= padValue)
                   return new LedState(track.color());
                return LedState.OFF;
-            }, button.getLight());
+            }, button.mLight);
          }
       }
 

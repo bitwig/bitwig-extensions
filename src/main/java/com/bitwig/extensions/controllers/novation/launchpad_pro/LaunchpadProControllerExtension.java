@@ -114,33 +114,33 @@ final class LaunchpadProControllerExtension extends ControllerExtension
 
    private void createMainLayer()
    {
-      mMainLayer.bindPressed(mClickButton.getButton(), () -> {
+      mMainLayer.bindPressed(mClickButton.mButton, () -> {
          if (isShiftOn())
             mTransport.tapTempo();
          else
             mTransport.isMetronomeEnabled().toggle();
       });
-      mMainLayer.bindPressed(mUndoButton.getButton(), () -> {
+      mMainLayer.bindPressed(mUndoButton.mButton, () -> {
          if (isShiftOn())
             mApplication.redo();
          else
             mApplication.undo();
       });
-      mMainLayer.bindPressed(mQuantizeButton.getButton(), () -> {
+      mMainLayer.bindPressed(mQuantizeButton.mButton, () -> {
          if (isShiftOn())
          {
             final SettableEnumValue recordQuantizationGrid = mApplication.recordQuantizationGrid();
             recordQuantizationGrid.set(recordQuantizationGrid.get().equals("OFF") ? "1/16" : "OFF");
          }
       });
-      mMainLayer.bindPressed(mDuplicateButton.getButton(), mApplication.duplicateAction());
-      mMainLayer.bindPressed(mDoubleButton.getButton(), () -> {
+      mMainLayer.bindPressed(mDuplicateButton.mButton, mApplication.duplicateAction());
+      mMainLayer.bindPressed(mDoubleButton.mButton, () -> {
          if (isShiftOn())
             mTransport.isArrangerRecordEnabled().toggle();
          else
             mTransport.togglePlay();
       });
-      mMainLayer.bindPressed(mRecordButton.getButton(), () -> {
+      mMainLayer.bindPressed(mRecordButton.mButton, () -> {
          final boolean enabled = isRecording();
          mTransport.isClipLauncherOverdubEnabled().set(!enabled);
          mTransport.isClipLauncherAutomationWriteEnabled().set(!enabled);
@@ -193,13 +193,13 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mHardwareSurface.setPhysicalSize(PHYSICAL_DEVICE_WIDTH, PHYSICAL_DEVICE_WIDTH);
 
       mShiftButton = createSideButton("shift", 0, 8);
-      mShiftButton.getButton().isPressed().markInterested();
+      mShiftButton.mButton.isPressed().markInterested();
       mClickButton = createSideButton("click", 0, 7);
       mUndoButton = createSideButton("undo", 0, 6);
       mDeleteButton = createSideButton("delete", 0, 5);
-      mDeleteButton.getButton().isPressed().markInterested();
+      mDeleteButton.mButton.isPressed().markInterested();
       mQuantizeButton = createSideButton("quantize", 0, 4);
-      mQuantizeButton.getButton().isPressed().markInterested();
+      mQuantizeButton.mButton.isPressed().markInterested();
       mDuplicateButton = createSideButton("duplicate", 0, 3);
       mDoubleButton = createSideButton("double", 0, 2);
       mRecordButton = createSideButton("record", 0, 1);
@@ -258,7 +258,7 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       assert x >= 0 && x < 10;
       assert y >= 0 && y < 10;
 
-      final HardwareButton button = bt.getButton();
+      final HardwareButton button = bt.mButton;
       button.setBounds(
          calculatePhysicalPosition(x),
          calculatePhysicalPosition(9 - y),
@@ -675,17 +675,17 @@ final class LaunchpadProControllerExtension extends ControllerExtension
 
    boolean isShiftOn()
    {
-      return mShiftButton.getButton().isPressed().get();
+      return mShiftButton.mButton.isPressed().get();
    }
 
    boolean isDeleteOn()
    {
-      return mDeleteButton.getButton().isPressed().get();
+      return mDeleteButton.mButton.isPressed().get();
    }
 
    public boolean isQuantizeOn()
    {
-      return mQuantizeButton.getButton().isPressed().get();
+      return mQuantizeButton.mButton.isPressed().get();
    }
 
    MusicalScale getMusicalScale()

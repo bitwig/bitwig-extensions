@@ -138,21 +138,6 @@ final class Color
       return new Color(r / 255.0f, g / 255.0f, b / 255.0f);
    }
 
-   public byte getRed()
-   {
-      return mRed;
-   }
-
-   public byte getGreen()
-   {
-      return mGreen;
-   }
-
-   public byte getBlue()
-   {
-      return mBlue;
-   }
-
    public boolean equals(final Color color)
    {
       return this == color || (mRed == color.mRed && mGreen == color.mGreen && mBlue == color.mBlue);
@@ -175,21 +160,7 @@ final class Color
       return com.bitwig.extension.api.Color.fromRGB255(4 * mRed, 4 * mGreen, 4 * mBlue);
    }
 
-   public int toInt24()
-   {
-      return (mRed << 16) | (mGreen << 8) | (mBlue);
-   }
-
-   static Color fromInt24(final int value)
-   {
-      final int red = (value >> 16) & 0xff;
-      final int green = (value >> 8) & 0xff;
-      final int blue = value & 0xff;
-
-      return Color.fromRgb255(4 * red, 4 * green, 4 * blue);
-   }
-
-   private final byte mRed;
-   private final byte mGreen;
-   private final byte mBlue;
+   final byte mRed;
+   final byte mGreen;
+   final byte mBlue;
 }

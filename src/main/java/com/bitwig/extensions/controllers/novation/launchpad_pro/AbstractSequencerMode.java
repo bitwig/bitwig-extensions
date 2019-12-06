@@ -116,7 +116,7 @@ abstract class AbstractSequencerMode extends Mode
    }
 
    @Override
-   public void onCursorClipExists(final boolean exists)
+   protected void onCursorClipExists(final boolean exists)
    {
       if (!exists)
          clearNoteInputRouting();
@@ -182,7 +182,7 @@ abstract class AbstractSequencerMode extends Mode
       }
 
       final Button pad = pads.get(0);
-      final int clipStepIndex = calculateClipStepIndex(pad.getX() - 1, 8 - pad.getY());
+      final int clipStepIndex = calculateClipStepIndex(pad.mX - 1, 8 - pad.mY);
       final NoteStep noteStep = findStepInfo(clipStepIndex);
 
       final double volume = noteStep.volume();
@@ -225,7 +225,7 @@ abstract class AbstractSequencerMode extends Mode
       }
 
       final Button pad = pads.get(0);
-      final int clipStepIndex = calculateClipStepIndex(pad.getX() - 1, 8 - pad.getY());
+      final int clipStepIndex = calculateClipStepIndex(pad.mX - 1, 8 - pad.mY);
       final NoteStep noteStep = findStepInfo(clipStepIndex);
 
       final double transpose = noteStep.transpose();

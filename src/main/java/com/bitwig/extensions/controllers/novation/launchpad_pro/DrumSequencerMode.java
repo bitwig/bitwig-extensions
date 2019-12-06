@@ -103,14 +103,14 @@ final class DrumSequencerMode extends AbstractSequencerMode
                mSceneAndPerfsLayer.bindPressed(actionBt, () -> onDrumScenePressed(X, Y));
             else
             {
-               mSceneAndPerfsLayer.bind(actionBt.getAfterTouch(), v -> onDrumPerfPressure(X, Y, (int) (127. * v)));
+               mSceneAndPerfsLayer.bind(actionBt.mAfterTouch, v -> onDrumPerfPressure(X, Y, (int) (127. * v)));
                mSceneAndPerfsLayer.bindReleased(actionBt, () -> onDrumPerfReleased(X, Y));
             }
 
             mMainActionsLayer.bindPressed(actionBt, v -> onDrumActionPressed(X, Y, (int) (v * 127)));
             mMainActionsLayer.bindReleased(actionBt, () -> onDrumActionReleased(X, Y));
             if (X == 0 && Y == 2)
-               mMainActionsLayer.bind(actionBt.getAfterTouch(), v -> onAutoNoteRepeatPressure((int) (127. * v)));
+               mMainActionsLayer.bind(actionBt.mAfterTouch, v -> onAutoNoteRepeatPressure((int) (127. * v)));
          }
       }
 
@@ -354,7 +354,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
       for (final Button button : padsInHoldState)
       {
-         final int clipStepIndex = calculateClipStepIndex(button.getX() - 1, 8 - button.getY());
+         final int clipStepIndex = calculateClipStepIndex(button.mX - 1, 8 - button.mY);
          final NoteStep noteStep = clip.getStep(0, clipStepIndex, mCurrentPitch);
 
          switch (y)
@@ -381,7 +381,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
       for (final Button buttonState : padsInHoldState)
       {
-         final int clipStepIndex = calculateClipStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final int clipStepIndex = calculateClipStepIndex(buttonState.mX - 1, 8 - buttonState.mY);
          final NoteStep noteStep = clip.getStep(0, clipStepIndex, mCurrentPitch);
 
          switch (y)
@@ -628,7 +628,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
          return false;
 
       final Button button = mDriver.getPadButton(x, y);
-      return button.getButton().isPressed().get();
+      return button.mButton.isPressed().get();
    }
 
    private boolean isDrumPadSelectOn()
