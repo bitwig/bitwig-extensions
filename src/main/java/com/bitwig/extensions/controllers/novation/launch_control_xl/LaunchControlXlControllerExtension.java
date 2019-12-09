@@ -1,5 +1,8 @@
 package com.bitwig.extensions.controllers.novation.launch_control_xl;
 
+import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+import com.bitwig.extension.controller.api.HardwareSlider;
+import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extensions.controllers.novation.common.SimpleLed;
 import com.bitwig.extensions.controllers.novation.common.SimpleLedColor;
 import com.bitwig.extension.controller.ControllerExtension;
@@ -116,6 +119,21 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
             parameter.markInterested();
             parameter.exists().markInterested();
          }
+      }
+
+      // We would need a multi-channel or multi-function hardware controls to make it clean
+      mHardwareSurface = mHost.createHardwareSurface();
+      final int knobOffets[] = { 13, 29, 49};
+      for (int i = 0; i < 8; ++i)
+      {
+         for (int j = 0; j < 3; ++j)
+         {
+            final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("knob-" + i + "-" + j);
+            knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, knobOffets[j] + i));
+            mHardwareKnobs[8 * j + i] = knob;
+         }
+         mHardwareSliders[i] = mHardwareSurface.createHardwareSlider("slider-" + i);
+         mHardwareSliders[i].setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, 77 + i));
       }
    }
 
@@ -554,4 +572,8 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private SimpleLed mRightButtonLed = new SimpleLed(0x90, 47);
    private CursorDevice[] mTrackDeviceCursors = new CursorDevice[8];
    private CursorRemoteControlsPage[] mTrackRemoteControls = new CursorRemoteControlsPage[8];
+
+   private HardwareSurface mHardwareSurface;
+   private AbsoluteHardwareKnob[] mHardwareKnobs = new AbsoluteHardwareKnob[3 * 8];
+   private HardwareSlider[] mHardwareSliders = new HardwareSlider[8];
 }

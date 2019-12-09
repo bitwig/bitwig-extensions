@@ -42,26 +42,9 @@ public class LaunchControlXlControllerExtensionDefinition extends ControllerExte
          new String[]{"Launch Control XL"},
          new String[]{"Launch Control XL"});
 
-      switch (platformType)
-      {
-         case MAC:
-            list.add(
-               new String[]{"Launch Control XL MIDI 1"},
-               new String[]{"Launch Control XL MIDI 1"});
-            break;
-
-         case WINDOWS:
-            list.add(
-               new String[]{"Launch Control XL MIDI 1"},
-               new String[]{"Launch Control XL MIDI 1"});
-            break;
-
-         case LINUX:
-            list.add(
-               new String[]{"Launch Control XL MIDI 1"},
-               new String[]{"Launch Control XL MIDI 1"});
-            break;
-      }
+      list.add(
+         new String[]{"Launch Control XL MIDI 1"},
+         new String[]{"Launch Control XL MIDI 1"});
    }
 
    @Override
@@ -97,7 +80,7 @@ public class LaunchControlXlControllerExtensionDefinition extends ControllerExte
    @Override
    public int getRequiredAPIVersion()
    {
-      return 7;
+      return 10;
    }
 
    @Override
