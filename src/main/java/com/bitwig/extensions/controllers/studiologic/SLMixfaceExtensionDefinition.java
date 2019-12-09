@@ -1,4 +1,4 @@
-package com.bitwig.extension.controllers.studiologic;
+package com.bitwig.extensions.controllers.studiologic;
 
 import java.util.UUID;
 

@@ -438,7 +438,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
          // Configure the Arp as a note repeat
          final Arpeggiator arpeggiator = mDriver.getArpeggiator();
-         arpeggiator.period().set(period);
+         arpeggiator.rate().set(period);
          arpeggiator.usePressureToVelocity().set(true);
          arpeggiator.shuffle().set(true);
          arpeggiator.mode().set("all"); // that's the note repeat way
@@ -461,7 +461,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private void onAutoNoteRepeatPressure(final int pressure)
    {
       final Arpeggiator arpeggiator = mDriver.getArpeggiator();
-      arpeggiator.period().set(calculateAutoNoteRepeatPeriod(pressure));
+      arpeggiator.rate().set(calculateAutoNoteRepeatPeriod(pressure));
    }
 
    private double calculateAutoNoteRepeatPeriod(final int pressure)
@@ -491,7 +491,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
             if (coord.y != 2 || coord.x != 0)
             {
                final double periodForPad = calculateNoteRepeatPeriodForPad(coord.x, coord.y);
-               arpeggiator.period().set(periodForPad);
+               arpeggiator.rate().set(periodForPad);
             }
          }
 
