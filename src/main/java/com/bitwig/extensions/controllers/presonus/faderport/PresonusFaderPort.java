@@ -169,9 +169,6 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
       mTransport = host.createTransport();
 
-      mClearMute = mApplication.getAction("clear_mute");
-      mClearSolo = mApplication.getAction("clear_solo");
-
       // Link all send positions to the first
       mTrackBank.getItemAt(0).sendBank().scrollPosition().addValueObserver(p -> {
          for (int i = 1; i < mChannelCount; i++)
@@ -468,8 +465,10 @@ public abstract class PresonusFaderPort extends ControllerExtension
          mIsForwarding = p;
          if (p) repeatForwardRewind();
       });
-      mDefaultLayer.bindToggle(mClearSoloButton, mClearSolo, mClearSolo.isEnabled());
-      mDefaultLayer.bindToggle(mClearMuteButton, mClearMute, mClearMute.isEnabled());
+      mDefaultLayer.bindPressed(mClearSoloButton, mApplication::unsoloAll);
+      mDefaultLayer.bind(mApplication.hasSoloedTracks(), mClearSoloButton);
+      mDefaultLayer.bindPressed(mClearMuteButton, mApplication::unmuteAll);
+      mDefaultLayer.bind(mApplication.hasMutedTracks(), mClearMuteButton);
 
       mDefaultLayer.bindToggle(mTrackModeButton, mTrackLayer);
       mDefaultLayer.bindToggle(mPluginModeButton, mDeviceLayer);
@@ -1056,10 +1055,6 @@ public abstract class PresonusFaderPort extends ControllerExtension
    private Arranger mArranger;
 
    private CueMarkerBank mCueMarkerBank;
-
-   private Action mClearMute;
-
-   private Action mClearSolo;
 
    private CursorRemoteControlsPage mRemoteControls2;
 
