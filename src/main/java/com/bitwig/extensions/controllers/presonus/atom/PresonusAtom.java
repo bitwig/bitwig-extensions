@@ -119,7 +119,7 @@ public class PresonusAtom extends ControllerExtension
       mNoteInput.setShouldConsumeEvents(false);
       mArpeggiator = mNoteInput.arpeggiator();
       mArpeggiator.isEnabled().markInterested();
-      mArpeggiator.period().markInterested();
+      mArpeggiator.rate().markInterested();
       mArpeggiator.shuffle().markInterested();
       mArpeggiator.usePressureToVelocity().set(true);
 
@@ -570,8 +570,8 @@ public class PresonusAtom extends ControllerExtension
 
          final HardwareButton padButton = mPadButtons[i];
 
-         mNoteRepeatShiftLayer.bindPressed(padButton, () -> mArpeggiator.period().set(timing));
-         mNoteRepeatShiftLayer.bind(() -> mArpeggiator.period().get() == timing ? RED : DIM_RED, padButton);
+         mNoteRepeatShiftLayer.bindPressed(padButton, () -> mArpeggiator.rate().set(timing));
+         mNoteRepeatShiftLayer.bind(() -> mArpeggiator.rate().get() == timing ? RED : DIM_RED, padButton);
 
          mNoteRepeatShiftLayer.bindPressed(mPadButtons[i + 8], doNothing);
          mNoteRepeatShiftLayer.bind(noColor, mPadButtons[i + 8]);
