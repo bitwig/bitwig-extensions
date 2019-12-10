@@ -28,6 +28,7 @@ import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
@@ -145,6 +146,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
       final ControllerHost host = getHost();
       mApplication = host.createApplication();
+      mProject = host.getProject();
       mArranger = host.createArranger();
       mCueMarkerBank = mArranger.createCueMarkerBank(mChannelCount);
 
@@ -465,10 +467,10 @@ public abstract class PresonusFaderPort extends ControllerExtension
          mIsForwarding = p;
          if (p) repeatForwardRewind();
       });
-      mDefaultLayer.bindPressed(mClearSoloButton, mApplication::unsoloAll);
-      mDefaultLayer.bind(mApplication.hasSoloedTracks(), mClearSoloButton);
-      mDefaultLayer.bindPressed(mClearMuteButton, mApplication::unmuteAll);
-      mDefaultLayer.bind(mApplication.hasMutedTracks(), mClearMuteButton);
+      mDefaultLayer.bindPressed(mClearSoloButton, mProject::unsoloAll);
+      mDefaultLayer.bind(mProject.hasSoloedTracks(), mClearSoloButton);
+      mDefaultLayer.bindPressed(mClearMuteButton, mProject::unmuteAll);
+      mDefaultLayer.bind(mProject.hasMutedTracks(), mClearMuteButton);
 
       mDefaultLayer.bindToggle(mTrackModeButton, mTrackLayer);
       mDefaultLayer.bindToggle(mPluginModeButton, mDeviceLayer);
@@ -975,6 +977,8 @@ public abstract class PresonusFaderPort extends ControllerExtension
    private MidiOut mMidiOut;
 
    private Application mApplication;
+
+   private Project mProject;
 
    private boolean mShift;
 
