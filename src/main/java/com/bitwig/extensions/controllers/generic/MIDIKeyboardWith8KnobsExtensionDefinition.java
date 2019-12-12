@@ -17,7 +17,7 @@ public class MIDIKeyboardWith8KnobsExtensionDefinition extends ControllerExtensi
    @Override
    public String getName()
    {
-      return "MIDI Keyboard";
+      return "Keyboard + 8 Device Knobs (CC 20-27)";
    }
 
    @Override
@@ -47,7 +47,7 @@ public class MIDIKeyboardWith8KnobsExtensionDefinition extends ControllerExtensi
    @Override
    public String getHardwareModel()
    {
-      return "Keyboard + 8 Device Knobs (CC 20-27)";
+      return getName();
    }
 
    @Override

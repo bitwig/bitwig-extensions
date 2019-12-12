@@ -47,7 +47,7 @@ public class MIDIKeyboardExtensionDefinition extends ControllerExtensionDefiniti
    @Override
    public String getHardwareModel()
    {
-      return "MIDI Keyboard";
+      return getName();
    }
 
    @Override
