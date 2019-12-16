@@ -62,7 +62,7 @@ public abstract class PresonusFaderPortDefinition extends ControllerExtensionDef
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/PreSonus/FaderPort.pdf";
+      return "Controllers/PreSonus/FaderPort.pdf";
    }
 
    @Override

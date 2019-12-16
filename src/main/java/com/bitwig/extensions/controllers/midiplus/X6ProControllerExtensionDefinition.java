@@ -104,7 +104,7 @@ public class X6ProControllerExtensionDefinition extends ControllerExtensionDefin
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/MIDIPLUS/XPro Keyboards.html";
+      return "Controllers/MIDIPLUS/XPro Keyboards.html";
    }
 
    final private static X6ProControllerExtensionDefinition INSTANCE = new X6ProControllerExtensionDefinition();

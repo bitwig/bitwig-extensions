@@ -47,7 +47,7 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Arturia/KeyLab mkII.pdf";
+      return "Controllers/Arturia/KeyLab mkII.pdf";
    }
 
    @Override

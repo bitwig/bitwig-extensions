@@ -51,7 +51,7 @@ public abstract class ArturiaKeylabControllerExtensionDefinition extends Control
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Arturia/KeyLab" + Math.min(61, getNumberOfKeys()) + ".html";
+      return "Controllers/Arturia/KeyLab" + Math.min(61, getNumberOfKeys()) + ".html";
    }
 
    @Override
