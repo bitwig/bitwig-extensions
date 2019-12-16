@@ -1137,6 +1137,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final int I = i;
          final int CC = CC_TOP_CTL0 + i;
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
+         knob.disableTakeOver();
          knob.isUpdatingTargetValue().markInterested();
          knob.hasTargetValue().addValueObserver(newValue -> updateTopControlRing(I));
          knob.targetValue().addValueObserver(newValue -> updateTopControlRing(I));
@@ -1198,6 +1199,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final int I = i;
          final int CC = CC_DEV_CTL0 + i;
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, CC));
+         knob.disableTakeOver();
          knob.setBounds(285 + 32 * (i % 4), 90 + 35 * (i / 4), PHYSICAL_KNOB_WIDTH, PHYSICAL_KNOB_WIDTH);
          knob.isUpdatingTargetValue().markInterested();
          knob.hasTargetValue().addValueObserver(newValue -> updateDeviceControlRing(I));
