@@ -53,8 +53,10 @@ You can select the different layouts by pressing a scene buttons.
 |2|Line/3|
 |3|Line/7|
 |4|Piano|
-|5|Root Key and Mode chooser|
-|6|64 Drums|
+|5|64 Drums|
+|6|*Unused*|
+|7|*Unused*|
+|8|Root Key and Mode chooser|
 
 ## Drum Sequencer Mode
 
