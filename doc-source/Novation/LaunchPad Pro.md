@@ -68,7 +68,8 @@ The grid is divided in two parts, the 32 upper pads are for the steps, while the
 
 ### Steps
 
-The 32 pads displays 32 steps.
+The 32 upper pads displays 32 steps. The light will be bright if there is a note on at this steps, dimmed if there is a sustained note or off if there is nothing.
+
 The four scenes on the right lets you edit up to 8 bars, each scene buttons will display 2 bars: [1,2], [3,4], [5,6], [7,8].
 
 To set the length of the clip, you can hold **Shift** and press one of the 8 scenes, or a step.
