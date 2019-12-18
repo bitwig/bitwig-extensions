@@ -13,6 +13,6 @@ echo Converting "$IN_MD" to "$OUT_HTML"
 
 {
    cat $ROOT/header.html
-   pandoc --from=markdown --to=html "$IN_MD"
+   pandoc --verbose --from=gfm --to=html "$IN_MD"
    cat $ROOT/footer.html
 } >"$OUT_HTML"
