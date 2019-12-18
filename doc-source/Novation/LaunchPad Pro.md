@@ -72,17 +72,17 @@ The 32 upper pads displays 32 steps. The light will be bright if there is a note
 
 The four scenes on the right lets you edit up to 8 bars, each scene buttons will display 2 bars: [1,2], [3,4], [5,6], [7,8].
 
-To set the length of the clip, you can hold **Shift** and press one of the 8 scenes, or a step.
+To set the length of the clip, you can hold **Shift** and press one of the 8 scene buttons, or a step.
 
 ### Minor Modes
 
-To select a minor mode, press one of the scene button on the bottom right.
+To select a minor mode, press one of the four scene buttons on the bottom right.
 There are four minor modes:
 
 |Index|Description|
 |---|---|
-|1|Play drums, perform select/solo/mute of a pad and note repeat|
-|2|Play drums, performance macros and scenes macros|
+|1|Play drums, note repeat, clip operations, select/solo/mute of a pad|
+|2|Play drums, performance macros and scene macros|
 |3|Edit Velocity, Note Length and Pan **per step**|
 |3|Edit Micro Tuning, Timbre and Pressure **per step**|
 
@@ -94,8 +94,8 @@ You can select a pad without playing it by pressing **Shift** + **Pad**.
 
 On the bottom right, there will be a bunch of *action* pads. They work by holding them, and then pressing a pad.
 You'll have a various different note repeat speed at the top and *Drum Pad Select*, *Mute* and *Solo* at the bottom.
-You can unmute all drum pads by doing **Delete** + **Mute Pad**.
-You can unsolo all drum pads by doing **Delete** + **Solo Pad**.
+You can un-mute all drum pads by doing **Delete** + **Mute Pad**.
+You can un-solo all drum pads by doing **Delete** + **Solo Pad**.
 
 #### 2. Drum Performances and Scenes
 
