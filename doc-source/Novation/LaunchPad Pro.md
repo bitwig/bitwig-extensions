@@ -32,7 +32,7 @@ Note that if you change the color of a scene, it will update the scene launcher 
 |Function|Shortcut|
 |---|---|
 |Launch a clip|Press the pad|
-|Launch a scene|Press the scene button|
+|Launch a scene|Press the scene button (on the right)|
 |Stop a clip|Press **Stop Clip** and choose the track to stop in the bottom row|
 |Stop all clips|Hold **Shift** and press **Stop Clip**|
 |move the clip launcher window|Use the arrows on top left, hold **Shift** to scroll by page|
