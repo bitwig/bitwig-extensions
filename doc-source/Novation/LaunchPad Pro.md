@@ -62,7 +62,7 @@ You can select the different layouts by pressing a scene buttons.
 
 Activate the Drum Sequencer Mode by pressing the **Device** button.
 
-The *Drum Sequencer* needs a clip to be selected first; also make sure that the track owning the clip is selected as well.
+The *Drum Sequencer* needs a clip to be selected first.
 
 The grid is divided in two parts, the 32 upper pads are for the steps, while the 32 others are for drums, performances and data.
 
