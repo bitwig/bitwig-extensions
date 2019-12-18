@@ -1,5 +1,7 @@
 # LaunchPad PRO
 
+## Overview
+
 This controller extension brings the following features to the controller:
  - Clip launcher via session mode
  - Keyboard and Drum play
