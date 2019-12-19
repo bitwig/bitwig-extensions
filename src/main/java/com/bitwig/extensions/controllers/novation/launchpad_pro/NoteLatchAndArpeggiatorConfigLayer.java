@@ -78,7 +78,7 @@ final class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       final SettableEnumValue mode = mDriver.mArpeggiator.mode();
       if (isActive())
          mode.set(arpMode);
-      mArpModeIndex = mode.enumDefinition().entryIndex(arpMode);
+      mArpModeIndex = mode.enumDefinition().valueDefinitionFor(arpMode).valueIndex();
    }
 
    private void panic()
@@ -159,7 +159,7 @@ final class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       final int entryCount = enumDefinition.valueCount();
       mArpModeIndex = (modeIndex + entryCount) % entryCount;
 
-      final String arpMode = enumDefinition.entryValue(mArpModeIndex);
+      final String arpMode = enumDefinition.valueDefinitionAt(mArpModeIndex).value();
       mode.set(arpMode);
       mDriver.getHost().showPopupNotification("Arpeggiator Mode: " + arpMode);
       mDriver.mArpModeSetting.set(arpMode);
