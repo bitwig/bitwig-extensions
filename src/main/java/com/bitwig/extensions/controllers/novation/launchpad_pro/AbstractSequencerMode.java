@@ -185,7 +185,7 @@ abstract class AbstractSequencerMode extends Mode
       final int clipStepIndex = calculateClipStepIndex(pad.mX - 1, 8 - pad.mY);
       final NoteStep noteStep = findStepInfo(clipStepIndex);
 
-      final double volume = noteStep.gain();
+      final double gain = noteStep.gain();
       final double velocity = noteStep.velocity();
       final double duration = noteStep.duration();
       final double pan = noteStep.pan();
@@ -193,7 +193,7 @@ abstract class AbstractSequencerMode extends Mode
       switch (y)
       {
          case 0:
-            return new LedState(x <= volume * 7 ? Color.VOLUME_MODE : Color.VOLUME_MODE_LOW);
+            return new LedState(x <= gain * 7 ? Color.VOLUME_MODE : Color.VOLUME_MODE_LOW);
          case 1:
             final double ipan = (x - 3.5) / 3.5;
             if ((pan > 0 && ipan > 0 && ipan <= pan) || (pan < 0 && ipan < 0 && pan <= ipan))

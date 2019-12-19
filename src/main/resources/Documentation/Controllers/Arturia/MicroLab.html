@@ -74,6 +74,14 @@
 		font: bold 16pt "Source Sans Pro", sans-serif;
       }
 
+      H3 {
+        color: #b95900;
+      }
+
+      H4 {
+        color: #9f4d00;
+      }
+
       P {
         color: black;
       }
@@ -87,6 +95,28 @@
         display: list-item;
 		padding: 4pt;
       }
+
+      TABLE {
+        border-collapse: collapse
+      }
+
+      TD, TH {
+        padding: 5pt;
+        border-bottom: 1px solid grey;
+      }
+
+      TR:hover {
+        background-color: #f7f7f7;
+      }
+
+      TR:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      TH {
+        background-color: #d66900;
+        color: white;
+      }
     </style>
 </head>
   <body>
@@ -99,7 +129,7 @@
 <h1 id="arturia-microlab">Arturia MicroLab</h1>
 <h2 id="about-this-controller">About this controller</h2>
 <p>This is a portable keyboard made by Arturia. It has some additional integration with Analog Labs.</p>
-<p>See https://www.arturia.com</p>
+<p>See <a href="https://www.arturia.com">https://www.arturia.com</a></p>
 <h2 id="preset-navigation-with-analog-lab">Preset navigation with Analog Lab</h2>
 <p>Start by loading Arturia Analog Lab VST3 or VST2 instrument plugin.</p>
 <p><em>Shift + Oct-/+</em>: loads previous/next preset</p>

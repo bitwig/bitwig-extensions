@@ -47,7 +47,7 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Arturia/KeyLab mkII.pdf";
+      return "Controllers/Arturia/KeyLab mkII.pdf";
    }
 
    @Override
@@ -59,7 +59,7 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
    @Override
    public int getNumMidiOutPorts()
    {
-      return 2;
+      return 1;
    }
 
    @Override
@@ -73,7 +73,7 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
          final String in2 = "MIDIIN2 (KeyLab mkII " + getNumberOfKeys() + ")";
          final String out2 = "MIDIOUT2 (KeyLab mkII " + getNumberOfKeys() + ")";
 
-         list.add(new String[] {name, in2}, new String[] {name, out2});
+         list.add(new String[] {name, in2}, new String[] {out2});
 
       }
       else if (platformType == PlatformType.MAC)
@@ -82,15 +82,16 @@ public abstract class ArturiaKeylabMkIIControllerExtensionDefinition extends Con
 
          list.add(
             new String[] {name + " MIDI", name + " DAW"},
-            new String[] {name + " MIDI", name + " DAW"});
+            new String[] {name + " DAW"});
       }
       else if (platformType == PlatformType.LINUX)
       {
          final String name = "KeyLab mkII " + getNumberOfKeys();
 
-         final String[] names = new String[] {name + " MIDI 1", name + " MIDI 2"};
+         final String[] inNames = new String[] {name + " MIDI 1", name + " MIDI 2"};
+         final String[] outNames = new String[] {name + " MIDI 2"};
 
-         list.add(names, names);
+         list.add(inNames, outNames);
       }
    }
 

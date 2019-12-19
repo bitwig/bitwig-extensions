@@ -74,6 +74,14 @@
 		font: bold 16pt "Source Sans Pro", sans-serif;
       }
 
+      H3 {
+        color: #b95900;
+      }
+
+      H4 {
+        color: #9f4d00;
+      }
+
       P {
         color: black;
       }
@@ -87,6 +95,28 @@
         display: list-item;
 		padding: 4pt;
       }
+
+      TABLE {
+        border-collapse: collapse
+      }
+
+      TD, TH {
+        padding: 5pt;
+        border-bottom: 1px solid grey;
+      }
+
+      TR:hover {
+        background-color: #f7f7f7;
+      }
+
+      TR:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      TH {
+        background-color: #d66900;
+        color: white;
+      }
     </style>
 </head>
   <body>
@@ -97,7 +127,22 @@
       </div>
       <div class="content">
 <h1 id="launchpad-pro">LaunchPad PRO</h1>
-<p>This controller extension brings the following features to the controller: - Clip launcher via session mode - Keyboard and Drum play - Selection of modes and root key - Drum sequencer - Step sequencer - Basic mixer controls - Arm/Solo/Mute and Track select - Volume/Pan/Sends control</p>
+<h2 id="overview">Overview</h2>
+<p>This controller extension brings the following features to the controller:</p>
+<ul>
+<li>Clip launcher via session mode</li>
+<li>Keyboard and Drum play
+<ul>
+<li>Selection of modes and root key</li>
+</ul></li>
+<li>Drum sequencer</li>
+<li>Step sequencer</li>
+<li>Basic mixer controls
+<ul>
+<li>Arm/Solo/Mute and Track select</li>
+<li>Volume/Pan/Sends control</li>
+</ul></li>
+</ul>
 <h2 id="global-functions">Global Functions</h2>
 <table>
 <thead>
@@ -142,12 +187,8 @@
 </tbody>
 </table>
 <h2 id="session-mode">Session Mode</h2>
-<p>To activate the session mode, press <strong>Session</strong>. Then you’ll see the clips on the pads and the scenes launchers on the right. Note that if you change the color of a scene, it will update the scene launcher button accordingly.</p>
+<p>To activate the session mode, press <strong>Session</strong>. Then you'll see the clips on the pads and the scenes launchers on the right. Note that if you change the color of a scene, it will update the scene launcher button accordingly.</p>
 <table>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
 <thead>
 <tr class="header">
 <th>Function</th>
@@ -161,7 +202,7 @@
 </tr>
 <tr class="even">
 <td>Launch a scene</td>
-<td>Press the scene button</td>
+<td>Press the scene button (on the right)</td>
 </tr>
 <tr class="odd">
 <td>Stop a clip</td>
@@ -172,19 +213,19 @@
 <td>Hold <strong>Shift</strong> and press <strong>Stop Clip</strong></td>
 </tr>
 <tr class="odd">
-<td>move the clip launcher window</td>
+<td>Move the clip launcher window</td>
 <td>Use the arrows on top left, hold <strong>Shift</strong> to scroll by page</td>
 </tr>
 <tr class="even">
-<td>select a clip</td>
+<td>Select a clip</td>
 <td>hold <strong>Shift</strong> and press the pad</td>
 </tr>
 <tr class="odd">
-<td>delete a clip</td>
+<td>Delete a clip</td>
 <td>hold <strong>Delete</strong> and press the pad</td>
 </tr>
 <tr class="even">
-<td>quantize a clip</td>
+<td>Quantize a clip</td>
 <td>hold <strong>Quantize</strong> and press the pad</td>
 </tr>
 </tbody>
@@ -218,23 +259,32 @@
 </tr>
 <tr class="odd">
 <td>5</td>
-<td>Root Key and Mode chooser</td>
+<td>64 Drums</td>
 </tr>
 <tr class="even">
 <td>6</td>
-<td>64 Drums</td>
+<td><em>Unused</em></td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td><em>Unused</em></td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>Root Key and Mode chooser</td>
 </tr>
 </tbody>
 </table>
 <h2 id="drum-sequencer-mode">Drum Sequencer Mode</h2>
 <p>Activate the Drum Sequencer Mode by pressing the <strong>Device</strong> button.</p>
-<p>The <em>Drum Sequencer</em> needs a clip to be selected first; also make sure that the track owning the clip is selected as well.</p>
+<p>The <em>Drum Sequencer</em> needs a clip to be selected first.</p>
 <p>The grid is divided in two parts, the 32 upper pads are for the steps, while the 32 others are for drums, performances and data.</p>
 <h3 id="steps">Steps</h3>
-<p>The 32 pads displays 32 steps. The four scenes on the right lets you edit up to 8 bars, each scene buttons will display 2 bars: [1,2], [3,4], [5,6], [7,8].</p>
-<p>To set the length of the clip, you can hold <strong>Shift</strong> and press one of the 8 scenes, or a step.</p>
+<p>The 32 upper pads displays 32 steps. The light will be bright if there is a note on at this steps, dimmed if there is a sustained note or off if there is nothing.</p>
+<p>The four scenes on the right lets you edit up to 8 bars, each scene buttons will display 2 bars: [1,2], [3,4], [5,6], [7,8].</p>
+<p>To set the length of the clip, you can hold <strong>Shift</strong> and press one of the 8 scene buttons, or a step.</p>
 <h3 id="minor-modes">Minor Modes</h3>
-<p>To select a minor mode, press one of the scene button on the bottom right. There are four minor modes:</p>
+<p>To select a minor mode, press one of the four scene buttons on the bottom right. There are four minor modes:</p>
 <table>
 <thead>
 <tr class="header">
@@ -245,11 +295,11 @@
 <tbody>
 <tr class="odd">
 <td>1</td>
-<td>Play drums, perform select/solo/mute of a pad and note repeat</td>
+<td>Play drums, note repeat, clip operations, select/solo/mute of a pad</td>
 </tr>
 <tr class="even">
 <td>2</td>
-<td>Play drums, performance macros and scenes macros</td>
+<td>Play drums, performance macros and scene macros</td>
 </tr>
 <tr class="odd">
 <td>3</td>
@@ -261,11 +311,15 @@
 </tr>
 </tbody>
 </table>
-<h4 id="play-drums-and-basic-actions">1. Play drums and basic actions</h4>
-<p>On the bottom left you’ll see a 4x4 grid of pads which you can play. Playing a pad will select the given drum pad in the sequencer above. You can select a pad without playing it by pressing <strong>Shift</strong> + <strong>Pad</strong>.</p>
-<p>On the bottom right, there will be a bunch of <em>action</em> pads. They work by holding them, and then pressing a pad. You’ll have a various different note repeat speed at the top and <em>Drum Pad Select</em>, <em>Mute</em> and <em>Solo</em> at the bottom. You can unmute all drum pads by doing <strong>Delete</strong> + <strong>Mute Pad</strong>. You can unsolo all drum pads by doing <strong>Delete</strong> + <strong>Solo Pad</strong>.</p>
-<h4 id="drum-performances-and-scenes">2. Drum Performances and Scenes</h4>
-<p>To use this minor mode, add two remote control pages to your drum kit: - One page with 8 Knobs, and add the tag <em>drum-perfs</em> - One page with 8 buttons, and add the tag <em>drum-scenes</em></p>
+<h4 id="1-play-drums-and-basic-actions">1. Play drums and basic actions</h4>
+<p>On the bottom left you'll see a 4x4 grid of pads which you can play. Playing a pad will select the given drum pad in the sequencer above. You can select a pad without playing it by pressing <strong>Shift</strong> + <strong>Pad</strong>.</p>
+<p>On the bottom right, there will be a bunch of <em>action</em> pads. They work by holding them, and then pressing a pad. You'll have a various different note repeat speed at the top and <em>Drum Pad Select</em>, <em>Mute</em> and <em>Solo</em> at the bottom. You can un-mute all drum pads by doing <strong>Delete</strong> + <strong>Mute Pad</strong>. You can un-solo all drum pads by doing <strong>Delete</strong> + <strong>Solo Pad</strong>.</p>
+<h4 id="2-drum-performances-and-scenes">2. Drum Performances and Scenes</h4>
+<p>To use this minor mode, add two remote control pages to your drum kit:</p>
+<ul>
+<li>One page with 8 Knobs, and add the tag <em>drum-perfs</em></li>
+<li>One page with 8 buttons, and add the tag <em>drum-scenes</em></li>
+</ul>
 <h2 id="step-sequencer-mode">Step Sequencer Mode</h2>
 <p>Activate the <em>Step Sequencer Mode</em> by pressing the <strong>User</strong> button.</p>
 <p>This mode is very similar to the <em>Drum Sequencer Mode</em> except that it is intended to sequence notes. To enter a step, hold the steps and press the pitches.</p>

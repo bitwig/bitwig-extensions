@@ -373,7 +373,7 @@ public class PresonusAtom extends ControllerExtension
          if (mShift)
             mTransport.isArrangerLoopEnabled().toggle();
          else
-            mTransport.togglePlay();
+            mTransport.play();
       }, mTransport.isPlaying());
 
       mBaseLayer.bindToggle(mStopUndoButton, () -> {

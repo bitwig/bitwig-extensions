@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
-import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -242,11 +241,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
             final byte[] data = SysexBuilder.fromHex("F0 00 20 6B 7F 42 04 00 60 01 ").addString(upper, 16)
                .addHex("00 02").addString(lower, 16).addHex(" 00").terminate();
 
-            if (mLastDisplayData == null || !Arrays.equals(data, mLastDisplayData))
-            {
-               mLastDisplayData = data;
-               getMidiOutPort(1).sendSysex(data);
-            }
+            getMidiOutPort(0).sendSysex(data);
          }
       });
 
@@ -531,38 +526,24 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       if (s.equals(ENTER_DAW_MODE))
       {
          mDawMode = true;
+         getHost().scheduleTask(() ->
+         {
+            mHardwareSurface.invalidateHardwareOutputState();
+            mDAWLayer.activate();
 
-         mDAWLayer.activate();
-
-         getHost().scheduleTask(() -> {
-            reset();
+            if (mShouldReactivateMultiMode) mMultiLayer.activate();
          }, 150);
       }
       else if (s.equals(EXIT_DAW_MODE))
       {
          mDawMode = false;
+         mShouldReactivateMultiMode = mMultiLayer.isActive();
          mDAWLayer.deactivate();
-
-         for (final com.bitwig.extensions.framework.Layer layer : mLayers.getLayers())
-         {
-            if (layer != mBaseLayer)
-               layer.deactivate();
-         }
+         mMultiLayer.deactivate();
+         mBrowserLayer.deactivate();
       }
 
       updateIndications();
-   }
-
-   private void reset()
-   {
-      // TODO
-      // for (final ControlElement element : getElements())
-      // {
-      // if (element instanceof Resetable)
-      // {
-      // ((Resetable)element).reset();
-      // }
-      // }
    }
 
    private void repeatRewind()
@@ -787,14 +768,8 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
                final byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 16")
                   .addByte(id.getSysexID()).addByte(red).addByte(green).addByte(blue).terminate();
 
-               if (mLastSysex == null || !Arrays.equals(mLastSysex, sysex))
-               {
-                  getMidiOutPort(1).sendSysex(sysex);
-                  mLastSysex = sysex;
-               }
+               getMidiOutPort(0).sendSysex(sysex);
             }
-
-            private byte[] mLastSysex;
          };
 
          light.state().onUpdateHardware(sendColor);
@@ -818,14 +793,8 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
                final byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 10")
                   .addByte(id.getSysexID()).addByte(intensity).terminate();
 
-               if (mLastSysex == null || !Arrays.equals(mLastSysex, sysex))
-               {
-                  getMidiOutPort(1).sendSysex(sysex);
-                  mLastSysex = sysex;
-               }
+               getMidiOutPort(0).sendSysex(sysex);
             }
-
-            private byte[] mLastSysex;
          };
 
          light.isOn().onUpdateHardware(sendOnOff);
@@ -896,7 +865,6 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
    HardwareTextDisplay mDisplay;
 
-   private byte[] mLastDisplayData;
-
    private Layers mLayers;
+   private boolean mShouldReactivateMultiMode;
 }

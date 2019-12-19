@@ -74,6 +74,14 @@
 		font: bold 16pt "Source Sans Pro", sans-serif;
       }
 
+      H3 {
+        color: #b95900;
+      }
+
+      H4 {
+        color: #9f4d00;
+      }
+
       P {
         color: black;
       }
@@ -86,6 +94,28 @@
       LI {
         display: list-item;
 		padding: 4pt;
+      }
+
+      TABLE {
+        border-collapse: collapse
+      }
+
+      TD, TH {
+        padding: 5pt;
+        border-bottom: 1px solid grey;
+      }
+
+      TR:hover {
+        background-color: #f7f7f7;
+      }
+
+      TR:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      TH {
+        background-color: #d66900;
+        color: white;
       }
     </style>
 </head>
@@ -100,7 +130,7 @@
 <h2 id="transport">Transport</h2>
 <p>The transport buttons are working.</p>
 <h2 id="channel-controls">Channel controls</h2>
-<p>Each column contains a knob which controls the track’s pan. Then comes a vertical fader which controls the track’s volume. And finally a button which toggles the track’s mute.</p>
+<p>Each column contains a knob which controls the track's pan. Then comes a vertical fader which controls the track's volume. And finally a button which toggles the track's mute.</p>
 <p>The first 8 columns control the 8 tracks of the track bank. You can move the track bank by using the two buttons on the right of the four leds on the bottom.</p>
 <p>The last column control the master track.</p>
 <h2 id="ab-crossfade">AB Crossfade</h2>

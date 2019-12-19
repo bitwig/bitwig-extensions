@@ -106,7 +106,7 @@ public class AdvanceControllerExtensionDefinition extends ControllerExtensionDef
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Akai/Advance Keyboards.html";
+      return "Controllers/Akai/Advance Keyboards.html";
    }
 
    private static AdvanceControllerExtensionDefinition mInstance = new AdvanceControllerExtensionDefinition();

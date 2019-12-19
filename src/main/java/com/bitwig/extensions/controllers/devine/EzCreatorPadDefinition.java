@@ -98,7 +98,7 @@ public class EzCreatorPadDefinition extends ControllerExtensionDefinition
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Devine/Ez-Creator Pads.html";
+      return "Controllers/Devine/Ez-Creator Pads.html";
    }
 
    private static final EzCreatorPadDefinition INSTANCE = new EzCreatorPadDefinition();

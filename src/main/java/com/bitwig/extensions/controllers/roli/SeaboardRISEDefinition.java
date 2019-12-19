@@ -54,7 +54,7 @@ public class SeaboardRISEDefinition extends ControllerExtensionDefinition
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/ROLI/Seaboard RISE.pdf";
+      return "Controllers/ROLI/Seaboard RISE.pdf";
    }
 
    @Override

@@ -44,7 +44,7 @@ public class LinnStrumentDefinition extends ControllerExtensionDefinition
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Roger Linn Design/LinnStrument.pdf";
+      return "Controllers/Roger Linn Design/LinnStrument.pdf";
    }
 
    @Override
