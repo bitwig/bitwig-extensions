@@ -156,7 +156,7 @@ final class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       final SettableEnumValue mode = mDriver.mArpeggiator.mode();
       final EnumDefinition enumDefinition = mode.enumDefinition();
 
-      final int entryCount = enumDefinition.entryCount();
+      final int entryCount = enumDefinition.valueCount();
       mArpModeIndex = (modeIndex + entryCount) % entryCount;
 
       final String arpMode = enumDefinition.entryValue(mArpModeIndex);
