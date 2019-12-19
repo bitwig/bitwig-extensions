@@ -102,7 +102,7 @@ public class EDrumControllerExtensionDefinition extends ControllerExtensionDefin
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Generic/E-Drum.html";
+      return "Controllers/Generic/E-Drum.html";
    }
 
    private static EDrumControllerExtensionDefinition INSTANCE = new EDrumControllerExtensionDefinition();

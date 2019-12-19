@@ -74,6 +74,14 @@
 		font: bold 16pt "Source Sans Pro", sans-serif;
       }
 
+      H3 {
+        color: #b95900;
+      }
+
+      H4 {
+        color: #9f4d00;
+      }
+
       P {
         color: black;
       }
@@ -86,6 +94,28 @@
       LI {
         display: list-item;
 		padding: 4pt;
+      }
+
+      TABLE {
+        border-collapse: collapse
+      }
+
+      TD, TH {
+        padding: 5pt;
+        border-bottom: 1px solid grey;
+      }
+
+      TR:hover {
+        background-color: #f7f7f7;
+      }
+
+      TR:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      TH {
+        background-color: #d66900;
+        color: white;
       }
     </style>
 </head>
@@ -107,7 +137,11 @@
 <p>The 9 sliders are mapped to envelope or drawbars.</p>
 <p>Track ◂▸ changes the selected track.</p>
 <p><strong>Browser</strong></p>
-<p>The popup browser can be opened by: * pressing one of the round ▹ buttons (replacing) * Selecting an empty device (inserts at the end of the chain)</p>
+<p>The popup browser can be opened by:</p>
+<ul>
+<li>pressing one of the round ▹ buttons (replacing)</li>
+<li>Selecting an empty device (inserts at the end of the chain)</li>
+</ul>
 <p>▴ Select previous item</p>
 <p>▾ Select next item</p>
 <p>▹ (Red) Cancel</p>

@@ -28,6 +28,7 @@ import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
@@ -145,6 +146,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
       final ControllerHost host = getHost();
       mApplication = host.createApplication();
+      mProject = host.getProject();
       mArranger = host.createArranger();
       mCueMarkerBank = mArranger.createCueMarkerBank(mChannelCount);
 
@@ -168,9 +170,6 @@ public abstract class PresonusFaderPort extends ControllerExtension
          mRemoteControls2 = mCursorDevice.createCursorRemoteControlsPage("right", 8, "");
 
       mTransport = host.createTransport();
-
-      mClearMute = mApplication.getAction("clear_mute");
-      mClearSolo = mApplication.getAction("clear_solo");
 
       // Link all send positions to the first
       mTrackBank.getItemAt(0).sendBank().scrollPosition().addValueObserver(p -> {
@@ -468,8 +467,10 @@ public abstract class PresonusFaderPort extends ControllerExtension
          mIsForwarding = p;
          if (p) repeatForwardRewind();
       });
-      mDefaultLayer.bindToggle(mClearSoloButton, mClearSolo, mClearSolo.isEnabled());
-      mDefaultLayer.bindToggle(mClearMuteButton, mClearMute, mClearMute.isEnabled());
+      mDefaultLayer.bindPressed(mClearSoloButton, mProject::unsoloAll);
+      mDefaultLayer.bind(mProject.hasSoloedTracks(), mClearSoloButton);
+      mDefaultLayer.bindPressed(mClearMuteButton, mProject::unmuteAll);
+      mDefaultLayer.bind(mProject.hasMutedTracks(), mClearMuteButton);
 
       mDefaultLayer.bindToggle(mTrackModeButton, mTrackLayer);
       mDefaultLayer.bindToggle(mPluginModeButton, mDeviceLayer);
@@ -977,6 +978,8 @@ public abstract class PresonusFaderPort extends ControllerExtension
 
    private Application mApplication;
 
+   private Project mProject;
+
    private boolean mShift;
 
    private final int mChannelCount;
@@ -1056,10 +1059,6 @@ public abstract class PresonusFaderPort extends ControllerExtension
    private Arranger mArranger;
 
    private CueMarkerBank mCueMarkerBank;
-
-   private Action mClearMute;
-
-   private Action mClearSolo;
 
    private CursorRemoteControlsPage mRemoteControls2;
 

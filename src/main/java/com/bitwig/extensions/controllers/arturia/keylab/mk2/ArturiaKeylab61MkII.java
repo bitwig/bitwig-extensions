@@ -17,10 +17,10 @@ public class ArturiaKeylab61MkII extends ArturiaKeylabMkII
    {
       surface.setPhysicalSize(875, 297);
 
-      surface.hardwareElementWithId("CHORD").setBounds(44.0, 28.5, 14.5, 8.0);
+      /*surface.hardwareElementWithId("CHORD").setBounds(44.0, 28.5, 14.5, 8.0);
       surface.hardwareElementWithId("TRANS").setBounds(69.5, 28.5, 14.5, 8.0);
       surface.hardwareElementWithId("OCT_MINUS").setBounds(44.0, 50.5, 14.5, 8.0);
-      surface.hardwareElementWithId("OCT_PLUS").setBounds(69.5, 50.5, 14.5, 8.0);
+      surface.hardwareElementWithId("OCT_PLUS").setBounds(69.5, 50.5, 14.5, 8.0);*/
       surface.hardwareElementWithId("PAD1").setBounds(135.25, 27.5, 24.0, 21.5);
       surface.hardwareElementWithId("PAD2").setBounds(168.25, 27.5, 24.0, 21.5);
       surface.hardwareElementWithId("PAD3").setBounds(202.5, 27.5, 24.0, 21.5);

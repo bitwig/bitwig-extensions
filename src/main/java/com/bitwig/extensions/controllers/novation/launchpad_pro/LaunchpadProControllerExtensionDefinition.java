@@ -102,7 +102,7 @@ public final class LaunchpadProControllerExtensionDefinition extends ControllerE
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Novation/LaunchPad Pro.html";
+      return "Controllers/Novation/LaunchPad Pro.html";
    }
 
    public static LaunchpadProControllerExtensionDefinition getInstance()

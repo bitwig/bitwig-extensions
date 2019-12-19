@@ -1,5 +1,7 @@
 # LaunchPad PRO
 
+## Overview
+
 This controller extension brings the following features to the controller:
  - Clip launcher via session mode
  - Keyboard and Drum play
@@ -32,13 +34,13 @@ Note that if you change the color of a scene, it will update the scene launcher 
 |Function|Shortcut|
 |---|---|
 |Launch a clip|Press the pad|
-|Launch a scene|Press the scene button|
+|Launch a scene|Press the scene button (on the right)|
 |Stop a clip|Press **Stop Clip** and choose the track to stop in the bottom row|
 |Stop all clips|Hold **Shift** and press **Stop Clip**|
-|move the clip launcher window|Use the arrows on top left, hold **Shift** to scroll by page|
-|select a clip|hold **Shift** and press the pad|
-|delete a clip|hold **Delete** and press the pad|
-|quantize a clip|hold **Quantize** and press the pad|
+|Move the clip launcher window|Use the arrows on top left, hold **Shift** to scroll by page|
+|Select a clip|hold **Shift** and press the pad|
+|Delete a clip|hold **Delete** and press the pad|
+|Quantize a clip|hold **Quantize** and press the pad|
 
 ## Play Mode
 
@@ -53,33 +55,36 @@ You can select the different layouts by pressing a scene buttons.
 |2|Line/3|
 |3|Line/7|
 |4|Piano|
-|5|Root Key and Mode chooser|
-|6|64 Drums|
+|5|64 Drums|
+|6|*Unused*|
+|7|*Unused*|
+|8|Root Key and Mode chooser|
 
 ## Drum Sequencer Mode
 
 Activate the Drum Sequencer Mode by pressing the **Device** button.
 
-The *Drum Sequencer* needs a clip to be selected first; also make sure that the track owning the clip is selected as well.
+The *Drum Sequencer* needs a clip to be selected first.
 
 The grid is divided in two parts, the 32 upper pads are for the steps, while the 32 others are for drums, performances and data.
 
 ### Steps
 
-The 32 pads displays 32 steps.
+The 32 upper pads displays 32 steps. The light will be bright if there is a note on at this steps, dimmed if there is a sustained note or off if there is nothing.
+
 The four scenes on the right lets you edit up to 8 bars, each scene buttons will display 2 bars: [1,2], [3,4], [5,6], [7,8].
 
-To set the length of the clip, you can hold **Shift** and press one of the 8 scenes, or a step.
+To set the length of the clip, you can hold **Shift** and press one of the 8 scene buttons, or a step.
 
 ### Minor Modes
 
-To select a minor mode, press one of the scene button on the bottom right.
+To select a minor mode, press one of the four scene buttons on the bottom right.
 There are four minor modes:
 
 |Index|Description|
 |---|---|
-|1|Play drums, perform select/solo/mute of a pad and note repeat|
-|2|Play drums, performance macros and scenes macros|
+|1|Play drums, note repeat, clip operations, select/solo/mute of a pad|
+|2|Play drums, performance macros and scene macros|
 |3|Edit Velocity, Note Length and Pan **per step**|
 |3|Edit Micro Tuning, Timbre and Pressure **per step**|
 
@@ -91,8 +96,8 @@ You can select a pad without playing it by pressing **Shift** + **Pad**.
 
 On the bottom right, there will be a bunch of *action* pads. They work by holding them, and then pressing a pad.
 You'll have a various different note repeat speed at the top and *Drum Pad Select*, *Mute* and *Solo* at the bottom.
-You can unmute all drum pads by doing **Delete** + **Mute Pad**.
-You can unsolo all drum pads by doing **Delete** + **Solo Pad**.
+You can un-mute all drum pads by doing **Delete** + **Mute Pad**.
+You can un-solo all drum pads by doing **Delete** + **Solo Pad**.
 
 #### 2. Drum Performances and Scenes
 

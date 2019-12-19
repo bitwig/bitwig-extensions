@@ -86,7 +86,7 @@ public class LaunchControlXlControllerExtensionDefinition extends ControllerExte
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Novation/Launch Control XL.html";
+      return "Controllers/Novation/Launch Control XL.html";
    }
 
    public static LaunchControlXlControllerExtensionDefinition getInstance()

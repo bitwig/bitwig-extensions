@@ -419,9 +419,9 @@ final class DrumSequencerMode extends AbstractSequencerMode
          final Track track = cursorClipExists ? cursorClip.getTrack() : mDriver.mCursorTrack;
 
          if (x == 0)
-            track.createNewClip(sceneIndex, 8);
+            track.createNewLauncherClip(sceneIndex, 8);
          else if (x == 1)
-            track.recordNewClip(sceneIndex);
+            track.recordNewLauncherClip(sceneIndex);
          else if (x == 2 && cursorClipExists)
             cursorClip.launch();
          else if (x == 3)

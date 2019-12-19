@@ -1,5 +1,3 @@
-com.bitwig.extensions.controllers.generic.MIDIKeyboardExtensionDefinition
-
 com.bitwig.extensions.controllers.akai.advance.AdvanceControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.apc40_mkii.APC40MKIIControllerExtensionDefinition
 
@@ -45,4 +43,4 @@ com.bitwig.extensions.controllers.vault.Apex25ControllerDefinition
 com.bitwig.extensions.controllers.vault.Apex49ControllerDefinition
 com.bitwig.extensions.controllers.vault.Apex61ControllerDefinition
 
-com.bitwig.extension.controllers.studiologic.SLMixfaceExtensionDefinition
+# com.bitwig.extensions.controllers.studiologic.SLMixfaceExtensionDefinition

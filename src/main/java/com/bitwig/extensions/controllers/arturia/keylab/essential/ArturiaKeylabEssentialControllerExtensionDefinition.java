@@ -49,7 +49,7 @@ public abstract class ArturiaKeylabEssentialControllerExtensionDefinition extend
    @Override
    public String getHelpFilePath()
    {
-      return "Documentation/Controllers/Arturia/KeyLab Essential.pdf";
+      return "Controllers/Arturia/KeyLab Essential.pdf";
    }
 
    @Override
