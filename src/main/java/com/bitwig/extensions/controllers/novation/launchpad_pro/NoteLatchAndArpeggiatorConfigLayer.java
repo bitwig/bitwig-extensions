@@ -159,7 +159,7 @@ final class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       final int entryCount = enumDefinition.valueCount();
       mArpModeIndex = (modeIndex + entryCount) % entryCount;
 
-      final String arpMode = enumDefinition.valueDefinitionAt(mArpModeIndex).value();
+      final String arpMode = enumDefinition.valueDefinitionAt(mArpModeIndex).id();
       mode.set(arpMode);
       mDriver.getHost().showPopupNotification("Arpeggiator Mode: " + arpMode);
       mDriver.mArpModeSetting.set(arpMode);
