@@ -15,6 +15,7 @@ import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
+import com.bitwig.extension.controller.api.EnumValueDefinition;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
@@ -413,7 +414,8 @@ final class LaunchpadProControllerExtension extends ControllerExtension
 
       final String ARP_CATEGORY = "Arpeggiator";
 
-      mArpModeSetting = mDocumentState.getEnumSetting("Mode", ARP_CATEGORY, mArpeggiator.mode().enumDefinition(), "flow");
+      final EnumValueDefinition flowEnumValue = mArpeggiator.mode().enumDefinition().valueDefinitionFor("flow");
+      mArpModeSetting = mDocumentState.getEnumSetting("Mode", ARP_CATEGORY, flowEnumValue);
       mArpModeSetting.markInterested();
 
       mArpOctaveSetting = mDocumentState.getNumberSetting("Octave", ARP_CATEGORY, 0, 4, 1, "", 1);
