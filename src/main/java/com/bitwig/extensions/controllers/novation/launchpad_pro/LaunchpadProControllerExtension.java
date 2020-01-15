@@ -6,7 +6,6 @@ import java.util.List;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arpeggiator;
-import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -16,12 +15,14 @@ import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
+import com.bitwig.extension.controller.api.EnumValueDefinition;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.NoteLatch;
 import com.bitwig.extension.controller.api.PinnableCursorClip;
 import com.bitwig.extension.controller.api.Preferences;
 import com.bitwig.extension.controller.api.Project;
@@ -32,6 +33,7 @@ import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.SettableEnumValue;
+import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -42,7 +44,7 @@ import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.MusicalScale;
 import com.bitwig.extensions.framework.MusicalScaleLibrary;
 
-public final class LaunchpadProControllerExtension extends ControllerExtension
+final class LaunchpadProControllerExtension extends ControllerExtension
 {
    /* Helper used to prevent Bitwig Studio from receiving MIDI notes. */
    public static final Integer[] FILTER_ALL_NOTE_MAP = {
@@ -66,7 +68,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    public LaunchpadProControllerExtension(final LaunchpadProControllerExtensionDefinition driverDefinition, final ControllerHost host)
    {
       super(driverDefinition, host);
-      mHost = host;
    }
 
    private void createLayers()
@@ -109,38 +110,38 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    {
       final Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
       debugLayer.setShouldReplaceBindingsInLayersBelow(false);
-      debugLayer.activate();
+      //debugLayer.activate();
    }
 
    private void createMainLayer()
    {
-      mMainLayer.bindPressed(mClickButton.getButton(), () -> {
+      mMainLayer.bindPressed(mClickButton.mButton, () -> {
          if (isShiftOn())
             mTransport.tapTempo();
          else
             mTransport.isMetronomeEnabled().toggle();
       });
-      mMainLayer.bindPressed(mUndoButton.getButton(), () -> {
+      mMainLayer.bindPressed(mUndoButton.mButton, () -> {
          if (isShiftOn())
             mApplication.redo();
          else
             mApplication.undo();
       });
-      mMainLayer.bindPressed(mQuantizeButton.getButton(), () -> {
+      mMainLayer.bindPressed(mQuantizeButton.mButton, () -> {
          if (isShiftOn())
          {
             final SettableEnumValue recordQuantizationGrid = mApplication.recordQuantizationGrid();
             recordQuantizationGrid.set(recordQuantizationGrid.get().equals("OFF") ? "1/16" : "OFF");
          }
       });
-      mMainLayer.bindPressed(mDuplicateButton.getButton(), mApplication.duplicateAction());
-      mMainLayer.bindPressed(mDoubleButton.getButton(), () -> {
+      mMainLayer.bindPressed(mDuplicateButton.mButton, mApplication.duplicateAction());
+      mMainLayer.bindPressed(mDoubleButton.mButton, () -> {
          if (isShiftOn())
             mTransport.isArrangerRecordEnabled().toggle();
          else
             mTransport.togglePlay();
       });
-      mMainLayer.bindPressed(mRecordButton.getButton(), () -> {
+      mMainLayer.bindPressed(mRecordButton.mButton, () -> {
          final boolean enabled = isRecording();
          mTransport.isClipLauncherOverdubEnabled().set(!enabled);
          mTransport.isClipLauncherAutomationWriteEnabled().set(!enabled);
@@ -193,13 +194,13 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mHardwareSurface.setPhysicalSize(PHYSICAL_DEVICE_WIDTH, PHYSICAL_DEVICE_WIDTH);
 
       mShiftButton = createSideButton("shift", 0, 8);
-      mShiftButton.getButton().isPressed().markInterested();
+      mShiftButton.mButton.isPressed().markInterested();
       mClickButton = createSideButton("click", 0, 7);
       mUndoButton = createSideButton("undo", 0, 6);
       mDeleteButton = createSideButton("delete", 0, 5);
-      mDeleteButton.getButton().isPressed().markInterested();
+      mDeleteButton.mButton.isPressed().markInterested();
       mQuantizeButton = createSideButton("quantize", 0, 4);
-      mQuantizeButton.getButton().isPressed().markInterested();
+      mQuantizeButton.mButton.isPressed().markInterested();
       mDuplicateButton = createSideButton("duplicate", 0, 3);
       mDoubleButton = createSideButton("double", 0, 2);
       mRecordButton = createSideButton("record", 0, 1);
@@ -258,7 +259,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       assert x >= 0 && x < 10;
       assert y >= 0 && y < 10;
 
-      final HardwareButton button = bt.getButton();
+      final HardwareButton button = bt.mButton;
       button.setBounds(
          calculatePhysicalPosition(x),
          calculatePhysicalPosition(9 - y),
@@ -295,24 +296,26 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    @Override
    public void init()
    {
+      final ControllerHost host = getHost();
+
       try
       {
          Thread.sleep(4000);
       }
       catch (final InterruptedException e)
       {
-         mHost.println(e.toString());
+         host.println(e.toString());
       }
 
-      mApplication = mHost.createApplication();
+      mApplication = host.createApplication();
       mApplication.recordQuantizationGrid().markInterested();
 
-      final Project project = mHost.getProject();
-      mDocumentState = mHost.getDocumentState();
+      final Project project = host.getProject();
+      mDocumentState = host.getDocumentState();
 
-      mUserControls = mHost.createUserControls(64);
-      mMasterTrack = mHost.createMasterTrack(8);
-      mTransport = mHost.createTransport();
+      mUserControls = host.createUserControls(64);
+      mMasterTrack = host.createMasterTrack(8);
+      mTransport = host.createTransport();
       mTransport.isClipLauncherAutomationWriteEnabled().markInterested();
       mTransport.isClipLauncherOverdubEnabled().markInterested();
       mTransport.isMetronomeEnabled().markInterested();
@@ -320,7 +323,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       mTransport.isPlaying().markInterested();
       mTransport.isArrangerRecordEnabled().markInterested();
 
-      mCursorTrack = mHost.createCursorTrack(8, 0);
+      mCursorTrack = host.createCursorTrack(8, 0);
       mCursorTrack.color().markInterested();
       mCursorTrack.hasPrevious().markInterested();
       mCursorTrack.hasNext().markInterested();
@@ -386,7 +389,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    private void initPreferences()
    {
-      final Preferences preferences = mHost.getPreferences();
+      final Preferences preferences = getHost().getPreferences();
 
       final String NOTE_INPUT_CATEGORY = "Note Input";
 
@@ -408,19 +411,42 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
          mKeyboardLayout = KeyboardLayout.fromString(newValue);
          invalidateKeyboardModes();
       });
+
+      final String ARP_CATEGORY = "Arpeggiator";
+
+      final EnumValueDefinition flowEnumValue = mArpeggiator.mode().enumDefinition().valueDefinitionFor("flow");
+      mArpModeSetting = mDocumentState.getEnumSetting("Mode", ARP_CATEGORY, flowEnumValue);
+      mArpModeSetting.markInterested();
+
+      mArpOctaveSetting = mDocumentState.getNumberSetting("Octave", ARP_CATEGORY, 0, 4, 1, "", 1);
+      mArpOctaveSetting.markInterested();
    }
 
    private void initMidi()
    {
-      mMidiIn = mHost.getMidiInPort(0);
-      mMidiOut = mHost.getMidiOutPort(0);
+      final ControllerHost host = getHost();
+      mMidiIn = host.getMidiInPort(0);
+      mMidiOut = host.getMidiOutPort(0);
 
       mNoteInput = mMidiIn.createNoteInput("Input", "??????");
       mNoteInput.setShouldConsumeEvents(false);
       mNoteInput.setKeyTranslationTable(FILTER_ALL_NOTE_MAP);
       mNoteInput.includeInAllInputs().markInterested();
 
+      mNoteLatch = mNoteInput.noteLatch();
+      mNoteLatch.isEnabled().markInterested();
+      mNoteLatch.mono().markInterested();
+      mNoteLatch.mode().markInterested();
+
       mArpeggiator = mNoteInput.arpeggiator();
+      mArpeggiator.gateLength().markInterested();
+      mArpeggiator.rate().markInterested();
+      mArpeggiator.isEnabled().markInterested();
+      mArpeggiator.octaves().markInterested();
+      mArpeggiator.mode().markInterested();
+      mArpeggiator.usePressureToVelocity().markInterested();
+      mArpeggiator.shuffle().markInterested();
+      mArpeggiator.isFreeRunning().markInterested();
 
       /* select the programmer layout */
       mMidiOut.sendSysex("F0 00 20 29 02 10 2C 03 F7");
@@ -437,7 +463,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
 
    private void initTrackBank()
    {
-      mTrackBank = mHost.createTrackBank(8, 8, 8, true);
+      mTrackBank = getHost().createTrackBank(8, 8, 8, true);
       mTrackBank.followCursorTrack(mCursorTrack);
       mTrackBank.cursorIndex().markInterested();
       mSceneBank = mTrackBank.sceneBank();
@@ -605,7 +631,7 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       assert overlay != null;
 
       if (isPressed)
-         bt.onButtonPressed(mHost);
+         bt.onButtonPressed(getHost());
 
       if (mBottomOverlay != null)
          mBottomOverlay.deactivate();
@@ -649,154 +675,19 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mGridButtons[8 * y + x];
    }
 
-   Button getButtonOnTheTop(final int x)
-   {
-      switch (x)
-      {
-         case 0:
-            return mUpButton;
-         case 1:
-            return mDownButton;
-         case 2:
-            return mLeftButton;
-         case 3:
-            return mRightButton;
-         case 4:
-            return mSessionButton;
-         case 5:
-            return mNoteButton;
-         case 6:
-            return mDeviceButton;
-         case 7:
-            return mUserButton;
-         default:
-            throw new IllegalStateException();
-      }
-   }
-
-   Button getButtonOnTheBottom(final int x)
-   {
-      switch (x)
-      {
-         case 0:
-            return mArmButton;
-         case 1:
-            return mSelectButton;
-         case 2:
-            return mMuteButton;
-         case 3:
-            return mSoloButton;
-         case 4:
-            return mVolumeButton;
-         case 5:
-            return mPanButton;
-         case 6:
-            return mSendsButton;
-         case 7:
-            return mStopButton;
-         default:
-            throw new IllegalStateException();
-      }
-   }
-
-   Button getButtonOnTheLeft(final int y)
-   {
-      switch (y)
-      {
-         case 0:
-            return mShiftButton;
-         case 1:
-            return mClickButton;
-         case 2:
-            return mUndoButton;
-         case 3:
-            return mDeleteButton;
-         case 4:
-            return mQuantizeButton;
-         case 5:
-            return mDuplicateButton;
-         case 6:
-            return mDoubleButton;
-         case 7:
-            return mRecordButton;
-         default:
-            throw new IllegalStateException();
-      }
-   }
-
-   Button getButtonOnTheRight(final int y)
-   {
-      return mSceneButtons[y];
-   }
-
-   public Button getUpButton()
-   {
-      return mUpButton;
-   }
-
-   public Button getDownButton()
-   {
-      return mDownButton;
-   }
-
-   public Button getLeftButton()
-   {
-      return mLeftButton;
-   }
-
-   public Button getRightButton()
-   {
-      return mRightButton;
-   }
-
-   TrackBank getTrackBank()
-   {
-      return mTrackBank;
-   }
-
-   SceneBank getSceneBank()
-   {
-      return mSceneBank;
-   }
-
    boolean isShiftOn()
    {
-      return mShiftButton.getButton().isPressed().get();
+      return mShiftButton.mButton.isPressed().get();
    }
 
    boolean isDeleteOn()
    {
-      return mDeleteButton.getButton().isPressed().get();
+      return mDeleteButton.mButton.isPressed().get();
    }
 
    public boolean isQuantizeOn()
    {
-      return mQuantizeButton.getButton().isPressed().get();
-   }
-
-   CursorDevice getCursorDevice()
-   {
-      return mCursorDevice;
-   }
-
-   CursorTrack getCursorTrack()
-   {
-      return mCursorTrack;
-   }
-
-   public DrumPadBank getDrumPadBank()
-   {
-      return mDrumPadBank;
-   }
-
-   UserControlBank getUserControls()
-   {
-      return mUserControls;
-   }
-
-   MasterTrack getMasterTrack()
-   {
-      return mMasterTrack;
+      return mQuantizeButton.mButton.isPressed().get();
    }
 
    MusicalScale getMusicalScale()
@@ -807,18 +698,8 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    void setMusicalScale(final MusicalScale musicalScale)
    {
       mMusicalScale = musicalScale;
-      mHost.showPopupNotification("Using scale: " + musicalScale.getName());
-      getMusicalScaleSetting().set(musicalScale.getName());
-   }
-
-   private SettableEnumValue getMusicalScaleSetting()
-   {
-      return mMusicalScaleSetting;
-   }
-
-   private SettableEnumValue getMusicalKeySetting()
-   {
-      return mMusicalKeySetting;
+      getHost().showPopupNotification("Using scale: " + musicalScale.getName());
+      mMusicalScaleSetting.set(musicalScale.getName());
    }
 
    int getMusicalKey()
@@ -830,33 +711,13 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    {
       mMusicalKey = musicalKey;
       final String keyName = KEY_NAMES[musicalKey];
-      mHost.showPopupNotification("Using root key: " + keyName);
-      getMusicalKeySetting().set(keyName);
-   }
-
-   NoteInput getNoteInput()
-   {
-      return mNoteInput;
-   }
-
-   Transport getTransport()
-   {
-      return mTransport;
+      getHost().showPopupNotification("Using root key: " + keyName);
+      mMusicalKeySetting.set(keyName);
    }
 
    void scheduleFlush()
    {
-      mHost.requestFlush();
-   }
-
-   Application getApplication()
-   {
-      return mApplication;
-   }
-
-   PinnableCursorClip getCursorClip()
-   {
-      return mCursorClip;
+      getHost().requestFlush();
    }
 
    Color getTrackColor(final int i)
@@ -867,31 +728,6 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    Color getCursorTrackColor()
    {
       return new Color(mCursorTrack.color());
-   }
-
-   CursorRemoteControlsPage getDrumPerfsRemoteControls()
-   {
-      return mDrumPerfsRemoteControls;
-   }
-
-   CursorRemoteControlsPage getDrumScenesRemoteControls()
-   {
-      return mDrumScenesRemoteControls;
-   }
-
-   BooleanValue wantsSafePitches()
-   {
-      return mSafePitchesSetting;
-   }
-
-   boolean shouldHighlightScale()
-   {
-      return mHighlightScaleSetting.get();
-   }
-
-   boolean shouldHihlightRootKey()
-   {
-      return mHighlightRootKeySetting.get();
    }
 
    private void setKeyboardLayout(final KeyboardLayout keyboardLayout)
@@ -906,127 +742,36 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
       return mKeyboardLayout;
    }
 
-   public Arpeggiator getArpeggiator()
-   {
-      return mArpeggiator;
-   }
-
    public Layers getLayers()
    {
       return mLayers;
    }
 
-   public Button getShiftButton()
-   {
-      return mShiftButton;
-   }
-
-   public Button getPanButton()
-   {
-      return mPanButton;
-   }
-
-   public Button getSendsButton()
-   {
-      return mSendsButton;
-   }
-
-   public Button getVolumeButton()
-   {
-      return mVolumeButton;
-   }
-
-   public Button getSceneButton(final int y)
-   {
-      return mSceneButtons[y];
-   }
-
-   public Button getRecordButton()
-   {
-      return mRecordButton;
-   }
-
-   public Button getArmButton()
-   {
-      return mArmButton;
-   }
-
-   public Button getMuteButton()
-   {
-      return mMuteButton;
-   }
-
-   public Button getStopButton()
-   {
-      return mStopButton;
-   }
-
-   public Button getSelectButton()
-   {
-      return mSelectButton;
-   }
-
-   public Button getDeleteButton()
-   {
-      return mDeleteButton;
-   }
-
-   public Button getSoloButton()
-   {
-      return mSoloButton;
-   }
-
-   public Button getQuantizeButton()
-   {
-      return mQuantizeButton;
-   }
-
-   public HardwareSurface getHardwareSurface()
-   {
-      return mHardwareSurface;
-   }
-
-   public Button getSessionButton()
-   {
-      return mSessionButton;
-   }
-
-   public Button getDeviceButton()
-   {
-      return mDeviceButton;
-   }
-
-   public Button getNoteButton()
-   {
-      return mNoteButton;
-   }
-
-   public Button getUserButton()
-   {
-      return mUserButton;
-   }
-
    /* API Objects */
-   private final ControllerHost mHost;
-   private Application mApplication;
-   private Transport mTransport;
-   private MidiIn mMidiIn;
-   private MidiOut mMidiOut;
-   private NoteInput mNoteInput;
-   private MasterTrack mMasterTrack;
-   private TrackBank mTrackBank;
-   private SceneBank mSceneBank;
-   private CursorTrack mCursorTrack;
-   private CursorDevice mCursorDevice;
-   private UserControlBank mUserControls;
-   private DocumentState mDocumentState;
-   private SettableEnumValue mMusicalKeySetting;
-   private SettableEnumValue mMusicalScaleSetting;
-   private PinnableCursorClip mCursorClip;
-   private CursorRemoteControlsPage mDrumScenesRemoteControls;
-   private CursorRemoteControlsPage mDrumPerfsRemoteControls;
-   private Arpeggiator mArpeggiator;
-   private DrumPadBank mDrumPadBank;
+   Application mApplication;
+   Transport mTransport;
+   MidiIn mMidiIn;
+   MidiOut mMidiOut;
+   NoteInput mNoteInput;
+   MasterTrack mMasterTrack;
+   TrackBank mTrackBank;
+   SceneBank mSceneBank;
+   CursorTrack mCursorTrack;
+   CursorDevice mCursorDevice;
+   UserControlBank mUserControls;
+   DocumentState mDocumentState;
+   PinnableCursorClip mCursorClip;
+   CursorRemoteControlsPage mDrumScenesRemoteControls;
+   CursorRemoteControlsPage mDrumPerfsRemoteControls;
+   Arpeggiator mArpeggiator;
+   NoteLatch mNoteLatch;
+   DrumPadBank mDrumPadBank;
+
+   /* Settings */
+   SettableEnumValue mMusicalKeySetting;
+   SettableEnumValue mMusicalScaleSetting;
+   SettableEnumValue mArpModeSetting;
+   SettableRangedValue mArpOctaveSetting;
 
    /* Modes and Overlay context */
    private Mode mCurrentMode;
@@ -1055,43 +800,43 @@ public final class LaunchpadProControllerExtension extends ControllerExtension
    private KeyboardLayout mKeyboardLayout = KeyboardLayout.GUITAR;
 
    /* Preferences */
-   private SettableBooleanValue mSafePitchesSetting;
-   private SettableBooleanValue mHighlightRootKeySetting;
-   private SettableBooleanValue mHighlightScaleSetting;
-   private SettableEnumValue mKeyboardLayoutSetting;
+   SettableBooleanValue mSafePitchesSetting;
+   SettableBooleanValue mHighlightRootKeySetting;
+   SettableBooleanValue mHighlightScaleSetting;
+   SettableEnumValue mKeyboardLayoutSetting;
 
    /* Layers */
    private Layers mLayers;
    private LaunchpadLayer mMainLayer;
 
    /* Hardware Controls */
-   private HardwareSurface mHardwareSurface;
-   private Button[] mGridButtons;
-   private Button[] mSceneButtons;
-   private Button mShiftButton;
-   private Button mClickButton;
-   private Button mUndoButton;
-   private Button mDeleteButton;
-   private Button mQuantizeButton;
-   private Button mDuplicateButton;
-   private Button mDoubleButton;
-   private Button mRecordButton;
-   private Button mUpButton;
-   private Button mDownButton;
-   private Button mLeftButton;
-   private Button mRightButton;
-   private Button mSessionButton;
-   private Button mNoteButton;
-   private Button mDeviceButton;
-   private Button mUserButton;
-   private Button mArmButton;
-   private Button mStopButton;
-   private Button mSendsButton;
-   private Button mPanButton;
-   private Button mVolumeButton;
-   private Button mSoloButton;
-   private Button mMuteButton;
-   private Button mSelectButton;
+   HardwareSurface mHardwareSurface;
+   Button[] mGridButtons;
+   Button[] mSceneButtons;
+   Button mShiftButton;
+   Button mClickButton;
+   Button mUndoButton;
+   Button mDeleteButton;
+   Button mQuantizeButton;
+   Button mDuplicateButton;
+   Button mDoubleButton;
+   Button mRecordButton;
+   Button mUpButton;
+   Button mDownButton;
+   Button mLeftButton;
+   Button mRightButton;
+   Button mSessionButton;
+   Button mNoteButton;
+   Button mDeviceButton;
+   Button mUserButton;
+   Button mArmButton;
+   Button mStopButton;
+   Button mSendsButton;
+   Button mPanButton;
+   Button mVolumeButton;
+   Button mSoloButton;
+   Button mMuteButton;
+   Button mSelectButton;
 
    /* Used to cache complex computed values during the flush required for painting */
    private int mFlushIteration = 0;

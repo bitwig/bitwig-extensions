@@ -23,8 +23,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       super(driver, "drum-sequencer");
 
-      final CursorTrack cursorTrack = driver.getCursorTrack();
-      final PinnableCursorClip cursorClip = driver.getCursorClip();
+      final CursorTrack cursorTrack = driver.mCursorTrack;
+      final PinnableCursorClip cursorClip = driver.mCursorClip;
 
       mShiftLayer = new LaunchpadLayer(driver, "drum-sequencer-shift");
       mDrumPadsLayer = new LaunchpadLayer(driver, "drum-pads");
@@ -33,7 +33,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       mMixDataLayer = new LaunchpadLayer(driver, "drum-seq-mix-data");
       mSoundDataLayer = new LaunchpadLayer(driver, "drum-seq-sound-data");
 
-      bindLightState(LedState.DRUM_SEQ_MODE, driver.getDeviceButton());
+      bindLightState(LedState.DRUM_SEQ_MODE, driver.mDeviceButton);
 
       // Step sequencer
       for (int y = 0; y < 4; ++y)
@@ -56,7 +56,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
             bindLightState(() -> computeStepSeqLedState(X, 3 - Y), bt);
          }
 
-         final Button sceneButton = driver.getSceneButton(y + 4);
+         final Button sceneButton = driver.mSceneButtons[y + 4];
          final int page = 3 - y;
          final int Y = y;
          bindPressed(sceneButton, () -> {
@@ -65,7 +65,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
          });
          bindLightState(() -> computePatternOffsetLedState(3 - Y), sceneButton);
 
-         final Button dataChoiceBt = driver.getSceneButton(y);
+         final Button dataChoiceBt = driver.mSceneButtons[y];
          bindPressed(dataChoiceBt, () -> setDataMode(Y));
          bindLightState(() -> computeDataChoiceLedState(Y), dataChoiceBt);
       }
@@ -73,18 +73,18 @@ final class DrumSequencerMode extends AbstractSequencerMode
       // Scene buttons in shift layer
       for (int y = 0; y < 8; ++y)
       {
-         final Button sceneButton = driver.getSceneButton(y);
+         final Button sceneButton = driver.mSceneButtons[y];
          final int page = 8 - y;
          final int Y = y;
          mShiftLayer.bindPressed(sceneButton, () -> setClipLength(page * 4));
          mShiftLayer.bindLightState(() -> computeClipLengthSelectionLedState(7 - Y), sceneButton);
       }
 
-      final SettableIntegerValue drumPosition = driver.getDrumPadBank().scrollPosition();
-      mShiftLayer.bindPressed(driver.getUpButton(), this::drumpPadsUp);
-      mShiftLayer.bindPressed(driver.getDownButton(), this::drumpPadsDown);
-      mShiftLayer.bindLightState(() -> drumPosition.get() < 116 ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
-      mShiftLayer.bindLightState(() -> drumPosition.get() > 0 ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
+      final SettableIntegerValue drumPosition = driver.mDrumPadBank.scrollPosition();
+      mShiftLayer.bindPressed(driver.mUpButton, this::drumpPadsUp);
+      mShiftLayer.bindPressed(driver.mDownButton, this::drumpPadsDown);
+      mShiftLayer.bindLightState(() -> drumPosition.get() < 116 ? LedState.PITCH : LedState.PITCH_LOW, driver.mUpButton);
+      mShiftLayer.bindLightState(() -> drumPosition.get() > 0 ? LedState.PITCH : LedState.PITCH_LOW, driver.mDownButton);
 
       // Drum Pads
       for (int x = 0; x < 4; ++x)
@@ -103,14 +103,14 @@ final class DrumSequencerMode extends AbstractSequencerMode
                mSceneAndPerfsLayer.bindPressed(actionBt, () -> onDrumScenePressed(X, Y));
             else
             {
-               mSceneAndPerfsLayer.bind(actionBt.getAfterTouch(), v -> onDrumPerfPressure(X, Y, (int) (127. * v)));
+               mSceneAndPerfsLayer.bind(actionBt.mAfterTouch, v -> onDrumPerfPressure(X, Y, (int) (127. * v)));
                mSceneAndPerfsLayer.bindReleased(actionBt, () -> onDrumPerfReleased(X, Y));
             }
 
             mMainActionsLayer.bindPressed(actionBt, v -> onDrumActionPressed(X, Y, (int) (v * 127)));
             mMainActionsLayer.bindReleased(actionBt, () -> onDrumActionReleased(X, Y));
             if (X == 0 && Y == 2)
-               mMainActionsLayer.bind(actionBt.getAfterTouch(), v -> onAutoNoteRepeatPressure((int) (127. * v)));
+               mMainActionsLayer.bind(actionBt.mAfterTouch, v -> onAutoNoteRepeatPressure((int) (127. * v)));
          }
       }
 
@@ -157,7 +157,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       super.doActivate();
 
-      final DrumPadBank drumPads = mDriver.getDrumPadBank();
+      final DrumPadBank drumPads = mDriver.mDrumPadBank;
       drumPads.exists().subscribe();
       drumPads.scrollPosition().subscribe();
       drumPads.hasMutedPads().subscribe();
@@ -176,12 +176,12 @@ final class DrumSequencerMode extends AbstractSequencerMode
          drumPad.solo().subscribe();
       }
 
-      final CursorDevice cursorDevice = mDriver.getCursorDevice();
+      final CursorDevice cursorDevice = mDriver.mCursorDevice;
       cursorDevice.hasDrumPads().subscribe();
       cursorDevice.subscribe();
 
-      final CursorRemoteControlsPage drumScenesRemoteControls = mDriver.getDrumScenesRemoteControls();
-      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
+      final CursorRemoteControlsPage drumScenesRemoteControls = mDriver.mDrumScenesRemoteControls;
+      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.mDrumPerfsRemoteControls;
       for (int i = 0; i < 8; ++i)
       {
          {
@@ -209,7 +209,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       deactivateEveryLayers();
 
-      final DrumPadBank drumPads = mDriver.getDrumPadBank();
+      final DrumPadBank drumPads = mDriver.mDrumPadBank;
       drumPads.exists().unsubscribe();
       drumPads.scrollPosition().unsubscribe();
       drumPads.hasMutedPads().unsubscribe();
@@ -228,12 +228,12 @@ final class DrumSequencerMode extends AbstractSequencerMode
          drumPad.unsubscribe();
       }
 
-      final CursorDevice cursorDevice = mDriver.getCursorDevice();
+      final CursorDevice cursorDevice = mDriver.mCursorDevice;
       cursorDevice.hasDrumPads().unsubscribe();
       cursorDevice.unsubscribe();
 
-      final CursorRemoteControlsPage drumScenesRemoteControls = mDriver.getDrumScenesRemoteControls();
-      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
+      final CursorRemoteControlsPage drumScenesRemoteControls = mDriver.mDrumScenesRemoteControls;
+      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.mDrumPerfsRemoteControls;
       for (int i = 0; i < 8; ++i)
       {
          {
@@ -293,7 +293,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    void drumpPadsUp()
    {
-      final DrumPadBank drumPads = mDriver.getDrumPadBank();
+      final DrumPadBank drumPads = mDriver.mDrumPadBank;
       final SettableIntegerValue position = drumPads.scrollPosition();
 
       if (position.get() == 0)
@@ -305,7 +305,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    void drumpPadsDown()
    {
-      final DrumPadBank drumPads = mDriver.getDrumPadBank();
+      final DrumPadBank drumPads = mDriver.mDrumPadBank;
       final SettableIntegerValue position = drumPads.scrollPosition();
 
       position.set(Math.max(0, position.get() - 16));
@@ -340,7 +340,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private int calculateDrumPadKey(final int x, final int y)
    {
-      final DrumPadBank drumPadBank = mDriver.getDrumPadBank();
+      final DrumPadBank drumPadBank = mDriver.mDrumPadBank;
 
       if (drumPadBank.exists().get())
          return x + 4 * y + drumPadBank.scrollPosition().get();
@@ -349,12 +349,12 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private void onMixDataPressed(final int x, final int y)
    {
-      final Clip clip = mDriver.getCursorClip();
+      final Clip clip = mDriver.mCursorClip;
       final List<Button> padsInHoldState = getStepsInPressedOrHoldState();
 
       for (final Button button : padsInHoldState)
       {
-         final int clipStepIndex = calculateClipStepIndex(button.getX() - 1, 8 - button.getY());
+         final int clipStepIndex = calculateClipStepIndex(button.mX - 1, 8 - button.mY);
          final NoteStep noteStep = clip.getStep(0, clipStepIndex, mCurrentPitch);
 
          switch (y)
@@ -376,12 +376,12 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private void onSoundDataPressed(final int x, final int y)
    {
-      final Clip clip = mDriver.getCursorClip();
+      final Clip clip = mDriver.mCursorClip;
       final List<Button> padsInHoldState = getStepsInPressedOrHoldState();
 
       for (final Button buttonState : padsInHoldState)
       {
-         final int clipStepIndex = calculateClipStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final int clipStepIndex = calculateClipStepIndex(buttonState.mX - 1, 8 - buttonState.mY);
          final NoteStep noteStep = clip.getStep(0, clipStepIndex, mCurrentPitch);
 
          switch (y)
@@ -406,17 +406,17 @@ final class DrumSequencerMode extends AbstractSequencerMode
       if (y == 0 && (x >= 0 && x <= 2))
       {
          if (mDriver.isDeleteOn() && x == 1 && y == 0)
-            mDriver.getDrumPadBank().clearMutedPads();
+            mDriver.mDrumPadBank.clearMutedPads();
          if (mDriver.isDeleteOn() && x == 2 && y == 0)
-            mDriver.getDrumPadBank().clearSoloedPads();
-         mDriver.getNoteInput().setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
+            mDriver.mDrumPadBank.clearSoloedPads();
+         mDriver.mNoteInput.setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
       }
       else if (y == 1)
       {
-         final Clip cursorClip = mDriver.getCursorClip();
+         final Clip cursorClip = mDriver.mCursorClip;
          final boolean cursorClipExists = cursorClip.exists().get();
          final int sceneIndex = cursorClipExists ? cursorClip.clipLauncherSlot().sceneIndex().get() : 0;
-         final Track track = cursorClipExists ? cursorClip.getTrack() : mDriver.getCursorTrack();
+         final Track track = cursorClipExists ? cursorClip.getTrack() : mDriver.mCursorTrack;
 
          if (x == 0)
             track.createNewLauncherClip(sceneIndex, 8);
@@ -437,7 +437,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
             period = calculateAutoNoteRepeatPeriod(velocity);
 
          // Configure the Arp as a note repeat
-         final Arpeggiator arpeggiator = mDriver.getArpeggiator();
+         final Arpeggiator arpeggiator = mDriver.mArpeggiator;
          arpeggiator.rate().set(period);
          arpeggiator.usePressureToVelocity().set(true);
          arpeggiator.shuffle().set(true);
@@ -460,7 +460,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private void onAutoNoteRepeatPressure(final int pressure)
    {
-      final Arpeggiator arpeggiator = mDriver.getArpeggiator();
+      final Arpeggiator arpeggiator = mDriver.mArpeggiator;
       arpeggiator.rate().set(calculateAutoNoteRepeatPeriod(pressure));
    }
 
@@ -481,7 +481,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
          mDriver.updateKeyTranslationTable();
       else if (y == 2 || y == 3)
       {
-         final Arpeggiator arpeggiator = mDriver.getArpeggiator();
+         final Arpeggiator arpeggiator = mDriver.mArpeggiator;
 
          mNoteRepeatStack.removeIf(coord -> coord.x == x && coord.y == y);
 
@@ -510,7 +510,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private void onDrumPerfReleased(final int x, final int y)
    {
-      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
+      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.mDrumPerfsRemoteControls;
       final RemoteControl parameter = drumPerfsRemoteControls.getParameter(x + 4 * (3 - y));
 
       if (!mDriver.isShiftOn() && parameter.exists().get())
@@ -519,7 +519,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private void onDrumPerfPressure(final int x, final int y, final int pressure)
    {
-      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
+      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.mDrumPerfsRemoteControls;
       final RemoteControl parameter = drumPerfsRemoteControls.getParameter(x + 4 * (3 - y));
 
       if (!mDriver.isShiftOn() && parameter.exists().get())
@@ -534,7 +534,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
    private void onDrumScenePressed(final int x, final int y)
    {
       final int paramIndex = x + 4 * (1 - y);
-      final CursorRemoteControlsPage scenesRemoteControls = mDriver.getDrumScenesRemoteControls();
+      final CursorRemoteControlsPage scenesRemoteControls = mDriver.mDrumScenesRemoteControls;
 
       final RemoteControl parameter = scenesRemoteControls.getParameter(paramIndex);
       if (parameter.exists().get() && parameter.get() != 0)
@@ -562,7 +562,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private void onStepPressed(final int absoluteStep, final int velocity)
    {
-      final Clip cursorClip = mDriver.getCursorClip();
+      final Clip cursorClip = mDriver.mCursorClip;
 
       if (mDriver.isShiftOn())
          setClipLength((absoluteStep + 1) / 4.0);
@@ -581,7 +581,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private void onStepReleased(final int absoluteStep, final boolean wasHeld)
    {
-      final Clip cursorClip = mDriver.getCursorClip();
+      final Clip cursorClip = mDriver.mCursorClip;
 
       if (mDriver.isShiftOn() || mDriver.isDeleteOn())
          return;
@@ -598,22 +598,22 @@ final class DrumSequencerMode extends AbstractSequencerMode
       final int key = calculateDrumPadKey(x, y);
 
       if (mDriver.isDeleteOn())
-         mDriver.getCursorClip().clearStepsAtY(0, key);
+         mDriver.mCursorClip.clearStepsAtY(0, key);
       else if (isDrumPadMuteOn())
       {
-         final DrumPadBank drumPadBank = mDriver.getDrumPadBank();
+         final DrumPadBank drumPadBank = mDriver.mDrumPadBank;
          final DrumPad drumPad = drumPadBank.getItemAt(x + 4 * y);
          drumPad.mute().toggle();
       }
       else if (isDrumPadSoloOn())
       {
-         final DrumPadBank drumPadBank = mDriver.getDrumPadBank();
+         final DrumPadBank drumPadBank = mDriver.mDrumPadBank;
          final DrumPad drumPad = drumPadBank.getItemAt(x + 4 * y);
          drumPad.solo().toggle();
       }
       else if (isDrumPadSelectOn())
       {
-         final DrumPadBank drumPadBank = mDriver.getDrumPadBank();
+         final DrumPadBank drumPadBank = mDriver.mDrumPadBank;
          final DrumPad drumPad = drumPadBank.getItemAt(x + 4 * y);
          drumPad.selectInEditor();
          mCurrentPitch = key;
@@ -628,7 +628,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
          return false;
 
       final Button button = mDriver.getPadButton(x, y);
-      return button.getButton().isPressed().get();
+      return button.mButton.isPressed().get();
    }
 
    private boolean isDrumPadSelectOn()
@@ -649,13 +649,13 @@ final class DrumSequencerMode extends AbstractSequencerMode
    @Override
    protected NoteStep findStepInfo(final int clipStepIndex)
    {
-      return mDriver.getCursorClip().getStep(0, clipStepIndex, mCurrentPitch);
+      return mDriver.mCursorClip.getStep(0, clipStepIndex, mCurrentPitch);
    }
 
    private LedState computePerfAndScenesLedState(final int x, final int y)
    {
-      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.getDrumPerfsRemoteControls();
-      final CursorRemoteControlsPage drumScenesRemoteControls = mDriver.getDrumScenesRemoteControls();
+      final CursorRemoteControlsPage drumPerfsRemoteControls = mDriver.mDrumPerfsRemoteControls;
+      final CursorRemoteControlsPage drumScenesRemoteControls = mDriver.mDrumScenesRemoteControls;
 
       if (y > 1)
       {
@@ -674,7 +674,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private LedState computeStepSeqLedState(final int x, final int y)
    {
-      final Clip clip = mDriver.getCursorClip();
+      final Clip clip = mDriver.mCursorClip;
       final int playingStep = clip.playingStep().get();
 
       final NoteStep noteStep = clip.getStep(0, calculateClipStepIndex(x, y), mCurrentPitch);
@@ -698,11 +698,11 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
    private LedState computeDrumPadLedState(final int x, final int y)
    {
-      final Clip clip = mDriver.getCursorClip();
-      final PlayingNoteArrayValue playingNotes = mDriver.getCursorTrack().playingNotes();
-      final CursorDevice cursorDevice = mDriver.getCursorDevice();
+      final Clip clip = mDriver.mCursorClip;
+      final PlayingNoteArrayValue playingNotes = mDriver.mCursorTrack.playingNotes();
+      final CursorDevice cursorDevice = mDriver.mCursorDevice;
       final boolean hasDrumPads = cursorDevice.hasDrumPads().get();
-      final DrumPadBank drumPads = mDriver.getDrumPadBank();
+      final DrumPadBank drumPads = mDriver.mDrumPadBank;
 
       final int pitch = calculateDrumPadKey(x, y);
       final boolean isPlaying = playingNotes.isNotePlaying(pitch);

@@ -9,21 +9,21 @@ import com.bitwig.extension.controller.api.PinnableCursorClip;
 import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.Track;
 
-public class StepSequencerMode extends AbstractSequencerMode
+final class StepSequencerMode extends AbstractSequencerMode
 {
    StepSequencerMode(final LaunchpadProControllerExtension driver)
    {
       super(driver, "step-sequencer");
 
-      final CursorTrack cursorTrack = driver.getCursorTrack();
-      final PinnableCursorClip cursorClip = driver.getCursorClip();
+      final CursorTrack cursorTrack = driver.mCursorTrack;
+      final PinnableCursorClip cursorClip = driver.mCursorClip;
 
       mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4,
-         () -> new Color(mDriver.getCursorTrack().color()), this::isKeyOn, this::onKeyDataPressed);
+         () -> new Color(mDriver.mCursorTrack.color()), this::isKeyOn, this::onKeyDataPressed);
       mMixDataLayer = new LaunchpadLayer(driver, "drum-seq-mix-data");
       mSoundDataLayer = new LaunchpadLayer(driver, "drum-seq-sound-data");
 
-      bindLightState(LedState.STEP_SEQ_MODE, driver.getUserButton());
+      bindLightState(LedState.STEP_SEQ_MODE, driver.mUserButton);
 
       // Step sequencer
       for (int y = 0; y < 4; ++y)
@@ -46,7 +46,7 @@ public class StepSequencerMode extends AbstractSequencerMode
             bindLightState(() -> computeStepSeqLedState(X, 3 - Y), bt);
          }
 
-         final Button sceneButton = driver.getSceneButton(y + 4);
+         final Button sceneButton = driver.mSceneButtons[y + 4];
          final int page = 3 - y;
          final int Y = y;
          bindPressed(sceneButton, () -> {
@@ -55,7 +55,7 @@ public class StepSequencerMode extends AbstractSequencerMode
          });
          bindLightState(() -> computePatternOffsetLedState(3 - Y), sceneButton);
 
-         final Button dataChoiceBt = driver.getSceneButton(y);
+         final Button dataChoiceBt = driver.mSceneButtons[y];
          bindPressed(dataChoiceBt, () -> setDataMode(Y));
          bindLightState(() -> computeDataChoiceLedState(Y), dataChoiceBt);
       }
@@ -63,23 +63,25 @@ public class StepSequencerMode extends AbstractSequencerMode
       // Scene buttons in shift layer
       for (int y = 0; y < 8; ++y)
       {
-         final Button sceneButton = driver.getSceneButton(y);
+         final Button sceneButton = driver.mSceneButtons[y];
          final int page = 8 - y;
          final int Y = y;
          mShiftLayer.bindPressed(sceneButton, () -> setClipLength(page * 4));
          mShiftLayer.bindLightState(() -> computeClipLengthSelectionLedState(7 - Y), sceneButton);
       }
 
-      mShiftLayer.bindPressed(driver.getUpButton(), () -> {
+      mShiftLayer.bindPressed(driver.mUpButton, () -> {
          mKeyboardLayer.octaveUp();
          mDriver.updateKeyTranslationTable();
       });
-      mShiftLayer.bindPressed(driver.getDownButton(), () -> {
+      mShiftLayer.bindPressed(driver.mDownButton, () -> {
          mKeyboardLayer.octaveDown();
          mDriver.updateKeyTranslationTable();
       });
-      mShiftLayer.bindLightState(() -> mKeyboardLayer.canOctaveUp() ? LedState.PITCH : LedState.PITCH_LOW, driver.getUpButton());
-      mShiftLayer.bindLightState(() -> mKeyboardLayer.canOctaveDown() ? LedState.PITCH : LedState.PITCH_LOW, driver.getDownButton());
+      mShiftLayer.bindLightState(() -> mKeyboardLayer.canOctaveUp() ? LedState.PITCH : LedState.PITCH_LOW,
+         driver.mUpButton);
+      mShiftLayer.bindLightState(() -> mKeyboardLayer.canOctaveDown() ? LedState.PITCH : LedState.PITCH_LOW,
+         driver.mDownButton);
 
       // Step Data
       for (int x = 0; x < 8; ++x)
@@ -104,7 +106,7 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       super.doActivate();
 
-      final Track track = mDriver.getCursorTrack();
+      final Track track = mDriver.mCursorTrack;
       track.subscribe();
 
       final SettableColorValue trackColor = track.color();
@@ -119,7 +121,7 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       deactivateEveryLayers();
 
-      final Track track = mDriver.getCursorTrack();
+      final Track track = mDriver.mCursorTrack;
       track.unsubscribe();
 
       final SettableColorValue trackColor = track.color();
@@ -142,13 +144,13 @@ public class StepSequencerMode extends AbstractSequencerMode
       if (mDataMode == DataMode.Main)
          mKeyboardLayer.updateKeyTranslationTable(table);
 
-      mDriver.getNoteInput().setKeyTranslationTable(table);
+      mDriver.mNoteInput.setKeyTranslationTable(table);
    }
 
    @Override
    protected NoteStep findStepInfo(final int clipStepIndex)
    {
-      final Clip cursorClip = mDriver.getCursorClip();
+      final Clip cursorClip = mDriver.mCursorClip;
       for (int key = 0; key < 128; ++key)
       {
          final NoteStep noteStep = cursorClip.getStep(0, clipStepIndex, key);
@@ -162,14 +164,14 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       assert key >= 0 && key < 127;
 
-      if (mDriver.getCursorTrack().playingNotes().isNotePlaying(key))
+      if (mDriver.mCursorTrack.playingNotes().isNotePlaying(key))
          return true;
 
-      final Clip cursorClip = mDriver.getCursorClip();
+      final Clip cursorClip = mDriver.mCursorClip;
       final List<Button> stepsInHoldState = getStepsInHoldState();
       for (final Button button : stepsInHoldState)
       {
-         final int clipStepIndex = calculateClipStepIndex(button.getX() - 1, 8 - button.getY());
+         final int clipStepIndex = calculateClipStepIndex(button.mX - 1, 8 - button.mY);
 
          final NoteStep noteStep = cursorClip.getStep(0, clipStepIndex, key);
          return noteStep.state() == NoteStep.State.NoteOn;
@@ -180,7 +182,7 @@ public class StepSequencerMode extends AbstractSequencerMode
 
    private LedState computeStepSeqLedState(final int x, final int y)
    {
-      final Clip clip = mDriver.getCursorClip();
+      final Clip clip = mDriver.mCursorClip;
       final int playingStep = clip.playingStep().get();
 
       final int clipStepIndex = calculateClipStepIndex(x, y);
@@ -205,7 +207,7 @@ public class StepSequencerMode extends AbstractSequencerMode
 
    private NoteStep computeVerticalStepState(final int absoluteStepIndex)
    {
-      final Clip clip = mDriver.getCursorClip();
+      final Clip clip = mDriver.mCursorClip;
       NoteStep value = clip.getStep(0, absoluteStepIndex, 0);
 
       for (int i = 0; i < 128; ++i)
@@ -235,12 +237,12 @@ public class StepSequencerMode extends AbstractSequencerMode
 
    private void onMixDataPressed(final int x, final int y)
    {
-      final Clip clip = mDriver.getCursorClip();
+      final Clip clip = mDriver.mCursorClip;
       final List<Button> padsInHoldState = mDriver.findPadsInHoldState();
 
       for (final Button buttonState : padsInHoldState)
       {
-         final int clipStepIndex = calculateClipStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final int clipStepIndex = calculateClipStepIndex(buttonState.mX - 1, 8 - buttonState.mY);
 
          for (int key = 0; key < 128; ++key)
          {
@@ -272,12 +274,12 @@ public class StepSequencerMode extends AbstractSequencerMode
 
    private void onSoundDataPressed(final int x, final int y)
    {
-      final Clip clip = mDriver.getCursorClip();
+      final Clip clip = mDriver.mCursorClip;
       final List<Button> padsInHoldState = mDriver.findPadsInHoldState();
 
       for (final Button buttonState : padsInHoldState)
       {
-         final int clipStepIndex = calculateClipStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final int clipStepIndex = calculateClipStepIndex(buttonState.mX - 1, 8 - buttonState.mY);
 
          for (int key = 0; key < 128; ++key)
          {
@@ -307,17 +309,17 @@ public class StepSequencerMode extends AbstractSequencerMode
    {
       assert 0 <= key && key < 128;
 
-      final Clip cursorClip = mDriver.getCursorClip();
+      final Clip cursorClip = mDriver.mCursorClip;
       for (final Button buttonState : getStepsInPressedOrHoldState())
       {
-         final int clipStepIndex = calculateClipStepIndex(buttonState.getX() - 1, 8 - buttonState.getY());
+         final int clipStepIndex = calculateClipStepIndex(buttonState.mX - 1, 8 - buttonState.mY);
          cursorClip.toggleStep(clipStepIndex, key, (int) (127 * velocity));
       }
    }
 
    private void onStepPressed(final int absoluteStep)
    {
-      final Clip cursorClip = mDriver.getCursorClip();
+      final Clip cursorClip = mDriver.mCursorClip;
 
       if (mDriver.isShiftOn())
          setClipLength((absoluteStep + 1) / 4.0);
@@ -327,7 +329,7 @@ public class StepSequencerMode extends AbstractSequencerMode
 
    private void onStepReleased(final int absoluteStep, final boolean wasHeld)
    {
-      final Clip cursorClip = mDriver.getCursorClip();
+      final Clip cursorClip = mDriver.mCursorClip;
 
       if (mDriver.isShiftOn() || mDriver.isDeleteOn())
          return;

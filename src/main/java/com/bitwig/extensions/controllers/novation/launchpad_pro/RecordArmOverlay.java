@@ -4,13 +4,13 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-class RecordArmOverlay extends Overlay
+final class RecordArmOverlay extends Overlay
 {
    public RecordArmOverlay(final LaunchpadProControllerExtension driver)
    {
       super(driver, "record");
 
-      final TrackBank trackBank = driver.getTrackBank();
+      final TrackBank trackBank = driver.mTrackBank;
       for (int x = 0; x < 8; ++x)
       {
          final Track track = trackBank.getItemAt(x);
@@ -24,13 +24,13 @@ class RecordArmOverlay extends Overlay
          }, button);
       }
 
-      bindLightState(LedState.REC_ON, driver.getArmButton());
+      bindLightState(LedState.REC_ON, driver.mArmButton);
    }
 
    @Override
    protected void doActivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
       for (int i = 0; i < 8; ++i)
          trackBank.getItemAt(i).arm().subscribe();
    }
@@ -38,7 +38,7 @@ class RecordArmOverlay extends Overlay
    @Override
    protected void doDeactivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
       for (int i = 0; i < 8; ++i)
          trackBank.getItemAt(i).arm().unsubscribe();
    }

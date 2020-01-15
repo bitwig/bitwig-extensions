@@ -1,16 +1,15 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
-import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-class StopClipOverlay extends Overlay
+final class StopClipOverlay extends Overlay
 {
    StopClipOverlay(final LaunchpadProControllerExtension driver)
    {
       super(driver, "stop-clip");
 
-      final TrackBank trackBank = driver.getTrackBank();
+      final TrackBank trackBank = driver.mTrackBank;
       for (int x = 0; x < 8; ++x)
       {
          final Track track = trackBank.getItemAt(x);
@@ -23,13 +22,13 @@ class StopClipOverlay extends Overlay
          }, button);
       }
 
-      bindLightState(LedState.STOP_CLIP_ON, driver.getStopButton());
+      bindLightState(LedState.STOP_CLIP_ON, driver.mStopButton);
    }
 
    @Override
    protected void doActivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
       for (int i = 0; i < 8; ++i)
       {
          final Track track = trackBank.getItemAt(i);
@@ -42,7 +41,7 @@ class StopClipOverlay extends Overlay
    @Override
    protected void doDeactivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
       for (int i = 0; i < 8; ++i)
       {
          final Track track = trackBank.getItemAt(i);

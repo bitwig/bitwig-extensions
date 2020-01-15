@@ -9,7 +9,7 @@ class MultiplexerMode extends Mode
       for (int i = 0; i < 8; ++i)
       {
          final int I = i;
-         final Button button = driver.getSceneButton(7 - i);
+         final Button button = driver.mSceneButtons[7 - i];
          bindPressed(button, () -> selectMinorMode(I));
          bindLightState(() -> {
             if (mModes[I] == null)

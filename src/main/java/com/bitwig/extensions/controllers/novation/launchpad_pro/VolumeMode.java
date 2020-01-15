@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-public class VolumeMode extends Mode
+final class VolumeMode extends Mode
 {
    public VolumeMode(final LaunchpadProControllerExtension driver)
    {
@@ -12,7 +12,7 @@ public class VolumeMode extends Mode
 
       mShiftLayer = new LaunchpadLayer(driver, "volume-shift");
 
-      final TrackBank trackBank = driver.getTrackBank();
+      final TrackBank trackBank = driver.mTrackBank;
       for (int x = 0; x < 8; ++x)
       {
          final Track track = trackBank.getItemAt(x);
@@ -29,21 +29,23 @@ public class VolumeMode extends Mode
                if (value >= padValue)
                   return new LedState(track.color());
                return LedState.OFF;
-            }, button.getLight());
+            }, button.mLight);
          }
       }
 
-      bindLightState(LedState.VOLUME_MODE, driver.getVolumeButton());
+      bindLightState(LedState.VOLUME_MODE, driver.mVolumeButton);
 
-      bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getRightButton());
-      bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW, driver.getLeftButton());
-      bindLightState(() -> LedState.OFF, driver.getDownButton());
-      bindLightState(() -> LedState.OFF, driver.getUpButton());
+      bindLightState(() -> trackBank.canScrollForwards().get() ? LedState.TRACK : LedState.TRACK_LOW,
+         driver.mRightButton);
+      bindLightState(() -> trackBank.canScrollBackwards().get() ? LedState.TRACK : LedState.TRACK_LOW,
+         driver.mLeftButton);
+      bindLightState(() -> LedState.OFF, driver.mDownButton);
+      bindLightState(() -> LedState.OFF, driver.mUpButton);
 
-      bindPressed(driver.getRightButton(), trackBank.scrollForwardsAction());
-      bindPressed(driver.getLeftButton(), trackBank.scrollBackwardsAction());
-      mShiftLayer.bindPressed(driver.getRightButton(), trackBank.scrollPageForwardsAction());
-      mShiftLayer.bindPressed(driver.getLeftButton(), trackBank.scrollPageBackwardsAction());
+      bindPressed(driver.mRightButton, trackBank.scrollForwardsAction());
+      bindPressed(driver.mLeftButton, trackBank.scrollBackwardsAction());
+      mShiftLayer.bindPressed(driver.mRightButton, trackBank.scrollPageForwardsAction());
+      mShiftLayer.bindPressed(driver.mLeftButton, trackBank.scrollPageBackwardsAction());
    }
 
    @Override
@@ -55,7 +57,7 @@ public class VolumeMode extends Mode
    @Override
    protected void doActivate()
    {
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
 
       for (int i = 0; i < 8; ++i)
       {
@@ -71,7 +73,7 @@ public class VolumeMode extends Mode
    protected void doDeactivate()
    {
       mShiftLayer.deactivate();
-      final TrackBank trackBank = mDriver.getTrackBank();
+      final TrackBank trackBank = mDriver.mTrackBank;
 
       for (int i = 0; i < 8; ++i)
       {

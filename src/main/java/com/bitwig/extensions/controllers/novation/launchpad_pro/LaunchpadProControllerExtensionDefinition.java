@@ -8,7 +8,7 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class LaunchpadProControllerExtensionDefinition extends ControllerExtensionDefinition
+public final class LaunchpadProControllerExtensionDefinition extends ControllerExtensionDefinition
 {
    @Override
    public String getName()
@@ -49,7 +49,7 @@ public class LaunchpadProControllerExtensionDefinition extends ControllerExtensi
    @Override
    public int getRequiredAPIVersion()
    {
-      return 10;
+      return 11;
    }
 
    @Override

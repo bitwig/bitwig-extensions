@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extensions.framework.MusicalScale;
 import com.bitwig.extensions.framework.MusicalScaleLibrary;
 
-public class ScaleAndKeyChooserMode extends Mode
+final class ScaleAndKeyChooserMode extends Mode
 {
    private static final int[] CHROMATIC_NOTE_INDEXES = new int[] {0, 2, 4, 5, 7, 9, 11, 12, -1, 1, 3, -1, 6, 8, 10, -1};
 
@@ -59,14 +59,14 @@ public class ScaleAndKeyChooserMode extends Mode
    @Override
    protected void doActivate()
    {
-      final Parameter tempo = mDriver.getTransport().tempo();
+      final Parameter tempo = mDriver.mTransport.tempo();
       tempo.subscribe();
    }
 
    @Override
    protected void doDeactivate()
    {
-      final Parameter tempo = mDriver.getTransport().tempo();
+      final Parameter tempo = mDriver.mTransport.tempo();
       tempo.unsubscribe();
    }
 
@@ -97,11 +97,11 @@ public class ScaleAndKeyChooserMode extends Mode
          return;
 
       final int note = musicalScale.computeNote(mDriver.getMusicalKey(), 6, i);
-      mDriver.getCursorTrack().playNote(note, 100);
+      mDriver.mCursorTrack.playNote(note, 100);
 
       if (i + 1 <= musicalScale.getNotesCount())
       {
-         final double duration = 60 / mDriver.getTransport().tempo().value().getRaw() / 2 * 1000;
+         final double duration = 60 / mDriver.mTransport.tempo().value().getRaw() / 2 * 1000;
 
          mDriver.getHost().scheduleTask(() -> playScale(i + 1, playScaleCount), (long)duration);
       }

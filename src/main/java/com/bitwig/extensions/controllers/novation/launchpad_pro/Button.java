@@ -1,7 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchpad_pro;
 
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
-import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -10,7 +9,7 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.ObjectHardwareProperty;
 
-class Button
+final class Button
 {
 
    static final int NO_PULSE = 0;
@@ -39,7 +38,7 @@ class Button
 
       mDriver = driver;
 
-      final HardwareSurface hardwareSurface = driver.getHardwareSurface();
+      final HardwareSurface hardwareSurface = driver.mHardwareSurface;
       mIsPressureSensitive = isPressureSensitive;
       mIndex = index;
 
@@ -74,16 +73,6 @@ class Button
       mY = y;
    }
 
-   public HardwareButton getButton()
-   {
-      return mButton;
-   }
-
-   public AbsoluteHardwareKnob getAfterTouch()
-   {
-      return mAfterTouch;
-   }
-
    State getButtonState()
    {
       return mButtonState;
@@ -112,16 +101,6 @@ class Button
       return mButtonState == State.PRESSED || mButtonState == State.HOLD;
    }
 
-   public int getX()
-   {
-      return mX;
-   }
-
-   public int getY()
-   {
-      return mY;
-   }
-
    public void appendLedUpdate(
       final StringBuilder ledClear, final StringBuilder ledUpdate, final StringBuilder ledPulseUpdate)
    {
@@ -135,28 +114,18 @@ class Button
       if (lastSent != null && currentState.equals(lastSent))
          return;
 
-      final Color color = currentState.getColor();
-      final int pulse = currentState.getPulse();
+      final Color color = currentState.mColor;
+      final int pulse = currentState.mPulse;
 
       if (pulse == NO_PULSE)
       {
          if (color.isBlack())
             ledClear.append(String.format(" %02x 00", mIndex));
          else
-            ledUpdate.append(String.format(" %02x %02x %02x %02x", mIndex, color.getRed(), color.getGreen(), color.getBlue()));
+            ledUpdate.append(String.format(" %02x %02x %02x %02x", mIndex, color.mRed, color.mGreen, color.mBlue));
       }
       else
          ledPulseUpdate.append(String.format(" %02x %02x", mIndex, pulse));
-   }
-
-   public MultiStateHardwareLight getLight()
-   {
-      return mLight;
-   }
-
-   public boolean isPressureSensitive()
-   {
-      return mIsPressureSensitive;
    }
 
    // For debugging
@@ -169,15 +138,15 @@ class Button
    private final LaunchpadProControllerExtension mDriver;
 
    /* Hardware objects */
-   private final HardwareButton mButton;
-   private final MultiStateHardwareLight mLight;
-   private final AbsoluteHardwareKnob mAfterTouch;
+   final HardwareButton mButton;
+   final MultiStateHardwareLight mLight;
+   final AbsoluteHardwareKnob mAfterTouch;
 
    /* State */
-   private final int mX;
-   private final int mY;
-   private final int mIndex;
-   private final boolean mIsPressureSensitive;
+   final int mX;
+   final int mY;
+   final int mIndex;
+   final boolean mIsPressureSensitive;
 
    private State mButtonState = State.RELEASED;
    private boolean mCancelHoldTask = false;

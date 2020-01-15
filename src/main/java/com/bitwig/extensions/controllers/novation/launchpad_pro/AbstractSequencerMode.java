@@ -24,13 +24,13 @@ abstract class AbstractSequencerMode extends Mode
          @Override
          protected void onActivate()
          {
-            mDriver.getCursorClip().getLoopLength().subscribe();
+            mDriver.mCursorClip.getLoopLength().subscribe();
          }
 
          @Override
          protected void onDeactivate()
          {
-            mDriver.getCursorClip().getLoopLength().unsubscribe();
+            mDriver.mCursorClip.getLoopLength().unsubscribe();
          }
       };
       bindMainLayer();
@@ -39,27 +39,29 @@ abstract class AbstractSequencerMode extends Mode
 
    private void bindMainLayer()
    {
-      final CursorTrack cursorTrack = mDriver.getCursorTrack();
-      final PinnableCursorClip cursorClip = mDriver.getCursorClip();
+      final CursorTrack cursorTrack = mDriver.mCursorTrack;
+      final PinnableCursorClip cursorClip = mDriver.mCursorClip;
 
-      bindPressed(mDriver.getLeftButton(), cursorTrack.selectPreviousAction());
-      bindPressed(mDriver.getRightButton(), cursorTrack.selectNextAction());
-      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, mDriver.getRightButton());
-      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, mDriver.getLeftButton());
+      bindPressed(mDriver.mLeftButton, cursorTrack.selectPreviousAction());
+      bindPressed(mDriver.mRightButton, cursorTrack.selectNextAction());
+      bindLightState(() -> cursorTrack.hasNext().get() ? LedState.TRACK : LedState.TRACK_LOW, mDriver.mRightButton);
+      bindLightState(() -> cursorTrack.hasPrevious().get() ? LedState.TRACK : LedState.TRACK_LOW, mDriver.mLeftButton);
 
-      bindPressed(mDriver.getUpButton(), cursorClip.selectPreviousAction());
-      bindPressed(mDriver.getDownButton(), cursorClip.selectNextAction());
-      bindLightState(() -> cursorClip.hasPrevious().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), mDriver.getUpButton());
-      bindLightState(() -> cursorClip.hasNext().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)), mDriver.getDownButton());
+      bindPressed(mDriver.mUpButton, cursorClip.selectPreviousAction());
+      bindPressed(mDriver.mDownButton, cursorClip.selectNextAction());
+      bindLightState(() -> cursorClip.hasPrevious().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)),
+         mDriver.mUpButton);
+      bindLightState(() -> cursorClip.hasNext().get() ? new LedState(cursorTrack.color()) : new LedState(Color.scale(new Color(cursorTrack.color()), .2f)),
+         mDriver.mDownButton);
 
-      bindLayer(mDriver.getShiftButton(), mShiftLayer);
+      bindLayer(mDriver.mShiftButton, mShiftLayer);
    }
 
    private void bindShiftLayer()
    {
-      final PinnableCursorClip cursorClip = mDriver.getCursorClip();
-      mShiftLayer.bindPressed(mDriver.getDeleteButton(), () -> cursorClip.clearSteps());
-      mShiftLayer.bindPressed(mDriver.getQuantizeButton(), () -> cursorClip.quantize(1));
+      final PinnableCursorClip cursorClip = mDriver.mCursorClip;
+      mShiftLayer.bindPressed(mDriver.mDeleteButton, () -> cursorClip.clearSteps());
+      mShiftLayer.bindPressed(mDriver.mQuantizeButton, () -> cursorClip.quantize(1));
    }
 
    protected enum DataMode
@@ -70,7 +72,7 @@ abstract class AbstractSequencerMode extends Mode
    @Override
    protected void doActivate()
    {
-      final PinnableCursorClip clip = mDriver.getCursorClip();
+      final PinnableCursorClip clip = mDriver.mCursorClip;
       clip.color().subscribe();
       clip.exists().subscribe();
       clip.hasNext().subscribe();
@@ -82,7 +84,7 @@ abstract class AbstractSequencerMode extends Mode
       if (clip.exists().get())
          setNoteInputRouting();
 
-      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      final CursorTrack cursorTrack = mDriver.mCursorTrack;
       cursorTrack.subscribe();
       cursorTrack.color().subscribe();
       cursorTrack.hasNext().subscribe();
@@ -93,7 +95,7 @@ abstract class AbstractSequencerMode extends Mode
    @Override
    protected void doDeactivate()
    {
-      final PinnableCursorClip clip = mDriver.getCursorClip();
+      final PinnableCursorClip clip = mDriver.mCursorClip;
       clip.color().unsubscribe();
       clip.exists().unsubscribe();
       clip.hasNext().unsubscribe();
@@ -105,7 +107,7 @@ abstract class AbstractSequencerMode extends Mode
       if (clip.exists().get())
          clearNoteInputRouting();
 
-      final CursorTrack cursorTrack = mDriver.getCursorTrack();
+      final CursorTrack cursorTrack = mDriver.mCursorTrack;
       cursorTrack.color().unsubscribe();
       cursorTrack.hasNext().unsubscribe();
       cursorTrack.hasPrevious().unsubscribe();
@@ -114,7 +116,7 @@ abstract class AbstractSequencerMode extends Mode
    }
 
    @Override
-   public void onCursorClipExists(final boolean exists)
+   protected void onCursorClipExists(final boolean exists)
    {
       if (!exists)
          clearNoteInputRouting();
@@ -124,19 +126,19 @@ abstract class AbstractSequencerMode extends Mode
 
    private void setNoteInputRouting()
    {
-      final NoteInput noteInput = mDriver.getNoteInput();
+      final NoteInput noteInput = mDriver.mNoteInput;
       noteInput.includeInAllInputs().set(false);
 
-      final Track cursorTrack = mDriver.getCursorTrack();
+      final Track cursorTrack = mDriver.mCursorTrack;
       cursorTrack.addNoteSource(noteInput);
    }
 
    private void clearNoteInputRouting()
    {
-      final NoteInput noteInput = mDriver.getNoteInput();
+      final NoteInput noteInput = mDriver.mNoteInput;
       noteInput.includeInAllInputs().set(true);
 
-      final Track cursorTrack = mDriver.getCursorTrack();
+      final Track cursorTrack = mDriver.mCursorTrack;
       cursorTrack.removeNoteSource(noteInput);
    }
 
@@ -180,7 +182,7 @@ abstract class AbstractSequencerMode extends Mode
       }
 
       final Button pad = pads.get(0);
-      final int clipStepIndex = calculateClipStepIndex(pad.getX() - 1, 8 - pad.getY());
+      final int clipStepIndex = calculateClipStepIndex(pad.mX - 1, 8 - pad.mY);
       final NoteStep noteStep = findStepInfo(clipStepIndex);
 
       final double gain = noteStep.gain();
@@ -223,7 +225,7 @@ abstract class AbstractSequencerMode extends Mode
       }
 
       final Button pad = pads.get(0);
-      final int clipStepIndex = calculateClipStepIndex(pad.getX() - 1, 8 - pad.getY());
+      final int clipStepIndex = calculateClipStepIndex(pad.mX - 1, 8 - pad.mY);
       final NoteStep noteStep = findStepInfo(clipStepIndex);
 
       final double transpose = noteStep.transpose();
@@ -271,7 +273,7 @@ abstract class AbstractSequencerMode extends Mode
 
    protected LedState computePatternOffsetLedState(final int y)
    {
-      final Clip clip = mDriver.getCursorClip();
+      final Clip clip = mDriver.mCursorClip;
 
       final SettableBeatTimeValue playStart = clip.getPlayStart();
       final SettableBeatTimeValue playStopTime = clip.getPlayStop();
@@ -287,7 +289,7 @@ abstract class AbstractSequencerMode extends Mode
 
    protected LedState computeClipLengthSelectionLedState(final int y)
    {
-      final Clip clip = mDriver.getCursorClip();
+      final Clip clip = mDriver.mCursorClip;
       final SettableBeatTimeValue loopLength = clip.getLoopLength();
       final double duration = loopLength.get();
 
@@ -296,7 +298,7 @@ abstract class AbstractSequencerMode extends Mode
 
    protected void setClipLength(final double lengthInBars)
    {
-      final Clip cursorClip = mDriver.getCursorClip();
+      final Clip cursorClip = mDriver.mCursorClip;
       cursorClip.getPlayStart().set(0);
       cursorClip.getPlayStop().set(lengthInBars);
       cursorClip.getLoopStart().set(0);

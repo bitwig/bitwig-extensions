@@ -3,13 +3,13 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 
-class TrackSelectOverlay extends Overlay
+final class TrackSelectOverlay extends Overlay
 {
    TrackSelectOverlay(final LaunchpadProControllerExtension driver)
    {
       super(driver, "track-select");
 
-      final TrackBank trackBank = driver.getTrackBank();
+      final TrackBank trackBank = driver.mTrackBank;
       for (int x = 0; x < 8; ++x)
       {
          final int X = x;
@@ -23,6 +23,6 @@ class TrackSelectOverlay extends Overlay
          }, button);
       }
 
-      bindLightState(LedState.TRACK, driver.getSelectButton());
+      bindLightState(LedState.TRACK, driver.mSelectButton);
    }
 }
