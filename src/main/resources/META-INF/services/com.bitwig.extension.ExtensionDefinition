@@ -9,6 +9,7 @@ com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab61ControllerEx
 com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab88ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.essential.ArturiaKeylabEssential49ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.essential.ArturiaKeylabEssential61ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.microlab.ArturiaMicroLabControllerExtensionDefinition
 
 com.bitwig.extensions.controllers.bajaao.EDrumControllerExtensionDefinition
 
