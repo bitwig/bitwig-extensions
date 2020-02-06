@@ -116,7 +116,6 @@ public class PresonusAtom extends ControllerExtension
 
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
       mNoteInput = midiIn.createNoteInput("Pads", "80????", "90????", "a0????");
-      mNoteInput.setShouldConsumeEvents(false);
       mArpeggiator = mNoteInput.arpeggiator();
       mArpeggiator.isEnabled().markInterested();
       mArpeggiator.rate().markInterested();
