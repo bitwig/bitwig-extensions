@@ -428,7 +428,7 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mMidiIn = host.getMidiInPort(0);
       mMidiOut = host.getMidiOutPort(0);
 
-      mNoteInput = mMidiIn.createNoteInput("Input", "8?????", "9?????", "A?????", "D?????", "E?????");
+      mNoteInput = mMidiIn.createNoteInput("Input", "8?????", "9?????", "D?????", "E?????");
       mNoteInput.setShouldConsumeEvents(true);
       mNoteInput.setKeyTranslationTable(FILTER_ALL_NOTE_MAP);
       mNoteInput.includeInAllInputs().markInterested();
