@@ -336,6 +336,7 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mCursorClip.getLoopStart().markInterested();
       mCursorClip.getLoopLength().markInterested();
       mCursorClip.playingStep().markInterested();
+      mCursorClip.getTrack().playingNotes().markInterested();
       final ClipLauncherSlot cursorClipSlot = mCursorClip.clipLauncherSlot();
       cursorClipSlot.sceneIndex().markInterested();
 
