@@ -16,6 +16,7 @@ import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.Track;
+import com.bitwig.extensions.util.NoteInputUtils;
 
 final class DrumSequencerMode extends AbstractSequencerMode
 {
@@ -409,7 +410,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
             mDriver.mDrumPadBank.clearMutedPads();
          if (mDriver.isDeleteOn() && x == 2 && y == 0)
             mDriver.mDrumPadBank.clearSoloedPads();
-         mDriver.mNoteInput.setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
+         mDriver.mNoteInput.setKeyTranslationTable(NoteInputUtils.NO_NOTES);
       }
       else if (y == 1)
       {
