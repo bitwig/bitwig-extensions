@@ -37,13 +37,11 @@ public class ArturiaMicroLabControllerExtension extends ControllerExtension
    @Override
    public void exit()
    {
-
    }
 
    @Override
    public void flush()
    {
-
    }
 
    private MidiIn mMidiInput;

@@ -15,6 +15,7 @@ import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
+import com.bitwig.extension.controller.api.EnumValueDefinition;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
@@ -42,21 +43,10 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.MusicalScale;
 import com.bitwig.extensions.framework.MusicalScaleLibrary;
+import com.bitwig.extensions.util.NoteInputUtils;
 
 final class LaunchpadProControllerExtension extends ControllerExtension
 {
-   /* Helper used to prevent Bitwig Studio from receiving MIDI notes. */
-   public static final Integer[] FILTER_ALL_NOTE_MAP = {
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-   };
-
    private final double PHYSICAL_DEVICE_WIDTH = 260;
    private final double PHYSICAL_BUTTON_WIDTH = 20;
    private final double PHYSICAL_BUTTON_SPACE = 4;
@@ -346,6 +336,7 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mCursorClip.getLoopStart().markInterested();
       mCursorClip.getLoopLength().markInterested();
       mCursorClip.playingStep().markInterested();
+      mCursorClip.getTrack().playingNotes().markInterested();
       final ClipLauncherSlot cursorClipSlot = mCursorClip.clipLauncherSlot();
       cursorClipSlot.sceneIndex().markInterested();
 
@@ -413,7 +404,8 @@ final class LaunchpadProControllerExtension extends ControllerExtension
 
       final String ARP_CATEGORY = "Arpeggiator";
 
-      mArpModeSetting = mDocumentState.getEnumSetting("Mode", ARP_CATEGORY, mArpeggiator.mode().enumDefinition(), "flow");
+      final EnumValueDefinition flowEnumValue = mArpeggiator.mode().enumDefinition().valueDefinitionFor("flow");
+      mArpModeSetting = mDocumentState.getEnumSetting("Mode", ARP_CATEGORY, flowEnumValue);
       mArpModeSetting.markInterested();
 
       mArpOctaveSetting = mDocumentState.getNumberSetting("Octave", ARP_CATEGORY, 0, 4, 1, "", 1);
@@ -426,9 +418,8 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mMidiIn = host.getMidiInPort(0);
       mMidiOut = host.getMidiOutPort(0);
 
-      mNoteInput = mMidiIn.createNoteInput("Input", "??????");
-      mNoteInput.setShouldConsumeEvents(false);
-      mNoteInput.setKeyTranslationTable(FILTER_ALL_NOTE_MAP);
+      mNoteInput = mMidiIn.createNoteInput("Input", "8?????", "9?????", "A?????", "D?????", "E?????");
+      mNoteInput.setKeyTranslationTable(NoteInputUtils.NO_NOTES);
       mNoteInput.includeInAllInputs().markInterested();
 
       mNoteLatch = mNoteInput.noteLatch();
@@ -445,6 +436,7 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mArpeggiator.usePressureToVelocity().markInterested();
       mArpeggiator.shuffle().markInterested();
       mArpeggiator.isFreeRunning().markInterested();
+      mArpeggiator.humanize().markInterested();
 
       /* select the programmer layout */
       mMidiOut.sendSysex("F0 00 20 29 02 10 2C 03 F7");
@@ -655,7 +647,7 @@ final class LaunchpadProControllerExtension extends ControllerExtension
 
    void updateKeyTranslationTable()
    {
-      final Integer[] table = FILTER_ALL_NOTE_MAP.clone();
+      final Integer[] table = NoteInputUtils.NO_NOTES.clone();
       mCurrentMode.updateKeyTranslationTable(table);
       if (mBottomOverlay != null)
          mBottomOverlay.updateKeyTranslationTable(table);

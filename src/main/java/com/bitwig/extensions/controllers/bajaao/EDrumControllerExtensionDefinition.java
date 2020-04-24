@@ -74,9 +74,6 @@ public class EDrumControllerExtensionDefinition extends ControllerExtensionDefin
       switch (platformType)
       {
          case WINDOWS:
-            list.add(new String[] { "E-DRUM" }, new String[0]);
-            list.add(new String[] { "E-DRUMS" }, new String[0]);
-            break;
          case MAC:
             list.add(new String[] { "E-DRUM" }, new String[0]);
             list.add(new String[] { "E-DRUMS" }, new String[0]);

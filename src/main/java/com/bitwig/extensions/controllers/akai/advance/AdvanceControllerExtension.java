@@ -27,10 +27,10 @@ public class AdvanceControllerExtension extends ControllerExtension
       mMidiIn.setMidiCallback(this::onMiniIn);
       mMidiIn.setSysexCallback(this::onSysexIn);
 
-      mKeyboardInput = mMidiIn.createNoteInput("Keyboard", "80????", "90????");
+      mKeyboardInput = mMidiIn.createNoteInput("Keyboard", "80????", "90????", "B001??", "B00B??", "B040??", "D0????", "E0????");
       mKeyboardInput.setShouldConsumeEvents(true);
 
-      mPadInput = mMidiIn.createNoteInput("Pads", "89????", "99????");
+      mPadInput = mMidiIn.createNoteInput("Pads", "89????", "99????", "B901??", "B90B??", "B940??", "D9????", "E9????");
       mPadInput.setShouldConsumeEvents(true);
 
       mMidiOut = host.getMidiOutPort(0);

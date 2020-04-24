@@ -16,6 +16,7 @@ import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
 import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.Track;
+import com.bitwig.extensions.util.NoteInputUtils;
 
 final class DrumSequencerMode extends AbstractSequencerMode
 {
@@ -23,7 +24,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       super(driver, "drum-sequencer");
 
-      final CursorTrack cursorTrack = driver.mCursorTrack;
       final PinnableCursorClip cursorClip = driver.mCursorClip;
 
       mShiftLayer = new LaunchpadLayer(driver, "drum-sequencer-shift");
@@ -409,7 +409,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
             mDriver.mDrumPadBank.clearMutedPads();
          if (mDriver.isDeleteOn() && x == 2 && y == 0)
             mDriver.mDrumPadBank.clearSoloedPads();
-         mDriver.mNoteInput.setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
+         mDriver.mNoteInput.setKeyTranslationTable(NoteInputUtils.NO_NOTES);
       }
       else if (y == 1)
       {
@@ -444,6 +444,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
          arpeggiator.mode().set("all"); // that's the note repeat way
          arpeggiator.octaves().set(0);
          arpeggiator.isEnabled().set(true);
+         arpeggiator.humanize().set(0);
+         arpeggiator.isFreeRunning().set(false);
 
          mNoteRepeatStack.add(new Coord(x, y));
       }

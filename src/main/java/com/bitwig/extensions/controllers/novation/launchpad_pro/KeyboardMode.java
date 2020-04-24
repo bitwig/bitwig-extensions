@@ -6,6 +6,7 @@ import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.NoteLatch;
 import com.bitwig.extension.controller.api.PlayingNoteArrayValue;
 import com.bitwig.extension.controller.api.SettableIntegerValue;
+import com.bitwig.extensions.util.NoteInputUtils;
 
 final class KeyboardMode extends Mode
 {
@@ -80,7 +81,7 @@ final class KeyboardMode extends Mode
    {
       mConfigLayer.deactivate();
       mKeyboardLayer.deactivate();
-      mDriver.mNoteInput.setKeyTranslationTable(LaunchpadProControllerExtension.FILTER_ALL_NOTE_MAP);
+      mDriver.mNoteInput.setKeyTranslationTable(NoteInputUtils.NO_NOTES);
 
       final CursorTrack cursorTrack = mDriver.mCursorTrack;
       cursorTrack.playingNotes().unsubscribe();

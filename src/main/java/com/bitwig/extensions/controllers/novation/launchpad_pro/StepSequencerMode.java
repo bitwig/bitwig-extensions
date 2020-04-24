@@ -15,11 +15,10 @@ final class StepSequencerMode extends AbstractSequencerMode
    {
       super(driver, "step-sequencer");
 
-      final CursorTrack cursorTrack = driver.mCursorTrack;
       final PinnableCursorClip cursorClip = driver.mCursorClip;
 
       mKeyboardLayer = new KeyboardLayer(driver, "step-sequencer-keyboard", 0, 0, 8, 4,
-         () -> new Color(mDriver.mCursorTrack.color()), this::isKeyOn, this::onKeyDataPressed);
+         () -> new Color(mDriver.mCursorClip.color()), this::isKeyOn, this::onKeyDataPressed);
       mMixDataLayer = new LaunchpadLayer(driver, "drum-seq-mix-data");
       mSoundDataLayer = new LaunchpadLayer(driver, "drum-seq-sound-data");
 
@@ -106,14 +105,16 @@ final class StepSequencerMode extends AbstractSequencerMode
    {
       super.doActivate();
 
-      final Track track = mDriver.mCursorTrack;
+      mDriver.mCursorClip.subscribe();
+      mDriver.mCursorClip.color().subscribe();
+
+      final Track track = mDriver.mCursorClip.getTrack();
       track.subscribe();
+      track.playingNotes().subscribe();
 
-      final SettableColorValue trackColor = track.color();
-      trackColor.subscribe();
-
-      track.selectInMixer();
       mKeyboardLayer.activate();
+
+      mStepPressedCount = 0;
    }
 
    @Override
@@ -121,11 +122,14 @@ final class StepSequencerMode extends AbstractSequencerMode
    {
       deactivateEveryLayers();
 
-      final Track track = mDriver.mCursorTrack;
+      final Track track = mDriver.mCursorClip.getTrack();
+      track.playingNotes().unsubscribe();
       track.unsubscribe();
 
-      final SettableColorValue trackColor = track.color();
-      trackColor.unsubscribe();
+      mDriver.mCursorClip.color().unsubscribe();
+      mDriver.mCursorClip.unsubscribe();
+
+      mStepPressedCount = 0;
 
       super.doDeactivate();
    }
@@ -141,7 +145,7 @@ final class StepSequencerMode extends AbstractSequencerMode
    @Override
    void updateKeyTranslationTable(final Integer[] table)
    {
-      if (mDataMode == DataMode.Main)
+      if (mDataMode == DataMode.Main && mStepPressedCount == 0)
          mKeyboardLayer.updateKeyTranslationTable(table);
 
       mDriver.mNoteInput.setKeyTranslationTable(table);
@@ -164,7 +168,7 @@ final class StepSequencerMode extends AbstractSequencerMode
    {
       assert key >= 0 && key < 127;
 
-      if (mDriver.mCursorTrack.playingNotes().isNotePlaying(key))
+      if (mDriver.mCursorClip.getTrack().playingNotes().isNotePlaying(key))
          return true;
 
       final Clip cursorClip = mDriver.mCursorClip;
@@ -325,11 +329,19 @@ final class StepSequencerMode extends AbstractSequencerMode
          setClipLength((absoluteStep + 1) / 4.0);
       else if (mDriver.isDeleteOn())
          cursorClip.clearStepsAtX(0, absoluteStep);
+
+      ++mStepPressedCount;
+      if (mStepPressedCount == 1)
+         invalidate();
    }
 
    private void onStepReleased(final int absoluteStep, final boolean wasHeld)
    {
       final Clip cursorClip = mDriver.mCursorClip;
+
+      --mStepPressedCount;
+      if (mStepPressedCount == 1)
+         invalidate();
 
       if (mDriver.isShiftOn() || mDriver.isDeleteOn())
          return;
@@ -387,4 +399,5 @@ final class StepSequencerMode extends AbstractSequencerMode
    private final KeyboardLayer mKeyboardLayer;
    private final LaunchpadLayer mMixDataLayer;
    private final LaunchpadLayer mSoundDataLayer;
+   private int mStepPressedCount = 0;
 }
