@@ -121,19 +121,18 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          }
       }
 
-      // We would need a multi-channel or multi-function hardware controls to make it clean
       mHardwareSurface = mHost.createHardwareSurface();
-      final int knobOffets[] = { 13, 29, 49};
+      final int knobOffsets[] = { 13, 29, 49};
       for (int i = 0; i < 8; ++i)
       {
          for (int j = 0; j < 3; ++j)
          {
             final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("knob-" + i + "-" + j);
-            knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, knobOffets[j] + i));
+            knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(knobOffsets[j] + i));
             mHardwareKnobs[8 * j + i] = knob;
          }
          mHardwareSliders[i] = mHardwareSurface.createHardwareSlider("slider-" + i);
-         mHardwareSliders[i].setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, 77 + i));
+         mHardwareSliders[i].setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(77 + i));
       }
    }
 
