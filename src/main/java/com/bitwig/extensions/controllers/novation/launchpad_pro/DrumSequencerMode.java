@@ -24,7 +24,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       super(driver, "drum-sequencer");
 
-      final CursorTrack cursorTrack = driver.mCursorTrack;
       final PinnableCursorClip cursorClip = driver.mCursorClip;
 
       mShiftLayer = new LaunchpadLayer(driver, "drum-sequencer-shift");
@@ -445,6 +444,8 @@ final class DrumSequencerMode extends AbstractSequencerMode
          arpeggiator.mode().set("all"); // that's the note repeat way
          arpeggiator.octaves().set(0);
          arpeggiator.isEnabled().set(true);
+         arpeggiator.humanize().set(0);
+         arpeggiator.isFreeRunning().set(false);
 
          mNoteRepeatStack.add(new Coord(x, y));
       }

@@ -12,6 +12,13 @@ This controller extension brings the following features to the controller:
     - Arm/Solo/Mute and Track select
     - Volume/Pan/Sends control
 
+## Device Setup
+
+You should configure your launchpad as follow:
+ - Press the setup button
+ - Choose the programmer mode
+ - Select Polyphonic after touch
+
 ## Global Functions
 
 |Function|How|

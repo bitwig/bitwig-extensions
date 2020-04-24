@@ -418,7 +418,7 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mMidiIn = host.getMidiInPort(0);
       mMidiOut = host.getMidiOutPort(0);
 
-      mNoteInput = mMidiIn.createNoteInput("Input", "8?????", "9?????", "D?????", "E?????");
+      mNoteInput = mMidiIn.createNoteInput("Input", "8?????", "9?????", "A?????", "D?????", "E?????");
       mNoteInput.setKeyTranslationTable(NoteInputUtils.NO_NOTES);
       mNoteInput.includeInAllInputs().markInterested();
 
@@ -436,6 +436,7 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mArpeggiator.usePressureToVelocity().markInterested();
       mArpeggiator.shuffle().markInterested();
       mArpeggiator.isFreeRunning().markInterested();
+      mArpeggiator.humanize().markInterested();
 
       /* select the programmer layout */
       mMidiOut.sendSysex("F0 00 20 29 02 10 2C 03 F7");
