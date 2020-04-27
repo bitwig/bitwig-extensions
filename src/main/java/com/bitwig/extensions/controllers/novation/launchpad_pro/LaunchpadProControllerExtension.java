@@ -461,7 +461,6 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mTrackBank.canScrollChannelsUp().markInterested();
 
       mSceneBank = mTrackBank.sceneBank();
-      mSceneBank.setSkipDisabledItems(true);
       mSceneBank.canScrollBackwards().markInterested();
       mSceneBank.canScrollForwards().markInterested();
       mSceneBank.itemCount().markInterested();
@@ -487,6 +486,7 @@ final class LaunchpadProControllerExtension extends ControllerExtension
          clipLauncherSlots.setIndication(false);
 
          final SendBank sendBank = channel.sendBank();
+         sendBank.setSkipDisabledItems(true);
 
          for (int j = 0; j < 8; ++j)
          {
