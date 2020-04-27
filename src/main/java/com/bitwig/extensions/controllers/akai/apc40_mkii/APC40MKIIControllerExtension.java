@@ -215,6 +215,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 4);
 
       mTrackBank = host.createTrackBank(8, 5, 5, false);
+      mTrackBank.setSkipDisabledItems(true);
+
       mSceneBank = mTrackBank.sceneBank();
       mSceneBank.setIndication(true);
 
@@ -225,7 +227,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final Scene scene = mSceneBank.getScene(j);
          scene.exists().markInterested();
          scene.color().markInterested();
-
       }
 
       for (int i = 0; i < 8; ++i)
@@ -237,6 +238,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final Track track = mTrackBank.getItemAt(i);
          final SendBank sendBank = track.sendBank();
+         sendBank.setSkipDisabledItems(true);
+
          final ClipLauncherSlotBank clipLauncher = track.clipLauncherSlotBank();
          clipLauncher.setIndication(true);
 
@@ -281,6 +284,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mSendTrackBank = host.createEffectTrackBank(5, 0);
+      mSendTrackBank.setSkipDisabledItems(true);
       for (int i = 0; i < 5; ++i)
       {
          final Track sendTrack = mSendTrackBank.getItemAt(i);

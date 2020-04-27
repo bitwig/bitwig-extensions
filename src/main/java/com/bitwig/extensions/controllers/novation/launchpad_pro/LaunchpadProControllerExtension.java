@@ -456,11 +456,14 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mTrackBank = getHost().createTrackBank(8, 8, 8, true);
       mTrackBank.followCursorTrack(mCursorTrack);
       mTrackBank.cursorIndex().markInterested();
-      mSceneBank = mTrackBank.sceneBank();
-      mSceneBank.canScrollBackwards().markInterested();
-      mSceneBank.canScrollForwards().markInterested();
+      mTrackBank.setSkipDisabledItems(true);
       mTrackBank.canScrollChannelsDown().markInterested();
       mTrackBank.canScrollChannelsUp().markInterested();
+
+      mSceneBank = mTrackBank.sceneBank();
+      mSceneBank.setSkipDisabledItems(true);
+      mSceneBank.canScrollBackwards().markInterested();
+      mSceneBank.canScrollForwards().markInterested();
       mSceneBank.itemCount().markInterested();
 
       for (int i = 0; i < 8; ++i)
