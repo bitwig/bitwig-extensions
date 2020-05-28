@@ -12,18 +12,17 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extension.controller.api.UserControlBank;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.LayerGroup;
 import com.bitwig.extensions.framework.Layers;
 
-class VCMC extends ControllerExtension
+class BefacoVCMC extends ControllerExtension
 {
    private static final String DEVICE_MODE_NAME = "Device";
 
    private static final String MIXER_MODE_NAME = "Mixer";
 
-   public VCMC(final VCMCDefinition definition, final ControllerHost host)
+   public BefacoVCMC(final BefacoVCMCDefinition definition, final ControllerHost host)
    {
       super(definition, host);
    }
@@ -68,11 +67,8 @@ class VCMC extends ControllerExtension
 
       mTrackBank = host.createTrackBank(8, 0, 0);
 
-      mUserControlBank = host.createUserControls(8 + 2);
-
       // Create layers and bindings
 
-      createBaseLayer();
       createDeviceLayer();
       createMixerLayer();
 
@@ -101,21 +97,6 @@ class VCMC extends ControllerExtension
       }
 
       mDeviceLayer = layer;
-   }
-
-   private void createBaseLayer()
-   {
-      final Layer layer = new Layer(mLayers, "Base");
-
-      for (int i = 0; i < 8; i++)
-      {
-         layer.bind(mCVInputs[i], mUserControlBank.getControl(i));
-      }
-
-      layer.bind(mAuxA, mUserControlBank.getControl(8));
-      layer.bind(mAuxB, mUserControlBank.getControl(9));
-
-      layer.activate();
    }
 
    private void createMixerLayer()
@@ -214,8 +195,6 @@ class VCMC extends ControllerExtension
    private CursorRemoteControlsPage mRemoteControls;
 
    private TrackBank mTrackBank;
-
-   private UserControlBank mUserControlBank;
 
    private final Layers mLayers = new Layers(this);
 

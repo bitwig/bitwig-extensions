@@ -7,7 +7,7 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class VCMCDefinition extends ControllerExtensionDefinition
+public class BefacoVCMCDefinition extends ControllerExtensionDefinition
 {
    @Override
    public String getHardwareVendor()
@@ -51,9 +51,9 @@ public class VCMCDefinition extends ControllerExtensionDefinition
    }
 
    @Override
-   public VCMC createInstance(final ControllerHost host)
+   public BefacoVCMC createInstance(final ControllerHost host)
    {
-      return new VCMC(this, host);
+      return new BefacoVCMC(this, host);
    }
 
    @Override
