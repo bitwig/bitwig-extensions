@@ -136,7 +136,7 @@ class VCMC extends ControllerExtension
 
       final MidiIn midiIn = getHost().getMidiInPort(0);
 
-      knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(14 + index));
+      knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 14 + index));
 
       return knob;
    }
@@ -148,7 +148,7 @@ class VCMC extends ControllerExtension
 
       final MidiIn midiIn = getHost().getMidiInPort(0);
 
-      knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(isA ? 32 : 33));
+      knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, isA ? 32 : 33));
 
       return knob;
    }
@@ -159,7 +159,7 @@ class VCMC extends ControllerExtension
 
       final MidiIn midiIn = getHost().getMidiInPort(0);
 
-      slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(23 + index));
+      slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 23 + index));
       slider.setLabel(String.valueOf(index + 1));
 
       return slider;
