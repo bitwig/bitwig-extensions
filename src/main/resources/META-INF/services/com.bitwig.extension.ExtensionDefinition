@@ -13,6 +13,8 @@ com.bitwig.extensions.controllers.arturia.microlab.ArturiaMicroLabControllerExte
 
 com.bitwig.extensions.controllers.bajaao.EDrumControllerExtensionDefinition
 
+com.bitwig.extensions.controllers.befaco.VCMCDefinition
+
 com.bitwig.extensions.controllers.devine.EzCreatorFadeDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorKeyDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorPadDefinition
