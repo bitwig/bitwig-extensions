@@ -134,6 +134,8 @@ class VCMC extends ControllerExtension
    {
       final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("CV" + (index + 1));
 
+      knob.disableTakeOver();
+
       final MidiIn midiIn = getHost().getMidiInPort(0);
 
       knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 14 + index));
@@ -145,6 +147,8 @@ class VCMC extends ControllerExtension
    {
       final AbsoluteHardwareKnob knob = mHardwareSurface
          .createAbsoluteHardwareKnob("Aux" + (isA ? "A" : "B"));
+
+      knob.disableTakeOver();
 
       final MidiIn midiIn = getHost().getMidiInPort(0);
 
