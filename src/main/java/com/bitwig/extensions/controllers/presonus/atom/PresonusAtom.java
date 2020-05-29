@@ -757,7 +757,7 @@ public class PresonusAtom extends ControllerExtension
 
       final Color offColor = Color.mix(onLightColor, Color.blackColor(), 0.5);
 
-      light.setStateToVisualStateFuncation(
+      light.setStateToVisualStateFunction(
          isOn -> isOn ? HardwareLightVisualState.createForColor(onLightColor, Color.blackColor())
             : HardwareLightVisualState.createForColor(offColor, Color.blackColor()));
 
