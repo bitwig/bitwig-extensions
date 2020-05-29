@@ -89,7 +89,19 @@ class BefacoVCMC extends ControllerExtension
 
    private void createDeviceLayer()
    {
-      final Layer layer = new Layer(mLayers, "Device");
+      final Layer layer = new Layer(mLayers, "Device")
+      {
+         @Override
+         protected void isActiveChanged()
+         {
+            super.isActiveChanged();
+
+            for (int i = 0; i < 8; i++)
+            {
+               mRemoteControls.getParameter(i).setIndication(isActive());
+            }
+         }
+      };
 
       for (int i = 0; i < 8; i++)
       {
@@ -101,7 +113,19 @@ class BefacoVCMC extends ControllerExtension
 
    private void createMixerLayer()
    {
-      final Layer layer = new Layer(mLayers, "Device");
+      final Layer layer = new Layer(mLayers, "Mixer")
+      {
+         @Override
+         protected void isActiveChanged()
+         {
+            super.isActiveChanged();
+
+            for (int i = 0; i < 8; i++)
+            {
+               mTrackBank.getItemAt(i).volume().setIndication(isActive());
+            }
+         }
+      };
 
       for (int i = 0; i < 8; i++)
       {

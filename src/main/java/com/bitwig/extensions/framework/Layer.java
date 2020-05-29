@@ -400,6 +400,8 @@ public class Layer
       {
          mIsActive = isActive;
 
+         isActiveChanged();
+
          if (isActive)
             onActivate();
          else
@@ -423,6 +425,10 @@ public class Layer
    public final void deactivate()
    {
       setIsActive(false);
+   }
+
+   protected void isActiveChanged()
+   {
    }
 
    protected void onActivate()
