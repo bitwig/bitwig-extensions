@@ -333,7 +333,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
       final HardwareSlider fader = mHardwareSurface.createHardwareSlider("fader" + (channel + 1));
 
       fader.setAdjustValueMatcher(mMidiIn.createAbsolutePitchBendValueMatcher(channel));
-
+      fader.setIndexInGroup(channel);
       fader.beginTouchAction().setActionMatcher(
          mMidiIn.createActionMatcher("status == 0x90 && data1 == " + (0x68 + channel) + " && data2 > 0"));
       fader.endTouchAction().setActionMatcher(
@@ -852,8 +852,11 @@ public abstract class PresonusFaderPort extends ControllerExtension
          final int channelNumber = index + 1;
 
          solo = createToggleButton("solo" + channelNumber, SOLOD_IDS[index]);
+         solo.setIndexInGroup(index);
          mute = createToggleButton("mute" + channelNumber, (index >= 8 ? 0x70 : 0x10) + index);
+         mute.setIndexInGroup(index);
          select = createRGBButton("select" + channelNumber, SELECT_IDS[index]);
+         select.setIndexInGroup(index);
          motorFader = createMotorFader(index);
          display = new Display(index, mSysexHeader, PresonusFaderPort.this);
       }

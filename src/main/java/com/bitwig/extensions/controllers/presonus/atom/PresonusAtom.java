@@ -864,6 +864,7 @@ public class PresonusAtom extends ControllerExtension
       final RelativeHardwareKnob encoder = mHardwareSurface
          .createRelativeHardwareKnob("encoder" + (index + 1));
       encoder.setLabel(String.valueOf(index + 1));
+      encoder.setIndexInGroup(index);
       encoder.setAdjustValueMatcher(mMidiIn.createRelativeSignedBitCCValueMatcher(0, CC_ENCODER_1 + index, 50));
 
       mEncoders[index] = encoder;

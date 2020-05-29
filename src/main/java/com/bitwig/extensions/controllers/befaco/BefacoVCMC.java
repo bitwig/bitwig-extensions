@@ -89,19 +89,7 @@ class BefacoVCMC extends ControllerExtension
 
    private void createDeviceLayer()
    {
-      final Layer layer = new Layer(mLayers, "Device")
-      {
-         @Override
-         protected void isActiveChanged()
-         {
-            super.isActiveChanged();
-
-            for (int i = 0; i < 8; i++)
-            {
-               mRemoteControls.getParameter(i).setIndication(isActive());
-            }
-         }
-      };
+      final Layer layer = new Layer(mLayers, "Device");
 
       for (int i = 0; i < 8; i++)
       {
@@ -113,19 +101,7 @@ class BefacoVCMC extends ControllerExtension
 
    private void createMixerLayer()
    {
-      final Layer layer = new Layer(mLayers, "Mixer")
-      {
-         @Override
-         protected void isActiveChanged()
-         {
-            super.isActiveChanged();
-
-            for (int i = 0; i < 8; i++)
-            {
-               mTrackBank.getItemAt(i).volume().setIndication(isActive());
-            }
-         }
-      };
+      final Layer layer = new Layer(mLayers, "Mixer");
 
       for (int i = 0; i < 8; i++)
       {
@@ -144,6 +120,7 @@ class BefacoVCMC extends ControllerExtension
       final MidiIn midiIn = getHost().getMidiInPort(0);
 
       knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 14 + index));
+      knob.setIndexInGroup(index);
 
       return knob;
    }
@@ -170,6 +147,7 @@ class BefacoVCMC extends ControllerExtension
 
       slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 23 + index));
       slider.setLabel(String.valueOf(index + 1));
+      slider.setIndexInGroup(index);
 
       return slider;
    }

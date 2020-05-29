@@ -84,12 +84,14 @@ public class SLMixfaceExtension extends ControllerExtension
          final double x = 13 + i * 20;
 
          final AbsoluteHardwareKnob panKnob = surface.createAbsoluteHardwareKnob("pan" + (i + 1));
+         panKnob.setIndexInGroup(i);
          panKnob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 2 + i));
          final String panLabel = "Pan" + (i + 1);
          panKnob.setLabel(panLabel);
          mPanKnobs[i] = panKnob;
 
          final HardwareSlider slider = surface.createHardwareSlider("volume" + (i + 1));
+         slider.setIndexInGroup(i);
          slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 16 + i));
          final String volLabel = "Volume " + (i + 1);
          slider.setLabel(volLabel);
@@ -98,6 +100,7 @@ public class SLMixfaceExtension extends ControllerExtension
          // Create the arm button
 
          final HardwareButton armButton = createButton("arm" + (i + 1));
+         armButton.setIndexInGroup(i);
          final int armCC = 48 + i;
          armButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 127));
          armButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, armCC, 0));
@@ -119,6 +122,7 @@ public class SLMixfaceExtension extends ControllerExtension
          // Create the mute button
 
          final HardwareButton muteButton = createButton("mute" + (i + 1));
+         muteButton.setIndexInGroup(i);
          final int muteCC = 64 + i;
          muteButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, muteCC, 127));
          muteButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, muteCC, 0));
@@ -137,6 +141,7 @@ public class SLMixfaceExtension extends ControllerExtension
          // Create the solo button
 
          final HardwareButton soloButton = createButton("solo" + (i + 1));
+         soloButton.setIndexInGroup(i);
          final int soloCC = 80 + i;
          soloButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, soloCC, 127));
          soloButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, soloCC, 0));
@@ -155,6 +160,7 @@ public class SLMixfaceExtension extends ControllerExtension
          // Create the select button
 
          final HardwareButton selectButton = createButton("select" + (i + 1));
+         selectButton.setIndexInGroup(i);
          final int selectCC = 96 + i;
          selectButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(15, selectCC, 127));
          selectButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(15, selectCC, 0));
