@@ -22,7 +22,7 @@ import com.bitwig.extensions.framework.Layers;
 
 public class XControllerExtension extends ControllerExtension
 {
-   static final int REQUIRED_API_VERSION = 10;
+   static final int REQUIRED_API_VERSION = 11;
 
    public XControllerExtension(
       final ControllerExtensionDefinition definition,
