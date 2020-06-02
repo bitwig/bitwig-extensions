@@ -174,7 +174,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mMasterTrack = host.createMasterTrack(5);
       mMasterTrack.isStopped().markInterested();
-      mMasterTrack.volume().setIndication(true);
 
       mTrackCursor = host.createCursorTrack(8, 0);
       mTrackCursor.exists().markInterested();
@@ -218,7 +217,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTrackBank.setSkipDisabledItems(true);
 
       mSceneBank = mTrackBank.sceneBank();
-      mSceneBank.setIndication(true);
 
       mTrackBank.cursorIndex().markInterested();
 
@@ -269,13 +267,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          track.isStopped().markInterested();
          track.pan().markInterested();
          track.pan().exists().markInterested();
-         track.volume().setIndication(true);
 
          mIsTrackSelected[i] = mTrackCursor.createEqualsValue(track);
          mIsTrackSelected[i].markInterested();
 
          final RemoteControl parameter = mRemoteControls.getParameter(i);
-         parameter.setIndication(true);
          parameter.markInterested();
          parameter.exists().markInterested();
 
@@ -931,6 +927,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackStop-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_STOP));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_STOP));
+         bt.setIndexInGroup(x);
          mTrackStopButtons[x] = bt;
 
          final int channel = x;
@@ -961,6 +958,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_SELECT));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_SELECT));
+         bt.setIndexInGroup(x);
          mTrackSelectButtons[x] = bt;
 
          final int channel = x;
@@ -1025,6 +1023,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          bt.setLabel("\u25CF");
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_ARM));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_ARM));
+         bt.setIndexInGroup(x);
          mArmButtons[x] = bt;
 
          final int channel = x;
@@ -1046,6 +1045,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_SOLO));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_SOLO));
          bt.setLabel("S");
+         bt.setIndexInGroup(x);
          mSoloButtons[x] = bt;
 
          final int channel = x;
@@ -1067,6 +1067,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_MUTE));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_MUTE));
          bt.setLabel(String.valueOf(x + 1));
+         bt.setIndexInGroup(x);
          mMuteButtons[x] = bt;
 
          final int channel = x;
@@ -1116,6 +1117,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          final HardwareSlider slider = mHardwareSurface.createHardwareSlider("TrackVolumeFader-" + i);
          slider.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(i, CC_TRACK_VOLUME));
+         slider.setIndexInGroup(i);
 
          mTrackVolumeSliders[i] = slider;
       }
@@ -1145,6 +1147,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          knob.isUpdatingTargetValue().markInterested();
          knob.hasTargetValue().addValueObserver(newValue -> updateTopControlRing(I));
          knob.targetValue().addValueObserver(newValue -> updateTopControlRing(I));
+         knob.setIndexInGroup(i);
          mTopControlKnobs[i] = knob;
       }
 
@@ -1210,6 +1213,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          knob.targetValue().addValueObserver(newValue -> updateDeviceControlRing(I));
          knob.setLabel(String.valueOf(i + 1));
          knob.setLabelPosition(RelativePosition.BELOW);
+         knob.setIndexInGroup(i);
 
          mDeviceControlKnobs[i] = knob;
       }
@@ -1461,48 +1465,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       if (topMode == TopMode.SENDS && mControlSendEffectSetting.get())
          mTrackCursor.selectChannel(mSendTrackBank.getItemAt(mSendIndex));
-
-      updateTopIndications();
-   }
-
-   private void updateTopIndications()
-   {
-      updatePanIndication(mTopMode == TopMode.PAN);
-      updateSendIndication(mTopMode == TopMode.SENDS ? mSendIndex : -1);
-      updateChannelStripIndication(mTopMode == TopMode.CHANNEL_STRIP);
-   }
-
-   private void updateChannelStripIndication(final boolean shouldIndicate)
-   {
-      for (int i = 0; i < CHANNEL_STRIP_NUM_PARAMS; ++i)
-         mChannelStripRemoteControls.getParameter(i).setIndication(shouldIndicate);
-
-      for (int i = 0; i < CHANNEL_STRIP_NUM_SENDS; ++i)
-         mTrackCursor.sendBank().getItemAt(i).setIndication(shouldIndicate);
-   }
-
-   private void updatePanIndication(final boolean shouldIndicate)
-   {
-      for (int i = 0; i < 8; ++i)
-      {
-         final Track track = mTrackBank.getItemAt(i);
-         track.pan().setIndication(track.exists().get() && shouldIndicate);
-      }
-   }
-
-   private void updateSendIndication(final int sendIndex)
-   {
-      for (int i = 0; i < 8; ++i)
-      {
-         final Track track = mTrackBank.getItemAt(i);
-         final SendBank sendBank = track.sendBank();
-         for (int j = 0; j < 5; ++j)
-         {
-            final Send send = sendBank.getItemAt(j);
-            final boolean shouldIndicate = sendIndex == j && send.exists().get();
-            send.setIndication(shouldIndicate);
-         }
-      }
    }
 
    private void onSysexIn(final String sysex)

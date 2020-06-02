@@ -54,7 +54,7 @@ public class SLMixfaceExtensionDefinition extends ControllerExtensionDefinition
    @Override
    public int getRequiredAPIVersion()
    {
-      return 10;
+      return 11;
    }
 
    @Override
