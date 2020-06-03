@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Bitwig Studio controller documentation</title>
+    <style type="text/css">
+      BODY {
+        background-color: white;
+        color: black;
+        margin: 0;
+        padding: 0;
+        float: none;
+        font: 12pt "Source Sans Pro", sans-serif;
+      }
+
+      DIV.world {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      DIV.header {
+        background-color: #1c1c1c;
+        color: #f6f6f6;
+        height: 50px;
+        position: relative;
+        top: 0;
+        left: 0;
+        width: 100%;
+        float: none;
+      }
+
+      DIV.logo {
+        width: 200px;
+        height: 100%;
+        background: url(https://www.bitwig.com/dms/bitwig/img/bitwig-logo-dots.png) no-repeat 0;
+        top: 0;
+        left: 20px;
+        position: absolute;
+      }
+
+      DIV.title {
+        position: absolute;
+        left: 220px;
+        width: 400px;
+        bottom: 12px;
+        font: 16pt "Source Sans Pro", sans-serif;
+      }
+
+      DIV.content {
+        padding: 20px;
+        margin-left: 200px;
+        color: black;
+        position: relative;
+        max-width: 100ch;
+      }
+
+      STRONG {
+        color: #00699d;
+      }
+
+      EM {
+        color: #009e61;
+      }
+
+      H1 {
+        margin: 20;
+        padding: 0;
+        position: relative;
+        font: 300 26pt 'Montserrat', sans-serif;
+      }
+
+      H2 {
+        color: #d66900;
+        margin-top: 40px;
+        margin-bottom: 10px;
+		font: bold 16pt "Source Sans Pro", sans-serif;
+      }
+
+      H3 {
+        color: #b95900;
+      }
+
+      H4 {
+        color: #9f4d00;
+      }
+
+      P {
+        color: black;
+      }
+
+      UL {
+        text-shadow: 0 0;
+        padding-left: 18px;
+      }
+
+      LI {
+        display: list-item;
+		padding: 4pt;
+      }
+
+      TABLE {
+        border-collapse: collapse
+      }
+
+      TD, TH {
+        padding: 5pt;
+        border-bottom: 1px solid grey;
+      }
+
+      TR:hover {
+        background-color: #f7f7f7;
+      }
+
+      TR:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      TH {
+        background-color: #d66900;
+        color: white;
+      }
+    </style>
+</head>
+<body>
+<div class="world">
+    <div class="header">
+        <div class="logo"></div>
+        <div class="title">Controller documentation</div>
+    </div>
+    <div class="content">
+        <h1 id="kenton-versakey-25">Kenton KillaMix Mini</h1>
+        <h2 id="pads">Controls</h2>
+        <p>This extension allows you to navigte tracks, devices and device-pages in Bitwig Studio. Knobs 1-8 control the currently
+        selected device/page macros. Knob 9 always adjusts the volume of the current track. The buttons 1-6 allow you to navigate in the following way:</p>
+        <ul>
+            <li>Buttons 1 & 2: select previous/next track</li>
+            <li>Buttons 3 & 4: select previous/next device</li>
+            <li>Buttons 5 & 6: select previous/next device-page</li>
+        </ul>
+
+        The button light indicates if the previous/next step for navigation is available.
+
+        <h2 id="keys">Setup</h2>
+        <p>In order for this integration to work, the Kenton KillaMix controller needs to be setup in a way that allows
+        Bitwig to communicate back controller values. This is achieved in the following way:</p>
+        <ul>
+            <li>Enable button toggle behavior: while the controller is on, press and hold <b>knob</b> 9 while pressing <b>knob</b> 8. Release both knobs, all encoder rings will light up to show that the button configuration mode has been entered. Press each <b>button</b> until it starts flashing. Do this for all buttons. To exit this configuration mode, press any <b>knob</b>. </li>
+            <li>Enable CC updates: while plugging in the USB cable, press <b>buttons</b> 6 and 8. Hold this for several seconds, then release the buttons. Button 9 (and potentially others) will illuminate to indicate that the configuation mode has been entered. Press <b>button</b> 3 until the <b>encoder ring</b> above it shows one lit LED (receive CC mode). Press <b>button</b> 9 to save and exit the configuration.</li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>
+

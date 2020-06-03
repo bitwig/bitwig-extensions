@@ -27,6 +27,8 @@ com.bitwig.extensions.controllers.devine.VersaKey88Definition
 
 com.bitwig.extensions.controllers.keith_mcmillen.QuNexusDefinition
 
+com.bitwig.extensions.controllers.kenton.KillaMixMiniExtensionDefinition
+
 com.bitwig.extensions.controllers.midiplus.X2MiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X3MiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X4MiniControllerExtensionDefinition
