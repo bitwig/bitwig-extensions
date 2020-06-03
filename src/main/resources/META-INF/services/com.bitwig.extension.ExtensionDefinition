@@ -17,8 +17,13 @@ com.bitwig.extensions.controllers.befaco.BefacoVCMCDefinition
 
 com.bitwig.extensions.controllers.devine.EzCreatorFadeDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorKeyDefinition
+com.bitwig.extensions.controllers.devine.EzCreatorKeyXLDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorPadDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorPlusDefinition
+com.bitwig.extensions.controllers.devine.VersaKey25Definition
+com.bitwig.extensions.controllers.devine.VersaKey49Definition
+com.bitwig.extensions.controllers.devine.VersaKey61Definition
+com.bitwig.extensions.controllers.devine.VersaKey88Definition
 
 com.bitwig.extensions.controllers.keith_mcmillen.QuNexusDefinition
 
