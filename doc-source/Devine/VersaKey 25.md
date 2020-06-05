@@ -1,4 +1,4 @@
-# Devine Ez-Creator Plus
+# Devine VersaKey 25
 
 ## Pads
 
@@ -12,6 +12,6 @@ The keys are working.
 
 They control the 1-4 remote controls of the selected device.
 
-## Faders
+## Transport
 
-They control the 5-8 remote controls of the selected device.
+The transport controls are working as indicated on the buttons.

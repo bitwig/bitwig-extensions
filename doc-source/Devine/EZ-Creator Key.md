@@ -1,4 +1,4 @@
-# Devine Ez-Creator Keys
+# Devine EZ-Creator Key
 
 Keys are working as expected.
 
