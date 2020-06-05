@@ -1,23 +1,27 @@
 package com.bitwig.extensions.controllers.kenton;
 
-import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
+import java.util.function.DoubleConsumer;
+
+import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+import com.bitwig.extension.controller.api.Channel;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
+import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.LayerGroup;
@@ -25,18 +29,27 @@ import com.bitwig.extensions.framework.Layers;
 
 public class KillaMixMiniExtension extends ControllerExtension
 {
-   private static final int NUM_KNOBS_AND_BUTTONS = 9;
-   private static final int NUM_DEVICE_KNOBS      = 8;
-   private static final int KNOB_CC_BASE          = 1;
-   private static final int BUTTON_CC_BASE        = 10;
+   private static final String DEVICE_MODE_NAME     = "Device";
+   private static final String MIXER_MODE_NAME      = "Mixer";
 
-   private static final int VOLUME_KNOB           = 8;
-   private static final int PREV_TRACK_BUTTON     = 0;
-   private static final int NEXT_TRACK_BUTTON     = 1;
-   private static final int PREV_DEVICE_BUTTON    = 2;
-   private static final int NEXT_DEVICE_BUTTON    = 3;
-   private static final int PREV_PAGE_BUTTON      = 4;
-   private static final int NEXT_PAGE_BUTTON      = 5;
+   private static final String SHOW_MODULATION      = "Show modulation";
+   private static final String SHOW_PARAMETERS      = "Show parameter only";
+
+   private static final int NUM_KNOBS_AND_BUTTONS   = 9;
+   private static final int NUM_DEVICE_KNOBS        = 8;
+   private static final int KNOB_CC_BASE            = 1;
+   private static final int BUTTON_CC_BASE          = 10;
+
+   private static final int MIXER_MODE_MASTER_KNOB  = 8;
+   private static final int DEVICE_MODE_VOLUME_KNOB = 8;
+
+   private static final int MODE_SWITCH_BUTTON      = 8;
+   private static final int PREV_TRACK_BUTTON       = 0;
+   private static final int NEXT_TRACK_BUTTON       = 1;
+   private static final int PREV_DEVICE_BUTTON      = 2;
+   private static final int NEXT_DEVICE_BUTTON      = 3;
+   private static final int PREV_PAGE_BUTTON        = 4;
+   private static final int NEXT_PAGE_BUTTON        = 5;
 
    protected KillaMixMiniExtension(final KillaMixMiniExtensionDefinition definition, final ControllerHost host)
    {
@@ -48,7 +61,7 @@ public class KillaMixMiniExtension extends ControllerExtension
    {
       initHardwareSurface();
 
-      mDeviceLayer.activate();
+      updateActiveLayer();
    }
 
    @Override
@@ -58,8 +71,8 @@ public class KillaMixMiniExtension extends ControllerExtension
    @Override
    public void flush()
    {
-      updateDeviceControlRings();
-      updateDeviceButtons();
+      updateDeviceControlRings(mDeviceModeDisplaySetting.get().equals(SHOW_MODULATION));
+      updateDeviceButtonLEDs();
    }
 
 
@@ -76,50 +89,100 @@ public class KillaMixMiniExtension extends ControllerExtension
       {
          createKnob(i);
          createButton(i);
+         createLED(i);
       }
+
+      createJoystick();
 
       initHardwareLayout(mHWSurface);
 
+      /////////////////////////////////////////////////////////////////////////
+      /////////////////////////////////////////////////////////////////////////
+
       final DocumentState settings = host.getDocumentState();
 
-      mCursorTrack = host.createCursorTrack(3, 0);
-      mCursorTrack.hasPrevious().markInterested();
-      mCursorTrack.hasNext().markInterested();
-
-      mCursorDevice   = mCursorTrack.createCursorDevice();
+      mCursorTrack    = host.createCursorTrack(3, 0);
+      mCursorDevice   = mCursorTrack.createCursorDevice("main", "Main", 0, CursorDeviceFollowMode.FOLLOW_SELECTION);
       mRemoteControls = mCursorDevice.createCursorRemoteControlsPage(8);
 
-      mTrackBank = host.createTrackBank(8, 0, 0);
+      mTrackBank      = host.createTrackBank(8, 0, 0);
+      mMasterTrack    = host.createMasterTrack(0);
       mTrackBank.followCursorTrack(mCursorTrack);
 
-      // global track control
-      mButtons[PREV_TRACK_BUTTON].pressedAction().addBinding(mCursorTrack.selectPreviousAction());
-      mButtons[NEXT_TRACK_BUTTON].pressedAction().addBinding(mCursorTrack.selectNextAction());
-
       createDeviceLayer();
+      createMixerLayer();
+
+      // mode switching
+      mModeSetting = settings.getEnumSetting("Mode", "Mode",
+         new String[] { DEVICE_MODE_NAME, MIXER_MODE_NAME }, DEVICE_MODE_NAME);
+
+      mModeSetting.addValueObserver(mode -> updateActiveLayer());
+
+      mDeviceModeDisplaySetting = settings.getEnumSetting("Show Modulation", "Mode",
+         new String[] { SHOW_PARAMETERS, SHOW_MODULATION }, SHOW_PARAMETERS);
+
+      // since the buttons-LEDs toggle on/off by the hardware itself, we must ensure that
+      // we flush/resend the current state to the buttons again, after they have been pressed
+      for (int i = 0; i < NUM_DEVICE_KNOBS; i++)
+      {
+         mButtons[i].isPressed().addValueObserver((boolean b) -> {
+            getHost().requestFlush();
+         });
+      }
+
+      new LayerGroup(mDeviceLayer, mMixerLayer);
    }
 
    private void initHardwareLayout(final HardwareSurface surface)
    {
-      surface.hardwareElementWithId("Knob 1").setBounds(4.0, 10.0, 36, 36.0);
-      surface.hardwareElementWithId("Knob 2").setBounds(16.25, 10.0, 36, 36.0);
-      surface.hardwareElementWithId("Knob 3").setBounds(28.25, 10.0, 36, 36.0);
-      surface.hardwareElementWithId("Knob 4").setBounds(40.5, 10.0, 36, 36.0);
-      surface.hardwareElementWithId("Knob 5").setBounds(52.5, 10.0, 36, 36.0);
-      surface.hardwareElementWithId("Knob 6").setBounds(64.75, 10.0, 36, 36.0);
-      surface.hardwareElementWithId("Knob 7").setBounds(77.0, 10.0, 36, 36.0);
-      surface.hardwareElementWithId("Knob 8").setBounds(89.0, 10.0, 36, 36.0);
-      surface.hardwareElementWithId("Knob 9").setBounds(101.0, 10.0, 36, 36.0);
+      surface.hardwareElementWithId("Joystick X").setBounds(13.0, 30, 15.0, 15.0);
+      surface.hardwareElementWithId("Joystick Y").setBounds(13.0, 45, 15.0, 15.0);
 
-      surface.hardwareElementWithId("Button 1").setBounds(4.0  , 50.0, 10, 10.0);
-      surface.hardwareElementWithId("Button 2").setBounds(16.25, 50.0, 10, 10.0);
-      surface.hardwareElementWithId("Button 3").setBounds(28.25, 50.0, 10, 10.0);
-      surface.hardwareElementWithId("Button 4").setBounds(40.5 , 50.0, 10, 10.0);
-      surface.hardwareElementWithId("Button 5").setBounds(52.5 , 50.0, 10, 10.0);
-      surface.hardwareElementWithId("Button 6").setBounds(64.75, 50.0, 10, 10.0);
-      surface.hardwareElementWithId("Button 7").setBounds(77.0 , 50.0, 10, 10.0);
-      surface.hardwareElementWithId("Button 8").setBounds(89.0 , 50.0, 10, 10.0);
-      surface.hardwareElementWithId("Button 8").setBounds(101.0 , 50.0, 10, 10.0);
+      surface.hardwareElementWithId("Knob 1").setBounds(40, 13.0, 15.0, 15.0);
+      surface.hardwareElementWithId("Knob 2").setBounds(70, 13.0, 15.0, 15.0);
+      surface.hardwareElementWithId("Knob 3").setBounds(100, 13.0, 15.0, 15.0);
+      surface.hardwareElementWithId("Knob 4").setBounds(130, 13.0, 15.0, 15.0);
+      surface.hardwareElementWithId("Knob 5").setBounds(160, 13.0, 15.0, 15.0);
+      surface.hardwareElementWithId("Knob 6").setBounds(190, 13.0, 15.0, 15.0);
+      surface.hardwareElementWithId("Knob 7").setBounds(220, 13.0, 15.0, 15.0);
+      surface.hardwareElementWithId("Knob 8").setBounds(250, 13.0, 15.0, 15.0);
+      surface.hardwareElementWithId("Knob 9").setBounds(280, 13.0, 15.0, 15.0);
+
+      surface.hardwareElementWithId("Button 1").setBounds(40, 35.0, 10.0, 10.0);
+      surface.hardwareElementWithId("Button 2").setBounds(70, 35.0, 10.0, 10.0);
+      surface.hardwareElementWithId("Button 3").setBounds(100, 35.0, 10.0, 10.0);
+      surface.hardwareElementWithId("Button 4").setBounds(130, 35.0, 10.0, 10.0);
+      surface.hardwareElementWithId("Button 5").setBounds(160,35.0, 10.0, 10.0);
+      surface.hardwareElementWithId("Button 6").setBounds(190,35.0, 10.0, 10.0);
+      surface.hardwareElementWithId("Button 7").setBounds(220, 35.0, 10.0, 10.0);
+      surface.hardwareElementWithId("Button 8").setBounds(250,35.0, 10.0, 10.0);
+      surface.hardwareElementWithId("Button 9").setBounds(280, 35.0, 10.0, 10.0);
+
+      surface.hardwareElementWithId("LED 1").setBounds(40, 52.0, 10.0, 10.0);
+      surface.hardwareElementWithId("LED 2").setBounds(70, 52.0, 10.0, 10.0);
+      surface.hardwareElementWithId("LED 3").setBounds(100,52.0, 10.0, 10.0);
+      surface.hardwareElementWithId("LED 4").setBounds(130, 52.0, 10.0, 10.0);
+      surface.hardwareElementWithId("LED 5").setBounds(160,52.0, 10.0, 10.0);
+      surface.hardwareElementWithId("LED 6").setBounds(190,52.0, 10.0, 10.0);
+      surface.hardwareElementWithId("LED 7").setBounds(220, 52.0, 10.0, 10.0);
+      surface.hardwareElementWithId("LED 8").setBounds(250, 52.0, 10.0, 10.0);
+      surface.hardwareElementWithId("LED 9").setBounds(280,52.0, 10.0, 10.0);
+   }
+
+   private void updateActiveLayer()
+   {
+      final String modeName = mModeSetting.get();
+
+      if (DEVICE_MODE_NAME.equals(modeName))
+      {
+         mLEDs[MODE_SWITCH_BUTTON].isOn().setValue(false);
+         mDeviceLayer.activate();
+      }
+      else if (MIXER_MODE_NAME.equals(modeName))
+      {
+         mLEDs[MODE_SWITCH_BUTTON].isOn().setValue(true);
+         mMixerLayer.activate();
+      }
    }
 
    private void createDeviceLayer()
@@ -129,7 +192,7 @@ public class KillaMixMiniExtension extends ControllerExtension
       // device knobs
       for (int i = 0; i < NUM_DEVICE_KNOBS; i++)
       {
-         final AbsoluteHardwareKnob knob   = mKnobs[i];
+         final RelativeHardwareKnob knob   = mKnobs[i];
          final RemoteControl        remote = mRemoteControls.getParameter(i);
 
          remote.setIndication(true);
@@ -142,7 +205,14 @@ public class KillaMixMiniExtension extends ControllerExtension
       final Parameter volumeParameter = mCursorTrack.volume();
       volumeParameter.setIndication(true);
       volumeParameter.markInterested();
-      layer.bind(mKnobs[VOLUME_KNOB], volumeParameter);
+      layer.bind(mKnobs[DEVICE_MODE_VOLUME_KNOB], volumeParameter);
+
+      // global track control
+      mCursorTrack.hasPrevious().markInterested();
+      mCursorTrack.hasNext().markInterested();
+
+      layer.bindPressed(mButtons[PREV_TRACK_BUTTON], mCursorTrack.selectPreviousAction());
+      layer.bindPressed(mButtons[NEXT_TRACK_BUTTON], mCursorTrack.selectNextAction());
 
       // move between devices
       mCursorDevice.hasPrevious().markInterested();
@@ -158,18 +228,77 @@ public class KillaMixMiniExtension extends ControllerExtension
       layer.bindPressed(mButtons[PREV_PAGE_BUTTON], mRemoteControls.selectPreviousAction());
       layer.bindPressed(mButtons[NEXT_PAGE_BUTTON], mRemoteControls.selectNextAction());
 
-      // since the buttons-LEDs toggle on/off by the hardware itself, we must ensure that
-      // we flush/resend the current state to the buttons again, after they have been pressed
-      for (int i = 0; i < NUM_KNOBS_AND_BUTTONS; i++)
-      {
-         final HardwareButton button   = mButtons[i];
+      // LED feedback
+      layer.bind(mCursorTrack.hasPrevious(),    mLEDs[PREV_TRACK_BUTTON]);
+      layer.bind(mCursorTrack.hasNext(),        mLEDs[NEXT_TRACK_BUTTON]);
 
-         layer.bindReleased(mButtons[i], () -> {
-            getHost().requestFlush();
-         });
-      }
+      layer.bind(mCursorDevice.hasPrevious(),   mLEDs[PREV_DEVICE_BUTTON]);
+      layer.bind(mCursorDevice.hasNext(),       mLEDs[NEXT_DEVICE_BUTTON]);
+
+      layer.bind(mRemoteControls.hasPrevious(), mLEDs[PREV_PAGE_BUTTON]);
+      layer.bind(mRemoteControls.hasNext(),     mLEDs[NEXT_PAGE_BUTTON]);
+
+      // switch to mixer layer
+      layer.bindPressed(mButtons[MODE_SWITCH_BUTTON], ()->{
+         mModeSetting.set(MIXER_MODE_NAME);
+      });
 
       mDeviceLayer = layer;
+   }
+
+   private void createMixerLayer()
+   {
+      final Layer layer = new Layer(mLayers, "Mixer");
+
+      for (int i = 0; i < NUM_DEVICE_KNOBS; i++)
+      {
+         Channel channel = mTrackBank.getItemAt(i);
+
+         layer.bind(mKnobs[i], channel.volume());
+
+         layer.bindPressed(mButtons[i], channel.mute().toggleAction());
+         layer.bind(channel.mute(), mLEDs[i]);
+      }
+
+      // joystick for track navigation
+      layer.bind(mJoystickX, new DoubleConsumer()
+      {
+         @Override
+         public void accept(final double value)
+         {
+            if(value < 0.25)
+            {
+               if(!triggered)
+               {
+                  triggered = true;
+                  mCursorTrack.selectPrevious();
+               }
+            }
+            else if(value > 0.75)
+            {
+               if(!triggered)
+               {
+                  triggered = true;
+                  mCursorTrack.selectNext();
+               }
+            }
+            else
+            {
+               triggered = false;
+            }
+         }
+
+         boolean triggered = false;
+      });
+
+      layer.bind(mKnobs[MIXER_MODE_MASTER_KNOB], mMasterTrack.volume());
+
+      // switch to device layer
+      layer.bindPressed(mButtons[MODE_SWITCH_BUTTON], ()->{
+         mModeSetting.set(DEVICE_MODE_NAME);
+      });
+
+      mMixerLayer = layer;
    }
 
    private void createKnob(int index)
@@ -178,13 +307,13 @@ public class KillaMixMiniExtension extends ControllerExtension
 
       final int knobCC = index+KNOB_CC_BASE;
 
-      final AbsoluteHardwareKnob knob = mHWSurface.createAbsoluteHardwareKnob("Knob " + (index+1));
+      final RelativeHardwareKnob knob = mHWSurface.createRelativeHardwareKnob("Knob " + (index+1));
 
-      knob.disableTakeOver();
-      knob.setAdjustValueMatcher( midiIn.createAbsoluteCCValueMatcher(0, knobCC) );
+      knob.setAdjustValueMatcher( midiIn.createRelativeSignedBitCCValueMatcher(0, knobCC, 100) );
 
       knob.isUpdatingTargetValue().markInterested();
       knob.targetValue().markInterested();
+      knob.modulatedTargetValue().markInterested();
       knob.hasTargetValue().markInterested();
 
       mKnobs[index] = knob;
@@ -204,28 +333,49 @@ public class KillaMixMiniExtension extends ControllerExtension
       mButtons[index] = button;
    }
 
-   private void updateDeviceControlRings()
+   private void createLED(int index)
+   {
+      final OnOffHardwareLight led = mHWSurface.createOnOffHardwareLight("LED " + (index+1));
+      led.setOnColor(Color.fromRGB(0, 1, 0));
+
+      mLEDs[index] = led;
+   }
+
+   private void createJoystick()
+   {
+      final MidiIn midiIn = getHost().getMidiInPort(0);
+
+      mJoystickX = mHWSurface.createAbsoluteHardwareKnob("Joystick X");
+      mJoystickX.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 19));
+
+      mJoystickY = mHWSurface.createAbsoluteHardwareKnob("Joystick Y");
+      mJoystickY.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 20));
+   }
+
+   private void updateDeviceControlRings(boolean showModulation)
    {
       for (int i = 0; i < NUM_KNOBS_AND_BUTTONS; ++i)
       {
-         updateDeviceControlRing(i);
+         updateDeviceControlRing(i, showModulation);
       }
    }
 
-   private void updateDeviceControlRing(final int knobIndex)
+   private void updateDeviceControlRing(final int knobIndex, boolean showModulation)
    {
       final int knobCC = knobIndex + KNOB_CC_BASE;
 
-      final AbsoluteHardwareKnob knob = mKnobs[knobIndex];
+      final RelativeHardwareKnob knob = mKnobs[knobIndex];
 
+      // add modulated value
       if(knob.hasTargetValue().get())
       {
-         double value = 127 * mKnobs[knobIndex].targetValue().getAsDouble();
+         final double knobValue = showModulation ? mKnobs[knobIndex].modulatedTargetValue().getAsDouble()
+                                                 : mKnobs[knobIndex].targetValue().getAsDouble();
+
+         double value  = 127 * knobValue;
          int midiValue = Math.min(Math.max((int)( Math.round(value) ), 0), 127);
 
          mLedValues[knobIndex] = midiValue;
-
-         System.out.println(value + " x " + midiValue);
       }
       else
       {
@@ -240,21 +390,16 @@ public class KillaMixMiniExtension extends ControllerExtension
       sendMidiCC(0, knobCC, midiValue);
    }
 
-   private void updateDeviceButtons()
+   private void updateDeviceButtonLEDs()
    {
-      updateDeviceButton(PREV_TRACK_BUTTON+BUTTON_CC_BASE,  mCursorTrack.hasPrevious().getAsBoolean());
-      updateDeviceButton(NEXT_TRACK_BUTTON+BUTTON_CC_BASE,  mCursorTrack.hasNext().getAsBoolean());
-
-      updateDeviceButton(PREV_DEVICE_BUTTON+BUTTON_CC_BASE, mCursorDevice.hasPrevious().getAsBoolean());
-      updateDeviceButton(NEXT_DEVICE_BUTTON+BUTTON_CC_BASE, mCursorDevice.hasNext().getAsBoolean());
-
-      updateDeviceButton(PREV_PAGE_BUTTON+BUTTON_CC_BASE, mRemoteControls.hasPrevious().getAsBoolean());
-      updateDeviceButton(NEXT_PAGE_BUTTON+BUTTON_CC_BASE, mRemoteControls.hasNext().getAsBoolean());
+      for(int i = 0; i < NUM_KNOBS_AND_BUTTONS; i++)
+      {
+         updateDeviceButtonLED(i+BUTTON_CC_BASE, mLEDs[i].isOn().currentValue());
+      }
    }
 
-   private void updateDeviceButton(int buttonCC, boolean isOn)
+   private void updateDeviceButtonLED(int buttonCC, boolean isOn)
    {
-      System.out.println(buttonCC+" is on "+isOn);
       if(isOn)
       {
          sendMidiCC(0, buttonCC, 127);
@@ -278,12 +423,20 @@ public class KillaMixMiniExtension extends ControllerExtension
    private CursorDevice             mCursorDevice;
 
    private Layer                    mDeviceLayer;
+   private Layer                    mMixerLayer;
 
    private CursorRemoteControlsPage mRemoteControls;
    private TrackBank                mTrackBank;
+   private MasterTrack              mMasterTrack;
+
+   private SettableEnumValue        mModeSetting;
+   private SettableEnumValue        mDeviceModeDisplaySetting;
 
    private final Layers                 mLayers    = new Layers(this);
-   private final AbsoluteHardwareKnob[] mKnobs     = new AbsoluteHardwareKnob[9];
+   private       AbsoluteHardwareKnob   mJoystickX;
+   private       AbsoluteHardwareKnob   mJoystickY;
+   private final RelativeHardwareKnob[] mKnobs     = new RelativeHardwareKnob[9];
    private final HardwareButton[]       mButtons   = new HardwareButton[9];
+   private final OnOffHardwareLight[]   mLEDs      = new OnOffHardwareLight[9];
    private final int[]                  mLedValues = new int[9];
 }

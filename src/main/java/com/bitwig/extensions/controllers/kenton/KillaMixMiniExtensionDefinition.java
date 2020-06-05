@@ -54,7 +54,7 @@ public class KillaMixMiniExtensionDefinition extends ControllerExtensionDefiniti
    @Override
    public int getRequiredAPIVersion()
    {
-      return 10;
+      return 11;
    }
 
    @Override
