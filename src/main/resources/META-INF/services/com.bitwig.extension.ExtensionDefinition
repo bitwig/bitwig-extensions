@@ -46,4 +46,4 @@ com.bitwig.extensions.controllers.vault.Apex25ControllerDefinition
 com.bitwig.extensions.controllers.vault.Apex49ControllerDefinition
 com.bitwig.extensions.controllers.vault.Apex61ControllerDefinition
 
-com.bitwig.extensions.controllers.studiologic.SLMixfaceExtensionDefinition
+# com.bitwig.extensions.controllers.studiologic.SLMixfaceExtensionDefinition
