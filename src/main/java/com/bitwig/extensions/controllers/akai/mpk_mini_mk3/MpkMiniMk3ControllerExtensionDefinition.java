@@ -94,4 +94,10 @@ public class MpkMiniMk3ControllerExtensionDefinition extends ControllerExtension
    {
       return 11;
    }
+
+   @Override
+   public String getHelpFilePath()
+   {
+      return "Controllers/Akai/MPK mini MK3.html";
+   }
 }
