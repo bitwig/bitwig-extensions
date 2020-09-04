@@ -139,15 +139,15 @@
 <h2 id="overview">Overview</h2>
 <p>This controller extension adds support for the MPK mini MK3:</p>
 <ul>
-<li>keys are working, you have a dedicated note input</li>
-<li>pads are working, you have a dedicated note input</li>
-<li>knobs are working, and the name of the parameter being controlled should be displayed on the screen</li>
+<li>Keys provide note input (also with a dedicated note input port)</li>
+<li>Pads provide note input (also with a dedicated note input port)</li>
+<li>Knobs follow the script's target, with the targeted parameter name shown on the screen</li>
 </ul>
 <h2 id="device-setup">Device Setup</h2>
 <p>There is no configuration required on the device; Bitwig Studio will send a custom "program" to it.</p>
 <ul>
-<li>Do not use "PROG SELECT". That would interfer with Bitwig Studio custom program</li>
-<li>Go into the synchronization settings and send the MIDI Clock, Start/Stop and SPP to synchronize the arpeggiator and note repeat</li>
+<li>Do not use "PROG SELECT"; it will interfere with Bitwig Studio's connection.</li>
+<li>To synchronize the MPK's arpeggiator and note repeat: go into Bitwig's Synchronization settings (Dashboard &gt; Settings &gt; Synchronization), and enabling sending MIDI "Clock," "Start/Stop," and "SPP" to the MPK mini MK3.</li>
 </ul>
 </div>
 </div>
