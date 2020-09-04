@@ -94,7 +94,7 @@ public class MpkMiniMk3ControllerExtension extends ControllerExtension
          pad.setLabel("PAD " + (i + 1));
          pad.setLabelPosition(RelativePosition.ABOVE);
 
-         final int note = 40 + i;
+         final int note = 36 + i;
 
          pad.pressedAction().setPressureActionMatcher(mMidiIn.createNoteOnVelocityValueMatcher(9, note));
          pad.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(9, note));
