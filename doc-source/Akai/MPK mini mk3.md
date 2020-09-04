@@ -5,7 +5,7 @@
 This controller extension adds support for the MPK mini MK3:
  - Keys provide note input (also with a dedicated note input port)
  - Pads provide note input (also with a dedicated note input port)
- - Knobs are mapped to the selected device's remote controls, with the targeted parameter name shown on the screen
+ - Knobs are mapped to the selected device's remote controls, with the targeted control name shown on the screen
 
 ## Device Setup
 
