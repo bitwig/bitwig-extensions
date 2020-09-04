@@ -21,7 +21,7 @@ public class MpkMiniMk3ControllerExtensionDefinition extends ControllerExtension
    @Override
    public String getHardwareModel()
    {
-      return "MPK mini MK3";
+      return "MPK mini mk3";
    }
 
    @Override
@@ -37,7 +37,7 @@ public class MpkMiniMk3ControllerExtensionDefinition extends ControllerExtension
    }
 
    @Override
-   public void listAutoDetectionMidiPortNames(AutoDetectionMidiPortNamesList list, PlatformType platformType)
+   public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list, final PlatformType platformType)
    {
       final String inputNames[] = new String[1];
       final String outputNames[] = new String[1];
@@ -60,7 +60,7 @@ public class MpkMiniMk3ControllerExtensionDefinition extends ControllerExtension
    }
 
    @Override
-   public ControllerExtension createInstance(ControllerHost host)
+   public ControllerExtension createInstance(final ControllerHost host)
    {
       return new MpkMiniMk3ControllerExtension(this, host);
    }
@@ -68,7 +68,7 @@ public class MpkMiniMk3ControllerExtensionDefinition extends ControllerExtension
    @Override
    public String getName()
    {
-      return "MPK mini MK3";
+      return "MPK mini mk3";
    }
 
    @Override
@@ -98,6 +98,6 @@ public class MpkMiniMk3ControllerExtensionDefinition extends ControllerExtension
    @Override
    public String getHelpFilePath()
    {
-      return "Controllers/Akai/MPK mini MK3.html";
+      return "Controllers/Akai/MPK mini mk3.html";
    }
 }
