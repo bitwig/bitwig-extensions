@@ -3,10 +3,12 @@ package com.bitwig.extensions.controllers.akai.mpk_mini_mk3;
 import java.nio.charset.StandardCharsets;
 
 import com.bitwig.extension.controller.ControllerExtension;
+import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.AbsoluteHardwareValueMatcher;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -86,6 +88,22 @@ public class MpkMiniMk3ControllerExtension extends ControllerExtension
          mainLayer.bind(knob, parameter);
       }
 
+      for (int i = 0; i < 8; i++)
+      {
+         final HardwareButton pad = mHardwareSurface.createHardwareButton("pad" + (i + 1));
+         pad.setLabel("PAD " + (i + 1));
+         pad.setLabelPosition(RelativePosition.ABOVE);
+
+         final int note = 40 + i;
+
+         pad.pressedAction().setPressureActionMatcher(mMidiIn.createNoteOnVelocityValueMatcher(9, note));
+         pad.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(9, note));
+
+         final AbsoluteHardwareKnob padAftertouch = mHardwareSurface.createAbsoluteHardwareKnob("pad-aftertouch" + (i + 1));
+         padAftertouch.setAdjustValueMatcher(mMidiIn.createPolyAftertouchValueMatcher(9, note));
+         pad.setAftertouchControl(padAftertouch);
+      }
+
       initHardwareControlPositions();
 
       mainLayer.activate();
@@ -106,6 +124,15 @@ public class MpkMiniMk3ControllerExtension extends ControllerExtension
       surface.hardwareElementWithId("K7").setBounds(258.5, 59.75, 20.0, 20.25);
       surface.hardwareElementWithId("K8").setBounds(288.75, 59.75, 20.0, 20.25);
       surface.hardwareElementWithId("piano").setBounds(13.25, 93.5, 294.0, 82.0);
+      surface.hardwareElementWithId("pad1").setBounds(55.5, 46.0, 28.5, 28.25);
+      surface.hardwareElementWithId("pad2").setBounds(90.25, 46.0, 28.5, 28.25);
+      surface.hardwareElementWithId("pad3").setBounds(125.25, 46.0, 28.5, 28.25);
+      surface.hardwareElementWithId("pad4").setBounds(160.0, 46.0, 28.5, 28.25);
+      surface.hardwareElementWithId("pad5").setBounds(55.0, 10.75, 28.5, 28.25);
+      surface.hardwareElementWithId("pad6").setBounds(90.25, 10.75, 28.5, 28.25);
+      surface.hardwareElementWithId("pad7").setBounds(125.25, 10.75, 28.5, 28.25);
+      surface.hardwareElementWithId("pad8").setBounds(160.5, 10.75, 28.5, 28.25);
+
    }
 
    @Override
