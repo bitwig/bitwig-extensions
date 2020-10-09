@@ -7,7 +7,7 @@ ROOT=$(dirname "$0")
 IN_MD="$1"
 OUT_HTML="$2"
 
-mkdir -p $(dirname $2)
+mkdir -p $(dirname "$2")
 
 echo Converting "$IN_MD" to "$OUT_HTML"
 
