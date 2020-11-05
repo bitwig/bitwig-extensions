@@ -1,4 +1,4 @@
-# Define Ez-Creator Pads
+# Define EZ-Creator Pads
 
 ## Pads
 
