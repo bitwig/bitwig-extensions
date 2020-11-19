@@ -1,4 +1,4 @@
-# Device Ez-Creator Fade
+# Device EZ-Creator Fade
 
 ## Transport
 
