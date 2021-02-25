@@ -73,6 +73,12 @@ public class KompleteKontrolSMk2ExtensionDefinition extends ControllerExtensionD
 		}
 	}
 
+   @Override
+   public String getHelpFilePath()
+   {
+      return "Controllers/Native Instruments/Komplete Kontrol MK2.pdf";
+   }
+
 	@Override
 	public KompleteKontrolSMk2Extension createInstance(final ControllerHost host) {
 		return new KompleteKontrolSMk2Extension(this, host);
