@@ -19,10 +19,7 @@ public class MainKnobControl {
 	private boolean displayActive = false;
 	private boolean shiftDown = false;
 
-	private final MaschineExtension driver;
-
 	public MainKnobControl(final MaschineExtension driver) {
-		this.driver = driver;
 		this.masterTrack = driver.getMasterTrack();
 		this.transport = driver.getTranport();
 		this.groove = driver.getHost().createGroove();

@@ -172,6 +172,11 @@ public class MaschineExtension extends ControllerExtension {
 		initJogWheel();
 
 		setUpMidiSysExCommands();
+
+		currentDisplayMode.activate();
+		currentMode.activate();
+		groupLayer.activate();
+		mainLayer.activate();
 		host.showPopupNotification(maschineMode.getDescriptor() + " Initialized");
 		host.scheduleTask(this::handlBlink, 100);
 		host.scheduleTask(this::handleTempDisplay, 200);
@@ -331,7 +336,6 @@ public class MaschineExtension extends ControllerExtension {
 		if (currentMode == mode) {
 			return;
 		}
-
 		currentMode.deactivate();
 		currentMode = mode;
 		currentMode.activate();
@@ -463,8 +467,6 @@ public class MaschineExtension extends ControllerExtension {
 		globalShiftLayer.bind(transport.isArrangerLoopEnabled(), restartButton);
 		globalShiftLayer.bindPressed(stopButton, rootTrack.stopAction());
 
-		mainLayer.activate();
-
 		groupLayer = new GroupLayer(this, "group-layer");
 
 		focusClip = new FocusClip(this);
@@ -525,9 +527,6 @@ public class MaschineExtension extends ControllerExtension {
 		currentMode = sessionMode;
 		currentDisplayMode = mixerDisplayMode;
 		previousDisplayMode = mixerDisplayMode;
-		currentDisplayMode.activate();
-		currentMode.activate();
-		groupLayer.activate();
 
 		initNoteRepeat(arpDisplayMode);
 		setUpArrangerHandling(sessionMode);
