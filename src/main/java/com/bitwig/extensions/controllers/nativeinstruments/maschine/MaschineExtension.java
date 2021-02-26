@@ -172,11 +172,11 @@ public class MaschineExtension extends ControllerExtension {
 		initJogWheel();
 
 		setUpMidiSysExCommands();
-
 		currentDisplayMode.activate();
 		currentMode.activate();
 		groupLayer.activate();
 		mainLayer.activate();
+
 		host.showPopupNotification(maschineMode.getDescriptor() + " Initialized");
 		host.scheduleTask(this::handlBlink, 100);
 		host.scheduleTask(this::handleTempDisplay, 200);

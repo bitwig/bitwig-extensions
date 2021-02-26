@@ -26,3 +26,5 @@ bitwig-extensions.iml
 
 target/
 /.idea
+/.classpath
+/.project
