@@ -7,25 +7,25 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class KompleteKontrolSMk2ExtensionDefinition extends ControllerExtensionDefinition {
-	private static final UUID DRIVER_ID = UUID.fromString("5348f355-862e-4674-bbab-dd15f5342d99");
+public class KompleteKontrolASeriesExtensionDefinition extends ControllerExtensionDefinition {
+	private static final UUID DRIVER_ID = UUID.fromString("523a5a44-409c-496b-bb74-58bcea37867d");
 
-	public KompleteKontrolSMk2ExtensionDefinition() {
+	public KompleteKontrolASeriesExtensionDefinition() {
 	}
 
 	@Override
 	public String getName() {
-		return "Komplete Kontrol S Mk2";
+		return "Komplete Kontrol A Series";
 	}
 
 	@Override
 	public String getAuthor() {
-		return "Bitwig / Eric Ahrens";
+		return "Bitwig";
 	}
 
 	@Override
 	public String getVersion() {
-		return "1.0";
+		return "0.1";
 	}
 
 	@Override
@@ -39,13 +39,8 @@ public class KompleteKontrolSMk2ExtensionDefinition extends ControllerExtensionD
 	}
 
 	@Override
-	public String getHelpFilePath() {
-		return "Controllers/Native Instruments/Komplete Kontrol MK2.pdf";
-	}
-
-	@Override
 	public String getHardwareModel() {
-		return "Komplete Kontrol S Mk2";
+		return "Komplete Kontrol A Series";
 	}
 
 	@Override
@@ -67,19 +62,19 @@ public class KompleteKontrolSMk2ExtensionDefinition extends ControllerExtensionD
 	public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
 			final PlatformType platformType) {
 		if (platformType == PlatformType.WINDOWS) {
-			list.add(new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" },
-					new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" });
+			list.add(new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" },
+					new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" });
 		} else if (platformType == PlatformType.MAC) {
-			list.add(new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" },
-					new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" });
+			list.add(new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" },
+					new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" });
 		} else if (platformType == PlatformType.LINUX) {
-			list.add(new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" },
-					new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" });
+			list.add(new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" },
+					new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" });
 		}
 	}
 
 	@Override
-	public KompleteKontrolSMk2Extension createInstance(final ControllerHost host) {
-		return new KompleteKontrolSMk2Extension(this, host);
+	public KompleteKontrolAExtension createInstance(final ControllerHost host) {
+		return new KompleteKontrolAExtension(this, host);
 	}
 }

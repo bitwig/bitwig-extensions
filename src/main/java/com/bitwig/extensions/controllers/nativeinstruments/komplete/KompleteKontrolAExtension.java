@@ -1,5 +1,8 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
+import com.bitwig.extension.controller.AutoDetectionMidiPortNames;
+import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
+import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
@@ -8,42 +11,42 @@ import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
-public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
+public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 
-	private static byte[] levelDbLookup = new byte[201]; // maps level values to align with KK display
-
-	final ModeButton[] selectButtons = new ModeButton[8];
-
-	protected KompleteKontrolSMk2Extension(final KompleteKontrolSMk2ExtensionDefinition definition,
-			final ControllerHost host) {
+	protected KompleteKontrolAExtension(final ControllerExtensionDefinition definition, final ControllerHost host) {
 		super(definition, host);
 	}
 
 	@Override
 	public void init() {
-		initSliderLookup();
 		super.init();
-		final ControllerHost host = getHost();
-
 		intoDawMode();
+		final ControllerHost host = getHost();
 		surface = host.createHardwareSurface();
 		layers = new Layers(this);
 		mainLayer = new KompleteLayer(this, "Main");
 		arrangeFocusLayer = new KompleteLayer(this, "ArrangeFocus");
-		sessionFocusLayer = new KompleteLayer(this, "SeesionFocus");
+		sessionFocusLayer = new KompleteLayer(this, "SessionFocus");
 
 		project = host.getProject();
 		mTransport = host.createTransport();
 
+		final AutoDetectionMidiPortNamesList defs = getExtensionDefinition()
+				.getAutoDetectionMidiPortNamesList(host.getPlatformType());
+
+		final AutoDetectionMidiPortNames inport = defs.getPortNames().get(0);
+		RemoteConsole.out.println("NAMES = {}", inport.getInputNames()[1]);
+
 		setUpSliders(midiIn);
 		final MidiIn midiIn2 = host.getMidiInPort(1);
-		// TODO get value from definition [1]
-		final NoteInput noteInput = midiIn2.createNoteInput("KOMPLETE KONTROL A25 MIDI", "80????", "90????", "D0????",
+		final NoteInput noteInput = midiIn2.createNoteInput(inport.getInputNames()[1], "80????", "90????", "D0????",
 				"E0????");
 		noteInput.setShouldConsumeEvents(true);
 
@@ -54,62 +57,26 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
 		final PinnableCursorDevice cursorDevice = cursorTrack.createCursorDevice();
 		bindMacroControl(cursorDevice, midiIn2);
 
+		for (final CcAssignment cc : CcAssignment.values()) {
+			sendLedUpdate(cc, 0);
+		}
 		mainLayer.activate();
-		host.showPopupNotification("Komplete Kontrol S Mk2 Initialized");
+		host.showPopupNotification("Komplete Kontrol A Initialized");
 	}
 
-	private static void initSliderLookup() {
-		final int[] intervalls = { 0, 25, 63, 100, 158, 200 };
-		final int[] pollValues = { 0, 14, 38, 67, 108, 127 };
-		int curentIv = 1;
-		int ivLb = 0;
-		int plLb = 0;
-		int ivUb = intervalls[curentIv];
-		int plUb = pollValues[curentIv];
-		double ratio = (double) (plUb - plLb) / (double) (ivUb - ivLb);
-		for (int i = 0; i < levelDbLookup.length; i++) {
-			if (i > intervalls[curentIv]) {
-				curentIv++;
-				ivLb = ivUb;
-				plLb = plUb;
-				ivUb = intervalls[curentIv];
-				plUb = pollValues[curentIv];
-				ratio = (double) (plUb - plLb) / (double) (ivUb - ivLb);
-			}
-			levelDbLookup[i] = (byte) Math.round(plLb + (i - ivLb) * ratio);
+	@Override
+	protected void setUpSliders(final MidiIn midiIn) {
+		for (int i = 0; i < 8; i++) {
+			final RelativeHardwareKnob knob = surface.createRelativeHardwareKnob("VOLUME_KNOB" + i);
+			volumeKnobs[i] = knob;
+			knob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x50 + i, 128));
+			knob.setStepSize(1 / 1024.0);
+
+			final RelativeHardwareKnob panKnob = surface.createRelativeHardwareKnob("PAN_KNOB" + i);
+			panKnobs[i] = panKnob;
+			panKnob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x58 + i, 128));
+			panKnob.setStepSize(1 / 1024.0);
 		}
-	}
-
-	@Override
-	public void exit() {
-		midiOutDaw.sendMidi(Midi.KK_DAW, Midi.GOODBYE, 0);
-		getHost().showPopupNotification("Komplete Kontrol S Mk2 Exited");
-	}
-
-	@Override
-	public void flush() {
-		if (dawModeConfirmed) {
-			surface.updateHardware();
-		}
-	}
-
-	@Override
-	public void setUpChannelDisplayFeedback(final int index, final Track channel) {
-		channel.volume().value().addValueObserver(value -> {
-			final byte v = toSliderVal(value);
-			midiOutDaw.sendMidi(0xBF, 0x50 + index, v);
-		});
-		channel.pan().value().addValueObserver(value -> {
-			final int v = (int) (value * 127);
-			midiOutDaw.sendMidi(0xBF, 0x58 + index, v);
-		});
-		channel.addVuMeterObserver(201, 0, true, leftValue -> {
-			trackLevelMeterComand.updateLeft(index, levelDbLookup[leftValue]);
-		});
-		channel.addVuMeterObserver(201, 1, true, rightValue -> {
-			trackLevelMeterComand.updateRight(index, levelDbLookup[rightValue]);
-			trackLevelMeterComand.update(midiOutDaw);
-		});
 	}
 
 	@Override
@@ -144,34 +111,16 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
 
 		application.panelLayout().addValueObserver(v -> {
 			currentLayoutType = LayoutType.toType(v);
-			updateLedChannelDown(singleTrackBank, singleTrackBank.canScrollChannelsDown().get());
-			udpateLedChannelUp(singleTrackBank, singleTrackBank.canScrollChannelsUp().get());
-			updateLedSceneForwards(sceneBank, sceneBank.canScrollForwards().get());
-			updateLedSceneBackwards(sceneBank, sceneBank.canScrollBackwards().get());
-		});
-
-		singleTrackBank.canScrollChannelsUp().addValueObserver(v -> {
-			udpateLedChannelUp(singleTrackBank, v);
-		});
-		singleTrackBank.canScrollChannelsDown().addValueObserver(v -> {
-			updateLedChannelDown(singleTrackBank, v);
-		});
-
-		sceneBank.canScrollBackwards().addValueObserver(v -> {
-			updateLedSceneBackwards(sceneBank, v);
-		});
-		sceneBank.canScrollForwards().addValueObserver(v -> {
-			updateLedSceneForwards(sceneBank, v);
 		});
 
 		final HardwareButton leftNavButton = surface.createHardwareButton("LEFT_NAV_BUTTON");
-		leftNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 1));
+		leftNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 1));
 		final HardwareButton rightNavButton = surface.createHardwareButton("RIGHT_NAV_BUTTON");
-		rightNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 127));
+		rightNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 127));
 		final HardwareButton upNavButton = surface.createHardwareButton("UP_NAV_BUTTON");
-		upNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 127));
+		upNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 127));
 		final HardwareButton downNavButton = surface.createHardwareButton("DOWN_NAV_BUTTON");
-		downNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 1));
+		downNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 1));
 		mainLayer.bindPressed(leftNavButton, () -> {
 			switch (currentLayoutType) {
 			case LAUNCHER:
@@ -258,6 +207,7 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
 		cursorClip.exists().markInterested();
 		final ModeButton quantizeButton = new ModeButton(this, "QUANTIZE_BUTTON", CcAssignment.QUANTIZE);
 		sessionFocusLayer.bindPressed(quantizeButton, () -> {
+			RemoteConsole.out.println("EXEC QUANTIZE");
 			cursorClip.quantize(1.0);
 		});
 		sessionFocusLayer.bind(() -> {
@@ -310,64 +260,77 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
 		});
 	}
 
-	private void updateLedSceneForwards(final SceneBank sceneBank, final boolean v) {
-		final int sv = (v ? 0x2 : 0x0) | (sceneBank.canScrollBackwards().get() ? 0x1 : 0x0);
-		switch (currentLayoutType) {
-		case LAUNCHER:
-			sendLedUpdate(0x32, sv);
-			break;
-		case ARRANGER:
-			sendLedUpdate(0x30, sv);
-			break;
-		default:
-			break;
+	@Override
+	public void exit() {
+		midiOutDaw.sendMidi(Midi.KK_DAW, Midi.GOODBYE, 0);
+		getHost().showPopupNotification("Komplete Kontrol A Series Exited");
+	}
+
+	@Override
+	public void flush() {
+		if (dawModeConfirmed) {
+			surface.updateHardware();
 		}
 	}
 
-	private void updateLedSceneBackwards(final SceneBank sceneBank, final boolean v) {
-		final int sv = sceneBank.canScrollForwards().get() ? 0x2 : 0x0;
-		switch (currentLayoutType) {
-		case LAUNCHER:
-			sendLedUpdate(0x32, (v ? 0x1 : 0x0) | sv);
-			break;
-		case ARRANGER:
-			sendLedUpdate(0x30, (v ? 0x1 : 0x0) | sv);
-			break;
-		default:
-			break;
-		}
+	@Override
+	protected void setUpChannelControl(final int index, final Track channel) {
+		final IndexButton selectButton = new IndexButton(this, index, "SELECT_BUTTON", 0x42);
+		mainLayer.bindPressed(selectButton.getHwButton(), () -> {
+			if (!channel.exists().get()) {
+				application.createInstrumentTrack(-1);
+			} else {
+				channel.selectInMixer();
+			}
+		});
+
+		channel.exists().markInterested();
+		channel.addIsSelectedInMixerObserver(v -> {
+			trackSelectedCommand.send(midiOutDaw, index, v);
+		});
+		channel.mute().addValueObserver(v -> {
+			trackMutedCommand.send(midiOutDaw, index, v);
+		});
+		channel.solo().addValueObserver(v -> {
+			trackSoloCommand.send(midiOutDaw, index, v);
+		});
+		channel.arm().addValueObserver(v -> {
+			trackArmedCommand.send(midiOutDaw, index, v);
+		});
+		channel.isMutedBySolo().addValueObserver(v -> {
+			trackMutedBySoloCommand.send(midiOutDaw, index, v);
+		});
+
+		channel.name().addValueObserver(name -> {
+			trackNameCommand.send(midiOutDaw, index, name);
+		});
+
+		channel.volume().displayedValue().addValueObserver(valueText -> {
+			trackVolumeTextCommand.send(midiOutDaw, index, valueText);
+		});
+
+		channel.pan().displayedValue().addValueObserver(value -> {
+			trackPanTextCommand.send(midiOutDaw, index, value);
+		});
+
+		channel.pan().value().addValueObserver(value -> {
+			final int v = (int) (value * 127);
+			midiOutDaw.sendMidi(0xBF, 0x58 + index, v);
+		});
+
+		channel.trackType().addValueObserver(v -> {
+			final TrackType type = TrackType.toType(v);
+			trackAvailableCommand.send(midiOutDaw, index, type.getId());
+		});
+		volumeKnobs[index].addBindingWithSensitivity(channel.volume(), 0.025);
+		panKnobs[index].addBindingWithSensitivity(channel.pan(), 0.025);
+
+		channel.isActivated().markInterested();
+		channel.canHoldAudioData().markInterested();
+		channel.canHoldNoteData().markInterested();
 	}
 
-	private void updateLedChannelDown(final TrackBank singleTrackBank, final boolean v) {
-		final int sv = (v ? 0x2 : 0x0) | (singleTrackBank.canScrollChannelsUp().get() ? 0x1 : 0x0);
-		switch (currentLayoutType) {
-		case LAUNCHER:
-			sendLedUpdate(0x30, sv);
-			break;
-		case ARRANGER:
-			sendLedUpdate(0x32, sv);
-			break;
-		default:
-			break;
-		}
+	@Override
+	protected void setUpChannelDisplayFeedback(final int index, final Track channel) {
 	}
-
-	private void udpateLedChannelUp(final TrackBank singleTrackBank, final boolean v) {
-		final int sv = (v ? 0x1 : 0x0) | (singleTrackBank.canScrollChannelsDown().get() ? 0x2 : 0x0);
-		switch (currentLayoutType) {
-		case LAUNCHER:
-			sendLedUpdate(0x30, sv);
-			break;
-		case ARRANGER:
-			sendLedUpdate(0x32, sv);
-			break;
-		default:
-			break;
-		}
-	}
-
-	byte toSliderVal(final double value) {
-		return levelDbLookup[(int) (value * 200)];
-	}
-
 }

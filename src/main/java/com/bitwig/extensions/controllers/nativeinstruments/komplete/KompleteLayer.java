@@ -6,14 +6,14 @@ import com.bitwig.extensions.framework.Layer;
 
 public class KompleteLayer extends Layer {
 
-	private final KompleteKontrolSMk2Extension driver;
+	private final KompleteKontrolExtension driver;
 
-	public KompleteLayer(final KompleteKontrolSMk2Extension driver, final String name) {
+	public KompleteLayer(final KompleteKontrolExtension driver, final String name) {
 		super(driver.getLayers(), name);
 		this.driver = driver;
 	}
 
-	public KompleteKontrolSMk2Extension getDriver() {
+	public KompleteKontrolExtension getDriver() {
 		return driver;
 	}
 
