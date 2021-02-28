@@ -82,7 +82,8 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 	}
 
 	protected void onMidi0(final ShortMidiMessage msg) {
-		RemoteConsole.out.println("MIDI => {} {} {}", msg.getStatusByte(), msg.getData1(), msg.getData2());
+		RemoteConsole.out.println("MIDI => {} {} {}", Integer.toHexString(msg.getStatusByte()),
+				Integer.toHexString(msg.getData1()), Integer.toHexString(msg.getData2()));
 		if (msg.getStatusByte() == 0xBF) {
 			if (msg.getData1() == 1) {
 				dawModeConfirmed = true;
@@ -187,8 +188,10 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 		fourDKnob.setStepSize(1 / 128.0);
 
 		final HardwareActionBindable incAction = getHost().createAction(() -> {
+			RemoteConsole.out.println(" TRANSPORT +");
 		}, () -> "+");
 		final HardwareActionBindable decAction = getHost().createAction(() -> {
+			RemoteConsole.out.println(" TRANSPORT -");
 		}, () -> "-");
 		fourDKnob.addBinding(getHost().createRelativeHardwareControlStepTarget(incAction, decAction));
 
@@ -197,8 +200,10 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 		fourDKnobMixer.setStepSize(1 / 128.0);
 
 		final HardwareActionBindable incMixAction = getHost().createAction(() -> {
+			RemoteConsole.out.println(" MIX +");
 		}, () -> "+");
 		final HardwareActionBindable decMixAction = getHost().createAction(() -> {
+			RemoteConsole.out.println(" MIX -");
 		}, () -> "-");
 		fourDKnobMixer.addBinding(getHost().createRelativeHardwareControlStepTarget(incMixAction, decMixAction));
 	}
@@ -208,12 +213,12 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 			final RelativeHardwareKnob knob = surface.createRelativeHardwareKnob("VOLUME_KNOB" + i);
 			volumeKnobs[i] = knob;
 			knob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x50 + i, 128));
-			knob.setStepSize(1 / 1024.0);
+			knob.setStepSize(1 / 128.0);
 
 			final RelativeHardwareKnob panKnob = surface.createRelativeHardwareKnob("PAN_KNOB" + i);
 			panKnobs[i] = panKnob;
 			panKnob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x58 + i, 128));
-			panKnob.setStepSize(1 / 1024.0);
+			panKnob.setStepSize(1 / 128.0);
 		}
 	}
 
@@ -246,6 +251,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 		initNaviagtion();
 
 		final PinnableCursorDevice cursorDevice = cursorTrack.createCursorDevice();
+
 		createKompleteKontrolDeviceKompleteKontrol(cursorDevice);
 		mixerTrackBank = getHost().createTrackBank(8, 0, 1);
 		mixerTrackBank.setSkipDisabledItems(true);
@@ -258,11 +264,22 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 		trackRightNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x31, 1));
 		mixerTrackBank.setChannelScrollStepSize(8);
 
+		final HardwareButton muteSelectedButton = surface.createHardwareButton("MUTE_SELECTED_BUTTON");
+		muteSelectedButton.pressedAction().setActionMatcher(CcAssignment.MUTE_CURRENT.createActionMatcher(midiIn, 1));
+
+		final HardwareButton soloSelectedButton = surface.createHardwareButton("SOLO_SELECTED_BUTTON");
+		soloSelectedButton.pressedAction().setActionMatcher(CcAssignment.SOLO_CURRENT.createActionMatcher(midiIn, 1));
+
+		mainLayer.bindPressed(muteSelectedButton, cursorTrack.mute().toggleAction());
+		mainLayer.bindPressed(soloSelectedButton, cursorTrack.solo().toggleAction());
+
 		mainLayer.bindPressed(trackNavLeftButton, () -> {
+			RemoteConsole.out.println(" NAV LEFT");
 			mixerTrackBank.scrollBy(-8);
 		});
 
 		mainLayer.bindPressed(trackRightNavButton, () -> {
+			RemoteConsole.out.println(" NAV LEFT");
 			mixerTrackBank.scrollBy(8);
 		});
 
