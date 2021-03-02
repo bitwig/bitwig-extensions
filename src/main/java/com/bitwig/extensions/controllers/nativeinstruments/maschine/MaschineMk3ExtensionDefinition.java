@@ -75,6 +75,12 @@ public class MaschineMk3ExtensionDefinition extends ControllerExtensionDefinitio
 		return "Controllers/Native Instruments/Maschine MK3 Plus.pdf";
 	}
 
+   @Override
+   public String getSupportFolderPath()
+   {
+      return "Controllers/Native Instruments";
+   }
+
 	@Override
 	public MaschineExtension createInstance(final ControllerHost host) {
 		return new MaschineExtension(this, host, MaschineMode.MK3);
