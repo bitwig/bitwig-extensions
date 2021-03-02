@@ -75,7 +75,7 @@ public class KompleteKontrolSMk2ExtensionDefinition extends ControllerExtensionD
 
 	@Override
 	public String getHelpFilePath() {
-		return "Controllers/Native Instruments/Komplete Kontrol MK2.pdf";
+		return "Controllers/Native Instruments/Komplete Kontrol MK2/Komplete Kontrol MK2.pdf";
 	}
 
 	@Override
