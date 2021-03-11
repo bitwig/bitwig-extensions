@@ -188,10 +188,10 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 		fourDKnob.setStepSize(1 / 128.0);
 
 		final HardwareActionBindable incAction = getHost().createAction(() -> {
-			RemoteConsole.out.println(" TRANSPORT +");
+			mTransport.fastForward();
 		}, () -> "+");
 		final HardwareActionBindable decAction = getHost().createAction(() -> {
-			RemoteConsole.out.println(" TRANSPORT -");
+			mTransport.rewind();
 		}, () -> "-");
 		fourDKnob.addBinding(getHost().createRelativeHardwareControlStepTarget(incAction, decAction));
 
@@ -337,13 +337,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 		mainLayer.bindLightState(playButton, mTransport.isPlaying());
 		final ModeButton restartButton = new ModeButton(this, "RESTART_BUTTON", CcAssignment.RESTART);
 		mainLayer.bindPressed(restartButton.getHwButton(), () -> {
-			mTransport.stop();
-			getHost().scheduleTask(() -> {
-				mTransport.stop();
-			}, 10);
-			getHost().scheduleTask(() -> {
-				mTransport.play();
-			}, 20);
+			mTransport.launchFromPlayStartPosition();
 		});
 		final ModeButton stopButton = new ModeButton(this, "STOP_BUTTON", CcAssignment.STOP);
 		mainLayer.bindPressed(stopButton.getHwButton(), mTransport.stopAction());

@@ -29,3 +29,4 @@ target/
 /.classpath
 /.project
 /${bitwig.extension.directory}/
+/${bitwig.extension.directory}/Bitwig.bwextension
