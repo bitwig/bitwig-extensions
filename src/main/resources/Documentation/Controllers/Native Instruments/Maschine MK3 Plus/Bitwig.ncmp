@@ -536,6 +536,7 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Setting">
+        <disabled />
         <controller>41</controller>
         <channel>0</channel>
         <off>0</off>
@@ -1396,7 +1397,7 @@
           <default>0</default>
         </led>
         <pad subtype="pressure" version="1" id="Pressure1">
-          <polyat>12</polyat>
+          <polyat>60</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1405,7 +1406,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure10">
-          <polyat>21</polyat>
+          <polyat>69</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1414,7 +1415,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure11">
-          <polyat>22</polyat>
+          <polyat>70</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1423,7 +1424,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure12">
-          <polyat>23</polyat>
+          <polyat>71</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1432,7 +1433,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure13">
-          <polyat>24</polyat>
+          <polyat>72</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1441,7 +1442,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure14">
-          <polyat>25</polyat>
+          <polyat>73</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1450,7 +1451,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure15">
-          <polyat>26</polyat>
+          <polyat>74</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1459,7 +1460,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure16">
-          <polyat>27</polyat>
+          <polyat>75</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1468,7 +1469,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure2">
-          <polyat>13</polyat>
+          <polyat>61</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1477,7 +1478,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure3">
-          <polyat>14</polyat>
+          <polyat>62</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1486,7 +1487,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure4">
-          <polyat>15</polyat>
+          <polyat>63</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1495,7 +1496,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure5">
-          <polyat>16</polyat>
+          <polyat>64</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1504,7 +1505,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure6">
-          <polyat>17</polyat>
+          <polyat>65</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1513,7 +1514,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure7">
-          <polyat>18</polyat>
+          <polyat>66</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1522,7 +1523,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure8">
-          <polyat>19</polyat>
+          <polyat>67</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>
@@ -1531,7 +1532,7 @@
           <reaction>ondown</reaction>
         </pad>
         <pad subtype="pressure" version="1" id="Pressure9">
-          <polyat>20</polyat>
+          <polyat>68</polyat>
           <channel>0</channel>
           <min>0</min>
           <max>127</max>

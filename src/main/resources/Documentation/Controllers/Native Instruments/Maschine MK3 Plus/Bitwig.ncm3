@@ -538,6 +538,7 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Setting">
+        <disabled />
         <controller>41</controller>
         <channel>0</channel>
         <off>0</off>
