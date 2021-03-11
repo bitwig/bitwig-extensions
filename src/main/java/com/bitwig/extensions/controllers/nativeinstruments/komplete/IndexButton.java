@@ -5,7 +5,7 @@ import com.bitwig.extension.controller.api.HardwareButton;
 public class IndexButton {
 	private final HardwareButton hwButton;
 
-	public IndexButton(final KompleteKontrolSMk2Extension driver, final int index, final String name, final int ccNr) {
+	public IndexButton(final KompleteKontrolExtension driver, final int index, final String name, final int ccNr) {
 		hwButton = driver.getSurface().createHardwareButton(name + "_" + index);
 		hwButton.pressedAction().setActionMatcher(driver.getMidiIn().createCCActionMatcher(0xF, ccNr, index));
 	}

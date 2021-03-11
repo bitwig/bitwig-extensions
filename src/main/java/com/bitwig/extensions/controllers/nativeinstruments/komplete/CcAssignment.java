@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
+import java.util.Optional;
+
 import com.bitwig.extension.controller.api.HardwareActionMatcher;
 import com.bitwig.extension.controller.api.MidiIn;
 
@@ -21,8 +23,11 @@ public enum CcAssignment {
 	QUANTIZE(0x22), //
 	AUTO(0x23), //
 	PRESS_4D_KNOB(0x60), //
-	PRESS_4D_KNOB_SHIFT(0x61) //
-	;
+	PRESS_4D_KNOB_SHIFT(0x61), //
+	VOLUME_CURRENT(0x64), //
+	PAN_CURRENT(0x65), //
+	MUTE_CURRENT(0x66), //
+	SOLO_CURRENT(0x67);
 	private int stateId;
 
 	private CcAssignment(final int stateId) {
@@ -32,6 +37,15 @@ public enum CcAssignment {
 	public int getStateId() {
 		return stateId;
 	};
+
+	public Optional<CcAssignment> fromMidi(final int value) {
+		for (final CcAssignment cc : CcAssignment.values()) {
+			if (cc.stateId == value) {
+				return Optional.of(cc);
+			}
+		}
+		return Optional.empty();
+	}
 
 	public HardwareActionMatcher createActionMatcher(final MidiIn midiIn, final int matchvalue) {
 		return midiIn.createCCActionMatcher(15, stateId, matchvalue);
