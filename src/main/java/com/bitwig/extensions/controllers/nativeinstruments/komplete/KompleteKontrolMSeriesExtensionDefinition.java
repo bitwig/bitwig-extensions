@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.nativeinstruments.maschine;
+package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
 import java.util.UUID;
 
@@ -7,15 +7,15 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class MaschineMk3ExtensionDefinition extends ControllerExtensionDefinition {
-	private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-810d-0de77ffa2d6f");
+public class KompleteKontrolMSeriesExtensionDefinition extends ControllerExtensionDefinition {
+	private static final UUID DRIVER_ID = UUID.fromString("963457d6-fa2f-4974-b61d-8c6881dc097e");
 
-	public MaschineMk3ExtensionDefinition() {
+	public KompleteKontrolMSeriesExtensionDefinition() {
 	}
 
 	@Override
 	public String getName() {
-		return "Maschine Mk3";
+		return "Komplete Kontrol M32";
 	}
 
 	@Override
@@ -25,7 +25,7 @@ public class MaschineMk3ExtensionDefinition extends ControllerExtensionDefinitio
 
 	@Override
 	public String getVersion() {
-		return "1.0";
+		return "0.5";
 	}
 
 	@Override
@@ -40,7 +40,7 @@ public class MaschineMk3ExtensionDefinition extends ControllerExtensionDefinitio
 
 	@Override
 	public String getHardwareModel() {
-		return "Maschine Mk3";
+		return "Komplete Kontrol M32";
 	}
 
 	@Override
@@ -50,38 +50,31 @@ public class MaschineMk3ExtensionDefinition extends ControllerExtensionDefinitio
 
 	@Override
 	public int getNumMidiInPorts() {
-		return 1;
+		return 2;
 	}
 
 	@Override
 	public int getNumMidiOutPorts() {
-		return 1;
+		return 2;
 	}
 
 	@Override
 	public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
 			final PlatformType platformType) {
 		if (platformType == PlatformType.WINDOWS) {
-			list.add(new String[] { "Maschine MK3 Ctrl MIDI" }, new String[] { "Maschine MK3 Ctrl MIDI" });
+			list.add(new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" },
+					new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" });
 		} else if (platformType == PlatformType.MAC) {
-			list.add(new String[] { "Maschine MK3 Virtual Input" }, new String[] { "Maschine MK3 Virtual Output" });
+			list.add(new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" },
+					new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" });
 		} else if (platformType == PlatformType.LINUX) {
-			list.add(new String[] { "Maschine MK3 Ctrl MIDI" }, new String[] { "Maschine MK3 Ctrl MIDI" });
+			list.add(new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" },
+					new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" });
 		}
 	}
 
 	@Override
-	public String getHelpFilePath() {
-		return "Controllers/Native Instruments/Maschine MK3 Plus/Maschine MK3 Plus.pdf";
-	}
-
-	@Override
-	public String getSupportFolderPath() {
-		return "Controllers/Native Instruments/Maschine MK3 Plus";
-	}
-
-	@Override
-	public MaschineExtension createInstance(final ControllerHost host) {
-		return new MaschineExtension(this, host, MaschineMode.MK3);
+	public KompleteKontrolAExtension createInstance(final ControllerHost host) {
+		return new KompleteKontrolAExtension(this, host);
 	}
 }

@@ -20,12 +20,12 @@ public class MaschinePlusExtensionDefinition extends ControllerExtensionDefiniti
 
 	@Override
 	public String getAuthor() {
-		return "Eric Ahrens";
+		return "Bitwig";
 	}
 
 	@Override
 	public String getVersion() {
-		return "0.1";
+		return "1.0";
 	}
 
 	@Override
@@ -75,13 +75,12 @@ public class MaschinePlusExtensionDefinition extends ControllerExtensionDefiniti
 		return "Controllers/Native Instruments/Maschine MK3 Plus/Maschine MK3 Plus.pdf";
 	}
 
-   @Override
-   public String getSupportFolderPath()
-   {
-      return "Controllers/Native Instruments/Maschine MK3 Plus";
-   }
+	@Override
+	public String getSupportFolderPath() {
+		return "Controllers/Native Instruments/Maschine MK3 Plus";
+	}
 
-   @Override
+	@Override
 	public MaschineExtension createInstance(final ControllerHost host) {
 		return new MaschineExtension(this, host, MaschineMode.PLUS);
 	}

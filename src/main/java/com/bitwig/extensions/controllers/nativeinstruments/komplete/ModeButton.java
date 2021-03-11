@@ -7,7 +7,7 @@ public class ModeButton {
 	private final HardwareButton hwButton;
 	private final OnOffHardwareLight led;
 
-	public ModeButton(final KompleteKontrolSMk2Extension driver, final String name, final CcAssignment assingment) {
+	public ModeButton(final KompleteKontrolExtension driver, final String name, final CcAssignment assingment) {
 		hwButton = driver.getSurface().createHardwareButton(name);
 		hwButton.pressedAction().setActionMatcher(assingment.createActionMatcher(driver.getMidiIn(), 1));
 		hwButton.releasedAction().setActionMatcher(assingment.createActionMatcher(driver.getMidiIn(), 0));
