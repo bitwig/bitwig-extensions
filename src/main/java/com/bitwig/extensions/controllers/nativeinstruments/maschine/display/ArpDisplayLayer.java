@@ -40,9 +40,7 @@ public class ArpDisplayLayer extends DisplayLayer {
 
 		arp.octaves().set(0);
 		arp.mode().markInterested();
-		bind(knobs[1],
-				host.createRelativeHardwareControlStepTarget(host.createAction(() -> incMode(arp.mode(), 1), () -> "+"),
-						host.createAction(() -> incMode(arp.mode(), -1), () -> "-")));
+		bind(knobs[1], createIncrementBinder(host, v -> incMode(arp.mode(), v)));
 		arp.mode().addValueObserver(v -> {
 			updateDisplayValues(v, 1);
 		});
@@ -51,10 +49,8 @@ public class ArpDisplayLayer extends DisplayLayer {
 		arp.rate().addValueObserver(v -> {
 			updateDisplayValues(rateToString(v), 2);
 		});
-		bind(knobs[3],
-				host.createRelativeHardwareControlStepTarget(host.createAction(() -> incRate(arp.rate(), 1), () -> "+"),
-						host.createAction(() -> incRate(arp.rate(), -1), () -> "-")));
-		// TODO more value to come
+		bind(knobs[3], createIncrementBinder(host, v -> incRate(arp.rate(), v)));
+		// TODO more values to come
 		arp.gateLength().markInterested();
 		arp.gateLength().addValueObserver(v -> {
 			updateDisplayValues(toPercent(v), 3);
@@ -64,17 +60,7 @@ public class ArpDisplayLayer extends DisplayLayer {
 				arp.octaves().set(0);
 			}
 		});
-		bind(knobs[4],
-				host.createRelativeHardwareControlStepTarget(
-						host.createAction(() -> incGateLength(arp.gateLength(), 1), () -> "+"),
-						host.createAction(() -> incGateLength(arp.gateLength(), -1), () -> "-")));
-//		final ModeButton[] buttons = driver.getDisplayButtons();
-//		bindPressed(buttons[0], () -> setGate());
-//		bindPressed(buttons[1], () -> updateScale(1));
-//		bindPressed(buttons[2], () -> updateOctave(-1));
-//		bindPressed(buttons[3], () -> updateOctave(1));
-//		bindPressed(buttons[4], () -> updateSemi(-1));
-//		bindPressed(buttons[5], () -> updateSemi(1));
+		bind(knobs[4], createIncrementBinder(host, v -> incGateLength(arp.gateLength(), v)));
 	}
 
 	private void incGateLength(final SettableDoubleValue value, final int incValue) {

@@ -106,24 +106,7 @@ public class SessionMode extends PadMode {
 			for (final PadButton padButton : buttons) {
 				getDriver().updatePadLed(padButton);
 			}
-			updateNavLed();
 		}
-	}
-
-	private void updateNavLed() {
-		final MaschineExtension driver = getDriver();
-		if (layout == LayoutType.LAUNCHER) {
-			driver.sendLedUpdate(CcAssignment.DKNOB_RIGHT, trackBank.canScrollChannelsDown().get() ? 127 : 0);
-			driver.sendLedUpdate(CcAssignment.DKNOB_LEFT, trackBank.canScrollChannelsUp().get() ? 127 : 0);
-			driver.sendLedUpdate(CcAssignment.DKNOB_DOWN, trackBank.sceneBank().canScrollForwards().get() ? 127 : 0);
-			driver.sendLedUpdate(CcAssignment.DKNOB_UP, trackBank.sceneBank().canScrollBackwards().get() ? 127 : 0);
-		} else {
-			driver.sendLedUpdate(CcAssignment.DKNOB_DOWN, trackBank.canScrollChannelsDown().get() ? 127 : 0);
-			driver.sendLedUpdate(CcAssignment.DKNOB_UP, trackBank.canScrollChannelsDown().get() ? 127 : 0);
-			driver.sendLedUpdate(CcAssignment.DKNOB_RIGHT, trackBank.sceneBank().canScrollForwards().get() ? 127 : 0);
-			driver.sendLedUpdate(CcAssignment.DKNOB_LEFT, trackBank.sceneBank().canScrollBackwards().get() ? 127 : 0);
-		}
-
 	}
 
 	private void handleLaunch(final int buttonIndex) {
@@ -182,38 +165,6 @@ public class SessionMode extends PadMode {
 	@Override
 	protected String getModeDescription() {
 		return "Clip Launcher";
-	}
-
-	public void navLeft() {
-		if (layout == LayoutType.LAUNCHER) {
-			getDriver().getTrackBank().scrollBackwards();
-		} else {
-			getDriver().getTrackBank().sceneBank().scrollBackwards();
-		}
-	}
-
-	public void navRight() {
-		if (layout == LayoutType.LAUNCHER) {
-			getDriver().getTrackBank().scrollForwards();
-		} else {
-			getDriver().getTrackBank().sceneBank().scrollForwards();
-		}
-	}
-
-	public void navUp() {
-		if (layout == LayoutType.LAUNCHER) {
-			getDriver().getTrackBank().sceneBank().scrollBackwards();
-		} else {
-			getDriver().getTrackBank().scrollBackwards();
-		}
-	}
-
-	public void navDown() {
-		if (layout == LayoutType.LAUNCHER) {
-			getDriver().getTrackBank().sceneBank().scrollForwards();
-		} else {
-			getDriver().getTrackBank().scrollForwards();
-		}
 	}
 
 	private InternalHardwareLightState computeGridLedState(final int buttonIndex) {
@@ -285,14 +236,14 @@ public class SessionMode extends PadMode {
 		super.doDeactivate();
 		final TrackBank trackBank = getDriver().getTrackBank();
 		final SceneBank sceneBank = getDriver().getTrackBank().sceneBank();
-		sceneBank.setIndication(false);
+		// sceneBank.setIndication(false);
 
 		for (int i = 0; i < 4; ++i) {
 			final Track channel = trackBank.getItemAt(i);
 			channel.unsubscribe();
 
 			final ClipLauncherSlotBank slotBank = channel.clipLauncherSlotBank();
-			slotBank.setIndication(false);
+			// slotBank.setIndication(false);
 
 			for (int j = 0; j < 4; ++j) {
 				final ClipLauncherSlot slot = slotBank.getItemAt(j);

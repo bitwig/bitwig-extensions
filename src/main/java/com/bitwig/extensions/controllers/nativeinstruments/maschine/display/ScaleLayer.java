@@ -23,17 +23,10 @@ public class ScaleLayer extends DisplayLayer {
 		final RelativeHardwareKnob semiSelection = knobs[2];
 		final RelativeHardwareKnob fixedSelection = knobs[4];
 		final ControllerHost host = driver.getHost();
-		bind(scaleSelection,
-				host.createRelativeHardwareControlStepTarget(host.createAction(() -> updateScale(1), () -> "+"),
-						host.createAction(() -> updateScale(-1), () -> "-")));
-		bind(octaveSelection,
-				host.createRelativeHardwareControlStepTarget(host.createAction(() -> updateOctave(1), () -> "+"),
-						host.createAction(() -> updateOctave(-1), () -> "-")));
-		bind(semiSelection, host.createRelativeHardwareControlStepTarget(
-				host.createAction(() -> updateSemi(1), () -> "+"), host.createAction(() -> updateSemi(-1), () -> "-")));
-		bind(fixedSelection,
-				host.createRelativeHardwareControlStepTarget(host.createAction(() -> updateFixedVelocity(1), () -> "+"),
-						host.createAction(() -> updateFixedVelocity(-1), () -> "-")));
+		bind(scaleSelection, createIncrementBinder(host, this::updateScale));
+		bind(octaveSelection, createIncrementBinder(host, this::updateOctave));
+		bind(semiSelection, createIncrementBinder(host, this::updateSemi));
+		bind(fixedSelection, createIncrementBinder(host, this::updateFixedVelocity));
 		bindPressed(buttons[0], () -> updateScale(-1));
 		bindPressed(buttons[1], () -> updateScale(1));
 		bindPressed(buttons[2], () -> updateOctave(-1));

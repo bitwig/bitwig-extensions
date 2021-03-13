@@ -14,7 +14,6 @@ import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.HardwareAction;
-import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
@@ -23,6 +22,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Preferences;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.Send;
@@ -35,6 +35,7 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.Grou
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.ArpDisplayLayer;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.BrowserLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DeviceLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.MixerLayer;
@@ -43,7 +44,9 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.Scal
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.StepEditDisplayLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.DrumPadMode;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.GroupLayer;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.JogWheelDestination;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.KeyboardMode;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.MainKnobControl;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.PadMode;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.SceneLaunchMode;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.SessionMode;
@@ -51,7 +54,7 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.StepMo
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.VeloctiyHandler;
 import com.bitwig.extensions.framework.Layers;
 
-public class MaschineExtension extends ControllerExtension {
+public class MaschineExtension extends ControllerExtension implements JogWheelDestination {
 
 	private final byte[] displayBuffer = { (byte) 240, 0, 0, 102, 23, 18, 0, // 6: the grid number 0-3 * 28
 			0, 0, 0, 0, 0, 0, 0, 0, // 7: 27 Chars
@@ -113,6 +116,8 @@ public class MaschineExtension extends ControllerExtension {
 
 	private final String[] displayBackupFields = new String[4];
 	private long lastTempUpdate = 0;
+	private PopupBrowser browser;
+	private BrowserLayer browserLayer;
 
 	protected MaschineExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final MaschineMode mode) {
@@ -169,14 +174,14 @@ public class MaschineExtension extends ControllerExtension {
 		createLayers();
 		setUpPreferences();
 
-		createButtonNavButton(midiIn, "PATTERN", CcAssignment.PATTERN);
-		initJogWheel();
+		mainKnobControl = new MainKnobControl(this);
 
 		setUpMidiSysExCommands();
 		currentDisplayMode.activate();
 		currentMode.activate();
 		groupLayer.activate();
 		mainLayer.activate();
+		mainKnobControl.activate();
 
 		host.showPopupNotification(maschineMode.getDescriptor() + " Initialized");
 		host.scheduleTask(this::handlBlink, 100);
@@ -261,11 +266,13 @@ public class MaschineExtension extends ControllerExtension {
 		final HardwareButton arrangerButton = createTransportButton("ARRANGE", CcAssignment.ARRANGER);
 		final HardwareButton followButton = createTransportButton("FOLLOW", CcAssignment.FOLLOWGRID);
 		final HardwareButton saveButton = createTransportButton("SAVE", CcAssignment.SAVE);
+
 		currentLayoutType = LayoutType.LAUNCHER;
 		application.panelLayout().addValueObserver(v -> {
 			currentLayoutType = LayoutType.toType(v);
 			inArrangeMode.setValue(currentLayoutType == LayoutType.ARRANGER);
 			sessionMode.notifyPanelLayout(currentLayoutType);
+			mainKnobControl.notifyPanelLayout(currentLayoutType);
 		});
 		mainLayer.bindIsPressed(arrangerButton, v -> {
 			application.setPanelLayout(currentLayoutType.other().getName());
@@ -282,6 +289,37 @@ public class MaschineExtension extends ControllerExtension {
 		globalShiftLayer.bindPressed(saveButton, openAction);
 		mainLayer.bindPressed(saveButton, saveAction);
 		globalShiftLayer.bindPressed(followButton, arranger.isClipLauncherVisible());
+	}
+
+	public void initBrowserSection() {
+		browser = getHost().createPopupBrowser();
+		browser.exists().markInterested();
+		browserLayer = new BrowserLayer(this, "browser-display-mode");
+
+		final HardwareButton browserButton = createTransportButton("BROWSERBUTTON", CcAssignment.BROWSER);
+		mainLayer.bindPressed(browserButton, pressed -> {
+			if (browser.exists().get()) {
+				browser.cancel();
+			} else {
+				cursorDevice.afterDeviceInsertionPoint().browse();
+			}
+		});
+		globalShiftLayer.bindPressed(browserButton, pressed -> {
+			if (browser.exists().get()) {
+				browser.cancel();
+			} else {
+				cursorDevice.replaceDeviceInsertionPoint().browse();
+			}
+		});
+		browser.exists().addValueObserver(exists -> {
+			if (exists) {
+				setDisplayMode(browserLayer);
+			} else {
+				backToPreviousDisplayMode();
+			}
+		});
+		mainLayer.bindLightState(browserButton, browser.exists());
+		globalShiftLayer.bindLightState(browserButton, browser.exists());
 	}
 
 	void handlBlink() {
@@ -331,7 +369,7 @@ public class MaschineExtension extends ControllerExtension {
 	}
 
 	final public void setMode(final PadMode mode) {
-		if (currentMode == mode) {
+		if (currentMode == mode || mode == null) {
 			return;
 		}
 		currentMode.deactivate();
@@ -383,6 +421,10 @@ public class MaschineExtension extends ControllerExtension {
 
 	public PinnableCursorDevice getCursorDevice() {
 		return cursorDevice;
+	}
+
+	public PopupBrowser getBrowser() {
+		return browser;
 	}
 
 	public void handleShiftAction(final int padButtonIndex) {
@@ -517,7 +559,6 @@ public class MaschineExtension extends ControllerExtension {
 		mainLayer.bindMode(deviceButton, deviceDisplayMode, false);
 		mainLayer.bindMode(mixerButton, mixerDisplayMode, false);
 
-		setUp4DNavButtons(sessionMode);
 		final HardwareButton touch4DButton = createTouchButton(midiIn, "NAV4D_TOUCH",
 				CcAssignment.DKNOB_TOUCH.getCcNr());
 		touch4DButton.isPressed().addValueObserver(touched -> {
@@ -531,6 +572,16 @@ public class MaschineExtension extends ControllerExtension {
 
 		initNoteRepeat(arpDisplayMode);
 		setUpArrangerHandling(sessionMode);
+		initBrowserSection();
+	}
+
+	public HardwareButton create4DSelectButton(final String name, final CcAssignment assignment) {
+		final HardwareButton navdownButton = surface.createHardwareButton(name);
+		navdownButton.pressedAction().setActionMatcher(assignment.createActionMatcher(midiIn, 127));
+		navdownButton.releasedAction().setActionMatcher(assignment.createActionMatcher(midiIn, 0));
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(name + "_LED");
+		navdownButton.setBackgroundLight(led);
+		return navdownButton;
 	}
 
 	private void initNoteRepeat(final ArpDisplayLayer arpDisplayMode) {
@@ -592,34 +643,6 @@ public class MaschineExtension extends ControllerExtension {
 		mainLayer.bindMode(padModeButton, padDisplayLayer, true); // Decoupled light
 		mainLayer.bindMode(stepButton, stepDisplayLayer, false);
 
-	}
-
-	private void setUp4DNavButtons(final SessionMode sessionMode) {
-		final HardwareButton navDownButton = createButtonNavButton(midiIn, "NAV4D_DOWN", CcAssignment.DKNOB_DOWN);
-		final HardwareButton navUpButton = createButtonNavButton(midiIn, "NAV4D_UP", CcAssignment.DKNOB_UP);
-		final HardwareButton navLeftButton = createButtonNavButton(midiIn, "NAV4D_LEFT", CcAssignment.DKNOB_LEFT);
-		final HardwareButton navRightButton = createButtonNavButton(midiIn, "NAV4D_RIGHT", CcAssignment.DKNOB_RIGHT);
-
-		navLeftButton.isPressed().addValueObserver(v -> {
-			if (v) {
-				sessionMode.navLeft();
-			}
-		});
-		navRightButton.isPressed().addValueObserver(v -> {
-			if (v) {
-				sessionMode.navRight();
-			}
-		});
-		navUpButton.isPressed().addValueObserver(v -> {
-			if (v) {
-				sessionMode.navUp();
-			}
-		});
-		navDownButton.isPressed().addValueObserver(v -> {
-			if (v) {
-				sessionMode.navDown();
-			}
-		});
 	}
 
 	private HardwareButton createTransportButton(final String name, final CcAssignment assignment) {
@@ -714,41 +737,6 @@ public class MaschineExtension extends ControllerExtension {
 		for (int i = 0; i < displayButtons.length; i++) {
 			displayButtons[i] = new ModeButton(this, "DISPLAY_BUTTON_" + i, buttonAssingments[i]);
 		}
-	}
-
-	private void initJogWheel() {
-		mainKnobControl = new MainKnobControl(this);
-
-		final RelativeHardwareKnob fourDKnob = surface.createRelativeHardwareKnob("4D_WHEEL");
-		fourDKnob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(
-				CcAssignment.DKNOB_TURN.getChannel(), CcAssignment.DKNOB_TURN.getCcNr(), 128));
-		fourDKnob.setStepSize(1 / 128.0);
-
-		final HardwareActionBindable incAction = getHost().createAction(() -> mainKnobControl.dataChange(1, shiftDown),
-				() -> "+");
-		final HardwareActionBindable decAction = getHost().createAction(() -> mainKnobControl.dataChange(-1, shiftDown),
-				() -> "-");
-		fourDKnob.addBinding(getHost().createRelativeHardwareControlStepTarget(incAction, decAction));
-	}
-
-//	private void onMidi0(final ShortMidiMessage msg) {
-//		if (msg.getStatusByte() == Midi.CC) {
-//			if (msg.getData1() == CcAssignment.DKNOB_TURN.getCcNr()) {
-//				mainKnobControl.dataChange(msg.getData2(), shiftDown);
-//			}
-//			if (msg.getData1() == 77) {
-//				RemoteConsole.out.println("MIDI {} {}", msg.getData1(), msg.getData2());
-//			}
-//		}
-//	}
-
-	public HardwareButton create4DSelectButton(final String name, final CcAssignment assignment) {
-		final HardwareButton navdownButton = surface.createHardwareButton(name);
-		navdownButton.pressedAction().setActionMatcher(assignment.createActionMatcher(midiIn, 127));
-		navdownButton.releasedAction().setActionMatcher(assignment.createActionMatcher(midiIn, 0));
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(name + "_LED");
-		navdownButton.setBackgroundLight(led);
-		return navdownButton;
 	}
 
 	private void initCursorTrack() {
@@ -846,16 +834,6 @@ public class MaschineExtension extends ControllerExtension {
 				send.exists().markInterested();
 			}
 		}
-	}
-
-	private HardwareButton createButtonNavButton(final MidiIn midiIn, final String name,
-			final CcAssignment assignment) {
-		final HardwareButton navButton = surface.createHardwareButton(name);
-		navButton.pressedAction().setActionMatcher(assignment.createActionMatcher(midiIn, 127));
-		navButton.releasedAction().setActionMatcher(assignment.createActionMatcher(midiIn, 0));
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(name + "_LED");
-		navButton.setBackgroundLight(led);
-		return navButton;
 	}
 
 	private HardwareButton createTouchButton(final MidiIn midiIn, final String name, final int ccNr) {
@@ -963,6 +941,29 @@ public class MaschineExtension extends ControllerExtension {
 
 	public boolean isEraseDown() {
 		return eraseButtonDown;
+	}
+
+	public JogWheelDestination getJogWheelDestination() {
+		if (browser.exists().get()) {
+			return browserLayer;
+		}
+		if (currentMode instanceof JogWheelDestination) {
+			return (JogWheelDestination) currentMode;
+		}
+		return this;
+	}
+
+	@Override
+	public void jogWheelPush(final boolean push) {
+	}
+
+	@Override
+	public void jogWheelAction(final int increment) {
+		if (increment > 0) {
+			transport.fastForward();
+		} else {
+			transport.rewind();
+		}
 	}
 
 }

@@ -20,17 +20,10 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		super(driver, name);
 		final ControllerHost host = driver.getHost();
 		final RelativeHardwareKnob[] knobs = driver.getDisplayKnobs();
-		bind(knobs[0],
-				host.createRelativeHardwareControlStepTarget(host.createAction(() -> changeFocusNote(1), () -> "+"),
-						host.createAction(() -> changeFocusNote(-1), () -> "-")));
-		bind(knobs[1],
-				host.createRelativeHardwareControlStepTarget(host.createAction(() -> changeRefVelocity(1), () -> "+"),
-						host.createAction(() -> changeRefVelocity(-1), () -> "-")));
-		bind(knobs[2],
-				host.createRelativeHardwareControlStepTarget(host.createAction(() -> changeLoopLength(1), () -> "+"),
-						host.createAction(() -> changeLoopLength(-1), () -> "-")));
-		bind(knobs[3], host.createRelativeHardwareControlStepTarget(host.createAction(() -> changeGrid(1), () -> "+"),
-				host.createAction(() -> changeGrid(-1), () -> "-")));
+		bind(knobs[0], createIncrementBinder(host, this::changeFocusNote));
+		bind(knobs[1], createIncrementBinder(host, this::changeRefVelocity));
+		bind(knobs[2], createIncrementBinder(host, this::changeLoopLength));
+		bind(knobs[3], createIncrementBinder(host, this::changeGrid));
 	}
 
 	private void changeGrid(final int amount) {

@@ -16,7 +16,6 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 
@@ -42,7 +41,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 				.getAutoDetectionMidiPortNamesList(host.getPlatformType());
 
 		final AutoDetectionMidiPortNames inport = defs.getPortNames().get(0);
-		RemoteConsole.out.println("NAMES = {}", inport.getInputNames()[1]);
+		// RemoteConsole.out.println("NAMES = {}", inport.getInputNames()[1]);
 
 		setUpSliders(midiIn);
 		final MidiIn midiIn2 = host.getMidiInPort(1);
@@ -207,7 +206,6 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 		cursorClip.exists().markInterested();
 		final ModeButton quantizeButton = new ModeButton(this, "QUANTIZE_BUTTON", CcAssignment.QUANTIZE);
 		sessionFocusLayer.bindPressed(quantizeButton, () -> {
-			RemoteConsole.out.println("EXEC QUANTIZE");
 			cursorClip.quantize(1.0);
 		});
 		sessionFocusLayer.bind(() -> {
