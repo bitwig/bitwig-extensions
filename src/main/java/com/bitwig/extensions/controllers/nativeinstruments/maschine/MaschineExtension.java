@@ -260,7 +260,6 @@ public class MaschineExtension extends ControllerExtension {
 		final HardwareButton arrangerButton = createTransportButton("ARRANGE", CcAssignment.ARRANGER);
 		final HardwareButton followButton = createTransportButton("FOLLOW", CcAssignment.FOLLOWGRID);
 		final HardwareButton saveButton = createTransportButton("SAVE", CcAssignment.SAVE);
-		final HardwareButton settingsButton = createTransportButton("SETTINGS", CcAssignment.SETTINGS);
 		currentLayoutType = LayoutType.LAUNCHER;
 		application.panelLayout().addValueObserver(v -> {
 			currentLayoutType = LayoutType.toType(v);
@@ -279,10 +278,8 @@ public class MaschineExtension extends ControllerExtension {
 
 		final Action saveAction = application.getAction("Save");
 		final Action openAction = application.getAction("Open");
-		final Action settingsAction = application.getAction("Preferences");
 		globalShiftLayer.bindPressed(saveButton, openAction);
 		mainLayer.bindPressed(saveButton, saveAction);
-		mainLayer.bindPressed(settingsButton, settingsAction);
 		globalShiftLayer.bindPressed(followButton, arranger.isClipLauncherVisible());
 	}
 
