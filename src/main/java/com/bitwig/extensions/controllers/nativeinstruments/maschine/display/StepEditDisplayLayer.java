@@ -136,28 +136,33 @@ public class StepEditDisplayLayer extends DisplayLayer {
 
 	public String getValueDisplay(final boolean forceValue) {
 		final StringBuilder sb = new StringBuilder();
-		if (touched[0] || forceValue) {
-			sb.append(DisplayUtil.padString(stepMode.getFocus(), 6));
+		if (touched[0]) {
+			sb.append(DisplayUtil.padString(stepMode.getFocus(), 27));
 		} else {
-			sb.append("I.NOTE");
-		}
-		sb.append("|");
-		if (touched[1] || forceValue) {
-			sb.append(DisplayUtil.padValue(this.stepMode.getRefVelocity(), 6));
-		} else {
-			sb.append("I.VEL ");
-		}
-		sb.append("|");
-		if (touched[2] || forceValue) {
-			sb.append(DisplayUtil.padString(DisplayUtil.beatsFormatted(stepMode.getClip().getLoopLength().get()), 6));
-		} else {
-			sb.append("CL.LEN");
-		}
-		sb.append("|");
-		if (touched[3] || forceValue) {
-			sb.append(DisplayUtil.padString(stepMode.getPositionHandler().getGridValue(), 6));
-		} else {
-			sb.append("GR.RES");
+			if (forceValue) {
+				sb.append(DisplayUtil.padString(stepMode.getFocus(), 6));
+			} else {
+				sb.append("I.NOTE");
+			}
+			sb.append("|");
+			if (touched[1] || forceValue) {
+				sb.append(DisplayUtil.padValue(this.stepMode.getRefVelocity(), 6));
+			} else {
+				sb.append("I.VEL ");
+			}
+			sb.append("|");
+			if (touched[2] || forceValue) {
+				sb.append(
+						DisplayUtil.padString(DisplayUtil.beatsFormatted(stepMode.getClip().getLoopLength().get()), 6));
+			} else {
+				sb.append("CL.LEN");
+			}
+			sb.append("|");
+			if (touched[3] || forceValue) {
+				sb.append(DisplayUtil.padString(stepMode.getPositionHandler().getGridValue(), 6));
+			} else {
+				sb.append("GR.RES");
+			}
 		}
 		return sb.toString();
 	}
@@ -199,7 +204,7 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		super.doActivate();
 		final RelativeHardwareKnob[] knobs = getDriver().getDisplayKnobs();
 		for (int i = 0; i < knobs.length; i++) {
-			knobs[i].setStepSize(1 / 64.0);
+			knobs[i].setStepSize(1 / 32.0);
 		}
 		updateTrackName();
 		updateClipName();

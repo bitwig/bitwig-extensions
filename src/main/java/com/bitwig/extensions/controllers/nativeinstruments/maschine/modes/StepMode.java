@@ -252,13 +252,10 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 
 	public void changeFocusNote(final int amount) {
 		if (isDrumEdit) {
-			int newValue = selectPadIndex + amount;
-			if (newValue < 0) {
-				newValue = 15;
-			} else if (newValue > 15) {
-				newValue = 0;
+			final int newValue = selectPadIndex + amount;
+			if (newValue >= 0 && newValue < 16) {
+				drumLayer.selectPad(newValue);
 			}
-			drumLayer.selectPad(newValue);
 		} else {
 			final int newValue = keyLayer.getNextNote(focusNote, amount);
 			// final int newValue = focusNote + amount;
