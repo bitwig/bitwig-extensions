@@ -29,8 +29,9 @@ public class DrumPadMode extends BasicKeyPlayingMode {
 			final DrumPad pad = drumPadBank.getItemAt(index);
 			pad.color().markInterested();
 			pad.name().markInterested();
-			pad.addIsSelectedInEditorObserver(v -> {
-				if (v) {
+			pad.exists().markInterested();
+			pad.addIsSelectedInEditorObserver(selected -> {
+				if (selected) {
 					noteFocusHandler.notifyDrumPadSelected(pad, padOffset, index);
 				}
 			});

@@ -7,6 +7,8 @@ import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.NoteStep.State;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.ColorBrightness;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.Colors;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.NIColorUtil;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLed;
@@ -152,10 +154,27 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 		this.focusNote = padOffset + padIndex;
 		this.focusPad = pad;
 		this.selectPadIndex = padIndex;
-		padColor = NIColorUtil.convertColor(pad.color());
+
+		if (pad.exists().get()) {
+			padColor = NIColorUtil.convertColor(pad.color());
+		} else {
+			padColor = Colors.WHITE.getIndexValue(ColorBrightness.DARKENED);
+		}
+
 		this.clip.scrollToKey(this.focusNote);
 		if (this.focusChangerListener != null) {
 			this.focusChangerListener.accept(getFocus());
+		}
+	}
+
+	private void updatePadColor() {
+		if (focusPad == null) {
+			return;
+		}
+		if (focusPad.exists().get()) {
+			padColor = NIColorUtil.convertColor(focusPad.color());
+		} else {
+			padColor = Colors.WHITE.getIndexValue(ColorBrightness.DARKENED);
 		}
 	}
 
@@ -213,6 +232,7 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 	@Override
 	protected void onActivate() {
 		super.onActivate();
+		updatePadColor();
 		clip.getTrack().selectInEditor();
 		clip.getTrack().isActivated().set(true);
 	}
