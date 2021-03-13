@@ -91,6 +91,7 @@ public class MaschineExtension extends ControllerExtension {
 
 	private int blinkState = 0;
 	private boolean shiftDown = false;
+	private boolean eraseButtonDown = false;
 	private Application application;
 	private GroupLayer groupLayer;
 	private NoteInput noteInput;
@@ -503,7 +504,10 @@ public class MaschineExtension extends ControllerExtension {
 		selectButton.getHwButton().isPressed().addValueObserver(active -> setSelectModifierState(active));
 		soloButton.getHwButton().isPressed().addValueObserver(active -> setModifierState(ModifierState.SOLO, active));
 		muteButton.getHwButton().isPressed().addValueObserver(active -> setModifierState(ModifierState.MUTE, active));
-		eraseButton.getHwButton().isPressed().addValueObserver(active -> setModifierState(ModifierState.ERASE, active));
+		eraseButton.getHwButton().isPressed().addValueObserver(active -> {
+			eraseButtonDown = active;
+			setModifierState(ModifierState.ERASE, active);
+		});
 
 		mainLayer.bindMode(patternButton, sessionMode);
 		mainLayer.bindMode(sceneButton, sceneMode);
@@ -955,6 +959,10 @@ public class MaschineExtension extends ControllerExtension {
 		getHost().scheduleTask(() -> {
 			transport.play();
 		}, 20);
+	}
+
+	public boolean isEraseDown() {
+		return eraseButtonDown;
 	}
 
 }
