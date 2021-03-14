@@ -207,7 +207,6 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 				groupLayer.setModifierState(ModifierState.SHIFT, false);
 				break;
 			case RETURN_FROM_HOST:
-				// RemoteConsole.out.println(" Return from Host Mode");
 				surface.invalidateHardwareOutputState();
 				host.requestFlush();
 				break;
@@ -301,14 +300,22 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 			if (browser.exists().get()) {
 				browser.cancel();
 			} else {
-				cursorDevice.afterDeviceInsertionPoint().browse();
+				if (cursorDevice.exists().get()) {
+					cursorDevice.afterDeviceInsertionPoint().browse();
+				} else {
+					deviceBank.browseToInsertDevice(0);
+				}
 			}
 		});
 		globalShiftLayer.bindPressed(browserButton, pressed -> {
 			if (browser.exists().get()) {
 				browser.cancel();
 			} else {
-				cursorDevice.replaceDeviceInsertionPoint().browse();
+				if (cursorDevice.exists().get()) {
+					cursorDevice.replaceDeviceInsertionPoint().browse();
+				} else {
+					deviceBank.browseToInsertDevice(0);
+				}
 			}
 		});
 		browser.exists().addValueObserver(exists -> {
@@ -762,6 +769,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 
 		deviceBank = cursorTrack.createDeviceBank(4);
 		cursorDevice = cursorTrack.createCursorDevice();
+		cursorDevice.exists().markInterested();
 		primaryDevice = cursorTrack.createCursorDevice("drumdetection", "Pad Device", 0,
 				CursorDeviceFollowMode.FIRST_INSTRUMENT);
 		primaryDevice.hasDrumPads().markInterested();
