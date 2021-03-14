@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
-import com.bitwig.extension.controller.AutoDetectionMidiPortNames;
-import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
@@ -37,16 +35,10 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 		project = host.getProject();
 		mTransport = host.createTransport();
 
-		final AutoDetectionMidiPortNamesList defs = getExtensionDefinition()
-				.getAutoDetectionMidiPortNamesList(host.getPlatformType());
-
-		final AutoDetectionMidiPortNames inport = defs.getPortNames().get(0);
-		// RemoteConsole.out.println("NAMES = {}", inport.getInputNames()[1]);
-
 		setUpSliders(midiIn);
 		final MidiIn midiIn2 = host.getMidiInPort(1);
-		final NoteInput noteInput = midiIn2.createNoteInput(inport.getInputNames()[1], "80????", "90????", "D0????",
-				"E0????");
+		final NoteInput noteInput = midiIn2.createNoteInput("MIDI", "80????", "90????", "D0????", "E0????", "B001??",
+				"B040??", "B1????");
 		noteInput.setShouldConsumeEvents(true);
 
 		initTrackBank();

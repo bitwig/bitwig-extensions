@@ -152,7 +152,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		midiOut = host.getMidiOutPort(0);
 		midiIn = host.getMidiInPort(0);
 
-		noteInput = midiIn.createNoteInput("Maschine MK3 Ctrl MIDI", "80????", "90????", "A0????");
+		noteInput = midiIn.createNoteInput("MIDI", "80????", "90????", "A0????");
 		noteInput.setShouldConsumeEvents(false);
 
 		padButtons = new PadButton[16];
