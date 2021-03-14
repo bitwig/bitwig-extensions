@@ -42,9 +42,12 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
 
 		setUpSliders(midiIn);
 		final MidiIn midiIn2 = host.getMidiInPort(1);
-		// TODO get value from definition [1]
-		final NoteInput noteInput = midiIn2.createNoteInput("KOMPLETE KONTROL A25 MIDI", "80????", "90????", "D0????",
-				"E0????");
+//		final AutoDetectionMidiPortNamesList defs = getExtensionDefinition()
+//				.getAutoDetectionMidiPortNamesList(host.getPlatformType());
+//		final AutoDetectionMidiPortNames inport = defs.getPortNames().get(0);
+
+		final NoteInput noteInput = midiIn2.createNoteInput("MIDI", "80????", "90????", "D0????", "E0????", "B001??",
+				"B040??", "B1????");
 		noteInput.setShouldConsumeEvents(true);
 
 		initTrackBank();

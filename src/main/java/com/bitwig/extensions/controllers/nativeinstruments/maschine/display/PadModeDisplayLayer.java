@@ -17,9 +17,7 @@ public class PadModeDisplayLayer extends DisplayLayer {
 
 		final RelativeHardwareKnob fixedSelection = knobs[0];
 		final ControllerHost host = driver.getHost();
-		bind(fixedSelection,
-				host.createRelativeHardwareControlStepTarget(host.createAction(() -> updateFixedVelocity(1), () -> "+"),
-						host.createAction(() -> updateFixedVelocity(-1), () -> "-")));
+		bind(fixedSelection, createIncrementBinder(host, this::updateFixedVelocity));
 	}
 
 	@Override

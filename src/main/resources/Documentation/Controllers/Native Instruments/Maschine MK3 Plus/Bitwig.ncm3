@@ -24,7 +24,6 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Browser">
-        <disabled />
         <controller>38</controller>
         <channel>0</channel>
         <off>0</off>

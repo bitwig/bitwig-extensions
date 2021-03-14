@@ -1,6 +1,10 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschine.display;
 
+import java.util.function.IntConsumer;
+
 import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.BooleanValueObject;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineExtension;
@@ -38,6 +42,12 @@ public abstract class DisplayLayer extends MaschineLayer {
 			knobs[i].setStepSize(1 / 128.0);
 			knobs[i].setSensitivity(sensitivity);
 		}
+	}
+
+	protected RelativeHardwarControlBindable createIncrementBinder(final ControllerHost host, final IntConsumer consumer) {
+		return host.createRelativeHardwareControlStepTarget(//
+				host.createAction(() -> consumer.accept(1), () -> "+"),
+				host.createAction(() -> consumer.accept(-1), () -> "-"));
 	}
 
 	protected void doActivate() {

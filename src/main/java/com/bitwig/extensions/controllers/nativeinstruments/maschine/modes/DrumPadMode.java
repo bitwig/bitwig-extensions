@@ -9,12 +9,13 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLedState;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayLayer;
 
-public class DrumPadMode extends BasicKeyPlayingMode {
+public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestination {
 	private final int padOffset = 36;
 	private final DrumPadBank drumPadBank;
 
 	private boolean hasDrumPads = false;
 	private PadMode altMode;
+	private final boolean[] isSelected = new boolean[16];
 
 	public DrumPadMode(final MaschineExtension driver, final String name, final NoteFocusHandler noteFocusHandler,
 			final VeloctiyHandler velocityHandler, final DisplayLayer associatedDisplay) {
@@ -29,15 +30,28 @@ public class DrumPadMode extends BasicKeyPlayingMode {
 			final DrumPad pad = drumPadBank.getItemAt(index);
 			pad.color().markInterested();
 			pad.name().markInterested();
-			pad.addIsSelectedInEditorObserver(v -> {
-				if (v) {
+			pad.exists().markInterested();
+			pad.addIsSelectedInEditorObserver(selected -> {
+				if (selected) {
 					noteFocusHandler.notifyDrumPadSelected(pad, padOffset, index);
+					isSelected[index] = true;
+				} else {
+					isSelected[index] = false;
 				}
 			});
 			bindLightState(() -> computeGridLedState(index, pad), button);
 			bindShift(button);
 			selectLayer.bindPressed(button, () -> selectPad(index));
 		}
+	}
+
+	@Override
+	public void jogWheelAction(final int increment) {
+		drumPadBank.scrollBy(increment * 4);
+	}
+
+	@Override
+	public void jogWheelPush(final boolean push) {
 	}
 
 	public void setAltMode(final PadMode altMode) {
@@ -77,7 +91,7 @@ public class DrumPadMode extends BasicKeyPlayingMode {
 	private InternalHardwareLightState computeGridLedState(final int index, final DrumPad pad) {
 		if (hasDrumPads) {
 			int color = NIColorUtil.convertColor(pad.color());
-			if (playing[index]) {
+			if (playing[index] || isSelected[index]) {
 				color += 2;
 			}
 			return new RgbLedState(color); // TO this need to be done with lookup table

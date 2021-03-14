@@ -26,7 +26,6 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public abstract class KompleteKontrolExtension extends ControllerExtension {
 	static final int KOMPLETE_KONTROL_DEVICE_ID = 1315523403;
@@ -82,8 +81,8 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 	}
 
 	protected void onMidi0(final ShortMidiMessage msg) {
-		RemoteConsole.out.println("MIDI => {} {} {}", Integer.toHexString(msg.getStatusByte()),
-				Integer.toHexString(msg.getData1()), Integer.toHexString(msg.getData2()));
+//		RemoteConsole.out.println("MIDI => {} {} {}", Integer.toHexString(msg.getStatusByte()),
+//				Integer.toHexString(msg.getData1()), Integer.toHexString(msg.getData2()));
 		if (msg.getStatusByte() == 0xBF) {
 			if (msg.getData1() == 1) {
 				dawModeConfirmed = true;
@@ -200,10 +199,8 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 		fourDKnobMixer.setStepSize(1 / 128.0);
 
 		final HardwareActionBindable incMixAction = getHost().createAction(() -> {
-			RemoteConsole.out.println(" MIX +");
 		}, () -> "+");
 		final HardwareActionBindable decMixAction = getHost().createAction(() -> {
-			RemoteConsole.out.println(" MIX -");
 		}, () -> "-");
 		fourDKnobMixer.addBinding(getHost().createRelativeHardwareControlStepTarget(incMixAction, decMixAction));
 	}
@@ -274,12 +271,10 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 		mainLayer.bindPressed(soloSelectedButton, cursorTrack.solo().toggleAction());
 
 		mainLayer.bindPressed(trackNavLeftButton, () -> {
-			RemoteConsole.out.println(" NAV LEFT");
 			mixerTrackBank.scrollBy(-8);
 		});
 
 		mainLayer.bindPressed(trackRightNavButton, () -> {
-			RemoteConsole.out.println(" NAV LEFT");
 			mixerTrackBank.scrollBy(8);
 		});
 

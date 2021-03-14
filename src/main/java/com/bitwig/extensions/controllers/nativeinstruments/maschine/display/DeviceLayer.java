@@ -14,11 +14,12 @@ public class DeviceLayer extends DisplayLayer implements NameContainer {
 	private final boolean[] parameterExsists = new boolean[8];
 
 	private String deviceName = "";
+	private final CursorRemoteControlsPage controlPage;
 
 	public DeviceLayer(final MaschineExtension driver, final String name) {
 		super(driver, name);
 		final PinnableCursorDevice device = driver.getCursorDevice();
-		final CursorRemoteControlsPage remote = device.createCursorRemoteControlsPage(8);
+		controlPage = device.createCursorRemoteControlsPage(8);
 		final RelativeHardwareKnob[] knobs = driver.getDisplayKnobs();
 		final KnobParamLayer macroLayer = new KnobParamLayer(driver, "DEVICE_MACRO_LAYER", "Macro", this);
 		final ModeButton leftNav = driver.getNavLeftButton();
@@ -29,7 +30,7 @@ public class DeviceLayer extends DisplayLayer implements NameContainer {
 		currentParamLayer = macroLayer;
 		for (int i = 0; i < 8; i++) {
 			final int index = i;
-			final RemoteControl parameter = remote.getParameter(index);
+			final RemoteControl parameter = controlPage.getParameter(index);
 			parameter.setIndication(true);
 			parameter.name().markInterested();
 			parameter.exists().markInterested();
@@ -47,8 +48,8 @@ public class DeviceLayer extends DisplayLayer implements NameContainer {
 		macroLayer.bindPressed(buttons[0], device.isEnabled(), () -> device.isEnabled().toggle());
 		macroLayer.bindPressed(buttons[2], device.hasPrevious(), () -> device.selectPrevious());
 		macroLayer.bindPressed(buttons[3], device.hasNext(), () -> device.selectNext());
-		macroLayer.bindPressed(leftNav, remote.hasPrevious(), () -> remote.selectPrevious());
-		macroLayer.bindPressed(rightNav, remote.hasNext(), () -> remote.selectNext());
+		macroLayer.bindPressed(leftNav, controlPage.hasPrevious(), () -> controlPage.selectPrevious());
+		macroLayer.bindPressed(rightNav, controlPage.hasNext(), () -> controlPage.selectNext());
 	}
 
 	public void deviceNameChanged(final String deviceName) {
@@ -98,9 +99,12 @@ public class DeviceLayer extends DisplayLayer implements NameContainer {
 	}
 
 	@Override
-	protected void notifyEncoderTouched(final int index, final boolean v) {
+	protected void notifyEncoderTouched(final int index, final boolean touched) {
 		updateDetail();
 		currentParamLayer.refreshValue(index / 4);
+		if (touched && getDriver().isEraseDown()) {
+			controlPage.getParameter(index).reset();
+		}
 	}
 
 	private void refreshToLineNames(final int section) {

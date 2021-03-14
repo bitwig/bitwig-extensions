@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
-import com.bitwig.extension.controller.AutoDetectionMidiPortNames;
-import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
@@ -16,7 +14,6 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 
@@ -38,16 +35,10 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 		project = host.getProject();
 		mTransport = host.createTransport();
 
-		final AutoDetectionMidiPortNamesList defs = getExtensionDefinition()
-				.getAutoDetectionMidiPortNamesList(host.getPlatformType());
-
-		final AutoDetectionMidiPortNames inport = defs.getPortNames().get(0);
-		RemoteConsole.out.println("NAMES = {}", inport.getInputNames()[1]);
-
 		setUpSliders(midiIn);
 		final MidiIn midiIn2 = host.getMidiInPort(1);
-		final NoteInput noteInput = midiIn2.createNoteInput(inport.getInputNames()[1], "80????", "90????", "D0????",
-				"E0????");
+		final NoteInput noteInput = midiIn2.createNoteInput("MIDI", "80????", "90????", "D0????", "E0????", "B001??",
+				"B040??", "B1????");
 		noteInput.setShouldConsumeEvents(true);
 
 		initTrackBank();
@@ -207,7 +198,6 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 		cursorClip.exists().markInterested();
 		final ModeButton quantizeButton = new ModeButton(this, "QUANTIZE_BUTTON", CcAssignment.QUANTIZE);
 		sessionFocusLayer.bindPressed(quantizeButton, () -> {
-			RemoteConsole.out.println("EXEC QUANTIZE");
 			cursorClip.quantize(1.0);
 		});
 		sessionFocusLayer.bind(() -> {
