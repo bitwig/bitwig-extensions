@@ -7,4 +7,6 @@ public interface NoteFocusHandler {
 
 	public void notifyNoteSelected(int note);
 
+	public void notifyPadColorChanged(DrumPad pad, int index, float r, float g, float b);
+
 }

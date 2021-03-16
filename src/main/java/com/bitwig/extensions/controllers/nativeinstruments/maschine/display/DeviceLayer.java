@@ -87,7 +87,6 @@ public class DeviceLayer extends DisplayLayer implements NameContainer {
 			b.append("P: " + deviceName);
 		}
 		sendToDisplay(0, b.toString());
-
 		sendToDisplay(1, rightInfo);
 	}
 
@@ -117,7 +116,7 @@ public class DeviceLayer extends DisplayLayer implements NameContainer {
 	private void updateParmName(final String name, final int index) {
 		names[index] = DisplayUtil.padString(name, 6);
 		fullNames[index] = DisplayUtil.padString(name, 12);
-		refreshToLineNames(index / 4);
+		currentParamLayer.refreshValue(index / 4);
 	}
 
 	@Override

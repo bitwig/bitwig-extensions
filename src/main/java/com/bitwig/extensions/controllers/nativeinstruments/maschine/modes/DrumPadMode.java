@@ -27,6 +27,7 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 		drumPadBank.scrollPosition().addValueObserver(scrollPos -> {
 			padOffset = scrollPos;
 			selectPad(getSelectedIndex());
+			applyScale();
 		});
 
 		final PadButton[] buttons = driver.getPadButtons();
@@ -45,10 +46,18 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 					isSelected[index] = false;
 				}
 			});
+			pad.color().addValueObserver((r, g, b) -> padColorChanged(pad, index, r, g, b));
 			bindLightState(() -> computeGridLedState(index, pad), button);
 			bindShift(button);
 			selectLayer.bindPressed(button, () -> selectPad(index));
 		}
+	}
+
+	private void padColorChanged(final DrumPad pad, final int index, final float r, final float g, final float b) {
+		if (noteFocusHandler == null) {
+			return;
+		}
+		noteFocusHandler.notifyPadColorChanged(pad, index, r, g, b);
 	}
 
 	@Override
@@ -122,6 +131,9 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 
 	@Override
 	void applyScale() {
+		if (!isActive()) {
+			return;
+		}
 		for (int i = 0; i < 128; i++) {
 			noteToPad[i] = -1;
 		}
