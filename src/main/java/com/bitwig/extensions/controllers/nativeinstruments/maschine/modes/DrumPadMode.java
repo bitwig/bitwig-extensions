@@ -10,7 +10,7 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadB
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayLayer;
 
 public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestination {
-	private final int padOffset = 36;
+	private int padOffset = 36;
 	private final DrumPadBank drumPadBank;
 
 	private boolean hasDrumPads = false;
@@ -22,6 +22,12 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 		super(driver, name, noteFocusHandler, velocityHandler, associatedDisplay);
 
 		drumPadBank = driver.getPrimaryDevice().createDrumPadBank(16);
+		drumPadBank.setIndication(true);
+
+		drumPadBank.scrollPosition().addValueObserver(scrollPos -> {
+			padOffset = scrollPos;
+			selectPad(getSelectedIndex());
+		});
 
 		final PadButton[] buttons = driver.getPadButtons();
 		for (int i = 0; i < buttons.length; i++) {
@@ -64,6 +70,15 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 		});
 	}
 
+	private int getSelectedIndex() {
+		for (int i = 0; i < 16; i++) {
+			if (isSelected[i]) {
+				return i;
+			}
+		}
+		return 0;
+	}
+
 	@Override
 	protected void onActivate() {
 		if (!hasDrumPads) {
@@ -85,6 +100,7 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 	void selectPad(final int index) {
 		final DrumPad pad = drumPadBank.getItemAt(index);
 		pad.selectInEditor();
+
 		noteFocusHandler.notifyDrumPadSelected(pad, padOffset, index);
 	}
 
