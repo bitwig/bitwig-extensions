@@ -1,9 +1,13 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschine;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 
 public final class RgbLedState extends RgbLed {
 
+	private static Map<Integer, RgbLedState> cache = new HashMap<Integer, RgbLedState>();
 	public static RgbLedState OFF = new RgbLedState(0);
 	public static RgbLedState TRACK_ON = new RgbLedState(Colors.LIGHT_ORANGE, ColorBrightness.DARKENED);
 	public static RgbLedState TRACK_OFF = new RgbLedState(Colors.LIGHT_ORANGE, ColorBrightness.BRIGHT);
@@ -33,16 +37,25 @@ public final class RgbLedState extends RgbLed {
 		this.offColor = 0;
 	}
 
-	public RgbLedState(final int color) {
+	private RgbLedState(final int color) {
 		super(color);
 	}
 
-	public RgbLedState(final Colors color, final ColorBrightness brightness) {
+	private RgbLedState(final Colors color, final ColorBrightness brightness) {
 		super(color.getIndexValue(brightness));
 	}
 
+	public static RgbLedState colorOf(final Colors color, final ColorBrightness brightness) {
+		return colorOf(color.getIndexValue(brightness));
+	}
+
 	public static RgbLedState colorOf(final int colorCode) {
-		return new RgbLedState(colorCode);
+		RgbLedState rgbColor = cache.get(colorCode);
+		if (rgbColor == null) {
+			rgbColor = new RgbLedState(colorCode);
+			cache.put(colorCode, rgbColor);
+		}
+		return rgbColor;
 	}
 
 	@Override

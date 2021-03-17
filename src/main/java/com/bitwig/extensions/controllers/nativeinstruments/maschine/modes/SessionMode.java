@@ -31,7 +31,7 @@ public class SessionMode extends PadMode {
 	private final TrackBank trackBank;
 
 	public SessionMode(final MaschineExtension driver, final String name) {
-		super(driver, name);
+		super(driver, name, true);
 		selectLayer = new MaschineLayer(driver, "select-" + name);
 		eraseLayer = new MaschineLayer(driver, "clear-" + name);
 		duplicateLayer = new MaschineLayer(driver, "duplicate-" + name);
@@ -231,19 +231,14 @@ public class SessionMode extends PadMode {
 
 	@Override
 	public void doDeactivate() {
-//		mQuantizeLayer.deactivate();
-//		mDeleteLayer.deactivate();
 		super.doDeactivate();
 		final TrackBank trackBank = getDriver().getTrackBank();
-		final SceneBank sceneBank = getDriver().getTrackBank().sceneBank();
-		// sceneBank.setIndication(false);
 
 		for (int i = 0; i < 4; ++i) {
 			final Track channel = trackBank.getItemAt(i);
 			channel.unsubscribe();
 
 			final ClipLauncherSlotBank slotBank = channel.clipLauncherSlotBank();
-			// slotBank.setIndication(false);
 
 			for (int j = 0; j < 4; ++j) {
 				final ClipLauncherSlot slot = slotBank.getItemAt(j);

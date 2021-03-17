@@ -74,6 +74,7 @@ public class ScaleLayer extends DisplayLayer {
 	@Override
 	protected void doActivate() {
 		super.doActivate();
+		setKnobSensitivity(1.0);
 		final RelativeHardwareKnob[] knobs = getDriver().getDisplayKnobs();
 		for (int i = 0; i < knobs.length; i++) {
 			knobs[i].setStepSize(1 / 64.0);

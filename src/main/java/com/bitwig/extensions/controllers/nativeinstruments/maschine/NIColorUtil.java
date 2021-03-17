@@ -45,6 +45,10 @@ public class NIColorUtil {
 		return convertColor(color.red(), color.green(), color.blue());
 	}
 
+	public static boolean isOff(final SettableColorValue color) {
+		return color.green() == 0 && color.red() == 0 && color.blue() == 0;
+	}
+
 	public static int convertColor(final float red, final float green, final float blue) {
 		if (red == 0 && green == 0 && blue == 0) {
 			return 0;

@@ -13,10 +13,16 @@ public abstract class PadMode extends MaschineLayer {
 	private final MaschineLayer shiftLayer;
 	private final BooleanValueObject active = new BooleanValueObject();
 	protected DisplayLayer associatedDisplay;
+	protected final boolean prefersControlDisplay;
 
 	public PadMode(final MaschineExtension driver, final String name) {
+		this(driver, name, false);
+	}
+
+	public PadMode(final MaschineExtension driver, final String name, final boolean prefersControlDisplay) {
 		super(driver, name);
 		shiftLayer = new MaschineLayer(driver, "shift-" + name);
+		this.prefersControlDisplay = prefersControlDisplay;
 	}
 
 	protected abstract String getModeDescription();
@@ -77,5 +83,9 @@ public abstract class PadMode extends MaschineLayer {
 
 	public PadMode getMomentarySwitchMode() {
 		return null;
+	}
+
+	public boolean isPrefersControlDisplay() {
+		return prefersControlDisplay;
 	}
 }

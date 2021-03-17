@@ -59,7 +59,7 @@ public abstract class BasicKeyPlayingMode extends PadMode {
 		}
 	}
 
-	private void enableLayer(final MaschineLayer layer, final boolean active) {
+	protected void enableLayer(final MaschineLayer layer, final boolean active) {
 		final NoteInput noteInput = getDriver().getNoteInput();
 		if (active) {
 			noteInput.setKeyTranslationTable(deactivationTable);

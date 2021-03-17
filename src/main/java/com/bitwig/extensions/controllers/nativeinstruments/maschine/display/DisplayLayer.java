@@ -44,7 +44,8 @@ public abstract class DisplayLayer extends MaschineLayer {
 		}
 	}
 
-	protected RelativeHardwarControlBindable createIncrementBinder(final ControllerHost host, final IntConsumer consumer) {
+	protected RelativeHardwarControlBindable createIncrementBinder(final ControllerHost host,
+			final IntConsumer consumer) {
 		return host.createRelativeHardwareControlStepTarget(//
 				host.createAction(() -> consumer.accept(1), () -> "+"),
 				host.createAction(() -> consumer.accept(-1), () -> "-"));
@@ -121,6 +122,15 @@ public abstract class DisplayLayer extends MaschineLayer {
 
 	protected void sendToDisplay(final int index, final String displayValue) {
 		getDriver().sendToDisplayBuffered(index, displayValue);
+	}
+
+	/**
+	 * Property of Display that control parameters, i.e. Mixer, i.e Device
+	 * 
+	 * @return
+	 */
+	public boolean isControlDisplay() {
+		return false;
 	}
 
 	protected abstract void doNotifyMacroDown(final boolean active);

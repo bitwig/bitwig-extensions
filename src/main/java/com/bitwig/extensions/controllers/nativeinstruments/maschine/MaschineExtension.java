@@ -82,7 +82,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 	private PadMode currentMode;
 
 	private DisplayLayer currentDisplayMode;
-	private DisplayLayer previousDisplayMode;
+	private DisplayLayer lastControlDisplay;
 
 	private ControllerHost host;
 	private MainKnobControl mainKnobControl;
@@ -298,7 +298,11 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		final HardwareButton browserButton = createTransportButton("BROWSERBUTTON", CcAssignment.BROWSER);
 		mainLayer.bindPressed(browserButton, pressed -> {
 			if (browser.exists().get()) {
-				browser.cancel();
+				if (currentDisplayMode == browserLayer) {
+					browser.cancel();
+				} else {
+					setDisplayMode(browserLayer);
+				}
 			} else {
 				if (cursorDevice.exists().get()) {
 					cursorDevice.afterDeviceInsertionPoint().browse();
@@ -309,7 +313,11 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		});
 		globalShiftLayer.bindPressed(browserButton, pressed -> {
 			if (browser.exists().get()) {
-				browser.cancel();
+				if (currentDisplayMode == browserLayer) {
+					browser.cancel();
+				} else {
+					setDisplayMode(browserLayer);
+				}
 			} else {
 				if (cursorDevice.exists().get()) {
 					cursorDevice.replaceDeviceInsertionPoint().browse();
@@ -357,11 +365,12 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 	}
 
 	public void backToPreviousDisplayMode() {
-		if (previousDisplayMode == currentDisplayMode) {
-			return;
-		}
 		currentDisplayMode.deactivate();
-		currentDisplayMode = previousDisplayMode;
+		if (currentMode.getAssociatedDisplay() != null) {
+			setDisplayMode(currentMode.getAssociatedDisplay());
+		} else if (currentMode.isPrefersControlDisplay()) {
+			setDisplayMode(lastControlDisplay);
+		}
 		currentDisplayMode.activate();
 	}
 
@@ -369,8 +378,11 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		if (currentDisplayMode == mode) {
 			return;
 		}
-		previousDisplayMode = currentDisplayMode;
 		currentDisplayMode.deactivate();
+		if (currentDisplayMode.isControlDisplay()) {
+			lastControlDisplay = currentDisplayMode;
+		}
+
 		currentDisplayMode = mode;
 		currentDisplayMode.activate();
 	}
@@ -380,10 +392,20 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 			return;
 		}
 		currentMode.deactivate();
+		boolean forcePreferred = false;
+		if (currentMode.getAssociatedDisplay() != null) {
+			forcePreferred = true;
+		}
 		currentMode = mode;
-		currentMode.activate();
 
-		// updateKeyTranslationTable();
+		if (currentMode.getAssociatedDisplay() != null) {
+			setDisplayMode(currentMode.getAssociatedDisplay());
+		} else if (forcePreferred //
+				&& currentMode.isPrefersControlDisplay() //
+				&& !currentDisplayMode.isControlDisplay()) {
+			setDisplayMode(lastControlDisplay);
+		}
+		currentMode.activate();
 	}
 
 	public DisplayLayer getCurrentDisplayMode() {
@@ -575,7 +597,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 
 		currentMode = sessionMode;
 		currentDisplayMode = mixerDisplayMode;
-		previousDisplayMode = mixerDisplayMode;
+		lastControlDisplay = mixerDisplayMode;
 
 		initNoteRepeat(arpDisplayMode);
 		setUpArrangerHandling(sessionMode);
@@ -631,6 +653,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		drumPadMode = new DrumPadMode(this, "pad-mode", stepMode, velocityHandler, padDisplayLayer);
 		keyboardMode = new KeyboardMode(this, "keyboard-mode", stepMode, velocityHandler, scaleDisplayMode);
 
+		stepMode.setDisplay(stepDisplayLayer);
 		drumPadMode.setAltMode(keyboardMode);
 		keyboardMode.setAltMode(drumPadMode);
 

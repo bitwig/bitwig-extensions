@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschine.modes;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import com.bitwig.extension.controller.api.Clip;
@@ -14,6 +16,7 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschine.NIColorUtil;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLed;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLedState;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayUtil;
 
 public class StepMode extends PadMode implements NoteFocusHandler {
@@ -41,6 +44,8 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 	private boolean isDrumEdit = false;
 
 	private int selectPadIndex = 0;
+	private String currentTrackName = "";
+	private final Map<String, Integer> lastNotes = new HashMap<String, Integer>();
 
 	private enum PressState {
 		None, New, Modify, Delete;
@@ -61,6 +66,10 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 			pressStates[i] = PressState.None;
 		}
 
+		this.getDriver().getCursorTrack().name().addValueObserver(tname -> {
+			currentTrackName = tname;
+		});
+
 		final PadButton[] buttons = driver.getPadButtons();
 		for (int i = 0; i < buttons.length; i++) {
 			final int index = i;
@@ -73,7 +82,12 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 
 		clip.addNoteStepObserver(this::handleNoteStep);
 		clip.playingStep().addValueObserver(this::handlePlayingStep);
+
 		this.clip.scrollToKey(focusNote);
+	}
+
+	public void setDisplay(final DisplayLayer display) {
+		associatedDisplay = display;
 	}
 
 	public Clip getClip() {
@@ -94,6 +108,11 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 
 	public void setRefVelocity(final int refVelocity) {
 		this.refVelocity = refVelocity;
+	}
+
+	@Override
+	public void notifyPadColorChanged(final DrumPad pad, final int index, final float r, final float g, final float b) {
+		updatePadColor();
 	}
 
 	private void handleSelection(final int index) {
@@ -147,6 +166,7 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 
 	private void handleClipColorChanged(final float red, final float green, final float blue) {
 		clipColor = NIColorUtil.convertColor(red, green, blue);
+		updatePadColor();
 	}
 
 	@Override
@@ -155,11 +175,7 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 		this.focusPad = pad;
 		this.selectPadIndex = padIndex;
 
-		if (pad.exists().get()) {
-			padColor = NIColorUtil.convertColor(pad.color());
-		} else {
-			padColor = Colors.WHITE.getIndexValue(ColorBrightness.DARKENED);
-		}
+		updatePadColor();
 
 		this.clip.scrollToKey(this.focusNote);
 		if (this.focusChangerListener != null) {
@@ -167,14 +183,24 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 		}
 	}
 
+	private void initPadColor() {
+		if (focusPad == null && !isDrumEdit) {
+			return;
+		} else if (focusPad == null && isDrumEdit) {
+			drumLayer.selectPad(0);
+			return;
+		}
+		updatePadColor();
+	}
+
 	private void updatePadColor() {
 		if (focusPad == null) {
 			return;
 		}
-		if (focusPad.exists().get()) {
-			padColor = NIColorUtil.convertColor(focusPad.color());
-		} else {
+		if (NIColorUtil.isOff(focusPad.color())) {
 			padColor = Colors.WHITE.getIndexValue(ColorBrightness.DARKENED);
+		} else {
+			padColor = NIColorUtil.convertColor(focusPad.color());
 		}
 	}
 
@@ -182,7 +208,8 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 	public void notifyNoteSelected(final int note) {
 		this.focusNote = note;
 		this.focusPad = null;
-		this.clip.scrollToKey(note);
+		this.clip.scrollToKey(focusNote);
+		lastNotes.put(currentTrackName, focusNote);
 		if (this.focusChangerListener != null) {
 			this.focusChangerListener.accept(getFocus());
 		}
@@ -232,7 +259,7 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 	@Override
 	protected void onActivate() {
 		super.onActivate();
-		updatePadColor();
+		initPadColor();
 		clip.getTrack().selectInEditor();
 		clip.getTrack().isActivated().set(true);
 	}
@@ -268,5 +295,4 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 			}
 		}
 	}
-
 }
