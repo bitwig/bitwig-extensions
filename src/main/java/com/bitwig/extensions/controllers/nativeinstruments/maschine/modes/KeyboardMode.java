@@ -17,8 +17,8 @@ public class KeyboardMode extends BasicKeyPlayingMode {
 
 	private static final List<Scale> scales = new ArrayList<Scale>();
 
-	private static final RgbLedState BASENOTE_COLOR = new RgbLedState(73);
-	private static final RgbLedState BASENOTE_COLOR_ON = new RgbLedState(75);
+	private static final RgbLedState BASENOTE_COLOR = RgbLedState.colorOf(73);
+	private static final RgbLedState BASENOTE_COLOR_ON = RgbLedState.colorOf(75);
 
 	private Scale currentScale = scales.get(0);
 	private final boolean[] isBaseNote = new boolean[16];
@@ -146,7 +146,7 @@ public class KeyboardMode extends BasicKeyPlayingMode {
 		if (playing[index]) {
 			color += 2;
 		}
-		return new RgbLedState(color); // Fast color look up with value of
+		return RgbLedState.colorOf(color); // Fast color look up with value of
 	}
 
 	@Override
