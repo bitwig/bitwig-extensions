@@ -65,11 +65,11 @@ public class KompleteKontrolASeriesExtensionDefinition extends ControllerExtensi
 			list.add(new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" },
 					new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" });
 		} else if (platformType == PlatformType.MAC) {
-			list.add(new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" },
-					new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" });
+			list.add(new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25" },
+					new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25" });
 		} else if (platformType == PlatformType.LINUX) {
-			list.add(new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" },
-					new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25 MIDI" });
+			list.add(new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25" },
+					new String[] { "Komplete Kontrol A DAW", "KOMPLETE KONTROL A25" });
 		}
 	}
 
