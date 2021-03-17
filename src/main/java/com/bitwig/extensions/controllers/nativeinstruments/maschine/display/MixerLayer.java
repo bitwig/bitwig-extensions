@@ -200,4 +200,9 @@ public class MixerLayer extends DisplayLayer implements NameContainer {
 		currentParamLayer.activate();
 	}
 
+	@Override
+	public boolean isControlDisplay() {
+		return true;
+	}
+
 }

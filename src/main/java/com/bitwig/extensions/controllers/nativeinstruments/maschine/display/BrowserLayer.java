@@ -26,6 +26,7 @@ public class BrowserLayer extends DisplayLayer implements JogWheelDestination {
 	private final CursorBrowserFilterItem deviceItem;
 
 	private int touchedIndex = -1;
+	private int currentHits;
 
 	public BrowserLayer(final MaschineExtension driver, final String name) {
 		super(driver, name);
@@ -40,36 +41,42 @@ public class BrowserLayer extends DisplayLayer implements JogWheelDestination {
 		});
 
 		deviceItem = (CursorBrowserFilterItem) browser.deviceColumn().createCursorItem();
+		deviceItem.hitCount().markInterested();
 		deviceItem.name().addValueObserver(v -> {
 			deviceElement = v.trim();
+			currentHits = deviceItem.hitCount().get();
 			updateDisplay();
 		});
 
 		fileTypeItem = (CursorBrowserFilterItem) browser.fileTypeColumn().createCursorItem();
+		fileTypeItem.hitCount().markInterested();
 		fileTypeItem.name().addValueObserver(v -> {
 			fileTypeElement = v.trim();
+			currentHits = fileTypeItem.hitCount().get();
 			updateDisplay();
 		});
 
 		categoryItem = (CursorBrowserFilterItem) browser.categoryColumn().createCursorItem();
+		categoryItem.hitCount().markInterested();
 		categoryItem.name().addValueObserver(v -> {
 			categoryElement = v.trim();
+			currentHits = categoryItem.hitCount().get();
 			updateDisplay();
 		});
-		categoryItem.hasNext().markInterested();
-		categoryItem.hasPrevious().markInterested();
 
 		creatorItem = (CursorBrowserFilterItem) browser.creatorColumn().createCursorItem();
+		creatorItem.hitCount().markInterested();
 		creatorItem.name().addValueObserver(v -> {
 			creatorElement = v.trim();
+			currentHits = creatorItem.hitCount().get();
 			updateDisplay();
 		});
-		creatorItem.hasNext().markInterested();
-		creatorItem.hasPrevious().markInterested();
 
 		tagItem = (CursorBrowserFilterItem) browser.tagColumn().createCursorItem();
+		tagItem.hitCount().markInterested();
 		tagItem.name().addValueObserver(v -> {
 			tagElement = v.trim();
+			currentHits = tagItem.hitCount().get();
 			updateDisplay();
 		});
 
@@ -145,7 +152,10 @@ public class BrowserLayer extends DisplayLayer implements JogWheelDestination {
 	}
 
 	private void updateDisplay() {
-		sendToDisplay(0, DisplayUtil.padString("BROWSE ", 20) + "|<AUDIT>");
+		if (!isActive()) {
+			return;
+		}
+		sendToDisplay(0, DisplayUtil.padString("BROWSE (" + currentHits + ")", 20) + "|<AUDIT>");
 
 		if (touchedIndex == -1 || touchedIndex > 4) {
 			sendToDisplay(2, //

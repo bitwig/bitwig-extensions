@@ -46,14 +46,19 @@ public class DeviceLayer extends DisplayLayer implements NameContainer {
 
 		final ModeButton[] buttons = driver.getDisplayButtons();
 		macroLayer.bindPressed(buttons[0], device.isEnabled(), () -> device.isEnabled().toggle());
-		macroLayer.bindPressed(buttons[2], device.hasPrevious(), () -> device.selectPrevious());
-		macroLayer.bindPressed(buttons[3], device.hasNext(), () -> device.selectNext());
+		macroLayer.bindPressed(buttons[2], device.hasPrevious(), () -> {
+			device.selectPrevious();
+		});
+		macroLayer.bindPressed(buttons[3], device.hasNext(), () -> {
+			device.selectNext();
+		});
 		macroLayer.bindPressed(leftNav, controlPage.hasPrevious(), () -> controlPage.selectPrevious());
 		macroLayer.bindPressed(rightNav, controlPage.hasNext(), () -> controlPage.selectNext());
 	}
 
 	public void deviceNameChanged(final String deviceName) {
 		this.deviceName = deviceName;
+		updateDetail();
 	}
 
 	private void handleExists(final int index, final boolean exists) {
@@ -129,6 +134,11 @@ public class DeviceLayer extends DisplayLayer implements NameContainer {
 	@Override
 	protected void doNotifyMacroDown(final boolean active) {
 		setKnobSensitivity(isMacroDown ? 1.0 : 4.0);
+	}
+
+	@Override
+	public boolean isControlDisplay() {
+		return true;
 	}
 
 	@Override

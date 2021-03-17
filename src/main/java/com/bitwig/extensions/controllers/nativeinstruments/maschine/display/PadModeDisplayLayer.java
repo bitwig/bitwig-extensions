@@ -24,6 +24,7 @@ public class PadModeDisplayLayer extends DisplayLayer {
 	protected void doActivate() {
 		super.doActivate();
 		final RelativeHardwareKnob[] knobs = getDriver().getDisplayKnobs();
+		setKnobSensitivity(1.0);
 		for (int i = 0; i < knobs.length; i++) {
 			knobs[i].setStepSize(1 / 128.0);
 		}

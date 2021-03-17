@@ -16,6 +16,7 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschine.NIColorUtil;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLed;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLedState;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayUtil;
 
 public class StepMode extends PadMode implements NoteFocusHandler {
@@ -83,6 +84,10 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 		clip.playingStep().addValueObserver(this::handlePlayingStep);
 
 		this.clip.scrollToKey(focusNote);
+	}
+
+	public void setDisplay(final DisplayLayer display) {
+		associatedDisplay = display;
 	}
 
 	public Clip getClip() {
@@ -160,6 +165,7 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 	}
 
 	private void handleClipColorChanged(final float red, final float green, final float blue) {
+		clipColor = NIColorUtil.convertColor(red, green, blue);
 		updatePadColor();
 	}
 

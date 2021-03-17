@@ -20,7 +20,7 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 	private final boolean[] isSelected = new boolean[16];
 
 	public SceneLaunchMode(final MaschineExtension driver, final String name) {
-		super(driver, name);
+		super(driver, name, true);
 		selectLayer = new MaschineLayer(driver, "select-" + name);
 		eraseLayer = new MaschineLayer(driver, "clear-" + name);
 		duplicateLayer = new MaschineLayer(driver, "duplicate-" + name);
