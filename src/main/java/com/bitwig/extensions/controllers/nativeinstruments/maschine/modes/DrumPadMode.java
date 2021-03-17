@@ -67,6 +67,7 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 			muteLayer.bindLightState(() -> computeGridLedStateMute(index, pad), button);
 			soloLayer.bindPressed(button, () -> soloPad(index));
 			soloLayer.bindLightState(() -> computeGridLedStateSolo(index, pad), button);
+			eraseLayer.bindPressed(button, () -> erasePadNotes(index));
 		}
 	}
 
@@ -146,6 +147,11 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 	private void soloPad(final int index) {
 		final DrumPad pad = drumPadBank.getItemAt(index);
 		pad.solo().toggle();
+	}
+
+	private void erasePadNotes(final int index) {
+		final int noteDel = padOffset + index;
+		getDriver().getFocusClip().clearNotes(noteDel);
 	}
 
 	void selectPad(final int index) {

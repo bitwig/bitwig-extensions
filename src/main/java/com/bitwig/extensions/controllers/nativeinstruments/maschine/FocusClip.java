@@ -148,4 +148,9 @@ public class FocusClip {
 		mainCursoClip.transpose(semitones);
 	}
 
+	public void clearNotes(final int noteToClear) {
+		mainCursoClip.scrollToKey(noteToClear);
+		mainCursoClip.clearStepsAtY(0, 0);
+	}
+
 }
