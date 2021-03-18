@@ -65,8 +65,8 @@ public class KompleteKontrolSMk2ExtensionDefinition extends ControllerExtensionD
 			list.add(new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" },
 					new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" });
 		} else if (platformType == PlatformType.MAC) {
-			list.add(new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" },
-					new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" });
+			list.add(new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL S49 MK2" },
+					new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL S49 MK2" });
 		} else if (platformType == PlatformType.LINUX) {
 			list.add(new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" },
 					new String[] { "Komplete Kontrol DAW - 1", "KOMPLETE KONTROL - 1" });
