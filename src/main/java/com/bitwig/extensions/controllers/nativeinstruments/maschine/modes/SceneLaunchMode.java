@@ -16,6 +16,9 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 	private final MaschineLayer eraseLayer;
 	private final MaschineLayer duplicateLayer;
 	private final SceneBank sceneBank;
+	int baseOffset = 0;
+	int lastScrollPostion = 0;
+	long toZeroSpJump = 0;
 
 	private final boolean[] isSelected = new boolean[16];
 
@@ -29,6 +32,7 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 		sceneBank.canScrollBackwards().markInterested();
 		sceneBank.canScrollForwards().markInterested();
 		sceneBank.itemCount().markInterested();
+		sceneBank.setSizeOfBank(16);
 
 		final PadButton[] buttons = driver.getPadButtons();
 		for (int i = 0; i < 16; ++i) {
@@ -42,7 +46,13 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 			scene.addIsSelectedInEditorObserver(selected -> {
 				isSelected[index] = selected;
 			});
-			bindPressed(button, scene.launchAction());
+			bindPressed(button, () -> {
+				if (scene.exists().get()) {
+					scene.launch();
+				} else {
+					driver.getProject().createScene();
+				}
+			});
 			bindShift(button);
 			selectLayer.bindPressed(button, () -> handleSelect(scene, index));
 			eraseLayer.bindPressed(button, () -> handleErase(scene));
@@ -143,9 +153,9 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 	@Override
 	public void jogWheelAction(final int increment) {
 		if (increment > 0) {
-			sceneBank.scrollForwards();
+			sceneBank.scrollBy(4);
 		} else {
-			sceneBank.scrollBackwards();
+			sceneBank.scrollBy(-4);
 		}
 	}
 

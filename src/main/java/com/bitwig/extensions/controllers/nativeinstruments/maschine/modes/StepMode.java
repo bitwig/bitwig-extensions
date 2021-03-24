@@ -115,12 +115,49 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 		updatePadColor();
 	}
 
+	public boolean hasPressedNotes() {
+		for (int i = 0; i < 16; i++) {
+			if (pressStates[i] != PressState.None) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public void changeNoteVelocity(final int amount) {
+		for (int i = 0; i < 16; i++) {
+			if (pressStates[i] != PressState.None) {
+				final NoteStep note = assignments[i];
+				if (note != null && note.state() == State.NoteOn) {
+					final double vel = Math.max(0, Math.min(1.0, note.velocity() + amount / 128.0));
+					note.setVelocity(vel);
+				}
+				pressStates[i] = PressState.Modify;
+			}
+		}
+	}
+
+	public void updateHeldNoteLength(final int amount) {
+		for (int i = 0; i < 16; i++) {
+			if (pressStates[i] != PressState.None) {
+				final NoteStep note = assignments[i];
+				if (note != null && note.state() == State.NoteOn) {
+					final double duration = note.duration() + amount * positionHandler.getGridResolution();
+					if (duration >= positionHandler.getGridResolution()) {
+						note.setDuration(duration);
+					}
+				}
+				pressStates[i] = PressState.Modify;
+			}
+		}
+	}
+
 	private void handleSelection(final int index) {
 		final NoteStep note = assignments[index];
 		if (note == null || note.state() == State.Empty) {
 			clip.setStep(index, 0, refVelocity, positionHandler.getGridResolution());
 			pressStates[index] = PressState.New;
-		} else {
+		} else if (note == null || note.state() == State.NoteOn) {
 			pressStates[index] = PressState.Delete;
 		}
 	}
@@ -132,6 +169,7 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 		if (pressStates[index] == PressState.Delete) {
 			clip.toggleStep(index, 0, refVelocity);
 		}
+		pressStates[index] = PressState.None;
 	}
 
 	private void handlePlayingStep(final int playingStep) {
@@ -149,18 +187,18 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 			return RgbLedState.OFF;
 		} else if (isDrumEdit) {
 			if (index == playingStep) {
-				return RgbLed.colorOf(padColor + 2);
+				return RgbLed.colorOf(padColor + 3);
 			} else if (assignments[index].state() == State.NoteSustain) {
 				return RgbLed.colorOf(padColor);
 			}
-			return RgbLed.colorOf(padColor + 1);
+			return RgbLed.colorOf(padColor + 2);
 		} else {
 			if (index == playingStep) {
-				return RgbLed.colorOf(clipColor + 2);
+				return RgbLed.colorOf(clipColor + 3);
 			} else if (assignments[index].state() == State.NoteSustain) {
 				return RgbLed.colorOf(clipColor);
 			}
-			return RgbLed.colorOf(clipColor + 1);
+			return RgbLed.colorOf(clipColor + 2);
 		}
 	}
 
@@ -285,7 +323,6 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 			}
 		} else {
 			final int newValue = keyLayer.getNextNote(focusNote, amount);
-			// final int newValue = focusNote + amount;
 			if (newValue >= 0 && newValue < 128) {
 				focusNote = newValue;
 				this.clip.scrollToKey(focusNote);
@@ -295,4 +332,5 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 			}
 		}
 	}
+
 }
