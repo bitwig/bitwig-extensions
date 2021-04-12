@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.bitwig:base-extensions-api:LOCAL'
+    implementation 'com.bitwig:base-extensions-api:13'
 }
 
 group = 'com.bitwig.extensions'
