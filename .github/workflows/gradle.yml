@@ -5,9 +5,9 @@ name: Java CI with Gradle
 
 on:
   push:
-    branches: [ api-13 ]
+    #branches: [ api-13 ]
   pull_request:
-    branches: [ api-13 ]
+    #branches: [ api-13 ]
 
 jobs:
   build:
@@ -24,4 +24,4 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      run: ./gradlew build
+      run: ./gradlew check
