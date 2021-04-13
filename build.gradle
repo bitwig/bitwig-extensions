@@ -18,10 +18,13 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.bitwig:base-extensions-api:13'
+    if (project.file('../is-building-bitwig.txt').exists())
+        implementation project(':base-extensions-api')
+    else
+        implementation 'com.bitwig:base-extensions-api:13'
 }
 
 group = 'com.bitwig.extensions'
 version = '1-SNAPSHOT'
 description = 'Bitwig Studio Extensions (Github)'
-java.sourceCompatibility = JavaVersion.VERSION_11
+java.sourceCompatibility = JavaVersion.VERSION_13
