@@ -18,6 +18,7 @@ public class SessionMode extends PadMode {
 	private final MaschineLayer selectLayer;
 	private final MaschineLayer eraseLayer;
 	private final MaschineLayer duplicateLayer;
+	private final MaschineLayer colorChooseLayer;
 
 	private ModifierState modstate = ModifierState.NONE;
 
@@ -34,6 +35,7 @@ public class SessionMode extends PadMode {
 		selectLayer = new MaschineLayer(driver, "select-" + name);
 		eraseLayer = new MaschineLayer(driver, "clear-" + name);
 		duplicateLayer = new MaschineLayer(driver, "duplicate-" + name);
+		colorChooseLayer = new MaschineLayer(driver, "colorpick-" + name);
 		trackBank = driver.getTrackBank();
 		currentSlotMapping = slotMappingVertical;
 		doGridBinding(driver);
@@ -88,6 +90,7 @@ public class SessionMode extends PadMode {
 				selectLayer.bindPressed(button, () -> handleSelect(buttonIndex));
 				eraseLayer.bindPressed(button, () -> handleErase(buttonIndex));
 				duplicateLayer.bindPressed(button, () -> handleDuplicate(buttonIndex));
+				colorChooseLayer.bindPressed(button, () -> handleColorPick(buttonIndex));
 				bindLightState(() -> computeGridLedState(buttonIndex), button);
 			}
 		}
@@ -125,6 +128,15 @@ public class SessionMode extends PadMode {
 		currentSlotMapping[buttonIndex].deleteObject();
 	}
 
+	private void handleColorPick(final int buttonIndex) {
+		final ClipLauncherSlot slot = currentSlotMapping[buttonIndex];
+		if (slot.hasContent().get()) {
+			getDriver().enterColorSelection(color -> {
+				color.set(slot.color());
+			});
+		}
+	}
+
 	private void handleDuplicate(final int buttonIndex) {
 		if (getDriver().isShiftDown()) {
 			currentSlotMapping[buttonIndex].select();
@@ -144,6 +156,8 @@ public class SessionMode extends PadMode {
 			return selectLayer;
 		case ERASE:
 			return eraseLayer;
+		case VARIATION:
+			return colorChooseLayer;
 		default:
 			return null;
 		}

@@ -19,7 +19,7 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadB
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayUtil;
 
-public class StepMode extends PadMode implements NoteFocusHandler {
+public class StepMode extends PadMode implements NoteFocusHandler, JogWheelDestination {
 
 	private final Clip clip;
 	private int playingStep;
@@ -330,6 +330,22 @@ public class StepMode extends PadMode implements NoteFocusHandler {
 					this.focusChangerListener.accept(getFocus());
 				}
 			}
+		}
+	}
+
+	@Override
+	public void jogWheelAction(final int increment) {
+		if (increment < 0) {
+			getPositionHandler().scrollLeft();
+		} else {
+			getPositionHandler().scrollRight();
+		}
+	}
+
+	@Override
+	public void jogWheelPush(final boolean push) {
+		if (push) {
+			clip.launch();
 		}
 	}
 

@@ -30,6 +30,7 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		bind(knobs[4], createIncrementBinder(host, this::changeNoteLength));
 		final ModeButton[] buttons = getDriver().getDisplayButtons();
 		bindPressed(buttons[4], this::createEmptyClip);
+		bindPressed(buttons[5], this::duplicateClip);
 	}
 
 	private void changeGrid(final int amount) {
@@ -126,7 +127,7 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		String bottomRight = "";
 		if (isInfoModeActive()) {
 			topLeft = " ---- | ---- | <POS | POS> ";
-			topRight = "+CLIP | ---- | ---- | ---- ";
+			topRight = "+CLIP | DUPL | ---- | ---- ";
 			bottomLeft = getLeftValues(true);
 			bottomRight = " ---- | ---- | ---- | ---- ";
 		} else {
@@ -181,6 +182,10 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		return sb.toString();
 	}
 
+	private void duplicateClip() {
+		getDriver().getFocusClip().getMainCursoClip().duplicate();
+	}
+
 	private void createEmptyClip() {
 		final CursorTrack cursorTrack = getDriver().getCursorTrack();
 		final ClipLauncherSlotBank slotBank = cursorTrack.clipLauncherSlotBank();
@@ -189,6 +194,7 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		if (nextEmpty != -1) {
 			slotBank.createEmptyClip(nextEmpty, 4);
 		}
+
 	}
 
 	private int getSelectedIndex(final ClipLauncherSlotBank slotBank) {

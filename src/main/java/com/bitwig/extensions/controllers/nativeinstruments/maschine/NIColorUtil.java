@@ -45,6 +45,14 @@ public class NIColorUtil {
 		return convertColor(color.red(), color.green(), color.blue());
 	}
 
+	public static int convertColor(final BitWigColor color) {
+		final Integer colorIndex = fixedColorTable.get(color.getLookupIndex());
+		if (colorIndex != null) {
+			return colorIndex.intValue();
+		}
+		return 68;
+	}
+
 	public static boolean isOff(final SettableColorValue color) {
 		return color.green() == 0 && color.red() == 0 && color.blue() == 0;
 	}

@@ -15,6 +15,8 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 	private final MaschineLayer selectLayer;
 	private final MaschineLayer eraseLayer;
 	private final MaschineLayer duplicateLayer;
+	private final MaschineLayer colorChooseLayer;
+
 	private final SceneBank sceneBank;
 	int baseOffset = 0;
 	int lastScrollPostion = 0;
@@ -27,6 +29,7 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 		selectLayer = new MaschineLayer(driver, "select-" + name);
 		eraseLayer = new MaschineLayer(driver, "clear-" + name);
 		duplicateLayer = new MaschineLayer(driver, "duplicate-" + name);
+		colorChooseLayer = new MaschineLayer(driver, "variation-" + name);
 
 		sceneBank = driver.getHost().createSceneBank(16);
 		sceneBank.canScrollBackwards().markInterested();
@@ -57,6 +60,7 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 			selectLayer.bindPressed(button, () -> handleSelect(scene, index));
 			eraseLayer.bindPressed(button, () -> handleErase(scene));
 			duplicateLayer.bindPressed(button, () -> handleDuplicate(scene));
+			colorChooseLayer.bindPressed(button, () -> handleColorSelection(scene));
 			bindLightState(() -> computeGridLedState(scene, index), button);
 		}
 
@@ -66,6 +70,14 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 //		scene.selectInEditor();
 //		scene.showInEditor();
 //		getDriver().getApplication().duplicate();
+	}
+
+	private void handleColorSelection(final Scene scene) {
+		if (scene.exists().get()) {
+			getDriver().enterColorSelection(color -> {
+				color.set(scene.color());
+			});
+		}
 	}
 
 	private void handleErase(final Scene scene) {
@@ -82,7 +94,7 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 		assert scene.isSubscribed();
 		final int color = NIColorUtil.convertColor(scene.color()) + (isSelected[index] ? 2 : 0);
 
-		return new RgbLedState(color, color, 0);
+		return RgbLedState.colorOf(color);
 	}
 
 	@Override
@@ -100,6 +112,8 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
 			return selectLayer;
 		case ERASE:
 			return eraseLayer;
+		case VARIATION:
+			return colorChooseLayer;
 		default:
 			return null;
 		}
