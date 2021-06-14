@@ -54,6 +54,10 @@ public class ModifierValueObject implements IntegerValue {
 		return value;
 	}
 
+	public boolean notSet() {
+		return value == 0;
+	}
+
 	private void notifyValueChanged() {
 		callbacks.forEach(callback -> callback.valueChanged(value));
 	}

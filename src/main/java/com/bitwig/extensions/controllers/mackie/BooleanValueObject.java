@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.bitwig.extension.callback.BooleanValueChangedCallback;
-import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.HardwareAction;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareActionBinding;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
 
-public class BooleanValueObject implements BooleanValue {
+public class BooleanValueObject implements SettableBooleanValue {
 
 	private boolean value = false;
 	private final List<BooleanValueChangedCallback> callbacks = new ArrayList<BooleanValueChangedCallback>();
@@ -15,6 +18,7 @@ public class BooleanValueObject implements BooleanValue {
 	public void markInterested() {
 	}
 
+	@Override
 	public void toggle() {
 		this.value = !this.value;
 		for (final BooleanValueChangedCallback booleanValueChangedCallback : callbacks) {
@@ -46,7 +50,8 @@ public class BooleanValueObject implements BooleanValue {
 	public void unsubscribe() {
 	}
 
-	public void setValue(final boolean value) {
+	@Override
+	public void set(final boolean value) {
 		this.value = value;
 		for (final BooleanValueChangedCallback booleanValueChangedCallback : callbacks) {
 			booleanValueChangedCallback.valueChanged(value);
@@ -56,6 +61,30 @@ public class BooleanValueObject implements BooleanValue {
 	@Override
 	public boolean get() {
 		return value;
+	}
+
+	@Override
+	public HardwareActionBinding addBinding(final HardwareAction action) {
+		return null;
+	}
+
+	@Override
+	public void invoke() {
+	}
+
+	@Override
+	public HardwareActionBindable toggleAction() {
+		return null;
+	}
+
+	@Override
+	public HardwareActionBindable setToTrueAction() {
+		return null;
+	}
+
+	@Override
+	public HardwareActionBindable setToFalseAction() {
+		return null;
 	}
 
 }

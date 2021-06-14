@@ -19,6 +19,7 @@ public class TimeCodeLed {
 
 	private int tsMain;
 	private int tsDiv;
+	private int tsTicks = 16;
 	private Mode mode = Mode.BEATS;
 
 	public enum Mode {
@@ -67,7 +68,16 @@ public class TimeCodeLed {
 		final String[] v = devision.split("/");
 		if (v.length == 2) {
 			tsMain = Integer.parseInt(v[0]);
-			tsDiv = Integer.parseInt(v[1]);
+			if (v[1].indexOf(',') > 0) {
+				final String[] denom = v[1].split(",");
+				if (denom.length == 2) {
+					tsDiv = Integer.parseInt(denom[0]);
+					tsTicks = Integer.parseInt(denom[1]);
+				}
+			} else {
+				tsDiv = Integer.parseInt(v[1]);
+				tsTicks = 16;
+			}
 			updatePosition(position);
 		}
 	}
@@ -95,8 +105,8 @@ public class TimeCodeLed {
 
 		final int bars = totalBeats / tsMain + 1;
 		final int beats = totalBeats % tsMain + 1;
-		final int sub = (int) (rest * 4) % (int) (16.0 / tsDiv) + 1;
-		final int ticks = (int) (rest * 400) % 100;
+		final int sub = (int) (rest * 4 * tsTicks / 16) % (int) (16.0 / tsDiv) + 1;
+		final int ticks = (int) (rest * 400 * tsTicks / 16) % 100;
 
 		if (ticks != this.ticks) {
 			this.ticks = ticks;
@@ -214,6 +224,12 @@ public class TimeCodeLed {
 		final char c2 = ch.charAt(1);
 		midiOut.sendMidi(Midi.CC, 75, toCharValue(c1));
 		midiOut.sendMidi(Midi.CC, 74, toCharValue(c2));
+	}
+
+	public void clearAll() {
+		for (int cc = 64; cc < 76; cc++) {
+			midiOut.sendMidi(Midi.CC, cc, 0);
+		}
 	}
 
 	private int toCharValue(final char c) {

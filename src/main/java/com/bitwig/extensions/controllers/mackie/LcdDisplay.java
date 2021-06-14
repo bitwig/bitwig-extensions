@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.mackie;
 
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.mackie.ChannelSection.SectionType;
+import com.bitwig.extensions.controllers.mackie.layer.ChannelSection.SectionType;
 
 public class LcdDisplay {
 	private final byte[] displayBuffer = { //
@@ -73,11 +73,14 @@ public class LcdDisplay {
 		if (row > 1 || row < 0) {
 			return;
 		}
-		lastSendGrids[row][segment] = text;
-		sendTextSeg(row, segment, text);
+		if (!text.equals(lastSendGrids[row][segment])) {
+			lastSendGrids[row][segment] = text;
+			sendTextSeg(row, segment, text);
+		}
 	}
 
 	private void sendTextSeg(final int row, final int segment, final String text) {
+		// RemoteConsole.out.println(" SEND r={} s={} txt={}", row, segment, text);
 		segBuffer[6] = (byte) (row * 56 + segment * 7);
 		final char[] ca = text.toCharArray();
 		for (int i = 0; i < 6; i++) {
@@ -114,6 +117,12 @@ public class LcdDisplay {
 		midiOut.sendSysex(sysHead + "62 f7");
 		sendToDisplay(0, "");
 		sendToDisplay(55, "");
+	}
+
+	public void exitMessage() {
+		midiOut.sendSysex(sysHead + "62 f7");
+		sendToDisplay(0, "                     Bitwig Studio ");
+		sendToDisplay(55, "            ");
 	}
 
 }

@@ -1,8 +1,9 @@
-package com.bitwig.extensions.controllers.mackie;
+package com.bitwig.extensions.controllers.mackie.layer;
 
 import com.bitwig.extension.controller.api.Parameter;
+import com.bitwig.extensions.controllers.mackie.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.bindings.DisplayNameBinding;
-import com.bitwig.extensions.controllers.mackie.bindings.DisplayValueBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.DisplayStringValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayBinding;
 import com.bitwig.extensions.framework.Layer;
@@ -10,13 +11,14 @@ import com.bitwig.extensions.framework.Layers;
 
 public class FlippableLayer extends Layer {
 
-	private final Layer mainLayer;
-	private final Layer flipLayer;
 	private boolean flipped = false;
 	private boolean touched = false;
-	private final Layer displayNonTouchLayer;
-	private final Layer displayTouchLayer;
-	private final ChannelSection section;
+
+	protected final ChannelSection section;
+	protected final Layer mainLayer;
+	protected final Layer flipLayer;
+	protected final Layer displayNonTouchLayer;
+	protected final Layer displayTouchLayer;
 
 	public FlippableLayer(final ChannelSection section, final String name) {
 		super(section.getLayers(), name);
@@ -28,25 +30,38 @@ public class FlippableLayer extends Layer {
 		displayTouchLayer = new Layer(layers, name + "_TOUCH");
 	}
 
-	public void addBinding(final int index, final Parameter other, final RingDisplayType type, final boolean isMixer) {
+	public void addBinding(final int index, final Parameter encParameter, final RingDisplayType type,
+			final boolean isMixer) {
+		bindVolumeParameter(index, isMixer);
+
+		mainLayer.bind(section.getEncoder(index), encParameter.value());
+		mainLayer.addBinding(new RingDisplayBinding(encParameter, section.getRingDisplay(index), type));
+		mainLayer.addBinding(section.createResetBinding(index, encParameter));
+
+		flipLayer.bind(section.getVolumeFader(index), encParameter);
+		flipLayer.addBinding(new FaderBinding(encParameter, section.getMotorFader(index)));
+		flipLayer.addBinding(section.createTouchFaderBinding(index, encParameter));
+
+		displayNonTouchLayer
+				.addBinding(new DisplayStringValueBinding(encParameter.displayedValue(), section.getValueTarget(index)));
+		if (!isMixer) {
+			displayNonTouchLayer.addBinding(new DisplayNameBinding(encParameter.name(), section.getNameTarget(index)));
+		}
+	}
+
+	protected void bindVolumeParameter(final int index, final boolean isMixer) {
 		mainLayer.addBinding(section.getVolumeToFaderBinding(index));
-		mainLayer.bind(section.getEncoder(index), other);
 		mainLayer.addBinding(section.getVolumeFaderBinding(index));
-		mainLayer.addBinding(new RingDisplayBinding(other, section.getRingDisplay(index), type));
-
-		flipLayer.bind(section.getVolumeFader(index), other);
+		mainLayer.addBinding(section.getVolumeTouchBinding(index));
+		flipLayer.addBinding(section.getVolumeResetBinding(index));
 		flipLayer.addBinding(section.getVolumeToEncoderBindings(index));
-		flipLayer.addBinding(new FaderBinding(other, section.getMotorFader(index)));
 		flipLayer.addBinding(section.getVolumeRingDisplayBinding(index));
-
 		displayTouchLayer.addBinding(section.getVolumeDisplayBinding(index));
-		displayNonTouchLayer.addBinding(new DisplayValueBinding(other, section.getValueTarget(index)));
 		if (isMixer) {
 			displayTouchLayer.addBinding(section.getChannelNameBinding(index));
 			displayNonTouchLayer.addBinding(section.getChannelNameBinding(index));
 		} else {
 			displayTouchLayer.addBinding(section.getChannelNameBinding(index));
-			displayNonTouchLayer.addBinding(new DisplayNameBinding(other.name(), section.getNameTarget(index)));
 		}
 	}
 
@@ -105,6 +120,9 @@ public class FlippableLayer extends Layer {
 		mainLayer.deactivate();
 		displayNonTouchLayer.deactivate();
 		displayTouchLayer.deactivate();
+	}
+
+	public void navigateLeftRight(final int direction) {
 	}
 
 }

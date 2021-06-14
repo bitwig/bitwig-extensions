@@ -24,8 +24,10 @@ import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.mackie.ChannelSection.SectionType;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
+import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
+import com.bitwig.extensions.controllers.mackie.layer.ChannelSection;
+import com.bitwig.extensions.controllers.mackie.layer.ChannelSection.SectionType;
 import com.bitwig.extensions.controllers.mackie.target.MotorFader;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -52,11 +54,15 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private final BooleanValueObject scrubActive = new BooleanValueObject();
 
 	private final ModifierValueObject modifier = new ModifierValueObject();
+	private final TrackModeValue trackChannelMode = new TrackModeValue();
+
 	private VuMode vuMode = VuMode.LED;
-	private VPotMode vpotMode = VPotMode.PAN;
 	private final int nrOfExtenders;
+	private DelayAction delayedAction = null; // TODO this needs to be a queue
+	private PinnableCursorDevice cursorDevice;
 
 	private final List<ChannelSection> sections = new ArrayList<ChannelSection>();
+	private EqDevice eqDevice;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -118,8 +124,22 @@ public class MackieMcuProExtension extends ControllerExtension {
 		}
 	}
 
+	public void cancelAction(final String actionId) {
+		if (delayedAction != null && actionId.equals(delayedAction.getActionId())) {
+			delayedAction = null;
+		}
+	}
+
+	public void scheduleAction(final String actionId, final int duration, final Runnable action) {
+		delayedAction = new DelayAction(duration, actionId, action);
+	}
+
 	private void handlePing() {
-		host.scheduleTask(this::handlePing, 500);
+		if (delayedAction != null && delayedAction.isReady()) {
+			delayedAction.run();
+			delayedAction = null;
+		}
+		host.scheduleTask(this::handlePing, 100);
 	}
 
 	private void initJogWheel() {
@@ -136,6 +156,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final double position = transport.playStartPosition().get();
 
 		final double newPos = position + 0.25 * inc;
+
 		transport.playStartPosition().set(newPos);
 		if (transport.isPlaying().get()) {
 			transport.jumpToPlayStartPosition();
@@ -166,7 +187,15 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void intiVPotModes() {
-		createModeButton(VPotMode.TRACK);
+		// createModeButton(VPotMode.TRACK);
+		createOnOfBoolButton(NoteOnAssignment.V_TRACK, trackChannelMode);
+//		final Action[] allActions = application.getActions();
+//		for (final Action action : allActions) {
+//			RemoteConsole.out.println(" ACTION [{}] name={} id=[{}] ", action.getCategory().getName(), action.getName(),
+//					action.getId());
+//		}
+		// createOnOfBoolButton(NoteOnAssignment.SOLO, soloExclusive);
+
 		createModeButton(VPotMode.SEND);
 		createModeButton(VPotMode.PAN);
 		createModeButton(VPotMode.PLUGIN);
@@ -228,11 +257,15 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void navigateTrack(final int direction) {
-		RemoteConsole.out.println("TRACK  {}", direction);
+		if (direction > 0) {
+			mixerTrackBank.scrollForwards();
+		} else {
+			mixerTrackBank.scrollBackwards();
+		}
 	}
 
 	private void navigateBank(final int direction) {
-		RemoteConsole.out.println("BANK  {}", direction);
+		mixerTrackBank.scrollBy(direction * 8 * sections.size());
 	}
 
 	private void navigateUpDown(final int direction) {
@@ -240,7 +273,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void navigateLeftRight(final int direction) {
-		RemoteConsole.out.println("LeftRight {}", direction);
+		if (!zoomActive.get()) {
+			sections.forEach(section -> section.navigateLeftRight(direction));
+		}
 	}
 
 	private void initFunctionSection() {
@@ -274,31 +309,31 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	private void initTransport() {
 		transport.playStartPosition().markInterested();
-		final HardwareButton playButton = createButton("PLAY", NoteOnAssignment.PLAY);
-		final HardwareButton recordButton = createButton("RECORD", NoteOnAssignment.RECORD);
-		final HardwareButton stopButton = createButtonWState("STOP", NoteOnAssignment.STOP, transport.isPlaying());
-		final HardwareButton rewindButton = createHoldButton("REWIND", NoteOnAssignment.REWIND);
-		final HardwareButton fastForwardButton = createHoldButton("FASTFORWARD", NoteOnAssignment.FFWD);
+		final HardwareButton playButton = createButton(NoteOnAssignment.PLAY);
+		final HardwareButton recordButton = createButton(NoteOnAssignment.RECORD);
+		final HardwareButton stopButton = createButtonWState(NoteOnAssignment.STOP, transport.isPlaying(), true);
+		final HardwareButton rewindButton = createHoldButton(NoteOnAssignment.REWIND);
+		final HardwareButton fastForwardButton = createHoldButton(NoteOnAssignment.FFWD);
 
-		final HardwareButton loopButton = createButton("LOOP_BUTTON", NoteOnAssignment.CYCLE);
+		final HardwareButton loopButton = createButton(NoteOnAssignment.CYCLE);
 		mainLayer.bindToggle(loopButton, transport.isArrangerLoopEnabled());
-		final HardwareButton metroButton = createButton("METRO_BUTTON", NoteOnAssignment.CLICK);
+		final HardwareButton metroButton = createButton(NoteOnAssignment.CLICK);
 		mainLayer.bindToggle(metroButton, transport.isMetronomeEnabled());
 
-		final HardwareButton autoWriteButton = createButton("AUTO_WRITE", NoteOnAssignment.AUTO_WRITE);
+		final HardwareButton autoWriteButton = createButton(NoteOnAssignment.AUTO_READ_OFF);
 		mainLayer.bindPressed(autoWriteButton, transport.isArrangerAutomationWriteEnabled());
 		mainLayer.bind(transport.isArrangerAutomationWriteEnabled(),
 				(OnOffHardwareLight) autoWriteButton.backgroundLight());
 
-		final HardwareButton touchButton = createButton("AUTO_TOUCH", NoteOnAssignment.TOUCH);
+		final HardwareButton touchButton = createButton(NoteOnAssignment.TOUCH);
 		mainLayer.bindPressed(touchButton, () -> {
 			transport.automationWriteMode().set("touch");
 		});
-		final HardwareButton latchButton = createButton("AUTO_LATCH", NoteOnAssignment.LATCH);
+		final HardwareButton latchButton = createButton(NoteOnAssignment.LATCH);
 		mainLayer.bindPressed(latchButton, () -> {
 			transport.automationWriteMode().set("latch");
 		});
-		final HardwareButton trimButton = createButton("AUTO_TRIM", NoteOnAssignment.TRIM);
+		final HardwareButton trimButton = createButton(NoteOnAssignment.AUTO_WRITE);
 		mainLayer.bindPressed(trimButton, () -> {
 			transport.automationWriteMode().set("write");
 		});
@@ -322,13 +357,18 @@ public class MackieMcuProExtension extends ControllerExtension {
 			}
 		});
 
+		final HardwareButton punchInButton = createButton(NoteOnAssignment.DROP);
+		final HardwareButton punchOutButton = createButton(NoteOnAssignment.REPLACE);
+		mainLayer.bindToggle(punchInButton, transport.isPunchInEnabled());
+		mainLayer.bindToggle(punchOutButton, transport.isPunchOutEnabled());
+
 		mainLayer.bindPressed(playButton, transport.continuePlaybackAction());
 		mainLayer.bind(transport.isPlaying(), (OnOffHardwareLight) playButton.backgroundLight());
 		mainLayer.bindPressed(stopButton, transport.stopAction());
 		mainLayer.bindToggle(recordButton, transport.isArrangerRecordEnabled());
 		mainLayer.bindPressed(rewindButton, transport.rewindAction());
 		mainLayer.bindPressed(fastForwardButton, transport.fastForwardAction());
-		final HardwareButton undoButton = createHoldButton("UNDO", NoteOnAssignment.UNDO);
+		final HardwareButton undoButton = createHoldButton(NoteOnAssignment.UNDO);
 		mainLayer.bindIsPressed(undoButton, v -> {
 			if (v) {
 				if (!modifier.isShiftSet()) {
@@ -348,14 +388,16 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		createOnOfBoolButton(NoteOnAssignment.FLIP, flipped);
 
-		final HardwareButton vuModeButton = createButton("VU_MODE", NoteOnAssignment.DIPLAY_NAME);
+		final HardwareButton vuModeButton = createButton(NoteOnAssignment.DIPLAY_NAME);
 		vuModeButton.isPressed().addValueObserver(v -> {
 			if (v) {
-				toogleVuMode();
+				if (modifier.isShift()) {
+					toogleVuMode();
+				}
 			}
 		});
 
-		final HardwareButton modeButton = createButton("TIME_MODE", NoteOnAssignment.DISPLAY_SMPTE);
+		final HardwareButton modeButton = createButton(NoteOnAssignment.DISPLAY_SMPTE);
 		modeButton.isPressed().addValueObserver(v -> {
 			if (v) {
 				ledDisplay.toggleMode();
@@ -363,7 +405,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		});
 	}
 
-	public void createOnOfBoolButton(final NoteOnAssignment assignment, final BooleanValueObject valueState) {
+	public void createOnOfBoolButton(final NoteOnAssignment assignment, final SettableBooleanValue valueState) {
 		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
 		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
@@ -393,11 +435,11 @@ public class MackieMcuProExtension extends ControllerExtension {
 		sections.forEach(section -> section.applyVuMode(this.getVuMode()));
 	}
 
-	private HardwareButton createHoldButton(final String name, final NoteOnAssignment assignment) {
-		final HardwareButton button = surface.createHardwareButton(name + "_BUTTON");
+	private HardwareButton createHoldButton(final NoteOnAssignment assignment) {
+		final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
 
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(name + "BUTTON_LED");
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "BUTTON_LED");
 		button.setBackgroundLight(led);
 		led.onUpdateHardware(() -> {
 			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
@@ -408,15 +450,17 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return button;
 	}
 
-	private HardwareButton createButtonWState(final String name, final NoteOnAssignment assignment,
-			final SettableBooleanValue settableBooleanValue) {
-		final HardwareButton button = surface.createHardwareButton(name + "_BUTTON");
+	private HardwareButton createButtonWState(final NoteOnAssignment assignment,
+			final SettableBooleanValue settableBooleanValue, final boolean reversedLed) {
+		final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(name + "BUTTON_LED");
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "BUTTON_LED");
 		button.setBackgroundLight(led);
-		led.onUpdateHardware(() -> {
-			sendLedUpdate(assignment, settableBooleanValue.get() ? 0 : 127);
-		});
+		if (reversedLed) {
+			led.onUpdateHardware(() -> sendLedUpdate(assignment, settableBooleanValue.get() ? 0 : 127));
+		} else {
+			led.onUpdateHardware(() -> sendLedUpdate(assignment, settableBooleanValue.get() ? 127 : 0));
+		}
 		settableBooleanValue.addValueObserver(v -> {
 			led.isOn().setValue(!v);
 		});
@@ -433,22 +477,22 @@ public class MackieMcuProExtension extends ControllerExtension {
 		});
 		mainLayer.bindPressed(button, () -> setVPotMode(mode));
 		led.isOn().setValueSupplier(() -> {
-			return this.vpotMode == mode;
+			return this.trackChannelMode.getMode() == mode;
 		});
 		return button;
 	}
 
 	private void setVPotMode(final VPotMode mode) {
-		if (this.vpotMode == mode) {
+		if (this.trackChannelMode.getMode() == mode) {
 			sections.forEach(ChannelSection::notifyModeAdvance);
 		} else {
-			this.vpotMode = mode;
+			this.trackChannelMode.setMode(mode);
 			sections.forEach(section -> section.notifyModeChange(mode));
 		}
 	}
 
 	public VPotMode getVpotMode() {
-		return vpotMode;
+		return this.trackChannelMode.getMode();
 	}
 
 	private HardwareButton createPressButton(final NoteOnAssignment assignment) {
@@ -458,10 +502,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return button;
 	}
 
-	private HardwareButton createButton(final String name, final NoteOnAssignment assignment) {
-		final HardwareButton button = surface.createHardwareButton(name + "_BUTTON");
+	private HardwareButton createButton(final NoteOnAssignment assignment) {
+		final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(name + "_BUTTON_LED");
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "_BUTTON_LED");
 		button.setBackgroundLight(led);
 		led.onUpdateHardware(() -> {
 			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
@@ -484,30 +528,32 @@ public class MackieMcuProExtension extends ControllerExtension {
 		// initNaviagtion();
 		cursorTrack = getHost().createCursorTrack(8, 16);
 
-		final PinnableCursorDevice cursorDevice = cursorTrack.createCursorDevice();
+		final HardwareButton soloButton = createButtonWState(NoteOnAssignment.SOLO, cursorTrack.solo(), false);
+		mainLayer.bindPressed(soloButton, cursorTrack.solo().toggleAction());
+
+		this.cursorDevice = cursorTrack.createCursorDevice();
 
 		mixerTrackBank = getHost().createMainTrackBank(8 * sections.size(), 1, 16);
 		mixerTrackBank.setSkipDisabledItems(true);
 		mixerTrackBank.canScrollChannelsDown().markInterested();
 		mixerTrackBank.canScrollChannelsUp().markInterested();
-
-		final HardwareButton trackNavLeftButton = surface.createHardwareButton("TRACK_LEFT_NAV_BUTTON");
-		trackNavLeftButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x31, 127));
-		final HardwareButton trackRightNavButton = surface.createHardwareButton("TRACK_RIGHT_NAV_BUTTON");
-		trackRightNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x31, 1));
-		mixerTrackBank.setChannelScrollStepSize(8);
-
-		mainLayer.bindPressed(trackNavLeftButton, () -> {
-			mixerTrackBank.scrollBy(-8);
-		});
-
-		mainLayer.bindPressed(trackRightNavButton, () -> {
-			mixerTrackBank.scrollBy(8);
-		});
+		eqDevice = new EqDevice(this);
 
 		for (final ChannelSection channelSection : sections) {
 			channelSection.initChannelControl(mixerTrackBank, cursorTrack);
 		}
+	}
+
+	public EqDevice getEqDevice() {
+		return eqDevice;
+	}
+
+	public PinnableCursorDevice getCursorDevice() {
+		return cursorDevice;
+	}
+
+	public CursorTrack getCursorTrack() {
+		return cursorTrack;
 	}
 
 	public void sendLedUpdate(final NoteOnAssignment assingment, final int value) {
@@ -518,10 +564,29 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return mainLayer;
 	}
 
+	private boolean shutdownHook = false;
+
 	@Override
 	public void exit() {
-		sections.forEach(ChannelSection::resetFaders);
-		sections.forEach(ChannelSection::clearAll);
+		shutdownHook = true;
+		final Thread shutdown = new Thread(() -> {
+			ledDisplay.clearAll();
+			sections.forEach(ChannelSection::resetLeds);
+			sections.forEach(ChannelSection::resetFaders);
+			sections.forEach(ChannelSection::exitMessage);
+			try {
+				Thread.sleep(300);
+			} catch (final InterruptedException e) {
+			}
+			shutdownHook = false;
+		});
+		shutdown.start();
+		while (shutdownHook) {
+			try {
+				Thread.sleep(1000);
+			} catch (final InterruptedException e) {
+			}
+		}
 		getHost().showPopupNotification(" Exit Mackie MCU Pro");
 	}
 
@@ -556,5 +621,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	public BooleanValueObject getFlipped() {
 		return flipped;
+	}
+
+	public TrackModeValue getTrackChannelMode() {
+		return trackChannelMode;
 	}
 }

@@ -1,19 +1,24 @@
 package com.bitwig.extensions.controllers.mackie.bindings;
 
-import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extensions.controllers.mackie.target.DisplayValueTarget;
 import com.bitwig.extensions.framework.Binding;
 
-public class DisplayValueBinding extends Binding<Parameter, DisplayValueTarget> {
+public abstract class AbstractDisplayValueBinding<T> extends Binding<T, DisplayValueTarget> {
 	private String lastValue = "";
 	private boolean active = false;
 
-	public DisplayValueBinding(final Parameter source, final DisplayValueTarget target) {
+	public AbstractDisplayValueBinding(final T source, final DisplayValueTarget target) {
 		super(source, target);
-		source.displayedValue().addValueObserver(this::valueChanged);
+		initListening();
 	}
 
-	private void valueChanged(final String value) {
+	protected void setLastValue(final String lastValue) {
+		this.lastValue = lastValue;
+	}
+
+	protected abstract void initListening();
+
+	protected void valueChanged(final String value) {
 		if (!lastValue.equals(value)) {
 			lastValue = value;
 			if (active) {
