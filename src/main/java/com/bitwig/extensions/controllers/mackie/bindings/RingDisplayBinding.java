@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.bindings;
 
 import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extensions.controllers.mackie.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.target.RingDisplay;
 import com.bitwig.extensions.framework.Binding;
 

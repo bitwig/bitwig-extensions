@@ -1,11 +1,14 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
 import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extensions.controllers.mackie.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.bindings.AbstractDisplayValueBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.DisplayDoubleValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.DisplayNameBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.DisplayStringValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.ValueConverter;
+import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
@@ -31,9 +34,23 @@ public class FlippableLayer extends Layer {
 	}
 
 	public void addBinding(final int index, final Parameter encParameter, final RingDisplayType type,
+			final boolean isMixer, final ValueConverter converter) {
+		bindVolumeParameter(index, isMixer);
+		final DisplayDoubleValueBinding displayValueBinding = new DisplayDoubleValueBinding(encParameter.value(),
+				section.getValueTarget(index), converter);
+		addBinding(index, encParameter, type, isMixer, displayValueBinding);
+	}
+
+	public void addBinding(final int index, final Parameter encParameter, final RingDisplayType type,
 			final boolean isMixer) {
 		bindVolumeParameter(index, isMixer);
+		final DisplayStringValueBinding displayValueBinding = new DisplayStringValueBinding(
+				encParameter.displayedValue(), section.getValueTarget(index));
+		addBinding(index, encParameter, type, isMixer, displayValueBinding);
+	}
 
+	public void addBinding(final int index, final Parameter encParameter, final RingDisplayType type,
+			final boolean isMixer, final AbstractDisplayValueBinding<?> displayValueBinding) {
 		mainLayer.bind(section.getEncoder(index), encParameter.value());
 		mainLayer.addBinding(new RingDisplayBinding(encParameter, section.getRingDisplay(index), type));
 		mainLayer.addBinding(section.createResetBinding(index, encParameter));
@@ -42,8 +59,7 @@ public class FlippableLayer extends Layer {
 		flipLayer.addBinding(new FaderBinding(encParameter, section.getMotorFader(index)));
 		flipLayer.addBinding(section.createTouchFaderBinding(index, encParameter));
 
-		displayNonTouchLayer
-				.addBinding(new DisplayStringValueBinding(encParameter.displayedValue(), section.getValueTarget(index)));
+		displayNonTouchLayer.addBinding(displayValueBinding);
 		if (!isMixer) {
 			displayNonTouchLayer.addBinding(new DisplayNameBinding(encParameter.name(), section.getNameTarget(index)));
 		}
@@ -74,6 +90,10 @@ public class FlippableLayer extends Layer {
 		updateDisplayLayers();
 	}
 
+	public boolean isFlipped() {
+		return flipped;
+	}
+
 	public void setTouched(final boolean touched) {
 		if (touched == this.touched) {
 			return;
@@ -82,20 +102,28 @@ public class FlippableLayer extends Layer {
 		updateDisplayLayers();
 	}
 
-	private void updateDisplayLayers() {
+	void updateDisplayLayers() {
 		if (!isActive()) {
 			return;
 		}
 		if (touched && !flipped || !touched && flipped) {
-			displayNonTouchLayer.deactivate();
-			displayTouchLayer.activate();
+			activateTouchDisplay();
 		} else {
-			displayTouchLayer.deactivate();
-			displayNonTouchLayer.activate();
+			activateNonTouchDisplay();
 		}
 	}
 
-	public void updateActivation() {
+	void activateNonTouchDisplay() {
+		displayTouchLayer.deactivate();
+		displayNonTouchLayer.activate();
+	}
+
+	void activateTouchDisplay() {
+		displayNonTouchLayer.deactivate();
+		displayTouchLayer.activate();
+	}
+
+	private void updateActivation() {
 		if (!isActive()) {
 			return;
 		}

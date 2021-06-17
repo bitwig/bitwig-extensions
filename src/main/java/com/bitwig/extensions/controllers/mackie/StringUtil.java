@@ -10,6 +10,15 @@ public class StringUtil {
 	private StringUtil() {
 	}
 
+	public static String padString(final String text, final int pad) {
+		final StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < pad; i++) {
+			sb.append(' ');
+		}
+		sb.append(text);
+		return sb.toString();
+	}
+
 	public static String toAsciiDisplay(final String name, final int maxLen) {
 		final String s = name.substring(0, Math.min(7, name.length()));
 		final StringBuilder b = new StringBuilder();

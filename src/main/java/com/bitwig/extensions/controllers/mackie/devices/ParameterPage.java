@@ -18,13 +18,13 @@ import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.SpecificBitwigDevice;
 import com.bitwig.extension.controller.api.StringValue;
-import com.bitwig.extensions.controllers.mackie.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.bindings.AbstractDisplayNameBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.AbstractDisplayValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderParameterBankBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ResetableAbsoluteValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ResetableRelativeValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.RingParameterBankDisplayBinding;
+import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.target.DisplayNameTarget;
 import com.bitwig.extensions.controllers.mackie.target.DisplayValueTarget;
 import com.bitwig.extensions.controllers.mackie.target.MotorFader;
@@ -61,6 +61,8 @@ public class ParameterPage implements SettableRangedValue {
 			final int pIndex = pages.size();
 			final String pname = generator.getParamName(page, index);
 			final Parameter param = device.createParameter(pname);
+			final DeviceParameter deviceParameter = generator.createDeviceParameter(pname, param, page, index);
+
 			param.value().markInterested();
 			param.value().addValueObserver(v -> {
 				if (pIndex == pageIndex) {
@@ -75,7 +77,7 @@ public class ParameterPage implements SettableRangedValue {
 				}
 			});
 
-			pages.add(generator.createDeviceParameter(pname, param, page, index));
+			pages.add(deviceParameter);
 		}
 		currentParameter = pages.get(pageIndex);
 	}

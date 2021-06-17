@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie;
+package com.bitwig.extensions.controllers.mackie.display;
 
 public enum RingDisplayType {
 	PAN_FILL(17), FILL_LR(33), SINGLE(1), CENTER_FILL(49);

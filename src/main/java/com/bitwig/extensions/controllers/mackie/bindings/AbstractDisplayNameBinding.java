@@ -6,7 +6,6 @@ import com.bitwig.extensions.framework.Binding;
 
 public abstract class AbstractDisplayNameBinding<T> extends Binding<T, DisplayNameTarget> {
 	private String lastValue = "";
-	private boolean active = false;
 
 	public AbstractDisplayNameBinding(final T source, final DisplayNameTarget target) {
 		super(source, target);
@@ -19,7 +18,7 @@ public abstract class AbstractDisplayNameBinding<T> extends Binding<T, DisplayNa
 		final String newValue = StringUtil.toAsciiDisplay(value, 7);
 		if (!lastValue.equals(newValue)) {
 			lastValue = newValue;
-			if (active) {
+			if (isActive()) {
 				getTarget().sendValue(newValue);
 			}
 		}
@@ -27,12 +26,10 @@ public abstract class AbstractDisplayNameBinding<T> extends Binding<T, DisplayNa
 
 	@Override
 	protected void deactivate() {
-		active = false;
 	}
 
 	@Override
 	protected void activate() {
-		active = true;
 		getTarget().sendValue(lastValue);
 	}
 

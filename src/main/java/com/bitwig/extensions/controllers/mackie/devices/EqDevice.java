@@ -6,17 +6,10 @@ import java.util.List;
 import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.DeviceMatcher;
-import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.SpecificBitwigDevice;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
-import com.bitwig.extensions.controllers.mackie.RingDisplayType;
 
 public class EqDevice {
-
-	private final static String[] PNAMES = { "TYPE", "FREQ", "GAIN", "Q" };
-	private final static RingDisplayType[] RING_TYPES = { RingDisplayType.FILL_LR, RingDisplayType.SINGLE,
-			RingDisplayType.FILL_LR, RingDisplayType.FILL_LR };
-	private final static double[] SENSITIVITIES = { 2, 0.25, 0.25, 0.25 };
 
 	private final SpecificBitwigDevice bitwigDevice;
 	private final Device device;
@@ -30,24 +23,7 @@ public class EqDevice {
 		eqPlusDeviceBank.setDeviceMatcher(eq5Matcher);
 		device = eqPlusDeviceBank.getItemAt(0);
 
-		final ParameterGenerator paramGen = new ParameterGenerator() {
-
-			@Override
-			public String getParamName(final int page, final int index) {
-				return PNAMES[index % 4] + Integer.toString(1 + index / 4 + page * 2);
-			}
-
-			@Override
-			public int getPages() {
-				return 4;
-			}
-
-			@Override
-			public DeviceParameter createDeviceParameter(final String pname, final Parameter param, final int page,
-					final int index) {
-				return new DeviceParameter(pname, param, RING_TYPES[index % 4], SENSITIVITIES[index % 4]);
-			}
-		};
+		final ParameterGenerator paramGen = new EqPlusBandParameterGenerator();
 
 		for (int i = 0; i < 8; i++) {
 			eqBands.add(new ParameterPage(i, bitwigDevice, paramGen));
@@ -60,6 +36,10 @@ public class EqDevice {
 //		});
 		device.exists().addValueObserver(v -> {
 		});
+	}
+
+	public Device getDevice() {
+		return device;
 	}
 
 	public List<ParameterPage> getEqBands() {

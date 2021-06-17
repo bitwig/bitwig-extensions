@@ -21,16 +21,11 @@ import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extensions.controllers.mackie.BindingCache;
-import com.bitwig.extensions.controllers.mackie.BooleanValueObject;
-import com.bitwig.extensions.controllers.mackie.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
-import com.bitwig.extensions.controllers.mackie.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.VPotMode.Assign;
-import com.bitwig.extensions.controllers.mackie.VuMode;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.DisplayNameBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.DisplayStringValueBinding;
@@ -40,20 +35,24 @@ import com.bitwig.extensions.controllers.mackie.bindings.TouchFaderBinding;
 import com.bitwig.extensions.controllers.mackie.devices.Devices;
 import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
+import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
+import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.target.DisplayNameTarget;
 import com.bitwig.extensions.controllers.mackie.target.DisplayValueTarget;
 import com.bitwig.extensions.controllers.mackie.target.MotorFader;
 import com.bitwig.extensions.controllers.mackie.target.RingDisplay;
+import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.framework.AbsoluteHardwareControlBinding;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.RelativeHardwareControlToRangedValueBinding;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class ChannelSection {
 
 	private final MidiIn midiIn;
 	private final MidiOut midiOut;
+	private final int[] lightStatusMap = new int[127];
 
 	final BindingCache volumeBindings = new BindingCache();
 
@@ -76,7 +75,7 @@ public class ChannelSection {
 
 	private final FlippableLayer panLayer;
 	private final FlippableBankLayer sendLayer;
-	private final FlippableEqBandLayer eqTrackLayer;
+	private final FlippableParameterBankLayer eqTrackLayer;
 	private final FlippableLayer sendTrackLayer;
 	private FlippableLayer currentLayer;
 
@@ -100,7 +99,8 @@ public class ChannelSection {
 		sendLayer = new FlippableBankLayer(this, "SEND_" + sectionIndex + "_LAYER");
 
 		sendTrackLayer = new FlippableLayer(this, "SEND_TRACK_" + sectionIndex + "_LAYER");
-		eqTrackLayer = new FlippableEqBandLayer(this, "EQ_TRACK_" + sectionIndex + "_LAYER");
+		eqTrackLayer = new FlippableParameterBankLayer(this, "EQ_TRACK_" + sectionIndex + "_LAYER");
+		eqTrackLayer.setMessages("no EQ+ device on track", "<< press EQ button to insert EQ+ device >>");
 
 		layers.add(panLayer);
 		layers.add(sendTrackLayer);
@@ -127,7 +127,9 @@ public class ChannelSection {
 				});
 			}
 		});
-
+		for (int i = 0; i < lightStatusMap.length; i++) {
+			lightStatusMap[i] = -1;
+		}
 		driver.getTrackChannelMode().addValueObserver(v -> changeTrackMode(v, driver.getTrackChannelMode().getMode()));
 	}
 
@@ -166,9 +168,28 @@ public class ChannelSection {
 				sendTrackLayer.addBinding(i, sendBank.getItemAt(i), RingDisplayType.FILL_LR, false);
 			}
 			final EqDevice eqDevice = driver.getEqDevice();
+			eqTrackLayer.attachDevice(eqDevice.getDevice());
+			eqTrackLayer.addDisplayBinding(mainDisplay);
 			final List<ParameterPage> bands = eqDevice.getEqBands();
 			for (int i = 0; i < 8; i++) {
 				eqTrackLayer.addBinding(i, bands.get(i), false);
+			}
+		}
+	}
+
+	public void fullHardwareUpdate() {
+		mainDisplay.refreshDisplay();
+		for (final MotorFader fader : motorFaderDest) {
+			fader.refresh();
+		}
+
+		for (final RingDisplay ringDisplay : ringDisplays) {
+			ringDisplay.refresh();
+		}
+
+		for (int i = 0; i < lightStatusMap.length; i++) {
+			if (lightStatusMap[i] >= 0) {
+				midiOut.sendMidi(Midi.NOTE_ON, i, lightStatusMap[i]);
 			}
 		}
 	}
@@ -179,6 +200,10 @@ public class ChannelSection {
 		button.pressedAction().setActionMatcher(midiIn.createNoteOnActionMatcher(0, 32 + index));
 		button.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(0, 32 + index));
 		return button;
+	}
+
+	public LcdDisplay getMainDisplay() {
+		return mainDisplay;
 	}
 
 	Layers getLayers() {
@@ -317,7 +342,8 @@ public class ChannelSection {
 			midiOut.sendMidi(Midi.CHANNEL_AT, index << 4 | v, 0);
 		});
 
-		panLayer.addBinding(index, channel.pan(), RingDisplayType.PAN_FILL, true);
+		panLayer.addBinding(index, channel.pan(), RingDisplayType.PAN_FILL, true, ChannelSection::panToString);
+
 		final SendBank bank = channel.sendBank();
 		sendLayer.addBinding(index, bank.getItemAt(0), RingDisplayType.FILL_LR, true);
 		sendLayer.addBank(bank);
@@ -329,7 +355,16 @@ public class ChannelSection {
 		channel.isActivated().markInterested();
 		channel.canHoldAudioData().markInterested();
 		channel.canHoldNoteData().markInterested();
+	}
 
+	public static String panToString(final double v) {
+		final int intv = (int) (v * 100);
+		if (intv == 50) {
+			return "  C";
+		} else if (intv < 50) {
+			return " " + (50 - intv) + "L";
+		}
+		return " " + (intv - 50) + "R";
 	}
 
 	public void handleSoloAction(final Project project, final Track channel) {
@@ -420,10 +455,7 @@ public class ChannelSection {
 	private void toEqMode() {
 		final EqDevice eqDevice = driver.getEqDevice();
 		final boolean hasEq = eqDevice.exists();
-		if (!hasEq) {
-			final InsertionPoint ip = cursorTrack.endOfDeviceChainInsertionPoint();
-			ip.insertBitwigDevice(Devices.EQ_PLUS.getUuid());
-		} else {
+		if (hasEq) {
 			eqDevice.triggerUpdate();
 		}
 	}
@@ -459,7 +491,7 @@ public class ChannelSection {
 				.createOnOffHardwareLight(name + "BUTTON_LED" + "_" + sectionIndex + "_" + index);
 		button.setBackgroundLight(led);
 		led.onUpdateHardware(() -> {
-			midiOut.sendMidi(Midi.NOTE_ON, notNr + index, led.isOn().currentValue() ? 127 : 0);
+			sendLedLightStatus(notNr + index, led.isOn().currentValue() ? 127 : 0);
 		});
 		if (value != null) {
 			value.addValueObserver(v -> led.isOn().setValue(v));
@@ -470,8 +502,13 @@ public class ChannelSection {
 	public void resetLeds() {
 		final NoteOnAssignment[] nv = NoteOnAssignment.values();
 		for (final NoteOnAssignment noteOnAssignment : nv) {
-			midiOut.sendMidi(Midi.NOTE_ON, noteOnAssignment.getNoteNo(), 0);
+			sendLedLightStatus(noteOnAssignment.getNoteNo(), 0);
 		}
+	}
+
+	private void sendLedLightStatus(final int noteNr, final int value) {
+		lightStatusMap[noteNr] = value;
+		midiOut.sendMidi(Midi.NOTE_ON, noteNr, value);
 	}
 
 	public void resetFaders() {
@@ -491,7 +528,7 @@ public class ChannelSection {
 		} else {
 			cx = nx;
 		}
-		RemoteConsole.out.println(" EX P {} c=[{}]", cx, (char) cx);
+		// RemoteConsole.out.println(" EX P {} c=[{}]", cx, (char) cx);
 		mainDisplay.sendChar(0, (char) cx);
 	}
 

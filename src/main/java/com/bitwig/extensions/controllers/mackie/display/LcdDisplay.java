@@ -1,10 +1,20 @@
-package com.bitwig.extensions.controllers.mackie;
+package com.bitwig.extensions.controllers.mackie.display;
 
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
+import com.bitwig.extensions.controllers.mackie.Midi;
+import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.layer.ChannelSection.SectionType;
 
+/**
+ * Represents 2x56 LCD display on the MCU or an extender.
+ *
+ */
 public class LcdDisplay {
-	private final byte[] displayBuffer = { //
+	private static final int DISPLAY_LEN = 55;
+	private static final int ROW2_START = 56;
+
+	private final byte[] rowDisplayBuffer = { //
 			(byte) 0XF0, 0, 0, 0X66, 0x14, 0x12, 0, // z: the grid number Zone number 0-3 * 28
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 7: 10 Chars
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 7: 10 Chars
@@ -16,18 +26,26 @@ public class LcdDisplay {
 			(byte) 240, 0, 0, 102, 20, 18, 0, // z: the grid number Zone number 0-3 * 28
 			0, 0, 0, 0, 0, 0, 0, // 7: 10 Chars
 			(byte) 247 };
-	public String sysHead = "f0 00 00 66 14 ";
+	public String sysHead;
+
 	private final String[][] lastSendGrids = new String[][] { { "", "", "", "", "", "", "", "" },
 			{ "", "", "", "", "", "", "", "" } };
 
 	private final MidiOut midiOut;
 
+	/**
+	 * @param driver  the parent
+	 * @param midiOut the MIDI out destination for the Display
+	 * @param type    the main unit or a an extenter
+	 */
 	public LcdDisplay(final MackieMcuProExtension driver, final MidiOut midiOut, final SectionType type) {
 		this.midiOut = midiOut;
 		if (type == SectionType.XTENDER) {
-			displayBuffer[4] = 0x15;
+			rowDisplayBuffer[4] = 0x15;
 			segBuffer[4] = 0x15;
 			sysHead = "f0 00 00 66 15 ";
+		} else {
+			sysHead = "f0 00 00 66 14 ";
 		}
 		appyVuMode(driver.getVuMode());
 	}
@@ -60,13 +78,35 @@ public class LcdDisplay {
 		refreshDisplay();
 	}
 
-	public void sendToDisplay(final int zone, final String text) {
-		displayBuffer[6] = (byte) zone;
-		final char[] ca = text.toCharArray();
-		for (int i = 0; i < 55; i++) {
-			displayBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+	private void resetGrids(final int row) {
+		for (int cell = 0; cell < lastSendGrids[row].length; cell++) {
+			lastSendGrids[row][cell] = "";
 		}
-		midiOut.sendSysex(displayBuffer);
+	}
+
+	public void centerText(final int row, final String text) {
+		sendToDisplay(row, pad4Center(text));
+	}
+
+	private static String pad4Center(final String text) {
+		final int fill = DISPLAY_LEN - text.length();
+		if (fill < 0) {
+			return text.substring(0, DISPLAY_LEN);
+		}
+		if (fill < 2) {
+			return text;
+		}
+		return StringUtil.padString(text, fill / 2);
+	}
+
+	public void sendToDisplay(final int row, final String text) {
+		resetGrids(row);
+		rowDisplayBuffer[6] = (byte) (row * ROW2_START);
+		final char[] ca = text.toCharArray();
+		for (int i = 0; i < DISPLAY_LEN; i++) {
+			rowDisplayBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+		}
+		midiOut.sendSysex(rowDisplayBuffer);
 	}
 
 	public void sendToRow(final int row, final int segment, final String text) {
@@ -80,8 +120,7 @@ public class LcdDisplay {
 	}
 
 	private void sendTextSeg(final int row, final int segment, final String text) {
-		// RemoteConsole.out.println(" SEND r={} s={} txt={}", row, segment, text);
-		segBuffer[6] = (byte) (row * 56 + segment * 7);
+		segBuffer[6] = (byte) (row * ROW2_START + segment * 7);
 		final char[] ca = text.toCharArray();
 		for (int i = 0; i < 6; i++) {
 			segBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
@@ -116,13 +155,18 @@ public class LcdDisplay {
 	public void clearAll() {
 		midiOut.sendSysex(sysHead + "62 f7");
 		sendToDisplay(0, "");
-		sendToDisplay(55, "");
+		sendToDisplay(1, "");
 	}
 
 	public void exitMessage() {
 		midiOut.sendSysex(sysHead + "62 f7");
-		sendToDisplay(0, "                     Bitwig Studio ");
-		sendToDisplay(55, "            ");
+		centerText(0, "Bitwig Studio");
+		centerText(1, "... not running ...");
+	}
+
+	public void clearText() {
+		sendToDisplay(0, "");
+		sendToDisplay(1, "");
 	}
 
 }

@@ -26,14 +26,26 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
 import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
+import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
+import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.layer.ChannelSection;
 import com.bitwig.extensions.controllers.mackie.layer.ChannelSection.SectionType;
 import com.bitwig.extensions.controllers.mackie.target.MotorFader;
+import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
+import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class MackieMcuProExtension extends ControllerExtension {
+
+	private static final String SYSEX_DEVICE_RELOAD = "f0000066140158595a";
+	private static final double[] FFWD_SPEEDS = { 0.0625, 0.25, 1.0, 4.0 };
+	private static final double[] FFWD_SPEEDS_SHIFT = { 0.25, 1.0, 4.0, 16.0 };
+	private static final long[] FFWD_TIMES = { 500, 1000, 2000, 3000, 4000 };
+
+	private Layers layers;
+	private Layer mainLayer;
+	private Layer shiftLayer;
 
 	private HardwareSurface surface;
 	private Transport transport;
@@ -43,8 +55,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private MidiIn midiIn;
 	private CursorTrack cursorTrack;
 	private TrackBank mixerTrackBank;
-	private Layers layers;
-	private Layer mainLayer;
 	private ControllerHost host;
 	private TimeCodeLed ledDisplay;
 	private ChannelSection mainSection;
@@ -60,6 +70,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private final int nrOfExtenders;
 	private DelayAction delayedAction = null; // TODO this needs to be a queue
 	private PinnableCursorDevice cursorDevice;
+
+	private final HoldDownAction holdAction = new HoldDownAction();
+	private final int[] lightStatusMap = new int[127];
 
 	private final List<ChannelSection> sections = new ArrayList<ChannelSection>();
 	private EqDevice eqDevice;
@@ -79,6 +92,11 @@ public class MackieMcuProExtension extends ControllerExtension {
 		project = host.getProject();
 		layers = new Layers(this);
 		mainLayer = new Layer(layers, "MainLayer");
+		shiftLayer = new Layer(layers, "GlobalShiftLayer");
+
+		for (int i = 0; i < lightStatusMap.length; i++) {
+			lightStatusMap[i] = -1;
+		}
 
 		midiOut = host.getMidiOutPort(0);
 		midiIn = host.getMidiInPort(0);
@@ -119,7 +137,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 						SectionType.XTENDER);
 				sections.add(extenderSection);
 			} else {
-				RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing ports", i + 1);
+				// RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing
+				// ports", i + 1);
 			}
 		}
 	}
@@ -139,6 +158,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 			delayedAction.run();
 			delayedAction = null;
 		}
+		if (holdAction.isRunning()) {
+			holdAction.execute();
+		}
 		host.scheduleTask(this::handlePing, 100);
 	}
 
@@ -147,19 +169,40 @@ public class MackieMcuProExtension extends ControllerExtension {
 		fourDKnob.setAdjustValueMatcher(midiIn.createRelativeSignedBitCCValueMatcher(0, 60, 128));
 		fourDKnob.setStepSize(1 / 128.0);
 
-		final HardwareActionBindable incAction = host.createAction(() -> jogWheel(1), () -> "+");
-		final HardwareActionBindable decAction = host.createAction(() -> jogWheel(-1), () -> "-");
+		final HardwareActionBindable incAction = host.createAction(() -> jogWheelPlayPosition(1), () -> "+");
+		final HardwareActionBindable decAction = host.createAction(() -> jogWheelPlayPosition(-1), () -> "-");
 		mainLayer.bind(fourDKnob, host.createRelativeHardwareControlStepTarget(incAction, decAction));
 	}
 
-	private void jogWheel(final int inc) {
+	private void jogWheelPlayPosition(final int dir) {
+		double resolution = 0.25;
+		if (modifier.isAltSet()) {
+			resolution = 4.0;
+		} else if (modifier.isShiftSet()) {
+			resolution = 1.0;
+		}
+		changePlayPosition(dir, resolution, !modifier.isOptionSet(), !modifier.isControlSet());
+	}
+
+	private void changePlayPosition(final int inc, final double resolution, final boolean restrictToStart,
+			final boolean quantize) {
+
 		final double position = transport.playStartPosition().get();
+		double newPos = position + resolution * inc;
 
-		final double newPos = position + 0.25 * inc;
+		if (restrictToStart && newPos < 0) {
+			newPos = 0;
+		}
 
-		transport.playStartPosition().set(newPos);
-		if (transport.isPlaying().get()) {
-			transport.jumpToPlayStartPosition();
+		if (position != newPos) {
+			if (quantize) {
+				final double intup = Math.floor(newPos / resolution);
+				newPos = intup * resolution;
+			}
+			transport.playStartPosition().set(newPos);
+			if (transport.isPlaying().get()) {
+				transport.jumpToPlayStartPosition();
+			}
 		}
 	}
 
@@ -187,7 +230,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void intiVPotModes() {
-		// createModeButton(VPotMode.TRACK);
 		createOnOfBoolButton(NoteOnAssignment.V_TRACK, trackChannelMode);
 //		final Action[] allActions = application.getActions();
 //		for (final Action action : allActions) {
@@ -269,7 +311,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void navigateUpDown(final int direction) {
-		RemoteConsole.out.println("UPDOWN {}", direction);
+		// RemoteConsole.out.println("UPDOWN {}", direction);
 	}
 
 	private void navigateLeftRight(final int direction) {
@@ -292,6 +334,11 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final HardwareButton shiftButton = createPressButton(NoteOnAssignment.SHIFT);
 		shiftButton.isPressed().addValueObserver(v -> {
 			modifier.setShift(v);
+			if (v) {
+				shiftLayer.activate();
+			} else {
+				shiftLayer.deactivate();
+			}
 		});
 		final HardwareButton optionButton = createPressButton(NoteOnAssignment.OPTION);
 		optionButton.isPressed().addValueObserver(v -> {
@@ -366,8 +413,11 @@ public class MackieMcuProExtension extends ControllerExtension {
 		mainLayer.bind(transport.isPlaying(), (OnOffHardwareLight) playButton.backgroundLight());
 		mainLayer.bindPressed(stopButton, transport.stopAction());
 		mainLayer.bindToggle(recordButton, transport.isArrangerRecordEnabled());
-		mainLayer.bindPressed(rewindButton, transport.rewindAction());
-		mainLayer.bindPressed(fastForwardButton, transport.fastForwardAction());
+
+		mainLayer.bindIsPressed(fastForwardButton, pressed -> notifyHoldForwardReverse(pressed, 1));
+
+		mainLayer.bindIsPressed(rewindButton, pressed -> notifyHoldForwardReverse(pressed, -1));
+
 		final HardwareButton undoButton = createHoldButton(NoteOnAssignment.UNDO);
 		mainLayer.bindIsPressed(undoButton, v -> {
 			if (v) {
@@ -403,6 +453,21 @@ public class MackieMcuProExtension extends ControllerExtension {
 				ledDisplay.toggleMode();
 			}
 		});
+	}
+
+	public void notifyHoldForwardReverse(final Boolean pressed, final int dir) {
+		if (pressed) {
+			holdAction.start(stage -> {
+				if (modifier.isShiftSet()) {
+					changePlayPosition(dir, FFWD_SPEEDS_SHIFT[Math.min(stage, FFWD_SPEEDS_SHIFT.length - 1)], true,
+							true);
+				} else {
+					changePlayPosition(dir, FFWD_SPEEDS[Math.min(stage, FFWD_SPEEDS.length - 1)], true, true);
+				}
+			}, FFWD_TIMES);
+		} else {
+			holdAction.stop();
+		}
 	}
 
 	public void createOnOfBoolButton(final NoteOnAssignment assignment, final SettableBooleanValue valueState) {
@@ -514,14 +579,28 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void onMidi0(final ShortMidiMessage msg) {
-		RemoteConsole.out.println(" MIDI ch={} st={} d1={} d2={}", msg.getChannel(), msg.getStatusByte(),
-				msg.getData1(), msg.getData2());
+//		RemoteConsole.out.println(" MIDI ch={} st={} d1={} d2={}", msg.getChannel(), msg.getStatusByte(),
+//				msg.getData1(), msg.getData2());
 	}
 
 	private void setUpMidiSysExCommands() {
 		midiIn.setSysexCallback(data -> {
-			RemoteConsole.out.println(" MIDI SYS EX {}", data);
+			if (data.startsWith(SYSEX_DEVICE_RELOAD)) {
+				updateAll(data);
+			} else {
+//				RemoteConsole.out.println(" MIDI SYS EX {}", data);
+			}
 		});
+	}
+
+	private void updateAll(final String command) {
+		surface.updateHardware();
+		sections.forEach(ChannelSection::fullHardwareUpdate);
+		for (int i = 0; i < lightStatusMap.length; i++) {
+			if (lightStatusMap[i] >= 0) {
+				midiOut.sendMidi(Midi.NOTE_ON, i, lightStatusMap[i]);
+			}
+		}
 	}
 
 	protected void initTrackBank() {
@@ -557,6 +636,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	public void sendLedUpdate(final NoteOnAssignment assingment, final int value) {
+		final int noteNr = assingment.getNoteNo();
+		lightStatusMap[noteNr] = value;
 		midiOut.sendMidi(assingment.getType(), assingment.getNoteNo(), value);
 	}
 

@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie;
+package com.bitwig.extensions.controllers.mackie.value;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.bitwig.extension.callback.BooleanValueChangedCallback;
+import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.VPotMode.Assign;
 
 public class TrackModeValue extends BooleanValueObject {

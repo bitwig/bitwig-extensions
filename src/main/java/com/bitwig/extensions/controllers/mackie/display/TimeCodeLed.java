@@ -1,6 +1,8 @@
-package com.bitwig.extensions.controllers.mackie;
+package com.bitwig.extensions.controllers.mackie.display;
 
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extensions.controllers.mackie.Midi;
+import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
 
 public class TimeCodeLed {
 	private final MidiOut midiOut;

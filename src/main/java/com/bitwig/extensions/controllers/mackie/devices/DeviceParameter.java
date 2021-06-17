@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.devices;
 
 import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extensions.controllers.mackie.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 
 class DeviceParameter {
 	final Parameter parameter;
