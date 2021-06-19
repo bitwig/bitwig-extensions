@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.nativeinstruments.maschine;
+package com.bitwig.extensions.controllers.mackie;
 
 import java.util.UUID;
 
@@ -7,15 +7,15 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class MaschineMk3ExtensionDefinition extends ControllerExtensionDefinition {
-	private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-810d-0de77ffa2d6f");
+public class MackieMcuProExtensionDefinition extends ControllerExtensionDefinition {
+	private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-81ad-1de77ffa2dab");
 
-	public MaschineMk3ExtensionDefinition() {
+	public MackieMcuProExtensionDefinition() {
 	}
 
 	@Override
 	public String getName() {
-		return "Maschine Mk3";
+		return "Mackie MCU Pro V3";
 	}
 
 	@Override
@@ -25,7 +25,7 @@ public class MaschineMk3ExtensionDefinition extends ControllerExtensionDefinitio
 
 	@Override
 	public String getVersion() {
-		return "1.0";
+		return "0.01";
 	}
 
 	@Override
@@ -35,12 +35,12 @@ public class MaschineMk3ExtensionDefinition extends ControllerExtensionDefinitio
 
 	@Override
 	public String getHardwareVendor() {
-		return "Native Instruments";
+		return "Mackie";
 	}
 
 	@Override
 	public String getHardwareModel() {
-		return "Maschine Mk3";
+		return "MCU Pro UCS";
 	}
 
 	@Override
@@ -62,26 +62,26 @@ public class MaschineMk3ExtensionDefinition extends ControllerExtensionDefinitio
 	public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
 			final PlatformType platformType) {
 		if (platformType == PlatformType.WINDOWS) {
-			list.add(new String[] { "Maschine MK3 Ctrl MIDI" }, new String[] { "Maschine MK3 Ctrl MIDI" });
+			list.add(new String[] { "MCU Pro USB v3.1" }, new String[] { "MCU Pro USB v3.1" });
 		} else if (platformType == PlatformType.MAC) {
-			list.add(new String[] { "Maschine MK3 Virtual Input" }, new String[] { "Maschine MK3 Virtual Output" });
+			list.add(new String[] { "MCU Pro USB v3.1" }, new String[] { "MCU Pro USB v3.1" });
 		} else if (platformType == PlatformType.LINUX) {
-			list.add(new String[] { "Maschine MK3 Ctrl MIDI" }, new String[] { "Maschine MK3 Ctrl MIDI" });
+			list.add(new String[] { "MCU Pro USB v3.1" }, new String[] { "MCU Pro USB v3.1" });
 		}
 	}
 
 	@Override
 	public String getHelpFilePath() {
-		return "Controllers/Native Instruments/Maschine MK3 Plus/Maschine MK3 Plus.pdf";
+		return "";
 	}
 
 	@Override
 	public String getSupportFolderPath() {
-		return "Controllers/Native Instruments/Maschine MK3 Plus";
+		return "";
 	}
 
 	@Override
-	public MaschineExtension createInstance(final ControllerHost host) {
-		return new MaschineExtension(this, host, MaschineMode.MK3);
+	public MackieMcuProExtension createInstance(final ControllerHost host) {
+		return new MackieMcuProExtension(this, host, 0);
 	}
 }

@@ -1,7 +1,10 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschine.display;
 
 import com.bitwig.extension.controller.api.Clip;
+import com.bitwig.extension.controller.api.ClipLauncherSlot;
+import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.ModeButton;
@@ -24,12 +27,21 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		bind(knobs[1], createIncrementBinder(host, this::changeRefVelocity));
 		bind(knobs[2], createIncrementBinder(host, this::changeLoopLength));
 		bind(knobs[3], createIncrementBinder(host, this::changeGrid));
+		bind(knobs[4], createIncrementBinder(host, this::changeNoteLength));
+		final ModeButton[] buttons = getDriver().getDisplayButtons();
+		bindPressed(buttons[4], this::createEmptyClip);
+		bindPressed(buttons[5], this::duplicateClip);
 	}
 
 	private void changeGrid(final int amount) {
 		stepMode.getPositionHandler().modifyGrid(amount);
 		updateDetails();
-		updateRightBottom();
+		updateBottomLeft();
+	}
+
+	private void changeNoteLength(final int amount) {
+		stepMode.updateHeldNoteLength(amount);
+		updateBottomRight();
 	}
 
 	private void changeLoopLength(final int amount) {
@@ -43,15 +55,19 @@ public class StepEditDisplayLayer extends DisplayLayer {
 
 	private void changeFocusNote(final int amount) {
 		stepMode.changeFocusNote(amount);
-		updateRightBottom();
+		updateBottomLeft();
 	}
 
 	private void changeRefVelocity(final int amount) {
 		final int value = stepMode.getRefVelocity();
-		final int newValue = value + amount;
-		if (newValue >= 1 && newValue < 128) {
-			stepMode.setRefVelocity(newValue);
-			updateRightBottom();
+		if (stepMode.hasPressedNotes()) {
+			stepMode.changeNoteVelocity(amount);
+		} else {
+			final int newValue = value + amount;
+			if (newValue >= 1 && newValue < 128) {
+				stepMode.setRefVelocity(newValue);
+				updateBottomLeft();
+			}
 		}
 	}
 
@@ -76,7 +92,7 @@ public class StepEditDisplayLayer extends DisplayLayer {
 			this.updateClipName();
 		});
 		clip.getLoopLength().addValueObserver(loopLen -> {
-			updateRightBottom();
+			updateBottomLeft();
 		});
 		final ModeButton[] buttons = getDriver().getDisplayButtons();
 		bindPressed(buttons[2], positionHandler.canScrollLeft(), this::scrollLeft);
@@ -87,7 +103,7 @@ public class StepEditDisplayLayer extends DisplayLayer {
 	public void notifyEncoderTouched(final int index, final boolean v) {
 		touched[index] = v;
 		if (index < 4) {
-			updateRightBottom();
+			updateBottomLeft();
 		}
 	}
 
@@ -111,13 +127,13 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		String bottomRight = "";
 		if (isInfoModeActive()) {
 			topLeft = " ---- | ---- | <POS | POS> ";
-			topRight = " ---- | ---- | ---- | ---- ";
-			bottomLeft = getValueDisplay(true);
+			topRight = "+CLIP | DUPL | ---- | ---- ";
+			bottomLeft = getLeftValues(true);
 			bottomRight = " ---- | ---- | ---- | ---- ";
 		} else {
 			topRight = "EDIT POS:" + DisplayUtil.beatsFormatted(stepMode.getPositionHandler().getPosition() * 16);
 			topLeft = getTrackClipInfo();
-			bottomLeft = getValueDisplay(false);
+			bottomLeft = getLeftValues(false);
 			bottomRight = "";
 		}
 		sendToDisplay(TOP_LEFT, topLeft);
@@ -127,7 +143,13 @@ public class StepEditDisplayLayer extends DisplayLayer {
 
 	}
 
-	public String getValueDisplay(final boolean forceValue) {
+	public String getRightValues(final boolean forceValue) {
+		final StringBuilder sb = new StringBuilder();
+		sb.append("I.NLEN ");
+		return sb.toString();
+	}
+
+	public String getLeftValues(final boolean forceValue) {
 		final StringBuilder sb = new StringBuilder();
 		if (touched[0]) {
 			sb.append(DisplayUtil.padString(stepMode.getFocus(), 27));
@@ -160,6 +182,43 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		return sb.toString();
 	}
 
+	private void duplicateClip() {
+		getDriver().getFocusClip().getMainCursoClip().duplicate();
+	}
+
+	private void createEmptyClip() {
+		final CursorTrack cursorTrack = getDriver().getCursorTrack();
+		final ClipLauncherSlotBank slotBank = cursorTrack.clipLauncherSlotBank();
+		final int selIndex = getSelectedIndex(slotBank);
+		final int nextEmpty = getNextEmpty(slotBank, selIndex);
+		if (nextEmpty != -1) {
+			slotBank.createEmptyClip(nextEmpty, 4);
+		}
+
+	}
+
+	private int getSelectedIndex(final ClipLauncherSlotBank slotBank) {
+		final int n = slotBank.getSizeOfBank();
+		for (int i = 0; i < n; i++) {
+			final ClipLauncherSlot clipSlot = slotBank.getItemAt(i);
+			if (clipSlot.isSelected().get()) {
+				return i;
+			}
+		}
+		return 0;
+	}
+
+	private int getNextEmpty(final ClipLauncherSlotBank slotBank, final int selectedIndex) {
+		final int n = slotBank.getSizeOfBank();
+		for (int i = selectedIndex; i < n; i++) {
+			final ClipLauncherSlot clipSlot = slotBank.getItemAt(i);
+			if (!clipSlot.hasContent().get()) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	private void scrollLeft() {
 		stepMode.getPositionHandler().scrollLeft();
 		updateDetails();
@@ -186,9 +245,15 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		}
 	}
 
-	private void updateRightBottom() {
+	private void updateBottomLeft() {
 		if (isActive()) {
-			sendToDisplay(BOTTOM_LEFT, getValueDisplay(false));
+			sendToDisplay(BOTTOM_LEFT, getLeftValues(false));
+		}
+	}
+
+	private void updateBottomRight() {
+		if (isActive()) {
+			sendToDisplay(BOTTOM_RIGHT, getRightValues(false));
 		}
 	}
 
@@ -197,13 +262,16 @@ public class StepEditDisplayLayer extends DisplayLayer {
 		super.doActivate();
 		setKnobSensitivity(1.0);
 		final RelativeHardwareKnob[] knobs = getDriver().getDisplayKnobs();
-		for (int i = 0; i < knobs.length; i++) {
-			knobs[i].setStepSize(1 / 32.0);
-		}
+		knobs[0].setStepSize(1 / 128.0);
+		knobs[1].setStepSize(1 / 256.0);
+		knobs[2].setStepSize(1 / 32.0);
+		knobs[3].setStepSize(1 / 32.0);
+		knobs[4].setStepSize(1 / 64.0);
 		updateTrackName();
 		updateClipName();
 		updateDetails();
-		updateRightBottom();
+		updateBottomLeft();
+		updateBottomRight();
 	}
 
 	@Override

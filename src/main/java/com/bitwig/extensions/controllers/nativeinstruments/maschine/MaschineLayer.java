@@ -122,6 +122,14 @@ public class MaschineLayer extends Layer {
 	}
 
 	@SuppressWarnings("rawtypes")
+	public Binding bindLightState(final ModeButton button, final BooleanSupplier supplier) {
+		final OnOffHardwareLight led = button.getLed();
+		final OnOffLightStateBinding binding = new OnOffLightStateBinding(supplier, led);
+		addBinding(binding);
+		return binding;
+	}
+
+	@SuppressWarnings("rawtypes")
 	public Binding bindLightState(final BooleanSupplier supplier, final ModeButton button) {
 		final OnOffHardwareLight led = button.getLed();
 		final OnOffLightStateBinding binding = new OnOffLightStateBinding(supplier, led);

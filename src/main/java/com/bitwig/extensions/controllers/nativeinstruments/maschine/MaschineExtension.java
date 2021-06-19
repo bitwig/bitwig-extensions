@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschine;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
@@ -24,6 +25,7 @@ import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Preferences;
+import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
@@ -42,6 +44,7 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.Mixe
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.PadModeDisplayLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.ScaleLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.StepEditDisplayLayer;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.ColorSelectionMode;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.DrumPadMode;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.GroupLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.JogWheelDestination;
@@ -56,7 +59,8 @@ import com.bitwig.extensions.framework.Layers;
 
 public class MaschineExtension extends ControllerExtension implements JogWheelDestination {
 
-	private final byte[] displayBuffer = { (byte) 240, 0, 0, 102, 23, 18, 0, // 6: the grid number 0-3 * 28
+	private final byte[] displayBuffer = { //
+			(byte) 240, 0, 0, 102, 23, 18, 0, // 6: the grid number 0-3 * 28
 			0, 0, 0, 0, 0, 0, 0, 0, // 7: 27 Chars
 			0, 0, 0, 0, 0, 0, 0, 0, // 15:
 			0, 0, 0, 0, 0, 0, 0, 0, // 22:
@@ -94,6 +98,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 
 	private int blinkState = 0;
 	private boolean shiftDown = false;
+	private boolean stopDown = false;
 	private boolean eraseButtonDown = false;
 	private Application application;
 	private GroupLayer groupLayer;
@@ -107,6 +112,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 	private FocusClip focusClip;
 
 	private final MaschineMode maschineMode;
+	private ColorSelectionMode colorSelectionMode;
 	private DrumPadMode drumPadMode;
 	private KeyboardMode keyboardMode;
 	private PinnableCursorDevice primaryDevice;
@@ -118,6 +124,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 	private long lastTempUpdate = 0;
 	private PopupBrowser browser;
 	private BrowserLayer browserLayer;
+	private Project project;
 
 	protected MaschineExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final MaschineMode mode) {
@@ -148,6 +155,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		surface = host.createHardwareSurface();
 		transport = host.createTransport();
 		application = host.createApplication();
+		project = host.getProject();
 
 		midiOut = host.getMidiOutPort(0);
 		midiIn = host.getMidiInPort(0);
@@ -175,6 +183,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		setUpPreferences();
 
 		mainKnobControl = new MainKnobControl(this);
+		colorSelectionMode = new ColorSelectionMode(this);
 
 		setUpMidiSysExCommands();
 		currentDisplayMode.activate();
@@ -387,6 +396,22 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		currentDisplayMode.activate();
 	}
 
+	public void enterColorSelection(final Consumer<BitWigColor> colorAction) {
+		colorSelectionMode.setReturnMode(currentMode);
+		colorSelectionMode.setColorAction(colorAction);
+		setMode(colorSelectionMode);
+	}
+
+	public void cancelColorMode() {
+		final PadMode returnmode = colorSelectionMode.getReturnMode();
+		if (returnmode != null) {
+			returnmode.setModifierState(ModifierState.VARIATION, false);
+			setMode(returnmode);
+			colorSelectionMode.setReturnMode(null);
+			colorSelectionMode.setColorAction(null);
+		}
+	}
+
 	final public void setMode(final PadMode mode) {
 		if (currentMode == mode || mode == null) {
 			return;
@@ -432,6 +457,10 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		return shiftDown;
 	}
 
+	public boolean isStopDown() {
+		return stopDown;
+	}
+
 	public PadButton[] getPadButtons() {
 		return padButtons;
 	}
@@ -454,6 +483,10 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 
 	public PopupBrowser getBrowser() {
 		return browser;
+	}
+
+	public Project getProject() {
+		return project;
 	}
 
 	public void handleShiftAction(final int padButtonIndex) {
@@ -513,19 +546,21 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 	private void createLayers() {
 		// We create all the layers here because the main layer might bind actions to
 		// activate other layers.
-		final Track rootTrack = host.getProject().getRootTrackGroup();
+		final Track rootTrack = project.getRootTrackGroup();
 
 		layers = new Layers(this);
 		mainLayer = new MaschineLayer(this, "Main");
 		globalShiftLayer = new MaschineLayer(this, "Shift");
 
 		final HardwareButton playButton = createTransportButton("PLAY", CcAssignment.PLAY);
-		final HardwareButton stopButton = createTransportButton("STOP", CcAssignment.STOP);
+		final HardwareButton stopButton = createHoldTransportButton("STOP", CcAssignment.STOP);
 		final HardwareButton tapButton = createTransportButton("TAP", CcAssignment.TAPMETRO);
 		final HardwareButton restartButton = createTransportButton("RESTART", CcAssignment.RESTART);
 
 		mainLayer.bindToggle(playButton, transport.isPlaying());
 		mainLayer.bindPressed(stopButton, transport.stopAction());
+		mainLayer.bindPressed(stopButton, v -> stopDown = true);
+		mainLayer.bindReleased(stopButton, v -> stopDown = false);
 		mainLayer.bindPressed(tapButton, transport.tapTempoAction());
 		mainLayer.bindPressed(restartButton, this::invokeRestart);
 
@@ -554,6 +589,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		final ModeButton soloButton = new ModeButton(this, "SOLO", CcAssignment.SOLO).bindToPressed();
 		final ModeButton muteButton = new ModeButton(this, "MUTE", CcAssignment.MUTE).bindToPressed();
 		final ModeButton eraseButton = new ModeButton(this, "ERASE", CcAssignment.ERASE).bindToPressed();
+		final ModeButton variationButton = new ModeButton(this, "VARIATION", CcAssignment.VARIATION).bindToPressed();
 
 		final ModeButton mixerButton = new ModeButton(this, "MIXER", CcAssignment.MIXER);
 		final ModeButton deviceButton = new ModeButton(this, "DEVICE", CcAssignment.PLUGIN);
@@ -578,6 +614,15 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		eraseButton.getHwButton().isPressed().addValueObserver(active -> {
 			eraseButtonDown = active;
 			setModifierState(ModifierState.ERASE, active);
+		});
+		variationButton.getHwButton().isPressed().addValueObserver(active -> {
+			if (active && currentMode == colorSelectionMode) {
+				cancelColorMode();
+			}
+			setModifierState(ModifierState.VARIATION, active);
+		});
+		mainLayer.bindLightState(variationButton, () -> {
+			return currentMode == colorSelectionMode;
 		});
 
 		mainLayer.bindMode(patternButton, sessionMode);
@@ -675,6 +720,18 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 
 	}
 
+	private HardwareButton createHoldTransportButton(final String name, final CcAssignment assignment) {
+		final HardwareButton button = surface.createHardwareButton(name + "_BUTTON");
+		button.pressedAction().setActionMatcher(assignment.createActionMatcher(midiIn, 127));
+		button.releasedAction().setActionMatcher(assignment.createActionMatcher(midiIn, 0));
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(name + "BUTTON_LED");
+		button.setBackgroundLight(led);
+		led.onUpdateHardware(() -> {
+			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
+		});
+		return button;
+	}
+
 	private HardwareButton createTransportButton(final String name, final CcAssignment assignment) {
 		final HardwareButton playButton = surface.createHardwareButton(name + "_BUTTON");
 		final HardwareAction action = playButton.pressedAction();
@@ -770,7 +827,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 	}
 
 	private void initCursorTrack() {
-		cursorTrack = getHost().createCursorTrack(8, 8);
+		cursorTrack = getHost().createCursorTrack(8, 32);
 		cursorTrack.color().markInterested();
 		cursorTrack.hasPrevious().markInterested();
 		cursorTrack.hasNext().markInterested();
@@ -786,6 +843,15 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 		cursorTrack.isStopped().markInterested();
 		cursorTrack.isQueuedForStop().markInterested();
 		cursorTrack.isActivated().markInterested();
+
+		final ClipLauncherSlotBank slotBank = cursorTrack.clipLauncherSlotBank();
+		slotBank.canScrollForwards().markInterested();
+		slotBank.scrollPosition().markInterested();
+		for (int i = 0; i < slotBank.getCapacityOfBank(); i++) {
+			final ClipLauncherSlot cs = slotBank.getItemAt(i);
+			cs.hasContent().markInterested();
+			cs.isSelected().markInterested();
+		}
 
 		masterTrack = getHost().createMasterTrack(8);
 		masterTrack.volume().markInterested();
