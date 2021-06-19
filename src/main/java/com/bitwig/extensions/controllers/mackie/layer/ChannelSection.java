@@ -32,6 +32,7 @@ import com.bitwig.extensions.controllers.mackie.bindings.DisplayStringValueBindi
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.TouchFaderBinding;
+import com.bitwig.extensions.controllers.mackie.devices.DeviceTracker;
 import com.bitwig.extensions.controllers.mackie.devices.Devices;
 import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
@@ -77,6 +78,8 @@ public class ChannelSection {
 	private final FlippableBankLayer sendLayer;
 	private final FlippableParameterBankLayer eqTrackLayer;
 	private final FlippableLayer sendTrackLayer;
+	private final FlippableRemoteLayer instrumentTrackLayer;
+	private final FlippableRemoteLayer pluginTrackLayer;
 	private FlippableLayer currentLayer;
 
 	private final BooleanValueObject fadersTouched = new BooleanValueObject();
@@ -100,12 +103,16 @@ public class ChannelSection {
 
 		sendTrackLayer = new FlippableLayer(this, "SEND_TRACK_" + sectionIndex + "_LAYER");
 		eqTrackLayer = new FlippableParameterBankLayer(this, "EQ_TRACK_" + sectionIndex + "_LAYER");
+		instrumentTrackLayer = new FlippableRemoteLayer(this, "INSTRUMENT_" + sectionIndex + "_LAYER");
+		pluginTrackLayer = new FlippableRemoteLayer(this, "PLUGIN_" + sectionIndex + "_LAYER");
 		eqTrackLayer.setMessages("no EQ+ device on track", "<< press EQ button to insert EQ+ device >>");
 
 		layers.add(panLayer);
 		layers.add(sendTrackLayer);
 		layers.add(sendLayer);
 		layers.add(eqTrackLayer);
+		layers.add(instrumentTrackLayer);
+		layers.add(pluginTrackLayer);
 
 		mainDisplay = new LcdDisplay(driver, midiOut, type);
 		final HardwareSurface surface = driver.getSurface();
@@ -168,6 +175,20 @@ public class ChannelSection {
 				sendTrackLayer.addBinding(i, sendBank.getItemAt(i), RingDisplayType.FILL_LR, false);
 			}
 			initEqDevice();
+			initInstrumentDevice();
+		}
+	}
+
+	private void initInstrumentDevice() {
+		final DeviceTracker instrumentDevice = driver.getInstrumentDevice();
+		instrumentTrackLayer.setDevice(instrumentDevice);
+		for (int i = 0; i < 8; i++) {
+			instrumentTrackLayer.addBinding(i, instrumentDevice.getParameter(i), RingDisplayType.FILL_LR, false);
+		}
+		final DeviceTracker fxDevice = driver.getPluginDevice();
+		pluginTrackLayer.setDevice(fxDevice);
+		for (int i = 0; i < 8; i++) {
+			pluginTrackLayer.addBinding(i, fxDevice.getParameter(i), RingDisplayType.FILL_LR, false);
 		}
 	}
 
@@ -416,6 +437,12 @@ public class ChannelSection {
 				eqTrackLayer.navigateLeftRight(1);
 			}
 			break;
+		case PLUGIN:
+			pluginTrackLayer.navigateLeftRight(1);
+			break;
+		case INSTRUMENT:
+			instrumentTrackLayer.navigateLeftRight(1);
+			break;
 		default:
 		}
 	}
@@ -436,11 +463,17 @@ public class ChannelSection {
 			}
 			break;
 		case INSTRUMENT:
+			if (type == SectionType.MAIN) {
+				newLayer = instrumentTrackLayer;
+			}
 			break;
 		case PAN:
 			newLayer = panLayer;
 			break;
 		case PLUGIN:
+			if (type == SectionType.MAIN) {
+				newLayer = pluginTrackLayer;
+			}
 			break;
 		case SEND:
 			if (type != SectionType.MAIN) {
@@ -543,6 +576,10 @@ public class ChannelSection {
 
 	public void navigateLeftRight(final int direction) {
 		currentLayer.navigateLeftRight(direction);
+	}
+
+	public void navigateUpDown(final int direction) {
+		currentLayer.navigateUpDown(direction);
 	}
 
 }

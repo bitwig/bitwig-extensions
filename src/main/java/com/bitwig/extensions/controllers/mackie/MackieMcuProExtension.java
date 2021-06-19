@@ -25,6 +25,7 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
+import com.bitwig.extensions.controllers.mackie.devices.DeviceTracker;
 import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
@@ -77,6 +78,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	private final List<ChannelSection> sections = new ArrayList<ChannelSection>();
 	private EqDevice eqDevice;
+	private DeviceTracker instrumentDevice;
+	private DeviceTracker pluginDevice;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -312,7 +315,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void navigateUpDown(final int direction) {
-		// RemoteConsole.out.println("UPDOWN {}", direction);
+		if (!zoomActive.get()) {
+			sections.forEach(section -> section.navigateUpDown(direction));
+		}
 	}
 
 	private void navigateLeftRight(final int direction) {
@@ -619,13 +624,24 @@ public class MackieMcuProExtension extends ControllerExtension {
 		mixerTrackBank.canScrollChannelsUp().markInterested();
 		eqDevice = new EqDevice(this);
 
+		instrumentDevice = new DeviceTracker(this, host.createInstrumentMatcher());
+		pluginDevice = new DeviceTracker(this, host.createAudioEffectMatcher());
+
 		for (final ChannelSection channelSection : sections) {
 			channelSection.initChannelControl(mixerTrackBank, cursorTrack);
 		}
 	}
 
+	public DeviceTracker getPluginDevice() {
+		return pluginDevice;
+	}
+
 	public EqDevice getEqDevice() {
 		return eqDevice;
+	}
+
+	public DeviceTracker getInstrumentDevice() {
+		return instrumentDevice;
 	}
 
 	public PinnableCursorDevice getCursorDevice() {

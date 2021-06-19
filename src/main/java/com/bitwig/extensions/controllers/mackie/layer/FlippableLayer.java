@@ -153,4 +153,6 @@ public class FlippableLayer extends Layer {
 	public void navigateLeftRight(final int direction) {
 	}
 
+	public void navigateUpDown(final int direction) {
+	}
 }
