@@ -44,6 +44,7 @@ import com.bitwig.extensions.controllers.mackie.target.DisplayValueTarget;
 import com.bitwig.extensions.controllers.mackie.target.MotorFader;
 import com.bitwig.extensions.controllers.mackie.target.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
+import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.AbsoluteHardwareControlBinding;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -176,7 +177,58 @@ public class ChannelSection {
 			}
 			initEqDevice();
 			initInstrumentDevice();
+			driver.getCursorDevice().deviceType().markInterested();
+//			driver.getCursorDevice().deviceType().addValueObserver(d -> handleDeviceTypeChanged(d));
+			driver.getCursorDevice().name().addValueObserver(name -> handleDeviceNameChanged(name));
 		}
+
+	}
+
+	private void handleDeviceNameChanged(final String name) {
+//		RemoteConsole.out.println(" dn > {} => {} :: {}", name, driver.getCursorDevice().deviceType().get(),
+//				driver.getVpotMode());
+		final String type = driver.getCursorDevice().deviceType().get();
+		switch (driver.getVpotMode()) {
+		case EQ:
+			if (!name.equals("EQ+")) {
+				forceSwitch(type);
+			}
+			break;
+		case INSTRUMENT:
+			if (!type.equals("instrument")) {
+				if (name.equals("EQ+")) {
+					forceSwitch("eq+");
+				} else {
+					forceSwitch(type);
+				}
+			}
+			break;
+		case PLUGIN:
+			if (!type.equals("audio-effect")) {
+				if (name.equals("EQ+")) {
+					forceSwitch("eq+");
+				} else {
+					forceSwitch(type);
+				}
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+	private void forceSwitch(final String type) {
+		switch (type) {
+		case "audio-effect":
+			driver.setVPotMode(VPotMode.PLUGIN);
+			break;
+		case "instrument":
+			driver.setVPotMode(VPotMode.INSTRUMENT);
+			break;
+		case "eq+":
+			break;
+		}
+
 	}
 
 	private void initInstrumentDevice() {
@@ -348,17 +400,7 @@ public class ChannelSection {
 			final OnOffHardwareLight led = (OnOffHardwareLight) selectButton.backgroundLight();
 			led.isOn().setValue(v);
 		});
-		mainLayer.bindPressed(selectButton, () -> {
-			if (channel.exists().get()) {
-				channel.selectInMixer();
-			} else {
-				if (driver.getModifier().isShiftSet()) {
-					application.createAudioTrack(-1);
-				} else {
-					application.createInstrumentTrack(-1);
-				}
-			}
-		});
+		mainLayer.bindPressed(selectButton, () -> handleTrackSelection(channel, application));
 
 		channel.exists().markInterested();
 //		channel.trackType().addValueObserver(v -> {
@@ -368,6 +410,7 @@ public class ChannelSection {
 			midiOut.sendMidi(Midi.CHANNEL_AT, index << 4 | v, 0);
 		});
 
+		// TODO this binding doesn't go away if the param is gone
 		panLayer.addBinding(index, channel.pan(), RingDisplayType.PAN_FILL, true, ChannelSection::panToString);
 
 		final SendBank bank = channel.sendBank();
@@ -381,6 +424,28 @@ public class ChannelSection {
 		channel.isActivated().markInterested();
 		channel.canHoldAudioData().markInterested();
 		channel.canHoldNoteData().markInterested();
+	}
+
+	private void handleTrackSelection(final Track channel, final Application application) {
+		if (channel.exists().get()) {
+			if (driver.getModifier().isControl()) {
+				channel.deleteObject();
+			} else if (driver.getModifier().isAlt()) {
+				channel.stop();
+			} else if (driver.getModifier().isOption()) {
+				application.navigateIntoTrackGroup(channel);
+			} else {
+				channel.selectInMixer();
+			}
+		} else {
+			if (driver.getModifier().isShift()) {
+				application.createAudioTrack(-1);
+			} else if (driver.getModifier().isSet(ModifierValueObject.ALT)) {
+				application.createEffectTrack(-1);
+			} else {
+				application.createInstrumentTrack(-1);
+			}
+		}
 	}
 
 	public static String panToString(final double v) {
@@ -465,6 +530,7 @@ public class ChannelSection {
 		case INSTRUMENT:
 			if (type == SectionType.MAIN) {
 				newLayer = instrumentTrackLayer;
+				toModeDevice(driver.getInstrumentDevice());
 			}
 			break;
 		case PAN:
@@ -473,6 +539,7 @@ public class ChannelSection {
 		case PLUGIN:
 			if (type == SectionType.MAIN) {
 				newLayer = pluginTrackLayer;
+				toModeDevice(driver.getPluginDevice());
 			}
 			break;
 		case SEND:
@@ -490,10 +557,17 @@ public class ChannelSection {
 		switchToLayer(newLayer);
 	}
 
+	private void toModeDevice(final DeviceTracker deviceTracker) {
+		if (deviceTracker.exists()) {
+			driver.getCursorDevice().selectDevice(deviceTracker.getDevice());
+		}
+	}
+
 	private void toEqMode() {
 		final EqDevice eqDevice = driver.getEqDevice();
 		final boolean hasEq = eqDevice.exists().get();
 		if (hasEq) {
+			driver.getCursorDevice().selectDevice(eqDevice.getDevice());
 			eqDevice.triggerUpdate();
 		}
 	}

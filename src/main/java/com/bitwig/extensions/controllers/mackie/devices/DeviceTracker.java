@@ -17,6 +17,7 @@ public class DeviceTracker {
 		deviceBank.setDeviceMatcher(matcher);
 		device = deviceBank.getItemAt(0);
 		remote = device.createCursorRemoteControlsPage(8);
+		device.exists().markInterested();
 	}
 
 	public Device getDevice() {
@@ -45,5 +46,9 @@ public class DeviceTracker {
 
 	public Parameter getParameter(final int i) {
 		return remote.getParameter(i);
+	}
+
+	public boolean exists() {
+		return device.exists().get();
 	}
 }

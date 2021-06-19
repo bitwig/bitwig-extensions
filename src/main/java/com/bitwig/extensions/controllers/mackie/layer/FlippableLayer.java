@@ -37,7 +37,7 @@ public class FlippableLayer extends Layer {
 			final boolean isMixer, final ValueConverter converter) {
 		bindVolumeParameter(index, isMixer);
 		final DisplayDoubleValueBinding displayValueBinding = new DisplayDoubleValueBinding(encParameter.value(),
-				section.getValueTarget(index), converter);
+				section.getValueTarget(index), encParameter, converter);
 		addBinding(index, encParameter, type, isMixer, displayValueBinding);
 	}
 
