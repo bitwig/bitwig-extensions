@@ -16,7 +16,6 @@ import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueBinding;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableRangedValue;
-import com.bitwig.extension.controller.api.SpecificBitwigDevice;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.mackie.bindings.AbstractDisplayNameBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.AbstractDisplayValueBinding;
@@ -29,12 +28,12 @@ import com.bitwig.extensions.controllers.mackie.target.DisplayNameTarget;
 import com.bitwig.extensions.controllers.mackie.target.DisplayValueTarget;
 import com.bitwig.extensions.controllers.mackie.target.MotorFader;
 import com.bitwig.extensions.controllers.mackie.target.RingDisplay;
+import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 public class ParameterPage implements SettableRangedValue {
 
 	private static final int RING_RANGE = 10;
 	private DeviceParameter currentParameter;
-	private int pageIndex = 0;
 
 	private ResetableRelativeValueBinding relativeEncoderBinding;
 	private ResetableAbsoluteValueBinding absoluteEncoderBinding;
@@ -47,39 +46,49 @@ public class ParameterPage implements SettableRangedValue {
 	private final List<Consumer<String>> valueChangeCallbacks = new ArrayList<>();
 	// listeners for the ring display values
 	private final List<IntConsumer> intValueCallbacks = new ArrayList<>();
-	// listeners for existence of value // TODO ring value
-	private final List<Consumer<Boolean>> exitsCallbacks = new ArrayList<>();
+	// listeners for existence of value
 	private final List<DoubleConsumer> doulbeValueCallbacks = new ArrayList<>();
 
 	private final List<DeviceParameter> pages = new ArrayList<>();
 
-	private final boolean exists = false;
+	public ParameterPage(final int index, final ControlDevice device) {
 
-	public ParameterPage(final int index, final SpecificBitwigDevice device, final ParameterGenerator generator) {
-
-		for (int page = 0; page < generator.getPages(); page++) {
+		for (int page = 0; page < device.getPages(); page++) {
 			final int pIndex = pages.size();
-			final String pname = generator.getParamName(page, index);
-			final Parameter param = device.createParameter(pname);
-			final DeviceParameter deviceParameter = generator.createDeviceParameter(pname, param, page, index);
+			final DeviceParameter deviceParameter = device.createDeviceParameter(page, index);
+			final Parameter param = deviceParameter.parameter;
 
 			param.value().markInterested();
 			param.value().addValueObserver(v -> {
-				if (pIndex == pageIndex) {
+				if (pIndex == device.getCurrentPage()) {
 					final int intv = (int) (v * RING_RANGE);
 					notifyIntValueChanged(intv);
 					notifyValueChanged(v);
 				}
 			});
-			param.value().displayedValue().addValueObserver(v -> {
-				if (pIndex == pageIndex) {
-					notifyValueChanged(v);
-				}
-			});
+			if (deviceParameter.getCustomValueConverter() != null) {
+				final CustomValueConverter converter = deviceParameter.getCustomValueConverter();
+				param.value().addValueObserver(converter.getIntRange(), v -> {
+					if (pIndex == device.getCurrentPage()) {
+						notifyValueChanged(converter.convert(v));
+					}
+				});
+			} else {
+				param.value().displayedValue().addValueObserver(v -> {
+					if (pIndex == device.getCurrentPage()) {
+						notifyValueChanged(v);
+					}
+				});
+			}
 
 			pages.add(deviceParameter);
 		}
-		currentParameter = pages.get(pageIndex);
+		currentParameter = pages.get(device.getCurrentPage());
+	}
+
+	public Parameter getParameter(final int pageIndex) {
+		assert pageIndex < pages.size();
+		return pages.get(pageIndex).parameter;
 	}
 
 	public void triggerUpdate() {
@@ -129,16 +138,8 @@ public class ParameterPage implements SettableRangedValue {
 		return this.absoluteEncoderBinding;
 	}
 
-	public void navigateNext() {
-		pageIndex = (pageIndex + 1) % pages.size();
-		currentParameter = pages.get(pageIndex);
-		resetBindings();
-	}
-
-	public void navigatePrevious() {
-		final int nextIndex = pageIndex - 1;
-		pageIndex = nextIndex < 0 ? pages.size() - 1 : nextIndex < pages.size() ? nextIndex : 0;
-		currentParameter = pages.get(pageIndex);
+	public void updatePage(final int currentPage) {
+		currentParameter = pages.get(currentPage);
 		resetBindings();
 	}
 
@@ -260,7 +261,7 @@ public class ParameterPage implements SettableRangedValue {
 			final RelativeHardwareControl hardwareControl, final double minNormalizedValue,
 			final double maxNormalizedValue, final double sensitivity) {
 		return currentParameter.parameter.addBindingWithRangeAndSensitivity(hardwareControl, minNormalizedValue,
-				maxNormalizedValue, currentParameter.sensitivity);
+				maxNormalizedValue, currentParameter.getSensitivity());
 	}
 
 	private void notifyValueChanged(final String value) {
@@ -268,7 +269,7 @@ public class ParameterPage implements SettableRangedValue {
 	}
 
 	public String getCurrentValue() {
-		return currentParameter.parameter.displayedValue().get();
+		return currentParameter.getStringValue();
 	}
 
 	public void addNameObserver(final Consumer<String> callback) {
@@ -276,11 +277,11 @@ public class ParameterPage implements SettableRangedValue {
 	}
 
 	private void notifyNameChanged(final String name) {
-		nameChangeCallbacks.forEach(callback -> callback.accept(currentParameter.name));
+		nameChangeCallbacks.forEach(callback -> callback.accept(currentParameter.getName()));
 	}
 
 	public String getCurrentName() {
-		return currentParameter.name;
+		return currentParameter.getName();
 	}
 
 	public void addIntValueObserver(final IntConsumer listener) {
@@ -295,24 +296,12 @@ public class ParameterPage implements SettableRangedValue {
 		doulbeValueCallbacks.forEach(callback -> callback.accept(value));
 	}
 
-	public void addExistsValueObserver(final Consumer<Boolean> listener) {
-		exitsCallbacks.add(listener);
-	}
-
-	public void notifyExists(final boolean value) {
-		exitsCallbacks.forEach(callback -> callback.accept(value));
-	}
-
 	public int getIntValue() {
 		return (int) (currentParameter.parameter.value().get() * RING_RANGE);
 	}
 
 	public RingDisplayType getRingDisplayType() {
-		return currentParameter.ringDisplayType;
-	}
-
-	public boolean exists() {
-		return exists;
+		return currentParameter.getRingDisplayType();
 	}
 
 	public double getParamValue() {
@@ -324,6 +313,20 @@ public class ParameterPage implements SettableRangedValue {
 	}
 
 	public void doReset() {
+		currentParameter.parameter.reset();
+	}
+
+	public void resetAll() {
+		for (final DeviceParameter parameter : pages) {
+			parameter.doReset();
+		}
+	}
+
+	public void notifyEnablement(final int value) {
+		ringBinding.handleEnabled(value);
+	}
+
+	public void doReset(final ModifierValueObject modifier) {
 		currentParameter.parameter.reset();
 	}
 

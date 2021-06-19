@@ -10,6 +10,13 @@ public class StringUtil {
 	private StringUtil() {
 	}
 
+	public static String toDisplayName(final String text) {
+		if (text.length() < 2) {
+			return text;
+		}
+		return text.charAt(0) + text.substring(1, Math.min(6, text.length())).toLowerCase();
+	}
+
 	public static String padString(final String text, final int pad) {
 		final StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < pad; i++) {

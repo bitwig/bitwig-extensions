@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie;
+package com.bitwig.extensions.controllers.mackie.value;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,10 +75,16 @@ public class ModifierValueObject implements IntegerValue {
 		return true;
 	}
 
+	/**
+	 * @return if the shift button is held down
+	 */
 	public boolean isShiftSet() {
 		return (value & SHIFT) != 0;
 	}
 
+	/**
+	 * @return if exactly the shift button is held down
+	 */
 	public boolean isShift() {
 		return value == SHIFT;
 	}
@@ -93,28 +99,40 @@ public class ModifierValueObject implements IntegerValue {
 		}
 	}
 
+	/**
+	 * @return if the option button is held down
+	 */
 	public boolean isOptionSet() {
 		return (value & OPTION) != 0;
 	}
 
+	/**
+	 * @return if exactly the option button is held down
+	 */
 	public boolean isOption() {
 		return value == OPTION;
 	}
 
 	public void setOption(final boolean option) {
 		if (option && !isOptionSet()) {
-			value |= SHIFT;
+			value |= OPTION;
 			notifyValueChanged();
 		} else if (!option && isOptionSet()) {
-			value &= ~SHIFT;
+			value &= ~OPTION;
 			notifyValueChanged();
 		}
 	}
 
+	/**
+	 * @return if the control button is held down
+	 */
 	public boolean isControlSet() {
 		return (value & CONTROL) != 0;
 	}
 
+	/**
+	 * @return if exactly only the control button is held down
+	 */
 	public boolean isControl() {
 		return value == CONTROL;
 	}

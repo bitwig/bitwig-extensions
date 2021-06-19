@@ -25,7 +25,6 @@ import com.bitwig.extension.controller.api.SpecificPluginDevice;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.mackie.MackieLayer;
 import com.bitwig.extensions.framework.Layers;
 
 public abstract class KompleteKontrolExtension extends ControllerExtension {

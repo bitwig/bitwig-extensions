@@ -167,13 +167,18 @@ public class ChannelSection {
 			for (int i = 0; i < 8; i++) {
 				sendTrackLayer.addBinding(i, sendBank.getItemAt(i), RingDisplayType.FILL_LR, false);
 			}
-			final EqDevice eqDevice = driver.getEqDevice();
-			eqTrackLayer.attachDevice(eqDevice.getDevice());
-			eqTrackLayer.addDisplayBinding(mainDisplay);
-			final List<ParameterPage> bands = eqDevice.getEqBands();
-			for (int i = 0; i < 8; i++) {
-				eqTrackLayer.addBinding(i, bands.get(i), false);
-			}
+			initEqDevice();
+		}
+	}
+
+	private void initEqDevice() {
+		final EqDevice eqDevice = driver.getEqDevice();
+		eqTrackLayer.attachDevice(eqDevice);
+		eqTrackLayer.addDisplayBinding(mainDisplay);
+		final List<ParameterPage> bands = eqDevice.getEqBands();
+		for (int i = 0; i < 8; i++) {
+			eqTrackLayer.addBinding(i, bands.get(i), false,
+					(pindex, pslot) -> eqDevice.handleResetInvoked(pindex, driver.getModifier()));
 		}
 	}
 
@@ -216,6 +221,10 @@ public class ChannelSection {
 
 	RelativeHardwareKnob getEncoder(final int index) {
 		return encoders[index];
+	}
+
+	HardwareButton getEncoderPress(final int index) {
+		return encoderPress[index];
 	}
 
 	AbsoluteHardwareKnob getVolumeFader(final int index) {
@@ -289,11 +298,7 @@ public class ChannelSection {
 		return new ButtonBinding(encoderPress[index], createAction(() -> param.reset()));
 	}
 
-	ButtonBinding createResetBinding(final int index, final ParameterPage param) {
-		return new ButtonBinding(encoderPress[index], createAction(() -> param.doReset()));
-	}
-
-	private HardwareActionBindable createAction(final Runnable action) {
+	HardwareActionBindable createAction(final Runnable action) {
 		return driver.getHost().createAction(action, null);
 	}
 
@@ -403,7 +408,7 @@ public class ChannelSection {
 	public void notifyModeAdvance() {
 		switch (driver.getVpotMode()) {
 		case EQ:
-			final boolean hasEq = driver.getEqDevice().exists();
+			final boolean hasEq = driver.getEqDevice().exists().get();
 			if (!hasEq) {
 				final InsertionPoint ip = cursorTrack.endOfDeviceChainInsertionPoint();
 				ip.insertBitwigDevice(Devices.EQ_PLUS.getUuid());
@@ -454,7 +459,7 @@ public class ChannelSection {
 
 	private void toEqMode() {
 		final EqDevice eqDevice = driver.getEqDevice();
-		final boolean hasEq = eqDevice.exists();
+		final boolean hasEq = eqDevice.exists().get();
 		if (hasEq) {
 			eqDevice.triggerUpdate();
 		}

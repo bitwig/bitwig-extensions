@@ -32,6 +32,7 @@ import com.bitwig.extensions.controllers.mackie.layer.ChannelSection;
 import com.bitwig.extensions.controllers.mackie.layer.ChannelSection.SectionType;
 import com.bitwig.extensions.controllers.mackie.target.MotorFader;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
+import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
