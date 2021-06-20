@@ -125,6 +125,7 @@ public class ChannelSection {
 			layers.forEach(layer -> layer.setFlipped(flipped));
 		});
 
+		// TODO this needs to work with Xtender
 		fadersTouched.addValueObserver(touched -> {
 			if (touched) {
 				layers.forEach(layer -> layer.setTouched(touched));
@@ -158,6 +159,11 @@ public class ChannelSection {
 			encoderPress[i] = createEncoderButon(i);
 			encoder.setAdjustValueMatcher(this.midiIn.createRelativeSignedBitCCValueMatcher(0x0, 0x10 + i, 200));
 			encoder.setStepSize(1 / 128.0);
+			encoder.isUpdatingTargetValue().addValueObserver(v -> {
+				if (v) {
+					driver.doActionImmediate("TOUCH");
+				}
+			});
 
 			valueTargets[i] = new DisplayValueTarget(mainDisplay, i);
 			nameTargets[i] = new DisplayNameTarget(mainDisplay, i);
@@ -228,7 +234,6 @@ public class ChannelSection {
 		case "eq+":
 			break;
 		}
-
 	}
 
 	private void initInstrumentDevice() {

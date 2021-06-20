@@ -35,6 +35,7 @@ import com.bitwig.extensions.controllers.mackie.layer.ChannelSection;
 import com.bitwig.extensions.controllers.mackie.layer.ChannelSection.SectionType;
 import com.bitwig.extensions.controllers.mackie.target.MotorFader;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
+import com.bitwig.extensions.controllers.mackie.value.LayoutType;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
 import com.bitwig.extensions.framework.Layer;
@@ -82,6 +83,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private EqDevice eqDevice;
 	private DeviceTracker instrumentDevice;
 	private DeviceTracker pluginDevice;
+	private LayoutType currentLayoutType;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -146,6 +148,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 				// RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing
 				// ports", i + 1);
 			}
+		}
+	}
+
+	public void doActionImmediate(final String actionId) {
+		if (delayedAction != null && actionId.equals(delayedAction.getActionId())) {
+			delayedAction.run();
+			delayedAction = null;
 		}
 	}
 
@@ -358,6 +367,16 @@ public class MackieMcuProExtension extends ControllerExtension {
 			if (v) {
 				transport.returnToArrangement();
 			}
+		});
+
+		final HardwareButton f2Button = createPressButton(NoteOnAssignment.F2);
+		mainLayer.bindIsPressed(f2Button, v -> {
+			if (v) {
+				application.setPanelLayout(currentLayoutType.other().getName());
+			}
+		});
+		application.panelLayout().addValueObserver(v -> {
+			currentLayoutType = LayoutType.toType(v);
 		});
 	}
 
