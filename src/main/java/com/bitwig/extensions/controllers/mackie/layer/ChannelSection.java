@@ -39,10 +39,10 @@ import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.target.DisplayNameTarget;
-import com.bitwig.extensions.controllers.mackie.target.DisplayValueTarget;
-import com.bitwig.extensions.controllers.mackie.target.MotorFader;
-import com.bitwig.extensions.controllers.mackie.target.RingDisplay;
+import com.bitwig.extensions.controllers.mackie.targets.DisplayNameTarget;
+import com.bitwig.extensions.controllers.mackie.targets.DisplayValueTarget;
+import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
+import com.bitwig.extensions.controllers.mackie.targets.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.AbsoluteHardwareControlBinding;
@@ -238,11 +238,18 @@ public class ChannelSection {
 
 	private void initInstrumentDevice() {
 		final DeviceTracker instrumentDevice = driver.getInstrumentDevice();
+
 		instrumentTrackLayer.setDevice(instrumentDevice);
+		instrumentTrackLayer.setMessages("no Instrument on Track", "<< select >>");
+		instrumentTrackLayer.addDisplayBinding(mainDisplay);
+
+		instrumentTrackLayer
+				.setResetAction((index, param) -> instrumentDevice.handleReset(index, param, driver.getModifier()));
 		for (int i = 0; i < 8; i++) {
 			instrumentTrackLayer.addBinding(i, instrumentDevice.getParameter(i), RingDisplayType.FILL_LR, false);
 		}
 		final DeviceTracker fxDevice = driver.getPluginDevice();
+		pluginTrackLayer.setResetAction((index, param) -> fxDevice.handleReset(index, param, driver.getModifier()));
 		pluginTrackLayer.setDevice(fxDevice);
 		for (int i = 0; i < 8; i++) {
 			pluginTrackLayer.addBinding(i, fxDevice.getParameter(i), RingDisplayType.FILL_LR, false);
@@ -370,10 +377,6 @@ public class ChannelSection {
 	ButtonBinding getVolumeResetBinding(final int index) {
 		return volumeBindings.getInit(ButtonBinding.class, index,
 				() -> new ButtonBinding(encoderPress[index], createAction(() -> channels[index].volume().reset())));
-	}
-
-	ButtonBinding createResetBinding(final int index, final Parameter param) {
-		return new ButtonBinding(encoderPress[index], createAction(() -> param.reset()));
 	}
 
 	HardwareActionBindable createAction(final Runnable action) {
@@ -564,6 +567,7 @@ public class ChannelSection {
 
 	private void toModeDevice(final DeviceTracker deviceTracker) {
 		if (deviceTracker.exists()) {
+			deviceTracker.getDevice().selectInEditor();
 			driver.getCursorDevice().selectDevice(deviceTracker.getDevice());
 		}
 	}
@@ -573,6 +577,7 @@ public class ChannelSection {
 		final boolean hasEq = eqDevice.exists().get();
 		if (hasEq) {
 			driver.getCursorDevice().selectDevice(eqDevice.getDevice());
+			eqDevice.getDevice().selectInEditor();
 			eqDevice.triggerUpdate();
 		}
 	}

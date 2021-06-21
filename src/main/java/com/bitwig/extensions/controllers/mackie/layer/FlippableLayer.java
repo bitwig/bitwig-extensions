@@ -1,7 +1,11 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
+import java.util.function.BiConsumer;
+
+import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extensions.controllers.mackie.bindings.AbstractDisplayValueBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.DisplayDoubleValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.DisplayNameBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.DisplayStringValueBinding;
@@ -22,6 +26,7 @@ public class FlippableLayer extends Layer {
 	protected final Layer flipLayer;
 	protected final Layer displayNonTouchLayer;
 	protected final Layer displayTouchLayer;
+	private BiConsumer<Integer, Parameter> resetAction = (index, param) -> param.reset();
 
 	public FlippableLayer(final ChannelSection section, final String name) {
 		super(section.getLayers(), name);
@@ -31,6 +36,10 @@ public class FlippableLayer extends Layer {
 		flipLayer = new Layer(layers, name + "_FLIP_FLIP");
 		displayNonTouchLayer = new Layer(layers, name + "_NON_TOUCH");
 		displayTouchLayer = new Layer(layers, name + "_TOUCH");
+	}
+
+	public void setResetAction(final BiConsumer<Integer, Parameter> resetAction) {
+		this.resetAction = resetAction;
 	}
 
 	public void addBinding(final int index, final Parameter encParameter, final RingDisplayType type,
@@ -53,7 +62,12 @@ public class FlippableLayer extends Layer {
 			final boolean isMixer, final AbstractDisplayValueBinding<?> displayValueBinding) {
 		mainLayer.bind(section.getEncoder(index), encParameter.value());
 		mainLayer.addBinding(new RingDisplayBinding(encParameter, section.getRingDisplay(index), type));
-		mainLayer.addBinding(section.createResetBinding(index, encParameter));
+
+		final HardwareButton encoderButton = section.getEncoderPress(index);
+
+		final ButtonBinding resetBinding = new ButtonBinding(encoderButton,
+				section.createAction(() -> resetAction.accept(index, encParameter)));
+		mainLayer.addBinding(resetBinding);
 
 		flipLayer.bind(section.getVolumeFader(index), encParameter);
 		flipLayer.addBinding(new FaderBinding(encParameter, section.getMotorFader(index)));
@@ -63,6 +77,11 @@ public class FlippableLayer extends Layer {
 		if (!isMixer) {
 			displayNonTouchLayer.addBinding(new DisplayNameBinding(encParameter.name(), section.getNameTarget(index)));
 		}
+		doAdditionalBindings();
+	}
+
+	protected void doAdditionalBindings() {
+		// To be overridden by subclasses
 	}
 
 	protected void bindVolumeParameter(final int index, final boolean isMixer) {

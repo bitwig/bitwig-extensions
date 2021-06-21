@@ -2,7 +2,7 @@ package com.bitwig.extensions.controllers.mackie.bindings;
 
 import com.bitwig.extension.controller.api.ObjectProxy;
 import com.bitwig.extension.controller.api.SettableRangedValue;
-import com.bitwig.extensions.controllers.mackie.target.DisplayValueTarget;
+import com.bitwig.extensions.controllers.mackie.targets.DisplayValueTarget;
 
 public class DisplayDoubleValueBinding extends AbstractDisplayValueBinding<SettableRangedValue> {
 
