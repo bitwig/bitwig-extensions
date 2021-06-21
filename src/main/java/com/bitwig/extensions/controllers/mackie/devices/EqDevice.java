@@ -46,12 +46,11 @@ public class EqDevice implements ControlDevice {
 	private final int[] enableValues = new int[8];
 	private final List<Parameter> enableParams = new ArrayList<>();
 
-	public EqDevice(final MackieMcuProExtension driver) {
+	public EqDevice(final MackieMcuProExtension driver, final DeviceMatcher matcher) {
 		bitwigDevice = driver.getCursorDevice().createSpecificBitwigDevice(Devices.EQ_PLUS.getUuid());
-		final DeviceMatcher eq5Matcher = driver.getHost().createBitwigDeviceMatcher(Devices.EQ_PLUS.getUuid());
 
 		final DeviceBank eqPlusDeviceBank = driver.getCursorTrack().createDeviceBank(1);
-		eqPlusDeviceBank.setDeviceMatcher(eq5Matcher);
+		eqPlusDeviceBank.setDeviceMatcher(matcher);
 		device = eqPlusDeviceBank.getItemAt(0);
 
 		for (int i = 0; i < 8; i++) {

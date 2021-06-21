@@ -6,6 +6,7 @@ import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
+import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 public class DeviceTracker {
 	private final Device device;
@@ -17,6 +18,18 @@ public class DeviceTracker {
 		deviceBank.setDeviceMatcher(matcher);
 		device = deviceBank.getItemAt(0);
 		remote = device.createCursorRemoteControlsPage(8);
+		device.exists().markInterested();
+		device.isEnabled().markInterested();
+	}
+
+	public void handleReset(final int index, final Parameter parameter, final ModifierValueObject modifier) {
+		if (modifier.isOptionSet()) {
+			device.isEnabled().toggle();
+		} else if (modifier.isControlSet()) {
+			parameter.restoreAutomationControl();
+		} else {
+			parameter.reset();
+		}
 	}
 
 	public Device getDevice() {
@@ -45,5 +58,9 @@ public class DeviceTracker {
 
 	public Parameter getParameter(final int i) {
 		return remote.getParameter(i);
+	}
+
+	public boolean exists() {
+		return device.exists().get();
 	}
 }

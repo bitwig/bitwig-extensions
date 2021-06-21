@@ -1,10 +1,10 @@
 package com.bitwig.extensions.controllers.mackie.bindings;
 
-import com.bitwig.extensions.controllers.mackie.target.DisplayValueTarget;
+import com.bitwig.extensions.controllers.mackie.targets.DisplayValueTarget;
 import com.bitwig.extensions.framework.Binding;
 
 public abstract class AbstractDisplayValueBinding<T> extends Binding<T, DisplayValueTarget> {
-	private String lastValue = "";
+	protected String lastValue = "";
 
 	public AbstractDisplayValueBinding(final T source, final DisplayValueTarget target) {
 		super(source, target);

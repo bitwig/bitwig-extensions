@@ -11,6 +11,7 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -26,13 +27,15 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTracker;
+import com.bitwig.extensions.controllers.mackie.devices.Devices;
 import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.layer.ChannelSection;
 import com.bitwig.extensions.controllers.mackie.layer.ChannelSection.SectionType;
-import com.bitwig.extensions.controllers.mackie.target.MotorFader;
+import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
+import com.bitwig.extensions.controllers.mackie.value.LayoutType;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
 import com.bitwig.extensions.framework.Layer;
@@ -80,6 +83,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private EqDevice eqDevice;
 	private DeviceTracker instrumentDevice;
 	private DeviceTracker pluginDevice;
+	private LayoutType currentLayoutType;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -144,6 +148,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 				// RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing
 				// ports", i + 1);
 			}
+		}
+	}
+
+	public void doActionImmediate(final String actionId) {
+		if (delayedAction != null && actionId.equals(delayedAction.getActionId())) {
+			delayedAction.run();
+			delayedAction = null;
 		}
 	}
 
@@ -317,12 +328,35 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private void navigateUpDown(final int direction) {
 		if (!zoomActive.get()) {
 			sections.forEach(section -> section.navigateUpDown(direction));
+		} else {
+			if (direction > 0) {
+				application.focusPanelAbove();
+			} else {
+				application.focusPanelBelow();
+			}
 		}
 	}
 
 	private void navigateLeftRight(final int direction) {
 		if (!zoomActive.get()) {
 			sections.forEach(section -> section.navigateLeftRight(direction));
+		} else {
+			if (modifier.isShiftSet()) {
+				if (direction < 0) {
+					application.zoomOut();
+				} else {
+					application.zoomIn();
+				}
+
+			} else {
+				if (direction < 0) {
+					application.focusPanelToLeft();
+				} else {
+					application.focusPanelToRight();
+				}
+
+			}
+
 		}
 	}
 
@@ -333,6 +367,16 @@ public class MackieMcuProExtension extends ControllerExtension {
 			if (v) {
 				transport.returnToArrangement();
 			}
+		});
+
+		final HardwareButton f2Button = createPressButton(NoteOnAssignment.F2);
+		mainLayer.bindIsPressed(f2Button, v -> {
+			if (v) {
+				application.setPanelLayout(currentLayoutType.other().getName());
+			}
+		});
+		application.panelLayout().addValueObserver(v -> {
+			currentLayoutType = LayoutType.toType(v);
 		});
 	}
 
@@ -553,7 +597,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return button;
 	}
 
-	private void setVPotMode(final VPotMode mode) {
+	public void setVPotMode(final VPotMode mode) {
 		if (this.trackChannelMode.getMode() == mode) {
 			sections.forEach(ChannelSection::notifyModeAdvance);
 		} else {
@@ -622,10 +666,14 @@ public class MackieMcuProExtension extends ControllerExtension {
 		mixerTrackBank.setSkipDisabledItems(true);
 		mixerTrackBank.canScrollChannelsDown().markInterested();
 		mixerTrackBank.canScrollChannelsUp().markInterested();
-		eqDevice = new EqDevice(this);
+		final DeviceMatcher eq5Matcher = host.createBitwigDeviceMatcher(Devices.EQ_PLUS.getUuid());
+		eqDevice = new EqDevice(this, eq5Matcher);
+
+		final DeviceMatcher notEq = host.createNotDeviceMatcher(eq5Matcher);
+		final DeviceMatcher combinedMatcher = host.createAndDeviceMatcher(notEq, host.createAudioEffectMatcher());
 
 		instrumentDevice = new DeviceTracker(this, host.createInstrumentMatcher());
-		pluginDevice = new DeviceTracker(this, host.createAudioEffectMatcher());
+		pluginDevice = new DeviceTracker(this, combinedMatcher);
 
 		for (final ChannelSection channelSection : sections) {
 			channelSection.initChannelControl(mixerTrackBank, cursorTrack);
