@@ -33,7 +33,7 @@ import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.layer.ChannelSection;
 import com.bitwig.extensions.controllers.mackie.layer.ChannelSection.SectionType;
-import com.bitwig.extensions.controllers.mackie.target.MotorFader;
+import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.LayoutType;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;

@@ -24,10 +24,10 @@ import com.bitwig.extensions.controllers.mackie.bindings.ResetableAbsoluteValueB
 import com.bitwig.extensions.controllers.mackie.bindings.ResetableRelativeValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.RingParameterBankDisplayBinding;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.target.DisplayNameTarget;
-import com.bitwig.extensions.controllers.mackie.target.DisplayValueTarget;
-import com.bitwig.extensions.controllers.mackie.target.MotorFader;
-import com.bitwig.extensions.controllers.mackie.target.RingDisplay;
+import com.bitwig.extensions.controllers.mackie.targets.DisplayNameTarget;
+import com.bitwig.extensions.controllers.mackie.targets.DisplayValueTarget;
+import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
+import com.bitwig.extensions.controllers.mackie.targets.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 public class ParameterPage implements SettableRangedValue {

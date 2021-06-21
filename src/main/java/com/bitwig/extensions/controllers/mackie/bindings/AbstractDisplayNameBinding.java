@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.bindings;
 
 import com.bitwig.extensions.controllers.mackie.StringUtil;
-import com.bitwig.extensions.controllers.mackie.target.DisplayNameTarget;
+import com.bitwig.extensions.controllers.mackie.targets.DisplayNameTarget;
 import com.bitwig.extensions.framework.Binding;
 
 public abstract class AbstractDisplayNameBinding<T> extends Binding<T, DisplayNameTarget> {
