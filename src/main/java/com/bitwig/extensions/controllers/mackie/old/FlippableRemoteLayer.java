@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.layer;
+package com.bitwig.extensions.controllers.mackie.old;
 
 import com.bitwig.extensions.controllers.mackie.bindings.FullDisplayBinding;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTracker;

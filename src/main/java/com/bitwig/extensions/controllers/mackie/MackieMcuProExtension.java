@@ -26,20 +26,23 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.FullDisplayBinding;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTracker;
 import com.bitwig.extensions.controllers.mackie.devices.Devices;
 import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.layer.ChannelSection;
-import com.bitwig.extensions.controllers.mackie.layer.ChannelSection.SectionType;
+import com.bitwig.extensions.controllers.mackie.layer.MixControl;
+import com.bitwig.extensions.controllers.mackie.old.ChannelSection.SectionType;
 import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
+import com.bitwig.extensions.controllers.mackie.value.DisplayTextValue;
 import com.bitwig.extensions.controllers.mackie.value.LayoutType;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class MackieMcuProExtension extends ControllerExtension {
 
@@ -60,13 +63,14 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private MidiIn midiIn;
 	private CursorTrack cursorTrack;
 	private TrackBank mixerTrackBank;
+	private TrackBank globalTrackBank;
 	private ControllerHost host;
 	private TimeCodeLed ledDisplay;
-	private ChannelSection mainSection;
 	private MasterTrack masterTrack;
 	private final BooleanValueObject flipped = new BooleanValueObject();
 	private final BooleanValueObject zoomActive = new BooleanValueObject();
 	private final BooleanValueObject scrubActive = new BooleanValueObject();
+	private final BooleanValueObject globalViewActive = new BooleanValueObject();
 
 	private final ModifierValueObject modifier = new ModifierValueObject();
 	private final TrackModeValue trackChannelMode = new TrackModeValue();
@@ -79,11 +83,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private final HoldDownAction holdAction = new HoldDownAction();
 	private final int[] lightStatusMap = new int[127];
 
-	private final List<ChannelSection> sections = new ArrayList<ChannelSection>();
 	private EqDevice eqDevice;
 	private DeviceTracker instrumentDevice;
 	private DeviceTracker pluginDevice;
 	private LayoutType currentLayoutType;
+
+	private MixControl mainSection;
+	private final List<MixControl> sections = new ArrayList<MixControl>();
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -116,7 +122,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		intiVPotModes();
 
 		initTransport();
-		initTrackBank();
+		initTrackBank(16);
 		initModifiers();
 
 		initFunctionSection();
@@ -127,21 +133,21 @@ public class MackieMcuProExtension extends ControllerExtension {
 		setUpMidiSysExCommands();
 		mainLayer.activate();
 		host.showPopupNotification(" Initialized Mackie MCU Pro");
-		sections.forEach(ChannelSection::resetFaders);
-		sections.forEach(ChannelSection::clearAll);
+		sections.forEach(MixControl::resetFaders);
+		sections.forEach(MixControl::clearAll);
 		ledDisplay.setAssignment("PN", false);
 		ledDisplay.refreschMode();
 		host.scheduleTask(this::handlePing, 100);
 	}
 
 	public void initChannelSections() {
-		mainSection = new ChannelSection(this, midiIn, midiOut, 0, SectionType.MAIN);
+		mainSection = new MixControl(this, midiIn, midiOut, 0, SectionType.MAIN);
 		sections.add(mainSection);
 		for (int i = 0; i < nrOfExtenders; i++) {
 			final MidiOut extMidiOut = host.getMidiOutPort(i + 1);
 			final MidiIn extMidiIn = host.getMidiInPort(i + 1);
 			if (extMidiIn != null && extMidiOut != null) {
-				final ChannelSection extenderSection = new ChannelSection(this, extMidiIn, extMidiOut, i + 1,
+				final MixControl extenderSection = new MixControl(this, extMidiIn, extMidiOut, i + 1,
 						SectionType.XTENDER);
 				sections.add(extenderSection);
 			} else {
@@ -354,15 +360,28 @@ public class MackieMcuProExtension extends ControllerExtension {
 				} else {
 					application.focusPanelToRight();
 				}
-
 			}
-
 		}
 	}
 
 	private void initFunctionSection() {
-		final HardwareButton f1Button = createPressButton(NoteOnAssignment.F1);
+		final HardwareButton markerButton = createButton(NoteOnAssignment.MARKER);
+		final BooleanValueObject marker = new BooleanValueObject();
+		final DisplayTextValue dispText = new DisplayTextValue();
+		dispText.setLine(0, "HELLOO ");
+		dispText.setLine(1, "< ---- >");
+		final FullDisplayBinding displayBinding = new FullDisplayBinding(dispText, mainSection.getDisplay(), true);
+		final Layer xlayer = new Layer(getLayers(), "X_LAYER");
+		xlayer.addBinding(displayBinding);
+		mainLayer.bind(marker, (OnOffHardwareLight) markerButton.backgroundLight());
+		mainLayer.bindIsPressed(markerButton, v -> {
+			marker.set(v);
+			xlayer.setIsActive(v);
+		});
 
+		createOnOfBoolButton(NoteOnAssignment.GLOBAL_VIEW, globalViewActive);
+
+		final HardwareButton f1Button = createPressButton(NoteOnAssignment.F1);
 		mainLayer.bindIsPressed(f1Button, v -> {
 			if (v) {
 				transport.returnToArrangement();
@@ -599,7 +618,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	public void setVPotMode(final VPotMode mode) {
 		if (this.trackChannelMode.getMode() == mode) {
-			sections.forEach(ChannelSection::notifyModeAdvance);
+			sections.forEach(MixControl::notifyModeAdvance);
 		} else {
 			this.trackChannelMode.setMode(mode);
 			sections.forEach(section -> section.notifyModeChange(mode));
@@ -629,8 +648,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void onMidi0(final ShortMidiMessage msg) {
-//		RemoteConsole.out.println(" MIDI ch={} st={} d1={} d2={}", msg.getChannel(), msg.getStatusByte(),
-//				msg.getData1(), msg.getData2());
+		RemoteConsole.out.println(" MIDI ch={} st={} d1={} d2={}", msg.getChannel(), msg.getStatusByte(),
+				msg.getData1(), msg.getData2());
 	}
 
 	private void setUpMidiSysExCommands() {
@@ -645,7 +664,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	private void updateAll(final String command) {
 		surface.updateHardware();
-		sections.forEach(ChannelSection::fullHardwareUpdate);
+		sections.forEach(MixControl::fullHardwareUpdate);
 		for (int i = 0; i < lightStatusMap.length; i++) {
 			if (lightStatusMap[i] >= 0) {
 				midiOut.sendMidi(Midi.NOTE_ON, i, lightStatusMap[i]);
@@ -653,19 +672,34 @@ public class MackieMcuProExtension extends ControllerExtension {
 		}
 	}
 
-	protected void initTrackBank() {
+	protected void initTrackBank(final int nrOfScenes) {
 		// initNaviagtion();
-		cursorTrack = getHost().createCursorTrack(8, 16);
+
+		cursorTrack = getHost().createCursorTrack(8, nrOfScenes);
 
 		final HardwareButton soloButton = createButtonWState(NoteOnAssignment.SOLO, cursorTrack.solo(), false);
 		mainLayer.bindPressed(soloButton, cursorTrack.solo().toggleAction());
 
 		this.cursorDevice = cursorTrack.createCursorDevice();
 
-		mixerTrackBank = getHost().createMainTrackBank(8 * sections.size(), 1, 16);
-		mixerTrackBank.setSkipDisabledItems(true);
+		final TrackBank mainTrackBank = getHost().createMainTrackBank(8 * sections.size(), 1, nrOfScenes);
+
+		mainTrackBank.followCursorTrack(cursorTrack);
+
+		mixerTrackBank = getHost().createMainTrackBank(8 * sections.size(), 1, nrOfScenes);
+		mixerTrackBank.setSkipDisabledItems(false);
 		mixerTrackBank.canScrollChannelsDown().markInterested();
 		mixerTrackBank.canScrollChannelsUp().markInterested();
+
+		globalTrackBank = host.createTrackBank(8 * sections.size(), 1, nrOfScenes);
+		globalTrackBank.setSkipDisabledItems(false);
+		globalTrackBank.canScrollChannelsDown().markInterested();
+		globalTrackBank.canScrollChannelsUp().markInterested();
+
+//		final TrackBank sendTrackBank = host.createEffectTrackBank(8 * sections.size(), nrOfScenes);
+//		sendTrackBank.canScrollChannelsDown().markInterested();
+//		sendTrackBank.canScrollChannelsUp().markInterested();
+
 		final DeviceMatcher eq5Matcher = host.createBitwigDeviceMatcher(Devices.EQ_PLUS.getUuid());
 		eqDevice = new EqDevice(this, eq5Matcher);
 
@@ -675,9 +709,14 @@ public class MackieMcuProExtension extends ControllerExtension {
 		instrumentDevice = new DeviceTracker(this, host.createInstrumentMatcher());
 		pluginDevice = new DeviceTracker(this, combinedMatcher);
 
-		for (final ChannelSection channelSection : sections) {
-			channelSection.initChannelControl(mixerTrackBank, cursorTrack);
+		for (final MixControl channelSection : sections) {
+			channelSection.initMainControl(mixerTrackBank, globalTrackBank);
 		}
+		mainSection.initTrackControl(cursorTrack, instrumentDevice, pluginDevice, eqDevice);
+	}
+
+	public BooleanValueObject getGlobalViewActive() {
+		return globalViewActive;
 	}
 
 	public DeviceTracker getPluginDevice() {
@@ -717,9 +756,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 		shutdownHook = true;
 		final Thread shutdown = new Thread(() -> {
 			ledDisplay.clearAll();
-			sections.forEach(ChannelSection::resetLeds);
-			sections.forEach(ChannelSection::resetFaders);
-			sections.forEach(ChannelSection::exitMessage);
+			sections.forEach(MixControl::resetLeds);
+			sections.forEach(MixControl::resetFaders);
+			sections.forEach(MixControl::exitMessage);
 			try {
 				Thread.sleep(300);
 			} catch (final InterruptedException e) {

@@ -7,25 +7,26 @@ import com.bitwig.extensions.framework.Binding;
 
 public class RingDisplayBinding extends Binding<Parameter, RingDisplay> {
 
-	private int lastValue = 0;
+	private final RingDisplayType type;
 
 	public RingDisplayBinding(final Parameter source, final RingDisplay target, final RingDisplayType type) {
 		super(target, source, target);
-		source.value().addValueObserver(11, v -> {
+		this.type = type;
+		final int vintRange = type.getRange() + 1;
+		source.value().addValueObserver(vintRange, v -> {
 			valueChange(type.getOffset() + v);
 		});
-		lastValue = type.getOffset() + (int) (source.value().get() * 10);
 		source.exists().addValueObserver(this::handleExists);
+		source.name().markInterested();
 	}
 
 	public void handleExists(final boolean exist) {
-		if (isActive() && !exist) {
-			valueChange(0);
+		if (isActive()) {
+			valueChange(calcCurrentValue(exist));
 		}
 	}
 
 	private void valueChange(final int value) {
-		lastValue = value;
 		if (isActive()) {
 			getTarget().sendValue(value, false);
 		}
@@ -37,7 +38,12 @@ public class RingDisplayBinding extends Binding<Parameter, RingDisplay> {
 
 	@Override
 	protected void activate() {
-		getTarget().sendValue(lastValue, false);
+		getTarget().sendValue(calcCurrentValue(getSource().exists().get()), false);
+	}
+
+	private int calcCurrentValue(final boolean exists) {
+		final int value = exists ? type.getOffset() + (int) (getSource().value().get() * type.getRange()) : 0;
+		return value;
 	}
 
 }

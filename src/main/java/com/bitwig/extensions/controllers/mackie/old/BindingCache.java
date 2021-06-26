@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.layer;
+package com.bitwig.extensions.controllers.mackie.old;
 
 import java.util.HashMap;
 import java.util.Map;

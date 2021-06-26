@@ -129,6 +129,14 @@ public class EqDevice implements ControlDevice {
 		return enableParam;
 	}
 
+	public void navigateParameterBanks(final int direction) {
+		if (direction < 0) {
+			navigatePrevious();
+		} else {
+			navigateNext();
+		}
+	}
+
 	@Override
 	public void navigateNext() {
 		pageIndex = (pageIndex + 1) % getPages();
