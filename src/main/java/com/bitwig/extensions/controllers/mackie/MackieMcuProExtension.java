@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.mackie;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.bitwig.extension.api.Color;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
@@ -72,6 +71,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private final BooleanValueObject zoomActive = new BooleanValueObject();
 	private final BooleanValueObject scrubActive = new BooleanValueObject();
 	private final BooleanValueObject globalViewActive = new BooleanValueObject();
+	private final BooleanValueObject groupViewActive = new BooleanValueObject();
 
 	private final ModifierValueObject modifier = new ModifierValueObject();
 	private final TrackModeValue trackChannelMode = new TrackModeValue();
@@ -92,6 +92,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private MixControl mainSection;
 	private final List<MixControl> sections = new ArrayList<>();
 	private boolean insertActionSet = false;
+	private int colorCount = 1;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -124,7 +125,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		intiVPotModes();
 
 		initTransport();
-		initTrackBank(16);
+		initTrackBank(4);
 		initModifiers();
 
 		initFunctionSection();
@@ -188,6 +189,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		if (holdAction.isRunning()) {
 			holdAction.execute();
 		}
+		sections.forEach(MixControl::notifyBlink);
 		host.scheduleTask(this::handlePing, 100);
 	}
 
@@ -383,6 +385,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		});
 
 		createOnOfBoolButton(NoteOnAssignment.GLOBAL_VIEW, globalViewActive);
+		createOnOfBoolButton(NoteOnAssignment.GROUP, groupViewActive);
 
 		final HardwareButton f1Button = createPressButton(NoteOnAssignment.F1);
 		mainLayer.bindIsPressed(f1Button, v -> {
@@ -685,9 +688,11 @@ public class MackieMcuProExtension extends ControllerExtension {
 		cursorTrack.color().markInterested();
 		cursorTrack.name().addValueObserver(track -> {
 			if (insertActionSet) {
-				final Color color = cursorTrack.color().get();
-				final int pick = (int) Math.round(Math.random() * BitWigColor.values().length - 1);
-				BitWigColor.values()[pick].set(cursorTrack.color());
+				BitWigColor.values()[colorCount].set(cursorTrack.color());
+				colorCount++;
+				if (colorCount >= BitWigColor.values().length - 2) {
+					colorCount = 1;
+				}
 				insertActionSet = false;
 			}
 		});
@@ -732,6 +737,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	public BooleanValueObject getGlobalViewActive() {
 		return globalViewActive;
+	}
+
+	public BooleanValueObject getGroupViewActive() {
+		return groupViewActive;
 	}
 
 	public DeviceTracker getPluginDevice() {

@@ -166,6 +166,10 @@ public class MixerSectionHardware {
 		}
 	}
 
+	public HardwareButton getButton(final int row, final int column) {
+		return buttonMatrix[row][column];
+	}
+
 	public void fullHardwareUpdate() {
 		mainDisplay.refreshDisplay();
 		for (final MotorFader fader : motorFaderDest) {

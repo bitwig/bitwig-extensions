@@ -19,8 +19,9 @@ import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
+import com.bitwig.extensions.framework.Layer;
 
-public class MixControl {
+public class MixControl implements LayerStateHandler {
 	private final MixerSectionHardware hwControls;
 	final MackieMcuProExtension driver;
 
@@ -42,6 +43,7 @@ public class MixControl {
 	private final BooleanValueObject fadersTouched = new BooleanValueObject();
 	private int touchCount = 0;
 	private final SectionType type;
+	private final ClipLaunchButtonLayer launchButtonLayer;
 
 	public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
 			final int sectionIndex, final SectionType type) {
@@ -64,13 +66,14 @@ public class MixControl {
 		pluginTrackConfiguration = new TrackLayerConfiguration("AUDIOFX", this);
 		eqTrackConfiguration = new TrackLayerConfiguration("EQ_DEVICE", this);
 
-		currentConfiguration = panConfiguration;
-		currentState = new LayerState(panConfiguration);
+		launchButtonLayer = new ClipLaunchButtonLayer("CLIP_LAUNCH", this);
 
-		driver.getFlipped()
-				.addValueObserver(flipped -> currentState.updateState(currentConfiguration, getActiveDisplayLayer()));
-		driver.getGlobalViewActive().addValueObserver(
-				globalView -> currentState.updateState(currentConfiguration, getActiveDisplayLayer()));
+		currentConfiguration = panConfiguration;
+		currentState = new LayerState(this);
+
+		driver.getFlipped().addValueObserver(flipped -> currentState.updateState(this));
+		driver.getGlobalViewActive().addValueObserver(globalView -> currentState.updateState(this));
+		driver.getGroupViewActive().addValueObserver(groupView -> currentState.updateState(this));
 		// driver.getTrackChannelMode().addValueObserver(v ->
 		// notifyModeChange(driver.getTrackChannelMode().getMode()));
 		fadersTouched.addValueObserver(v -> reactToFaderTouched(v));
@@ -86,6 +89,20 @@ public class MixControl {
 		}
 	}
 
+	@Override
+	public LayerConfiguration getCurrentConfig() {
+		return currentConfiguration;
+	}
+
+	@Override
+	public Layer getButtonLayer() {
+		if (driver.getGroupViewActive().get()) {
+			return launchButtonLayer;
+		}
+		return currentConfiguration.getButtonLayer();
+	}
+
+	@Override
 	public DisplayLayer getActiveDisplayLayer() {
 		final boolean flipped = driver.getFlipped().get();
 		final boolean touched = fadersTouched.get();
@@ -194,7 +211,11 @@ public class MixControl {
 		default:
 			break;
 		}
-		currentState.updateState(currentConfiguration, getActiveDisplayLayer());
+		currentState.updateState(this);
+	}
+
+	public void notifyBlink() {
+		launchButtonLayer.notifyBlink();
 	}
 
 	private void focusDevice(final Device device) {
@@ -227,6 +248,7 @@ public class MixControl {
 	public void initMainControl(final TrackBank mixerTrackBank, final TrackBank globalTrackBank) {
 		mainGroup.init(mixerTrackBank);
 		globalGroup.init(globalTrackBank);
+		launchButtonLayer.initTrackBank(this.getHwControls(), mixerTrackBank);
 	}
 
 	public void initTrackControl(final CursorTrack cursorTrack, final DeviceTracker instrumentDevice,

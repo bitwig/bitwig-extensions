@@ -8,21 +8,30 @@ public class LayerState {
 	private Layer buttonLayer;
 	private DisplayLayer displayLayer;
 
-	LayerState(final LayerConfiguration initalConfig) {
+	LayerState(final LayerStateHandler statHandler) {
+		final LayerConfiguration initalConfig = statHandler.getCurrentConfig();
+
 		faderLayer = initalConfig.getFaderLayer();
 		encoderLayer = initalConfig.getEncoderLayer();
-		buttonLayer = initalConfig.getButtonLayer();
-		displayLayer = initalConfig.getDisplayLayer(0);
+
+		buttonLayer = statHandler.getButtonLayer();
+
+		displayLayer = statHandler.getActiveDisplayLayer();
 		faderLayer.setIsActive(true);
 		encoderLayer.setIsActive(true);
 		buttonLayer.setIsActive(true);
 		displayLayer.setIsActive(true);
 	}
 
-	public void updateState(final LayerConfiguration config, final DisplayLayer displayLayer) {
+	public void updateState(final LayerStateHandler statHandler) {
+		final LayerConfiguration config = statHandler.getCurrentConfig();
+		final DisplayLayer displayLayer = statHandler.getActiveDisplayLayer();
+
 		final Layer newFaderLayer = config.getFaderLayer();
 		final Layer newEncoderLayer = config.getEncoderLayer();
-		final Layer newButtonLayer = config.getButtonLayer();
+
+		final Layer newButtonLayer = statHandler.getButtonLayer();
+
 		if (!newFaderLayer.equals(faderLayer)) {
 			faderLayer.setIsActive(false);
 			faderLayer = newFaderLayer;
