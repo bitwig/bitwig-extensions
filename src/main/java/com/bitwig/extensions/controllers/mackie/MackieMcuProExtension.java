@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.mackie;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.bitwig.extension.api.Color;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
@@ -34,6 +35,7 @@ import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.layer.MixControl;
 import com.bitwig.extensions.controllers.mackie.layer.SectionType;
 import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
+import com.bitwig.extensions.controllers.mackie.value.BitWigColor;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.DisplayTextValue;
 import com.bitwig.extensions.controllers.mackie.value.LayoutType;
@@ -89,6 +91,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	private MixControl mainSection;
 	private final List<MixControl> sections = new ArrayList<>();
+	private boolean insertActionSet = false;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -171,6 +174,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	public void scheduleAction(final String actionId, final int duration, final Runnable action) {
 		delayedAction = new DelayAction(duration, actionId, action);
+	}
+
+	public void notifyInsert() {
+		insertActionSet = true;
 	}
 
 	private void handlePing() {
@@ -672,6 +679,17 @@ public class MackieMcuProExtension extends ControllerExtension {
 		// initNaviagtion();
 
 		cursorTrack = getHost().createCursorTrack(8, nrOfScenes);
+		cursorTrack.color().markInterested();
+		cursorTrack.name().addValueObserver(track -> {
+			if (insertActionSet) {
+				final Color color = cursorTrack.color().get();
+				RemoteConsole.out.println("Track Insert Detected {},{},{} <== {}", color.getRed(), color.getGreen(),
+						color.getGreen());
+				final int pick = (int) Math.round(Math.random() * BitWigColor.values().length - 1);
+				BitWigColor.values()[pick].set(cursorTrack.color());
+				insertActionSet = false;
+			}
+		});
 
 		final HardwareButton soloButton = createButtonWState(NoteOnAssignment.SOLO, cursorTrack.solo(), false);
 		mainLayer.bindPressed(soloButton, cursorTrack.solo().toggleAction());

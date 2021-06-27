@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.mackie.layer;
 
 import java.util.function.IntConsumer;
 
+import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.framework.Layer;
 
 public abstract class LayerConfiguration {
@@ -32,6 +33,10 @@ public abstract class LayerConfiguration {
 	public abstract Layer getButtonLayer();
 
 	public abstract DisplayLayer getDisplayLayer(int which);
+
+	public DeviceManager getDeviceManager() {
+		return null;
+	}
 
 	public String getName() {
 		return name;

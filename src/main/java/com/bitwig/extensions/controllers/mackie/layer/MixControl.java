@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.InsertionPoint;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -9,6 +10,7 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
+import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTracker;
 import com.bitwig.extensions.controllers.mackie.devices.Devices;
 import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
@@ -160,15 +162,18 @@ public class MixControl {
 		switch (mode) {
 		case EQ:
 			currentConfiguration = eqTrackConfiguration;
+			focusDevice(driver.getEqDevice().getDevice());
 			break;
 		case INSTRUMENT:
 			currentConfiguration = instrumentTrackConfiguration;
+			focusDevice(driver.getInstrumentDevice().getDevice());
 			break;
 		case PAN:
 			currentConfiguration = panConfiguration;
 			break;
 		case PLUGIN:
 			currentConfiguration = pluginTrackConfiguration;
+			focusDevice(driver.getInstrumentDevice().getDevice());
 			break;
 		case SEND:
 			if (type != SectionType.MAIN) {
@@ -183,6 +188,12 @@ public class MixControl {
 			break;
 		}
 		currentState.updateState(currentConfiguration, getActiveDisplayLayer());
+	}
+
+	private void focusDevice(final Device device) {
+		if (device.exists().get()) {
+			driver.getCursorDevice().selectDevice(device);
+		}
 	}
 
 	private void handleTouch(final boolean touched) {
@@ -221,6 +232,11 @@ public class MixControl {
 			eqTrackConfiguration.addBinding(i, eqDevice.getEqBands().get(i),
 					(pindex, pslot) -> eqDevice.handleResetInvoked(pindex, driver.getModifier()));
 		}
+
+		instrumentTrackConfiguration.setDeviceManager(instrumentDevice);
+		pluginTrackConfiguration.setDeviceManager(pluginDevice);
+		eqTrackConfiguration.setDeviceManager(eqDevice);
+
 		sendTrackConfiguration.setNavigateHorizontalHandler(direction -> {
 			if (direction < 0) {
 				sendBank.scrollBackwards();
@@ -252,8 +268,16 @@ public class MixControl {
 		eqDevice.getDevice().exists()
 				.addValueObserver(exist -> eqTrackConfiguration.getDisplayLayer(0).enableFullTextMode(!exist));
 
+		cursorTrack.name().addValueObserver(trackName -> ensureModeFocus());
+
 		driver.getCursorDevice().deviceType().markInterested();
-//			driver.getCursorDevice().name().addValueObserver(name -> handleDeviceNameChanged(name));
+	}
+
+	public void ensureModeFocus() {
+		final DeviceManager device = currentConfiguration.getDeviceManager();
+		if (device != null && !device.getCursorOnDevice().get()) {
+			driver.getCursorDevice().selectDevice(device.getDevice());
+		}
 	}
 
 	public void navigateDeviceParameters(final DeviceTracker device, final int direction) {
@@ -297,10 +321,13 @@ public class MixControl {
 			}
 		} else {
 			if (driver.getModifier().isShift()) {
+				driver.notifyInsert();
 				driver.getApplication().createAudioTrack(-1);
 			} else if (driver.getModifier().isSet(ModifierValueObject.ALT)) {
+				driver.notifyInsert();
 				driver.getApplication().createEffectTrack(-1);
 			} else {
+				driver.notifyInsert();
 				driver.getApplication().createInstrumentTrack(-1);
 			}
 		}

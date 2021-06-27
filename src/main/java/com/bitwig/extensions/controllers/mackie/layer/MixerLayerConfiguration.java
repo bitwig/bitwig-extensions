@@ -73,4 +73,5 @@ class MixerLayerConfiguration extends LayerConfiguration {
 		}
 		return mixControl.mainGroup.getDisplayConfiguration(ParamElement.VOLUME);
 	}
+
 }

@@ -12,6 +12,7 @@ import com.bitwig.extension.controller.api.SpecificBitwigDevice;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 /**
  * Fully Customized control of the Bitwig EQ+ Device Missing Parameters:
@@ -21,7 +22,7 @@ import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
  * ADAPTIVE_Q DECIBEL_RANGE
  *
  */
-public class EqDevice implements ControlDevice {
+public class EqDevice implements ControlDevice, DeviceManager {
 	private final static String[] PNAMES = { "TYPE", "FREQ", "GAIN", "Q" };
 	private final static RingDisplayType[] RING_TYPES = { RingDisplayType.FILL_LR, RingDisplayType.SINGLE,
 			RingDisplayType.FILL_LR, RingDisplayType.FILL_LR };
@@ -45,6 +46,7 @@ public class EqDevice implements ControlDevice {
 	private int pageIndex = 0;
 	private final int[] enableValues = new int[8];
 	private final List<Parameter> enableParams = new ArrayList<>();
+	private final BooleanValue cursorOnDevice;
 
 	public EqDevice(final MackieMcuProExtension driver, final DeviceMatcher matcher) {
 		bitwigDevice = driver.getCursorDevice().createSpecificBitwigDevice(Devices.EQ_PLUS.getUuid());
@@ -52,6 +54,11 @@ public class EqDevice implements ControlDevice {
 		final DeviceBank eqPlusDeviceBank = driver.getCursorTrack().createDeviceBank(1);
 		eqPlusDeviceBank.setDeviceMatcher(matcher);
 		device = eqPlusDeviceBank.getItemAt(0);
+
+		cursorOnDevice = device.createEqualsValue(driver.getCursorDevice());
+		cursorOnDevice.addValueObserver(eq -> {
+			RemoteConsole.out.println("IAM Equal to cursor {}", eq);
+		});
 
 		for (int i = 0; i < 8; i++) {
 			parameterSlots.add(new ParameterPage(i, this));
@@ -100,6 +107,11 @@ public class EqDevice implements ControlDevice {
 		} else {
 			parameterSlots.get(index).doReset();
 		}
+	}
+
+	@Override
+	public BooleanValue getCursorOnDevice() {
+		return cursorOnDevice;
 	}
 
 	private void resetAll() {
@@ -214,6 +226,7 @@ public class EqDevice implements ControlDevice {
 		return parameter;
 	}
 
+	@Override
 	public Device getDevice() {
 		return device;
 	}

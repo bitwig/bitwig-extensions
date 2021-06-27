@@ -1,7 +1,6 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
 import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class LayerState {
 	private Layer faderLayer;
@@ -30,7 +29,6 @@ public class LayerState {
 			faderLayer.setIsActive(true);
 		}
 		if (!newEncoderLayer.equals(encoderLayer)) {
-			RemoteConsole.out.println(" Encoder Config ", config.getName());
 			encoderLayer.setIsActive(false);
 			encoderLayer = newEncoderLayer;
 			encoderLayer.setIsActive(true);

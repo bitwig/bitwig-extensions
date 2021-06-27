@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.mackie.devices;
 
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceBank;
@@ -8,15 +9,18 @@ import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
-public class DeviceTracker {
+public class DeviceTracker implements DeviceManager {
 	private final Device device;
 	private final CursorRemoteControlsPage remote;
 	private final DeviceBank deviceBank;
+	private final BooleanValue cursorOnDevice;
 
 	public DeviceTracker(final MackieMcuProExtension driver, final DeviceMatcher matcher) {
 		deviceBank = driver.getCursorTrack().createDeviceBank(1);
+
 		deviceBank.setDeviceMatcher(matcher);
 		device = deviceBank.getItemAt(0);
+		cursorOnDevice = device.createEqualsValue(driver.getCursorDevice());
 		remote = device.createCursorRemoteControlsPage(8);
 		device.exists().markInterested();
 		device.isEnabled().markInterested();
@@ -32,8 +36,14 @@ public class DeviceTracker {
 		}
 	}
 
+	@Override
 	public Device getDevice() {
 		return device;
+	}
+
+	@Override
+	public BooleanValue getCursorOnDevice() {
+		return cursorOnDevice;
 	}
 
 	public CursorRemoteControlsPage getRemote() {

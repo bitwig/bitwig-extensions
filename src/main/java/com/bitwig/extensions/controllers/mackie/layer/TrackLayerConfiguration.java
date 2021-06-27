@@ -4,6 +4,7 @@ import java.util.function.BiConsumer;
 
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
+import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.framework.Layer;
@@ -14,6 +15,7 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	private final Layer faderLayer;
 	private final Layer encoderLayer;
 	private final DisplayLayer displayLayer;
+	private DeviceManager deviceManager;
 
 	public TrackLayerConfiguration(final String name, final MixControl mixControl) {
 		super(name, mixControl);
@@ -22,6 +24,16 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		faderLayer = new Layer(layers, name + "_FADER_LAYER_" + sectionIndex);
 		encoderLayer = new Layer(layers, name + "_ENCODER_LAYER_" + sectionIndex);
 		displayLayer = new DisplayLayer(name, this.mixControl);
+	}
+
+	@Override
+	public DeviceManager getDeviceManager() {
+		return deviceManager;
+	}
+
+	public void setDeviceManager(final DeviceManager deviceManager) {
+		this.deviceManager = deviceManager;
+		this.deviceManager.getCursorOnDevice().markInterested();
 	}
 
 	@Override
