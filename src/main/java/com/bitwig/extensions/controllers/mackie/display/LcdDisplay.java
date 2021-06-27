@@ -30,8 +30,13 @@ public class LcdDisplay {
 
 	private final String[][] lastSendGrids = new String[][] { { "", "", "", "", "", "", "", "" },
 			{ "", "", "", "", "", "", "", "" } };
+	private final String[] lastSentRows = new String[] { "", "" };
 
 	private final MidiOut midiOut;
+
+	private boolean fullTextMode = false;
+
+	private VuMode vuMode;
 
 	/**
 	 * @param driver  the parent
@@ -47,10 +52,31 @@ public class LcdDisplay {
 		} else {
 			sysHead = "f0 00 00 66 14 ";
 		}
-		appyVuMode(driver.getVuMode());
+		setVuMode(driver.getVuMode());
 	}
 
-	public void appyVuMode(final VuMode mode) {
+	public void setFullTextMode(final boolean fullTextMode) {
+		if (this.fullTextMode == fullTextMode) {
+			return;
+		}
+		this.fullTextMode = fullTextMode;
+		if (fullTextMode) {
+			switchVuMode(VuMode.LED);
+		} else {
+			switchVuMode(vuMode);
+		}
+		refreshDisplay();
+	}
+
+	public void setVuMode(final VuMode mode) {
+		this.vuMode = mode;
+		if (!fullTextMode) {
+			switchVuMode(mode);
+			refreshDisplay();
+		}
+	}
+
+	private void switchVuMode(final VuMode mode) {
 		switch (mode) {
 		case LED:
 			midiOut.sendSysex(sysHead + "21 01 f7"); // Vertical VU
@@ -75,7 +101,6 @@ public class LcdDisplay {
 			}
 			break;
 		}
-		refreshDisplay();
 	}
 
 	private void resetGrids(final int row) {
@@ -100,7 +125,15 @@ public class LcdDisplay {
 	}
 
 	public void sendToDisplay(final int row, final String text) {
+		if (text.equals(lastSentRows[row])) {
+			return;
+		}
+		lastSentRows[row] = text;
 		resetGrids(row);
+		sendFullRow(row, text);
+	}
+
+	private void sendFullRow(final int row, final String text) {
 		rowDisplayBuffer[6] = (byte) (row * ROW2_START);
 		final char[] ca = text.toCharArray();
 		for (int i = 0; i < DISPLAY_LEN; i++) {
@@ -132,9 +165,14 @@ public class LcdDisplay {
 	}
 
 	public void refreshDisplay() {
-		for (int row = 0; row < 2; row++) {
-			for (int segment = 0; segment < 8; segment++) {
-				sendTextSeg(row, segment, lastSendGrids[row][segment]);
+		if (fullTextMode) {
+			sendFullRow(0, lastSentRows[0]);
+			sendFullRow(1, lastSentRows[1]);
+		} else {
+			for (int row = 0; row < 2; row++) {
+				for (int segment = 0; segment < 8; segment++) {
+					sendTextSeg(row, segment, lastSendGrids[row][segment]);
+				}
 			}
 		}
 	}

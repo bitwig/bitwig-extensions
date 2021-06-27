@@ -71,7 +71,8 @@ public class MixControl {
 				.addValueObserver(flipped -> currentState.updateState(currentConfiguration, getActiveDisplayLayer()));
 		driver.getGlobalViewActive().addValueObserver(
 				globalView -> currentState.updateState(currentConfiguration, getActiveDisplayLayer()));
-		driver.getTrackChannelMode().addValueObserver(v -> notifyModeChange(driver.getTrackChannelMode().getMode()));
+		// driver.getTrackChannelMode().addValueObserver(v ->
+		// notifyModeChange(driver.getTrackChannelMode().getMode()));
 		fadersTouched.addValueObserver(v -> reactToFaderTouched(v));
 	}
 
@@ -117,7 +118,7 @@ public class MixControl {
 	}
 
 	public void applyVuMode(final VuMode mode) {
-		hwControls.getMainDisplay().appyVuMode(mode);
+		hwControls.getMainDisplay().setVuMode(mode);
 	}
 
 	public MackieMcuProExtension getDriver() {
@@ -132,7 +133,7 @@ public class MixControl {
 		currentConfiguration.navigateVertical(direction);
 	}
 
-	public void notifyModeAdvance() {
+	public void notifyModeAdvance(final boolean pressed) {
 		switch (driver.getVpotMode()) {
 		case EQ:
 			switch (driver.getVpotMode()) {
@@ -158,7 +159,13 @@ public class MixControl {
 		}
 	}
 
-	public void notifyModeChange(final VPotMode mode) {
+	public void notifyModeChange(final VPotMode mode, final boolean down) {
+		if (down) {
+			doModeChange(mode);
+		}
+	}
+
+	void doModeChange(final VPotMode mode) {
 		switch (mode) {
 		case EQ:
 			currentConfiguration = eqTrackConfiguration;
@@ -248,25 +255,15 @@ public class MixControl {
 				.setNavigateHorizontalHandler(direction -> navigateDeviceParameters(instrumentDevice, direction));
 		instrumentTrackConfiguration
 				.setNavigateVerticalHandler(direction -> navigateDevices(instrumentDevice, direction));
-		instrumentTrackConfiguration.getDisplayLayer(0).setCenteredText("no instrument on track",
-				"<< select instrument device from Browser >>");
+
 		pluginTrackConfiguration.setNavigateHorizontalHandler(direction -> navigateDevices(pluginDevice, direction));
 		pluginTrackConfiguration.setNavigateVerticalHandler(direction -> navigateDevices(pluginDevice, direction));
-		pluginTrackConfiguration.getDisplayLayer(0).setCenteredText("no audio fx on track",
-				"<< select device from Browser >>");
 
 		eqTrackConfiguration.setNavigateHorizontalHandler(eqDevice::navigateParameterBanks);
-		eqTrackConfiguration.getDisplayLayer(0).setCenteredText("no EQ+ device on track",
-				"<< press EQ button to insert EQ+ device >>");
 
-		pluginDevice.getDevice().exists()
-				.addValueObserver(exist -> pluginTrackConfiguration.getDisplayLayer(0).enableFullTextMode(!exist));
-
-		instrumentDevice.getDevice().exists()
-				.addValueObserver(exist -> instrumentTrackConfiguration.getDisplayLayer(0).enableFullTextMode(!exist));
-
-		eqDevice.getDevice().exists()
-				.addValueObserver(exist -> eqTrackConfiguration.getDisplayLayer(0).enableFullTextMode(!exist));
+		pluginTrackConfiguration.setMissingText("no audio fx on track", "<< select device from Browser >>");
+		instrumentTrackConfiguration.setMissingText("no instrument on track", "<< select device from Browser >>");
+		eqTrackConfiguration.setMissingText("no EQ+ device on track", "<< press EQ button to insert EQ+ device >>");
 
 		cursorTrack.name().addValueObserver(trackName -> ensureModeFocus());
 

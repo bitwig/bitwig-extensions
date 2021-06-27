@@ -125,7 +125,12 @@ public class MixerLayerGroup {
 	protected void setUpChannelControl(final int index, final Track channel) {
 		final MixerSectionHardware hwControls = control.getHwControls();
 		channel.exists().markInterested();
-		hwControls.registerVuMeter(index, channel);
+
+		channel.addVuMeterObserver(14, -1, true, value -> {
+			if (volumeEncoderLayer.isActive() || volumeFaderLayer.isActive()) {
+				hwControls.sendVuUpdate(index, value);
+			}
+		});
 
 		final BooleanValueObject selectedInMixer = new BooleanValueObject();
 		channel.addIsSelectedInEditorObserver(v -> selectedInMixer.set(v));

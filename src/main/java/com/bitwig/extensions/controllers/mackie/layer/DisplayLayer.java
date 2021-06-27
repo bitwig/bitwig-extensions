@@ -12,6 +12,7 @@ public class DisplayLayer extends Layer {
 	private final LcdDisplay display;
 	private final DisplayRow topRow = new DisplayRow(0);
 	private final DisplayRow bottomRow = new DisplayRow(1);
+	private boolean inFullTextMode = false;
 
 	static class DisplayRow {
 		int rowIndex = 0;
@@ -52,9 +53,6 @@ public class DisplayLayer extends Layer {
 		}
 
 		public void enableFullTextMode(final LcdDisplay display, final boolean enable, final boolean doRefresh) {
-			if (enable == fullTextMode) {
-				return;
-			}
 			this.fullTextMode = enable;
 			if (doRefresh) {
 				refresh(display);
@@ -88,23 +86,6 @@ public class DisplayLayer extends Layer {
 			this.exist = exist;
 		}
 
-	}
-
-	public void setCenteredText(final String row1, final String row2) {
-		topRow.setFullText(row1);
-		topRow.setCentered(true);
-		bottomRow.setFullText(row2);
-		bottomRow.setCentered(true);
-	}
-
-	public void setFullText(final int row, final String text, final boolean centered) {
-		if (row == 0) {
-			topRow.setFullText(text);
-			topRow.setCentered(centered);
-		} else if (row == 1) {
-			bottomRow.setFullText(text);
-			bottomRow.setCentered(centered);
-		}
 	}
 
 	public DisplayLayer(final String name, final MixControl mixControl) {
@@ -184,14 +165,27 @@ public class DisplayLayer extends Layer {
 		}
 	}
 
+	public void setCenteredText(final String row1, final String row2) {
+		topRow.setFullText(row1);
+		topRow.setCentered(true);
+		bottomRow.setFullText(row2);
+		bottomRow.setCentered(true);
+	}
+
 	public void enableFullTextMode(final boolean enabled) {
-		topRow.enableFullTextMode(display, enabled, isActive());
-		bottomRow.enableFullTextMode(display, enabled, isActive());
+		final boolean active = isActive();
+		topRow.enableFullTextMode(display, enabled, active);
+		bottomRow.enableFullTextMode(display, enabled, active);
+		inFullTextMode = enabled;
+		if (active) {
+			display.setFullTextMode(enabled);
+		}
 	}
 
 	@Override
 	protected void onActivate() {
 		super.onActivate();
+		display.setFullTextMode(inFullTextMode);
 		topRow.refresh(display);
 		bottomRow.refresh(display);
 	}

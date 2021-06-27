@@ -612,19 +612,22 @@ public class MackieMcuProExtension extends ControllerExtension {
 		led.onUpdateHardware(() -> {
 			sendLedUpdate(mode.getButtonAssignment(), led.isOn().currentValue() ? 127 : 0);
 		});
-		mainLayer.bindPressed(button, () -> setVPotMode(mode));
+		mainLayer.bindPressed(button, () -> setVPotMode(mode, true));
+		mainLayer.bindReleased(button, () -> {
+			setVPotMode(mode, false);
+		});
 		led.isOn().setValueSupplier(() -> {
 			return this.trackChannelMode.getMode() == mode;
 		});
 		return button;
 	}
 
-	public void setVPotMode(final VPotMode mode) {
+	public void setVPotMode(final VPotMode mode, final boolean down) {
 		if (this.trackChannelMode.getMode() == mode) {
-			sections.forEach(MixControl::notifyModeAdvance);
+			sections.forEach(control -> control.notifyModeAdvance(down));
 		} else {
 			this.trackChannelMode.setMode(mode);
-			sections.forEach(section -> section.notifyModeChange(mode));
+			sections.forEach(section -> section.notifyModeChange(mode, down));
 		}
 	}
 
@@ -683,8 +686,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 		cursorTrack.name().addValueObserver(track -> {
 			if (insertActionSet) {
 				final Color color = cursorTrack.color().get();
-				RemoteConsole.out.println("Track Insert Detected {},{},{} <== {}", color.getRed(), color.getGreen(),
-						color.getGreen());
 				final int pick = (int) Math.round(Math.random() * BitWigColor.values().length - 1);
 				BitWigColor.values()[pick].set(cursorTrack.color());
 				insertActionSet = false;

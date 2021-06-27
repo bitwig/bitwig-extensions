@@ -2,6 +2,8 @@ package com.bitwig.extensions.controllers.mackie.layer;
 
 import java.util.function.BiConsumer;
 
+import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
+import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
@@ -16,6 +18,8 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	private final Layer encoderLayer;
 	private final DisplayLayer displayLayer;
 	private DeviceManager deviceManager;
+	private String stdMissingTextLine1;
+	private String stdMissingTextLine2;
 
 	public TrackLayerConfiguration(final String name, final MixControl mixControl) {
 		super(name, mixControl);
@@ -31,9 +35,61 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		return deviceManager;
 	}
 
+	public boolean isActive() {
+		return encoderLayer.isActive() || faderLayer.isActive();
+	}
+
+	public void setMissingText(final String line1, final String line2) {
+		this.stdMissingTextLine1 = line1;
+		this.stdMissingTextLine2 = line2;
+		if (deviceManager != null) {
+			deviceManager.getDevice().exists().addValueObserver(exist -> evaluateTextDisplay(getPagesCount(), exist));
+		}
+	}
+
 	public void setDeviceManager(final DeviceManager deviceManager) {
 		this.deviceManager = deviceManager;
 		this.deviceManager.getCursorOnDevice().markInterested();
+		final CursorRemoteControlsPage remotes = deviceManager.getRemote();
+		if (remotes != null) {
+			remotes.pageCount()
+					.addValueObserver(count -> evaluateTextDisplay(count, deviceManager.getDevice().exists().get()));
+		}
+		deviceManager.getDevice().name().addValueObserver(name -> {
+			evaluateTextDisplay(getPagesCount(), deviceManager.getDevice().exists().get());
+		});
+	}
+
+	private int getPagesCount() {
+		if (deviceManager.getRemote() == null) {
+			return 0;
+		}
+		return deviceManager.getRemote().pageCount().get();
+	}
+
+	private void evaluateTextDisplay(final int count, final boolean exists) {
+		if (deviceManager == null) {
+			return;
+		}
+		final CursorRemoteControlsPage remotes = deviceManager.getRemote();
+		final Device device = deviceManager.getDevice();
+		if (remotes != null) {
+			if (!exists) {
+				displayLayer.setCenteredText(stdMissingTextLine1, stdMissingTextLine2);
+				displayLayer.enableFullTextMode(true);
+			} else if (count == 0) {
+				displayLayer.setCenteredText(device.name().get() + " has no Parameter Pages",
+						"<< configure Parameter Pages in Bitwig >>");
+				displayLayer.enableFullTextMode(true);
+			} else {
+				displayLayer.enableFullTextMode(false);
+			}
+		} else if (!exists) {
+			displayLayer.setCenteredText(stdMissingTextLine1, stdMissingTextLine2);
+			displayLayer.enableFullTextMode(true);
+		} else {
+			displayLayer.enableFullTextMode(false);
+		}
 	}
 
 	@Override

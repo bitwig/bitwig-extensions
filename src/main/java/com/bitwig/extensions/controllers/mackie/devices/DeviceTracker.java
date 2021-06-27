@@ -22,6 +22,7 @@ public class DeviceTracker implements DeviceManager {
 		device = deviceBank.getItemAt(0);
 		cursorOnDevice = device.createEqualsValue(driver.getCursorDevice());
 		remote = device.createCursorRemoteControlsPage(8);
+		device.name().markInterested();
 		device.exists().markInterested();
 		device.isEnabled().markInterested();
 	}
@@ -46,6 +47,7 @@ public class DeviceTracker implements DeviceManager {
 		return cursorOnDevice;
 	}
 
+	@Override
 	public CursorRemoteControlsPage getRemote() {
 		return remote;
 	}

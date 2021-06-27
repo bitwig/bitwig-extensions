@@ -12,7 +12,6 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
-import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
@@ -106,10 +105,8 @@ public class MixerSectionHardware {
 		}
 	}
 
-	public void registerVuMeter(final int index, final Track channel) {
-		channel.addVuMeterObserver(14, -1, true, v -> {
-			midiOut.sendMidi(Midi.CHANNEL_AT, index << 4 | v, 0);
-		});
+	void sendVuUpdate(final int index, final int value) {
+		midiOut.sendMidi(Midi.CHANNEL_AT, index << 4 | value, 0);
 	}
 
 	public void bindButton(final Layer layer, final int index, final int buttonIndex, final BooleanSupplier param,

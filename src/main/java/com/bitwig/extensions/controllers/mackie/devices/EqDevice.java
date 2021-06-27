@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.DeviceMatcher;
@@ -12,7 +13,6 @@ import com.bitwig.extension.controller.api.SpecificBitwigDevice;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 /**
  * Fully Customized control of the Bitwig EQ+ Device Missing Parameters:
@@ -56,9 +56,6 @@ public class EqDevice implements ControlDevice, DeviceManager {
 		device = eqPlusDeviceBank.getItemAt(0);
 
 		cursorOnDevice = device.createEqualsValue(driver.getCursorDevice());
-		cursorOnDevice.addValueObserver(eq -> {
-			RemoteConsole.out.println("IAM Equal to cursor {}", eq);
-		});
 
 		for (int i = 0; i < 8; i++) {
 			parameterSlots.add(new ParameterPage(i, this));
@@ -264,6 +261,11 @@ public class EqDevice implements ControlDevice, DeviceManager {
 				enable.value().setImmediately(0);
 			}
 		}
+	}
+
+	@Override
+	public CursorRemoteControlsPage getRemote() {
+		return null;
 	}
 
 }
