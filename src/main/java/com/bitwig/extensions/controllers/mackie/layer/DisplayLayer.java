@@ -51,6 +51,16 @@ public class DisplayLayer extends Layer {
 			this.fullTextMode = fullTextMode;
 		}
 
+		public void enableFullTextMode(final LcdDisplay display, final boolean enable, final boolean doRefresh) {
+			if (enable == fullTextMode) {
+				return;
+			}
+			this.fullTextMode = enable;
+			if (doRefresh) {
+				refresh(display);
+			}
+		}
+
 		public void refresh(final LcdDisplay display) {
 			if (fullTextMode) {
 				display.centerText(rowIndex, fullText);
@@ -78,10 +88,13 @@ public class DisplayLayer extends Layer {
 			this.exist = exist;
 		}
 
-		public boolean isExist() {
-			return exist;
-		}
+	}
 
+	public void setCenteredText(final String row1, final String row2) {
+		topRow.setFullText(row1);
+		topRow.setCentered(true);
+		bottomRow.setFullText(row2);
+		bottomRow.setCentered(true);
 	}
 
 	public void setFullText(final int row, final String text, final boolean centered) {
@@ -169,6 +182,11 @@ public class DisplayLayer extends Layer {
 		if (isActive() && !bottomRow.isFullTextMode()) {
 			display.sendToRow(1, index, bottomRow.getCell(index).getDisplayValue());
 		}
+	}
+
+	public void enableFullTextMode(final boolean enabled) {
+		topRow.enableFullTextMode(display, enabled, isActive());
+		bottomRow.enableFullTextMode(display, enabled, isActive());
 	}
 
 	@Override

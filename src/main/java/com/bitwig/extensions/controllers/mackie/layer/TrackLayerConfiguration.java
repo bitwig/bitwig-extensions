@@ -100,4 +100,5 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		displayLayer.bindName(index, parameter.name());
 		displayLayer.bindParameterValue(index, parameter);
 	}
+
 }

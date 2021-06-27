@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.InsertionPoint;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.SendBank;
@@ -9,11 +10,11 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTracker;
+import com.bitwig.extensions.controllers.mackie.devices.Devices;
 import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.old.ChannelSection.SectionType;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
@@ -132,6 +133,20 @@ public class MixControl {
 	public void notifyModeAdvance() {
 		switch (driver.getVpotMode()) {
 		case EQ:
+			switch (driver.getVpotMode()) {
+			case EQ:
+				final boolean hasEq = driver.getEqDevice().exists().get();
+				if (!hasEq) {
+					final InsertionPoint ip = driver.getCursorTrack().endOfDeviceChainInsertionPoint();
+					ip.insertBitwigDevice(Devices.EQ_PLUS.getUuid());
+				}
+				break;
+			case PLUGIN:
+				break;
+			case INSTRUMENT:
+				break;
+			default:
+			}
 			break;
 		case PLUGIN:
 			break;
@@ -217,10 +232,25 @@ public class MixControl {
 				.setNavigateHorizontalHandler(direction -> navigateDeviceParameters(instrumentDevice, direction));
 		instrumentTrackConfiguration
 				.setNavigateVerticalHandler(direction -> navigateDevices(instrumentDevice, direction));
+		instrumentTrackConfiguration.getDisplayLayer(0).setCenteredText("no instrument on track",
+				"<< select instrument device from Browser >>");
 		pluginTrackConfiguration.setNavigateHorizontalHandler(direction -> navigateDevices(pluginDevice, direction));
 		pluginTrackConfiguration.setNavigateVerticalHandler(direction -> navigateDevices(pluginDevice, direction));
+		pluginTrackConfiguration.getDisplayLayer(0).setCenteredText("no audio fx on track",
+				"<< select device from Browser >>");
 
 		eqTrackConfiguration.setNavigateHorizontalHandler(eqDevice::navigateParameterBanks);
+		eqTrackConfiguration.getDisplayLayer(0).setCenteredText("no EQ+ device on track",
+				"<< press EQ button to insert EQ+ device >>");
+
+		pluginDevice.getDevice().exists()
+				.addValueObserver(exist -> pluginTrackConfiguration.getDisplayLayer(0).enableFullTextMode(!exist));
+
+		instrumentDevice.getDevice().exists()
+				.addValueObserver(exist -> instrumentTrackConfiguration.getDisplayLayer(0).enableFullTextMode(!exist));
+
+		eqDevice.getDevice().exists()
+				.addValueObserver(exist -> eqTrackConfiguration.getDisplayLayer(0).enableFullTextMode(!exist));
 
 		driver.getCursorDevice().deviceType().markInterested();
 //			driver.getCursorDevice().name().addValueObserver(name -> handleDeviceNameChanged(name));

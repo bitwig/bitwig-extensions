@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
-import com.bitwig.extensions.controllers.mackie.old.ChannelSection.SectionType;
+import com.bitwig.extensions.controllers.mackie.layer.SectionType;
 
 /**
  * Represents 2x56 LCD display on the MCU or an extender.
@@ -80,7 +80,7 @@ public class LcdDisplay {
 
 	private void resetGrids(final int row) {
 		for (int cell = 0; cell < lastSendGrids[row].length; cell++) {
-			lastSendGrids[row][cell] = "";
+			lastSendGrids[row][cell] = "\n";
 		}
 	}
 

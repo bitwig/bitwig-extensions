@@ -26,14 +26,13 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
-import com.bitwig.extensions.controllers.mackie.bindings.FullDisplayBinding;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTracker;
 import com.bitwig.extensions.controllers.mackie.devices.Devices;
 import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.layer.MixControl;
-import com.bitwig.extensions.controllers.mackie.old.ChannelSection.SectionType;
+import com.bitwig.extensions.controllers.mackie.layer.SectionType;
 import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.DisplayTextValue;
@@ -89,7 +88,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private LayoutType currentLayoutType;
 
 	private MixControl mainSection;
-	private final List<MixControl> sections = new ArrayList<MixControl>();
+	private final List<MixControl> sections = new ArrayList<>();
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -370,13 +369,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final DisplayTextValue dispText = new DisplayTextValue();
 		dispText.setLine(0, "HELLOO ");
 		dispText.setLine(1, "< ---- >");
-		final FullDisplayBinding displayBinding = new FullDisplayBinding(dispText, mainSection.getDisplay(), true);
-		final Layer xlayer = new Layer(getLayers(), "X_LAYER");
-		xlayer.addBinding(displayBinding);
+
 		mainLayer.bind(marker, (OnOffHardwareLight) markerButton.backgroundLight());
 		mainLayer.bindIsPressed(markerButton, v -> {
 			marker.set(v);
-			xlayer.setIsActive(v);
 		});
 
 		createOnOfBoolButton(NoteOnAssignment.GLOBAL_VIEW, globalViewActive);
