@@ -11,7 +11,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 
 public class VCastDefinition extends ControllerExtensionDefinition
 {
-   public static String[] VERSIONS = {"V1.03", "V1.04", "V1.05"};
+   public static String[] VERSIONS = {"V1.00", "V1.01", "V1.02", "V1.03", "V1.04", "V1.05", "V1.06", "V1.07"};
 
    @Override
    public String getName()
