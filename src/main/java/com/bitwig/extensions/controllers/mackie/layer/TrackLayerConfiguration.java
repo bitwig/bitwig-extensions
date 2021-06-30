@@ -75,17 +75,17 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		final Device device = deviceManager.getDevice();
 		if (remotes != null) {
 			if (!exists) {
-				displayLayer.setCenteredText(stdMissingTextLine1, stdMissingTextLine2);
+				displayLayer.setMainText(stdMissingTextLine1, stdMissingTextLine2, true);
 				displayLayer.enableFullTextMode(true);
 			} else if (count == 0) {
-				displayLayer.setCenteredText(device.name().get() + " has no Parameter Pages",
-						"<< configure Parameter Pages in Bitwig >>");
+				displayLayer.setMainText(device.name().get() + " has no Parameter Pages",
+						"<< configure Parameter Pages in Bitwig >>", true);
 				displayLayer.enableFullTextMode(true);
 			} else {
 				displayLayer.enableFullTextMode(false);
 			}
 		} else if (!exists) {
-			displayLayer.setCenteredText(stdMissingTextLine1, stdMissingTextLine2);
+			displayLayer.setMainText(stdMissingTextLine1, stdMissingTextLine2, true);
 			displayLayer.enableFullTextMode(true);
 		} else {
 			displayLayer.enableFullTextMode(false);
@@ -116,14 +116,6 @@ class TrackLayerConfiguration extends LayerConfiguration {
 			return this.mixControl.mainGroup.getEncoderLayer(ParamElement.VOLUME);
 		}
 		return encoderLayer;
-	}
-
-	@Override
-	public Layer getButtonLayer() {
-		if (mixControl.driver.getGlobalViewActive().get()) {
-			return mixControl.globalGroup.getMixerButtonLayer();
-		}
-		return mixControl.mainGroup.getMixerButtonLayer();
 	}
 
 	@Override

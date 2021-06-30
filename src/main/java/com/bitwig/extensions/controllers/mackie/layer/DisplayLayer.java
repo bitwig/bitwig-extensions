@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
+import com.bitwig.extension.controller.api.DoubleValue;
+import com.bitwig.extension.controller.api.ObjectProxy;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.mackie.bindings.ValueConverter;
@@ -61,7 +63,11 @@ public class DisplayLayer extends Layer {
 
 		public void refresh(final LcdDisplay display) {
 			if (fullTextMode) {
-				display.centerText(rowIndex, fullText);
+				if (centered) {
+					display.centerText(rowIndex, fullText);
+				} else {
+					display.sendToDisplay(rowIndex, fullText);
+				}
 			} else {
 				for (int i = 0; i < 8; i++) {
 					display.sendToRow(rowIndex, i, cells[i].getDisplayValue());
@@ -73,17 +79,22 @@ public class DisplayLayer extends Layer {
 	private static class DisplayCell {
 		private String lastValue = "";
 		private boolean exist = true;
+		private String emptyValue = "";
 
 		public DisplayCell() {
 			super();
 		}
 
 		public String getDisplayValue() {
-			return exist ? lastValue : "";
+			return exist ? lastValue : emptyValue;
 		}
 
 		public void setExist(final boolean exist) {
 			this.exist = exist;
+		}
+
+		public void setEmptyValue(final String emptyText) {
+			this.emptyValue = emptyText;
 		}
 
 	}
@@ -94,14 +105,26 @@ public class DisplayLayer extends Layer {
 		this.display = mixControl.getDisplay();
 	}
 
-	private void bindExists(final int index, final Parameter parameter) {
-		parameter.exists().addValueObserver(exist -> {
+	private void bindExists(final int index, final ObjectProxy existSource, final String emptyString) {
+		final DisplayCell cell = bottomRow.getCell(index);
+		cell.setEmptyValue(emptyString);
+		existSource.exists().addValueObserver(exist -> {
+			cell.setExist(exist);
+			if (isActive() && !bottomRow.isFullTextMode()) {
+				display.sendToRow(1, index, cell.getDisplayValue());
+			}
+		});
+		cell.setExist(existSource.exists().get());
+	}
+
+	private void bindExists(final int index, final ObjectProxy existSource) {
+		existSource.exists().addValueObserver(exist -> {
 			bottomRow.getCell(index).setExist(exist);
 			if (isActive() && !bottomRow.isFullTextMode()) {
 				display.sendToRow(1, index, bottomRow.getCell(index).getDisplayValue());
 			}
 		});
-		bottomRow.getCell(index).setExist(parameter.exists().get());
+		bottomRow.getCell(index).setExist(existSource.exists().get());
 	}
 
 	public void bindDisplayParameterValue(final int index, final Parameter parameter,
@@ -135,6 +158,39 @@ public class DisplayLayer extends Layer {
 		bottomRow.getCell(index).lastValue = parameter.displayedValue().get();
 	}
 
+	public void bindParameterValue(final int index, final DoubleValue value, final ObjectProxy existSource,
+			final String nonExistText, final ValueConverter converter) {
+		bindExists(index, existSource, nonExistText);
+		value.addValueObserver(v -> {
+			bottomRow.getCell(index).lastValue = converter.convert(v);
+			if (isActive() && !bottomRow.isFullTextMode()) {
+				display.sendToRow(1, index, bottomRow.getCell(index).getDisplayValue());
+			}
+		});
+		bottomRow.getCell(index).lastValue = converter.convert(value.get());
+
+	}
+
+	public void bindName(final int index, final StringValue name, final ObjectProxy sourceOfExistance,
+			final String emptyText) {
+		final DisplayCell cell = topRow.getCell(index);
+		cell.setEmptyValue(emptyText);
+		sourceOfExistance.exists().addValueObserver(exist -> {
+			cell.setExist(exist);
+			if (isActive() && !topRow.isFullTextMode()) {
+				display.sendToRow(0, index, cell.getDisplayValue());
+			}
+		});
+		cell.setExist(sourceOfExistance.exists().get());
+		name.addValueObserver(v -> {
+			cell.lastValue = v;
+			if (isActive() && !topRow.isFullTextMode()) {
+				display.sendToRow(0, index, cell.getDisplayValue());
+			}
+		});
+		cell.lastValue = name.get();
+	}
+
 	public void bindName(final int index, final StringValue name) {
 		name.addValueObserver(v -> {
 			topRow.getCell(index).lastValue = v;
@@ -165,11 +221,11 @@ public class DisplayLayer extends Layer {
 		}
 	}
 
-	public void setCenteredText(final String row1, final String row2) {
+	public void setMainText(final String row1, final String row2, final boolean centered) {
 		topRow.setFullText(row1);
-		topRow.setCentered(true);
+		topRow.setCentered(centered);
 		bottomRow.setFullText(row2);
-		bottomRow.setCentered(true);
+		bottomRow.setCentered(centered);
 	}
 
 	public void enableFullTextMode(final boolean enabled) {

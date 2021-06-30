@@ -9,6 +9,7 @@ import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.ObjectProxy;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
@@ -17,7 +18,8 @@ import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
-import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayExistsBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayParameterBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.TouchFaderBinding;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
@@ -236,9 +238,14 @@ public class MixerSectionHardware {
 		return new RelativeHardwareControlToRangedValueBinding(encoders[index], param);
 	}
 
-	public RingDisplayBinding createRingDisplayBinding(final int index, final Parameter param,
+	public RingDisplayParameterBinding createRingDisplayBinding(final int index, final Parameter param,
 			final RingDisplayType type) {
-		return new RingDisplayBinding(param, ringDisplays[index], type);
+		return new RingDisplayParameterBinding(param, ringDisplays[index], type);
+	}
+
+	public RingDisplayExistsBinding createRingDisplayBinding(final int index, final ObjectProxy object,
+			final RingDisplayType type) {
+		return new RingDisplayExistsBinding(object, ringDisplays[index], type);
 	}
 
 	HardwareActionBindable createAction(final Runnable action) {

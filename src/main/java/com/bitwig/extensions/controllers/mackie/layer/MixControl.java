@@ -151,6 +151,9 @@ public class MixControl implements LayerStateHandler {
 	}
 
 	public void notifyModeAdvance(final boolean pressed) {
+		if (!pressed) {
+			return;
+		}
 		switch (driver.getVpotMode()) {
 		case EQ:
 			switch (driver.getVpotMode()) {
@@ -214,6 +217,11 @@ public class MixControl implements LayerStateHandler {
 		currentState.updateState(this);
 	}
 
+	public void setConfiguration(final LayerConfiguration config) {
+		currentConfiguration = config;
+		currentState.updateState(this);
+	}
+
 	public void notifyBlink() {
 		launchButtonLayer.notifyBlink();
 	}
@@ -235,6 +243,10 @@ public class MixControl implements LayerStateHandler {
 		} else if (touchCount == 0 && fadersTouched.get()) {
 			fadersTouched.set(false);
 		}
+	}
+
+	public LayerConfiguration getCurrentConfiguration() {
+		return currentConfiguration;
 	}
 
 	public void fullHardwareUpdate() {

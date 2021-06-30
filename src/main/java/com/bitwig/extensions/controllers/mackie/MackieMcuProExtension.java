@@ -9,7 +9,11 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.Arranger;
+import com.bitwig.extension.controller.api.BeatTimeFormatter;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.CueMarker;
+import com.bitwig.extension.controller.api.CueMarkerBank;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
@@ -31,12 +35,13 @@ import com.bitwig.extensions.controllers.mackie.devices.Devices;
 import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
+import com.bitwig.extensions.controllers.mackie.layer.LayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.layer.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.layer.MixControl;
 import com.bitwig.extensions.controllers.mackie.layer.SectionType;
 import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
 import com.bitwig.extensions.controllers.mackie.value.BitWigColor;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
-import com.bitwig.extensions.controllers.mackie.value.DisplayTextValue;
 import com.bitwig.extensions.controllers.mackie.value.LayoutType;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
@@ -81,7 +86,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private DelayAction delayedAction = null; // TODO this needs to be a queue
 	private PinnableCursorDevice cursorDevice;
 
-	private final HoldDownAction holdAction = new HoldDownAction();
+	private final HoldMenuButtonState holdAction = new HoldMenuButtonState();
 	private final int[] lightStatusMap = new int[127];
 
 	private EqDevice eqDevice;
@@ -93,6 +98,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private final List<MixControl> sections = new ArrayList<>();
 	private boolean insertActionSet = false;
 	private int colorCount = 1;
+
+	private final HoldCapture holdState = new HoldCapture();
+	private Arranger arranger;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -106,6 +114,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		surface = host.createHardwareSurface();
 		transport = host.createTransport();
 		application = host.createApplication();
+		arranger = host.createArranger();
 		project = host.getProject();
 		layers = new Layers(this);
 		mainLayer = new Layer(layers, "MainLayer");
@@ -128,7 +137,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 		initTrackBank(4);
 		initModifiers();
 
-		initFunctionSection();
 		initCursorSection();
 
 		midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) msg -> onMidi0(msg));
@@ -141,6 +149,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 		ledDisplay.setAssignment("PN", false);
 		ledDisplay.refreschMode();
 		host.scheduleTask(this::handlePing, 100);
+//		final Action[] as = application.getActions();
+//		for (final Action action : as) {
+//			RemoteConsole.out.println("ACTION > [{}]", action.getId());
+//		}
 	}
 
 	public void initChannelSections() {
@@ -372,39 +384,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 		}
 	}
 
-	private void initFunctionSection() {
-		final HardwareButton markerButton = createButton(NoteOnAssignment.MARKER);
-		final BooleanValueObject marker = new BooleanValueObject();
-		final DisplayTextValue dispText = new DisplayTextValue();
-		dispText.setLine(0, "HELLOO ");
-		dispText.setLine(1, "< ---- >");
-
-		mainLayer.bind(marker, (OnOffHardwareLight) markerButton.backgroundLight());
-		mainLayer.bindIsPressed(markerButton, v -> {
-			marker.set(v);
-		});
-
-		createOnOfBoolButton(NoteOnAssignment.GLOBAL_VIEW, globalViewActive);
-		createOnOfBoolButton(NoteOnAssignment.GROUP, groupViewActive);
-
-		final HardwareButton f1Button = createPressButton(NoteOnAssignment.F1);
-		mainLayer.bindIsPressed(f1Button, v -> {
-			if (v) {
-				transport.returnToArrangement();
-			}
-		});
-
-		final HardwareButton f2Button = createPressButton(NoteOnAssignment.F2);
-		mainLayer.bindIsPressed(f2Button, v -> {
-			if (v) {
-				application.setPanelLayout(currentLayoutType.other().getName());
-			}
-		});
-		application.panelLayout().addValueObserver(v -> {
-			currentLayoutType = LayoutType.toType(v);
-		});
-	}
-
 	private void initModifiers() {
 		final HardwareButton shiftButton = createPressButton(NoteOnAssignment.SHIFT);
 		shiftButton.isPressed().addValueObserver(v -> {
@@ -508,7 +487,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 		transport.timeSignature().addValueObserver(sig -> {
 			ledDisplay.setDivision(sig);
 		});
-		transport.playPosition().addValueObserver(ledDisplay::updatePosition);
+
+		transport.playPosition()
+				.addValueObserver(v -> ledDisplay.updatePosition(v, transport.playPosition().getFormatted()));
 		transport.playPositionInSeconds().addValueObserver(ledDisplay::updateTime);
 
 		createOnOfBoolButton(NoteOnAssignment.FLIP, flipped);
@@ -716,10 +697,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 		globalTrackBank.canScrollChannelsDown().markInterested();
 		globalTrackBank.canScrollChannelsUp().markInterested();
 
-//		final TrackBank sendTrackBank = host.createEffectTrackBank(8 * sections.size(), nrOfScenes);
-//		sendTrackBank.canScrollChannelsDown().markInterested();
-//		sendTrackBank.canScrollChannelsUp().markInterested();
-
 		final DeviceMatcher eq5Matcher = host.createBitwigDeviceMatcher(Devices.EQ_PLUS.getUuid());
 		eqDevice = new EqDevice(this, eq5Matcher);
 
@@ -733,6 +710,84 @@ public class MackieMcuProExtension extends ControllerExtension {
 			channelSection.initMainControl(mixerTrackBank, globalTrackBank);
 		}
 		mainSection.initTrackControl(cursorTrack, instrumentDevice, pluginDevice, eqDevice);
+		initMenuButtons();
+	}
+
+	private void initMenuButtons() {
+		final HardwareButton markerButton = createButton(NoteOnAssignment.MARKER);
+		final BooleanValueObject marker = new BooleanValueObject();
+
+		final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
+
+		final MenuModeLayerConfiguration markerMenuConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
+		final CueMarkerBank cueMarkerBank = arranger.createCueMarkerBank(8);
+		for (int i = 0; i < 8; i++) {
+			final CueMarker cueMarker = cueMarkerBank.getItemAt(i);
+			cueMarker.exists().markInterested();
+			markerMenuConfig.addValueBinding(i, cueMarker.position(), cueMarker, "---", v -> {
+				return cueMarker.position().getFormatted(formatter);
+			});
+			markerMenuConfig.addNameBinding(i, cueMarker.getName(), cueMarker, "<Cue" + (i + 1) + ">");
+			markerMenuConfig.addRingExistsBinding(i, cueMarker);
+			markerMenuConfig.addPressEncoderBinding(i, index -> {
+				if (cueMarker.exists().get()) {
+					cueMarker.position().set(transport.getPosition().get());
+				}
+			});
+			markerMenuConfig.addEncoderIncBinding(i, cueMarker.position(), 1);
+		}
+
+		mainLayer.bind(marker, (OnOffHardwareLight) markerButton.backgroundLight());
+		mainLayer.bindPressed(markerButton, () -> {
+			holdState.enter(mainSection.getCurrentConfiguration(), markerButton.getName());
+			mainSection.setConfiguration(markerMenuConfig);
+		});
+		mainLayer.bindReleased(markerButton, () -> {
+			final LayerConfiguration layer = holdState.endHold();
+			if (layer != null) {
+				mainSection.setConfiguration(layer);
+			}
+			if (holdState.exit()) {
+				marker.toggle();
+			}
+		});
+
+		createOnOfBoolButton(NoteOnAssignment.GLOBAL_VIEW, globalViewActive);
+		createOnOfBoolButton(NoteOnAssignment.GROUP, groupViewActive);
+
+		initFButton(0, NoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
+		initFButton(1, NoteOnAssignment.F2, marker, cueMarkerBank,
+				() -> application.setPanelLayout(currentLayoutType.other().getName()));
+		initFButton(2, NoteOnAssignment.F3, marker, cueMarkerBank, () -> {
+		});
+		initFButton(3, NoteOnAssignment.F4, marker, cueMarkerBank, () -> {
+		});
+		initFButton(4, NoteOnAssignment.F5, marker, cueMarkerBank, () -> {
+		});
+		initFButton(5, NoteOnAssignment.F6, marker, cueMarkerBank, () -> {
+		});
+		initFButton(6, NoteOnAssignment.F7, marker, cueMarkerBank, () -> {
+		});
+		initFButton(7, NoteOnAssignment.F8, marker, cueMarkerBank, () -> {
+		});
+
+		application.panelLayout().addValueObserver(v -> {
+			currentLayoutType = LayoutType.toType(v);
+		});
+	}
+
+	public void initFButton(final int index, final NoteOnAssignment assign, final BooleanValueObject marker,
+			final CueMarkerBank cueMarkerBank, final Runnable nonMarkerFunction) {
+		final HardwareButton fButton = createPressButton(assign);
+		mainLayer.bindIsPressed(fButton, v -> {
+			if (v) {
+				if (marker.get()) {
+					cueMarkerBank.getItemAt(index).launch(modifier.isShift());
+				} else {
+					nonMarkerFunction.run();
+				}
+			}
+		});
 	}
 
 	public BooleanValueObject getGlobalViewActive() {

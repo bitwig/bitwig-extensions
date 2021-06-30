@@ -8,7 +8,7 @@ import java.util.function.IntConsumer;
  * the behavior can change over time.
  *
  */
-public class HoldDownAction {
+public class HoldMenuButtonState {
 	private long startTime = 0;
 	private IntConsumer executor = null;
 	private long[] times;
