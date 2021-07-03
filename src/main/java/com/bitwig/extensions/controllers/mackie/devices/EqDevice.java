@@ -47,6 +47,8 @@ public class EqDevice implements ControlDevice, DeviceManager {
 	private final int[] enableValues = new int[8];
 	private final List<Parameter> enableParams = new ArrayList<>();
 	private final BooleanValue cursorOnDevice;
+	private DeviceBank overallBank;
+	private int bankIndex = 0;
 
 	public EqDevice(final MackieMcuProExtension driver, final DeviceMatcher matcher) {
 		bitwigDevice = driver.getCursorDevice().createSpecificBitwigDevice(Devices.EQ_PLUS.getUuid());
@@ -74,12 +76,34 @@ public class EqDevice implements ControlDevice, DeviceManager {
 				notifyEnablementFromEnable(page, index, typeParam, v);
 			});
 		}
+
+		initBankTracking(driver);
 // final Just code to final list all parameters final of device
 //		device.addDirectParameterIdObserver(allp -> {
 //			for (final String pname : allp) {
 //				RemoteConsole.out.println("[{}]", pname);
 //			}
 //		});
+	}
+
+	private void initBankTracking(final MackieMcuProExtension driver) {
+		overallBank = driver.getCursorTrack().createDeviceBank(8);
+		overallBank.canScrollBackwards().markInterested();
+		overallBank.canScrollForwards().markInterested();
+		for (int i = 0; i < overallBank.getSizeOfBank(); i++) {
+			final int which = i;
+			final BooleanValue evo = overallBank.getItemAt(which).createEqualsValue(device);
+			evo.addValueObserver(v -> {
+				if (v) {
+					if (which == 0 && overallBank.canScrollBackwards().get()) {
+						overallBank.scrollBackwards();
+					} else if (which == overallBank.getSizeOfBank() - 1 && overallBank.canScrollForwards().get()) {
+						overallBank.scrollForwards();
+					}
+					bankIndex = which;
+				}
+			});
+		}
 	}
 
 	private void notifyEnablementFromEnable(final int page, final int bandIndexOffset, final Parameter typeParam,
@@ -268,4 +292,30 @@ public class EqDevice implements ControlDevice, DeviceManager {
 		return null;
 	}
 
+	@Override
+	public boolean isCanTrackMultiple() {
+		return true;
+	}
+
+	@Override
+	public void moveDeviceToLeft() {
+		if (overallBank == null) {
+			return;
+		}
+		if (bankIndex > 0) {
+			final Device nextDevice = overallBank.getItemAt(bankIndex - 1);
+			nextDevice.beforeDeviceInsertionPoint().moveDevices(device);
+		}
+	}
+
+	@Override
+	public void moveDeviceToRight() {
+		if (overallBank == null) {
+			return;
+		}
+		if (bankIndex < overallBank.getSizeOfBank() - 1) {
+			final Device nextDevice = overallBank.getItemAt(bankIndex + 1);
+			nextDevice.afterDeviceInsertionPoint().moveDevices(device);
+		}
+	}
 }

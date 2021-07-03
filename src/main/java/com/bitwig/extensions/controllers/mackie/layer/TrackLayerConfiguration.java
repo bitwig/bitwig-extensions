@@ -20,6 +20,8 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	private DeviceManager deviceManager;
 	private String stdMissingTextLine1;
 	private String stdMissingTextLine2;
+	private final MenuModeLayerConfiguration menuControl;
+	private final int locationInGlobal = 0;
 
 	public TrackLayerConfiguration(final String name, final MixControl mixControl) {
 		super(name, mixControl);
@@ -28,6 +30,8 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		faderLayer = new Layer(layers, name + "_FADER_LAYER_" + sectionIndex);
 		encoderLayer = new Layer(layers, name + "_ENCODER_LAYER_" + sectionIndex);
 		displayLayer = new DisplayLayer(name, this.mixControl);
+		menuControl = new MenuModeLayerConfiguration(name + "_MENU_" + sectionIndex, mixControl);
+		menuControl.getDisplayLayer(0).displayFullTextMode(true);
 	}
 
 	@Override
@@ -43,7 +47,8 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		this.stdMissingTextLine1 = line1;
 		this.stdMissingTextLine2 = line2;
 		if (deviceManager != null) {
-			deviceManager.getDevice().exists().addValueObserver(exist -> evaluateTextDisplay(getPagesCount(), exist));
+			deviceManager.getDevice().exists().addValueObserver(
+					exist -> evaluateTextDisplay(getPagesCount(), exist, deviceManager.getDevice().name().get()));
 		}
 	}
 
@@ -51,13 +56,39 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		this.deviceManager = deviceManager;
 		this.deviceManager.getCursorOnDevice().markInterested();
 		final CursorRemoteControlsPage remotes = deviceManager.getRemote();
+		final Device device = deviceManager.getDevice();
+		device.name().markInterested();
 		if (remotes != null) {
 			remotes.pageCount()
-					.addValueObserver(count -> evaluateTextDisplay(count, deviceManager.getDevice().exists().get()));
+					.addValueObserver(count -> evaluateTextDisplay(count, device.exists().get(), device.name().get()));
 		}
-		deviceManager.getDevice().name().addValueObserver(name -> {
-			evaluateTextDisplay(getPagesCount(), deviceManager.getDevice().exists().get());
+		device.name().addValueObserver(name -> {
+			evaluateTextDisplay(getPagesCount(), device.exists().get(), name);
 		});
+
+		final DisplayLayer menuDisplayLayer = menuControl.getDisplayLayer(0);
+		menuDisplayLayer.bindBool(0, device.isEnabled(), "ACTIVE", "<OFF>", device, "-no dev-");
+		menuControl.addPressEncoderBinding(0, encIndex -> {
+			device.isEnabled().toggle();
+		});
+
+		if (deviceManager.isCanTrackMultiple()) {
+			menuDisplayLayer.bindFixed(1, "<Move");
+			menuDisplayLayer.bindFixed(2, "Move>");
+			menuControl.addPressEncoderBinding(1, encIndex -> {
+				deviceManager.moveDeviceToLeft();
+			});
+			menuControl.addPressEncoderBinding(2, encIndex -> {
+				deviceManager.moveDeviceToRight();
+			});
+		}
+
+		for (int i = 1; i < 8; i++) {
+			menuControl.addRingFixedBinding(i);
+		}
+
+		menuDisplayLayer.bindFixed(7, "Browse");
+		menuControl.addRingBoolBinding(0, device.isEnabled());
 	}
 
 	private int getPagesCount() {
@@ -67,10 +98,13 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		return deviceManager.getRemote().pageCount().get();
 	}
 
-	private void evaluateTextDisplay(final int count, final boolean exists) {
+	private void evaluateTextDisplay(final int count, final boolean exists, final String deviceName) {
 		if (deviceManager == null) {
 			return;
 		}
+		final DisplayLayer menuLayer = menuControl.getDisplayLayer(0);
+		menuLayer.setText(0, "Device: " + deviceManager.getDevice().name().get(), false);
+		menuLayer.enableFullTextMode(0, true);
 		final CursorRemoteControlsPage remotes = deviceManager.getRemote();
 		final Device device = deviceManager.getDevice();
 		if (remotes != null) {
@@ -107,6 +141,9 @@ class TrackLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public Layer getEncoderLayer() {
+		if (mixControl.getIsMenuHoldActive().get()) {
+			return menuControl.getEncoderLayer();
+		}
 		final boolean flipped = this.mixControl.driver.getFlipped().get();
 		final boolean isMixerGlobal = this.mixControl.driver.getGlobalViewActive().get();
 		if (flipped) {
@@ -120,6 +157,9 @@ class TrackLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public DisplayLayer getDisplayLayer(final int which) {
+		if (mixControl.getIsMenuHoldActive().get()) {
+			return menuControl.getDisplayLayer(0);
+		}
 		if (which == 0) {
 			return displayLayer;
 		}

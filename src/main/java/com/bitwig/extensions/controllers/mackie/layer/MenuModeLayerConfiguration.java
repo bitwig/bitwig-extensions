@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.mackie.layer;
 
 import java.util.function.IntConsumer;
 
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.DoubleValue;
 import com.bitwig.extension.controller.api.ObjectProxy;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
@@ -15,7 +16,6 @@ import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.RelativeHardwareControlBinding;
 
 public class MenuModeLayerConfiguration extends LayerConfiguration {
-	private final Layer faderLayer;
 	private final Layer encoderLayer;
 	private final DisplayLayer displayLayer;
 
@@ -23,13 +23,12 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
 		super(name, mixControl);
 		final Layers layers = this.mixControl.getDriver().getLayers();
 		final int sectionIndex = mixControl.getHwControls().getSectionIndex();
-		faderLayer = new Layer(layers, name + "_FADER_LAYER_" + sectionIndex);
 		encoderLayer = new Layer(layers, name + "_ENCODER_LAYER_" + sectionIndex);
 		displayLayer = new DisplayLayer(name, this.mixControl);
 	}
 
 	public boolean isActive() {
-		return encoderLayer.isActive() || faderLayer.isActive();
+		return encoderLayer.isActive();
 	}
 
 	@Override
@@ -61,6 +60,16 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
 
 		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(index),
 				hwControls.createAction(() -> pressaction.accept(index))));
+	}
+
+	public void addRingBoolBinding(final int index, final BooleanValue value) {
+		final MixerSectionHardware hwControls = mixControl.getHwControls();
+		encoderLayer.addBinding(hwControls.createRingDisplayBinding(index, value, RingDisplayType.FILL_LR_0));
+	}
+
+	public void addRingFixedBinding(final int index) {
+		final MixerSectionHardware hwControls = mixControl.getHwControls();
+		encoderLayer.addBinding(hwControls.createRingDisplayBinding(index, 0, RingDisplayType.FILL_LR_0));
 	}
 
 	public void addRingExistsBinding(final int index, final ObjectProxy existSource) {

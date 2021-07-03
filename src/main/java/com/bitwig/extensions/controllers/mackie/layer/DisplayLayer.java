@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.mackie.layer;
 import com.bitwig.extension.controller.api.DoubleValue;
 import com.bitwig.extension.controller.api.ObjectProxy;
 import com.bitwig.extension.controller.api.Parameter;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.mackie.bindings.ValueConverter;
 import com.bitwig.extensions.controllers.mackie.bindings.ValueStringConverter;
@@ -14,7 +15,6 @@ public class DisplayLayer extends Layer {
 	private final LcdDisplay display;
 	private final DisplayRow topRow = new DisplayRow(0);
 	private final DisplayRow bottomRow = new DisplayRow(1);
-	private boolean inFullTextMode = false;
 
 	static class DisplayRow {
 		int rowIndex = 0;
@@ -103,6 +103,22 @@ public class DisplayLayer extends Layer {
 		super(mixControl.getDriver().getLayers(),
 				name + "_" + mixControl.getHwControls().getSectionIndex() + "_Display");
 		this.display = mixControl.getDisplay();
+	}
+
+	public void bindFixed(final int index, final String value) {
+		bottomRow.getCell(index).lastValue = value;
+	}
+
+	public void bindBool(final int index, final SettableBooleanValue value, final String trueString,
+			final String falseString, final ObjectProxy existSource, final String emptyString) {
+		bindExists(index, existSource, emptyString);
+		value.addValueObserver(newValue -> {
+			bottomRow.getCell(index).lastValue = newValue ? trueString : falseString;
+			if (isActive() && !bottomRow.isFullTextMode()) {
+				display.sendToRow(1, index, bottomRow.getCell(index).getDisplayValue());
+			}
+		});
+		bottomRow.getCell(index).lastValue = value.get() ? trueString : falseString;
 	}
 
 	private void bindExists(final int index, final ObjectProxy existSource, final String emptyString) {
@@ -221,6 +237,25 @@ public class DisplayLayer extends Layer {
 		}
 	}
 
+	public void setText(final int row, final String value, final boolean centered) {
+		final DisplayRow which = row == 0 ? topRow : bottomRow;
+		which.setFullText(value);
+		which.setCentered(centered);
+	}
+
+	public void displayFullTextMode(final boolean enabled) {
+		if (isActive()) {
+			display.setFullTextMode(0, topRow.fullTextMode);
+			display.setFullTextMode(1, bottomRow.fullTextMode);
+		}
+	}
+
+	public void enableFullTextMode(final int row, final boolean enabled) {
+		final DisplayRow which = row == 0 ? topRow : bottomRow;
+		final boolean active = isActive();
+		which.enableFullTextMode(display, enabled, active);
+	}
+
 	public void setMainText(final String row1, final String row2, final boolean centered) {
 		topRow.setFullText(row1);
 		topRow.setCentered(centered);
@@ -232,16 +267,17 @@ public class DisplayLayer extends Layer {
 		final boolean active = isActive();
 		topRow.enableFullTextMode(display, enabled, active);
 		bottomRow.enableFullTextMode(display, enabled, active);
-		inFullTextMode = enabled;
 		if (active) {
-			display.setFullTextMode(enabled);
+			display.setFullTextMode(0, topRow.fullTextMode);
+			display.setFullTextMode(1, bottomRow.fullTextMode);
 		}
 	}
 
 	@Override
 	protected void onActivate() {
 		super.onActivate();
-		display.setFullTextMode(inFullTextMode);
+		display.setFullTextMode(0, topRow.fullTextMode);
+		display.setFullTextMode(1, bottomRow.fullTextMode);
 		topRow.refresh(display);
 		bottomRow.refresh(display);
 	}

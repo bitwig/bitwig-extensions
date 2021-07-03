@@ -4,6 +4,7 @@ import java.util.function.BooleanSupplier;
 
 import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -18,7 +19,9 @@ import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayBoolBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayExistsBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayFixedBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayParameterBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.TouchFaderBinding;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
@@ -241,6 +244,16 @@ public class MixerSectionHardware {
 	public RingDisplayParameterBinding createRingDisplayBinding(final int index, final Parameter param,
 			final RingDisplayType type) {
 		return new RingDisplayParameterBinding(param, ringDisplays[index], type);
+	}
+
+	public RingDisplayBoolBinding createRingDisplayBinding(final int index, final BooleanValue value,
+			final RingDisplayType type) {
+		return new RingDisplayBoolBinding(value, ringDisplays[index], type);
+	}
+
+	public RingDisplayFixedBinding createRingDisplayBinding(final int index, final Integer value,
+			final RingDisplayType type) {
+		return new RingDisplayFixedBinding(value, ringDisplays[index], type);
 	}
 
 	public RingDisplayExistsBinding createRingDisplayBinding(final int index, final ObjectProxy object,

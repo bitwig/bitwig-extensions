@@ -40,7 +40,6 @@ import com.bitwig.extensions.controllers.mackie.layer.MenuModeLayerConfiguration
 import com.bitwig.extensions.controllers.mackie.layer.MixControl;
 import com.bitwig.extensions.controllers.mackie.layer.SectionType;
 import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
-import com.bitwig.extensions.controllers.mackie.value.BitWigColor;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.LayoutType;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
@@ -96,8 +95,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	private MixControl mainSection;
 	private final List<MixControl> sections = new ArrayList<>();
-	private boolean insertActionSet = false;
-	private int colorCount = 1;
 
 	private final HoldCapture holdState = new HoldCapture();
 	private Arranger arranger;
@@ -187,10 +184,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	public void scheduleAction(final String actionId, final int duration, final Runnable action) {
 		delayedAction = new DelayAction(duration, actionId, action);
-	}
-
-	public void notifyInsert() {
-		insertActionSet = true;
 	}
 
 	private void handlePing() {
@@ -288,58 +281,29 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	private void initCursorSection() {
 		final HardwareButton trackLeftButton = createPressButton(NoteOnAssignment.TRACK_LEFT);
-		mainLayer.bindIsPressed(trackLeftButton, v -> {
-			if (v) {
-				navigateTrack(-1);
-			}
-		});
+		mainLayer.bindIsPressed(trackLeftButton, v -> navigateTrack(-1, v));
 		final HardwareButton trackRightButton = createPressButton(NoteOnAssignment.TRACK_RIGHT);
-		mainLayer.bindIsPressed(trackRightButton, v -> {
-			if (v) {
-				navigateTrack(1);
-			}
-		});
+		mainLayer.bindIsPressed(trackRightButton, v -> navigateTrack(1, v));
 		final HardwareButton bankRightButton = createPressButton(NoteOnAssignment.BANK_RIGH);
-		mainLayer.bindIsPressed(bankRightButton, v -> {
-			if (v) {
-				navigateBank(1);
-			}
-		});
+		mainLayer.bindIsPressed(bankRightButton, v -> navigateBank(1, v));
 		final HardwareButton bankLeftButton = createPressButton(NoteOnAssignment.BANK_LEFT);
-		mainLayer.bindIsPressed(bankLeftButton, v -> {
-			if (v) {
-				navigateBank(-1);
-			}
-		});
+		mainLayer.bindIsPressed(bankLeftButton, v -> navigateBank(-1, v));
 		final HardwareButton upButton = createPressButton(NoteOnAssignment.CURSOR_UP);
-		mainLayer.bindIsPressed(upButton, v -> {
-			if (v) {
-				navigateUpDown(1);
-			}
-		});
+		mainLayer.bindIsPressed(upButton, v -> navigateUpDown(1, v));
 		final HardwareButton downButton = createPressButton(NoteOnAssignment.CURSOR_DOWN);
-		mainLayer.bindIsPressed(downButton, v -> {
-			if (v) {
-				navigateUpDown(-1);
-			}
-		});
+		mainLayer.bindIsPressed(downButton, v -> navigateUpDown(-1, v));
 		final HardwareButton leftButton = createPressButton(NoteOnAssignment.CURSOR_LEFT);
-		mainLayer.bindIsPressed(leftButton, v -> {
-			if (v) {
-				navigateLeftRight(-1);
-			}
-		});
+		mainLayer.bindIsPressed(leftButton, v -> navigateLeftRight(-1, v));
 		final HardwareButton rightButton = createPressButton(NoteOnAssignment.CURSOR_RIGHT);
-		mainLayer.bindIsPressed(rightButton, v -> {
-			if (v) {
-				navigateLeftRight(1);
-			}
-		});
+		mainLayer.bindIsPressed(rightButton, v -> navigateLeftRight(1, v));
 		createOnOfBoolButton(NoteOnAssignment.ZOOM, zoomActive);
 		createOnOfBoolButton(NoteOnAssignment.SCRUB, scrubActive);
 	}
 
-	private void navigateTrack(final int direction) {
+	private void navigateTrack(final int direction, final boolean isPressed) {
+		if (!isPressed) {
+			return;
+		}
 		if (direction > 0) {
 			mixerTrackBank.scrollForwards();
 		} else {
@@ -347,14 +311,20 @@ public class MackieMcuProExtension extends ControllerExtension {
 		}
 	}
 
-	private void navigateBank(final int direction) {
+	private void navigateBank(final int direction, final boolean isPressed) {
+		if (!isPressed) {
+			return;
+		}
 		mixerTrackBank.scrollBy(direction * 8 * sections.size());
 	}
 
-	private void navigateUpDown(final int direction) {
+	private void navigateUpDown(final int direction, final boolean isPressed) {
 		if (!zoomActive.get()) {
-			sections.forEach(section -> section.navigateUpDown(direction));
+			sections.forEach(section -> section.navigateUpDown(direction, isPressed));
 		} else {
+			if (!isPressed) {
+				return;
+			}
 			if (direction > 0) {
 				application.focusPanelAbove();
 			} else {
@@ -363,10 +333,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 		}
 	}
 
-	private void navigateLeftRight(final int direction) {
+	private void navigateLeftRight(final int direction, final boolean isPressed) {
 		if (!zoomActive.get()) {
-			sections.forEach(section -> section.navigateLeftRight(direction));
+			sections.forEach(section -> section.navigateLeftRight(direction, isPressed));
 		} else {
+			if (!isPressed) {
+				return;
+			}
 			if (modifier.isShiftSet()) {
 				if (direction < 0) {
 					application.zoomOut();
@@ -667,16 +640,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		cursorTrack = getHost().createCursorTrack(8, nrOfScenes);
 		cursorTrack.color().markInterested();
-		cursorTrack.name().addValueObserver(track -> {
-			if (insertActionSet) {
-				BitWigColor.values()[colorCount].set(cursorTrack.color());
-				colorCount++;
-				if (colorCount >= BitWigColor.values().length - 2) {
-					colorCount = 1;
-				}
-				insertActionSet = false;
-			}
-		});
 
 		final HardwareButton soloButton = createButtonWState(NoteOnAssignment.SOLO, cursorTrack.solo(), false);
 		mainLayer.bindPressed(soloButton, cursorTrack.solo().toggleAction());
@@ -703,8 +666,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final DeviceMatcher notEq = host.createNotDeviceMatcher(eq5Matcher);
 		final DeviceMatcher combinedMatcher = host.createAndDeviceMatcher(notEq, host.createAudioEffectMatcher());
 
-		instrumentDevice = new DeviceTracker(this, host.createInstrumentMatcher());
-		pluginDevice = new DeviceTracker(this, combinedMatcher);
+		instrumentDevice = new DeviceTracker(this, host.createInstrumentMatcher(), false);
+		pluginDevice = new DeviceTracker(this, combinedMatcher, true);
 
 		for (final MixControl channelSection : sections) {
 			channelSection.initMainControl(mixerTrackBank, globalTrackBank);

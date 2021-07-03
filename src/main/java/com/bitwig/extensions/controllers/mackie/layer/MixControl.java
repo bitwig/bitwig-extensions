@@ -44,6 +44,7 @@ public class MixControl implements LayerStateHandler {
 	private int touchCount = 0;
 	private final SectionType type;
 	private final ClipLaunchButtonLayer launchButtonLayer;
+	private final BooleanValueObject isMenuHoldActive = new BooleanValueObject();
 
 	public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
 			final int sectionIndex, final SectionType type) {
@@ -110,6 +111,10 @@ public class MixControl implements LayerStateHandler {
 		return currentConfiguration.getDisplayLayer(displayer);
 	}
 
+	public BooleanValueObject getIsMenuHoldActive() {
+		return isMenuHoldActive;
+	}
+
 	MixerSectionHardware getHwControls() {
 		return hwControls;
 	}
@@ -142,26 +147,48 @@ public class MixControl implements LayerStateHandler {
 		return driver;
 	}
 
-	public void navigateLeftRight(final int direction) {
-		currentConfiguration.navigateHorizontal(direction);
+	public void navigateLeftRight(final int direction, final boolean isPressed) {
+		if (!isPressed) { // TODO we want to use this to show information in the current mode
+			return;
+		}
+		if (launchButtonLayer.isActive()) {
+			launchButtonLayer.navigateHorizontal(direction);
+		} else {
+			currentConfiguration.navigateHorizontal(direction);
+		}
 	}
 
-	public void navigateUpDown(final int direction) {
-		currentConfiguration.navigateVertical(direction);
+	public void navigateUpDown(final int direction, final boolean isPressed) {
+		if (!isPressed) { // TODO we want to use this to show information in the current mode
+			return;
+		}
+		if (launchButtonLayer.isActive()) {
+			launchButtonLayer.navigateVertical(direction);
+		} else {
+			currentConfiguration.navigateVertical(direction);
+		}
 	}
 
 	public void notifyModeAdvance(final boolean pressed) {
 		if (!pressed) {
-			return;
-		}
-		switch (driver.getVpotMode()) {
-		case EQ:
+			isMenuHoldActive.set(false);
+		} else {
+			isMenuHoldActive.set(true);
 			switch (driver.getVpotMode()) {
 			case EQ:
-				final boolean hasEq = driver.getEqDevice().exists().get();
-				if (!hasEq) {
-					final InsertionPoint ip = driver.getCursorTrack().endOfDeviceChainInsertionPoint();
-					ip.insertBitwigDevice(Devices.EQ_PLUS.getUuid());
+				switch (driver.getVpotMode()) {
+				case EQ:
+					final boolean hasEq = driver.getEqDevice().exists().get();
+					if (!hasEq) {
+						final InsertionPoint ip = driver.getCursorTrack().endOfDeviceChainInsertionPoint();
+						ip.insertBitwigDevice(Devices.EQ_PLUS.getUuid());
+					}
+					break;
+				case PLUGIN:
+					break;
+				case INSTRUMENT:
+					break;
+				default:
 				}
 				break;
 			case PLUGIN:
@@ -170,18 +197,15 @@ public class MixControl implements LayerStateHandler {
 				break;
 			default:
 			}
-			break;
-		case PLUGIN:
-			break;
-		case INSTRUMENT:
-			break;
-		default:
 		}
+		currentState.updateState(this);
 	}
 
 	public void notifyModeChange(final VPotMode mode, final boolean down) {
 		if (down) {
 			doModeChange(mode);
+		} else {
+			currentState.updateState(this);
 		}
 	}
 
@@ -352,13 +376,10 @@ public class MixControl implements LayerStateHandler {
 			}
 		} else {
 			if (driver.getModifier().isShift()) {
-				driver.notifyInsert();
 				driver.getApplication().createAudioTrack(-1);
 			} else if (driver.getModifier().isSet(ModifierValueObject.ALT)) {
-				driver.notifyInsert();
 				driver.getApplication().createEffectTrack(-1);
 			} else {
-				driver.notifyInsert();
 				driver.getApplication().createInstrumentTrack(-1);
 			}
 		}

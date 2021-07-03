@@ -11,4 +11,10 @@ public interface DeviceManager {
 	Device getDevice();
 
 	CursorRemoteControlsPage getRemote();
+
+	boolean isCanTrackMultiple();
+
+	void moveDeviceToLeft();
+
+	void moveDeviceToRight();
 }

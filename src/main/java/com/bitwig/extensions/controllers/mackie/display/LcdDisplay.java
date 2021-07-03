@@ -31,10 +31,9 @@ public class LcdDisplay {
 	private final String[][] lastSendGrids = new String[][] { { "", "", "", "", "", "", "", "" },
 			{ "", "", "", "", "", "", "", "" } };
 	private final String[] lastSentRows = new String[] { "", "" };
+	private final boolean[] fullTextMode = new boolean[] { false, false };
 
 	private final MidiOut midiOut;
-
-	private boolean fullTextMode = false;
 
 	private VuMode vuMode;
 
@@ -55,22 +54,31 @@ public class LcdDisplay {
 		setVuMode(driver.getVuMode());
 	}
 
-	public void setFullTextMode(final boolean fullTextMode) {
-		if (this.fullTextMode == fullTextMode) {
-			return;
-		}
-		this.fullTextMode = fullTextMode;
-		if (fullTextMode) {
-			switchVuMode(VuMode.LED);
-		} else {
-			switchVuMode(vuMode);
+	public void setFullTextMode(final int row, final boolean fullTextMode) {
+		final boolean vuDisabledPrev = isFullModeActive();
+		this.fullTextMode[row] = fullTextMode;
+		final boolean vuDisabledNow = isFullModeActive();
+		if (vuDisabledPrev != vuDisabledNow) {
+			if (fullTextMode) {
+				if (this.vuMode != VuMode.LED) {
+					switchVuMode(VuMode.LED);
+				}
+			} else {
+				if (this.vuMode != VuMode.LED) {
+					switchVuMode(vuMode);
+				}
+			}
 		}
 		refreshDisplay();
 	}
 
+	private boolean isFullModeActive() {
+		return this.fullTextMode[0] | this.fullTextMode[1];
+	}
+
 	public void setVuMode(final VuMode mode) {
 		this.vuMode = mode;
-		if (!fullTextMode) {
+		if (!isFullModeActive()) {
 			switchVuMode(mode);
 			refreshDisplay();
 		}
@@ -105,7 +113,7 @@ public class LcdDisplay {
 
 	private void resetGrids(final int row) {
 		for (int cell = 0; cell < lastSendGrids[row].length; cell++) {
-			lastSendGrids[row][cell] = "\n";
+			lastSendGrids[row][cell] = "      ";
 		}
 	}
 
@@ -165,11 +173,10 @@ public class LcdDisplay {
 	}
 
 	public void refreshDisplay() {
-		if (fullTextMode) {
-			sendFullRow(0, lastSentRows[0]);
-			sendFullRow(1, lastSentRows[1]);
-		} else {
-			for (int row = 0; row < 2; row++) {
+		for (int row = 0; row < 2; row++) {
+			if (fullTextMode[row]) {
+				sendFullRow(row, lastSentRows[row]);
+			} else {
 				for (int segment = 0; segment < 8; segment++) {
 					sendTextSeg(row, segment, lastSendGrids[row][segment]);
 				}
