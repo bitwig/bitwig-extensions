@@ -17,11 +17,11 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	private final Layer faderLayer;
 	private final Layer encoderLayer;
 	private final DisplayLayer displayLayer;
+	private final DisplayLayer infoLayer;
 	private DeviceManager deviceManager;
 	private String stdMissingTextLine1;
 	private String stdMissingTextLine2;
 	private final MenuModeLayerConfiguration menuControl;
-	private final int locationInGlobal = 0;
 
 	public TrackLayerConfiguration(final String name, final MixControl mixControl) {
 		super(name, mixControl);
@@ -32,6 +32,8 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		displayLayer = new DisplayLayer(name, this.mixControl);
 		menuControl = new MenuModeLayerConfiguration(name + "_MENU_" + sectionIndex, mixControl);
 		menuControl.getDisplayLayer(0).displayFullTextMode(true);
+		infoLayer = new DisplayLayer(name + "_INFO", this.mixControl);
+		infoLayer.enableFullTextMode(true);
 	}
 
 	@Override
@@ -55,6 +57,7 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	public void setDeviceManager(final DeviceManager deviceManager) {
 		this.deviceManager = deviceManager;
 		this.deviceManager.getCursorOnDevice().markInterested();
+		this.deviceManager.setInfoLayer(infoLayer);
 		final CursorRemoteControlsPage remotes = deviceManager.getRemote();
 		final Device device = deviceManager.getDevice();
 		device.name().markInterested();
@@ -67,21 +70,29 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		});
 
 		final DisplayLayer menuDisplayLayer = menuControl.getDisplayLayer(0);
-		menuDisplayLayer.bindBool(0, device.isEnabled(), "ACTIVE", "<OFF>", device, "-no dev-");
+		menuDisplayLayer.bindBool(0, device.isEnabled(), "ACTIVE", "<BYPS>", device, "-no dev-");
 		menuControl.addPressEncoderBinding(0, encIndex -> {
 			device.isEnabled().toggle();
 		});
 
+		int slotcount = 1;
 		if (deviceManager.isCanTrackMultiple()) {
-			menuDisplayLayer.bindFixed(1, "<Move");
-			menuDisplayLayer.bindFixed(2, "Move>");
-			menuControl.addPressEncoderBinding(1, encIndex -> {
+			menuDisplayLayer.bindFixed(slotcount, "<Move");
+			menuControl.addPressEncoderBinding(slotcount, encIndex -> {
 				deviceManager.moveDeviceToLeft();
 			});
-			menuControl.addPressEncoderBinding(2, encIndex -> {
+			slotcount++;
+			menuDisplayLayer.bindFixed(slotcount, "Move>");
+			menuControl.addPressEncoderBinding(slotcount, encIndex -> {
 				deviceManager.moveDeviceToRight();
 			});
+			slotcount++;
 		}
+
+		menuDisplayLayer.bindFixed(slotcount, "REMOVE");
+		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
+			deviceManager.removeDevice();
+		});
 
 		for (int i = 1; i < 8; i++) {
 			menuControl.addRingFixedBinding(i);
@@ -160,6 +171,9 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		if (mixControl.getIsMenuHoldActive().get()) {
 			return menuControl.getDisplayLayer(0);
 		}
+		if (deviceManager != null && deviceManager.getInfoSource() != null) {
+			return infoLayer;
+		}
 		if (which == 0) {
 			return displayLayer;
 		}
@@ -167,6 +181,18 @@ class TrackLayerConfiguration extends LayerConfiguration {
 			return mixControl.globalGroup.getDisplayConfiguration(ParamElement.VOLUME);
 		}
 		return mixControl.mainGroup.getDisplayConfiguration(ParamElement.VOLUME);
+	}
+
+	@Override
+	public boolean enableInfo(final InfoSource type) {
+		deviceManager.enableInfo(type);
+		return true;
+	}
+
+	@Override
+	public boolean disableInfo() {
+		deviceManager.disableInfo();
+		return true;
 	}
 
 	public void addBinding(final int index, final ParameterPage parameter,

@@ -59,4 +59,12 @@ public abstract class LayerConfiguration {
 		}
 	}
 
+	public boolean enableInfo(final InfoSource navVertical) {
+		return false;
+	}
+
+	public boolean disableInfo() {
+		return false;
+	}
+
 }

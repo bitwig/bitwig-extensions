@@ -35,7 +35,6 @@ public class ClipLaunchButtonLayer extends Layer {
 			final Track track = trackBank.getItemAt(trackIndex);
 			final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
 			slotBank.setIndication(true);
-			final int mainTrackIndex = trackIndex;
 
 			for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
 				final HardwareButton button = hwControls.getButton(slotIndex, trackIndex);

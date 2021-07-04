@@ -12,6 +12,8 @@ import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.SpecificBitwigDevice;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.layer.DisplayLayer;
+import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 /**
@@ -49,6 +51,8 @@ public class EqDevice implements ControlDevice, DeviceManager {
 	private final BooleanValue cursorOnDevice;
 	private DeviceBank overallBank;
 	private int bankIndex = 0;
+	private DisplayLayer infoLayer;
+	private InfoSource infoSource;
 
 	public EqDevice(final MackieMcuProExtension driver, final DeviceMatcher matcher) {
 		bitwigDevice = driver.getCursorDevice().createSpecificBitwigDevice(Devices.EQ_PLUS.getUuid());
@@ -84,6 +88,39 @@ public class EqDevice implements ControlDevice, DeviceManager {
 //				RemoteConsole.out.println("[{}]", pname);
 //			}
 //		});
+	}
+
+	@Override
+	public void setInfoLayer(final DisplayLayer infoLayer) {
+		this.infoLayer = infoLayer;
+	}
+
+	@Override
+	public void enableInfo(final InfoSource type) {
+		infoSource = type;
+		if (infoSource == InfoSource.NAV_VERTICAL) {
+			infoLayer.setMainText(getDeviceInfo(), "", false);
+		} else if (infoSource == InfoSource.NAV_HORIZONTAL) {
+			infoLayer.setMainText(getPageInfo(), "", false);
+		}
+	}
+
+	@Override
+	public void disableInfo() {
+		infoSource = null;
+	}
+
+	@Override
+	public InfoSource getInfoSource() {
+		return infoSource;
+	}
+
+	public String getDeviceInfo() {
+		return "EQ+ Device";
+	}
+
+	public String getPageInfo() {
+		return "Parameter Page : " + pageIndex;
 	}
 
 	private void initBankTracking(final MackieMcuProExtension driver) {
@@ -317,5 +354,10 @@ public class EqDevice implements ControlDevice, DeviceManager {
 			final Device nextDevice = overallBank.getItemAt(bankIndex + 1);
 			nextDevice.afterDeviceInsertionPoint().moveDevices(device);
 		}
+	}
+
+	@Override
+	public void removeDevice() {
+		device.deleteObject();
 	}
 }

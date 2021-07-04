@@ -666,8 +666,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final DeviceMatcher notEq = host.createNotDeviceMatcher(eq5Matcher);
 		final DeviceMatcher combinedMatcher = host.createAndDeviceMatcher(notEq, host.createAudioEffectMatcher());
 
-		instrumentDevice = new DeviceTracker(this, host.createInstrumentMatcher(), false);
-		pluginDevice = new DeviceTracker(this, combinedMatcher, true);
+		instrumentDevice = new DeviceTracker(this, "Instrument", host.createInstrumentMatcher(), false);
+		pluginDevice = new DeviceTracker(this, "Audio-FX", combinedMatcher, true);
 
 		for (final MixControl channelSection : sections) {
 			channelSection.initMainControl(mixerTrackBank, globalTrackBank);

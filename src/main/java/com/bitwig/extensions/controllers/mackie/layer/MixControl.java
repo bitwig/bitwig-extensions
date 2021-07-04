@@ -28,7 +28,7 @@ public class MixControl implements LayerStateHandler {
 	final MixerLayerGroup mainGroup;
 	final MixerLayerGroup globalGroup;
 
-	private final LayerState currentState;
+	private final LayerState layerState;
 
 	private LayerConfiguration currentConfiguration;
 
@@ -70,11 +70,11 @@ public class MixControl implements LayerStateHandler {
 		launchButtonLayer = new ClipLaunchButtonLayer("CLIP_LAUNCH", this);
 
 		currentConfiguration = panConfiguration;
-		currentState = new LayerState(this);
+		layerState = new LayerState(this);
 
-		driver.getFlipped().addValueObserver(flipped -> currentState.updateState(this));
-		driver.getGlobalViewActive().addValueObserver(globalView -> currentState.updateState(this));
-		driver.getGroupViewActive().addValueObserver(groupView -> currentState.updateState(this));
+		driver.getFlipped().addValueObserver(flipped -> layerState.updateState(this));
+		driver.getGlobalViewActive().addValueObserver(globalView -> layerState.updateState(this));
+		driver.getGroupViewActive().addValueObserver(groupView -> layerState.updateState(this));
 		// driver.getTrackChannelMode().addValueObserver(v ->
 		// notifyModeChange(driver.getTrackChannelMode().getMode()));
 		fadersTouched.addValueObserver(v -> reactToFaderTouched(v));
@@ -82,10 +82,10 @@ public class MixControl implements LayerStateHandler {
 
 	private void reactToFaderTouched(final boolean touched) {
 		if (touched) {
-			currentState.updateDisplayState(getActiveDisplayLayer());
+			layerState.updateDisplayState(getActiveDisplayLayer());
 		} else {
 			driver.scheduleAction("TOUCH", 1500, () -> {
-				currentState.updateDisplayState(getActiveDisplayLayer());
+				layerState.updateDisplayState(getActiveDisplayLayer());
 			});
 		}
 	}
@@ -148,24 +148,40 @@ public class MixControl implements LayerStateHandler {
 	}
 
 	public void navigateLeftRight(final int direction, final boolean isPressed) {
-		if (!isPressed) { // TODO we want to use this to show information in the current mode
-			return;
-		}
 		if (launchButtonLayer.isActive()) {
-			launchButtonLayer.navigateHorizontal(direction);
+			if (isPressed) {
+				launchButtonLayer.navigateHorizontal(direction);
+			}
 		} else {
-			currentConfiguration.navigateHorizontal(direction);
+			if (isPressed) {
+				currentConfiguration.navigateHorizontal(direction);
+				if (currentConfiguration.enableInfo(InfoSource.NAV_HORIZONTAL)) {
+					layerState.updateState(this);
+				}
+			} else {
+				if (currentConfiguration.disableInfo()) {
+					layerState.updateState(this);
+				}
+			}
 		}
 	}
 
 	public void navigateUpDown(final int direction, final boolean isPressed) {
-		if (!isPressed) { // TODO we want to use this to show information in the current mode
-			return;
-		}
 		if (launchButtonLayer.isActive()) {
-			launchButtonLayer.navigateVertical(direction);
+			if (isPressed) {
+				launchButtonLayer.navigateVertical(direction);
+			}
 		} else {
-			currentConfiguration.navigateVertical(direction);
+			if (isPressed) {
+				currentConfiguration.navigateVertical(direction);
+				if (currentConfiguration.enableInfo(InfoSource.NAV_VERTICAL)) {
+					layerState.updateState(this);
+				}
+			} else {
+				if (currentConfiguration.disableInfo()) {
+					layerState.updateState(this);
+				}
+			}
 		}
 	}
 
@@ -198,14 +214,14 @@ public class MixControl implements LayerStateHandler {
 			default:
 			}
 		}
-		currentState.updateState(this);
+		layerState.updateState(this);
 	}
 
 	public void notifyModeChange(final VPotMode mode, final boolean down) {
 		if (down) {
 			doModeChange(mode);
 		} else {
-			currentState.updateState(this);
+			layerState.updateState(this);
 		}
 	}
 
@@ -238,12 +254,12 @@ public class MixControl implements LayerStateHandler {
 		default:
 			break;
 		}
-		currentState.updateState(this);
+		layerState.updateState(this);
 	}
 
 	public void setConfiguration(final LayerConfiguration config) {
 		currentConfiguration = config;
-		currentState.updateState(this);
+		layerState.updateState(this);
 	}
 
 	public void notifyBlink() {
@@ -314,7 +330,8 @@ public class MixControl implements LayerStateHandler {
 		instrumentTrackConfiguration
 				.setNavigateVerticalHandler(direction -> navigateDevices(instrumentDevice, direction));
 
-		pluginTrackConfiguration.setNavigateHorizontalHandler(direction -> navigateDevices(pluginDevice, direction));
+		pluginTrackConfiguration
+				.setNavigateHorizontalHandler(direction -> navigateDeviceParameters(pluginDevice, direction));
 		pluginTrackConfiguration.setNavigateVerticalHandler(direction -> navigateDevices(pluginDevice, direction));
 
 		eqTrackConfiguration.setNavigateHorizontalHandler(eqDevice::navigateParameterBanks);

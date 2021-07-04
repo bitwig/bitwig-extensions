@@ -273,6 +273,14 @@ public class DisplayLayer extends Layer {
 		}
 	}
 
+	public void invokeRefresh() {
+		if (!isActive()) {
+			return;
+		}
+		topRow.refresh(display);
+		bottomRow.refresh(display);
+	}
+
 	@Override
 	protected void onActivate() {
 		super.onActivate();
