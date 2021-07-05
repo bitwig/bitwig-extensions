@@ -25,7 +25,7 @@ public class MackieMcuProX2ExtensionDefinition extends ControllerExtensionDefini
 
 	@Override
 	public String getVersion() {
-		return "0.01";
+		return "0.1";
 	}
 
 	@Override

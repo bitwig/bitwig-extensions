@@ -66,8 +66,8 @@ public class TimeCodeLed {
 		}
 	}
 
-	public void setDivision(final String devision) {
-		final String[] v = devision.split("/");
+	public void setDivision(final String division) {
+		final String[] v = division.split("/");
 		if (v.length == 2) {
 			tsMain = Integer.parseInt(v[0]);
 			if (v[1].indexOf(',') > 0) {
@@ -80,7 +80,7 @@ public class TimeCodeLed {
 				tsDiv = Integer.parseInt(v[1]);
 				tsTicks = 16;
 			}
-			updatePosition(position);
+			updatePosition(position, "");
 		}
 	}
 
@@ -98,7 +98,7 @@ public class TimeCodeLed {
 		displayBars(hours, precountTime);
 	}
 
-	public void updatePosition(final double pos) {
+	public void updatePosition(final double pos, final String formatted) {
 		this.position = pos;
 		final boolean precount = pos < 0;
 		final double posabs = Math.abs(pos);

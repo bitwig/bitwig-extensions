@@ -62,8 +62,8 @@ public class KompleteKontrolMSeriesExtensionDefinition extends ControllerExtensi
 	public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
 			final PlatformType platformType) {
 		if (platformType == PlatformType.WINDOWS) {
-			list.add(new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" },
-					new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" });
+			list.add(new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32 MIDI" },
+					new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32 MIDI" });
 		} else if (platformType == PlatformType.MAC) {
 			list.add(new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" },
 					new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" });

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.DeviceMatcher;
@@ -11,6 +12,8 @@ import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.SpecificBitwigDevice;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.layer.DisplayLayer;
+import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 /**
@@ -21,7 +24,7 @@ import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
  * ADAPTIVE_Q DECIBEL_RANGE
  *
  */
-public class EqDevice implements ControlDevice {
+public class EqDevice implements ControlDevice, DeviceManager {
 	private final static String[] PNAMES = { "TYPE", "FREQ", "GAIN", "Q" };
 	private final static RingDisplayType[] RING_TYPES = { RingDisplayType.FILL_LR, RingDisplayType.SINGLE,
 			RingDisplayType.FILL_LR, RingDisplayType.FILL_LR };
@@ -45,6 +48,11 @@ public class EqDevice implements ControlDevice {
 	private int pageIndex = 0;
 	private final int[] enableValues = new int[8];
 	private final List<Parameter> enableParams = new ArrayList<>();
+	private final BooleanValue cursorOnDevice;
+	private DeviceBank overallBank;
+	private int bankIndex = 0;
+	private DisplayLayer infoLayer;
+	private InfoSource infoSource;
 
 	public EqDevice(final MackieMcuProExtension driver, final DeviceMatcher matcher) {
 		bitwigDevice = driver.getCursorDevice().createSpecificBitwigDevice(Devices.EQ_PLUS.getUuid());
@@ -52,6 +60,8 @@ public class EqDevice implements ControlDevice {
 		final DeviceBank eqPlusDeviceBank = driver.getCursorTrack().createDeviceBank(1);
 		eqPlusDeviceBank.setDeviceMatcher(matcher);
 		device = eqPlusDeviceBank.getItemAt(0);
+
+		cursorOnDevice = device.createEqualsValue(driver.getCursorDevice());
 
 		for (int i = 0; i < 8; i++) {
 			parameterSlots.add(new ParameterPage(i, this));
@@ -70,12 +80,67 @@ public class EqDevice implements ControlDevice {
 				notifyEnablementFromEnable(page, index, typeParam, v);
 			});
 		}
+
+		initBankTracking(driver);
 // final Just code to final list all parameters final of device
 //		device.addDirectParameterIdObserver(allp -> {
 //			for (final String pname : allp) {
 //				RemoteConsole.out.println("[{}]", pname);
 //			}
 //		});
+	}
+
+	@Override
+	public void setInfoLayer(final DisplayLayer infoLayer) {
+		this.infoLayer = infoLayer;
+	}
+
+	@Override
+	public void enableInfo(final InfoSource type) {
+		infoSource = type;
+		if (infoSource == InfoSource.NAV_VERTICAL) {
+			infoLayer.setMainText(getDeviceInfo(), "", false);
+		} else if (infoSource == InfoSource.NAV_HORIZONTAL) {
+			infoLayer.setMainText(getPageInfo(), "", false);
+		}
+	}
+
+	@Override
+	public void disableInfo() {
+		infoSource = null;
+	}
+
+	@Override
+	public InfoSource getInfoSource() {
+		return infoSource;
+	}
+
+	public String getDeviceInfo() {
+		return "EQ+ Device";
+	}
+
+	public String getPageInfo() {
+		return "Parameter Page : " + pageIndex;
+	}
+
+	private void initBankTracking(final MackieMcuProExtension driver) {
+		overallBank = driver.getCursorTrack().createDeviceBank(8);
+		overallBank.canScrollBackwards().markInterested();
+		overallBank.canScrollForwards().markInterested();
+		for (int i = 0; i < overallBank.getSizeOfBank(); i++) {
+			final int which = i;
+			final BooleanValue evo = overallBank.getItemAt(which).createEqualsValue(device);
+			evo.addValueObserver(v -> {
+				if (v) {
+					if (which == 0 && overallBank.canScrollBackwards().get()) {
+						overallBank.scrollBackwards();
+					} else if (which == overallBank.getSizeOfBank() - 1 && overallBank.canScrollForwards().get()) {
+						overallBank.scrollForwards();
+					}
+					bankIndex = which;
+				}
+			});
+		}
 	}
 
 	private void notifyEnablementFromEnable(final int page, final int bandIndexOffset, final Parameter typeParam,
@@ -100,6 +165,11 @@ public class EqDevice implements ControlDevice {
 		} else {
 			parameterSlots.get(index).doReset();
 		}
+	}
+
+	@Override
+	public BooleanValue getCursorOnDevice() {
+		return cursorOnDevice;
 	}
 
 	private void resetAll() {
@@ -127,6 +197,14 @@ public class EqDevice implements ControlDevice {
 		final String enablePname = "ENABLE" + (index + 1);
 		final Parameter enableParam = bitwigDevice.createParameter(enablePname);
 		return enableParam;
+	}
+
+	public void navigateParameterBanks(final int direction) {
+		if (direction < 0) {
+			navigatePrevious();
+		} else {
+			navigateNext();
+		}
 	}
 
 	@Override
@@ -206,6 +284,7 @@ public class EqDevice implements ControlDevice {
 		return parameter;
 	}
 
+	@Override
 	public Device getDevice() {
 		return device;
 	}
@@ -245,4 +324,40 @@ public class EqDevice implements ControlDevice {
 		}
 	}
 
+	@Override
+	public CursorRemoteControlsPage getRemote() {
+		return null;
+	}
+
+	@Override
+	public boolean isCanTrackMultiple() {
+		return true;
+	}
+
+	@Override
+	public void moveDeviceToLeft() {
+		if (overallBank == null) {
+			return;
+		}
+		if (bankIndex > 0) {
+			final Device nextDevice = overallBank.getItemAt(bankIndex - 1);
+			nextDevice.beforeDeviceInsertionPoint().moveDevices(device);
+		}
+	}
+
+	@Override
+	public void moveDeviceToRight() {
+		if (overallBank == null) {
+			return;
+		}
+		if (bankIndex < overallBank.getSizeOfBank() - 1) {
+			final Device nextDevice = overallBank.getItemAt(bankIndex + 1);
+			nextDevice.afterDeviceInsertionPoint().moveDevices(device);
+		}
+	}
+
+	@Override
+	public void removeDevice() {
+		device.deleteObject();
+	}
 }

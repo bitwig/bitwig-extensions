@@ -17,15 +17,11 @@ import com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueB
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.StringValue;
-import com.bitwig.extensions.controllers.mackie.bindings.AbstractDisplayNameBinding;
-import com.bitwig.extensions.controllers.mackie.bindings.AbstractDisplayValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderParameterBankBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ResetableAbsoluteValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ResetableRelativeValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.RingParameterBankDisplayBinding;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.targets.DisplayNameTarget;
-import com.bitwig.extensions.controllers.mackie.targets.DisplayValueTarget;
 import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
 import com.bitwig.extensions.controllers.mackie.targets.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
@@ -108,24 +104,6 @@ public class ParameterPage implements SettableRangedValue {
 	public FaderParameterBankBinding createFaderBinding(final MotorFader fader) {
 		faderBinding = new FaderParameterBankBinding(this, fader);
 		return faderBinding;
-	}
-
-	public AbstractDisplayNameBinding<ParameterPage> createNameDisplayBinding(final DisplayNameTarget target) {
-		return new AbstractDisplayNameBinding<ParameterPage>(this, target) {
-			@Override
-			protected void initListening() {
-				getSource().addNameObserver(this::valueChanged);
-			}
-		};
-	}
-
-	public AbstractDisplayValueBinding<ParameterPage> createValueDisplayBinding(final DisplayValueTarget target) {
-		return new AbstractDisplayValueBinding<ParameterPage>(this, target) {
-			@Override
-			protected void initListening() {
-				getSource().addStringValueObserver(this::valueChanged);
-			}
-		};
 	}
 
 	public ResetableRelativeValueBinding getRelativeEncoderBinding(final RelativeHardwareKnob encoder) {

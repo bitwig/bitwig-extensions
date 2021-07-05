@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
-import com.bitwig.extensions.controllers.mackie.layer.ChannelSection.SectionType;
+import com.bitwig.extensions.controllers.mackie.layer.SectionType;
 
 /**
  * Represents 2x56 LCD display on the MCU or an extender.
@@ -30,8 +30,12 @@ public class LcdDisplay {
 
 	private final String[][] lastSendGrids = new String[][] { { "", "", "", "", "", "", "", "" },
 			{ "", "", "", "", "", "", "", "" } };
+	private final String[] lastSentRows = new String[] { "", "" };
+	private final boolean[] fullTextMode = new boolean[] { false, false };
 
 	private final MidiOut midiOut;
+
+	private VuMode vuMode;
 
 	/**
 	 * @param driver  the parent
@@ -47,10 +51,40 @@ public class LcdDisplay {
 		} else {
 			sysHead = "f0 00 00 66 14 ";
 		}
-		appyVuMode(driver.getVuMode());
+		setVuMode(driver.getVuMode());
 	}
 
-	public void appyVuMode(final VuMode mode) {
+	public void setFullTextMode(final int row, final boolean fullTextMode) {
+		final boolean vuDisabledPrev = isFullModeActive();
+		this.fullTextMode[row] = fullTextMode;
+		final boolean vuDisabledNow = isFullModeActive();
+		if (vuDisabledPrev != vuDisabledNow) {
+			if (fullTextMode) {
+				if (this.vuMode != VuMode.LED) {
+					switchVuMode(VuMode.LED);
+				}
+			} else {
+				if (this.vuMode != VuMode.LED) {
+					switchVuMode(vuMode);
+				}
+			}
+		}
+		refreshDisplay();
+	}
+
+	private boolean isFullModeActive() {
+		return this.fullTextMode[0] | this.fullTextMode[1];
+	}
+
+	public void setVuMode(final VuMode mode) {
+		this.vuMode = mode;
+		if (!isFullModeActive()) {
+			switchVuMode(mode);
+			refreshDisplay();
+		}
+	}
+
+	private void switchVuMode(final VuMode mode) {
 		switch (mode) {
 		case LED:
 			midiOut.sendSysex(sysHead + "21 01 f7"); // Vertical VU
@@ -75,12 +109,11 @@ public class LcdDisplay {
 			}
 			break;
 		}
-		refreshDisplay();
 	}
 
 	private void resetGrids(final int row) {
 		for (int cell = 0; cell < lastSendGrids[row].length; cell++) {
-			lastSendGrids[row][cell] = "";
+			lastSendGrids[row][cell] = "      ";
 		}
 	}
 
@@ -100,7 +133,15 @@ public class LcdDisplay {
 	}
 
 	public void sendToDisplay(final int row, final String text) {
+		if (text.equals(lastSentRows[row])) {
+			return;
+		}
+		lastSentRows[row] = text;
 		resetGrids(row);
+		sendFullRow(row, text);
+	}
+
+	private void sendFullRow(final int row, final String text) {
 		rowDisplayBuffer[6] = (byte) (row * ROW2_START);
 		final char[] ca = text.toCharArray();
 		for (int i = 0; i < DISPLAY_LEN; i++) {
@@ -133,8 +174,12 @@ public class LcdDisplay {
 
 	public void refreshDisplay() {
 		for (int row = 0; row < 2; row++) {
-			for (int segment = 0; segment < 8; segment++) {
-				sendTextSeg(row, segment, lastSendGrids[row][segment]);
+			if (fullTextMode[row]) {
+				sendFullRow(row, lastSentRows[row]);
+			} else {
+				for (int segment = 0; segment < 8; segment++) {
+					sendTextSeg(row, segment, lastSendGrids[row][segment]);
+				}
 			}
 		}
 	}

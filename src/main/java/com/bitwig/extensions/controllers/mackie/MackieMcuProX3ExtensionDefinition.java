@@ -7,15 +7,15 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class MackieMcuProExtensionDefinition extends ControllerExtensionDefinition {
-	private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-81ad-1de77ffa2dab");
+public class MackieMcuProX3ExtensionDefinition extends ControllerExtensionDefinition {
+	private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-81ad-1de77ffa2df1");
 
-	public MackieMcuProExtensionDefinition() {
+	public MackieMcuProX3ExtensionDefinition() {
 	}
 
 	@Override
 	public String getName() {
-		return "Mackie MCU Pro V3";
+		return "Mackie MCU Pro V3 w 2 Ext";
 	}
 
 	@Override
@@ -25,7 +25,7 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
 
 	@Override
 	public String getVersion() {
-		return "0.1";
+		return "0.2";
 	}
 
 	@Override
@@ -50,38 +50,41 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
 
 	@Override
 	public int getNumMidiInPorts() {
-		return 1;
+		return 3;
 	}
 
 	@Override
 	public int getNumMidiOutPorts() {
-		return 1;
+		return 3;
 	}
 
 	@Override
 	public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
 			final PlatformType platformType) {
 		if (platformType == PlatformType.WINDOWS) {
-			list.add(new String[] { "MCU Pro USB v3.1" }, new String[] { "MCU Pro USB v3.1" });
+			list.add(new String[] { "MCU Pro USB v3.1", "MIDIIN2 (MCU Pro USB v3.1)", "MIDIIN3 (MCU Pro USB v3.1)" }, //
+					new String[] { "MCU Pro USB v3.1", "MIDIOUT2 (MCU Pro USB v3.1)", "MIDIOUT3 (MCU Pro USB v3.1)" });
 		} else if (platformType == PlatformType.MAC) {
-			list.add(new String[] { "MCU Pro USB v3.1" }, new String[] { "MCU Pro USB v3.1" });
+			list.add(new String[] { "MCU Pro USB v3.1", "MIDIIN2 (MCU Pro USB v3.1)", "MIDIIN3 (MCU Pro USB v3.1)" }, //
+					new String[] { "MCU Pro USB v3.1", "MIDIOUT2 (MCU Pro USB v3.1)", "MIDIOUT3 (MCU Pro USB v3.1)" });
 		} else if (platformType == PlatformType.LINUX) {
-			list.add(new String[] { "MCU Pro USB v3.1" }, new String[] { "MCU Pro USB v3.1" });
+			list.add(new String[] { "MCU Pro USB v3.1", "MIDIIN2 (MCU Pro USB v3.1)", "MIDIIN3 (MCU Pro USB v3.1)" }, //
+					new String[] { "MCU Pro USB v3.1", "MIDIOUT2 (MCU Pro USB v3.1)", "MIDIOUT3 (MCU Pro USB v3.1)" });
 		}
 	}
 
 	@Override
 	public String getHelpFilePath() {
-		return "";
+		return "Controllers/Native Instruments/Maschine MK3 Plus/Maschine MK3 Plus.pdf";
 	}
 
 	@Override
 	public String getSupportFolderPath() {
-		return "";
+		return "Controllers/Native Instruments/Maschine MK3 Plus";
 	}
 
 	@Override
 	public MackieMcuProExtension createInstance(final ControllerHost host) {
-		return new MackieMcuProExtension(this, host, 0);
+		return new MackieMcuProExtension(this, host, 1);
 	}
 }

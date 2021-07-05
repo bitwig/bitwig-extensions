@@ -24,7 +24,7 @@ public enum NoteOnAssignment {
 	F1(54), F2(55), F3(56), F4(57), F5(58), F6(59), F7(60), F8(61), //
 	CURSOR_UP(96), CURSOR_DOWN(97), CURSOR_LEFT(98), CURSOR_RIGHT(99), //
 	ZOOM(100), SCRUB(101), //
-	BANK_LEFT(46), BANK_RIGH(47), TRACK_LEFT(48), TRACK_RIGHT(49);
+	BANK_LEFT(46), BANK_RIGH(47), TRACK_LEFT(48), TRACK_RIGHT(49), GLOBAL_VIEW(51);
 
 	private final int notNr;
 	private final int channel;
