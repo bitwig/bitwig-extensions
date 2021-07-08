@@ -31,6 +31,8 @@ public class EqDevice implements ControlDevice, DeviceManager {
 	private final static double[] SENSITIVITIES = { 2, 0.25, 0.25, 0.25 };
 	private static final String[] TYPES = { "*Off*", "LowC-1", "LowC-2", "LowC-4", "LowC-6", "LowC-8", "LoShlv", "Bell", //
 			"HiC-1", "HiC-2", "HiC-4", "HiC-6", "HiC-8", "HiShlv", "Notch" };
+	private static final String[] PAGE_NAMES = { "Bands 1 & 2", "Bands 3 & 4", "Bands 5 & 6", "Bands 7 & 8",
+			"General" };
 
 	private static final ParameterSetting[] PAGE_5 = { //
 			new ParameterSetting("OUTPUT_GAIN", 0.125, RingDisplayType.FILL_LR), //
@@ -120,7 +122,7 @@ public class EqDevice implements ControlDevice, DeviceManager {
 	}
 
 	public String getPageInfo() {
-		return "Parameter Page : " + pageIndex;
+		return "Parameter Page : " + PAGE_NAMES[pageIndex];
 	}
 
 	private void initBankTracking(final MackieMcuProExtension driver) {

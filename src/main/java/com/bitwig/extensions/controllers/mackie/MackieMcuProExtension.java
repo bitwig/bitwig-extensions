@@ -76,6 +76,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private final BooleanValueObject scrubActive = new BooleanValueObject();
 	private final BooleanValueObject globalViewActive = new BooleanValueObject();
 	private final BooleanValueObject groupViewActive = new BooleanValueObject();
+	private int blinkTicks = 0;
 
 	private final ModifierValueObject modifier = new ModifierValueObject();
 	private final TrackModeValue trackChannelMode = new TrackModeValue();
@@ -194,7 +195,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		if (holdAction.isRunning()) {
 			holdAction.execute();
 		}
-		sections.forEach(MixControl::notifyBlink);
+		sections.forEach(section -> section.notifyBlink(blinkTicks));
+		blinkTicks++;
 		host.scheduleTask(this::handlePing, 100);
 	}
 
@@ -276,7 +278,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		createModeButton(VPotMode.PAN);
 		createModeButton(VPotMode.PLUGIN);
 		createModeButton(VPotMode.EQ);
-		createModeButton(VPotMode.INSTRUMENT);
+		createModeButton(VPotMode.INSTRUMENT, VPotMode.MIDI_EFFECT);
 	}
 
 	private void initCursorSection() {
@@ -326,9 +328,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 				return;
 			}
 			if (direction > 0) {
-				application.focusPanelAbove();
+				arranger.zoomOutLaneHeightsAll();
 			} else {
-				application.focusPanelBelow();
+				arranger.zoomInLaneHeightsAll();
 			}
 		}
 	}
@@ -340,19 +342,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 			if (!isPressed) {
 				return;
 			}
-			if (modifier.isShiftSet()) {
-				if (direction < 0) {
-					application.zoomOut();
-				} else {
-					application.zoomIn();
-				}
-
+			if (direction < 0) {
+				arranger.zoomOut();
 			} else {
-				if (direction < 0) {
-					application.focusPanelToLeft();
-				} else {
-					application.focusPanelToRight();
-				}
+				arranger.zoomIn();
 			}
 		}
 	}
@@ -398,6 +391,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 		mainLayer.bindPressed(autoWriteButton, transport.isArrangerAutomationWriteEnabled());
 		mainLayer.bind(transport.isArrangerAutomationWriteEnabled(),
 				(OnOffHardwareLight) autoWriteButton.backgroundLight());
+		shiftLayer.bindPressed(autoWriteButton, transport.isClipLauncherAutomationWriteEnabled());
+		shiftLayer.bind(transport.isClipLauncherAutomationWriteEnabled(),
+				(OnOffHardwareLight) autoWriteButton.backgroundLight());
 
 		final HardwareButton touchButton = createButton(NoteOnAssignment.TOUCH);
 		mainLayer.bindPressed(touchButton, () -> {
@@ -439,7 +435,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 		mainLayer.bindPressed(playButton, transport.continuePlaybackAction());
 		mainLayer.bind(transport.isPlaying(), (OnOffHardwareLight) playButton.backgroundLight());
 		mainLayer.bindPressed(stopButton, transport.stopAction());
+
 		mainLayer.bindToggle(recordButton, transport.isArrangerRecordEnabled());
+		shiftLayer.bindToggle(recordButton, transport.isClipLauncherOverdubEnabled());
 
 		mainLayer.bindIsPressed(fastForwardButton, pressed -> notifyHoldForwardReverse(pressed, 1));
 
@@ -448,13 +446,14 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final HardwareButton undoButton = createHoldButton(NoteOnAssignment.UNDO);
 		mainLayer.bindIsPressed(undoButton, v -> {
 			if (v) {
-				if (!modifier.isShiftSet()) {
-					application.undo();
-					host.showPopupNotification("Undo");
-				} else {
-					application.redo();
-					host.showPopupNotification("Redo");
-				}
+				application.undo();
+				host.showPopupNotification("Undo");
+			}
+		});
+		shiftLayer.bindIsPressed(undoButton, v -> {
+			if (v) {
+				application.redo();
+				host.showPopupNotification("Redo");
 			}
 		});
 		transport.timeSignature().addValueObserver(sig -> {
@@ -561,7 +560,16 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return button;
 	}
 
-	private HardwareButton createModeButton(final VPotMode mode) {
+	/**
+	 * Creates modes button
+	 *
+	 * @param modes first mode is standard mode, second shift mode
+	 * @return the button
+	 */
+	private HardwareButton createModeButton(final VPotMode... modes) {
+		assert modes.length > 0;
+		final VPotMode mode = modes[0];
+		final VPotMode altmode = modes.length > 1 ? modes[1] : null;
 		final HardwareButton button = surface.createHardwareButton(mode.getName() + "_BUTTON");
 		mode.getButtonAssignment().holdActionAssign(midiIn, button);
 		final OnOffHardwareLight led = surface.createOnOffHardwareLight(mode.getName() + "BUTTON_LED");
@@ -569,22 +577,49 @@ public class MackieMcuProExtension extends ControllerExtension {
 		led.onUpdateHardware(() -> {
 			sendLedUpdate(mode.getButtonAssignment(), led.isOn().currentValue() ? 127 : 0);
 		});
-		mainLayer.bindPressed(button, () -> setVPotMode(mode, true));
-		mainLayer.bindReleased(button, () -> {
-			setVPotMode(mode, false);
-		});
-		led.isOn().setValueSupplier(() -> {
-			return this.trackChannelMode.getMode() == mode;
-		});
+		mainLayer.bindPressed(button, () -> setVPotMode(mode, true, altmode));
+		mainLayer.bindReleased(button, () -> setVPotMode(mode, false, altmode));
+		if (modes.length == 1) {
+			mainLayer.bind(() -> lightState(mode), led);
+		} else if (altmode != null) {
+			mainLayer.bind(() -> lightState(mode, modes[1]), led);
+			shiftLayer.bind(() -> lightState(mode, modes[1]), led);
+			shiftLayer.bindPressed(button, () -> setVPotMode(altmode, true, mode));
+		}
+
 		return button;
 	}
 
-	public void setVPotMode(final VPotMode mode, final boolean down) {
+	private boolean lightState(final VPotMode mode) {
 		if (this.trackChannelMode.getMode() == mode) {
-			sections.forEach(control -> control.notifyModeAdvance(down));
-		} else {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean lightState(final VPotMode mode, final VPotMode shiftmode) {
+		if (this.trackChannelMode.getMode() == mode) {
+			return true;
+		} else if (this.trackChannelMode.getMode() == shiftmode) {
+			if (blinkTicks % 8 < 3) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public void setVPotMode(final VPotMode mode, final boolean down, final VPotMode altMode) {
+		final VPotMode cmode = this.trackChannelMode.getMode();
+		if (cmode != mode && cmode != altMode || cmode == altMode && modifier.isShiftSet()) {
 			this.trackChannelMode.setMode(mode);
 			sections.forEach(section -> section.notifyModeChange(mode, down));
+		} else if (cmode == mode && altMode != null && modifier.isShiftSet()) {
+			this.trackChannelMode.setMode(altMode);
+			sections.forEach(section -> section.notifyModeChange(altMode, down));
+		} else {
+			sections.forEach(control -> control.notifyModeAdvance(down));
 		}
 	}
 
@@ -668,11 +703,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		instrumentDevice = new DeviceTracker(this, "Instrument", host.createInstrumentMatcher(), false);
 		pluginDevice = new DeviceTracker(this, "Audio-FX", combinedMatcher, true);
+		final DeviceTracker noteEffectDevice = new DeviceTracker(this, "Note-FX", host.createNoteEffectMatcher(),
+				false);
 
 		for (final MixControl channelSection : sections) {
 			channelSection.initMainControl(mixerTrackBank, globalTrackBank);
 		}
-		mainSection.initTrackControl(cursorTrack, instrumentDevice, pluginDevice, eqDevice);
+		mainSection.initTrackControl(cursorTrack, instrumentDevice, noteEffectDevice, pluginDevice, eqDevice);
 		initMenuButtons();
 	}
 

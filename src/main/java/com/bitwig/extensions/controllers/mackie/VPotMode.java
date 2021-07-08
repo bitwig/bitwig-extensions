@@ -6,7 +6,8 @@ public enum VPotMode {
 	PAN(NoteOnAssignment.V_PAN, Assign.MIXER), //
 	PLUGIN(NoteOnAssignment.V_PLUGIN, Assign.CHANNEL), //
 	EQ(NoteOnAssignment.V_EQ, Assign.CHANNEL), // possibly both
-	INSTRUMENT(NoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL);
+	INSTRUMENT(NoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL),
+	MIDI_EFFECT(NoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL);
 
 	public enum Assign {
 		MIXER, CHANNEL, BOTH;
@@ -31,4 +32,5 @@ public enum VPotMode {
 	public String getName() {
 		return buttonAssignment.toString();
 	}
+
 }

@@ -37,6 +37,7 @@ public class MixControl implements LayerStateHandler {
 			ParamElement.SENDMIXER);
 	private final TrackLayerConfiguration sendTrackConfiguration;
 	private final TrackLayerConfiguration instrumentTrackConfiguration;
+	private final TrackLayerConfiguration noteEffectTrackConfiguration;
 	private final TrackLayerConfiguration pluginTrackConfiguration;
 	private final TrackLayerConfiguration eqTrackConfiguration;
 
@@ -45,6 +46,7 @@ public class MixControl implements LayerStateHandler {
 	private final SectionType type;
 	private final ClipLaunchButtonLayer launchButtonLayer;
 	private final BooleanValueObject isMenuHoldActive = new BooleanValueObject();
+	private final DisplayLayer infoLayer;
 
 	public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
 			final int sectionIndex, final SectionType type) {
@@ -54,6 +56,7 @@ public class MixControl implements LayerStateHandler {
 		for (int i = 0; i < 8; i++) {
 			hwControls.assignFaderTouchAction(i, touched -> handleTouch(touched));
 		}
+		infoLayer = new DisplayLayer("HINT_DISP_LAYER", this);
 
 		mainGroup = new MixerLayerGroup("MN", this);
 		globalGroup = new MixerLayerGroup("GL", this);
@@ -64,6 +67,7 @@ public class MixControl implements LayerStateHandler {
 
 		sendTrackConfiguration = new TrackLayerConfiguration("SN_TR", this);
 		instrumentTrackConfiguration = new TrackLayerConfiguration("INSTRUMENT", this);
+		noteEffectTrackConfiguration = new TrackLayerConfiguration("MIDI_FX", this);
 		pluginTrackConfiguration = new TrackLayerConfiguration("AUDIOFX", this);
 		eqTrackConfiguration = new TrackLayerConfiguration("EQ_DEVICE", this);
 
@@ -75,9 +79,29 @@ public class MixControl implements LayerStateHandler {
 		driver.getFlipped().addValueObserver(flipped -> layerState.updateState(this));
 		driver.getGlobalViewActive().addValueObserver(globalView -> layerState.updateState(this));
 		driver.getGroupViewActive().addValueObserver(groupView -> layerState.updateState(this));
+		driver.getTrackChannelMode().addValueObserver(trackMode -> doModeChange(driver.getVpotMode()));
 		// driver.getTrackChannelMode().addValueObserver(v ->
 		// notifyModeChange(driver.getTrackChannelMode().getMode()));
 		fadersTouched.addValueObserver(v -> reactToFaderTouched(v));
+		if (type == SectionType.MAIN) {
+			setUpModifierHandling(driver.getModifier());
+		}
+	}
+
+	private void setUpModifierHandling(final ModifierValueObject modifier) {
+		modifier.addValueObserver(modvalue -> {
+			// TODO this will have to change to accodate different modes
+			if (modvalue > 0 && launchButtonLayer.isActive()) {
+				infoLayer.setMainText("Clip mods:  Shft+Opt=delete  Shft+Alt=double content",
+						"Opt=duplicate alt=stop track", false);
+				infoLayer.enableFullTextMode(true);
+				infoLayer.setIsActive(true);
+				layerState.updateState(this);
+			} else if (infoLayer.isActive()) {
+				infoLayer.setIsActive(false);
+				layerState.updateState(this);
+			}
+		});
 	}
 
 	private void reactToFaderTouched(final boolean touched) {
@@ -105,6 +129,9 @@ public class MixControl implements LayerStateHandler {
 
 	@Override
 	public DisplayLayer getActiveDisplayLayer() {
+		if (infoLayer.isActive()) {
+			return infoLayer;
+		}
 		final boolean flipped = driver.getFlipped().get();
 		final boolean touched = fadersTouched.get();
 		final int displayer = !flipped && touched || flipped && !touched ? 1 : 0;
@@ -192,24 +219,17 @@ public class MixControl implements LayerStateHandler {
 			isMenuHoldActive.set(true);
 			switch (driver.getVpotMode()) {
 			case EQ:
-				switch (driver.getVpotMode()) {
-				case EQ:
-					final boolean hasEq = driver.getEqDevice().exists().get();
-					if (!hasEq) {
-						final InsertionPoint ip = driver.getCursorTrack().endOfDeviceChainInsertionPoint();
-						ip.insertBitwigDevice(Devices.EQ_PLUS.getUuid());
-					}
-					break;
-				case PLUGIN:
-					break;
-				case INSTRUMENT:
-					break;
-				default:
+				final boolean hasEq = driver.getEqDevice().exists().get();
+				if (!hasEq) {
+					final InsertionPoint ip = driver.getCursorTrack().endOfDeviceChainInsertionPoint();
+					ip.insertBitwigDevice(Devices.EQ_PLUS.getUuid());
 				}
 				break;
 			case PLUGIN:
 				break;
 			case INSTRUMENT:
+				break;
+			case MIDI_EFFECT:
 				break;
 			default:
 			}
@@ -231,16 +251,19 @@ public class MixControl implements LayerStateHandler {
 			currentConfiguration = eqTrackConfiguration;
 			focusDevice(driver.getEqDevice().getDevice());
 			break;
+		case MIDI_EFFECT:
+			currentConfiguration = noteEffectTrackConfiguration;
+			break;
 		case INSTRUMENT:
 			currentConfiguration = instrumentTrackConfiguration;
-			focusDevice(driver.getInstrumentDevice().getDevice());
+			// focusDevice(driver.getInstrumentDevice().getDevice());
 			break;
 		case PAN:
 			currentConfiguration = panConfiguration;
 			break;
 		case PLUGIN:
 			currentConfiguration = pluginTrackConfiguration;
-			focusDevice(driver.getInstrumentDevice().getDevice());
+			// focusDevice(driver.getInstrumentDevice().getDevice());
 			break;
 		case SEND:
 			if (type != SectionType.MAIN) {
@@ -262,8 +285,8 @@ public class MixControl implements LayerStateHandler {
 		layerState.updateState(this);
 	}
 
-	public void notifyBlink() {
-		launchButtonLayer.notifyBlink();
+	public void notifyBlink(final int ticks) {
+		launchButtonLayer.notifyBlink(ticks);
 	}
 
 	private void focusDevice(final Device device) {
@@ -304,17 +327,19 @@ public class MixControl implements LayerStateHandler {
 	}
 
 	public void initTrackControl(final CursorTrack cursorTrack, final DeviceTracker instrumentDevice,
-			final DeviceTracker pluginDevice, final EqDevice eqDevice) {
+			final DeviceTracker noteEffectDevice, final DeviceTracker pluginDevice, final EqDevice eqDevice) {
 		final SendBank sendBank = cursorTrack.sendBank();
 		for (int i = 0; i < 8; i++) {
 			sendTrackConfiguration.addBinding(i, sendBank.getItemAt(i), RingDisplayType.FILL_LR);
 			instrumentTrackConfiguration.addBinding(i, instrumentDevice.getParameter(i), RingDisplayType.FILL_LR);
+			noteEffectTrackConfiguration.addBinding(i, noteEffectDevice.getParameter(i), RingDisplayType.FILL_LR);
 			pluginTrackConfiguration.addBinding(i, pluginDevice.getParameter(i), RingDisplayType.FILL_LR);
 			eqTrackConfiguration.addBinding(i, eqDevice.getEqBands().get(i),
 					(pindex, pslot) -> eqDevice.handleResetInvoked(pindex, driver.getModifier()));
 		}
 
 		instrumentTrackConfiguration.setDeviceManager(instrumentDevice);
+		noteEffectTrackConfiguration.setDeviceManager(noteEffectDevice);
 		pluginTrackConfiguration.setDeviceManager(pluginDevice);
 		eqTrackConfiguration.setDeviceManager(eqDevice);
 
@@ -330,6 +355,11 @@ public class MixControl implements LayerStateHandler {
 		instrumentTrackConfiguration
 				.setNavigateVerticalHandler(direction -> navigateDevices(instrumentDevice, direction));
 
+		noteEffectTrackConfiguration
+				.setNavigateHorizontalHandler(direction -> navigateDeviceParameters(noteEffectDevice, direction));
+		noteEffectTrackConfiguration
+				.setNavigateVerticalHandler(direction -> navigateDevices(noteEffectDevice, direction));
+
 		pluginTrackConfiguration
 				.setNavigateHorizontalHandler(direction -> navigateDeviceParameters(pluginDevice, direction));
 		pluginTrackConfiguration.setNavigateVerticalHandler(direction -> navigateDevices(pluginDevice, direction));
@@ -338,6 +368,7 @@ public class MixControl implements LayerStateHandler {
 
 		pluginTrackConfiguration.setMissingText("no audio fx on track", "<< select device from Browser >>");
 		instrumentTrackConfiguration.setMissingText("no instrument on track", "<< select device from Browser >>");
+		noteEffectTrackConfiguration.setMissingText("no notes effect on track", "<< select device from Browser >>");
 		eqTrackConfiguration.setMissingText("no EQ+ device on track", "<< press EQ button to insert EQ+ device >>");
 
 		cursorTrack.name().addValueObserver(trackName -> ensureModeFocus());

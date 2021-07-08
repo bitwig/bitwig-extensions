@@ -14,10 +14,10 @@ import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class ClipLaunchButtonLayer extends Layer {
 
-	private int blinkTicks = 0;
 	private TrackBank trackBank;
 	private final MackieMcuProExtension driver;
 	private final Clip mainCursorClip;
+	private int blinkTicks;
 
 	public ClipLaunchButtonLayer(final String name, final MixControl mixControl) {
 		super(mixControl.getDriver().getLayers(),
@@ -67,8 +67,8 @@ public class ClipLaunchButtonLayer extends Layer {
 		}
 	}
 
-	public void notifyBlink() {
-		blinkTicks++;
+	public void notifyBlink(final int ticks) {
+		blinkTicks = ticks;
 	}
 
 	public boolean lightState(final ClipLauncherSlot slot) {
