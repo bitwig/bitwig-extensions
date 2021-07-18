@@ -1,26 +1,14 @@
 package com.bitwig.extensions.controllers.mackie.devices;
 
-import com.bitwig.extension.controller.api.BooleanValue;
-import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
-import com.bitwig.extension.controller.api.Device;
+import com.bitwig.extension.controller.api.Parameter;
+import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration;
 import com.bitwig.extensions.controllers.mackie.layer.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
+import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 public interface DeviceManager {
 
-	BooleanValue getCursorOnDevice();
-
-	Device getDevice();
-
-	CursorRemoteControlsPage getRemote();
-
-	boolean isCanTrackMultiple();
-
-	void moveDeviceToLeft();
-
-	void moveDeviceToRight();
-
-	void removeDevice();
+	void initiateBrowsing(final BrowserConfiguration browser);
 
 	void setInfoLayer(DisplayLayer infoLayer);
 
@@ -29,4 +17,21 @@ public interface DeviceManager {
 	void disableInfo();
 
 	InfoSource getInfoSource();
+
+	Parameter getParameter(int index);
+
+	ParameterPage getParameterPage(int index);
+
+	void navigateDeviceParameters(final int direction);
+
+	void handleResetInvoked(final int index, final ModifierValueObject modifier);
+
+	void setCurrentFollower(final DeviceTypeFollower currentFollower);
+
+	DeviceTypeFollower getCurrentFollower();
+
+	boolean isSpecificDevicePresent();
+
+	int getPageCount();
+
 }

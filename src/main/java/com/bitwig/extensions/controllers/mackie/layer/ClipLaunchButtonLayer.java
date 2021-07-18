@@ -10,7 +10,6 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class ClipLaunchButtonLayer extends Layer {
 
@@ -105,7 +104,6 @@ public class ClipLaunchButtonLayer extends Layer {
 	}
 
 	public void navigateVertical(final int direction) {
-		RemoteConsole.out.println(" ND {}", direction);
 		if (direction > 0) {
 			trackBank.sceneBank().scrollBackwards();
 		} else {

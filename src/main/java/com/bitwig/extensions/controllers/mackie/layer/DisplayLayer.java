@@ -189,19 +189,38 @@ public class DisplayLayer extends Layer {
 
 	public void bindName(final int index, final StringValue name, final ObjectProxy sourceOfExistance,
 			final String emptyText) {
-		final DisplayCell cell = topRow.getCell(index);
+		bindName(0, index, name, sourceOfExistance, emptyText);
+	}
+
+	public void bindName(final int rowIndex, final int index, final StringValue name) {
+		final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
+		final DisplayCell cell = row.getCell(index);
+		cell.setEmptyValue("");
+		name.addValueObserver(v -> {
+			cell.lastValue = v;
+			if (isActive() && !row.isFullTextMode()) {
+				display.sendToRow(rowIndex, index, cell.getDisplayValue());
+			}
+		});
+		cell.lastValue = name.get();
+	}
+
+	public void bindName(final int rowIndex, final int index, final StringValue name,
+			final ObjectProxy sourceOfExistance, final String emptyText) {
+		final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
+		final DisplayCell cell = row.getCell(index);
 		cell.setEmptyValue(emptyText);
 		sourceOfExistance.exists().addValueObserver(exist -> {
 			cell.setExist(exist);
-			if (isActive() && !topRow.isFullTextMode()) {
-				display.sendToRow(0, index, cell.getDisplayValue());
+			if (isActive() && !row.isFullTextMode()) {
+				display.sendToRow(rowIndex, index, cell.getDisplayValue());
 			}
 		});
 		cell.setExist(sourceOfExistance.exists().get());
 		name.addValueObserver(v -> {
 			cell.lastValue = v;
-			if (isActive() && !topRow.isFullTextMode()) {
-				display.sendToRow(0, index, cell.getDisplayValue());
+			if (isActive() && !row.isFullTextMode()) {
+				display.sendToRow(rowIndex, index, cell.getDisplayValue());
 			}
 		});
 		cell.lastValue = name.get();

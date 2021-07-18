@@ -15,7 +15,6 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CueMarker;
 import com.bitwig.extension.controller.api.CueMarkerBank;
 import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -23,18 +22,18 @@ import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
-import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
-import com.bitwig.extensions.controllers.mackie.devices.DeviceTracker;
-import com.bitwig.extensions.controllers.mackie.devices.Devices;
-import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
+import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
+import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
+import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration;
 import com.bitwig.extensions.controllers.mackie.layer.LayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.layer.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.layer.MixControl;
@@ -46,7 +45,6 @@ import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class MackieMcuProExtension extends ControllerExtension {
 
@@ -84,14 +82,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private VuMode vuMode = VuMode.LED;
 	private final int nrOfExtenders;
 	private DelayAction delayedAction = null; // TODO this needs to be a queue
-	private PinnableCursorDevice cursorDevice;
 
 	private final HoldMenuButtonState holdAction = new HoldMenuButtonState();
 	private final int[] lightStatusMap = new int[127];
 
-	private EqDevice eqDevice;
-	private DeviceTracker instrumentDevice;
-	private DeviceTracker pluginDevice;
 	private LayoutType currentLayoutType;
 
 	private MixControl mainSection;
@@ -99,6 +93,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	private final HoldCapture holdState = new HoldCapture();
 	private Arranger arranger;
+	private PopupBrowser browser;
+	private BrowserConfiguration browserConfiguration;
+
+	private CursorDeviceControl cursorDeviceControl;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -126,9 +124,12 @@ public class MackieMcuProExtension extends ControllerExtension {
 		midiIn = host.getMidiInPort(0);
 		ledDisplay = new TimeCodeLed(midiOut);
 
+		browser = host.createPopupBrowser();
+
 		initJogWheel();
 		initMasterSection();
 		initChannelSections();
+		browserConfiguration = new BrowserConfiguration("BROWSER", mainSection, host, browser);
 		intiVPotModes();
 
 		initTransport();
@@ -623,8 +624,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		}
 	}
 
-	public VPotMode getVpotMode() {
-		return this.trackChannelMode.getMode();
+	public TrackModeValue getVpotMode() {
+		return this.trackChannelMode;
 	}
 
 	private HardwareButton createPressButton(final NoteOnAssignment assignment) {
@@ -646,8 +647,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void onMidi0(final ShortMidiMessage msg) {
-		RemoteConsole.out.println(" MIDI ch={} st={} d1={} d2={}", msg.getChannel(), msg.getStatusByte(),
-				msg.getData1(), msg.getData2());
+//		RemoteConsole.out.println(" MIDI ch={} st={} d1={} d2={}", msg.getChannel(), msg.getStatusByte(),
+//				msg.getData1(), msg.getData2());
 	}
 
 	private void setUpMidiSysExCommands() {
@@ -676,10 +677,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 		cursorTrack = getHost().createCursorTrack(8, nrOfScenes);
 		cursorTrack.color().markInterested();
 
+		cursorDeviceControl = new CursorDeviceControl(cursorTrack, 8);
+
 		final HardwareButton soloButton = createButtonWState(NoteOnAssignment.SOLO, cursorTrack.solo(), false);
 		mainLayer.bindPressed(soloButton, cursorTrack.solo().toggleAction());
-
-		this.cursorDevice = cursorTrack.createCursorDevice();
 
 		final TrackBank mainTrackBank = getHost().createMainTrackBank(8 * sections.size(), 1, nrOfScenes);
 
@@ -695,22 +696,21 @@ public class MackieMcuProExtension extends ControllerExtension {
 		globalTrackBank.canScrollChannelsDown().markInterested();
 		globalTrackBank.canScrollChannelsUp().markInterested();
 
-		final DeviceMatcher eq5Matcher = host.createBitwigDeviceMatcher(Devices.EQ_PLUS.getUuid());
-		eqDevice = new EqDevice(this, eq5Matcher);
-
-		final DeviceMatcher notEq = host.createNotDeviceMatcher(eq5Matcher);
-		final DeviceMatcher combinedMatcher = host.createAndDeviceMatcher(notEq, host.createAudioEffectMatcher());
-
-		instrumentDevice = new DeviceTracker(this, "Instrument", host.createInstrumentMatcher(), false);
-		pluginDevice = new DeviceTracker(this, "Audio-FX", combinedMatcher, true);
-		final DeviceTracker noteEffectDevice = new DeviceTracker(this, "Note-FX", host.createNoteEffectMatcher(),
-				false);
+		final DeviceTypeBank deviceTypeBank = new DeviceTypeBank(host, cursorDeviceControl);
 
 		for (final MixControl channelSection : sections) {
 			channelSection.initMainControl(mixerTrackBank, globalTrackBank);
 		}
-		mainSection.initTrackControl(cursorTrack, instrumentDevice, noteEffectDevice, pluginDevice, eqDevice);
+		mainSection.initTrackControl(cursorTrack, deviceTypeBank);
 		initMenuButtons();
+	}
+
+	public BrowserConfiguration getBrowserConfiguration() {
+		return browserConfiguration;
+	}
+
+	public void setBrowserConfiguration(final BrowserConfiguration browserConfiguration) {
+		this.browserConfiguration = browserConfiguration;
 	}
 
 	private void initMenuButtons() {
@@ -798,20 +798,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return groupViewActive;
 	}
 
-	public DeviceTracker getPluginDevice() {
-		return pluginDevice;
-	}
-
-	public EqDevice getEqDevice() {
-		return eqDevice;
-	}
-
-	public DeviceTracker getInstrumentDevice() {
-		return instrumentDevice;
-	}
-
-	public PinnableCursorDevice getCursorDevice() {
-		return cursorDevice;
+	public CursorDeviceControl getCursorDeviceControl() {
+		return cursorDeviceControl;
 	}
 
 	public CursorTrack getCursorTrack() {

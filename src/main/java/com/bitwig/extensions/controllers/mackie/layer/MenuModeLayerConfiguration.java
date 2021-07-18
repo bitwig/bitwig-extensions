@@ -12,18 +12,16 @@ import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ValueConverter;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.RelativeHardwareControlBinding;
 
 public class MenuModeLayerConfiguration extends LayerConfiguration {
-	private final Layer encoderLayer;
+	private final EncoderLayer encoderLayer;
 	private final DisplayLayer displayLayer;
 
 	public MenuModeLayerConfiguration(final String name, final MixControl mixControl) {
 		super(name, mixControl);
-		final Layers layers = this.mixControl.getDriver().getLayers();
 		final int sectionIndex = mixControl.getHwControls().getSectionIndex();
-		encoderLayer = new Layer(layers, name + "_ENCODER_LAYER_" + sectionIndex);
+		encoderLayer = new EncoderLayer(mixControl, name + "_ENCODER_LAYER_" + sectionIndex);
 		displayLayer = new DisplayLayer(name, this.mixControl);
 	}
 
@@ -41,7 +39,7 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
 	}
 
 	@Override
-	public Layer getEncoderLayer() {
+	public EncoderLayer getEncoderLayer() {
 		return encoderLayer;
 	}
 

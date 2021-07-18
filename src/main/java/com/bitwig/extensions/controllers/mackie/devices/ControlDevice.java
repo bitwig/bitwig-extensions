@@ -8,10 +8,6 @@ public interface ControlDevice {
 
 	int getPages();
 
-	void navigateNext();
-
-	void navigatePrevious();
-
 	BooleanValue exists();
 
 	DeviceParameter createDeviceParameter(int page, int index);

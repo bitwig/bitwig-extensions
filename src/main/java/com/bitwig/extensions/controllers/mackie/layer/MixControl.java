@@ -5,20 +5,22 @@ import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.InsertionPoint;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
+import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
-import com.bitwig.extensions.controllers.mackie.devices.DeviceTracker;
-import com.bitwig.extensions.controllers.mackie.devices.Devices;
-import com.bitwig.extensions.controllers.mackie.devices.EqDevice;
+import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
+import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
+import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
 import com.bitwig.extensions.framework.Layer;
 
 public class MixControl implements LayerStateHandler {
@@ -36,17 +38,17 @@ public class MixControl implements LayerStateHandler {
 	private final LayerConfiguration sendConfiguration = new MixerLayerConfiguration("SEND", this,
 			ParamElement.SENDMIXER);
 	private final TrackLayerConfiguration sendTrackConfiguration;
-	private final TrackLayerConfiguration instrumentTrackConfiguration;
-	private final TrackLayerConfiguration noteEffectTrackConfiguration;
-	private final TrackLayerConfiguration pluginTrackConfiguration;
+	private final TrackLayerConfiguration cursorDeviceConfiguration;
 	private final TrackLayerConfiguration eqTrackConfiguration;
 
 	private final BooleanValueObject fadersTouched = new BooleanValueObject();
 	private int touchCount = 0;
+
 	private final SectionType type;
 	private final ClipLaunchButtonLayer launchButtonLayer;
 	private final BooleanValueObject isMenuHoldActive = new BooleanValueObject();
 	private final DisplayLayer infoLayer;
+	private DeviceTypeBank deviceTypeBank;
 
 	public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
 			final int sectionIndex, final SectionType type) {
@@ -66,9 +68,9 @@ public class MixControl implements LayerStateHandler {
 		});
 
 		sendTrackConfiguration = new TrackLayerConfiguration("SN_TR", this);
-		instrumentTrackConfiguration = new TrackLayerConfiguration("INSTRUMENT", this);
-		noteEffectTrackConfiguration = new TrackLayerConfiguration("MIDI_FX", this);
-		pluginTrackConfiguration = new TrackLayerConfiguration("AUDIOFX", this);
+
+		cursorDeviceConfiguration = new TrackLayerConfiguration("INSTRUMENT", this);
+
 		eqTrackConfiguration = new TrackLayerConfiguration("EQ_DEVICE", this);
 
 		launchButtonLayer = new ClipLaunchButtonLayer("CLIP_LAUNCH", this);
@@ -79,9 +81,8 @@ public class MixControl implements LayerStateHandler {
 		driver.getFlipped().addValueObserver(flipped -> layerState.updateState(this));
 		driver.getGlobalViewActive().addValueObserver(globalView -> layerState.updateState(this));
 		driver.getGroupViewActive().addValueObserver(groupView -> layerState.updateState(this));
-		driver.getTrackChannelMode().addValueObserver(trackMode -> doModeChange(driver.getVpotMode()));
-		// driver.getTrackChannelMode().addValueObserver(v ->
-		// notifyModeChange(driver.getTrackChannelMode().getMode()));
+		driver.getTrackChannelMode().addValueObserver(trackMode -> doModeChange(driver.getVpotMode().getMode(), true));
+
 		fadersTouched.addValueObserver(v -> reactToFaderTouched(v));
 		if (type == SectionType.MAIN) {
 			setUpModifierHandling(driver.getModifier());
@@ -90,7 +91,7 @@ public class MixControl implements LayerStateHandler {
 
 	private void setUpModifierHandling(final ModifierValueObject modifier) {
 		modifier.addValueObserver(modvalue -> {
-			// TODO this will have to change to accodate different modes
+			// TODO this will have to change to accommodate different modes
 			if (modvalue > 0 && launchButtonLayer.isActive()) {
 				infoLayer.setMainText("Clip mods:  Shft+Opt=delete  Shft+Alt=double content",
 						"Opt=duplicate alt=stop track", false);
@@ -217,19 +218,22 @@ public class MixControl implements LayerStateHandler {
 			isMenuHoldActive.set(false);
 		} else {
 			isMenuHoldActive.set(true);
-			switch (driver.getVpotMode()) {
+
+			final DeviceManager deviceTracker = currentConfiguration.getDeviceManager();
+
+			switch (driver.getVpotMode().getMode()) {
 			case EQ:
-				final boolean hasEq = driver.getEqDevice().exists().get();
-				if (!hasEq) {
+				if (!deviceTracker.isSpecificDevicePresent()) {
 					final InsertionPoint ip = driver.getCursorTrack().endOfDeviceChainInsertionPoint();
-					ip.insertBitwigDevice(Devices.EQ_PLUS.getUuid());
+					ip.insertBitwigDevice(SpecialDevices.EQ_PLUS.getUuid());
 				}
 				break;
 			case PLUGIN:
-				break;
 			case INSTRUMENT:
-				break;
 			case MIDI_EFFECT:
+				if (!deviceTracker.isSpecificDevicePresent()) {
+					deviceTracker.initiateBrowsing(driver.getBrowserConfiguration());
+				}
 				break;
 			default:
 			}
@@ -239,31 +243,32 @@ public class MixControl implements LayerStateHandler {
 
 	public void notifyModeChange(final VPotMode mode, final boolean down) {
 		if (down) {
-			doModeChange(mode);
+			doModeChange(mode, true);
 		} else {
 			layerState.updateState(this);
 		}
 	}
 
-	void doModeChange(final VPotMode mode) {
+	void doModeChange(final VPotMode mode, final boolean focus) {
 		switch (mode) {
 		case EQ:
 			currentConfiguration = eqTrackConfiguration;
-			focusDevice(driver.getEqDevice().getDevice());
+			currentConfiguration.setCurrentFollower(deviceTypeBank.getFollower(mode));
 			break;
 		case MIDI_EFFECT:
-			currentConfiguration = noteEffectTrackConfiguration;
+			currentConfiguration = cursorDeviceConfiguration;
+			currentConfiguration.setCurrentFollower(deviceTypeBank.getFollower(mode));
 			break;
 		case INSTRUMENT:
-			currentConfiguration = instrumentTrackConfiguration;
-			// focusDevice(driver.getInstrumentDevice().getDevice());
+			currentConfiguration = cursorDeviceConfiguration;
+			currentConfiguration.setCurrentFollower(deviceTypeBank.getFollower(mode));
 			break;
 		case PAN:
 			currentConfiguration = panConfiguration;
 			break;
 		case PLUGIN:
-			currentConfiguration = pluginTrackConfiguration;
-			// focusDevice(driver.getInstrumentDevice().getDevice());
+			currentConfiguration = cursorDeviceConfiguration;
+			currentConfiguration.setCurrentFollower(deviceTypeBank.getFollower(mode));
 			break;
 		case SEND:
 			if (type != SectionType.MAIN) {
@@ -277,7 +282,25 @@ public class MixControl implements LayerStateHandler {
 		default:
 			break;
 		}
+		if (currentConfiguration.getDeviceManager() != null && focus) {
+			focusDevice(currentConfiguration.getDeviceManager());
+		} else {
+			ensureDevicePointer(currentConfiguration.getDeviceManager());
+		}
+		getDriver().getBrowserConfiguration().forceClose();
 		layerState.updateState(this);
+	}
+
+	private void ensureDevicePointer(final DeviceManager deviceManager) {
+		if (deviceManager == null) {
+			return;
+		}
+		deviceManager.getCurrentFollower().ensurePosition();
+	}
+
+	private void focusDevice(final DeviceManager deviceManager) {
+		final Device device = deviceManager.getCurrentFollower().getFocusDevice();
+		getDriver().getCursorDeviceControl().selectDevice(device);
 	}
 
 	public void setConfiguration(final LayerConfiguration config) {
@@ -287,12 +310,6 @@ public class MixControl implements LayerStateHandler {
 
 	public void notifyBlink(final int ticks) {
 		launchButtonLayer.notifyBlink(ticks);
-	}
-
-	private void focusDevice(final Device device) {
-		if (device.exists().get()) {
-			driver.getCursorDevice().selectDevice(device);
-		}
 	}
 
 	private void handleTouch(final boolean touched) {
@@ -326,22 +343,26 @@ public class MixControl implements LayerStateHandler {
 		launchButtonLayer.initTrackBank(this.getHwControls(), mixerTrackBank);
 	}
 
-	public void initTrackControl(final CursorTrack cursorTrack, final DeviceTracker instrumentDevice,
-			final DeviceTracker noteEffectDevice, final DeviceTracker pluginDevice, final EqDevice eqDevice) {
+	public void initTrackControl(final CursorTrack cursorTrack, final DeviceTypeBank deviceTypeBank) {
+		this.deviceTypeBank = deviceTypeBank;
 		final SendBank sendBank = cursorTrack.sendBank();
+
+		final CursorDeviceControl cursorDeviceControl = getDriver().getCursorDeviceControl();
+
+		final DeviceManager cursorDeviceManager = deviceTypeBank.getDeviceManager(VPotMode.INSTRUMENT);
+		final DeviceManager eqDevice = deviceTypeBank.getDeviceManager(VPotMode.EQ);
+
 		for (int i = 0; i < 8; i++) {
 			sendTrackConfiguration.addBinding(i, sendBank.getItemAt(i), RingDisplayType.FILL_LR);
-			instrumentTrackConfiguration.addBinding(i, instrumentDevice.getParameter(i), RingDisplayType.FILL_LR);
-			noteEffectTrackConfiguration.addBinding(i, noteEffectDevice.getParameter(i), RingDisplayType.FILL_LR);
-			pluginTrackConfiguration.addBinding(i, pluginDevice.getParameter(i), RingDisplayType.FILL_LR);
-			eqTrackConfiguration.addBinding(i, eqDevice.getEqBands().get(i),
+			cursorDeviceConfiguration.addBinding(i, cursorDeviceManager.getParameter(i), RingDisplayType.FILL_LR);
+			eqTrackConfiguration.addBinding(i, eqDevice.getParameterPage(i),
 					(pindex, pslot) -> eqDevice.handleResetInvoked(pindex, driver.getModifier()));
 		}
 
-		instrumentTrackConfiguration.setDeviceManager(instrumentDevice);
-		noteEffectTrackConfiguration.setDeviceManager(noteEffectDevice);
-		pluginTrackConfiguration.setDeviceManager(pluginDevice);
+		cursorDeviceConfiguration.setDeviceManager(cursorDeviceManager);
+		cursorDeviceConfiguration.registerFollowers(deviceTypeBank.getStandardFollowers());
 		eqTrackConfiguration.setDeviceManager(eqDevice);
+		eqTrackConfiguration.registerFollowers(deviceTypeBank.getFollower(VPotMode.EQ));
 
 		sendTrackConfiguration.setNavigateHorizontalHandler(direction -> {
 			if (direction < 0) {
@@ -350,53 +371,34 @@ public class MixControl implements LayerStateHandler {
 				sendBank.scrollForwards();
 			}
 		});
-		instrumentTrackConfiguration
-				.setNavigateHorizontalHandler(direction -> navigateDeviceParameters(instrumentDevice, direction));
-		instrumentTrackConfiguration
-				.setNavigateVerticalHandler(direction -> navigateDevices(instrumentDevice, direction));
+		cursorDeviceConfiguration.setNavigateHorizontalHandler(cursorDeviceManager::navigateDeviceParameters);
+		cursorDeviceConfiguration.setNavigateVerticalHandler(cursorDeviceControl::navigateDevice);
 
-		noteEffectTrackConfiguration
-				.setNavigateHorizontalHandler(direction -> navigateDeviceParameters(noteEffectDevice, direction));
-		noteEffectTrackConfiguration
-				.setNavigateVerticalHandler(direction -> navigateDevices(noteEffectDevice, direction));
+		eqTrackConfiguration.setNavigateHorizontalHandler(eqDevice::navigateDeviceParameters);
+		eqTrackConfiguration.setNavigateVerticalHandler(cursorDeviceControl::navigateDevice);
 
-		pluginTrackConfiguration
-				.setNavigateHorizontalHandler(direction -> navigateDeviceParameters(pluginDevice, direction));
-		pluginTrackConfiguration.setNavigateVerticalHandler(direction -> navigateDevices(pluginDevice, direction));
-
-		eqTrackConfiguration.setNavigateHorizontalHandler(eqDevice::navigateParameterBanks);
-
-		pluginTrackConfiguration.setMissingText("no audio fx on track", "<< select device from Browser >>");
-		instrumentTrackConfiguration.setMissingText("no instrument on track", "<< select device from Browser >>");
-		noteEffectTrackConfiguration.setMissingText("no notes effect on track", "<< select device from Browser >>");
+//		pluginTrackConfiguration.setMissingText("no audio fx on track", "<< press PLUG-IN again to browse >>");
+		cursorDeviceConfiguration.setMissingText("no instrument on track", "<< press INSTRUMENT again to browse >>");
+//		noteEffectTrackConfiguration.setMissingText("no notes effect on track",
+//				"<< press INSTRUMENT again to browse >>");
 		eqTrackConfiguration.setMissingText("no EQ+ device on track", "<< press EQ button to insert EQ+ device >>");
 
 		cursorTrack.name().addValueObserver(trackName -> ensureModeFocus());
 
-		driver.getCursorDevice().deviceType().markInterested();
+		final PinnableCursorDevice cursorDevice = driver.getCursorDeviceControl().getCursorDevice();
+		final TrackModeValue potMode = driver.getVpotMode();
+		cursorDevice.position().addValueObserver(p -> {
+			final VPotMode fittingMode = VPotMode.fittingMode(cursorDevice);
+			if (fittingMode != null && potMode.getMode().isDeviceMode()
+					&& !getDriver().getBrowserConfiguration().isActive()) {
+				driver.getVpotMode().setMode(fittingMode);
+				doModeChange(fittingMode, false);
+			}
+		});
 	}
 
-	public void ensureModeFocus() {
-		final DeviceManager device = currentConfiguration.getDeviceManager();
-		if (device != null && !device.getCursorOnDevice().get()) {
-			driver.getCursorDevice().selectDevice(device.getDevice());
-		}
-	}
+	private void ensureModeFocus() {
 
-	public void navigateDeviceParameters(final DeviceTracker device, final int direction) {
-		if (direction < 0) {
-			device.selectPreviousParameterPage();
-		} else {
-			device.selectNextParameterPage();
-		}
-	}
-
-	public void navigateDevices(final DeviceTracker device, final int direction) {
-		if (direction < 0) {
-			device.selectPreviousDevice();
-		} else {
-			device.selectNextDevice();
-		}
 	}
 
 	public void handleSoloAction(final Track channel) {

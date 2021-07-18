@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.mackie.layer;
 import java.util.function.IntConsumer;
 
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
+import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
 import com.bitwig.extensions.framework.Layer;
 
 public abstract class LayerConfiguration {
@@ -28,7 +29,7 @@ public abstract class LayerConfiguration {
 
 	public abstract Layer getFaderLayer();
 
-	public abstract Layer getEncoderLayer();
+	public abstract EncoderLayer getEncoderLayer();
 
 	public Layer getButtonLayer() {
 		if (mixControl.driver.getGlobalViewActive().get()) {
@@ -65,6 +66,13 @@ public abstract class LayerConfiguration {
 
 	public boolean disableInfo() {
 		return false;
+	}
+
+	protected void evaluateDisplay() {
+
+	}
+
+	public void setCurrentFollower(final DeviceTypeFollower follower) {
 	}
 
 }

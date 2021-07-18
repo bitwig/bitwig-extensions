@@ -18,12 +18,12 @@ public class MixerLayerGroup {
 
 	private final List<Bank<? extends Parameter>> bankList = new ArrayList<>();
 	private final Layer volumeFaderLayer;
-	private final Layer volumeEncoderLayer;
+	private final EncoderLayer volumeEncoderLayer;
 	private final Layer panFaderLayer;
-	private final Layer panEncoderLayer;
+	private final EncoderLayer panEncoderLayer;
 	private final Layer mixerButtonLayer;
 	private final Layer sendFaderLayer;
-	private final Layer sendEncoderLayer;
+	private final EncoderLayer sendEncoderLayer;
 	private final MixControl control;
 	private final DisplayLayer volumeDisplayConfiguration;
 	private final DisplayLayer panDisplayConfiguration;
@@ -36,13 +36,13 @@ public class MixerLayerGroup {
 		mixerButtonLayer = new Layer(layers, name + "_MIXER_BUTTON_LAYER_" + sectionIndex);
 
 		volumeFaderLayer = new Layer(layers, name + "_VOLUME_FADER_LAYER_" + sectionIndex);
-		volumeEncoderLayer = new Layer(layers, name + "_VOLUME_ENCODER_LAYER_" + sectionIndex);
+		volumeEncoderLayer = new EncoderLayer(control, name + "_VOLUME_ENCODER_LAYER_" + sectionIndex);
 
 		panFaderLayer = new Layer(layers, name + "_PAN_FADER_LAYER_" + sectionIndex);
-		panEncoderLayer = new Layer(layers, name + "_PAN_ENCODER_LAYER_" + sectionIndex);
+		panEncoderLayer = new EncoderLayer(control, name + "_PAN_ENCODER_LAYER_" + sectionIndex);
 
 		sendFaderLayer = new Layer(layers, name + "_SEND_FADER_LAYER_" + sectionIndex);
-		sendEncoderLayer = new Layer(layers, name + "_SEN_ENCODER_LAYER_" + sectionIndex);
+		sendEncoderLayer = new EncoderLayer(control, name + "_SEN_ENCODER_LAYER_" + sectionIndex);
 
 		volumeDisplayConfiguration = new DisplayLayer("MixVolume", control);
 		panDisplayConfiguration = new DisplayLayer("MixPan", control);
@@ -87,7 +87,7 @@ public class MixerLayerGroup {
 		}
 	}
 
-	public Layer getEncoderLayer(final ParamElement type) {
+	public EncoderLayer getEncoderLayer(final ParamElement type) {
 		switch (type) {
 		case VOLUME:
 			return volumeEncoderLayer;

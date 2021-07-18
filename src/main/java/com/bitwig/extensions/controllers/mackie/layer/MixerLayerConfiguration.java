@@ -31,7 +31,7 @@ class MixerLayerConfiguration extends LayerConfiguration {
 	}
 
 	@Override
-	public Layer getEncoderLayer() {
+	public EncoderLayer getEncoderLayer() {
 		final boolean flipped = this.mixControl.driver.getFlipped().get();
 		final boolean isGlobalView = this.mixControl.driver.getGlobalViewActive().get();
 

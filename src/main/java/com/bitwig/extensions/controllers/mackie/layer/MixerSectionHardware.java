@@ -5,6 +5,7 @@ import java.util.function.BooleanSupplier;
 import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -14,6 +15,7 @@ import com.bitwig.extension.controller.api.ObjectProxy;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.RelativeHardwareValueMatcher;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
@@ -46,6 +48,8 @@ public class MixerSectionHardware {
 	private final MotorFader[] motorFaderDest = new MotorFader[8];
 	private final RingDisplay[] ringDisplays = new RingDisplay[8];
 	private final HardwareButton buttonMatrix[][] = new HardwareButton[4][8];
+	private final RelativeHardwareValueMatcher[] nonAcceleratedMatchers = new RelativeHardwareValueMatcher[8];
+	private final RelativeHardwareValueMatcher[] acceleratedMatchers = new RelativeHardwareValueMatcher[8];
 
 	private final MidiIn midiIn;
 	private final MidiOut midiOut;
@@ -97,16 +101,37 @@ public class MixerSectionHardware {
 					.createRelativeHardwareKnob("PAN_KNOB" + sectionIndex + "_" + i);
 			encoders[i] = encoder;
 			encoderPress[i] = createEncoderButon(i);
-			encoder.setAdjustValueMatcher(this.midiIn.createRelativeSignedBitCCValueMatcher(0x0, 0x10 + i, 200));
-			encoder.setStepSize(1 / 128.0);
+			acceleratedMatchers[i] = this.midiIn.createRelativeSignedBitCCValueMatcher(0x0, 0x10 + i, 200);
+
 			encoder.isUpdatingTargetValue().addValueObserver(v -> {
 				if (v) {
 					driver.doActionImmediate("TOUCH");
 				}
 			});
 
-//			valueTargets[i] = new DisplayValueTarget(mainDisplay, i);
-//			nameTargets[i] = new DisplayNameTarget(mainDisplay, i);
+			final ControllerHost host = driver.getHost();
+			final RelativeHardwareValueMatcher stepDownMatcher = midiIn
+					.createRelativeValueMatcher("(status == 176 && data1 == " + (0x10 + i) + " && data2 > 64)", -1);
+			final RelativeHardwareValueMatcher stepUpMatcher = midiIn
+					.createRelativeValueMatcher("(status == 176 && data1 == " + (0x10 + i) + " && data2 < 65)", 1);
+			nonAcceleratedMatchers[i] = host.createOrRelativeHardwareValueMatcher(stepDownMatcher, stepUpMatcher);
+			setEncoderBehavior(i, EncoderMode.ACCELERATED, 128);
+		}
+	}
+
+	public void setEncoderBehavior(final EncoderMode mode, final int stepSizeDivisor) {
+		for (int i = 0; i < 8; i++) {
+			setEncoderBehavior(i, mode, stepSizeDivisor);
+		}
+	}
+
+	public void setEncoderBehavior(final int index, final EncoderMode mode, final int stepSizeDivisor) {
+		if (mode == EncoderMode.ACCELERATED) {
+			encoders[index].setAdjustValueMatcher(acceleratedMatchers[index]);
+			encoders[index].setStepSize(1.0 / stepSizeDivisor);
+		} else if (mode == EncoderMode.NONACCELERATED) {
+			encoders[index].setAdjustValueMatcher(nonAcceleratedMatchers[index]);
+			encoders[index].setStepSize(1);
 		}
 	}
 

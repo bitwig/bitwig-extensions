@@ -3,10 +3,12 @@ package com.bitwig.extensions.controllers.mackie.layer;
 import java.util.function.BiConsumer;
 
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
-import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.Parameter;
+import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
+import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
+import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.framework.Layer;
@@ -15,25 +17,86 @@ import com.bitwig.extensions.framework.Layers;
 class TrackLayerConfiguration extends LayerConfiguration {
 
 	private final Layer faderLayer;
-	private final Layer encoderLayer;
+	private final EncoderLayer encoderLayer;
 	private final DisplayLayer displayLayer;
 	private final DisplayLayer infoLayer;
+
 	private DeviceManager deviceManager;
 	private String stdMissingTextLine1;
 	private String stdMissingTextLine2;
 	private final MenuModeLayerConfiguration menuControl;
+	private CursorDeviceControl cursorDeviceControl;
 
 	public TrackLayerConfiguration(final String name, final MixControl mixControl) {
 		super(name, mixControl);
 		final Layers layers = this.mixControl.getDriver().getLayers();
 		final int sectionIndex = mixControl.getHwControls().getSectionIndex();
+
 		faderLayer = new Layer(layers, name + "_FADER_LAYER_" + sectionIndex);
-		encoderLayer = new Layer(layers, name + "_ENCODER_LAYER_" + sectionIndex);
+		encoderLayer = new EncoderLayer(mixControl, name + "_ENCODER_LAYER_" + sectionIndex);
 		displayLayer = new DisplayLayer(name, this.mixControl);
 		menuControl = new MenuModeLayerConfiguration(name + "_MENU_" + sectionIndex, mixControl);
 		menuControl.getDisplayLayer(0).displayFullTextMode(true);
 		infoLayer = new DisplayLayer(name + "_INFO", this.mixControl);
 		infoLayer.enableFullTextMode(true);
+	}
+
+	public void setDeviceManager(final DeviceManager deviceManager) {
+		cursorDeviceControl = mixControl.getDriver().getCursorDeviceControl();
+		this.deviceManager = deviceManager;
+		this.deviceManager.setInfoLayer(infoLayer);
+
+		final CursorRemoteControlsPage remotes = cursorDeviceControl.getRemotes();
+		final PinnableCursorDevice device = cursorDeviceControl.getCursorDevice();
+		if (remotes != null) {
+			remotes.pageCount()
+					.addValueObserver(count -> evaluateTextDisplay(count, device.exists().get(), device.name().get()));
+		}
+		device.name().addValueObserver(name -> {
+			evaluateTextDisplay(deviceManager.getPageCount(), device.exists().get(), name);
+		});
+
+		initMenuControl(device);
+	}
+
+	private void initMenuControl(final PinnableCursorDevice device) {
+		int slotcount = 0;
+		DisplayLayer menuDisplayLayer = menuControl.getDisplayLayer(slotcount);
+
+		menuDisplayLayer.bindBool(slotcount, device.isEnabled(), "ACTIVE", "<BYPS>", device, "<NODV>");
+		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
+			device.isEnabled().toggle();
+		});
+		slotcount++;
+		menuDisplayLayer = menuControl.getDisplayLayer(slotcount);
+		menuDisplayLayer.bindBool(slotcount, device.isPinned(), "PINNED", "<PIN>", device, "<NODV>");
+		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
+			device.isPinned().toggle();
+		});
+		slotcount++;
+
+		menuDisplayLayer.bindFixed(slotcount, "<Move");
+		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
+			cursorDeviceControl.moveDeviceLeft();
+		});
+		slotcount++;
+		menuDisplayLayer.bindFixed(slotcount, "Move>");
+		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
+			cursorDeviceControl.moveDeviceRight();
+		});
+		slotcount++;
+
+		menuDisplayLayer.bindFixed(slotcount, "REMOVE");
+		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
+			cursorDeviceControl.getCursorDevice().deleteObject();
+		});
+
+		for (int i = 1; i < 8; i++) {
+			menuControl.addRingFixedBinding(i);
+		}
+
+		menuDisplayLayer.bindFixed(7, "Browse");
+		menuControl.addRingBoolBinding(0, device.isEnabled());
 	}
 
 	@Override
@@ -48,65 +111,27 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	public void setMissingText(final String line1, final String line2) {
 		this.stdMissingTextLine1 = line1;
 		this.stdMissingTextLine2 = line2;
-		if (deviceManager != null) {
-			deviceManager.getDevice().exists().addValueObserver(
-					exist -> evaluateTextDisplay(getPagesCount(), exist, deviceManager.getDevice().name().get()));
+	}
+
+	public void registerFollowers(final DeviceTypeFollower... deviceTypeFollowers) {
+		final PinnableCursorDevice device = cursorDeviceControl.getCursorDevice();
+		for (final DeviceTypeFollower deviceTypeFollower : deviceTypeFollowers) {
+			deviceTypeFollower.getFocusDevice().exists().addValueObserver(exist -> {
+				if (deviceManager.getCurrentFollower() == deviceTypeFollower && isActive()) {
+					evaluateTextDisplay(deviceManager.getPageCount(), exist, device.name().get());
+				}
+			});
 		}
 	}
 
-	public void setDeviceManager(final DeviceManager deviceManager) {
-		this.deviceManager = deviceManager;
-		this.deviceManager.getCursorOnDevice().markInterested();
-		this.deviceManager.setInfoLayer(infoLayer);
-		final CursorRemoteControlsPage remotes = deviceManager.getRemote();
-		final Device device = deviceManager.getDevice();
-		device.name().markInterested();
-		if (remotes != null) {
-			remotes.pageCount()
-					.addValueObserver(count -> evaluateTextDisplay(count, device.exists().get(), device.name().get()));
+	@Override
+	public void setCurrentFollower(final DeviceTypeFollower follower) {
+		if (deviceManager == null) {
+			return;
 		}
-		device.name().addValueObserver(name -> {
-			evaluateTextDisplay(getPagesCount(), device.exists().get(), name);
-		});
-
-		final DisplayLayer menuDisplayLayer = menuControl.getDisplayLayer(0);
-		menuDisplayLayer.bindBool(0, device.isEnabled(), "ACTIVE", "<BYPS>", device, "-no dev-");
-		menuControl.addPressEncoderBinding(0, encIndex -> {
-			device.isEnabled().toggle();
-		});
-
-		int slotcount = 1;
-		if (deviceManager.isCanTrackMultiple()) {
-			menuDisplayLayer.bindFixed(slotcount, "<Move");
-			menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-				deviceManager.moveDeviceToLeft();
-			});
-			slotcount++;
-			menuDisplayLayer.bindFixed(slotcount, "Move>");
-			menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-				deviceManager.moveDeviceToRight();
-			});
-			slotcount++;
-		}
-
-		menuDisplayLayer.bindFixed(slotcount, "REMOVE");
-		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-			deviceManager.removeDevice();
-		});
-
-		for (int i = 1; i < 8; i++) {
-			menuControl.addRingFixedBinding(i);
-		}
-
-		menuDisplayLayer.bindFixed(7, "Browse");
-		menuControl.addRingBoolBinding(0, device.isEnabled());
-	}
-
-	private int getPagesCount() {
-		if (deviceManager.getRemote() == null) {
-			return 0;
-		}
-		return deviceManager.getRemote().pageCount().get();
+		deviceManager.setCurrentFollower(follower);
+		evaluateTextDisplay(deviceManager.getPageCount(), follower.getFocusDevice().exists().get(),
+				cursorDeviceControl.getCursorDevice().name().get());
 	}
 
 	private void evaluateTextDisplay(final int count, final boolean exists, final String deviceName) {
@@ -114,17 +139,17 @@ class TrackLayerConfiguration extends LayerConfiguration {
 			return;
 		}
 		final DisplayLayer menuLayer = menuControl.getDisplayLayer(0);
-		menuLayer.setText(0, "Device: " + deviceManager.getDevice().name().get(), false);
+
+		menuLayer.setText(0, "Device: " + deviceName, false);
 		menuLayer.enableFullTextMode(0, true);
-		final CursorRemoteControlsPage remotes = deviceManager.getRemote();
-		final Device device = deviceManager.getDevice();
+		final CursorRemoteControlsPage remotes = cursorDeviceControl.getRemotes();
 		if (remotes != null) {
 			if (!exists) {
 				displayLayer.setMainText(stdMissingTextLine1, stdMissingTextLine2, true);
 				displayLayer.enableFullTextMode(true);
 			} else if (count == 0) {
-				displayLayer.setMainText(device.name().get() + " has no Parameter Pages",
-						"<< configure Parameter Pages in Bitwig >>", true);
+				displayLayer.setMainText(deviceName + " has no Parameter Pages",
+						"<<configure Parameter Pages in Bitwig Studio>>", true);
 				displayLayer.enableFullTextMode(true);
 			} else {
 				displayLayer.enableFullTextMode(false);
@@ -151,7 +176,7 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	}
 
 	@Override
-	public Layer getEncoderLayer() {
+	public EncoderLayer getEncoderLayer() {
 		if (mixControl.getIsMenuHoldActive().get()) {
 			return menuControl.getEncoderLayer();
 		}
@@ -198,6 +223,7 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	public void addBinding(final int index, final ParameterPage parameter,
 			final BiConsumer<Integer, ParameterPage> resetAction) {
 		final MixerSectionHardware hwControls = mixControl.getHwControls();
+
 		encoderLayer.addBinding(parameter.getRelativeEncoderBinding(hwControls.getEncoder(index)));
 		encoderLayer.addBinding(parameter.createRingBinding(hwControls.getRingDisplay(index)));
 		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(index),
