@@ -160,6 +160,25 @@ public class LcdDisplay {
 		}
 	}
 
+	public void sendToRowFull(final int row, final int segment, final String text) {
+		if (row > 1 || row < 0) {
+			return;
+		}
+		if (!text.equals(lastSendGrids[row][segment])) {
+			lastSendGrids[row][segment] = text;
+			sendTextSegFull(row, segment, text);
+		}
+	}
+
+	private void sendTextSegFull(final int row, final int segment, final String text) {
+		segBuffer[6] = (byte) (row * ROW2_START + segment * 7);
+		final char[] ca = text.toCharArray();
+		for (int i = 0; i < 7; i++) {
+			segBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+		}
+		midiOut.sendSysex(segBuffer);
+	}
+
 	private void sendTextSeg(final int row, final int segment, final String text) {
 		segBuffer[6] = (byte) (row * ROW2_START + segment * 7);
 		final char[] ca = text.toCharArray();

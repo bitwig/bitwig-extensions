@@ -5,6 +5,8 @@ import java.util.function.IntConsumer;
 import com.bitwig.extension.controller.api.BrowserResultsItem;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorBrowserFilterItem;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
@@ -15,8 +17,13 @@ import com.bitwig.extensions.framework.Layer;
 
 public class BrowserConfiguration extends LayerConfiguration {
 
+	public enum Type {
+		DEVICE, PRESET;
+	}
+
 	private final EncoderLayer encoderLayer;
 	private final DisplayLayer displayLayer;
+
 	private final PopupBrowser browser;
 	private LayerConfiguration previousConfig = null;
 	private boolean browsingInitiated = false;
@@ -26,6 +33,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 	private final CursorBrowserFilterItem tagItem;
 	private final CursorBrowserFilterItem fileTypeItem;
 	private CursorBrowserFilterItem deviceTypeItem;
+	// private CursorBrowserFilterItem deviceItem;
 
 	public BrowserConfiguration(final String name, final MixControl mixControl, final ControllerHost host,
 			final PopupBrowser browser) {
@@ -34,12 +42,17 @@ public class BrowserConfiguration extends LayerConfiguration {
 		encoderLayer = new EncoderLayer(mixControl, name + "_ENCODER_LAYER_" + sectionIndex);
 		encoderLayer.setEncoderMode(EncoderMode.NONACCELERATED);
 		displayLayer = new DisplayLayer(name, this.mixControl);
+		// deviceItem = (CursorBrowserFilterItem)
+		// browser.deviceColumn().createCursorItem();
+
 		this.browser = browser;
-		this.browser.exists().addValueObserver(browserOpen -> {
+		this.browser.exists().addValueObserver(browserNowOpen -> {
 			if (!browsingInitiated) {
 				return;
 			}
-			if (browserOpen) {
+			if (browserNowOpen) {
+				browser.shouldAudition().set(false);
+				browser.selectedContentTypeIndex().set(0);
 				resetState = true;
 				previousConfig = mixControl.getCurrentConfig();
 				mixControl.setConfiguration(this);
@@ -50,24 +63,33 @@ public class BrowserConfiguration extends LayerConfiguration {
 				browsingInitiated = false;
 			}
 		});
+		deviceTypeItem = (CursorBrowserFilterItem) browser.deviceTypeColumn().createCursorItem();
+		fileTypeItem = (CursorBrowserFilterItem) browser.fileTypeColumn().createCursorItem();
+		categoryItem = (CursorBrowserFilterItem) browser.categoryColumn().createCursorItem();
+		tagItem = (CursorBrowserFilterItem) browser.tagColumn().createCursorItem();
+
+		setUpDeviceBrowsing(mixControl, host, browser);
+	}
+
+	private void setUpDeviceBrowsing(final MixControl mixControl, final ControllerHost host,
+			final PopupBrowser browser) {
+		final HardwareButton enterButton = mixControl.getDriver().getEnterButton();
+		final HardwareButton cancelButton = mixControl.getDriver().getCancelButton();
 
 		final MixerSectionHardware hwControls = mixControl.getHwControls();
 
-		deviceTypeItem = (CursorBrowserFilterItem) browser.deviceTypeColumn().createCursorItem();
 		bindBrowserItem(0, hwControls, host, deviceTypeItem, "Type");
 		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(0),
 				hwControls.createAction(() -> browser.shouldAudition().toggle())));
 
 		final CursorBrowserFilterItem locationItem = (CursorBrowserFilterItem) browser.locationColumn()
 				.createCursorItem();
-//		deviceItem = (CursorBrowserFilterItem) browser.deviceColumn().createCursorItem();
+
 		bindBrowserItem(1, hwControls, host, locationItem, "DevLoc");
 		locationItem.hitCount().markInterested();
 
-		fileTypeItem = (CursorBrowserFilterItem) browser.fileTypeColumn().createCursorItem();
 		bindBrowserItem(2, hwControls, host, fileTypeItem, "FlType");
 
-		categoryItem = (CursorBrowserFilterItem) browser.categoryColumn().createCursorItem();
 		bindBrowserItem(3, hwControls, host, categoryItem, "Catgry");
 
 		final CursorBrowserFilterItem creatorItem = (CursorBrowserFilterItem) browser.creatorColumn()
@@ -75,25 +97,28 @@ public class BrowserConfiguration extends LayerConfiguration {
 		bindBrowserItem(4, hwControls, host, creatorItem, "Creatr");
 
 		displayLayer.bindName(0, 6, new CombinedStringValueObject("<Cncl>"));
-		encoderLayer.addBinding(
-				new ButtonBinding(hwControls.getEncoderPress(6), hwControls.createAction(() -> browser.cancel())));
+		final HardwareActionBindable cancelAction = hwControls.createAction(() -> browser.cancel());
+		final HardwareActionBindable commitAction = hwControls.createAction(() -> browser.commit());
+
+		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(6), cancelAction));
+		encoderLayer.bindPressed(cancelButton, cancelAction);
 
 		final BrowserResultsItem resultCursorItem = browser.resultsColumn().createCursorItem();
 		displayLayer.bindName(0, 7, new CombinedStringValueObject("<Okay>"), resultCursorItem, "<---->");
-		displayLayer.bindName(1, 7, resultCursorItem.name(), resultCursorItem, "");
-		encoderLayer.addBinding(
-				new ButtonBinding(hwControls.getEncoderPress(7), hwControls.createAction(() -> browser.commit())));
-		final RelativeHardwareKnob encoder = hwControls.getEncoder(7);
-		final RelativeHardwarControlBindable bindingResult = createIncrementBinder(host, v -> {
+		displayLayer.bindName(1, 6, 2, resultCursorItem.name(), resultCursorItem, "");
+
+		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(7), commitAction));
+		encoderLayer.bindPressed(enterButton, commitAction);
+		final RelativeHardwarControlBindable resultSelectionBinding = createIncrementBinder(host, v -> {
 			if (v < 0) {
 				browser.selectPreviousFile();
 			} else {
 				browser.selectNextFile();
 			}
 		});
-		encoderLayer.bind(encoder, bindingResult);
+		encoderLayer.bind(hwControls.getEncoder(6), resultSelectionBinding);
+		encoderLayer.bind(hwControls.getEncoder(7), resultSelectionBinding);
 
-		tagItem = (CursorBrowserFilterItem) browser.tagColumn().createCursorItem();
 		tagItem.hitCount().markInterested();
 	}
 
@@ -121,7 +146,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 				host.createAction(() -> consumer.accept(-1), () -> "-"));
 	}
 
-	public void setBrowsingInitiated(final boolean browsingInitiated) {
+	public void setBrowsingInitiated(final boolean browsingInitiated, final Type type) {
 		this.browsingInitiated = browsingInitiated;
 		deviceTypeItem.selectFirst();
 	}

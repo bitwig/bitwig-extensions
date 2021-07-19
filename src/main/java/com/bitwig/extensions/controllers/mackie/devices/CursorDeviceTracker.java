@@ -4,6 +4,7 @@ import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration;
+import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.layer.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
@@ -18,9 +19,10 @@ public class CursorDeviceTracker implements DeviceManager {
 
 	private final PinnableCursorDevice cursorDevice;
 
-	public CursorDeviceTracker(final CursorDeviceControl deviceControl) {
+	public CursorDeviceTracker(final CursorDeviceControl deviceControl, final DeviceTypeFollower initial) {
 		cursorDevice = deviceControl.getCursorDevice();
 		remote = deviceControl.getRemotes();
+		currentFollower = initial;
 
 		remote.pageNames().addValueObserver(pages -> {
 			currentPageInfo = getPageInfo(pages, remote.selectedPageIndex().get());
@@ -79,10 +81,7 @@ public class CursorDeviceTracker implements DeviceManager {
 	}
 
 	private String getDeviceInfo(final String deviceName, final String presetName) {
-		if (currentFollower != null) {
-			return currentFollower.getPotMode().getTypeName() + ":" + deviceName + "   Preset:" + presetName;
-		}
-		return "############";
+		return currentFollower.getPotMode().getTypeName() + ":" + deviceName + "   Preset:" + presetName;
 	}
 
 	@Override
@@ -91,8 +90,8 @@ public class CursorDeviceTracker implements DeviceManager {
 	}
 
 	@Override
-	public void initiateBrowsing(final BrowserConfiguration browser) {
-		browser.setBrowsingInitiated(true);
+	public void initiateBrowsing(final BrowserConfiguration browser, final Type type) {
+		browser.setBrowsingInitiated(true, type);
 		currentFollower.initiateBrowsing();
 	}
 

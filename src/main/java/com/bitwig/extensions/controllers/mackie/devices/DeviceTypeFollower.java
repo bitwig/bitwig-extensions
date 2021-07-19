@@ -28,6 +28,8 @@ public class DeviceTypeFollower {
 
 		focusDevice = deviceBank.getItemAt(0);
 		focusDevice.exists().markInterested();
+		focusDevice.name().markInterested();
+
 		final PinnableCursorDevice cursorDevice = cursorDeviceControl.getCursorDevice();
 		cursorOnDevice = focusDevice.createEqualsValue(cursorDevice);
 		cursorOnDevice.addValueObserver(equalsCursor -> {

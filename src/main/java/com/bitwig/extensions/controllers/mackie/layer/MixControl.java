@@ -18,9 +18,9 @@ import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
+import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
-import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
 import com.bitwig.extensions.framework.Layer;
 
 public class MixControl implements LayerStateHandler {
@@ -49,6 +49,8 @@ public class MixControl implements LayerStateHandler {
 	private final BooleanValueObject isMenuHoldActive = new BooleanValueObject();
 	private final DisplayLayer infoLayer;
 	private DeviceTypeBank deviceTypeBank;
+
+	private VPotMode activeMode = VPotMode.PAN;
 
 	public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
 			final int sectionIndex, final SectionType type) {
@@ -213,17 +215,18 @@ public class MixControl implements LayerStateHandler {
 		}
 	}
 
-	public void notifyModeAdvance(final boolean pressed) {
+	public void notifyModeAdvance(final VPotMode mode, final boolean pressed) {
 		if (!pressed) {
+			currentConfiguration.disableInfo();
 			isMenuHoldActive.set(false);
 		} else {
 			isMenuHoldActive.set(true);
 
 			final DeviceManager deviceTracker = currentConfiguration.getDeviceManager();
 
-			switch (driver.getVpotMode().getMode()) {
+			switch (activeMode) {
 			case EQ:
-				if (!deviceTracker.isSpecificDevicePresent()) {
+				if (deviceTracker != null && !deviceTracker.isSpecificDevicePresent()) {
 					final InsertionPoint ip = driver.getCursorTrack().endOfDeviceChainInsertionPoint();
 					ip.insertBitwigDevice(SpecialDevices.EQ_PLUS.getUuid());
 				}
@@ -231,8 +234,8 @@ public class MixControl implements LayerStateHandler {
 			case PLUGIN:
 			case INSTRUMENT:
 			case MIDI_EFFECT:
-				if (!deviceTracker.isSpecificDevicePresent()) {
-					deviceTracker.initiateBrowsing(driver.getBrowserConfiguration());
+				if (deviceTracker != null && !deviceTracker.isSpecificDevicePresent()) {
+					deviceTracker.initiateBrowsing(driver.getBrowserConfiguration(), Type.DEVICE);
 				}
 				break;
 			default:
@@ -245,6 +248,7 @@ public class MixControl implements LayerStateHandler {
 		if (down) {
 			doModeChange(mode, true);
 		} else {
+			currentConfiguration.disableInfo();
 			layerState.updateState(this);
 		}
 	}
@@ -282,6 +286,7 @@ public class MixControl implements LayerStateHandler {
 		default:
 			break;
 		}
+		activeMode = mode;
 		if (currentConfiguration.getDeviceManager() != null && focus) {
 			focusDevice(currentConfiguration.getDeviceManager());
 		} else {
@@ -377,20 +382,12 @@ public class MixControl implements LayerStateHandler {
 		eqTrackConfiguration.setNavigateHorizontalHandler(eqDevice::navigateDeviceParameters);
 		eqTrackConfiguration.setNavigateVerticalHandler(cursorDeviceControl::navigateDevice);
 
-//		pluginTrackConfiguration.setMissingText("no audio fx on track", "<< press PLUG-IN again to browse >>");
-		cursorDeviceConfiguration.setMissingText("no instrument on track", "<< press INSTRUMENT again to browse >>");
-//		noteEffectTrackConfiguration.setMissingText("no notes effect on track",
-//				"<< press INSTRUMENT again to browse >>");
-		eqTrackConfiguration.setMissingText("no EQ+ device on track", "<< press EQ button to insert EQ+ device >>");
-
 		cursorTrack.name().addValueObserver(trackName -> ensureModeFocus());
 
 		final PinnableCursorDevice cursorDevice = driver.getCursorDeviceControl().getCursorDevice();
-		final TrackModeValue potMode = driver.getVpotMode();
 		cursorDevice.position().addValueObserver(p -> {
 			final VPotMode fittingMode = VPotMode.fittingMode(cursorDevice);
-			if (fittingMode != null && potMode.getMode().isDeviceMode()
-					&& !getDriver().getBrowserConfiguration().isActive()) {
+			if (fittingMode != null && activeMode.isDeviceMode() && !getDriver().getBrowserConfiguration().isActive()) {
 				driver.getVpotMode().setMode(fittingMode);
 				doModeChange(fittingMode, false);
 			}

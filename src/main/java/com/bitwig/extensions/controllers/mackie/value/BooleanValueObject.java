@@ -12,7 +12,7 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 public class BooleanValueObject implements SettableBooleanValue {
 
 	private boolean value = false;
-	private final List<BooleanValueChangedCallback> callbacks = new ArrayList<BooleanValueChangedCallback>();
+	private final List<BooleanValueChangedCallback> callbacks = new ArrayList<>();
 
 	@Override
 	public void markInterested() {
@@ -52,6 +52,9 @@ public class BooleanValueObject implements SettableBooleanValue {
 
 	@Override
 	public void set(final boolean value) {
+		if (this.value == value) {
+			return;
+		}
 		this.value = value;
 		for (final BooleanValueChangedCallback booleanValueChangedCallback : callbacks) {
 			booleanValueChangedCallback.valueChanged(value);

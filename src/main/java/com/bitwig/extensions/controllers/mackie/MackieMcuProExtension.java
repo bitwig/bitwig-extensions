@@ -97,6 +97,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private BrowserConfiguration browserConfiguration;
 
 	private CursorDeviceControl cursorDeviceControl;
+	private HardwareButton enterButton;
+	private HardwareButton cancelButton;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -123,6 +125,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 		midiOut = host.getMidiOutPort(0);
 		midiIn = host.getMidiInPort(0);
 		ledDisplay = new TimeCodeLed(midiOut);
+
+		enterButton = createPressButton(NoteOnAssignment.ENTER);
+		cancelButton = createPressButton(NoteOnAssignment.CANCEL);
 
 		browser = host.createPopupBrowser();
 
@@ -152,6 +157,14 @@ public class MackieMcuProExtension extends ControllerExtension {
 //		for (final Action action : as) {
 //			RemoteConsole.out.println("ACTION > [{}]", action.getId());
 //		}
+	}
+
+	public HardwareButton getEnterButton() {
+		return enterButton;
+	}
+
+	public HardwareButton getCancelButton() {
+		return cancelButton;
 	}
 
 	public void initChannelSections() {
@@ -614,13 +627,17 @@ public class MackieMcuProExtension extends ControllerExtension {
 	public void setVPotMode(final VPotMode mode, final boolean down, final VPotMode altMode) {
 		final VPotMode cmode = this.trackChannelMode.getMode();
 		if (cmode != mode && cmode != altMode || cmode == altMode && modifier.isShiftSet()) {
-			this.trackChannelMode.setMode(mode);
+			if (down) {
+				this.trackChannelMode.setMode(mode);
+			}
 			sections.forEach(section -> section.notifyModeChange(mode, down));
 		} else if (cmode == mode && altMode != null && modifier.isShiftSet()) {
-			this.trackChannelMode.setMode(altMode);
+			if (down) {
+				this.trackChannelMode.setMode(mode);
+			}
 			sections.forEach(section -> section.notifyModeChange(altMode, down));
 		} else {
-			sections.forEach(control -> control.notifyModeAdvance(down));
+			sections.forEach(control -> control.notifyModeAdvance(mode, down));
 		}
 	}
 

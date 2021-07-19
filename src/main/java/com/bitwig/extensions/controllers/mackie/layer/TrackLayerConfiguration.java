@@ -3,14 +3,18 @@ package com.bitwig.extensions.controllers.mackie.layer;
 import java.util.function.BiConsumer;
 
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
+import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
+import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
@@ -22,8 +26,7 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	private final DisplayLayer infoLayer;
 
 	private DeviceManager deviceManager;
-	private String stdMissingTextLine1;
-	private String stdMissingTextLine2;
+
 	private final MenuModeLayerConfiguration menuControl;
 	private CursorDeviceControl cursorDeviceControl;
 
@@ -42,18 +45,19 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	}
 
 	public void setDeviceManager(final DeviceManager deviceManager) {
-		cursorDeviceControl = mixControl.getDriver().getCursorDeviceControl();
+		final MackieMcuProExtension driver = mixControl.getDriver();
+		cursorDeviceControl = driver.getCursorDeviceControl();
 		this.deviceManager = deviceManager;
 		this.deviceManager.setInfoLayer(infoLayer);
 
 		final CursorRemoteControlsPage remotes = cursorDeviceControl.getRemotes();
 		final PinnableCursorDevice device = cursorDeviceControl.getCursorDevice();
 		if (remotes != null) {
-			remotes.pageCount()
-					.addValueObserver(count -> evaluateTextDisplay(count, device.exists().get(), device.name().get()));
+			remotes.pageCount().addValueObserver(
+					count -> evaluateTextDisplay(count, deviceManager.isSpecificDevicePresent(), device.name().get()));
 		}
 		device.name().addValueObserver(name -> {
-			evaluateTextDisplay(deviceManager.getPageCount(), device.exists().get(), name);
+			evaluateTextDisplay(deviceManager.getPageCount(), deviceManager.isSpecificDevicePresent(), name);
 		});
 
 		initMenuControl(device);
@@ -96,6 +100,9 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		}
 
 		menuDisplayLayer.bindFixed(7, "Browse");
+		menuControl.addPressEncoderBinding(7, encIndex -> {
+			deviceManager.initiateBrowsing(getMixControl().getDriver().getBrowserConfiguration(), Type.PRESET);
+		});
 		menuControl.addRingBoolBinding(0, device.isEnabled());
 	}
 
@@ -105,20 +112,25 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	}
 
 	public boolean isActive() {
-		return encoderLayer.isActive() || faderLayer.isActive();
-	}
-
-	public void setMissingText(final String line1, final String line2) {
-		this.stdMissingTextLine1 = line1;
-		this.stdMissingTextLine2 = line2;
+		return encoderLayer.isActive() || faderLayer.isActive() || menuControl.isActive();
 	}
 
 	public void registerFollowers(final DeviceTypeFollower... deviceTypeFollowers) {
-		final PinnableCursorDevice device = cursorDeviceControl.getCursorDevice();
+		final PinnableCursorDevice cursorDevice = cursorDeviceControl.getCursorDevice();
+
+		cursorDevice.exists().addValueObserver(cursorExists -> {
+			if (isActive() && !cursorExists && deviceManager.isSpecificDevicePresent()) {
+				cursorDevice.selectDevice(deviceManager.getCurrentFollower().getFocusDevice());
+				mixControl.getIsMenuHoldActive().set(false);
+			}
+		});
+
 		for (final DeviceTypeFollower deviceTypeFollower : deviceTypeFollowers) {
-			deviceTypeFollower.getFocusDevice().exists().addValueObserver(exist -> {
+			final Device focusDevice = deviceTypeFollower.getFocusDevice();
+
+			focusDevice.exists().addValueObserver(exist -> {
 				if (deviceManager.getCurrentFollower() == deviceTypeFollower && isActive()) {
-					evaluateTextDisplay(deviceManager.getPageCount(), exist, device.name().get());
+					evaluateTextDisplay(deviceManager.getPageCount(), exist, cursorDevice.name().get());
 				}
 			});
 		}
@@ -130,7 +142,7 @@ class TrackLayerConfiguration extends LayerConfiguration {
 			return;
 		}
 		deviceManager.setCurrentFollower(follower);
-		evaluateTextDisplay(deviceManager.getPageCount(), follower.getFocusDevice().exists().get(),
+		evaluateTextDisplay(deviceManager.getPageCount(), deviceManager.isSpecificDevicePresent(),
 				cursorDeviceControl.getCursorDevice().name().get());
 	}
 
@@ -138,15 +150,14 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		if (deviceManager == null) {
 			return;
 		}
-		final DisplayLayer menuLayer = menuControl.getDisplayLayer(0);
 
+		final DisplayLayer menuLayer = menuControl.getDisplayLayer(0);
 		menuLayer.setText(0, "Device: " + deviceName, false);
 		menuLayer.enableFullTextMode(0, true);
 		final CursorRemoteControlsPage remotes = cursorDeviceControl.getRemotes();
 		if (remotes != null) {
-			if (!exists) {
-				displayLayer.setMainText(stdMissingTextLine1, stdMissingTextLine2, true);
-				displayLayer.enableFullTextMode(true);
+			if (!exists || deviceName.length() == 0) {
+				setMainText(deviceManager.getCurrentFollower().getPotMode());
 			} else if (count == 0) {
 				displayLayer.setMainText(deviceName + " has no Parameter Pages",
 						"<<configure Parameter Pages in Bitwig Studio>>", true);
@@ -155,11 +166,23 @@ class TrackLayerConfiguration extends LayerConfiguration {
 				displayLayer.enableFullTextMode(false);
 			}
 		} else if (!exists) {
-			displayLayer.setMainText(stdMissingTextLine1, stdMissingTextLine2, true);
-			displayLayer.enableFullTextMode(true);
+			setMainText(deviceManager.getCurrentFollower().getPotMode());
 		} else {
 			displayLayer.enableFullTextMode(false);
 		}
+	}
+
+	private void setMainText(final VPotMode mode) {
+		final String line1 = String.format("no %s on track", mode.getTypeDisplayName());
+		final String line2;
+		if (mode.getDeviceName() == null) {
+			line2 = String.format("<< press %s again to browse >>", mode.getButtonDescription());
+		} else {
+			line2 = String.format("<< press %s again to create %s device >>", mode.getButtonDescription(),
+					mode.getDeviceName());
+		}
+		displayLayer.setMainText(line1, line2, true);
+		displayLayer.enableFullTextMode(true);
 	}
 
 	@Override

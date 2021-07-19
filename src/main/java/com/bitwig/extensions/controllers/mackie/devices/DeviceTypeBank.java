@@ -40,7 +40,7 @@ public class DeviceTypeBank {
 				managers.put(VPotMode.EQ, manager);
 				break;
 			default:
-				manager = new CursorDeviceTracker(cursorDeviceControl);
+				manager = new CursorDeviceTracker(cursorDeviceControl, types.get(VPotMode.PLUGIN));
 				managers.put(VPotMode.INSTRUMENT, manager);
 				managers.put(VPotMode.MIDI_EFFECT, manager);
 				managers.put(VPotMode.PLUGIN, manager);

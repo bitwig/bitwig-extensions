@@ -226,6 +226,44 @@ public class DisplayLayer extends Layer {
 		cell.lastValue = name.get();
 	}
 
+	public void bindName(final int rowIndex, final int startIndex, final int span, final StringValue name,
+			final ObjectProxy sourceOfExistance, final String emptyText) {
+		assert startIndex >= 0 && startIndex < 8;
+		assert startIndex + span < 8;
+		assert span > 0;
+
+		final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
+
+		for (int i = 0; i < span; i++) {
+			final int index = startIndex + i;
+			final int seg = i;
+			final DisplayCell cell = row.getCell(index);
+			cell.setEmptyValue(splitString(emptyText, index));
+			sourceOfExistance.exists().addValueObserver(exist -> {
+				cell.setExist(exist);
+				if (isActive() && !row.isFullTextMode()) {
+					display.sendToRowFull(rowIndex, index, cell.getDisplayValue());
+				}
+			});
+			cell.setExist(sourceOfExistance.exists().get());
+			name.addValueObserver(v -> {
+				cell.lastValue = splitString(v, seg);
+				if (isActive() && !row.isFullTextMode()) {
+					display.sendToRowFull(rowIndex, index, cell.getDisplayValue());
+				}
+			});
+			cell.lastValue = splitString(name.get(), seg);
+		}
+	}
+
+	private static String splitString(final String s, final int section) {
+		final int startIndex = section * 7;
+		if (startIndex >= s.length()) {
+			return "";
+		}
+		return s.substring(startIndex, Math.min(startIndex + 7, s.length()));
+	}
+
 	public void bindName(final int index, final StringValue name) {
 		name.addValueObserver(v -> {
 			topRow.getCell(index).lastValue = v;

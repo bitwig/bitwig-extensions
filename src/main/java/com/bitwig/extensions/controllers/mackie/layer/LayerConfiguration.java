@@ -17,6 +17,10 @@ public abstract class LayerConfiguration {
 		this.mixControl = mixControl;
 	}
 
+	public MixControl getMixControl() {
+		return mixControl;
+	}
+
 	public void setNavigateHorizontalHandler(final IntConsumer navigateHorizontalHandler) {
 		this.navigateHorizontalHandler = navigateHorizontalHandler;
 	}

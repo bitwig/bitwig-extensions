@@ -9,6 +9,7 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.SpecificBitwigDevice;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration;
+import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.layer.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
@@ -289,8 +290,8 @@ public class EqDevice implements ControlDevice, DeviceManager {
 	}
 
 	@Override
-	public void initiateBrowsing(final BrowserConfiguration browser) {
-		browser.setBrowsingInitiated(true);
+	public void initiateBrowsing(final BrowserConfiguration browser, final Type type) {
+		browser.setBrowsingInitiated(true, type);
 		deviceFollower.initiateBrowsing();
 	}
 
