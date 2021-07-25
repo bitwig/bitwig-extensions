@@ -3,9 +3,9 @@ package com.bitwig.extensions.controllers.mackie.devices;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration;
 import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
-import com.bitwig.extensions.controllers.mackie.layer.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 

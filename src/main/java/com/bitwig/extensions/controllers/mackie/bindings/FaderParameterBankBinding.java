@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.bindings;
 
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
-import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
+import com.bitwig.extensions.controllers.mackie.display.MotorFader;
 import com.bitwig.extensions.framework.Binding;
 
 public class FaderParameterBankBinding extends Binding<ParameterPage, MotorFader> {

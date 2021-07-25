@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.mackie.bindings;
 
 import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extensions.controllers.mackie.display.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.targets.RingDisplay;
 import com.bitwig.extensions.framework.Binding;
 
 public class RingDisplayBoolBinding extends Binding<BooleanValue, RingDisplay> {

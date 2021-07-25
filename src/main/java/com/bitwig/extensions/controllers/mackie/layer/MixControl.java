@@ -15,6 +15,7 @@ import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
 import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
+import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
@@ -22,6 +23,7 @@ import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class MixControl implements LayerStateHandler {
 	private final MixerSectionHardware hwControls;
@@ -49,6 +51,7 @@ public class MixControl implements LayerStateHandler {
 	private final BooleanValueObject isMenuHoldActive = new BooleanValueObject();
 	private final DisplayLayer infoLayer;
 	private DeviceTypeBank deviceTypeBank;
+	private DisplayLayer activeDisplayLayer;
 
 	private VPotMode activeMode = VPotMode.PAN;
 
@@ -79,6 +82,7 @@ public class MixControl implements LayerStateHandler {
 
 		currentConfiguration = panConfiguration;
 		layerState = new LayerState(this);
+		activeDisplayLayer = infoLayer;
 
 		driver.getFlipped().addValueObserver(flipped -> layerState.updateState(this));
 		driver.getGlobalViewActive().addValueObserver(globalView -> layerState.updateState(this));
@@ -133,19 +137,21 @@ public class MixControl implements LayerStateHandler {
 	@Override
 	public DisplayLayer getActiveDisplayLayer() {
 		if (infoLayer.isActive()) {
-			return infoLayer;
+			activeDisplayLayer = infoLayer;
+		} else {
+			final boolean flipped = driver.getFlipped().get();
+			final boolean touched = fadersTouched.get();
+			final int displayer = !flipped && touched || flipped && !touched ? 1 : 0;
+			activeDisplayLayer = currentConfiguration.getDisplayLayer(displayer);
 		}
-		final boolean flipped = driver.getFlipped().get();
-		final boolean touched = fadersTouched.get();
-		final int displayer = !flipped && touched || flipped && !touched ? 1 : 0;
-		return currentConfiguration.getDisplayLayer(displayer);
+		return activeDisplayLayer;
 	}
 
 	public BooleanValueObject getIsMenuHoldActive() {
 		return isMenuHoldActive;
 	}
 
-	MixerSectionHardware getHwControls() {
+	public MixerSectionHardware getHwControls() {
 		return hwControls;
 	}
 
@@ -315,6 +321,7 @@ public class MixControl implements LayerStateHandler {
 
 	public void notifyBlink(final int ticks) {
 		launchButtonLayer.notifyBlink(ticks);
+		activeDisplayLayer.triggerTimer();
 	}
 
 	private void handleTouch(final boolean touched) {
@@ -387,9 +394,18 @@ public class MixControl implements LayerStateHandler {
 		final PinnableCursorDevice cursorDevice = driver.getCursorDeviceControl().getCursorDevice();
 		cursorDevice.position().addValueObserver(p -> {
 			final VPotMode fittingMode = VPotMode.fittingMode(cursorDevice);
-			if (fittingMode != null && activeMode.isDeviceMode() && !getDriver().getBrowserConfiguration().isActive()) {
+			if (p == -1) {
+				RemoteConsole.out.println("No Cursor Set = {}", driver.getVpotMode().getMode());
+			} else if (fittingMode != null && activeMode.isDeviceMode()
+					&& !getDriver().getBrowserConfiguration().isActive()) {
 				driver.getVpotMode().setMode(fittingMode);
 				doModeChange(fittingMode, false);
+			}
+		});
+
+		deviceTypeBank.addListenter((type, exists) -> {
+			if (driver.getVpotMode().getMode() == type) {
+				focusDevice(currentConfiguration.getDeviceManager());
 			}
 		});
 	}

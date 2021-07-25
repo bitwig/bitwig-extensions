@@ -4,6 +4,7 @@ import java.util.function.IntConsumer;
 
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
+import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.framework.Layer;
 
 public abstract class LayerConfiguration {

@@ -9,6 +9,7 @@ import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
+import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.framework.Layer;

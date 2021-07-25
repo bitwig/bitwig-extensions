@@ -10,6 +10,7 @@ import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ValueConverter;
+import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.RelativeHardwareControlBinding;

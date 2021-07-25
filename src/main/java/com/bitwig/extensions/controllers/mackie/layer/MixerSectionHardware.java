@@ -27,9 +27,9 @@ import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayFixedBinding
 import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayParameterBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.TouchFaderBinding;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
+import com.bitwig.extensions.controllers.mackie.display.MotorFader;
+import com.bitwig.extensions.controllers.mackie.display.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.targets.MotorFader;
-import com.bitwig.extensions.controllers.mackie.targets.RingDisplay;
 import com.bitwig.extensions.framework.AbsoluteHardwareControlBinding;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.RelativeHardwareControlToRangedValueBinding;

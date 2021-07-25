@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.targets;
+package com.bitwig.extensions.controllers.mackie.display;
 
 import com.bitwig.extension.controller.api.MidiOut;
 

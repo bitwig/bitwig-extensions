@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.bindings;
 
+import com.bitwig.extensions.controllers.mackie.display.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.targets.RingDisplay;
 import com.bitwig.extensions.framework.Binding;
 
 public class RingDisplayFixedBinding extends Binding<Integer, RingDisplay> {

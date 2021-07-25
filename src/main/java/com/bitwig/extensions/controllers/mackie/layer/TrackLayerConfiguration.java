@@ -13,6 +13,7 @@ import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
+import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
 import com.bitwig.extensions.framework.Layer;

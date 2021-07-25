@@ -1,26 +1,40 @@
 package com.bitwig.extensions.controllers.mackie.devices;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.Device;
+import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 
 public class DeviceTypeBank {
+
+	public interface ExistanceChangedListener {
+		void changed(VPotMode typ, boolean exists);
+	}
+
 	private final Map<VPotMode, DeviceTypeFollower> types = new HashMap<>();
 	private final Map<VPotMode, DeviceManager> managers = new HashMap<>();
 	private final CursorDeviceControl cursorDeviceControl;
+	private final List<ExistanceChangedListener> listeners = new ArrayList<>();
 
 	public DeviceTypeBank(final ControllerHost host, final CursorDeviceControl deviceControl) {
 		this.cursorDeviceControl = deviceControl;
-		types.put(VPotMode.INSTRUMENT,
-				new DeviceTypeFollower(deviceControl, host.createInstrumentMatcher(), VPotMode.INSTRUMENT));
-		types.put(VPotMode.PLUGIN,
-				new DeviceTypeFollower(deviceControl, host.createAudioEffectMatcher(), VPotMode.PLUGIN));
-		types.put(VPotMode.MIDI_EFFECT,
-				new DeviceTypeFollower(deviceControl, host.createNoteEffectMatcher(), VPotMode.MIDI_EFFECT));
-		types.put(VPotMode.EQ, new DeviceTypeFollower(deviceControl,
-				host.createBitwigDeviceMatcher(SpecialDevices.EQ_PLUS.getUuid()), VPotMode.EQ));
+		addFollower(host, deviceControl, VPotMode.INSTRUMENT, host.createInstrumentMatcher());
+		addFollower(host, deviceControl, VPotMode.PLUGIN, host.createAudioEffectMatcher());
+		addFollower(host, deviceControl, VPotMode.MIDI_EFFECT, host.createNoteEffectMatcher());
+		addFollower(host, deviceControl, VPotMode.EQ, host.createBitwigDeviceMatcher(SpecialDevices.EQ_PLUS.getUuid()));
+	}
+
+	private void addFollower(final ControllerHost host, final CursorDeviceControl deviceControl, final VPotMode mode,
+			final DeviceMatcher matcher) {
+		final DeviceTypeFollower follower = new DeviceTypeFollower(deviceControl, matcher, VPotMode.INSTRUMENT);
+		types.put(mode, follower);
+		final Device device = follower.getFocusDevice();
+		device.exists().addValueObserver(followExists -> listeners.forEach(l -> l.changed(mode, followExists)));
 	}
 
 	public DeviceTypeFollower[] getStandardFollowers() {
@@ -29,6 +43,10 @@ public class DeviceTypeBank {
 		result[1] = types.get(VPotMode.PLUGIN);
 		result[2] = types.get(VPotMode.MIDI_EFFECT);
 		return result;
+	}
+
+	public void addListenter(final ExistanceChangedListener listener) {
+		listeners.add(listener);
 	}
 
 	public DeviceManager getDeviceManager(final VPotMode mode) {

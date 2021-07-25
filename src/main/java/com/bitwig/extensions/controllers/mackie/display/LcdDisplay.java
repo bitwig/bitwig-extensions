@@ -10,7 +10,7 @@ import com.bitwig.extensions.controllers.mackie.layer.SectionType;
  * Represents 2x56 LCD display on the MCU or an extender.
  *
  */
-public class LcdDisplay {
+public class LcdDisplay implements DisplaySource {
 	private static final int DISPLAY_LEN = 55;
 	private static final int ROW2_START = 56;
 
@@ -117,8 +117,8 @@ public class LcdDisplay {
 		}
 	}
 
-	public void centerText(final int row, final String text) {
-		sendToDisplay(row, pad4Center(text));
+	public void centerText(final DisplaySource source, final int row, final String text) {
+		sendToDisplay(source, row, pad4Center(text));
 	}
 
 	private static String pad4Center(final String text) {
@@ -132,16 +132,16 @@ public class LcdDisplay {
 		return StringUtil.padString(text, fill / 2);
 	}
 
-	public void sendToDisplay(final int row, final String text) {
+	public void sendToDisplay(final DisplaySource source, final int row, final String text) {
 		if (text.equals(lastSentRows[row])) {
 			return;
 		}
 		lastSentRows[row] = text;
 		resetGrids(row);
-		sendFullRow(row, text);
+		sendFullRow(source, row, text);
 	}
 
-	private void sendFullRow(final int row, final String text) {
+	private void sendFullRow(final DisplaySource source, final int row, final String text) {
 		rowDisplayBuffer[6] = (byte) (row * ROW2_START);
 		final char[] ca = text.toCharArray();
 		for (int i = 0; i < DISPLAY_LEN; i++) {
@@ -150,27 +150,27 @@ public class LcdDisplay {
 		midiOut.sendSysex(rowDisplayBuffer);
 	}
 
-	public void sendToRow(final int row, final int segment, final String text) {
+	public void sendToRow(final DisplaySource source, final int row, final int segment, final String text) {
 		if (row > 1 || row < 0) {
 			return;
 		}
 		if (!text.equals(lastSendGrids[row][segment])) {
 			lastSendGrids[row][segment] = text;
-			sendTextSeg(row, segment, text);
+			sendTextSeg(source, row, segment, text);
 		}
 	}
 
-	public void sendToRowFull(final int row, final int segment, final String text) {
+	public void sendToRowFull(final DisplaySource source, final int row, final int segment, final String text) {
 		if (row > 1 || row < 0) {
 			return;
 		}
 		if (!text.equals(lastSendGrids[row][segment])) {
 			lastSendGrids[row][segment] = text;
-			sendTextSegFull(row, segment, text);
+			sendTextSegFull(source, row, segment, text);
 		}
 	}
 
-	private void sendTextSegFull(final int row, final int segment, final String text) {
+	private void sendTextSegFull(final DisplaySource source, final int row, final int segment, final String text) {
 		segBuffer[6] = (byte) (row * ROW2_START + segment * 7);
 		final char[] ca = text.toCharArray();
 		for (int i = 0; i < 7; i++) {
@@ -179,7 +179,7 @@ public class LcdDisplay {
 		midiOut.sendSysex(segBuffer);
 	}
 
-	private void sendTextSeg(final int row, final int segment, final String text) {
+	private void sendTextSeg(final DisplaySource source, final int row, final int segment, final String text) {
 		segBuffer[6] = (byte) (row * ROW2_START + segment * 7);
 		final char[] ca = text.toCharArray();
 		for (int i = 0; i < 6; i++) {
@@ -194,10 +194,10 @@ public class LcdDisplay {
 	public void refreshDisplay() {
 		for (int row = 0; row < 2; row++) {
 			if (fullTextMode[row]) {
-				sendFullRow(row, lastSentRows[row]);
+				sendFullRow(this, row, lastSentRows[row]);
 			} else {
 				for (int segment = 0; segment < 8; segment++) {
-					sendTextSeg(row, segment, lastSendGrids[row][segment]);
+					sendTextSeg(this, row, segment, lastSendGrids[row][segment]);
 				}
 			}
 		}
@@ -218,19 +218,24 @@ public class LcdDisplay {
 
 	public void clearAll() {
 		midiOut.sendSysex(sysHead + "62 f7");
-		sendToDisplay(0, "");
-		sendToDisplay(1, "");
+		sendToDisplay(this, 0, "");
+		sendToDisplay(this, 1, "");
 	}
 
 	public void exitMessage() {
 		midiOut.sendSysex(sysHead + "62 f7");
-		centerText(0, "Bitwig Studio");
-		centerText(1, "... not running ...");
+		centerText(this, 0, "Bitwig Studio");
+		centerText(this, 1, "... not running ...");
 	}
 
 	public void clearText() {
-		sendToDisplay(0, "");
-		sendToDisplay(1, "");
+		sendToDisplay(this, 0, "");
+		sendToDisplay(this, 1, "");
+	}
+
+	@Override
+	public boolean isActive() {
+		return true;
 	}
 
 }
