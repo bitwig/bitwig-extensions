@@ -17,13 +17,14 @@ public class CursorDeviceControl {
 	private final PinnableCursorDevice primaryDevice;
 	private final DrumPadBank drumPadBank;
 
-	public CursorDeviceControl(final CursorTrack cursorTrack, final int size) {
+	public CursorDeviceControl(final CursorTrack cursorTrack, final int size, final int totalChannelsAvailable) {
 		this.cursorTrack = cursorTrack;
 		this.cursorDevice = cursorTrack.createCursorDevice();
-		primaryDevice = cursorTrack.createCursorDevice("drumdetection", "Pad Device", 8,
+		primaryDevice = cursorTrack.createCursorDevice("drumdetection", "Pad Device", 1,
 				CursorDeviceFollowMode.FIRST_INSTRUMENT);
 
-		drumPadBank = primaryDevice.createDrumPadBank(8);
+		drumPadBank = primaryDevice.createDrumPadBank(size);
+		drumPadBank.setSkipDisabledItems(false);
 
 		this.cursorDevice.name().markInterested();
 		this.cursorDevice.deviceType().markInterested();

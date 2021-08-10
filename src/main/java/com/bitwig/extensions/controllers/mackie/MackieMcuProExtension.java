@@ -322,9 +322,19 @@ public class MackieMcuProExtension extends ControllerExtension {
 			return;
 		}
 		if (direction > 0) {
-			mixerTrackBank.scrollForwards();
+			if (mixerMode.get() == MixerMode.DRUM) {
+				cursorDeviceControl.getDrumPadBank().scrollForwards();
+			} else {
+				mixerTrackBank.scrollForwards();
+				globalTrackBank.scrollForwards();
+			}
 		} else {
-			mixerTrackBank.scrollBackwards();
+			if (mixerMode.get() == MixerMode.DRUM) {
+				cursorDeviceControl.getDrumPadBank().scrollBackwards();
+			} else {
+				mixerTrackBank.scrollBackwards();
+				globalTrackBank.scrollBackwards();
+			}
 		}
 	}
 
@@ -332,7 +342,12 @@ public class MackieMcuProExtension extends ControllerExtension {
 		if (!isPressed) {
 			return;
 		}
-		mixerTrackBank.scrollBy(direction * 8 * sections.size());
+		if (mixerMode.get() == MixerMode.DRUM) {
+			cursorDeviceControl.getDrumPadBank().scrollBy(direction * 8 * sections.size());
+		} else {
+			mixerTrackBank.scrollBy(direction * 8 * sections.size());
+			globalTrackBank.scrollBy(direction * 8 * sections.size());
+		}
 	}
 
 	private void navigateUpDown(final int direction, final boolean isPressed) {
@@ -731,25 +746,26 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	protected void initTrackBank(final int nrOfScenes) {
 		// initNaviagtion();
+		final int numberOfHwChannels = 8 * sections.size();
 
 		cursorTrack = getHost().createCursorTrack(8, nrOfScenes);
 		cursorTrack.color().markInterested();
 
-		cursorDeviceControl = new CursorDeviceControl(cursorTrack, 8);
+		cursorDeviceControl = new CursorDeviceControl(cursorTrack, 8, numberOfHwChannels);
 
 		final HardwareButton soloButton = createButtonWState(NoteOnAssignment.SOLO, cursorTrack.solo(), false);
 		mainLayer.bindPressed(soloButton, cursorTrack.solo().toggleAction());
 
-		final TrackBank mainTrackBank = getHost().createMainTrackBank(8 * sections.size(), 1, nrOfScenes);
+		final TrackBank mainTrackBank = getHost().createMainTrackBank(numberOfHwChannels, 1, nrOfScenes);
 
 		mainTrackBank.followCursorTrack(cursorTrack);
 
-		mixerTrackBank = getHost().createMainTrackBank(8 * sections.size(), 1, nrOfScenes);
+		mixerTrackBank = getHost().createMainTrackBank(numberOfHwChannels, 1, nrOfScenes);
 		mixerTrackBank.setSkipDisabledItems(false);
 		mixerTrackBank.canScrollChannelsDown().markInterested();
 		mixerTrackBank.canScrollChannelsUp().markInterested();
 
-		globalTrackBank = host.createTrackBank(8 * sections.size(), 1, nrOfScenes);
+		globalTrackBank = host.createTrackBank(numberOfHwChannels, 1, nrOfScenes);
 		globalTrackBank.setSkipDisabledItems(false);
 		globalTrackBank.canScrollChannelsDown().markInterested();
 		globalTrackBank.canScrollChannelsUp().markInterested();
@@ -848,7 +864,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		});
 	}
 
-	public ValueObject<MixerMode> getGlobalViewActive() {
+	public ValueObject<MixerMode> getMixerMode() {
 		return mixerMode;
 	}
 

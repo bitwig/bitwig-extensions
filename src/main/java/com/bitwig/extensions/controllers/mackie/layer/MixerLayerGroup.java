@@ -5,8 +5,10 @@ import java.util.List;
 
 import com.bitwig.extension.controller.api.Bank;
 import com.bitwig.extension.controller.api.Channel;
+import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.Parameter;
+import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
@@ -19,7 +21,7 @@ import com.bitwig.extensions.framework.Layers;
 
 public class MixerLayerGroup {
 
-	private final List<Bank<? extends Parameter>> bankList = new ArrayList<>();
+	private final List<Bank<? extends Parameter>> sendBankList = new ArrayList<>();
 	private final Layer volumeFaderLayer;
 	private final EncoderLayer volumeEncoderLayer;
 	private final Layer panFaderLayer;
@@ -108,12 +110,8 @@ public class MixerLayerGroup {
 	}
 
 	public void navigateHorizontally(final int direction) {
-		for (final Bank<?> bank : bankList) {
-			if (direction > 0 && bank.canScrollForwards().get()) {
-				bank.scrollForwards();
-			} else if (direction < 0 && bank.canScrollBackwards().get()) {
-				bank.scrollBackwards();
-			}
+		for (final Bank<?> bank : sendBankList) {
+			bank.scrollBy(direction);
 		}
 	}
 
@@ -143,21 +141,21 @@ public class MixerLayerGroup {
 			}
 		});
 
-		final BooleanValueObject selectedInMixer = new BooleanValueObject();
-		channel.addIsSelectedInEditorObserver(v -> selectedInMixer.set(v));
-
 		setControlLayer(index, channel.volume(), volumeFaderLayer, volumeEncoderLayer, RingDisplayType.FILL_LR_0);
 		setControlLayer(index, channel.pan(), panFaderLayer, panEncoderLayer, RingDisplayType.PAN_FILL);
-		final SendBank bank = channel.sendBank();
-		setControlLayer(index, bank.getItemAt(0), sendFaderLayer, sendEncoderLayer, RingDisplayType.FILL_LR);
-		bankList.add(bank);
-		bank.canScrollForwards().markInterested();
-		bank.canScrollBackwards().markInterested();
+		final SendBank sendBank = channel.sendBank();
+		final Send focusSendItem = sendBank.getItemAt(0);
+
+		// focusSendItem.name().addValueObserver(itemName ->
+		// RemoteConsole.out.println("ITEM NAME {}", itemName));
+
+		setControlLayer(index, focusSendItem, sendFaderLayer, sendEncoderLayer, RingDisplayType.FILL_LR);
+		sendBankList.add(sendBank);
 
 		volumeDisplayConfiguration.bindDisplayParameterValue(index, channel.volume(),
 				s -> StringUtil.condenseVolumenValue(s, 7));
 		panDisplayConfiguration.bindParameterValue(index, channel.pan(), StringUtil::panToString);
-		sendDisplayConfiguration.bindDisplayParameterValue(index, bank.getItemAt(0),
+		sendDisplayConfiguration.bindDisplayParameterValue(index, focusSendItem,
 				s -> StringUtil.condenseVolumenValue(s, 7));
 
 		final TrackNameValueHandler trackNameHandler = new TrackNameValueHandler(channel.name());
@@ -173,11 +171,19 @@ public class MixerLayerGroup {
 		});
 		if (channel instanceof Track) {
 			final Track track = (Track) channel;
+			final BooleanValueObject selectedInMixer = new BooleanValueObject();
+			channel.addIsSelectedInEditorObserver(v -> selectedInMixer.set(v));
 			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.REC_INDEX, track.arm(), () -> {
 				track.arm().toggle();
 			});
 			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
 					() -> control.handleTrackSelection(track));
+		} else if (channel instanceof DrumPad) {
+			final DrumPad pad = (DrumPad) channel;
+			final BooleanValueObject selectedInMixer = new BooleanValueObject();
+			pad.addIsSelectedInMixerObserver(v -> selectedInMixer.set(v));
+			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
+					() -> pad.selectInMixer());
 		}
 	}
 

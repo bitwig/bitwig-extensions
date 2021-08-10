@@ -72,8 +72,12 @@ public class MixControl implements LayerStateHandler {
 		globalGroup = new MixerLayerGroup("GL", this);
 		drumGroup = new MixerLayerGroup("DR", this);
 		sendConfiguration.setNavigateHorizontalHandler(direction -> {
-			mainGroup.navigateHorizontally(direction);
-			globalGroup.navigateHorizontally(direction);
+			if (driver.getMixerMode().get() == MixerMode.DRUM) {
+				drumGroup.navigateHorizontally(direction);
+			} else {
+				mainGroup.navigateHorizontally(direction);
+				globalGroup.navigateHorizontally(direction);
+			}
 		});
 
 		sendTrackConfiguration = new TrackLayerConfiguration("SN_TR", this);
@@ -89,7 +93,7 @@ public class MixControl implements LayerStateHandler {
 		activeDisplayLayer = infoLayer;
 
 		driver.getFlipped().addValueObserver(flipped -> layerState.updateState(this));
-		driver.getGlobalViewActive().addValueObserver(globalView -> layerState.updateState(this));
+		driver.getMixerMode().addValueObserver(globalView -> layerState.updateState(this));
 		driver.getGroupViewActive().addValueObserver(groupView -> layerState.updateState(this));
 		driver.getTrackChannelMode().addValueObserver(trackMode -> doModeChange(driver.getVpotMode().getMode(), true));
 
@@ -126,7 +130,7 @@ public class MixControl implements LayerStateHandler {
 	}
 
 	public MixerLayerGroup getActiveMixGroup() {
-		final MixerMode group = driver.getGlobalViewActive().get();
+		final MixerMode group = driver.getMixerMode().get();
 		switch (group) {
 		case MAIN:
 			return mainGroup;
@@ -203,9 +207,7 @@ public class MixControl implements LayerStateHandler {
 
 	public void navigateLeftRight(final int direction, final boolean isPressed) {
 		if (launchButtonLayer.isActive()) {
-			if (isPressed) {
-				launchButtonLayer.navigateHorizontal(direction);
-			}
+			launchButtonLayer.navigateHorizontal(direction, isPressed);
 		} else {
 			if (isPressed) {
 				currentConfiguration.navigateHorizontal(direction);
@@ -222,9 +224,7 @@ public class MixControl implements LayerStateHandler {
 
 	public void navigateUpDown(final int direction, final boolean isPressed) {
 		if (launchButtonLayer.isActive()) {
-			if (isPressed) {
-				launchButtonLayer.navigateVertical(direction);
-			}
+			launchButtonLayer.navigateVertical(direction, isPressed);
 		} else {
 			if (isPressed) {
 				currentConfiguration.navigateVertical(direction);
@@ -330,6 +330,10 @@ public class MixControl implements LayerStateHandler {
 	private void focusDevice(final DeviceManager deviceManager) {
 		final Device device = deviceManager.getCurrentFollower().getFocusDevice();
 		getDriver().getCursorDeviceControl().selectDevice(device);
+	}
+
+	public void applyUpdate() {
+		layerState.updateState(this);
 	}
 
 	public void setConfiguration(final LayerConfiguration config) {

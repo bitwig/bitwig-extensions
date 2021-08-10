@@ -38,6 +38,8 @@ public class BrowserConfiguration extends LayerConfiguration {
 	private FilterLayerConfig presetConfig;
 	private CursorBrowserResultItem resultCursorItem;
 	private StringIntValueObject resultValue;
+	private CursorBrowserFilterItem creatorItem;
+	private CursorBrowserFilterItem locationItem;
 
 	static class FilterLayerConfig {
 		private final EncoderLayer encoderLayer;
@@ -56,7 +58,6 @@ public class BrowserConfiguration extends LayerConfiguration {
 		public DisplayLayer getDisplayLayer() {
 			return displayLayer;
 		}
-
 	}
 
 	public BrowserConfiguration(final String name, final MixControl mixControl, final ControllerHost host,
@@ -69,8 +70,18 @@ public class BrowserConfiguration extends LayerConfiguration {
 		currentConfig = deviceConfig;
 		// deviceItem = (CursorBrowserFilterItem)
 		// browser.deviceColumn().createCursorItem();
-		browser.selectedContentTypeName().addValueObserver(contentTypeName -> {
-			// RemoteConsole.out.println("Content Type {}", contentTypeName);
+		browser.selectedContentTypeIndex().addValueObserver(contentType -> {
+			if (!browsingInitiated) {
+				return;
+			}
+			if (contentType == 0) {
+				currentConfig = deviceConfig;
+			} else if (contentType == 1) {
+				currentConfig = presetConfig;
+			} else {
+				currentConfig = deviceConfig;
+			}
+			mixControl.applyUpdate();
 		});
 
 		this.browser = browser;
@@ -95,50 +106,53 @@ public class BrowserConfiguration extends LayerConfiguration {
 		fileTypeItem = (CursorBrowserFilterItem) browser.fileTypeColumn().createCursorItem();
 		categoryItem = (CursorBrowserFilterItem) browser.categoryColumn().createCursorItem();
 		tagItem = (CursorBrowserFilterItem) browser.tagColumn().createCursorItem();
+		creatorItem = (CursorBrowserFilterItem) browser.creatorColumn().createCursorItem();
 		resultCursorItem = (CursorBrowserResultItem) browser.resultsColumn().createCursorItem();
+		locationItem = (CursorBrowserFilterItem) browser.locationColumn().createCursorItem();
 		resultValue = new StringIntValueObject(resultCursorItem.name(), categoryItem.hitCount(), resultCursorItem,
 				"FOUND ITEMS=%d");
+		locationItem.hitCount().markInterested();
 
 		setUpDeviceBrowsing(deviceConfig, mixControl, host, browser);
 		setUpPresetBrowsing(presetConfig, mixControl, host, browser);
 	}
 
 	private void setUpPresetBrowsing(final FilterLayerConfig config, final MixControl mixControl,
-			final ControllerHost host, final PopupBrowser browser2) {
-		final HardwareButton enterButton = mixControl.getDriver().getEnterButton();
-		final HardwareButton cancelButton = mixControl.getDriver().getCancelButton();
-		final EncoderLayer encoderLayer = config.getEncoderLayer();
-		final DisplayLayer displayLayer = config.getDisplayLayer();
+			final ControllerHost host, final PopupBrowser browser) {
 		final MixerSectionHardware hwControls = mixControl.getHwControls();
-
+		bindBrowserItem(0, config, hwControls, host, deviceTypeItem, "Type");
+		bindBrowserItem(1, config, hwControls, host, locationItem, "DevLoc");
+		bindBrowserItem(2, config, hwControls, host, fileTypeItem, "FileTp");
+		bindBrowserItem(3, config, hwControls, host, tagItem, "Tag");
+		bindBrowserItem(4, config, hwControls, host, creatorItem, "Creatr");
+		setUpResultSection(config, host, browser);
 	}
 
 	private void setUpDeviceBrowsing(final FilterLayerConfig config, final MixControl mixControl,
 			final ControllerHost host, final PopupBrowser browser) {
+		final MixerSectionHardware hwControls = mixControl.getHwControls();
+
+		bindBrowserItem(0, config, hwControls, host, deviceTypeItem, "Type");
+		bindBrowserItem(1, config, hwControls, host, locationItem, "DevLoc");
+		bindBrowserItem(2, config, hwControls, host, fileTypeItem, "FileTp");
+		bindBrowserItem(3, config, hwControls, host, categoryItem, "Catgry");
+		bindBrowserItem(4, config, hwControls, host, creatorItem, "Creatr");
+
+		setUpResultSection(config, host, browser);
+	}
+
+	private void setUpResultSection(final FilterLayerConfig config, final ControllerHost host,
+			final PopupBrowser browser) {
+		final MixerSectionHardware hwControls = mixControl.getHwControls();
 		final HardwareButton enterButton = mixControl.getDriver().getEnterButton();
 		final HardwareButton cancelButton = mixControl.getDriver().getCancelButton();
 		final EncoderLayer encoderLayer = config.getEncoderLayer();
 		final DisplayLayer displayLayer = config.getDisplayLayer();
-		final MixerSectionHardware hwControls = mixControl.getHwControls();
 
-		bindBrowserItem(0, config, hwControls, host, deviceTypeItem, "Type");
 		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(0),
 				hwControls.createAction(() -> browser.shouldAudition().toggle())));
-
-		final CursorBrowserFilterItem locationItem = (CursorBrowserFilterItem) browser.locationColumn()
-				.createCursorItem();
-
-		bindBrowserItem(1, config, hwControls, host, locationItem, "DevLoc");
-		locationItem.hitCount().markInterested();
-
-		bindBrowserItem(2, config, hwControls, host, fileTypeItem, "FileTp");
-
-		bindBrowserItem(3, config, hwControls, host, categoryItem, "Catgry");
-
-		final CursorBrowserFilterItem creatorItem = (CursorBrowserFilterItem) browser.creatorColumn()
-				.createCursorItem();
-		bindBrowserItem(4, config, hwControls, host, creatorItem, "Creatr");
-
+		encoderLayer.addBinding(
+				new ButtonBinding(hwControls.getEncoderPress(1), hwControls.createAction(() -> advanceMode(browser))));
 		displayLayer.bindName(0, 5, new CombinedStringValueObject("<Cncl>"));
 		final HardwareActionBindable cancelAction = hwControls.createAction(() -> browser.cancel());
 		final HardwareActionBindable commitAction = hwControls.createAction(() -> browser.commit());
@@ -163,10 +177,24 @@ public class BrowserConfiguration extends LayerConfiguration {
 		encoderLayer.bind(hwControls.getEncoder(7), resultSelectionBinding);
 	}
 
+	private void advanceMode(final PopupBrowser browser) {
+		final int current = browser.selectedContentTypeIndex().get();
+		switch (current) {
+		case 0:
+			browser.selectedContentTypeIndex().set(1);
+			break;
+		case 1:
+			browser.selectedContentTypeIndex().set(0);
+			break;
+		default:
+			browser.selectedContentTypeIndex().set(0);
+		}
+	}
+
 	private void bindBrowserItem(final int index, final FilterLayerConfig config, final MixerSectionHardware hwControls,
 			final ControllerHost host, final CursorBrowserFilterItem browserCursorItem, final String name) {
-		final EncoderLayer encoderLayer = deviceConfig.getEncoderLayer();
-		final DisplayLayer displayLayer = deviceConfig.getDisplayLayer();
+		final EncoderLayer encoderLayer = config.getEncoderLayer();
+		final DisplayLayer displayLayer = config.getDisplayLayer();
 
 		displayLayer.bindName(0, index, new CombinedStringValueObject(name), browserCursorItem, "");
 		displayLayer.bindNameTemp(1, index, 3, browserCursorItem.name(), browserCursorItem, "");

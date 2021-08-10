@@ -95,7 +95,10 @@ public class ClipLaunchButtonLayer extends Layer {
 		return false;
 	}
 
-	public void navigateHorizontal(final int direction) {
+	public void navigateHorizontal(final int direction, final boolean pressed) {
+		if (!pressed) {
+			return;
+		}
 		if (direction > 0) {
 			trackBank.scrollForwards();
 		} else {
@@ -103,7 +106,10 @@ public class ClipLaunchButtonLayer extends Layer {
 		}
 	}
 
-	public void navigateVertical(final int direction) {
+	public void navigateVertical(final int direction, final boolean pressed) {
+		if (!pressed) {
+			return;
+		}
 		if (direction > 0) {
 			trackBank.sceneBank().scrollBackwards();
 		} else {
