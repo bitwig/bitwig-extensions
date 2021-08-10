@@ -78,6 +78,17 @@ public class DisplayLayer extends Layer implements DisplaySource {
 		public boolean active(final int rowIndex, final int startIndex) {
 			return startTime > 0 && rowIndex == 1 && expansionBottomIndex == startIndex;
 		}
+
+		/**
+		 * Determine if the task is active and running on some other than the given
+		 * expander.
+		 *
+		 * @param cellExpander the expander to check
+		 * @return false if task is not active or the current expander is the one given.
+		 */
+		public boolean runningOther(final CellExpander cellExpander) {
+			return isActive() && currentExpander != cellExpander;
+		}
 	}
 
 	class CellExpander {
@@ -87,9 +98,6 @@ public class DisplayLayer extends Layer implements DisplaySource {
 		private final String frameChar;
 		private final ExpansionTask task;
 
-		// TODO
-		// 1. Fixed Cell expander with reverse effect when overlapped
-		// 2. Make sure data is sent only when active in every case
 		public CellExpander(final DisplayCell cell, final DisplayRow row, final int span, final StringValue name,
 				final ObjectProxy sourceOfExistance, final String emptyText, final String frameChar,
 				final ExpansionTask task) {
@@ -146,7 +154,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
 		}
 
 		private void sendFullLength(final String v) {
-			if (!isActive() || bottomRow.isFullTextMode()) {
+			if (!isActive() || bottomRow.isFullTextMode() || expansionTask.runningOther(this)) {
 				return;
 			}
 			final String dv = frameChar != null ? frameChar.charAt(0) + v : v;
@@ -172,9 +180,10 @@ public class DisplayLayer extends Layer implements DisplaySource {
 			} else if (expansionTask.active(row.getRowIndex(), cell.getIndex())) {
 				sendFullLength(cell.getDisplayValue());
 			} else {
-				if (isActive()) {
-					display.sendToRow(DisplayLayer.this, row.getRowIndex(), cell.getIndex(), cell.getDisplayValue());
+				if (!isActive() || bottomRow.isFullTextMode() || expansionTask.runningOther(this)) {
+					return;
 				}
+				display.sendToRow(DisplayLayer.this, row.getRowIndex(), cell.getIndex(), cell.getDisplayValue());
 			}
 		}
 	}

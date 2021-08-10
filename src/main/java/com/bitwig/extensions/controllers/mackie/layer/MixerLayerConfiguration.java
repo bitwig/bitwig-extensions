@@ -15,64 +15,38 @@ class MixerLayerConfiguration extends LayerConfiguration {
 	@Override
 	public Layer getFaderLayer() {
 		final boolean flipped = this.mixControl.driver.getFlipped().get();
-		final boolean isGlobalView = this.mixControl.driver.getGlobalViewActive().get();
+		final MixerLayerGroup activeGroup = this.mixControl.getActiveMixGroup();
 		if (flipped) {
-			if (isGlobalView) {
-				return this.mixControl.globalGroup.getFaderLayer(encoderAssign);
-			} else {
-				return this.mixControl.mainGroup.getFaderLayer(encoderAssign);
-			}
+			return activeGroup.getFaderLayer(encoderAssign);
 		} else {
-			if (isGlobalView) {
-				return this.mixControl.globalGroup.getFaderLayer(ParamElement.VOLUME);
-			} else {
-				return this.mixControl.mainGroup.getFaderLayer(ParamElement.VOLUME);
-			}
+			return activeGroup.getFaderLayer(ParamElement.VOLUME);
 		}
 	}
 
 	@Override
 	public EncoderLayer getEncoderLayer() {
 		final boolean flipped = this.mixControl.driver.getFlipped().get();
-		final boolean isGlobalView = this.mixControl.driver.getGlobalViewActive().get();
+		final MixerLayerGroup activeGroup = this.mixControl.getActiveMixGroup();
 
 		if (flipped) {
-			if (isGlobalView) {
-				return this.mixControl.globalGroup.getEncoderLayer(ParamElement.VOLUME);
-			} else {
-				return this.mixControl.mainGroup.getEncoderLayer(ParamElement.VOLUME);
-			}
+			return activeGroup.getEncoderLayer(ParamElement.VOLUME);
 		} else {
-			if (isGlobalView) {
-				return this.mixControl.globalGroup.getEncoderLayer(encoderAssign);
-			} else {
-				return this.mixControl.mainGroup.getEncoderLayer(encoderAssign);
-			}
+			return activeGroup.getEncoderLayer(encoderAssign);
 		}
 	}
 
 	@Override
 	public Layer getButtonLayer() {
-		if (this.mixControl.driver.getGlobalViewActive().get()) {
-			return this.mixControl.globalGroup.getMixerButtonLayer();
-		}
-		return this.mixControl.mainGroup.getMixerButtonLayer();
+		return this.mixControl.getActiveMixGroup().getMixerButtonLayer();
 	}
 
 	@Override
 	public DisplayLayer getDisplayLayer(final int which) {
-		final boolean isGlobalView = mixControl.driver.getGlobalViewActive().get();
+		final MixerLayerGroup activeGroup = this.mixControl.getActiveMixGroup();
 		if (which == 0) {
-			if (isGlobalView) {
-				return mixControl.globalGroup.getDisplayConfiguration(encoderAssign);
-			}
-			return mixControl.mainGroup.getDisplayConfiguration(encoderAssign);
+			return activeGroup.getDisplayConfiguration(encoderAssign);
 		}
-
-		if (isGlobalView) {
-			return mixControl.globalGroup.getDisplayConfiguration(ParamElement.VOLUME);
-		}
-		return mixControl.mainGroup.getDisplayConfiguration(ParamElement.VOLUME);
+		return activeGroup.getDisplayConfiguration(ParamElement.VOLUME);
 	}
 
 }

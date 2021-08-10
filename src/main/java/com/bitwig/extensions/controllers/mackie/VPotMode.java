@@ -7,7 +7,7 @@ public enum VPotMode {
 	SEND(NoteOnAssignment.V_SEND, Assign.BOTH), //
 	PAN(NoteOnAssignment.V_PAN, Assign.MIXER), //
 	PLUGIN(NoteOnAssignment.V_PLUGIN, Assign.CHANNEL, "audio-effect", "PLUGIN"), //
-	EQ(NoteOnAssignment.V_EQ, Assign.CHANNEL, "audio-effect", "EQ", "EQ+"), // possibly both
+	EQ(NoteOnAssignment.V_EQ, Assign.CHANNEL, "EQ device", "EQ", "EQ+"), // possibly both
 	INSTRUMENT(NoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL, "instrument", "INSTRUMENT"),
 	MIDI_EFFECT(NoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL, "note-effect", "SHIFT+INSTRUMENT"),
 	ARPEGGIATOR(NoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL, "note-effect", "ALT+INSTRUMENT");

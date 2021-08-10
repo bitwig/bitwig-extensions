@@ -9,7 +9,6 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 
 public class DeviceTypeFollower {
-
 	private final DeviceBank deviceBank;
 	private final VPotMode potMode;
 	private final Device focusDevice;

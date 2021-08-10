@@ -35,6 +35,7 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 		colorChooseLayer = new MaschineLayer(driver, name + "-color");
 
 		drumPadBank = driver.getPrimaryDevice().createDrumPadBank(16);
+
 		drumPadBank.setIndication(true);
 
 		drumPadBank.scrollPosition().addValueObserver(scrollPos -> {

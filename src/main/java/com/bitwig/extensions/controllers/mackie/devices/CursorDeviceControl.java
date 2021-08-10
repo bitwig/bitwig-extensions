@@ -1,9 +1,11 @@
 package com.bitwig.extensions.controllers.mackie.devices;
 
+import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceBank;
+import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 
@@ -12,10 +14,17 @@ public class CursorDeviceControl {
 	private final PinnableCursorDevice cursorDevice;
 	private final CursorRemoteControlsPage remotes;
 	private final CursorTrack cursorTrack;
+	private final PinnableCursorDevice primaryDevice;
+	private final DrumPadBank drumPadBank;
 
 	public CursorDeviceControl(final CursorTrack cursorTrack, final int size) {
 		this.cursorTrack = cursorTrack;
 		this.cursorDevice = cursorTrack.createCursorDevice();
+		primaryDevice = cursorTrack.createCursorDevice("drumdetection", "Pad Device", 8,
+				CursorDeviceFollowMode.FIRST_INSTRUMENT);
+
+		drumPadBank = primaryDevice.createDrumPadBank(8);
+
 		this.cursorDevice.name().markInterested();
 		this.cursorDevice.deviceType().markInterested();
 		this.cursorDevice.isPinned().markInterested();
@@ -55,6 +64,10 @@ public class CursorDeviceControl {
 		nextDevice.afterDeviceInsertionPoint().moveDevices(cursorDevice);
 		cursorDevice.selectPrevious();
 		cursorDevice.selectNext();
+	}
+
+	public DrumPadBank getDrumPadBank() {
+		return drumPadBank;
 	}
 
 	public PinnableCursorDevice getCursorDevice() {

@@ -37,10 +37,7 @@ public abstract class LayerConfiguration {
 	public abstract EncoderLayer getEncoderLayer();
 
 	public Layer getButtonLayer() {
-		if (mixControl.driver.getGlobalViewActive().get()) {
-			return mixControl.globalGroup.getMixerButtonLayer();
-		}
-		return mixControl.mainGroup.getMixerButtonLayer();
+		return this.mixControl.getActiveMixGroup().getMixerButtonLayer();
 	}
 
 	public abstract DisplayLayer getDisplayLayer(int which);

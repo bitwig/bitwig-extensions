@@ -1,7 +1,9 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
+import com.bitwig.extension.controller.api.Channel;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Device;
+import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.InsertionPoint;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -10,6 +12,7 @@ import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
+import com.bitwig.extensions.controllers.mackie.MixerMode;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
@@ -23,7 +26,6 @@ import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class MixControl implements LayerStateHandler {
 	private final MixerSectionHardware hwControls;
@@ -31,6 +33,7 @@ public class MixControl implements LayerStateHandler {
 
 	final MixerLayerGroup mainGroup;
 	final MixerLayerGroup globalGroup;
+	final MixerLayerGroup drumGroup;
 
 	private final LayerState layerState;
 
@@ -67,6 +70,7 @@ public class MixControl implements LayerStateHandler {
 
 		mainGroup = new MixerLayerGroup("MN", this);
 		globalGroup = new MixerLayerGroup("GL", this);
+		drumGroup = new MixerLayerGroup("DR", this);
 		sendConfiguration.setNavigateHorizontalHandler(direction -> {
 			mainGroup.navigateHorizontally(direction);
 			globalGroup.navigateHorizontally(direction);
@@ -118,6 +122,20 @@ public class MixControl implements LayerStateHandler {
 			driver.scheduleAction("TOUCH", 1500, () -> {
 				layerState.updateDisplayState(getActiveDisplayLayer());
 			});
+		}
+	}
+
+	public MixerLayerGroup getActiveMixGroup() {
+		final MixerMode group = driver.getGlobalViewActive().get();
+		switch (group) {
+		case MAIN:
+			return mainGroup;
+		case GLOBAL:
+			return globalGroup;
+		case DRUM:
+			return drumGroup;
+		default:
+			return mainGroup;
 		}
 	}
 
@@ -349,9 +367,11 @@ public class MixControl implements LayerStateHandler {
 		hwControls.resetLeds();
 	}
 
-	public void initMainControl(final TrackBank mixerTrackBank, final TrackBank globalTrackBank) {
+	public void initMainControl(final TrackBank mixerTrackBank, final TrackBank globalTrackBank,
+			final DrumPadBank drumPadBank) {
 		mainGroup.init(mixerTrackBank);
 		globalGroup.init(globalTrackBank);
+		drumGroup.init(drumPadBank);
 		launchButtonLayer.initTrackBank(this.getHwControls(), mixerTrackBank);
 	}
 
@@ -395,7 +415,8 @@ public class MixControl implements LayerStateHandler {
 		cursorDevice.position().addValueObserver(p -> {
 			final VPotMode fittingMode = VPotMode.fittingMode(cursorDevice);
 			if (p == -1) {
-				RemoteConsole.out.println("No Cursor Set = {}", driver.getVpotMode().getMode());
+				// RemoteConsole.out.println("No Cursor Set = {}",
+				// driver.getVpotMode().getMode());
 			} else if (fittingMode != null && activeMode.isDeviceMode()
 					&& !getDriver().getBrowserConfiguration().isActive()) {
 				driver.getVpotMode().setMode(fittingMode);
@@ -414,7 +435,7 @@ public class MixControl implements LayerStateHandler {
 
 	}
 
-	public void handleSoloAction(final Track channel) {
+	public void handleSoloAction(final Channel channel) {
 		if (!channel.exists().get()) {
 			return;
 		}

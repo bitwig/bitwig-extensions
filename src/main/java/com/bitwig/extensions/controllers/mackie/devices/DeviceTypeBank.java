@@ -31,7 +31,7 @@ public class DeviceTypeBank {
 
 	private void addFollower(final ControllerHost host, final CursorDeviceControl deviceControl, final VPotMode mode,
 			final DeviceMatcher matcher) {
-		final DeviceTypeFollower follower = new DeviceTypeFollower(deviceControl, matcher, VPotMode.INSTRUMENT);
+		final DeviceTypeFollower follower = new DeviceTypeFollower(deviceControl, matcher, mode);
 		types.put(mode, follower);
 		final Device device = follower.getFocusDevice();
 		device.exists().addValueObserver(followExists -> listeners.forEach(l -> l.changed(mode, followExists)));

@@ -7,7 +7,6 @@ import com.bitwig.extension.callback.StringValueChangedCallback;
 import com.bitwig.extension.controller.api.IntegerValue;
 import com.bitwig.extension.controller.api.ObjectProxy;
 import com.bitwig.extension.controller.api.StringValue;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class StringIntValueObject implements StringValue {
 	private final List<StringValueChangedCallback> callbacks = new ArrayList<>();
@@ -30,7 +29,6 @@ public class StringIntValueObject implements StringValue {
 					.valueChanged(calcValue(stringValue.get(), sourceOfExistence.exists().get(), v)));
 		});
 		stringValue.addValueObserver(v -> {
-			RemoteConsole.out.println("CHANGOR {}", v);
 			callbacks.forEach(
 					callback -> callback.valueChanged(calcValue(v, sourceOfExistence.exists().get(), intValue.get())));
 		});

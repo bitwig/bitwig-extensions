@@ -69,6 +69,9 @@ public class BrowserConfiguration extends LayerConfiguration {
 		currentConfig = deviceConfig;
 		// deviceItem = (CursorBrowserFilterItem)
 		// browser.deviceColumn().createCursorItem();
+		browser.selectedContentTypeName().addValueObserver(contentTypeName -> {
+			// RemoteConsole.out.println("Content Type {}", contentTypeName);
+		});
 
 		this.browser = browser;
 		this.browser.exists().addValueObserver(browserNowOpen -> {
@@ -128,7 +131,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 		bindBrowserItem(1, config, hwControls, host, locationItem, "DevLoc");
 		locationItem.hitCount().markInterested();
 
-		bindBrowserItem(2, config, hwControls, host, fileTypeItem, "FlType");
+		bindBrowserItem(2, config, hwControls, host, fileTypeItem, "FileTp");
 
 		bindBrowserItem(3, config, hwControls, host, categoryItem, "Catgry");
 
@@ -214,11 +217,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 
 	@Override
 	public Layer getFaderLayer() {
-		final boolean isMixerGlobal = this.mixControl.driver.getGlobalViewActive().get();
-		if (isMixerGlobal) {
-			return this.mixControl.globalGroup.getFaderLayer(ParamElement.VOLUME);
-		}
-		return this.mixControl.mainGroup.getFaderLayer(ParamElement.VOLUME);
+		return this.mixControl.getActiveMixGroup().getFaderLayer(ParamElement.VOLUME);
 	}
 
 	@Override

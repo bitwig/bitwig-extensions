@@ -32,11 +32,7 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public Layer getFaderLayer() {
-		final boolean isMixerGlobal = this.mixControl.driver.getGlobalViewActive().get();
-		if (isMixerGlobal) {
-			return this.mixControl.globalGroup.getFaderLayer(ParamElement.VOLUME);
-		}
-		return this.mixControl.mainGroup.getFaderLayer(ParamElement.VOLUME);
+		return this.mixControl.getActiveMixGroup().getFaderLayer(ParamElement.VOLUME);
 	}
 
 	@Override

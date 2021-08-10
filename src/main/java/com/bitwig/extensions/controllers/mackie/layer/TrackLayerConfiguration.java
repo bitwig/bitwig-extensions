@@ -189,14 +189,10 @@ class TrackLayerConfiguration extends LayerConfiguration {
 	@Override
 	public Layer getFaderLayer() {
 		final boolean flipped = this.mixControl.driver.getFlipped().get();
-		final boolean isMixerGlobal = this.mixControl.driver.getGlobalViewActive().get();
 		if (flipped) {
 			return faderLayer;
 		}
-		if (isMixerGlobal) {
-			return this.mixControl.globalGroup.getFaderLayer(ParamElement.VOLUME);
-		}
-		return this.mixControl.mainGroup.getFaderLayer(ParamElement.VOLUME);
+		return this.mixControl.getActiveMixGroup().getFaderLayer(ParamElement.VOLUME);
 	}
 
 	@Override
@@ -205,12 +201,9 @@ class TrackLayerConfiguration extends LayerConfiguration {
 			return menuControl.getEncoderLayer();
 		}
 		final boolean flipped = this.mixControl.driver.getFlipped().get();
-		final boolean isMixerGlobal = this.mixControl.driver.getGlobalViewActive().get();
+		final MixerLayerGroup activeMixGroup = this.mixControl.getActiveMixGroup();
 		if (flipped) {
-			if (isMixerGlobal) {
-				return this.mixControl.globalGroup.getEncoderLayer(ParamElement.VOLUME);
-			}
-			return this.mixControl.mainGroup.getEncoderLayer(ParamElement.VOLUME);
+			return activeMixGroup.getEncoderLayer(ParamElement.VOLUME);
 		}
 		return encoderLayer;
 	}
@@ -226,10 +219,8 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		if (which == 0) {
 			return displayLayer;
 		}
-		if (mixControl.driver.getGlobalViewActive().get()) {
-			return mixControl.globalGroup.getDisplayConfiguration(ParamElement.VOLUME);
-		}
-		return mixControl.mainGroup.getDisplayConfiguration(ParamElement.VOLUME);
+		final MixerLayerGroup activeMixGroup = this.mixControl.getActiveMixGroup();
+		return activeMixGroup.getDisplayConfiguration(ParamElement.VOLUME);
 	}
 
 	@Override

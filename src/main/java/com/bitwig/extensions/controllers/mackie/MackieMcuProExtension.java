@@ -43,6 +43,7 @@ import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.LayoutType;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
+import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
@@ -72,8 +73,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private final BooleanValueObject flipped = new BooleanValueObject();
 	private final BooleanValueObject zoomActive = new BooleanValueObject();
 	private final BooleanValueObject scrubActive = new BooleanValueObject();
-	private final BooleanValueObject globalViewActive = new BooleanValueObject();
-	private final BooleanValueObject groupViewActive = new BooleanValueObject();
+	private final ValueObject<MixerMode> mixerMode = new ValueObject<>(MixerMode.MAIN);
+	private final BooleanValueObject groupViewActive = new BooleanValueObject(); // actually controls clip launching
 	private int blinkTicks = 0;
 
 	private final ModifierValueObject modifier = new ModifierValueObject();
@@ -512,6 +513,46 @@ public class MackieMcuProExtension extends ControllerExtension {
 		}
 	}
 
+	public void createModeFlashButton(final NoteOnAssignment assignment, final ValueObject<MixerMode> valueState) {
+		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+		assignment.holdActionAssign(midiIn, button);
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
+		button.setBackgroundLight(led);
+		led.onUpdateHardware(() -> {
+			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
+		});
+		mainLayer.bind(() -> lightStateMixMode(valueState), led);
+		mainLayer.bindPressed(button, () -> {
+			final MixerMode current = valueState.get();
+			if (modifier.isShiftSet()) {
+				if (current == MixerMode.DRUM) {
+					valueState.set(MixerMode.MAIN);
+				} else {
+					valueState.set(MixerMode.DRUM);
+				}
+			} else if (current == MixerMode.MAIN) {
+				valueState.set(MixerMode.GLOBAL);
+			} else if (current == MixerMode.GLOBAL) {
+				valueState.set(MixerMode.MAIN);
+			} else if (current == MixerMode.DRUM) {
+				valueState.set(MixerMode.MAIN);
+			}
+		});
+	}
+
+	private boolean lightStateMixMode(final ValueObject<MixerMode> valueState) {
+		if (valueState.get() == MixerMode.GLOBAL) {
+			return true;
+		} else if (valueState.get() == MixerMode.DRUM) {
+			if (blinkTicks % 8 < 3) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public void createOnOfBoolButton(final NoteOnAssignment assignment, final SettableBooleanValue valueState) {
 		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
@@ -716,7 +757,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final DeviceTypeBank deviceTypeBank = new DeviceTypeBank(host, cursorDeviceControl);
 
 		for (final MixControl channelSection : sections) {
-			channelSection.initMainControl(mixerTrackBank, globalTrackBank);
+			channelSection.initMainControl(mixerTrackBank, globalTrackBank, cursorDeviceControl.getDrumPadBank());
 		}
 		mainSection.initTrackControl(cursorTrack, deviceTypeBank);
 		initMenuButtons();
@@ -769,7 +810,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 			}
 		});
 
-		createOnOfBoolButton(NoteOnAssignment.GLOBAL_VIEW, globalViewActive);
+		createModeFlashButton(NoteOnAssignment.GLOBAL_VIEW, mixerMode);
 		createOnOfBoolButton(NoteOnAssignment.GROUP, groupViewActive);
 
 		initFButton(0, NoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
@@ -807,8 +848,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		});
 	}
 
-	public BooleanValueObject getGlobalViewActive() {
-		return globalViewActive;
+	public ValueObject<MixerMode> getGlobalViewActive() {
+		return mixerMode;
 	}
 
 	public BooleanValueObject getGroupViewActive() {

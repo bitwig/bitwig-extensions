@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.bitwig.extension.controller.api.Bank;
+import com.bitwig.extension.controller.api.Channel;
+import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
@@ -115,6 +117,14 @@ public class MixerLayerGroup {
 		}
 	}
 
+	public void init(final DrumPadBank drumPadBank) {
+		final int sectionIndex = control.getHwControls().getSectionIndex();
+		for (int i = 0; i < 8; i++) {
+			final int trackIndex = i + sectionIndex * 8;
+			setUpChannelControl(i, drumPadBank.getItemAt(trackIndex));
+		}
+	}
+
 	public void init(final TrackBank trackBank) {
 		final int sectionIndex = control.getHwControls().getSectionIndex();
 		for (int i = 0; i < 8; i++) {
@@ -123,7 +133,7 @@ public class MixerLayerGroup {
 		}
 	}
 
-	protected void setUpChannelControl(final int index, final Track channel) {
+	protected void setUpChannelControl(final int index, final Channel channel) {
 		final MixerSectionHardware hwControls = control.getHwControls();
 		channel.exists().markInterested();
 
@@ -156,16 +166,19 @@ public class MixerLayerGroup {
 		panDisplayConfiguration.bindName(index, trackNameHandler);
 		sendDisplayConfiguration.bindName(index, trackNameHandler);
 
-		hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.REC_INDEX, channel.arm(), () -> {
-			channel.arm().toggle();
-		});
 		hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SOLO_INDEX, channel.solo(),
 				() -> control.handleSoloAction(channel));
 		hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.MUTE_INDEX, channel.mute(), () -> {
 			channel.mute().toggle();
 		});
-		hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
-				() -> control.handleTrackSelection(channel));
+		if (channel instanceof Track) {
+			final Track track = (Track) channel;
+			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.REC_INDEX, track.arm(), () -> {
+				track.arm().toggle();
+			});
+			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
+					() -> control.handleTrackSelection(track));
+		}
 	}
 
 	private void setControlLayer(final int index, final Parameter parameter, final Layer faderLayer,
