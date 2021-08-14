@@ -26,6 +26,7 @@ import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class MixControl implements LayerStateHandler {
 	private final MixerSectionHardware hwControls;
@@ -357,6 +358,11 @@ public class MixControl implements LayerStateHandler {
 		} else if (touchCount == 0 && fadersTouched.get()) {
 			fadersTouched.set(false);
 		}
+	}
+
+	public void handleNameDisplay(final boolean pressed) {
+		RemoteConsole.out.println("NAME => {}", pressed);
+		currentConfiguration.activateNameValue(pressed);
 	}
 
 	public LayerConfiguration getCurrentConfiguration() {

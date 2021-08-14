@@ -498,10 +498,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		final HardwareButton vuModeButton = createButton(NoteOnAssignment.DIPLAY_NAME);
 		vuModeButton.isPressed().addValueObserver(v -> {
-			if (v) {
-				if (modifier.isShift()) {
-					toogleVuMode();
-				}
+			if (modifier.isShift()) {
+				toogleVuMode(v);
+			} else {
+				sections.forEach(section -> section.handleNameDisplay(v));
 			}
 		});
 
@@ -587,7 +587,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 		light.isOn().setValue(onoff);
 	}
 
-	private void toogleVuMode() {
+	private void toogleVuMode(final boolean pressed) {
+		if (!pressed) {
+			return;
+		}
 		if (this.vuMode == VuMode.LED) {
 			this.vuMode = VuMode.LED_LCD_VERTICAL;
 		} else if (this.vuMode == VuMode.LED_LCD_VERTICAL) {

@@ -42,6 +42,10 @@ public abstract class LayerConfiguration {
 
 	public abstract DisplayLayer getDisplayLayer(int which);
 
+	protected boolean activateNameValue(final boolean pressed) {
+		return false;
+	}
+
 	public DeviceManager getDeviceManager() {
 		return null;
 	}
