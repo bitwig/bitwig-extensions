@@ -15,6 +15,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CueMarker;
 import com.bitwig.extension.controller.api.CueMarkerBank;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -31,6 +32,7 @@ import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
+import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
 import com.bitwig.extensions.controllers.mackie.display.MotorFader;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
@@ -73,8 +75,11 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private final BooleanValueObject flipped = new BooleanValueObject();
 	private final BooleanValueObject zoomActive = new BooleanValueObject();
 	private final BooleanValueObject scrubActive = new BooleanValueObject();
+
 	private final ValueObject<MixerMode> mixerMode = new ValueObject<>(MixerMode.MAIN);
-	private final BooleanValueObject groupViewActive = new BooleanValueObject(); // actually controls clip launching
+	private MixerMode previousOverallMode = MixerMode.MAIN;
+
+	private final ValueObject<ButtonViewState> buttonViewMode = new ValueObject<>(ButtonViewState.MIXER);
 	private int blinkTicks = 0;
 
 	private final ModifierValueObject modifier = new ModifierValueObject();
@@ -100,6 +105,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private CursorDeviceControl cursorDeviceControl;
 	private HardwareButton enterButton;
 	private HardwareButton cancelButton;
+	private DeviceMatcher drumMatcher;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -126,6 +132,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		midiOut = host.getMidiOutPort(0);
 		midiIn = host.getMidiInPort(0);
 		ledDisplay = new TimeCodeLed(midiOut);
+		drumMatcher = host.createBitwigDeviceMatcher(SpecialDevices.DRUM.getUuid());
 
 		enterButton = createPressButton(NoteOnAssignment.ENTER);
 		cancelButton = createPressButton(NoteOnAssignment.CANCEL);
@@ -151,7 +158,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 		host.showPopupNotification(" Initialized Mackie MCU Pro");
 		sections.forEach(MixControl::resetFaders);
 		sections.forEach(MixControl::clearAll);
-		ledDisplay.setAssignment("PN", false);
 		ledDisplay.refreschMode();
 		host.scheduleTask(this::handlePing, 100);
 //		final Action[] as = application.getActions();
@@ -261,6 +267,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return vuMode;
 	}
 
+	public DeviceMatcher getDrumMatcher() {
+		return drumMatcher;
+	}
+
 	private void initMasterSection() {
 		masterTrack = getHost().createMasterTrack(8);
 		masterTrack.volume().markInterested();
@@ -301,7 +311,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		mainLayer.bindIsPressed(trackLeftButton, v -> navigateTrack(-1, v));
 		final HardwareButton trackRightButton = createPressButton(NoteOnAssignment.TRACK_RIGHT);
 		mainLayer.bindIsPressed(trackRightButton, v -> navigateTrack(1, v));
-		final HardwareButton bankRightButton = createPressButton(NoteOnAssignment.BANK_RIGH);
+		final HardwareButton bankRightButton = createPressButton(NoteOnAssignment.BANK_RIGHT);
 		mainLayer.bindIsPressed(bankRightButton, v -> navigateBank(1, v));
 		final HardwareButton bankLeftButton = createPressButton(NoteOnAssignment.BANK_LEFT);
 		mainLayer.bindIsPressed(bankLeftButton, v -> navigateBank(-1, v));
@@ -528,46 +538,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 		}
 	}
 
-	public void createModeFlashButton(final NoteOnAssignment assignment, final ValueObject<MixerMode> valueState) {
-		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
-		assignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
-		button.setBackgroundLight(led);
-		led.onUpdateHardware(() -> {
-			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
-		});
-		mainLayer.bind(() -> lightStateMixMode(valueState), led);
-		mainLayer.bindPressed(button, () -> {
-			final MixerMode current = valueState.get();
-			if (modifier.isShiftSet()) {
-				if (current == MixerMode.DRUM) {
-					valueState.set(MixerMode.MAIN);
-				} else {
-					valueState.set(MixerMode.DRUM);
-				}
-			} else if (current == MixerMode.MAIN) {
-				valueState.set(MixerMode.GLOBAL);
-			} else if (current == MixerMode.GLOBAL) {
-				valueState.set(MixerMode.MAIN);
-			} else if (current == MixerMode.DRUM) {
-				valueState.set(MixerMode.MAIN);
-			}
-		});
-	}
-
-	private boolean lightStateMixMode(final ValueObject<MixerMode> valueState) {
-		if (valueState.get() == MixerMode.GLOBAL) {
-			return true;
-		} else if (valueState.get() == MixerMode.DRUM) {
-			if (blinkTicks % 8 < 3) {
-				return false;
-			} else {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	public void createOnOfBoolButton(final NoteOnAssignment assignment, final SettableBooleanValue valueState) {
 		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
@@ -767,6 +737,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 		mixerTrackBank.setSkipDisabledItems(false);
 		mixerTrackBank.canScrollChannelsDown().markInterested();
 		mixerTrackBank.canScrollChannelsUp().markInterested();
+		mixerTrackBank.scrollPosition().addValueObserver(offset -> {
+			ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
+		});
 
 		globalTrackBank = host.createTrackBank(numberOfHwChannels, 1, nrOfScenes);
 		globalTrackBank.setSkipDisabledItems(false);
@@ -829,8 +802,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 			}
 		});
 
-		createModeFlashButton(NoteOnAssignment.GLOBAL_VIEW, mixerMode);
-		createOnOfBoolButton(NoteOnAssignment.GROUP, groupViewActive);
+		createGlobalViewButton(NoteOnAssignment.GLOBAL_VIEW);
+		createGroupModeButton(NoteOnAssignment.GROUP, buttonViewMode);
 
 		initFButton(0, NoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
 		initFButton(1, NoteOnAssignment.F2, marker, cueMarkerBank,
@@ -853,6 +826,71 @@ public class MackieMcuProExtension extends ControllerExtension {
 		});
 	}
 
+	public void createGlobalViewButton(final NoteOnAssignment assignment) {
+		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+		assignment.holdActionAssign(midiIn, button);
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
+		button.setBackgroundLight(led);
+		led.onUpdateHardware(() -> {
+			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
+		});
+		mixerMode.addValueObserver(newValue -> {
+			if (newValue != MixerMode.DRUM) {
+				previousOverallMode = newValue;
+			}
+		});
+		mainLayer.bind(() -> lightStateMixMode(mixerMode), led);
+		mainLayer.bindPressed(button, () -> {
+			if (mixerMode.get() == MixerMode.DRUM) {
+				mixerMode.set(previousOverallMode);
+			} else if (buttonViewMode.get() == ButtonViewState.GLOBAL_VIEW) {
+				buttonViewMode.set(ButtonViewState.MIXER);
+			} else {
+				buttonViewMode.set(ButtonViewState.GLOBAL_VIEW);
+			}
+		});
+	}
+
+	private boolean lightStateMixMode(final ValueObject<MixerMode> valueState) {
+		if (buttonViewMode.get() == ButtonViewState.GLOBAL_VIEW) {
+			return true;
+		} else if (valueState.get() == MixerMode.DRUM) {
+			if (blinkTicks % 8 < 3) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public void createGroupModeButton(final NoteOnAssignment assignment,
+			final ValueObject<ButtonViewState> valueState) {
+		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+		assignment.holdActionAssign(midiIn, button);
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
+		button.setBackgroundLight(led);
+		led.onUpdateHardware(() -> {
+			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
+		});
+		mainLayer.bind(this::lightStateButtonMode, led);
+		mainLayer.bindPressed(button, () -> {
+			final ButtonViewState current = valueState.get();
+			switch (current) {
+			case GROUP_LAUNCH:
+				valueState.set(ButtonViewState.MIXER);
+				break;
+			default:
+				valueState.set(ButtonViewState.GROUP_LAUNCH);
+				break;
+			}
+		});
+	}
+
+	private boolean lightStateButtonMode() {
+		return buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH;
+	}
+
 	public void initFButton(final int index, final NoteOnAssignment assign, final BooleanValueObject marker,
 			final CueMarkerBank cueMarkerBank, final Runnable nonMarkerFunction) {
 		final HardwareButton fButton = createPressButton(assign);
@@ -871,8 +909,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return mixerMode;
 	}
 
-	public BooleanValueObject getGroupViewActive() {
-		return groupViewActive;
+	public ValueObject<ButtonViewState> getButtonView() {
+		return buttonViewMode;
 	}
 
 	public CursorDeviceControl getCursorDeviceControl() {

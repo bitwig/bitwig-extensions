@@ -40,6 +40,13 @@ public class StringUtil {
 		return sb.toString();
 	}
 
+	public static String toTwoCharVal(final int value) {
+		if (value < 10) {
+			return " " + Integer.toString(value);
+		}
+		return Integer.toString(value);
+	}
+
 	public static String toDisplayName(final String text) {
 		if (text.length() < 2) {
 			return text;

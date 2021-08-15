@@ -37,6 +37,8 @@ public class LcdDisplay implements DisplaySource {
 
 	private VuMode vuMode;
 
+	private boolean displayBarGraphEnabled = true;
+
 	/**
 	 * @param driver  the parent
 	 * @param midiOut the MIDI out destination for the Display
@@ -55,21 +57,23 @@ public class LcdDisplay implements DisplaySource {
 	}
 
 	public void setFullTextMode(final int row, final boolean fullTextMode) {
-		final boolean vuDisabledPrev = isFullModeActive();
 		this.fullTextMode[row] = fullTextMode;
-		final boolean vuDisabledNow = isFullModeActive();
-		if (vuDisabledPrev != vuDisabledNow) {
-			if (fullTextMode) {
-				if (this.vuMode != VuMode.LED) {
-					switchVuMode(VuMode.LED);
-				}
-			} else {
-				if (this.vuMode != VuMode.LED) {
-					switchVuMode(vuMode);
-				}
-			}
-		}
+		setDisplayBarGraphEnabled(!isFullModeActive());
 		refreshDisplay();
+	}
+
+	public void setDisplayBarGraphEnabled(final boolean displayBarGraphEnabled) {
+		if (this.displayBarGraphEnabled == displayBarGraphEnabled) {
+			return;
+		}
+		this.displayBarGraphEnabled = displayBarGraphEnabled;
+		if (this.displayBarGraphEnabled) { // enable level metering in LCD
+			if (this.vuMode != VuMode.LED) { // action only need if overall Vu Mode is actually set to such
+				switchVuMode(vuMode);
+			}
+		} else if (this.vuMode != VuMode.LED) { // disable level metering in LCD
+			switchVuMode(VuMode.LED);
+		}
 	}
 
 	private boolean isFullModeActive() {

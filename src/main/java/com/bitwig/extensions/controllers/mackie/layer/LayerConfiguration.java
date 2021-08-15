@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.mackie.layer;
 
 import java.util.function.IntConsumer;
 
+import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
@@ -20,6 +21,10 @@ public abstract class LayerConfiguration {
 
 	public MixControl getMixControl() {
 		return mixControl;
+	}
+
+	public MackieMcuProExtension getDriver() {
+		return mixControl.getDriver();
 	}
 
 	public void setNavigateHorizontalHandler(final IntConsumer navigateHorizontalHandler) {
@@ -41,10 +46,6 @@ public abstract class LayerConfiguration {
 	}
 
 	public abstract DisplayLayer getDisplayLayer(int which);
-
-	protected boolean activateNameValue(final boolean pressed) {
-		return false;
-	}
 
 	public DeviceManager getDeviceManager() {
 		return null;

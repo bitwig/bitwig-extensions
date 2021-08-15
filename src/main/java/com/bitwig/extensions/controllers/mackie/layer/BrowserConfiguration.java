@@ -49,6 +49,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 			encoderLayer = new EncoderLayer(mixControl, name);
 			encoderLayer.setEncoderMode(EncoderMode.NONACCELERATED);
 			displayLayer = new DisplayLayer("DISP_" + name, mixControl);
+			displayLayer.setUsesLevelMeteringInLcd(false);
 		}
 
 		public EncoderLayer getEncoderLayer() {

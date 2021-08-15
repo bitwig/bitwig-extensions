@@ -21,6 +21,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
 	private final ExpansionTask expansionTask = new ExpansionTask();
 	private final Map<Integer, CellExpander> expanders = new HashMap<>();
 	private final Map<Integer, CellExpander> fixedExpanders = new HashMap<>();
+	private boolean usesLevelMeteringInLcd = true;
 
 	static class ExpansionTask {
 		private int expansionBottomIndex = -1;
@@ -488,11 +489,16 @@ public class DisplayLayer extends Layer implements DisplaySource {
 		bottomRow.refresh(display, this);
 	}
 
+	public void setUsesLevelMeteringInLcd(final boolean usesLevelMeteringInLcd) {
+		this.usesLevelMeteringInLcd = usesLevelMeteringInLcd;
+	}
+
 	@Override
 	protected void onActivate() {
 		super.onActivate();
 		display.setFullTextMode(0, topRow.fullTextMode);
 		display.setFullTextMode(1, bottomRow.fullTextMode);
+		display.setDisplayBarGraphEnabled(usesLevelMeteringInLcd);
 		topRow.refresh(display, this);
 		bottomRow.refresh(display, this);
 	}

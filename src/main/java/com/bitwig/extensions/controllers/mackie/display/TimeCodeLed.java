@@ -215,7 +215,7 @@ public class TimeCodeLed {
 		final char c1 = ch.charAt(0);
 		final char c2 = ch.charAt(1);
 		midiOut.sendMidi(Midi.CC, 75, toCharValue(c1));
-		midiOut.sendMidi(Midi.CC, 74, toCharValue(c2) + 64);
+		midiOut.sendMidi(Midi.CC, 74, toCharValue(c2) | (dotted ? 0x20 : 0x0));
 	}
 
 	public void setAssignment(final String ch) {

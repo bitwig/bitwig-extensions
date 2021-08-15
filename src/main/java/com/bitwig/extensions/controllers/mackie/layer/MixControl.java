@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.mackie.layer;
 import com.bitwig.extension.controller.api.Channel;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Device;
+import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.InsertionPoint;
 import com.bitwig.extension.controller.api.MidiIn;
@@ -11,6 +12,7 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extensions.controllers.mackie.ButtonViewState;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.MixerMode;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
@@ -26,7 +28,6 @@ import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class MixControl implements LayerStateHandler {
 	private final MixerSectionHardware hwControls;
@@ -46,6 +47,7 @@ public class MixControl implements LayerStateHandler {
 	private final TrackLayerConfiguration sendTrackConfiguration;
 	private final TrackLayerConfiguration cursorDeviceConfiguration;
 	private final TrackLayerConfiguration eqTrackConfiguration;
+	private final GlovalViewLayerConfiguration globalViewLayerConfiguration;
 
 	private final BooleanValueObject fadersTouched = new BooleanValueObject();
 	private int touchCount = 0;
@@ -56,6 +58,7 @@ public class MixControl implements LayerStateHandler {
 	private final DisplayLayer infoLayer;
 	private DeviceTypeBank deviceTypeBank;
 	private DisplayLayer activeDisplayLayer;
+	private final DeviceBank drumFollowDeviceBanks[] = new DeviceBank[8];
 
 	private VPotMode activeMode = VPotMode.PAN;
 
@@ -87,6 +90,8 @@ public class MixControl implements LayerStateHandler {
 
 		eqTrackConfiguration = new TrackLayerConfiguration("EQ_DEVICE", this);
 
+		globalViewLayerConfiguration = new GlovalViewLayerConfiguration("GLOBAL_VIEW", this);
+
 		launchButtonLayer = new ClipLaunchButtonLayer("CLIP_LAUNCH", this);
 
 		currentConfiguration = panConfiguration;
@@ -95,12 +100,21 @@ public class MixControl implements LayerStateHandler {
 
 		driver.getFlipped().addValueObserver(flipped -> layerState.updateState(this));
 		driver.getMixerMode().addValueObserver(globalView -> layerState.updateState(this));
-		driver.getGroupViewActive().addValueObserver(groupView -> layerState.updateState(this));
+		driver.getButtonView().addValueObserver(this::handleButtonViewChanged);
 		driver.getTrackChannelMode().addValueObserver(trackMode -> doModeChange(driver.getVpotMode().getMode(), true));
 
 		fadersTouched.addValueObserver(v -> reactToFaderTouched(v));
 		if (type == SectionType.MAIN) {
 			setUpModifierHandling(driver.getModifier());
+		}
+	}
+
+	private void handleButtonViewChanged(final ButtonViewState newState) {
+		if (newState == ButtonViewState.GLOBAL_VIEW) {
+			currentConfiguration = globalViewLayerConfiguration;
+			layerState.updateState(this);
+		} else {
+			doModeChange(activeMode, true);
 		}
 	}
 
@@ -151,7 +165,11 @@ public class MixControl implements LayerStateHandler {
 
 	@Override
 	public Layer getButtonLayer() {
-		if (driver.getGroupViewActive().get()) {
+		switch (driver.getButtonView().get()) {
+		case MIXER:
+		case GLOBAL_VIEW:
+			return currentConfiguration.getButtonLayer();
+		case GROUP_LAUNCH:
 			return launchButtonLayer;
 		}
 		return currentConfiguration.getButtonLayer();
@@ -344,6 +362,7 @@ public class MixControl implements LayerStateHandler {
 
 	public void notifyBlink(final int ticks) {
 		launchButtonLayer.notifyBlink(ticks);
+		globalViewLayerConfiguration.notifyBlink(ticks);
 		activeDisplayLayer.triggerTimer();
 	}
 
@@ -361,8 +380,15 @@ public class MixControl implements LayerStateHandler {
 	}
 
 	public void handleNameDisplay(final boolean pressed) {
-		RemoteConsole.out.println("NAME => {}", pressed);
-		currentConfiguration.activateNameValue(pressed);
+		if (mainGroup.notifyDisplayName(pressed)) {
+			layerState.updateState(this);
+		}
+		if (globalGroup.notifyDisplayName(pressed)) {
+			layerState.updateState(this);
+		}
+		if (drumGroup.notifyDisplayName(pressed)) {
+			layerState.updateState(this);
+		}
 	}
 
 	public LayerConfiguration getCurrentConfiguration() {
@@ -383,6 +409,21 @@ public class MixControl implements LayerStateHandler {
 		globalGroup.init(globalTrackBank);
 		drumGroup.init(drumPadBank);
 		launchButtonLayer.initTrackBank(this.getHwControls(), mixerTrackBank);
+		globalViewLayerConfiguration.init(mixerTrackBank);
+
+		final int sectionIndex = getHwControls().getSectionIndex();
+		for (int i = 0; i < 8; i++) {
+			final int trackIndex = i + sectionIndex * 8;
+			final Track track = mixerTrackBank.getItemAt(trackIndex);
+			final DeviceBank mixerDeviceBank = track.createDeviceBank(1);
+			drumFollowDeviceBanks[i] = mixerDeviceBank;
+			mixerDeviceBank.setDeviceMatcher(driver.getDrumMatcher());
+			mixerDeviceBank.itemCount().markInterested();
+		}
+	}
+
+	public DeviceBank[] getDrumFollowDeviceBanks() {
+		return drumFollowDeviceBanks;
 	}
 
 	public void initTrackControl(final CursorTrack cursorTrack, final DeviceTypeBank deviceTypeBank) {

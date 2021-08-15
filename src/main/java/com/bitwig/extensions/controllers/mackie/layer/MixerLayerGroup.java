@@ -33,6 +33,8 @@ public class MixerLayerGroup {
 	private final DisplayLayer volumeDisplayConfiguration;
 	private final DisplayLayer panDisplayConfiguration;
 	private final DisplayLayer sendDisplayConfiguration;
+	private final DisplayLayer sendDisplayAltConfiguration;
+	private DisplayLayer activeSendDisplayConfig;
 
 	public MixerLayerGroup(final String name, final MixControl control) {
 		final int sectionIndex = control.getHwControls().getSectionIndex();
@@ -52,6 +54,8 @@ public class MixerLayerGroup {
 		volumeDisplayConfiguration = new DisplayLayer("MixVolume", control);
 		panDisplayConfiguration = new DisplayLayer("MixPan", control);
 		sendDisplayConfiguration = new DisplayLayer("MixSend", control);
+		sendDisplayAltConfiguration = new DisplayLayer("MixSendAlt", control);
+		activeSendDisplayConfig = sendDisplayConfiguration;
 	}
 
 	public DisplayLayer getPanDisplayConfiguration() {
@@ -86,7 +90,7 @@ public class MixerLayerGroup {
 		case PAN:
 			return panDisplayConfiguration;
 		case SENDMIXER:
-			return sendDisplayConfiguration;
+			return activeSendDisplayConfig;
 		default:
 			return volumeDisplayConfiguration;
 		}
@@ -103,6 +107,20 @@ public class MixerLayerGroup {
 		default:
 			return volumeEncoderLayer;
 		}
+	}
+
+	public boolean notifyDisplayName(final boolean pressed) {
+		if (!pressed) {
+			return false;
+		}
+		if (sendDisplayConfiguration.isActive()) {
+			activeSendDisplayConfig = sendDisplayAltConfiguration;
+			return true;
+		} else if (sendDisplayAltConfiguration.isActive()) {
+			activeSendDisplayConfig = sendDisplayConfiguration;
+			return true;
+		}
+		return false;
 	}
 
 	public Layer getMixerButtonLayer() {
@@ -157,12 +175,16 @@ public class MixerLayerGroup {
 		panDisplayConfiguration.bindParameterValue(index, channel.pan(), StringUtil::panToString);
 		sendDisplayConfiguration.bindDisplayParameterValue(index, focusSendItem,
 				s -> StringUtil.condenseVolumenValue(s, 7));
+		sendDisplayAltConfiguration.bindDisplayParameterValue(index, focusSendItem,
+				s -> StringUtil.condenseVolumenValue(s, 7));
 
 		final TrackNameValueHandler trackNameHandler = new TrackNameValueHandler(channel.name());
+		final TrackNameValueHandler sendNameHandler = new TrackNameValueHandler(focusSendItem.name());
 
 		volumeDisplayConfiguration.bindName(index, trackNameHandler);
 		panDisplayConfiguration.bindName(index, trackNameHandler);
 		sendDisplayConfiguration.bindName(index, trackNameHandler);
+		sendDisplayAltConfiguration.bindName(index, sendNameHandler);
 
 		hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SOLO_INDEX, channel.solo(),
 				() -> control.handleSoloAction(channel));
@@ -171,11 +193,11 @@ public class MixerLayerGroup {
 		});
 		if (channel instanceof Track) {
 			final Track track = (Track) channel;
-			final BooleanValueObject selectedInMixer = new BooleanValueObject();
-			channel.addIsSelectedInEditorObserver(v -> selectedInMixer.set(v));
 			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.REC_INDEX, track.arm(), () -> {
 				track.arm().toggle();
 			});
+			final BooleanValueObject selectedInMixer = new BooleanValueObject();
+			channel.addIsSelectedInEditorObserver(v -> selectedInMixer.set(v));
 			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
 					() -> control.handleTrackSelection(track));
 		} else if (channel instanceof DrumPad) {

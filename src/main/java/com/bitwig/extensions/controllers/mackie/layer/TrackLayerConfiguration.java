@@ -225,13 +225,17 @@ class TrackLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public boolean enableInfo(final InfoSource type) {
-		deviceManager.enableInfo(type);
+		if (deviceManager != null) {
+			deviceManager.enableInfo(type);
+		}
 		return true;
 	}
 
 	@Override
 	public boolean disableInfo() {
-		deviceManager.disableInfo();
+		if (deviceManager != null) {
+			deviceManager.disableInfo();
+		}
 		return true;
 	}
 
