@@ -16,7 +16,6 @@ import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class GlovalViewLayerConfiguration extends LayerConfiguration {
 	private final EncoderLayer encoderLayer;
@@ -82,6 +81,7 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 			final Track track = trackBank.getItemAt(trackIndex);
 			track.trackType().markInterested();
 			track.isGroup().markInterested();
+			track.isGroupExpanded().markInterested();
 			final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
 			slotBank.setIndication(true);
 
@@ -108,7 +108,7 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 	}
 
 	private void toggleGroupFold(final Track track) {
-		RemoteConsole.out.println("FOLD TOGGLE {}", track.trackType().get());
+		track.isGroupExpanded().toggle();
 	}
 
 	private boolean lightStateDrum(final Track track, final DeviceBank drumFollow) {
@@ -119,12 +119,14 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 		if (!track.isGroup().get()) {
 			return false;
 		}
-		// folded unfolded
-		if (blinkTicks % 4 == 0) {
-			return false;
-		} else {
-			return true;
+		if (track.isGroupExpanded().get()) {
+			if (blinkTicks % 4 == 0) {
+				return false;
+			} else {
+				return true;
+			}
 		}
+		return true;
 	}
 
 	private void toggleMixMode() {

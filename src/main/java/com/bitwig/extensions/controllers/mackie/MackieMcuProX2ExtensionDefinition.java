@@ -45,7 +45,7 @@ public class MackieMcuProX2ExtensionDefinition extends ControllerExtensionDefini
 
 	@Override
 	public int getRequiredAPIVersion() {
-		return 14;
+		return MackieMcuProExtensionDefinition.MCU_API_VERSION;
 	}
 
 	@Override

@@ -482,20 +482,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		mainLayer.bindIsPressed(fastForwardButton, pressed -> notifyHoldForwardReverse(pressed, 1));
 
 		mainLayer.bindIsPressed(rewindButton, pressed -> notifyHoldForwardReverse(pressed, -1));
+		initUndoRedo();
 
-		final HardwareButton undoButton = createHoldButton(NoteOnAssignment.UNDO);
-		mainLayer.bindIsPressed(undoButton, v -> {
-			if (v) {
-				application.undo();
-				host.showPopupNotification("Undo");
-			}
-		});
-		shiftLayer.bindIsPressed(undoButton, v -> {
-			if (v) {
-				application.redo();
-				host.showPopupNotification("Redo");
-			}
-		});
 		transport.timeSignature().addValueObserver(sig -> {
 			ledDisplay.setDivision(sig);
 		});
@@ -521,6 +509,34 @@ public class MackieMcuProExtension extends ControllerExtension {
 				ledDisplay.toggleMode();
 			}
 		});
+	}
+
+	private void initUndoRedo() {
+		final HardwareButton undoButton = createPressButton(NoteOnAssignment.UNDO);
+		final OnOffHardwareLight undoLight = (OnOffHardwareLight) undoButton.backgroundLight();
+		application.canRedo().markInterested();
+		undoLight.onUpdateHardware(() -> {
+			sendLedUpdate(NoteOnAssignment.UNDO, undoLight.isOn().currentValue() ? 127 : 0);
+		});
+		mainLayer.bindIsPressed(undoButton, v -> {
+			if (v) {
+				application.undo();
+				host.showPopupNotification("Undo");
+			}
+		});
+		mainLayer.bind(application.canUndo(), undoLight);
+		shiftLayer.bindIsPressed(undoButton, v -> {
+			if (v) {
+				application.redo();
+				host.showPopupNotification("Redo");
+			}
+		});
+		shiftLayer.bind(() -> {
+			if (application.canRedo().get() && blinkTicks % 8 < 3) {
+				return true;
+			}
+			return false;
+		}, undoLight);
 	}
 
 	public void notifyHoldForwardReverse(final Boolean pressed, final int dir) {
@@ -764,43 +780,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void initMenuButtons() {
-		final HardwareButton markerButton = createButton(NoteOnAssignment.MARKER);
-		final BooleanValueObject marker = new BooleanValueObject();
-
-		final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
-
-		final MenuModeLayerConfiguration markerMenuConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
 		final CueMarkerBank cueMarkerBank = arranger.createCueMarkerBank(8);
-		for (int i = 0; i < 8; i++) {
-			final CueMarker cueMarker = cueMarkerBank.getItemAt(i);
-			cueMarker.exists().markInterested();
-			markerMenuConfig.addValueBinding(i, cueMarker.position(), cueMarker, "---", v -> {
-				return cueMarker.position().getFormatted(formatter);
-			});
-			markerMenuConfig.addNameBinding(i, cueMarker.getName(), cueMarker, "<Cue" + (i + 1) + ">");
-			markerMenuConfig.addRingExistsBinding(i, cueMarker);
-			markerMenuConfig.addPressEncoderBinding(i, index -> {
-				if (cueMarker.exists().get()) {
-					cueMarker.position().set(transport.getPosition().get());
-				}
-			});
-			markerMenuConfig.addEncoderIncBinding(i, cueMarker.position(), 1);
-		}
 
-		mainLayer.bind(marker, (OnOffHardwareLight) markerButton.backgroundLight());
-		mainLayer.bindPressed(markerButton, () -> {
-			holdState.enter(mainSection.getCurrentConfiguration(), markerButton.getName());
-			mainSection.setConfiguration(markerMenuConfig);
-		});
-		mainLayer.bindReleased(markerButton, () -> {
-			final LayerConfiguration layer = holdState.endHold();
-			if (layer != null) {
-				mainSection.setConfiguration(layer);
-			}
-			if (holdState.exit()) {
-				marker.toggle();
-			}
-		});
+		final BooleanValueObject marker = initCueMarkerSection(cueMarkerBank);
 
 		createGlobalViewButton(NoteOnAssignment.GLOBAL_VIEW);
 		createGroupModeButton(NoteOnAssignment.GROUP, buttonViewMode);
@@ -824,6 +806,54 @@ public class MackieMcuProExtension extends ControllerExtension {
 		application.panelLayout().addValueObserver(v -> {
 			currentLayoutType = LayoutType.toType(v);
 		});
+	}
+
+	// TODO this all should go into a class of its own
+
+	private BooleanValueObject initCueMarkerSection(final CueMarkerBank cueMarkerBank) {
+		final HardwareButton markerButton = createButton(NoteOnAssignment.MARKER);
+		final BooleanValueObject marker = new BooleanValueObject();
+
+		final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
+
+		final MenuModeLayerConfiguration markerMenuConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
+		for (int i = 0; i < 8; i++) {
+			final CueMarker cueMarker = cueMarkerBank.getItemAt(i);
+			cueMarker.exists().markInterested();
+			markerMenuConfig.addValueBinding(i, cueMarker.position(), cueMarker, "---", v -> {
+				return cueMarker.position().getFormatted(formatter);
+			});
+			markerMenuConfig.addNameBinding(i, cueMarker.getName(), cueMarker, "<Cue" + (i + 1) + ">");
+			markerMenuConfig.addRingExistsBinding(i, cueMarker);
+			markerMenuConfig.addPressEncoderBinding(i, index -> {
+				if (cueMarker.exists().get()) {
+					if (modifier.isShift()) {
+						cueMarker.remove();
+					} else {
+						cueMarker.position().set(transport.getPosition().get());
+					}
+				} else {
+					transport.addCueMarkerAtCurrentPosition();
+				}
+			});
+			markerMenuConfig.addEncoderIncBinding(i, cueMarker.position(), 1);
+		}
+
+		mainLayer.bind(marker, (OnOffHardwareLight) markerButton.backgroundLight());
+		mainLayer.bindPressed(markerButton, () -> {
+			holdState.enter(mainSection.getCurrentConfiguration(), markerButton.getName());
+			mainSection.setConfiguration(markerMenuConfig);
+		});
+		mainLayer.bindReleased(markerButton, () -> {
+			final LayerConfiguration layer = holdState.endHold();
+			if (layer != null) {
+				mainSection.setConfiguration(layer);
+			}
+			if (holdState.exit()) {
+				marker.toggle();
+			}
+		});
+		return marker;
 	}
 
 	public void createGlobalViewButton(final NoteOnAssignment assignment) {

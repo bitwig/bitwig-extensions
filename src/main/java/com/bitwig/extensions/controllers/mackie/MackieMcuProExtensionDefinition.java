@@ -8,6 +8,7 @@ import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
 public class MackieMcuProExtensionDefinition extends ControllerExtensionDefinition {
+	public static final int MCU_API_VERSION = 15;
 	private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-81ad-1de77ffa2dab");
 
 	public MackieMcuProExtensionDefinition() {
@@ -45,7 +46,7 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
 
 	@Override
 	public int getRequiredAPIVersion() {
-		return 14;
+		return MCU_API_VERSION;
 	}
 
 	@Override
