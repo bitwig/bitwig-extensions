@@ -28,6 +28,6 @@ java {
     sourceCompatibility = JavaVersion.VERSION_11
 
     jar {
-        archiveFileName = 'BitwigExtension.jar'
+        archiveFileName = 'BitwigExtensions.jar'
     }
 }
