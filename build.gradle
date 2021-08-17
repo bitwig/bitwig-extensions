@@ -22,6 +22,12 @@ dependencies {
 }
 
 group = 'com.bitwig.extensions'
-version = '1-SNAPSHOT'
 description = 'Bitwig Studio Extensions (Github)'
-java.sourceCompatibility = JavaVersion.VERSION_11
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+
+    jar {
+        archiveFileName = 'BitwigExtension.jar'
+    }
+}
