@@ -64,10 +64,12 @@ public class StringUtil {
 	}
 
 	public static String toAsciiDisplay(final String name, final int maxLen) {
-		final String s = name.substring(0, Math.min(7, name.length()));
 		final StringBuilder b = new StringBuilder();
-		for (int i = 0; i < name.length() && i < maxLen; i++) {
-			final char c = s.charAt(i);
+		for (int i = 0; i < name.length() && b.length() < maxLen; i++) {
+			final char c = name.charAt(i);
+			if (c == 32) {
+				continue;
+			}
 			if (c < 128) {
 				b.append(c);
 			} else {

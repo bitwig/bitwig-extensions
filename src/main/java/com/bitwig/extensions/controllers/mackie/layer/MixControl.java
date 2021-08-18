@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
 import com.bitwig.extension.controller.api.Channel;
+import com.bitwig.extension.controller.api.CursorDeviceLayer;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceBank;
@@ -45,6 +46,7 @@ public class MixControl implements LayerStateHandler {
 	private final LayerConfiguration sendConfiguration = new MixerLayerConfiguration("SEND", this,
 			ParamElement.SENDMIXER);
 	private final TrackLayerConfiguration sendTrackConfiguration;
+	private final TrackLayerConfiguration sendDrumTrackConfiguration;
 	private final TrackLayerConfiguration cursorDeviceConfiguration;
 	private final TrackLayerConfiguration eqTrackConfiguration;
 	private final GlovalViewLayerConfiguration globalViewLayerConfiguration;
@@ -86,6 +88,8 @@ public class MixControl implements LayerStateHandler {
 
 		sendTrackConfiguration = new TrackLayerConfiguration("SN_TR", this);
 
+		sendDrumTrackConfiguration = new TrackLayerConfiguration("SEND_DRUM_TRACK", this);
+
 		cursorDeviceConfiguration = new TrackLayerConfiguration("INSTRUMENT", this);
 
 		eqTrackConfiguration = new TrackLayerConfiguration("EQ_DEVICE", this);
@@ -99,7 +103,7 @@ public class MixControl implements LayerStateHandler {
 		activeDisplayLayer = infoLayer;
 
 		driver.getFlipped().addValueObserver(flipped -> layerState.updateState(this));
-		driver.getMixerMode().addValueObserver(globalView -> layerState.updateState(this));
+		driver.getMixerMode().addValueObserver(globalView -> changeMixerMode());
 		driver.getButtonView().addValueObserver(this::handleButtonViewChanged);
 		driver.getTrackChannelMode().addValueObserver(trackMode -> doModeChange(driver.getVpotMode().getMode(), true));
 
@@ -296,6 +300,11 @@ public class MixControl implements LayerStateHandler {
 		}
 	}
 
+	private void changeMixerMode() {
+		determineSendTrackConfig(activeMode);
+		layerState.updateState(this);
+	}
+
 	void doModeChange(final VPotMode mode, final boolean focus) {
 		switch (mode) {
 		case EQ:
@@ -318,13 +327,7 @@ public class MixControl implements LayerStateHandler {
 			currentConfiguration.setCurrentFollower(deviceTypeBank.getFollower(mode));
 			break;
 		case SEND:
-			if (type != SectionType.MAIN) {
-				currentConfiguration = sendConfiguration;
-			} else if (driver.getTrackChannelMode().get()) {
-				currentConfiguration = sendTrackConfiguration;
-			} else {
-				currentConfiguration = sendConfiguration;
-			}
+			determineSendTrackConfig(VPotMode.SEND);
 			break;
 		default:
 			break;
@@ -337,6 +340,23 @@ public class MixControl implements LayerStateHandler {
 		}
 		getDriver().getBrowserConfiguration().forceClose();
 		layerState.updateState(this);
+	}
+
+	private void determineSendTrackConfig(final VPotMode mode) {
+		if (mode != VPotMode.SEND) {
+			return;
+		}
+		if (type != SectionType.MAIN) {
+			currentConfiguration = sendConfiguration;
+		} else if (driver.getTrackChannelMode().get()) {
+			if (driver.getMixerMode().get() == MixerMode.DRUM) {
+				currentConfiguration = sendDrumTrackConfiguration;
+			} else {
+				currentConfiguration = sendTrackConfiguration;
+			}
+		} else {
+			currentConfiguration = sendConfiguration;
+		}
 	}
 
 	private void ensureDevicePointer(final DeviceManager deviceManager) {
@@ -426,9 +446,11 @@ public class MixControl implements LayerStateHandler {
 		return drumFollowDeviceBanks;
 	}
 
-	public void initTrackControl(final CursorTrack cursorTrack, final DeviceTypeBank deviceTypeBank) {
+	public void initTrackControl(final CursorTrack cursorTrack, final CursorDeviceLayer drumCursor,
+			final DeviceTypeBank deviceTypeBank) {
 		this.deviceTypeBank = deviceTypeBank;
 		final SendBank sendBank = cursorTrack.sendBank();
+		final SendBank drumSendBank = drumCursor.sendBank();
 
 		final CursorDeviceControl cursorDeviceControl = getDriver().getCursorDeviceControl();
 
@@ -437,6 +459,7 @@ public class MixControl implements LayerStateHandler {
 
 		for (int i = 0; i < 8; i++) {
 			sendTrackConfiguration.addBinding(i, sendBank.getItemAt(i), RingDisplayType.FILL_LR);
+			sendDrumTrackConfiguration.addBinding(i, drumSendBank.getItemAt(i), RingDisplayType.FILL_LR);
 			cursorDeviceConfiguration.addBinding(i, cursorDeviceManager.getParameter(i), RingDisplayType.FILL_LR);
 			eqTrackConfiguration.addBinding(i, eqDevice.getParameterPage(i),
 					(pindex, pslot) -> eqDevice.handleResetInvoked(pindex, driver.getModifier()));
@@ -452,6 +475,14 @@ public class MixControl implements LayerStateHandler {
 				sendBank.scrollBackwards();
 			} else {
 				sendBank.scrollForwards();
+			}
+		});
+		// TODO DRY apply
+		sendTrackConfiguration.setNavigateHorizontalHandler(direction -> {
+			if (direction < 0) {
+				drumSendBank.scrollBackwards();
+			} else {
+				drumSendBank.scrollForwards();
 			}
 		});
 		cursorDeviceConfiguration.setNavigateHorizontalHandler(cursorDeviceManager::navigateDeviceParameters);
@@ -498,16 +529,18 @@ public class MixControl implements LayerStateHandler {
 		}
 	}
 
-	void handleTrackSelection(final Track channel) {
-		if (channel.exists().get()) {
-			if (driver.getModifier().isControl()) {
-				channel.deleteObject();
+	void handleTrackSelection(final Track track) {
+		if (track.exists().get()) {
+			if (driver.getModifier().isShift() && track.isGroup().get()) {
+				track.isGroupExpanded().toggle();
+			} else if (driver.getModifier().isControl()) {
+				track.deleteObject();
 			} else if (driver.getModifier().isAlt()) {
-				channel.stop();
+				track.stop();
 			} else if (driver.getModifier().isOption()) {
-				driver.getApplication().navigateIntoTrackGroup(channel);
+				driver.getApplication().navigateIntoTrackGroup(track);
 			} else {
-				channel.selectInMixer();
+				track.selectInMixer();
 			}
 		} else {
 			if (driver.getModifier().isShift()) {

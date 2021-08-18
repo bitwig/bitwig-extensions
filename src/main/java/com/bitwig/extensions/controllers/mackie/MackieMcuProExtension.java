@@ -16,6 +16,7 @@ import com.bitwig.extension.controller.api.CueMarker;
 import com.bitwig.extension.controller.api.CueMarkerBank;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DeviceMatcher;
+import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -764,10 +765,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		final DeviceTypeBank deviceTypeBank = new DeviceTypeBank(host, cursorDeviceControl);
 
+		final DrumPadBank drumPadBank = cursorDeviceControl.getDrumPadBank();
+		drumPadBank.setIndication(true);
+
 		for (final MixControl channelSection : sections) {
-			channelSection.initMainControl(mixerTrackBank, globalTrackBank, cursorDeviceControl.getDrumPadBank());
+			channelSection.initMainControl(mixerTrackBank, globalTrackBank, drumPadBank);
 		}
-		mainSection.initTrackControl(cursorTrack, deviceTypeBank);
+		mainSection.initTrackControl(cursorTrack, cursorDeviceControl.getDrumCursor(), deviceTypeBank);
 		initMenuButtons();
 	}
 

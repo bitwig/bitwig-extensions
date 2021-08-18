@@ -178,7 +178,7 @@ public class MixerLayerGroup {
 		sendDisplayAltConfiguration.bindDisplayParameterValue(index, focusSendItem,
 				s -> StringUtil.condenseVolumenValue(s, 7));
 
-		final TrackNameValueHandler trackNameHandler = new TrackNameValueHandler(channel.name());
+		final TrackNameValueHandler trackNameHandler = new TrackNameValueHandler(channel);
 		final TrackNameValueHandler sendNameHandler = new TrackNameValueHandler(focusSendItem.name());
 
 		volumeDisplayConfiguration.bindName(index, trackNameHandler);
@@ -204,8 +204,10 @@ public class MixerLayerGroup {
 			final DrumPad pad = (DrumPad) channel;
 			final BooleanValueObject selectedInMixer = new BooleanValueObject();
 			pad.addIsSelectedInMixerObserver(v -> selectedInMixer.set(v));
-			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
-					() -> pad.selectInMixer());
+			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer, () -> {
+				pad.selectInEditor();
+				pad.selectInMixer();
+			});
 		}
 	}
 
