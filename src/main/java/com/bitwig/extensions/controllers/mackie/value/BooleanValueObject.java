@@ -14,6 +14,9 @@ public class BooleanValueObject implements SettableBooleanValue {
 	private boolean value = false;
 	private final List<BooleanValueChangedCallback> callbacks = new ArrayList<>();
 
+	public BooleanValueObject() {
+	}
+
 	@Override
 	public void markInterested() {
 	}

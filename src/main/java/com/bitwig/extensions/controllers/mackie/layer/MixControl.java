@@ -5,6 +5,7 @@ import com.bitwig.extension.controller.api.CursorDeviceLayer;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceBank;
+import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.InsertionPoint;
 import com.bitwig.extension.controller.api.MidiIn;
@@ -16,6 +17,7 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.mackie.ButtonViewState;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.MixerMode;
+import com.bitwig.extensions.controllers.mackie.NoteHandler;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
@@ -63,6 +65,7 @@ public class MixControl implements LayerStateHandler {
 	private final DeviceBank drumFollowDeviceBanks[] = new DeviceBank[8];
 
 	private VPotMode activeMode = VPotMode.PAN;
+	private NoteHandler noteHandler;
 
 	public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
 			final int sectionIndex, final SectionType type) {
@@ -367,8 +370,12 @@ public class MixControl implements LayerStateHandler {
 	}
 
 	private void focusDevice(final DeviceManager deviceManager) {
-		final Device device = deviceManager.getCurrentFollower().getFocusDevice();
-		getDriver().getCursorDeviceControl().selectDevice(device);
+		if (driver.getMixerMode().get() == MixerMode.DRUM) {
+			getDriver().getCursorDeviceControl().focusOnDrumDevice();
+		} else {
+			final Device device = deviceManager.getCurrentFollower().getFocusDevice();
+			getDriver().getCursorDeviceControl().selectDevice(device);
+		}
 	}
 
 	public void applyUpdate() {
@@ -425,9 +432,10 @@ public class MixControl implements LayerStateHandler {
 
 	public void initMainControl(final TrackBank mixerTrackBank, final TrackBank globalTrackBank,
 			final DrumPadBank drumPadBank) {
+		noteHandler = new NoteHandler(this.getHwControls().getMidiIn(), drumPadBank, getDriver().getCursorTrack());
 		mainGroup.init(mixerTrackBank);
 		globalGroup.init(globalTrackBank);
-		drumGroup.init(drumPadBank);
+		drumGroup.init(drumPadBank, noteHandler);
 		launchButtonLayer.initTrackBank(this.getHwControls(), mixerTrackBank);
 		globalViewLayerConfiguration.init(mixerTrackBank);
 
@@ -446,9 +454,14 @@ public class MixControl implements LayerStateHandler {
 		return drumFollowDeviceBanks;
 	}
 
+	public NoteHandler getNoteHandler() {
+		return noteHandler;
+	}
+
 	public void initTrackControl(final CursorTrack cursorTrack, final CursorDeviceLayer drumCursor,
 			final DeviceTypeBank deviceTypeBank) {
 		this.deviceTypeBank = deviceTypeBank;
+
 		final SendBank sendBank = cursorTrack.sendBank();
 		final SendBank drumSendBank = drumCursor.sendBank();
 
@@ -470,21 +483,10 @@ public class MixControl implements LayerStateHandler {
 		eqTrackConfiguration.setDeviceManager(eqDevice);
 		eqTrackConfiguration.registerFollowers(deviceTypeBank.getFollower(VPotMode.EQ));
 
-		sendTrackConfiguration.setNavigateHorizontalHandler(direction -> {
-			if (direction < 0) {
-				sendBank.scrollBackwards();
-			} else {
-				sendBank.scrollForwards();
-			}
-		});
-		// TODO DRY apply
-		sendTrackConfiguration.setNavigateHorizontalHandler(direction -> {
-			if (direction < 0) {
-				drumSendBank.scrollBackwards();
-			} else {
-				drumSendBank.scrollForwards();
-			}
-		});
+		sendTrackConfiguration.setNavigateHorizontalHandler(direction -> handleSendNavigation(sendBank, direction));
+		sendDrumTrackConfiguration
+				.setNavigateHorizontalHandler(direction -> handleSendNavigation(drumSendBank, direction));
+
 		cursorDeviceConfiguration.setNavigateHorizontalHandler(cursorDeviceManager::navigateDeviceParameters);
 		cursorDeviceConfiguration.setNavigateVerticalHandler(cursorDeviceControl::navigateDevice);
 
@@ -511,6 +513,14 @@ public class MixControl implements LayerStateHandler {
 				focusDevice(currentConfiguration.getDeviceManager());
 			}
 		});
+	}
+
+	private void handleSendNavigation(final SendBank sendBank, final int direction) {
+		if (direction < 0) {
+			sendBank.scrollBackwards();
+		} else {
+			sendBank.scrollForwards();
+		}
 	}
 
 	private void ensureModeFocus() {
@@ -550,6 +560,14 @@ public class MixControl implements LayerStateHandler {
 			} else {
 				driver.getApplication().createInstrumentTrack(-1);
 			}
+		}
+	}
+
+	public void handlePadSelection(final DrumPad pad) {
+		pad.selectInEditor();
+		pad.selectInMixer();
+		if (activeMode == VPotMode.INSTRUMENT) {
+			driver.getCursorDeviceControl().focusOnDrumDevice();
 		}
 	}
 

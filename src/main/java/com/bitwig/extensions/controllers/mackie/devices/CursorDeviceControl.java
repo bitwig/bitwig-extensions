@@ -18,6 +18,7 @@ public class CursorDeviceControl {
 	private final PinnableCursorDevice primaryDevice;
 	private final DrumPadBank drumPadBank;
 	private final CursorDeviceLayer drumCursor;
+	private final DeviceBank drumDeviceBank;
 
 	public CursorDeviceControl(final CursorTrack cursorTrack, final int size, final int totalChannelsAvailable) {
 		this.cursorTrack = cursorTrack;
@@ -28,6 +29,8 @@ public class CursorDeviceControl {
 		drumPadBank = primaryDevice.createDrumPadBank(size);
 		drumPadBank.setSkipDisabledItems(false);
 		drumCursor = primaryDevice.createCursorLayer();
+
+		this.drumDeviceBank = drumCursor.createDeviceBank(8);
 
 		this.cursorDevice.name().markInterested();
 		this.cursorDevice.deviceType().markInterested();
@@ -78,6 +81,10 @@ public class CursorDeviceControl {
 		return drumPadBank;
 	}
 
+	public DeviceBank getDrumDeviceBank() {
+		return drumDeviceBank;
+	}
+
 	public PinnableCursorDevice getCursorDevice() {
 		return cursorDevice;
 	}
@@ -101,6 +108,10 @@ public class CursorDeviceControl {
 	public void selectDevice(final Device device) {
 		cursorDevice.selectDevice(device);
 		cursorDevice.selectInEditor();
+	}
+
+	public void focusOnDrumDevice() {
+		cursorDevice.selectDevice(drumDeviceBank.getDevice(0));
 	}
 
 	public void navigateDevice(final int direction) {

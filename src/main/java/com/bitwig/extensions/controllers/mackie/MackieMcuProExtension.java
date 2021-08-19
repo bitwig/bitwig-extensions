@@ -107,6 +107,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private HardwareButton enterButton;
 	private HardwareButton cancelButton;
 	private DeviceMatcher drumMatcher;
+	private boolean shutdownHook = false;
+	private NoteHandler noteHandler;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -161,6 +163,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		sections.forEach(MixControl::clearAll);
 		ledDisplay.refreschMode();
 		host.scheduleTask(this::handlePing, 100);
+
 //		final Action[] as = application.getActions();
 //		for (final Action action : as) {
 //			RemoteConsole.out.println("ACTION > [{}]", action.getId());
@@ -785,6 +788,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	private void initMenuButtons() {
 		final CueMarkerBank cueMarkerBank = arranger.createCueMarkerBank(8);
+		cueMarkerBank.itemCount().addValueObserver(items -> {
+			// RemoteConsole.out.println("Number Changed {}", items);
+		});
 
 		final BooleanValueObject marker = initCueMarkerSection(cueMarkerBank);
 
@@ -965,8 +971,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return mainLayer;
 	}
 
-	private boolean shutdownHook = false;
-
 	@Override
 	public void exit() {
 		shutdownHook = true;
@@ -1026,5 +1030,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	public TrackModeValue getTrackChannelMode() {
 		return trackChannelMode;
+	}
+
+	public NoteHandler getNoteHandler() {
+		return noteHandler;
 	}
 }

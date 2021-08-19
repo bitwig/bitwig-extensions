@@ -12,6 +12,8 @@ import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extensions.controllers.mackie.NoteHandler;
+import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
@@ -20,13 +22,13 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
 public class MixerLayerGroup {
-
 	private final List<Bank<? extends Parameter>> sendBankList = new ArrayList<>();
 	private final Layer volumeFaderLayer;
 	private final EncoderLayer volumeEncoderLayer;
 	private final Layer panFaderLayer;
 	private final EncoderLayer panEncoderLayer;
-	private final Layer mixerButtonLayer;
+	private final ButtonLayer mixerButtonLayer;
+
 	private final Layer sendFaderLayer;
 	private final EncoderLayer sendEncoderLayer;
 	private final MixControl control;
@@ -40,7 +42,7 @@ public class MixerLayerGroup {
 		final int sectionIndex = control.getHwControls().getSectionIndex();
 		this.control = control;
 		final Layers layers = this.control.getDriver().getLayers();
-		mixerButtonLayer = new Layer(layers, name + "_MIXER_BUTTON_LAYER_" + sectionIndex);
+		mixerButtonLayer = new ButtonLayer(name, control, NoteOnAssignment.REC_BASE);
 
 		volumeFaderLayer = new Layer(layers, name + "_VOLUME_FADER_LAYER_" + sectionIndex);
 		volumeEncoderLayer = new EncoderLayer(control, name + "_VOLUME_ENCODER_LAYER_" + sectionIndex);
@@ -133,11 +135,11 @@ public class MixerLayerGroup {
 		}
 	}
 
-	public void init(final DrumPadBank drumPadBank) {
+	public void init(final DrumPadBank drumPadBank, final NoteHandler noteHandler) {
 		final int sectionIndex = control.getHwControls().getSectionIndex();
 		for (int i = 0; i < 8; i++) {
 			final int trackIndex = i + sectionIndex * 8;
-			setUpChannelControl(i, drumPadBank.getItemAt(trackIndex));
+			setUpDrumPadControl(i, drumPadBank.getItemAt(trackIndex), noteHandler);
 		}
 	}
 
@@ -145,12 +147,37 @@ public class MixerLayerGroup {
 		final int sectionIndex = control.getHwControls().getSectionIndex();
 		for (int i = 0; i < 8; i++) {
 			final int trackIndex = i + sectionIndex * 8;
-			setUpChannelControl(i, trackBank.getItemAt(trackIndex));
+			setUpTrackControl(i, trackBank.getItemAt(trackIndex));
 		}
 	}
 
-	protected void setUpChannelControl(final int index, final Channel channel) {
+	protected void setUpDrumPadControl(final int index, final DrumPad pad, final NoteHandler noteHandler) {
 		final MixerSectionHardware hwControls = control.getHwControls();
+		mixerButtonLayer.setNoteHandler(noteHandler);
+		setUpChannelControl(index, hwControls, pad);
+		final BooleanValueObject selectedInMixer = new BooleanValueObject();
+		pad.addIsSelectedInMixerObserver(v -> selectedInMixer.set(v));
+
+		hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
+				() -> control.handlePadSelection(pad));
+		hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.REC_INDEX, noteHandler.isPlaying(index),
+				() -> {
+				});
+	}
+
+	protected void setUpTrackControl(final int index, final Track track) {
+		final MixerSectionHardware hwControls = control.getHwControls();
+		setUpChannelControl(index, hwControls, track);
+		hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.REC_INDEX, track.arm(), () -> {
+			track.arm().toggle();
+		});
+		final BooleanValueObject selectedInMixer = new BooleanValueObject();
+		track.addIsSelectedInEditorObserver(v -> selectedInMixer.set(v));
+		hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
+				() -> control.handleTrackSelection(track));
+	}
+
+	protected void setUpChannelControl(final int index, final MixerSectionHardware hwControls, final Channel channel) {
 		channel.exists().markInterested();
 
 		channel.addVuMeterObserver(14, -1, true, value -> {
@@ -191,24 +218,6 @@ public class MixerLayerGroup {
 		hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.MUTE_INDEX, channel.mute(), () -> {
 			channel.mute().toggle();
 		});
-		if (channel instanceof Track) {
-			final Track track = (Track) channel;
-			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.REC_INDEX, track.arm(), () -> {
-				track.arm().toggle();
-			});
-			final BooleanValueObject selectedInMixer = new BooleanValueObject();
-			channel.addIsSelectedInEditorObserver(v -> selectedInMixer.set(v));
-			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
-					() -> control.handleTrackSelection(track));
-		} else if (channel instanceof DrumPad) {
-			final DrumPad pad = (DrumPad) channel;
-			final BooleanValueObject selectedInMixer = new BooleanValueObject();
-			pad.addIsSelectedInMixerObserver(v -> selectedInMixer.set(v));
-			hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer, () -> {
-				pad.selectInEditor();
-				pad.selectInMixer();
-			});
-		}
 	}
 
 	private void setControlLayer(final int index, final Parameter parameter, final Layer faderLayer,

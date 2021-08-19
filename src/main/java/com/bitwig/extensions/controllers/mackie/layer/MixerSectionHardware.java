@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -139,11 +140,23 @@ public class MixerSectionHardware {
 		midiOut.sendMidi(Midi.CHANNEL_AT, index << 4 | value, 0);
 	}
 
+	public MidiIn getMidiIn() {
+		return midiIn;
+	}
+
 	public void bindButton(final Layer layer, final int index, final int buttonIndex, final BooleanSupplier param,
 			final Runnable action) {
 		final HardwareButton button = buttonMatrix[buttonIndex][index];
 		final OnOffHardwareLight light = (OnOffHardwareLight) button.backgroundLight();
 		layer.bindPressed(button, action);
+		layer.bind(param, light);
+	}
+
+	public void bindButton(final Layer layer, final int index, final int buttonIndex, final BooleanSupplier param,
+			final Consumer<Boolean> action) {
+		final HardwareButton button = buttonMatrix[buttonIndex][index];
+		final OnOffHardwareLight light = (OnOffHardwareLight) button.backgroundLight();
+		layer.bindIsPressed(button, action);
 		layer.bind(param, light);
 	}
 
