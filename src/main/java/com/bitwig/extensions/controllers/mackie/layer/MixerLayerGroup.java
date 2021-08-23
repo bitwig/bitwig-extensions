@@ -43,7 +43,7 @@ public class MixerLayerGroup {
 		final int sectionIndex = control.getHwControls().getSectionIndex();
 		this.control = control;
 		final Layers layers = this.control.getDriver().getLayers();
-		mixerButtonLayer = new ButtonLayer(name, control, NoteOnAssignment.REC_BASE);
+		mixerButtonLayer = new ButtonLayer(name, control, NoteOnAssignment.REC_BASE, sectionIndex * 8);
 
 		volumeFaderLayer = new Layer(layers, name + "_VOLUME_FADER_LAYER_" + sectionIndex);
 		volumeEncoderLayer = new EncoderLayer(control, name + "_VOLUME_ENCODER_LAYER_" + sectionIndex);

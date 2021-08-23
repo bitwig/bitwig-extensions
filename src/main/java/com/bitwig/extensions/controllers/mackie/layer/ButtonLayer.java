@@ -8,11 +8,14 @@ public class ButtonLayer extends Layer {
 
 	private NoteHandler noteHandler;
 	private final int baseOffset;
+	private final int sectionOffset;
 
-	public ButtonLayer(final String name, final MixControl mixControl, final NoteOnAssignment base) {
+	public ButtonLayer(final String name, final MixControl mixControl, final NoteOnAssignment base,
+			final int layerOffset) {
 		super(mixControl.getDriver().getLayers(),
 				name + "_" + mixControl.getHwControls().getSectionIndex() + "_BUTTON");
 		this.baseOffset = base.getNoteNo();
+		this.sectionOffset = mixControl.getHwControls().getSectionIndex() * 8;
 	}
 
 	public void setNoteHandler(final NoteHandler noteHandler) {
@@ -23,7 +26,7 @@ public class ButtonLayer extends Layer {
 	protected void onActivate() {
 		super.onActivate();
 		if (noteHandler != null) {
-			noteHandler.activate(baseOffset);
+			noteHandler.activate(baseOffset, sectionOffset);
 		}
 	}
 

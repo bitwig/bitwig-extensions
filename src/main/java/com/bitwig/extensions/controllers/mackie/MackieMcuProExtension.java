@@ -43,6 +43,7 @@ import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
 import com.bitwig.extensions.controllers.mackie.display.MotorFader;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
+import com.bitwig.extensions.controllers.mackie.layer.ExtenderMixControl;
 import com.bitwig.extensions.controllers.mackie.layer.MixControl;
 import com.bitwig.extensions.controllers.mackie.layer.SectionType;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
@@ -189,8 +190,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 			final MidiOut extMidiOut = host.getMidiOutPort(i + 1);
 			final MidiIn extMidiIn = host.getMidiInPort(i + 1);
 			if (extMidiIn != null && extMidiOut != null) {
-				final MixControl extenderSection = new MixControl(this, extMidiIn, extMidiOut, i + 1,
-						SectionType.XTENDER);
+				final MixControl extenderSection = new ExtenderMixControl(this, extMidiIn, extMidiOut, i + 1);
 				sections.add(extenderSection);
 			} else {
 				// RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing

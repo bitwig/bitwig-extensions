@@ -27,7 +27,8 @@ public class CursorDeviceControl {
 		primaryDevice = cursorTrack.createCursorDevice("drumdetection", "Pad Device", 8,
 				CursorDeviceFollowMode.FIRST_INSTRUMENT);
 
-		drumPadBank = primaryDevice.createDrumPadBank(size);
+		drumPadBank = primaryDevice.createDrumPadBank(totalChannelsAvailable);
+
 		drumPadBank.setSkipDisabledItems(false);
 		drumCursor = primaryDevice.createCursorLayer();
 

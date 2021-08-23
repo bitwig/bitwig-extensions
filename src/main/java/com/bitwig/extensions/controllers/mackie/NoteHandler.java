@@ -20,7 +20,8 @@ public class NoteHandler {
 	private boolean active;
 
 	private int drumScrollOffset = 0;
-	private int inputOffset;
+	private int noteOffset;
+	private int padOffset;
 
 	public NoteHandler(final MidiIn midiIn, final DrumPadBank drumPadBank, final CursorTrack cursorTrack) {
 		noteInput = midiIn.createNoteInput("MIDI", "80????", "90????");
@@ -62,8 +63,9 @@ public class NoteHandler {
 		}
 	}
 
-	public void activate(final int inputOffset) {
-		this.inputOffset = inputOffset;
+	public void activate(final int inputOffset, final int padOffset) {
+		this.noteOffset = inputOffset; // With MCU happens to be 0
+		this.padOffset = padOffset;
 		active = true;
 		applyScale();
 	}
@@ -75,9 +77,13 @@ public class NoteHandler {
 		for (int i = 0; i < 128; i++) {
 			noteToPad[i] = -1;
 		}
+		// TODO could go out of bounds be careful !!
 		for (int i = 0; i < 8; i++) {
-			noteTable[i + inputOffset] = drumScrollOffset + i;
-			noteToPad[drumScrollOffset + i] = i;
+			final int noteToPadIndex = drumScrollOffset + i + noteOffset + padOffset;
+			if (noteToPadIndex < 128) {
+				noteTable[i] = noteToPadIndex;
+				noteToPad[noteToPadIndex] = i;
+			}
 		}
 		noteInput.setKeyTranslationTable(noteTable);
 	}
@@ -87,7 +93,7 @@ public class NoteHandler {
 			return;
 		}
 		for (int i = 0; i < 8; i++) {
-			noteTable[i + inputOffset] = -1;
+			noteTable[i] = -1;
 		}
 		noteInput.setKeyTranslationTable(noteTable);
 	}

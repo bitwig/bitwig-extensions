@@ -19,8 +19,8 @@ import com.bitwig.extensions.controllers.mackie.MixerMode;
 import com.bitwig.extensions.controllers.mackie.NoteHandler;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
-import com.bitwig.extensions.controllers.mackie.configurations.GlovalViewLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
+import com.bitwig.extensions.controllers.mackie.configurations.GlovalViewLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.MixerLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.TrackLayerConfiguration;
@@ -44,11 +44,11 @@ public class MixControl implements LayerStateHandler {
 	final MixerLayerGroup globalGroup;
 	final MixerLayerGroup drumGroup;
 
-	private final LayerState layerState;
+	protected final LayerState layerState;
 
-	private LayerConfiguration currentConfiguration;
+	protected LayerConfiguration currentConfiguration;
 
-	private final LayerConfiguration panConfiguration = new MixerLayerConfiguration("PAN", this, ParamElement.PAN);
+	protected final LayerConfiguration panConfiguration = new MixerLayerConfiguration("PAN", this, ParamElement.PAN);
 	private final LayerConfiguration sendConfiguration = new MixerLayerConfiguration("SEND", this,
 			ParamElement.SENDMIXER);
 	private final TrackLayerConfiguration sendTrackConfiguration;
@@ -67,7 +67,7 @@ public class MixControl implements LayerStateHandler {
 	private DeviceTypeBank deviceTypeBank;
 	private DisplayLayer activeDisplayLayer;
 
-	private VPotMode activeMode = VPotMode.PAN;
+	protected VPotMode activeMode = VPotMode.PAN;
 	private NoteHandler noteHandler;
 
 	public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
@@ -354,7 +354,7 @@ public class MixControl implements LayerStateHandler {
 		layerState.updateState(this);
 	}
 
-	private void determineSendTrackConfig(final VPotMode mode) {
+	protected void determineSendTrackConfig(final VPotMode mode) {
 		if (mode != VPotMode.SEND) {
 			return;
 		}
@@ -376,7 +376,7 @@ public class MixControl implements LayerStateHandler {
 		layerState.updateState(this);
 	}
 
-	private void switchActiveConfiguration(final LayerConfiguration nextConfiguration) {
+	protected void switchActiveConfiguration(final LayerConfiguration nextConfiguration) {
 		if (nextConfiguration == currentConfiguration) {
 			return;
 		}
