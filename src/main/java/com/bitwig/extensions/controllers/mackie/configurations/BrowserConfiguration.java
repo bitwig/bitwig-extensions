@@ -1,6 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.layer;
-
-import java.util.function.IntConsumer;
+package com.bitwig.extensions.controllers.mackie.configurations;
 
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorBrowserFilterItem;
@@ -13,6 +11,11 @@ import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
+import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
+import com.bitwig.extensions.controllers.mackie.layer.MixControl;
+import com.bitwig.extensions.controllers.mackie.layer.MixerSectionHardware;
+import com.bitwig.extensions.controllers.mackie.layer.ParamElement;
 import com.bitwig.extensions.controllers.mackie.value.CombinedStringValueObject;
 import com.bitwig.extensions.controllers.mackie.value.StringIntValueObject;
 import com.bitwig.extensions.framework.Layer;
@@ -120,29 +123,26 @@ public class BrowserConfiguration extends LayerConfiguration {
 
 	private void setUpPresetBrowsing(final FilterLayerConfig config, final MixControl mixControl,
 			final ControllerHost host, final PopupBrowser browser) {
-		final MixerSectionHardware hwControls = mixControl.getHwControls();
-		bindBrowserItem(0, config, hwControls, host, deviceTypeItem, "Type");
-		bindBrowserItem(1, config, hwControls, host, locationItem, "DevLoc");
-		bindBrowserItem(2, config, hwControls, host, fileTypeItem, "FileTp");
-		bindBrowserItem(3, config, hwControls, host, tagItem, "Tag");
-		bindBrowserItem(4, config, hwControls, host, creatorItem, "Creatr");
-		setUpResultSection(config, host, browser);
+		bindBrowserItem(0, config, mixControl, deviceTypeItem, "Type");
+		bindBrowserItem(1, config, mixControl, locationItem, "DevLoc");
+		bindBrowserItem(2, config, mixControl, fileTypeItem, "FileTp");
+		bindBrowserItem(3, config, mixControl, tagItem, "Tag");
+		bindBrowserItem(4, config, mixControl, creatorItem, "Creatr");
+		setUpResultSection(config, mixControl, browser);
 	}
 
 	private void setUpDeviceBrowsing(final FilterLayerConfig config, final MixControl mixControl,
 			final ControllerHost host, final PopupBrowser browser) {
-		final MixerSectionHardware hwControls = mixControl.getHwControls();
+		bindBrowserItem(0, config, mixControl, deviceTypeItem, "Type");
+		bindBrowserItem(1, config, mixControl, locationItem, "DevLoc");
+		bindBrowserItem(2, config, mixControl, fileTypeItem, "FileTp");
+		bindBrowserItem(3, config, mixControl, categoryItem, "Catgry");
+		bindBrowserItem(4, config, mixControl, creatorItem, "Creatr");
 
-		bindBrowserItem(0, config, hwControls, host, deviceTypeItem, "Type");
-		bindBrowserItem(1, config, hwControls, host, locationItem, "DevLoc");
-		bindBrowserItem(2, config, hwControls, host, fileTypeItem, "FileTp");
-		bindBrowserItem(3, config, hwControls, host, categoryItem, "Catgry");
-		bindBrowserItem(4, config, hwControls, host, creatorItem, "Creatr");
-
-		setUpResultSection(config, host, browser);
+		setUpResultSection(config, mixControl, browser);
 	}
 
-	private void setUpResultSection(final FilterLayerConfig config, final ControllerHost host,
+	private void setUpResultSection(final FilterLayerConfig config, final MixControl control,
 			final PopupBrowser browser) {
 		final MixerSectionHardware hwControls = mixControl.getHwControls();
 		final HardwareButton enterButton = mixControl.getDriver().getEnterButton();
@@ -166,7 +166,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 
 		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(7), commitAction));
 		encoderLayer.bindPressed(enterButton, commitAction);
-		final RelativeHardwarControlBindable resultSelectionBinding = createIncrementBinder(host, v -> {
+		final RelativeHardwarControlBindable resultSelectionBinding = control.getDriver().createIncrementBinder(v -> {
 			if (v < 0) {
 				browser.selectPreviousFile();
 			} else {
@@ -192,8 +192,9 @@ public class BrowserConfiguration extends LayerConfiguration {
 		}
 	}
 
-	private void bindBrowserItem(final int index, final FilterLayerConfig config, final MixerSectionHardware hwControls,
-			final ControllerHost host, final CursorBrowserFilterItem browserCursorItem, final String name) {
+	private void bindBrowserItem(final int index, final FilterLayerConfig config, final MixControl mixControl,
+			final CursorBrowserFilterItem browserCursorItem, final String name) {
+		final MixerSectionHardware hwControls = mixControl.getHwControls();
 		final EncoderLayer encoderLayer = config.getEncoderLayer();
 		final DisplayLayer displayLayer = config.getDisplayLayer();
 
@@ -202,7 +203,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 		encoderLayer.addBinding(hwControls.createRingDisplayBinding(index, 11, RingDisplayType.FILL_LR_0));
 		final RelativeHardwareKnob encoder = hwControls.getEncoder(index);
 
-		final RelativeHardwarControlBindable binding = createIncrementBinder(host, v -> {
+		final RelativeHardwarControlBindable binding = mixControl.getDriver().createIncrementBinder(v -> {
 			if (v < 0) {
 				browserCursorItem.selectPrevious();
 			} else {
@@ -211,13 +212,6 @@ public class BrowserConfiguration extends LayerConfiguration {
 			displayLayer.tickExpansion(index);
 		});
 		encoderLayer.bind(encoder, binding);
-	}
-
-	protected RelativeHardwarControlBindable createIncrementBinder(final ControllerHost host,
-			final IntConsumer consumer) {
-		return host.createRelativeHardwareControlStepTarget(//
-				host.createAction(() -> consumer.accept(1), () -> "+"),
-				host.createAction(() -> consumer.accept(-1), () -> "-"));
 	}
 
 	public void setBrowsingInitiated(final boolean browsingInitiated, final Type type) {
@@ -233,12 +227,16 @@ public class BrowserConfiguration extends LayerConfiguration {
 		return browser;
 	}
 
-	public boolean isActive() {
+	public boolean isMcuBrowserActive() {
 		return currentConfig.getEncoderLayer().isActive();
 	}
 
+	public boolean isBrowserActive() {
+		return browser.exists().get();
+	}
+
 	public void forceClose() {
-		if (browser.exists().get()) {
+		if (browser.exists().get() && browsingInitiated) {
 			resetState = false;
 			browser.cancel();
 		}

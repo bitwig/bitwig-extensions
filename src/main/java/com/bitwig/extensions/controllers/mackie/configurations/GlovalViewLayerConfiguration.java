@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.layer;
+package com.bitwig.extensions.controllers.mackie.configurations;
 
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.DeviceBank;
@@ -12,6 +12,11 @@ import com.bitwig.extensions.controllers.mackie.MixerMode;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
+import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
+import com.bitwig.extensions.controllers.mackie.layer.MixControl;
+import com.bitwig.extensions.controllers.mackie.layer.MixerSectionHardware;
+import com.bitwig.extensions.controllers.mackie.layer.ParamElement;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 import com.bitwig.extensions.framework.Layer;
@@ -21,7 +26,9 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 	private final EncoderLayer encoderLayer;
 	private final DisplayLayer displayLayer;
 	private final Layer buttonLayer;
+	private final Layer globalButtonLayer;
 	private int blinkTicks;
+	private boolean showTrackNames = false;
 
 	public GlovalViewLayerConfiguration(final String name, final MixControl mixControl) {
 		super(name, mixControl);
@@ -32,6 +39,7 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 		displayLayer = new DisplayLayer("GLOBAL_" + name, mixControl);
 		displayLayer.setUsesLevelMeteringInLcd(false);
 		buttonLayer = new Layer(layers, name + "_GOBAL_BUTTON_LAYER_" + sectionIndex);
+		globalButtonLayer = new Layer(layers, name + "_GGOBAL_BUTTON_LAYER_" + sectionIndex);
 	}
 
 	@Override
@@ -41,6 +49,14 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public Layer getButtonLayer() {
+		final ValueObject<MixerMode> mixMode = mixControl.getDriver().getMixerMode();
+		MixerMode mode = mixMode.get();
+		if (mode == MixerMode.DRUM) {
+			mode = mixControl.getDriver().getPreviousOverallMode();
+		}
+		if (mode == MixerMode.GLOBAL) {
+			return this.globalButtonLayer;
+		}
 		return this.buttonLayer;
 	}
 
@@ -51,6 +67,9 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public DisplayLayer getDisplayLayer(final int which) {
+		if (showTrackNames) {
+			return getMixControl().getActiveMixGroup().getDisplayConfiguration(ParamElement.VOLUME);
+		}
 		return displayLayer;
 	}
 
@@ -58,7 +77,7 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 		blinkTicks = ticks;
 	}
 
-	public void init(final TrackBank trackBank) {
+	public void init(final TrackBank mixerTrackBank, final TrackBank globalTrackBank) {
 		final MixerSectionHardware hwControls = mixControl.getHwControls();
 		displayLayer.setText(0, "[ShowSends]  Mute=->Drum Mix  Select=Group Fold", false);
 		displayLayer.enableFullTextMode(0, true);
@@ -71,10 +90,24 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 		displayLayer.bindName(1, 0, onOff);
 		final HardwareActionBindable toggleMixModeAction = hwControls.createAction(this::toggleMixMode);
 		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(0), toggleMixModeAction));
-		final DeviceBank[] drumFollowBanks = mixControl.getDrumFollowDeviceBanks();
+
+		initButtonLayer(mixerTrackBank, buttonLayer, hwControls);
+		initButtonLayer(globalTrackBank, globalButtonLayer, hwControls);
+	}
+
+	private void initButtonLayer(final TrackBank trackBank, final Layer layer, final MixerSectionHardware hwControls) {
+		final DeviceBank[] drumFollowBanks = new DeviceBank[8];
+		final int sectionIndex = hwControls.getSectionIndex();
+		for (int i = 0; i < 8; i++) {
+			final int trackIndex = i + sectionIndex * 8;
+			final Track track = trackBank.getItemAt(trackIndex);
+			final DeviceBank mixerDeviceBank = track.createDeviceBank(1);
+			drumFollowBanks[i] = mixerDeviceBank;
+			mixerDeviceBank.setDeviceMatcher(mixControl.getDriver().getDrumMatcher());
+			mixerDeviceBank.itemCount().markInterested();
+		}
 
 		final int offset = hwControls.getSectionIndex() * 8;
-
 		for (int i = 0; i < 8; i++) {
 			final int index = i;
 			final int trackIndex = index + offset;
@@ -86,16 +119,15 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 			slotBank.setIndication(true);
 
 			final HardwareButton intoDrumButton = hwControls.getButton(2, index);
-			buttonLayer.bindPressed(intoDrumButton, () -> intoDrumMode(index, track, drumFollowBanks[index]));
+			layer.bindPressed(intoDrumButton, () -> intoDrumMode(index, track, drumFollowBanks[index]));
 			final OnOffHardwareLight drumLight = (OnOffHardwareLight) intoDrumButton.backgroundLight();
-			buttonLayer.bind(() -> lightStateDrum(track, drumFollowBanks[index]), drumLight);
+			layer.bind(() -> lightStateDrum(track, drumFollowBanks[index]), drumLight);
 
 			final HardwareButton groupButton = hwControls.getButton(3, index);
-			buttonLayer.bindPressed(groupButton, () -> toggleGroupFold(track));
+			layer.bindPressed(groupButton, () -> toggleGroupFold(track));
 			final OnOffHardwareLight groupLight = (OnOffHardwareLight) groupButton.backgroundLight();
-			buttonLayer.bind(() -> lightStateGroup(track), groupLight);
+			layer.bind(() -> lightStateGroup(track), groupLight);
 		}
-
 	}
 
 	private void intoDrumMode(final int index, final Track track, final DeviceBank drumFollow) {
@@ -151,6 +183,20 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 		default:
 			return "<DRUM>";
 		}
+	}
+
+	@Override
+	public boolean notifyDisplayName(final boolean pressed) {
+		if (!isActive()) {
+			return false;
+		}
+		showTrackNames = pressed;
+		return true;
+	}
+
+	@Override
+	public void doActivate() {
+		showTrackNames = false;
 	}
 
 }

@@ -1,9 +1,13 @@
-package com.bitwig.extensions.controllers.mackie.layer;
+package com.bitwig.extensions.controllers.mackie.configurations;
 
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
+import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
+import com.bitwig.extensions.controllers.mackie.layer.MixControl;
+import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
+import com.bitwig.extensions.controllers.mackie.layer.ParamElement;
 import com.bitwig.extensions.framework.Layer;
 
-class MixerLayerConfiguration extends LayerConfiguration {
+public class MixerLayerConfiguration extends LayerConfiguration {
 
 	ParamElement encoderAssign;
 
@@ -14,7 +18,7 @@ class MixerLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public Layer getFaderLayer() {
-		final boolean flipped = this.mixControl.driver.getFlipped().get();
+		final boolean flipped = this.mixControl.isFlipped();
 		final MixerLayerGroup activeGroup = this.mixControl.getActiveMixGroup();
 		if (flipped) {
 			return activeGroup.getFaderLayer(encoderAssign);
@@ -25,7 +29,7 @@ class MixerLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public EncoderLayer getEncoderLayer() {
-		final boolean flipped = this.mixControl.driver.getFlipped().get();
+		final boolean flipped = this.mixControl.isFlipped();
 		final MixerLayerGroup activeGroup = this.mixControl.getActiveMixGroup();
 
 		if (flipped) {

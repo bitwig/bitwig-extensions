@@ -1,6 +1,6 @@
 package com.bitwig.extensions.controllers.mackie;
 
-import com.bitwig.extensions.controllers.mackie.layer.LayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
 
 public class HoldCapture {
 	private LayerConfiguration storedConfiguration;

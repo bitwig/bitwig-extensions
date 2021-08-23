@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.layer;
+package com.bitwig.extensions.controllers.mackie.configurations;
 
 import java.util.function.BiConsumer;
 
@@ -9,17 +9,23 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
+import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
+import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
+import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
+import com.bitwig.extensions.controllers.mackie.layer.MixControl;
+import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
+import com.bitwig.extensions.controllers.mackie.layer.MixerSectionHardware;
+import com.bitwig.extensions.controllers.mackie.layer.ParamElement;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
-class TrackLayerConfiguration extends LayerConfiguration {
+public class TrackLayerConfiguration extends LayerConfiguration {
 
 	private final Layer faderLayer;
 	private final EncoderLayer encoderLayer;
@@ -112,6 +118,7 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		return deviceManager;
 	}
 
+	@Override
 	public boolean isActive() {
 		return encoderLayer.isActive() || faderLayer.isActive() || menuControl.isActive();
 	}
@@ -188,7 +195,7 @@ class TrackLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public Layer getFaderLayer() {
-		final boolean flipped = this.mixControl.driver.getFlipped().get();
+		final boolean flipped = this.mixControl.isFlipped();
 		if (flipped) {
 			return faderLayer;
 		}
@@ -200,7 +207,7 @@ class TrackLayerConfiguration extends LayerConfiguration {
 		if (mixControl.getIsMenuHoldActive().get()) {
 			return menuControl.getEncoderLayer();
 		}
-		final boolean flipped = this.mixControl.driver.getFlipped().get();
+		final boolean flipped = this.mixControl.isFlipped();
 		final MixerLayerGroup activeMixGroup = this.mixControl.getActiveMixGroup();
 		if (flipped) {
 			return activeMixGroup.getEncoderLayer(ParamElement.VOLUME);

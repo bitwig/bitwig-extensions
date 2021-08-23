@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.layer;
+package com.bitwig.extensions.controllers.mackie.value;
 
 import java.util.ArrayList;
 import java.util.List;

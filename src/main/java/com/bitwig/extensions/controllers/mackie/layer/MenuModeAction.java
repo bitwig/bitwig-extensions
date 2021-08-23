@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
+import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
+
 public class MenuModeAction {
 	private LayerConfiguration storedConfiguration = null;
 	private long downTime;

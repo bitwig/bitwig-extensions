@@ -299,7 +299,7 @@ public class MixerSectionHardware {
 		return new RingDisplayExistsBinding(object, ringDisplays[index], type);
 	}
 
-	HardwareActionBindable createAction(final Runnable action) {
+	public HardwareActionBindable createAction(final Runnable action) {
 		return driver.getHost().createAction(action, null);
 	}
 

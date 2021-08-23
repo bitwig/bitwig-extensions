@@ -17,6 +17,10 @@ public class BooleanValueObject implements SettableBooleanValue {
 	public BooleanValueObject() {
 	}
 
+	public BooleanValueObject(final boolean initValue) {
+		this.value = initValue;
+	}
+
 	@Override
 	public void markInterested() {
 	}

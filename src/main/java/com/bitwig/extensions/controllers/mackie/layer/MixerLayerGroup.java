@@ -18,6 +18,7 @@ import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
+import com.bitwig.extensions.controllers.mackie.value.TrackNameValueHandler;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
@@ -112,14 +113,12 @@ public class MixerLayerGroup {
 	}
 
 	public boolean notifyDisplayName(final boolean pressed) {
-		if (!pressed) {
-			return false;
-		}
-		if (sendDisplayConfiguration.isActive()) {
-			activeSendDisplayConfig = sendDisplayAltConfiguration;
-			return true;
-		} else if (sendDisplayAltConfiguration.isActive()) {
-			activeSendDisplayConfig = sendDisplayConfiguration;
+		if (sendDisplayConfiguration.isActive() || sendDisplayAltConfiguration.isActive()) {
+			if (pressed) {
+				activeSendDisplayConfig = sendDisplayAltConfiguration;
+			} else {
+				activeSendDisplayConfig = sendDisplayConfiguration;
+			}
 			return true;
 		}
 		return false;

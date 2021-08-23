@@ -9,6 +9,7 @@ import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 public class CursorDeviceControl {
 	private final DeviceBank deviceBank;
@@ -35,6 +36,10 @@ public class CursorDeviceControl {
 		this.cursorDevice.name().markInterested();
 		this.cursorDevice.deviceType().markInterested();
 		this.cursorDevice.isPinned().markInterested();
+		this.cursorDevice.hasDrumPads().markInterested();
+		this.cursorDevice.hasLayers().markInterested();
+		this.cursorDevice.hasSlots().markInterested();
+		this.cursorDevice.slotNames().markInterested();
 
 		deviceBank = cursorDevice.deviceChain().createDeviceBank(8);
 		deviceBank.canScrollBackwards().markInterested();
@@ -114,11 +119,26 @@ public class CursorDeviceControl {
 		cursorDevice.selectDevice(drumDeviceBank.getDevice(0));
 	}
 
-	public void navigateDevice(final int direction) {
-		if (direction > 0) {
-			cursorDevice.selectNext();
+	public void navigateDevice(final int direction, final ModifierValueObject modState) {
+		if (modState.isShiftSet()) {
+			if (direction > 0) {
+				cursorDevice.selectParent();
+			} else {
+				if (cursorDevice.hasDrumPads().get()) {
+					focusOnDrumDevice();
+				} else if (cursorDevice.hasLayers().get()) {
+					cursorDevice.selectFirstInLayer(0);
+				} else if (cursorDevice.hasSlots().get()) {
+					final String[] slotNames = cursorDevice.slotNames().get();
+					cursorDevice.selectFirstInSlot(slotNames[0]);
+				}
+			}
 		} else {
-			cursorDevice.selectPrevious();
+			if (direction < 0) {
+				cursorDevice.selectNext(); // Arrow Button Down is next device
+			} else {
+				cursorDevice.selectPrevious(); // Arrow Button UP ist previous Device
+			}
 		}
 	}
 

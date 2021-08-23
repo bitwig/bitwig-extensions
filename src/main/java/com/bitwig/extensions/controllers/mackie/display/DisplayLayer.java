@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.mackie.display;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.DoubleValue;
 import com.bitwig.extension.controller.api.ObjectProxy;
 import com.bitwig.extension.controller.api.Parameter;
@@ -211,6 +212,16 @@ public class DisplayLayer extends Layer implements DisplaySource {
 		bottomRow.getCell(index).lastValue = value.get() ? trueString : falseString;
 	}
 
+	public void bindBool(final int index, final BooleanValue value, final String trueString, final String falseString) {
+		value.addValueObserver(newValue -> {
+			bottomRow.getCell(index).lastValue = newValue ? trueString : falseString;
+			if (isActive() && !bottomRow.isFullTextMode()) {
+				display.sendToRow(this, 1, index, bottomRow.getCell(index).getDisplayValue());
+			}
+		});
+		bottomRow.getCell(index).lastValue = value.get() ? trueString : falseString;
+	}
+
 	private void bindExists(final int index, final ObjectProxy existSource, final String emptyString) {
 		final DisplayCell cell = bottomRow.getCell(index);
 		cell.setEmptyValue(emptyString);
@@ -286,7 +297,16 @@ public class DisplayLayer extends Layer implements DisplaySource {
 			}
 		});
 		bottomRow.getCell(index).lastValue = converter.convert(value.get());
+	}
 
+	public void bindParameterValue(final int index, final DoubleValue value, final ValueConverter converter) {
+		value.addValueObserver(v -> {
+			bottomRow.getCell(index).lastValue = converter.convert(v);
+			if (isActive() && !bottomRow.isFullTextMode()) {
+				display.sendToRow(this, 1, index, bottomRow.getCell(index).getDisplayValue());
+			}
+		});
+		bottomRow.getCell(index).lastValue = converter.convert(value.get());
 	}
 
 	public void bindName(final int index, final StringValue name, final ObjectProxy sourceOfExistance,

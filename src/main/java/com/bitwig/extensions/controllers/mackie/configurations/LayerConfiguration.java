@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.layer;
+package com.bitwig.extensions.controllers.mackie.configurations;
 
 import java.util.function.IntConsumer;
 
@@ -6,6 +6,9 @@ import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
+import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
+import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
+import com.bitwig.extensions.controllers.mackie.layer.MixControl;
 import com.bitwig.extensions.framework.Layer;
 
 public abstract class LayerConfiguration {
@@ -13,6 +16,7 @@ public abstract class LayerConfiguration {
 	protected final MixControl mixControl;
 	protected IntConsumer navigateHorizontalHandler;
 	protected IntConsumer navigateVerticalHandler;
+	private boolean active;
 
 	public LayerConfiguration(final String name, final MixControl mixControl) {
 		this.name = name;
@@ -75,7 +79,37 @@ public abstract class LayerConfiguration {
 		return false;
 	}
 
-	protected void evaluateDisplay() {
+	/**
+	 * Let the view react to NAME-VALUE being pressed or released.
+	 *
+	 * @param pressed NAME-VALUE being pressed(=true) or released(=false)
+	 * @return if this notification had any effect, return false if nothing happens
+	 */
+	public boolean notifyDisplayName(final boolean pressed) {
+		return false;
+	}
+
+	public void setActive(final boolean active) {
+		if (active == this.active) {
+			return;
+		}
+		this.active = active;
+		if (this.active) {
+			doActivate();
+		} else {
+			doDeactivate();
+		}
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public void doActivate() {
+
+	}
+
+	public void doDeactivate() {
 
 	}
 

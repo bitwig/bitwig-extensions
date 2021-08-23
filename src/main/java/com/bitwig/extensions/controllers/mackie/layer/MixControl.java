@@ -4,7 +4,6 @@ import com.bitwig.extension.controller.api.Channel;
 import com.bitwig.extension.controller.api.CursorDeviceLayer;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Device;
-import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.InsertionPoint;
@@ -19,6 +18,12 @@ import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.MixerMode;
 import com.bitwig.extensions.controllers.mackie.NoteHandler;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
+import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.GlovalViewLayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
+import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.MixerLayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.TrackLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
@@ -27,7 +32,6 @@ import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
@@ -62,7 +66,6 @@ public class MixControl implements LayerStateHandler {
 	private final DisplayLayer infoLayer;
 	private DeviceTypeBank deviceTypeBank;
 	private DisplayLayer activeDisplayLayer;
-	private final DeviceBank drumFollowDeviceBanks[] = new DeviceBank[8];
 
 	private VPotMode activeMode = VPotMode.PAN;
 	private NoteHandler noteHandler;
@@ -102,6 +105,8 @@ public class MixControl implements LayerStateHandler {
 		launchButtonLayer = new ClipLaunchButtonLayer("CLIP_LAUNCH", this);
 
 		currentConfiguration = panConfiguration;
+		panConfiguration.setActive(true);
+
 		layerState = new LayerState(this);
 		activeDisplayLayer = infoLayer;
 
@@ -110,7 +115,7 @@ public class MixControl implements LayerStateHandler {
 		driver.getButtonView().addValueObserver(this::handleButtonViewChanged);
 		driver.getTrackChannelMode().addValueObserver(trackMode -> doModeChange(driver.getVpotMode().getMode(), true));
 
-		fadersTouched.addValueObserver(v -> reactToFaderTouched(v));
+		fadersTouched.addValueObserver(v -> handleFadersTouched(v));
 		if (type == SectionType.MAIN) {
 			setUpModifierHandling(driver.getModifier());
 		}
@@ -118,7 +123,7 @@ public class MixControl implements LayerStateHandler {
 
 	private void handleButtonViewChanged(final ButtonViewState newState) {
 		if (newState == ButtonViewState.GLOBAL_VIEW) {
-			currentConfiguration = globalViewLayerConfiguration;
+			switchActiveConfiguration(globalViewLayerConfiguration);
 			layerState.updateState(this);
 		} else {
 			doModeChange(activeMode, true);
@@ -141,7 +146,7 @@ public class MixControl implements LayerStateHandler {
 		});
 	}
 
-	private void reactToFaderTouched(final boolean touched) {
+	private void handleFadersTouched(final boolean touched) {
 		if (touched) {
 			layerState.updateDisplayState(getActiveDisplayLayer());
 		} else {
@@ -217,6 +222,10 @@ public class MixControl implements LayerStateHandler {
 
 	public void clearAll() {
 		hwControls.getMainDisplay().clearAll();
+	}
+
+	public boolean isFlipped() {
+		return driver.getFlipped().get();
 	}
 
 	public void exitMessage() {
@@ -311,22 +320,22 @@ public class MixControl implements LayerStateHandler {
 	void doModeChange(final VPotMode mode, final boolean focus) {
 		switch (mode) {
 		case EQ:
-			currentConfiguration = eqTrackConfiguration;
+			switchActiveConfiguration(eqTrackConfiguration);
 			currentConfiguration.setCurrentFollower(deviceTypeBank.getFollower(mode));
 			break;
 		case MIDI_EFFECT:
-			currentConfiguration = cursorDeviceConfiguration;
+			switchActiveConfiguration(cursorDeviceConfiguration);
 			currentConfiguration.setCurrentFollower(deviceTypeBank.getFollower(mode));
 			break;
 		case INSTRUMENT:
-			currentConfiguration = cursorDeviceConfiguration;
+			switchActiveConfiguration(cursorDeviceConfiguration);
 			currentConfiguration.setCurrentFollower(deviceTypeBank.getFollower(mode));
 			break;
 		case PAN:
-			currentConfiguration = panConfiguration;
+			switchActiveConfiguration(panConfiguration);
 			break;
 		case PLUGIN:
-			currentConfiguration = cursorDeviceConfiguration;
+			switchActiveConfiguration(cursorDeviceConfiguration);
 			currentConfiguration.setCurrentFollower(deviceTypeBank.getFollower(mode));
 			break;
 		case SEND:
@@ -350,16 +359,30 @@ public class MixControl implements LayerStateHandler {
 			return;
 		}
 		if (type != SectionType.MAIN) {
-			currentConfiguration = sendConfiguration;
+			switchActiveConfiguration(sendConfiguration);
 		} else if (driver.getTrackChannelMode().get()) {
 			if (driver.getMixerMode().get() == MixerMode.DRUM) {
-				currentConfiguration = sendDrumTrackConfiguration;
+				switchActiveConfiguration(sendDrumTrackConfiguration);
 			} else {
-				currentConfiguration = sendTrackConfiguration;
+				switchActiveConfiguration(sendTrackConfiguration);
 			}
 		} else {
-			currentConfiguration = sendConfiguration;
+			switchActiveConfiguration(sendConfiguration);
 		}
+	}
+
+	public void setConfiguration(final LayerConfiguration config) {
+		switchActiveConfiguration(config);
+		layerState.updateState(this);
+	}
+
+	private void switchActiveConfiguration(final LayerConfiguration nextConfiguration) {
+		if (nextConfiguration == currentConfiguration) {
+			return;
+		}
+		currentConfiguration.setActive(false);
+		currentConfiguration = nextConfiguration;
+		currentConfiguration.setActive(true);
 	}
 
 	private void ensureDevicePointer(final DeviceManager deviceManager) {
@@ -379,11 +402,6 @@ public class MixControl implements LayerStateHandler {
 	}
 
 	public void applyUpdate() {
-		layerState.updateState(this);
-	}
-
-	public void setConfiguration(final LayerConfiguration config) {
-		currentConfiguration = config;
 		layerState.updateState(this);
 	}
 
@@ -407,13 +425,10 @@ public class MixControl implements LayerStateHandler {
 	}
 
 	public void handleNameDisplay(final boolean pressed) {
-		if (mainGroup.notifyDisplayName(pressed)) {
+		final MixerLayerGroup activeMixerGroup = getActiveMixGroup();
+		if (activeMixerGroup.notifyDisplayName(pressed)) {
 			layerState.updateState(this);
-		}
-		if (globalGroup.notifyDisplayName(pressed)) {
-			layerState.updateState(this);
-		}
-		if (drumGroup.notifyDisplayName(pressed)) {
+		} else if (currentConfiguration.notifyDisplayName(pressed)) {
 			layerState.updateState(this);
 		}
 	}
@@ -437,21 +452,8 @@ public class MixControl implements LayerStateHandler {
 		globalGroup.init(globalTrackBank);
 		drumGroup.init(drumPadBank, noteHandler);
 		launchButtonLayer.initTrackBank(this.getHwControls(), mixerTrackBank);
-		globalViewLayerConfiguration.init(mixerTrackBank);
+		globalViewLayerConfiguration.init(mixerTrackBank, globalTrackBank);
 
-		final int sectionIndex = getHwControls().getSectionIndex();
-		for (int i = 0; i < 8; i++) {
-			final int trackIndex = i + sectionIndex * 8;
-			final Track track = mixerTrackBank.getItemAt(trackIndex);
-			final DeviceBank mixerDeviceBank = track.createDeviceBank(1);
-			drumFollowDeviceBanks[i] = mixerDeviceBank;
-			mixerDeviceBank.setDeviceMatcher(driver.getDrumMatcher());
-			mixerDeviceBank.itemCount().markInterested();
-		}
-	}
-
-	public DeviceBank[] getDrumFollowDeviceBanks() {
-		return drumFollowDeviceBanks;
 	}
 
 	public NoteHandler getNoteHandler() {
@@ -488,31 +490,41 @@ public class MixControl implements LayerStateHandler {
 				.setNavigateHorizontalHandler(direction -> handleSendNavigation(drumSendBank, direction));
 
 		cursorDeviceConfiguration.setNavigateHorizontalHandler(cursorDeviceManager::navigateDeviceParameters);
-		cursorDeviceConfiguration.setNavigateVerticalHandler(cursorDeviceControl::navigateDevice);
+		cursorDeviceConfiguration.setNavigateVerticalHandler(
+				direction -> cursorDeviceControl.navigateDevice(direction, driver.getModifier()));
 
 		eqTrackConfiguration.setNavigateHorizontalHandler(eqDevice::navigateDeviceParameters);
-		eqTrackConfiguration.setNavigateVerticalHandler(cursorDeviceControl::navigateDevice);
+		eqTrackConfiguration.setNavigateVerticalHandler(
+				direction -> cursorDeviceControl.navigateDevice(direction, driver.getModifier()));
 
 		cursorTrack.name().addValueObserver(trackName -> ensureModeFocus());
+		setUpDeviceModeHandling(deviceTypeBank);
+	}
+
+	private void setUpDeviceModeHandling(final DeviceTypeBank deviceTypeBank) {
+		final BrowserConfiguration browserConfiguration = getDriver().getBrowserConfiguration();
 
 		final PinnableCursorDevice cursorDevice = driver.getCursorDeviceControl().getCursorDevice();
-		cursorDevice.position().addValueObserver(p -> {
-			final VPotMode fittingMode = VPotMode.fittingMode(cursorDevice);
-			if (p == -1) {
-				// RemoteConsole.out.println("No Cursor Set = {}",
-				// driver.getVpotMode().getMode());
-			} else if (fittingMode != null && activeMode.isDeviceMode()
-					&& !getDriver().getBrowserConfiguration().isActive()) {
-				driver.getVpotMode().setMode(fittingMode);
-				doModeChange(fittingMode, false);
-			}
-		});
+		cursorDevice.position().addValueObserver(p -> updateDeviceMode(p, browserConfiguration, cursorDevice));
+		cursorDevice.isNested().addValueObserver(
+				nested -> updateDeviceMode(cursorDevice.position().get(), browserConfiguration, cursorDevice));
 
 		deviceTypeBank.addListenter((type, exists) -> {
 			if (driver.getVpotMode().getMode() == type) {
 				focusDevice(currentConfiguration.getDeviceManager());
 			}
 		});
+	}
+
+	private void updateDeviceMode(final int p, final BrowserConfiguration browserConfiguration,
+			final PinnableCursorDevice cursorDevice) {
+		final VPotMode fittingMode = VPotMode.fittingMode(cursorDevice);
+		if (p >= 0 && fittingMode != null && activeMode.isDeviceMode()) {
+			if (!browserConfiguration.isMcuBrowserActive()) {
+				driver.getVpotMode().setMode(fittingMode);
+				doModeChange(fittingMode, false);
+			}
+		}
 	}
 
 	private void handleSendNavigation(final SendBank sendBank, final int direction) {
@@ -541,7 +553,7 @@ public class MixControl implements LayerStateHandler {
 
 	void handleTrackSelection(final Track track) {
 		if (track.exists().get()) {
-			if (driver.getModifier().isShift() && track.isGroup().get()) {
+			if (driver.getModifier().isShift()) {
 				track.isGroupExpanded().toggle();
 			} else if (driver.getModifier().isControl()) {
 				track.deleteObject();

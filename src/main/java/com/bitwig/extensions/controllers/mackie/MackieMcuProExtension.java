@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.mackie;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntConsumer;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
@@ -26,22 +27,25 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.Project;
+import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
+import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
 import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
 import com.bitwig.extensions.controllers.mackie.display.MotorFader;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.layer.BrowserConfiguration;
-import com.bitwig.extensions.controllers.mackie.layer.LayerConfiguration;
-import com.bitwig.extensions.controllers.mackie.layer.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.layer.MixControl;
 import com.bitwig.extensions.controllers.mackie.layer.SectionType;
+import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.LayoutType;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
@@ -426,8 +430,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final HardwareButton rewindButton = createHoldButton(NoteOnAssignment.REWIND);
 		final HardwareButton fastForwardButton = createHoldButton(NoteOnAssignment.FFWD);
 
-		final HardwareButton loopButton = createButton(NoteOnAssignment.CYCLE);
-		mainLayer.bindToggle(loopButton, transport.isArrangerLoopEnabled());
+		initCycleSection();
 		final HardwareButton metroButton = createButton(NoteOnAssignment.CLICK);
 		mainLayer.bindToggle(metroButton, transport.isMetronomeEnabled());
 
@@ -758,18 +761,46 @@ public class MackieMcuProExtension extends ControllerExtension {
 		mixerTrackBank.canScrollChannelsDown().markInterested();
 		mixerTrackBank.canScrollChannelsUp().markInterested();
 		mixerTrackBank.scrollPosition().addValueObserver(offset -> {
-			ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
+			if (mixerMode.get() == MixerMode.MAIN) {
+				ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
+			}
 		});
 
 		globalTrackBank = host.createTrackBank(numberOfHwChannels, 1, nrOfScenes);
 		globalTrackBank.setSkipDisabledItems(false);
 		globalTrackBank.canScrollChannelsDown().markInterested();
 		globalTrackBank.canScrollChannelsUp().markInterested();
+		globalTrackBank.scrollPosition().addValueObserver(offset -> {
+			if (mixerMode.get() == MixerMode.GLOBAL) {
+				ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
+			}
+		});
 
 		final DeviceTypeBank deviceTypeBank = new DeviceTypeBank(host, cursorDeviceControl);
 
 		final DrumPadBank drumPadBank = cursorDeviceControl.getDrumPadBank();
 		drumPadBank.setIndication(true);
+		drumPadBank.scrollPosition().addValueObserver(offset -> {
+			if (mixerMode.get() == MixerMode.DRUM) {
+				ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
+			}
+		});
+
+		mixerMode.addValueObserver(mode -> {
+			switch (mode) {
+			case DRUM:
+				ledDisplay.setAssignment(StringUtil.toTwoCharVal(drumPadBank.scrollPosition().get() + 1), false);
+				break;
+			case GLOBAL:
+				ledDisplay.setAssignment(StringUtil.toTwoCharVal(globalTrackBank.scrollPosition().get() + 1), false);
+				break;
+			case MAIN:
+				ledDisplay.setAssignment(StringUtil.toTwoCharVal(mixerTrackBank.scrollPosition().get() + 1), false);
+				break;
+			default:
+				break;
+			}
+		});
 
 		for (final MixControl channelSection : sections) {
 			channelSection.initMainControl(mixerTrackBank, globalTrackBank, drumPadBank);
@@ -800,8 +831,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		initFButton(0, NoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
 		initFButton(1, NoteOnAssignment.F2, marker, cueMarkerBank,
 				() -> application.setPanelLayout(currentLayoutType.other().getName()));
-		initFButton(2, NoteOnAssignment.F3, marker, cueMarkerBank, () -> {
-		});
+		initFButton(2, NoteOnAssignment.F3, marker, cueMarkerBank, () -> application.navigateToParentTrackGroup());
 		initFButton(3, NoteOnAssignment.F4, marker, cueMarkerBank, () -> {
 		});
 		initFButton(4, NoteOnAssignment.F5, marker, cueMarkerBank, () -> {
@@ -818,7 +848,74 @@ public class MackieMcuProExtension extends ControllerExtension {
 		});
 	}
 
-	// TODO this all should go into a class of its own
+	private void initCycleSection() {
+		final HardwareButton loopButton = createButton(NoteOnAssignment.CYCLE);
+		final MenuModeLayerConfiguration cycleConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
+		final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
+
+		final SettableBeatTimeValue cycleStart = transport.arrangerLoopStart();
+		final SettableBeatTimeValue cycleLength = transport.arrangerLoopDuration();
+
+		cycleStart.markInterested();
+		cycleLength.markInterested();
+
+		cycleConfig.addNameBinding(0, new BasicStringValue("Cycle"));
+		cycleConfig.addNameBinding(1, new BasicStringValue("Start"));
+		cycleConfig.addNameBinding(2, new BasicStringValue("Len"));
+		cycleConfig.addNameBinding(4, new BasicStringValue("P.IN"));
+		cycleConfig.addNameBinding(5, new BasicStringValue("P.OUT"));
+
+		cycleConfig.addValueBinding(0, transport.isArrangerLoopEnabled(), "< ON >", "<OFF >");
+		cycleConfig.addValueBinding(1, cycleStart, v -> {
+			return cycleStart.getFormatted(formatter);
+		});
+		cycleConfig.addValueBinding(2, cycleLength, v -> {
+			return cycleLength.getFormatted(formatter);
+		});
+		cycleConfig.addValueBinding(4, transport.isPunchInEnabled(), "< ON >", "<OFF >");
+		cycleConfig.addValueBinding(5, transport.isPunchOutEnabled(), "< ON >", "<OFF >");
+
+		cycleConfig.addRingBoolBinding(0, transport.isArrangerLoopEnabled());
+		cycleConfig.addRingFixedBindingActive(1);
+		cycleConfig.addRingFixedBindingActive(2);
+		cycleConfig.addRingBoolBinding(0, transport.isPunchInEnabled());
+		cycleConfig.addRingBoolBinding(0, transport.isPunchOutEnabled());
+
+		cycleConfig.addPressEncoderBinding(0, index -> transport.isArrangerLoopEnabled().toggle());
+		cycleConfig.addPressEncoderBinding(1, index -> {
+			cycleStart.set(transport.getPosition().get());
+		});
+		cycleConfig.addPressEncoderBinding(4, index -> transport.isPunchInEnabled().toggle());
+		cycleConfig.addPressEncoderBinding(5, index -> transport.isPunchOutEnabled().toggle());
+		cycleConfig.addPressEncoderBinding(2, index -> {
+			final double startTime = cycleStart.get();
+			final double diff = transport.getPosition().get() - startTime;
+			if (diff > 0) {
+				cycleLength.set(diff);
+			}
+		});
+		cycleConfig.addEncoderIncBinding(1, cycleStart, 1);
+		cycleConfig.addEncoderIncBinding(2, cycleLength, 1);
+
+		cycleConfig.addRingFixedBinding(3);
+		cycleConfig.addRingFixedBinding(6);
+		cycleConfig.addRingFixedBinding(7);
+		// cycleConfig.addEncoderIncBinding(0, t, 1);
+		mainLayer.bind(transport.isArrangerLoopEnabled(), (OnOffHardwareLight) loopButton.backgroundLight());
+		mainLayer.bindPressed(loopButton, () -> {
+			holdState.enter(mainSection.getCurrentConfiguration(), loopButton.getName());
+			mainSection.setConfiguration(cycleConfig);
+		});
+		mainLayer.bindReleased(loopButton, () -> {
+			final LayerConfiguration layer = holdState.endHold();
+			if (layer != null) {
+				mainSection.setConfiguration(layer);
+			}
+			if (holdState.exit()) {
+				transport.isArrangerLoopEnabled().toggle();
+			}
+		});
+	}
 
 	private BooleanValueObject initCueMarkerSection(final CueMarkerBank cueMarkerBank) {
 		final HardwareButton markerButton = createButton(NoteOnAssignment.MARKER);
@@ -902,6 +999,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 			}
 		}
 		return false;
+	}
+
+	public MixerMode getPreviousOverallMode() {
+		return previousOverallMode;
 	}
 
 	public void createGroupModeButton(final NoteOnAssignment assignment,
@@ -993,6 +1094,12 @@ public class MackieMcuProExtension extends ControllerExtension {
 			}
 		}
 		getHost().showPopupNotification(" Exit Mackie MCU Pro");
+	}
+
+	public RelativeHardwarControlBindable createIncrementBinder(final IntConsumer consumer) {
+		return host.createRelativeHardwareControlStepTarget(//
+				host.createAction(() -> consumer.accept(1), () -> "+"),
+				host.createAction(() -> consumer.accept(-1), () -> "-"));
 	}
 
 	public Layers getLayers() {
