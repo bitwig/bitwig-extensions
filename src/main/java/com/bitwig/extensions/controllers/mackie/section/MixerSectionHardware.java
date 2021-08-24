@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.layer;
+package com.bitwig.extensions.controllers.mackie.section;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -31,6 +31,7 @@ import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.MotorFader;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
 import com.bitwig.extensions.framework.AbsoluteHardwareControlBinding;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.RelativeHardwareControlToRangedValueBinding;
@@ -136,7 +137,7 @@ public class MixerSectionHardware {
 		}
 	}
 
-	void sendVuUpdate(final int index, final int value) {
+	public void sendVuUpdate(final int index, final int value) {
 		midiOut.sendMidi(Midi.CHANNEL_AT, index << 4 | value, 0);
 	}
 

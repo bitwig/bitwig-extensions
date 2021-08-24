@@ -7,8 +7,8 @@ import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
-import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
-import com.bitwig.extensions.controllers.mackie.layer.MixControl;
+import com.bitwig.extensions.controllers.mackie.section.InfoSource;
+import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.framework.Layer;
 
 public abstract class LayerConfiguration {

@@ -13,9 +13,9 @@ import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
-import com.bitwig.extensions.controllers.mackie.layer.MixControl;
-import com.bitwig.extensions.controllers.mackie.layer.MixerSectionHardware;
-import com.bitwig.extensions.controllers.mackie.layer.ParamElement;
+import com.bitwig.extensions.controllers.mackie.section.MixControl;
+import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
+import com.bitwig.extensions.controllers.mackie.section.ParamElement;
 import com.bitwig.extensions.controllers.mackie.value.CombinedStringValueObject;
 import com.bitwig.extensions.controllers.mackie.value.StringIntValueObject;
 import com.bitwig.extensions.framework.Layer;
@@ -30,6 +30,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 	private LayerConfiguration previousConfig = null;
 	private boolean browsingInitiated = false;
 	private boolean resetState = false;
+	private Type contentType = Type.DEVICE;
 
 	private final CursorBrowserFilterItem categoryItem;
 	private final CursorBrowserFilterItem tagItem;
@@ -95,7 +96,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 			}
 			if (browserNowOpen) {
 				browser.shouldAudition().set(false);
-				browser.selectedContentTypeIndex().set(0);
+				browser.selectedContentTypeIndex().set(contentType.ordinal());
 				resetState = true;
 				previousConfig = mixControl.getCurrentConfig();
 				mixControl.setConfiguration(this);
@@ -216,6 +217,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 
 	public void setBrowsingInitiated(final boolean browsingInitiated, final Type type) {
 		this.browsingInitiated = browsingInitiated;
+		this.contentType = type;
 		deviceTypeItem.selectFirst();
 	}
 

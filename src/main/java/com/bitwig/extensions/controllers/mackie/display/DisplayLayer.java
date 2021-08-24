@@ -12,7 +12,7 @@ import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.mackie.bindings.ValueConverter;
 import com.bitwig.extensions.controllers.mackie.bindings.ValueStringConverter;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
-import com.bitwig.extensions.controllers.mackie.layer.MixControl;
+import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.framework.Layer;
 
 public class DisplayLayer extends Layer implements DisplaySource {

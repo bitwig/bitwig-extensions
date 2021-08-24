@@ -6,7 +6,7 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
-import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
+import com.bitwig.extensions.controllers.mackie.section.InfoSource;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 public class CursorDeviceTracker implements DeviceManager {
@@ -93,6 +93,16 @@ public class CursorDeviceTracker implements DeviceManager {
 	public void initiateBrowsing(final BrowserConfiguration browser, final Type type) {
 		browser.setBrowsingInitiated(true, type);
 		currentFollower.initiateBrowsing();
+	}
+
+	@Override
+	public void addBrowsing(final BrowserConfiguration browser, final boolean after) {
+		browser.setBrowsingInitiated(true, Type.DEVICE);
+		if (after) {
+			currentFollower.addNewDeviceAfter();
+		} else {
+			currentFollower.addNewDeviceBefore();
+		}
 	}
 
 	@Override

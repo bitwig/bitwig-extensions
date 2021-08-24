@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.layer;
+package com.bitwig.extensions.controllers.mackie.section;
 
 import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;

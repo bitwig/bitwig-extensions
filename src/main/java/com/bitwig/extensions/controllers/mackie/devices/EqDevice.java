@@ -11,7 +11,7 @@ import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfigurat
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
+import com.bitwig.extensions.controllers.mackie.section.InfoSource;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 /**
@@ -293,6 +293,16 @@ public class EqDevice implements ControlDevice, DeviceManager {
 	public void initiateBrowsing(final BrowserConfiguration browser, final Type type) {
 		browser.setBrowsingInitiated(true, type);
 		deviceFollower.initiateBrowsing();
+	}
+
+	@Override
+	public void addBrowsing(final BrowserConfiguration browser, final boolean after) {
+		browser.setBrowsingInitiated(true, Type.DEVICE);
+		if (after) {
+			deviceFollower.addNewDeviceAfter();
+		} else {
+			deviceFollower.addNewDeviceBefore();
+		}
 	}
 
 	@Override

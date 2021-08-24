@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
+import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.framework.Layer;
 
 public class EncoderLayer extends Layer {

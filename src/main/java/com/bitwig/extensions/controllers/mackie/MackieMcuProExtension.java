@@ -43,9 +43,9 @@ import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
 import com.bitwig.extensions.controllers.mackie.display.MotorFader;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.layer.ExtenderMixControl;
-import com.bitwig.extensions.controllers.mackie.layer.MixControl;
-import com.bitwig.extensions.controllers.mackie.layer.SectionType;
+import com.bitwig.extensions.controllers.mackie.section.ExtenderMixControl;
+import com.bitwig.extensions.controllers.mackie.section.MixControl;
+import com.bitwig.extensions.controllers.mackie.section.SectionType;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.LayoutType;
@@ -312,6 +312,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		createModeButton(VPotMode.PLUGIN);
 		createModeButton(VPotMode.EQ);
 		createModeButton(VPotMode.INSTRUMENT, VPotMode.MIDI_EFFECT);
+		createModeButton(VPotMode.MIDI_EFFECT);
 	}
 
 	private void initCursorSection() {
@@ -629,28 +630,27 @@ public class MackieMcuProExtension extends ControllerExtension {
 	/**
 	 * Creates modes button
 	 *
-	 * @param modes first mode is standard mode, second shift mode
+	 * @param modes first mode is the button, the second represents the light
 	 * @return the button
 	 */
 	private HardwareButton createModeButton(final VPotMode... modes) {
 		assert modes.length > 0;
 		final VPotMode mode = modes[0];
-		final VPotMode altmode = modes.length > 1 ? modes[1] : null;
+
 		final HardwareButton button = surface.createHardwareButton(mode.getName() + "_BUTTON");
 		mode.getButtonAssignment().holdActionAssign(midiIn, button);
+
 		final OnOffHardwareLight led = surface.createOnOffHardwareLight(mode.getName() + "BUTTON_LED");
 		button.setBackgroundLight(led);
 		led.onUpdateHardware(() -> {
 			sendLedUpdate(mode.getButtonAssignment(), led.isOn().currentValue() ? 127 : 0);
 		});
-		mainLayer.bindPressed(button, () -> setVPotMode(mode, true, altmode));
-		mainLayer.bindReleased(button, () -> setVPotMode(mode, false, altmode));
+		mainLayer.bindPressed(button, () -> setVPotMode(mode, true));
+		mainLayer.bindReleased(button, () -> setVPotMode(mode, false));
 		if (modes.length == 1) {
 			mainLayer.bind(() -> lightState(mode), led);
-		} else if (altmode != null) {
+		} else if (modes.length == 2) {
 			mainLayer.bind(() -> lightState(mode, modes[1]), led);
-			shiftLayer.bind(() -> lightState(mode, modes[1]), led);
-			shiftLayer.bindPressed(button, () -> setVPotMode(altmode, true, mode));
 		}
 
 		return button;
@@ -676,18 +676,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return false;
 	}
 
-	public void setVPotMode(final VPotMode mode, final boolean down, final VPotMode altMode) {
+	public void setVPotMode(final VPotMode mode, final boolean down) {
 		final VPotMode cmode = this.trackChannelMode.getMode();
-		if (cmode != mode && cmode != altMode || cmode == altMode && modifier.isShiftSet()) {
+		if (cmode != mode && cmode != null) {
 			if (down) {
 				this.trackChannelMode.setMode(mode);
 			}
 			sections.forEach(section -> section.notifyModeChange(mode, down));
-		} else if (cmode == mode && altMode != null && modifier.isShiftSet()) {
-			if (down) {
-				this.trackChannelMode.setMode(mode);
-			}
-			sections.forEach(section -> section.notifyModeChange(altMode, down));
 		} else {
 			sections.forEach(control -> control.notifyModeAdvance(mode, down));
 		}

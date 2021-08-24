@@ -2,9 +2,9 @@ package com.bitwig.extensions.controllers.mackie.configurations;
 
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
-import com.bitwig.extensions.controllers.mackie.layer.MixControl;
 import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
-import com.bitwig.extensions.controllers.mackie.layer.ParamElement;
+import com.bitwig.extensions.controllers.mackie.section.MixControl;
+import com.bitwig.extensions.controllers.mackie.section.ParamElement;
 import com.bitwig.extensions.framework.Layer;
 
 public class MixerLayerConfiguration extends LayerConfiguration {

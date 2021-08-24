@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.mackie.layer;
+package com.bitwig.extensions.controllers.mackie.section;
 
 import com.bitwig.extension.controller.api.Channel;
 import com.bitwig.extension.controller.api.CursorDeviceLayer;
@@ -32,6 +32,8 @@ import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
+import com.bitwig.extensions.controllers.mackie.layer.ClipLaunchButtonLayer;
+import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
@@ -551,7 +553,7 @@ public class MixControl implements LayerStateHandler {
 		}
 	}
 
-	void handleTrackSelection(final Track track) {
+	public void handleTrackSelection(final Track track) {
 		if (track.exists().get()) {
 			if (driver.getModifier().isShift()) {
 				track.isGroupExpanded().toggle();

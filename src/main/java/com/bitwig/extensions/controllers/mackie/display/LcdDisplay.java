@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
-import com.bitwig.extensions.controllers.mackie.layer.SectionType;
+import com.bitwig.extensions.controllers.mackie.section.SectionType;
 
 /**
  * Represents 2x56 LCD display on the MCU or an extender.

@@ -51,6 +51,22 @@ public class DeviceTypeFollower {
 		return potMode;
 	}
 
+	public void addNewDeviceAfter() {
+		if (focusDevice.exists().get()) {
+			focusDevice.afterDeviceInsertionPoint().browse();
+		} else {
+			deviceBank.browseToInsertDevice(0);
+		}
+	}
+
+	public void addNewDeviceBefore() {
+		if (focusDevice.exists().get()) {
+			focusDevice.beforeDeviceInsertionPoint().browse();
+		} else {
+			deviceBank.browseToInsertDevice(0);
+		}
+	}
+
 	public void initiateBrowsing() {
 		if (focusDevice.exists().get()) {
 			focusDevice.replaceDeviceInsertionPoint().browse();

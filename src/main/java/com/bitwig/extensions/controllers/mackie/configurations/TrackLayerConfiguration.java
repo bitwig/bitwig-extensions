@@ -17,11 +17,11 @@ import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
-import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
-import com.bitwig.extensions.controllers.mackie.layer.MixControl;
 import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
-import com.bitwig.extensions.controllers.mackie.layer.MixerSectionHardware;
-import com.bitwig.extensions.controllers.mackie.layer.ParamElement;
+import com.bitwig.extensions.controllers.mackie.section.InfoSource;
+import com.bitwig.extensions.controllers.mackie.section.MixControl;
+import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
+import com.bitwig.extensions.controllers.mackie.section.ParamElement;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
@@ -101,15 +101,26 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
 			cursorDeviceControl.getCursorDevice().deleteObject();
 		});
+		slotcount++;
+		menuDisplayLayer.bindFixed(slotcount, "<ADD");
+		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
+			deviceManager.addBrowsing(getMixControl().getDriver().getBrowserConfiguration(), false);
+		});
+		slotcount++;
+		menuDisplayLayer.bindFixed(slotcount, "ADD>");
+		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
+			deviceManager.addBrowsing(getMixControl().getDriver().getBrowserConfiguration(), true);
+		});
+		slotcount++;
+		menuDisplayLayer.bindFixed(slotcount, "*BRWS*");
+		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
+			deviceManager.initiateBrowsing(getMixControl().getDriver().getBrowserConfiguration(), Type.DEVICE);
+		});
 
 		for (int i = 1; i < 8; i++) {
 			menuControl.addRingFixedBinding(i);
 		}
 
-		menuDisplayLayer.bindFixed(7, "Browse");
-		menuControl.addPressEncoderBinding(7, encIndex -> {
-			deviceManager.initiateBrowsing(getMixControl().getDriver().getBrowserConfiguration(), Type.PRESET);
-		});
 		menuControl.addRingBoolBinding(0, device.isEnabled());
 	}
 
