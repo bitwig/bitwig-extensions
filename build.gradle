@@ -31,3 +31,5 @@ java {
         archiveFileName = 'BitwigControllers.bwextension'
     }
 }
+
+tasks.register("")
