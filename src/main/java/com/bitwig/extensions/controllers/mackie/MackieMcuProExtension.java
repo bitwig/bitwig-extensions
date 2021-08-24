@@ -184,13 +184,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	public void initChannelSections() {
-		mainSection = new MixControl(this, midiIn, midiOut, 0, SectionType.MAIN);
+		mainSection = new MixControl(this, midiIn, midiOut, nrOfExtenders, SectionType.MAIN);
 		sections.add(mainSection);
 		for (int i = 0; i < nrOfExtenders; i++) {
 			final MidiOut extMidiOut = host.getMidiOutPort(i + 1);
 			final MidiIn extMidiIn = host.getMidiInPort(i + 1);
 			if (extMidiIn != null && extMidiOut != null) {
-				final MixControl extenderSection = new ExtenderMixControl(this, extMidiIn, extMidiOut, i + 1);
+				final MixControl extenderSection = new ExtenderMixControl(this, extMidiIn, extMidiOut, i);
 				sections.add(extenderSection);
 			} else {
 				// RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing
@@ -361,11 +361,12 @@ public class MackieMcuProExtension extends ControllerExtension {
 		if (!isPressed) {
 			return;
 		}
+		final int numberOfTracksToControl = 8 * (nrOfExtenders + 1);
 		if (mixerMode.get() == MixerMode.DRUM) {
-			cursorDeviceControl.getDrumPadBank().scrollBy(direction * 8 * sections.size());
+			cursorDeviceControl.getDrumPadBank().scrollBy(direction * numberOfTracksToControl);
 		} else {
-			mixerTrackBank.scrollBy(direction * 8 * sections.size());
-			globalTrackBank.scrollBy(direction * 8 * sections.size());
+			mixerTrackBank.scrollBy(direction * numberOfTracksToControl);
+			globalTrackBank.scrollBy(direction * numberOfTracksToControl);
 		}
 	}
 
@@ -737,7 +738,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	protected void initTrackBank(final int nrOfScenes) {
 		// initNaviagtion();
-		final int numberOfHwChannels = 8 * sections.size();
+		final int numberOfHwChannels = 8 * (nrOfExtenders + 1);
 
 		cursorTrack = getHost().createCursorTrack(8, nrOfScenes);
 		cursorTrack.color().markInterested();
@@ -777,14 +778,14 @@ public class MackieMcuProExtension extends ControllerExtension {
 		drumPadBank.setIndication(true);
 		drumPadBank.scrollPosition().addValueObserver(offset -> {
 			if (mixerMode.get() == MixerMode.DRUM) {
-				ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
+				ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset), true);
 			}
 		});
 
 		mixerMode.addValueObserver(mode -> {
 			switch (mode) {
 			case DRUM:
-				ledDisplay.setAssignment(StringUtil.toTwoCharVal(drumPadBank.scrollPosition().get() + 1), false);
+				ledDisplay.setAssignment(StringUtil.toTwoCharVal(drumPadBank.scrollPosition().get()), true);
 				break;
 			case GLOBAL:
 				ledDisplay.setAssignment(StringUtil.toTwoCharVal(globalTrackBank.scrollPosition().get() + 1), false);

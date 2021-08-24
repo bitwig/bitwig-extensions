@@ -25,7 +25,7 @@ public class MackieMcuProX2ExtensionDefinition extends ControllerExtensionDefini
 
 	@Override
 	public String getVersion() {
-		return "0.1";
+		return MackieMcuProExtensionDefinition.SOFTWARE_VERSION;
 	}
 
 	@Override
@@ -75,12 +75,12 @@ public class MackieMcuProX2ExtensionDefinition extends ControllerExtensionDefini
 
 	@Override
 	public String getHelpFilePath() {
-		return "Controllers/Native Instruments/Maschine MK3 Plus/Maschine MK3 Plus.pdf";
+		return null;
 	}
 
 	@Override
 	public String getSupportFolderPath() {
-		return "Controllers/Native Instruments/Maschine MK3 Plus";
+		return null;
 	}
 
 	@Override
