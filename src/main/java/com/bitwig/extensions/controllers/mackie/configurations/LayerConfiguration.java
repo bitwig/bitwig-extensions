@@ -9,6 +9,7 @@ import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
 import com.bitwig.extensions.controllers.mackie.section.InfoSource;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
+import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
 
 public abstract class LayerConfiguration {
@@ -44,6 +45,17 @@ public abstract class LayerConfiguration {
 	public abstract Layer getFaderLayer();
 
 	public abstract EncoderLayer getEncoderLayer();
+
+	/**
+	 * Determine if changing the modifier button state should have any effect on the
+	 * layout.
+	 *
+	 * @param modvalue the modifier value
+	 * @return true if change of modifier should lead to change of display
+	 */
+	public boolean applyModifier(final ModifierValueObject modvalue) {
+		return false;
+	}
 
 	public Layer getButtonLayer() {
 		return this.mixControl.getActiveMixGroup().getMixerButtonLayer();

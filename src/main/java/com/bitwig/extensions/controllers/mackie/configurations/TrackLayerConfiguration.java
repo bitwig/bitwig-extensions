@@ -22,6 +22,7 @@ import com.bitwig.extensions.controllers.mackie.section.InfoSource;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
+import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
@@ -35,6 +36,7 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 	private DeviceManager deviceManager;
 
 	private final MenuModeLayerConfiguration menuControl;
+	private final MenuModeLayerConfiguration shiftMenuControl;
 	private CursorDeviceControl cursorDeviceControl;
 
 	public TrackLayerConfiguration(final String name, final MixControl mixControl) {
@@ -45,10 +47,16 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		faderLayer = new Layer(layers, name + "_FADER_LAYER_" + sectionIndex);
 		encoderLayer = new EncoderLayer(mixControl, name + "_ENCODER_LAYER_" + sectionIndex);
 		displayLayer = new DisplayLayer(name, this.mixControl);
-		menuControl = new MenuModeLayerConfiguration(name + "_MENU_" + sectionIndex, mixControl);
-		menuControl.getDisplayLayer(0).displayFullTextMode(true);
+		menuControl = createMenuControl(name + "_MENU_" + sectionIndex, mixControl);
+		shiftMenuControl = createMenuControl(name + "_MENU_S_" + sectionIndex, mixControl);
 		infoLayer = new DisplayLayer(name + "_INFO", this.mixControl);
 		infoLayer.enableFullTextMode(true);
+	}
+
+	private MenuModeLayerConfiguration createMenuControl(final String name, final MixControl mixControl) {
+		final MenuModeLayerConfiguration menuControl = new MenuModeLayerConfiguration(name, mixControl);
+		menuControl.getDisplayLayer(0).displayFullTextMode(true);
+		return menuControl;
 	}
 
 	public void setDeviceManager(final DeviceManager deviceManager) {
@@ -71,57 +79,26 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 	}
 
 	private void initMenuControl(final PinnableCursorDevice device) {
-		int slotcount = 0;
-		DisplayLayer menuDisplayLayer = menuControl.getDisplayLayer(slotcount);
+		MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menuControl);
+		builder.bindBool(device.isEnabled(), "ACTIVE", "<BYPS>", device, "<NODV>", () -> device.isEnabled().toggle());
+		builder.bindBool(device.isPinned(), "PINNED", "<PIN>", device, "<NODV>", () -> device.isPinned().toggle());
+		builder.bindFixed("<Move", () -> cursorDeviceControl.moveDeviceLeft());
+		builder.bindFixed("Move>", () -> cursorDeviceControl.moveDeviceRight());
+		builder.bindFixed("REMOVE", () -> cursorDeviceControl.getCursorDevice().deleteObject());
+		builder.bindFixed("<ADD",
+				() -> deviceManager.addBrowsing(getMixControl().getDriver().getBrowserConfiguration(), false));
+		builder.bindFixed("ADD>",
+				() -> deviceManager.addBrowsing(getMixControl().getDriver().getBrowserConfiguration(), true));
+		builder.bindFixed("*BRWS*", () -> deviceManager
+				.initiateBrowsing(getMixControl().getDriver().getBrowserConfiguration(), Type.DEVICE));
 
-		menuDisplayLayer.bindBool(slotcount, device.isEnabled(), "ACTIVE", "<BYPS>", device, "<NODV>");
-		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-			device.isEnabled().toggle();
-		});
-		slotcount++;
-		menuDisplayLayer = menuControl.getDisplayLayer(slotcount);
-		menuDisplayLayer.bindBool(slotcount, device.isPinned(), "PINNED", "<PIN>", device, "<NODV>");
-		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-			device.isPinned().toggle();
-		});
-		slotcount++;
-
-		menuDisplayLayer.bindFixed(slotcount, "<Move");
-		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-			cursorDeviceControl.moveDeviceLeft();
-		});
-		slotcount++;
-		menuDisplayLayer.bindFixed(slotcount, "Move>");
-		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-			cursorDeviceControl.moveDeviceRight();
-		});
-		slotcount++;
-
-		menuDisplayLayer.bindFixed(slotcount, "REMOVE");
-		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-			cursorDeviceControl.getCursorDevice().deleteObject();
-		});
-		slotcount++;
-		menuDisplayLayer.bindFixed(slotcount, "<ADD");
-		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-			deviceManager.addBrowsing(getMixControl().getDriver().getBrowserConfiguration(), false);
-		});
-		slotcount++;
-		menuDisplayLayer.bindFixed(slotcount, "ADD>");
-		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-			deviceManager.addBrowsing(getMixControl().getDriver().getBrowserConfiguration(), true);
-		});
-		slotcount++;
-		menuDisplayLayer.bindFixed(slotcount, "*BRWS*");
-		menuControl.addPressEncoderBinding(slotcount, encIndex -> {
-			deviceManager.initiateBrowsing(getMixControl().getDriver().getBrowserConfiguration(), Type.DEVICE);
-		});
-
-		for (int i = 1; i < 8; i++) {
-			menuControl.addRingFixedBinding(i);
+		builder = new MenuDisplayLayerBuilder(shiftMenuControl);
+		// Make this possibly
+		// device.isNested();
+		builder.bindFixed("PARENT", () -> device.selectParent());
+		for (int i = 0; i < 7; i++) {
+			builder.insertEmpty();
 		}
-
-		menuControl.addRingBoolBinding(0, device.isEnabled());
 	}
 
 	@Override
@@ -130,8 +107,14 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 	}
 
 	@Override
-	public boolean isActive() {
-		return encoderLayer.isActive() || faderLayer.isActive() || menuControl.isActive();
+	public boolean applyModifier(final ModifierValueObject modvalue) {
+		if (shiftMenuControl.getDisplayLayer(0).isActive() && !modvalue.isShiftSet()) {
+			return true;
+		}
+		if (menuControl.getDisplayLayer(0).isActive() && modvalue.isShiftSet()) {
+			return true;
+		}
+		return false;
 	}
 
 	public void registerFollowers(final DeviceTypeFollower... deviceTypeFollowers) {
@@ -169,10 +152,7 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		if (deviceManager == null) {
 			return;
 		}
-
-		final DisplayLayer menuLayer = menuControl.getDisplayLayer(0);
-		menuLayer.setText(0, "Device: " + deviceName, false);
-		menuLayer.enableFullTextMode(0, true);
+		setUpMenuDisplay(deviceName);
 		final CursorRemoteControlsPage remotes = cursorDeviceControl.getRemotes();
 		if (remotes != null) {
 			if (!exists || deviceName.length() == 0) {
@@ -189,6 +169,15 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		} else {
 			displayLayer.enableFullTextMode(false);
 		}
+	}
+
+	private void setUpMenuDisplay(final String deviceName) {
+		final DisplayLayer menuLayer = menuControl.getDisplayLayer(0);
+		menuLayer.setText(0, "Device: " + deviceName, false);
+		menuLayer.enableFullTextMode(0, true);
+		final DisplayLayer shiftMenuLayer = shiftMenuControl.getDisplayLayer(0);
+		shiftMenuLayer.setText(0, "Device: " + deviceName + " NAVIGATION ", false);
+		shiftMenuLayer.enableFullTextMode(0, true);
 	}
 
 	private void setMainText(final VPotMode mode) {
@@ -216,6 +205,9 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 	@Override
 	public EncoderLayer getEncoderLayer() {
 		if (mixControl.getIsMenuHoldActive().get()) {
+			if (mixControl.getDriver().getModifier().isShiftSet()) {
+				return shiftMenuControl.getEncoderLayer();
+			}
 			return menuControl.getEncoderLayer();
 		}
 		final boolean flipped = this.mixControl.isFlipped();
@@ -229,6 +221,9 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 	@Override
 	public DisplayLayer getDisplayLayer(final int which) {
 		if (mixControl.getIsMenuHoldActive().get()) {
+			if (mixControl.getDriver().getModifier().isShiftSet()) {
+				return shiftMenuControl.getDisplayLayer(0);
+			}
 			return menuControl.getDisplayLayer(0);
 		}
 		if (deviceManager != null && deviceManager.getInfoSource() != null) {
