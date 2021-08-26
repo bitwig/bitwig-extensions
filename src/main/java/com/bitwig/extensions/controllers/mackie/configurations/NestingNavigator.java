@@ -67,22 +67,22 @@ public class NestingNavigator {
 		actions[slot] = this::selectNext;
 		slot++;
 		if (isNested) {
-			sections[slot].set("PARENT");
+			sections[slot].set("<PARENT");
 			actions[slot] = this::selectParent;
 			slot++;
 		}
 		for (final String slotName : slotNames) {
-			sections[slot].set(slotName);
+			sections[slot].set(slotName + ">");
 			actions[slot] = () -> this.handleSlotSelection(slotName);
 			slot++;
 		}
 		if (hasLayers) {
-			sections[slot].set("LAYERS");
+			sections[slot].set("LAYER>");
 			actions[slot] = this::handleLayerSelection;
 			slot++;
 		}
 		if (drumPads) {
-			sections[slot].set("PADS");
+			sections[slot].set("PAD >");
 			actions[slot] = this::handleDrumSelection;
 			slot++;
 		}

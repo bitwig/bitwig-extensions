@@ -9,10 +9,14 @@ import com.bitwig.extension.controller.api.ObjectProxy;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableBeatTimeValue;
+import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.ResetableRelativeValueBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayRangedValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ValueConverter;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
+import com.bitwig.extensions.controllers.mackie.display.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
@@ -105,6 +109,10 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
 		displayLayer.bindParameterValue(i, value, existSource, nonExistText, converter);
 	}
 
+	public void addDisplayValueBinding(final int i, final StringValue value) {
+		displayLayer.bindName(1, i, value);
+	}
+
 	public void addValueBinding(final int i, final DoubleValue value, final ValueConverter converter) {
 		displayLayer.bindParameterValue(i, value, converter);
 	}
@@ -121,6 +129,18 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
 			position.set(position.get() + inc * increment);
 		});
 		encoderLayer.bind(encoder, incBinder);
+	}
+
+	public void addEncoderBinding(final int i, final SettableRangedValue value, final double sensitivity) {
+		final MixerSectionHardware hwControls = mixControl.getHwControls();
+		final RelativeHardwareKnob encoder = hwControls.getEncoder(i);
+		final ResetableRelativeValueBinding absoluteEncoderBinding = new ResetableRelativeValueBinding(encoder, value,
+				sensitivity);
+		encoderLayer.addBinding(absoluteEncoderBinding);
+		final RingDisplay ringDisplay = hwControls.getRingDisplay(i);
+		final RingDisplayRangedValueBinding ringBinding = new RingDisplayRangedValueBinding(value, ringDisplay,
+				RingDisplayType.FILL_LR);
+		encoderLayer.addBinding(ringBinding);
 	}
 
 }

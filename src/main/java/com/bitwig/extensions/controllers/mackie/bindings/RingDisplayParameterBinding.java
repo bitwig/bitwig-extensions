@@ -17,7 +17,6 @@ public class RingDisplayParameterBinding extends Binding<Parameter, RingDisplay>
 			valueChange(type.getOffset() + v);
 		});
 		source.exists().addValueObserver(this::handleExists);
-		source.name().markInterested();
 	}
 
 	public void handleExists(final boolean exist) {

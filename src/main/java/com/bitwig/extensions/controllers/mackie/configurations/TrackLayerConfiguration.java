@@ -108,10 +108,10 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 			shiftMenuLayer.enableFullTextMode(0, true);
 		});
 
-		builder.bindEncAction(navigator.getSection(0), index -> navigator.doAction(index));
-		builder.bindEncAction(navigator.getSection(1), index -> navigator.doAction(index));
-		builder.bindEncAction(navigator.getSection(2), index -> navigator.doAction(index));
-		builder.bindEncAction(navigator.getSection(3), index -> navigator.doAction(index));
+		for (int i = 0; i < 7; i++) {
+			final int slotIndex = i;
+			builder.bindEncAction(navigator.getSection(slotIndex), index -> navigator.doAction(slotIndex));
+		}
 	}
 
 	@Override

@@ -36,6 +36,7 @@ import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.MenuDisplayLayerBuilder;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
@@ -57,6 +58,7 @@ import com.bitwig.extensions.framework.Layers;
 
 public class MackieMcuProExtension extends ControllerExtension {
 
+	private static final String MAIN_UNIT_SYEX_HEADER = "F0 00 00 66 14 0A ";
 	private static final String SYSEX_DEVICE_RELOAD = "f0000066140158595a";
 	private static final double[] FFWD_SPEEDS = { 0.0625, 0.25, 1.0, 4.0 };
 	private static final double[] FFWD_SPEEDS_SHIFT = { 0.25, 1.0, 4.0, 16.0 };
@@ -87,6 +89,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	private final ValueObject<ButtonViewState> buttonViewMode = new ValueObject<>(ButtonViewState.MIXER);
 	private int blinkTicks = 0;
+	private final BooleanValueObject transportClick = new BooleanValueObject();
 
 	private final ModifierValueObject modifier = new ModifierValueObject();
 	private final TrackModeValue trackChannelMode = new TrackModeValue();
@@ -433,8 +436,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final HardwareButton fastForwardButton = createHoldButton(NoteOnAssignment.FFWD);
 
 		initCycleSection();
-		final HardwareButton metroButton = createButton(NoteOnAssignment.CLICK);
-		mainLayer.bindToggle(metroButton, transport.isMetronomeEnabled());
+		initClickSection();
 
 		final HardwareButton autoWriteButton = createButton(NoteOnAssignment.AUTO_READ_OFF);
 		mainLayer.bindPressed(autoWriteButton, transport.isArrangerAutomationWriteEnabled());
@@ -844,6 +846,24 @@ public class MackieMcuProExtension extends ControllerExtension {
 		});
 	}
 
+	private void initClickSection() {
+		final HardwareButton metroButton = createButton(NoteOnAssignment.CLICK);
+		final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
+		final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
+		builder.bindBool("METRO", transport.isMetronomeEnabled());
+		builder.bindBool("P.ROLL", transport.isMetronomeAudibleDuringPreRoll());
+		builder.bindBool("M.TICK", transport.isMetronomeTickPlaybackEnabled());
+		builder.bindValue("M.VOL", transport.metronomeVolume(), 0.05);
+		builder.insertEmpty();
+		builder.bindBool("T.CLCK", transportClick);
+
+		transportClick.addValueObserver(value -> {
+			midiOut.sendSysex(MAIN_UNIT_SYEX_HEADER + (value ? "01" : "00") + " F7");
+		});
+		builder.fillRest();
+		bindHoldToggleButton(metroButton, menu, transport.isMetronomeEnabled());
+	}
+
 	private void initCycleSection() {
 		final HardwareButton loopButton = createButton(NoteOnAssignment.CYCLE);
 		final MenuModeLayerConfiguration cycleConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
@@ -897,18 +917,23 @@ public class MackieMcuProExtension extends ControllerExtension {
 		cycleConfig.addRingFixedBinding(6);
 		cycleConfig.addRingFixedBinding(7);
 		// cycleConfig.addEncoderIncBinding(0, t, 1);
-		mainLayer.bind(transport.isArrangerLoopEnabled(), (OnOffHardwareLight) loopButton.backgroundLight());
-		mainLayer.bindPressed(loopButton, () -> {
-			holdState.enter(mainSection.getCurrentConfiguration(), loopButton.getName());
-			mainSection.setConfiguration(cycleConfig);
+		bindHoldToggleButton(loopButton, cycleConfig, transport.isArrangerLoopEnabled());
+	}
+
+	private void bindHoldToggleButton(final HardwareButton button, final MenuModeLayerConfiguration menu,
+			final SettableBooleanValue value) {
+		mainLayer.bind(value, (OnOffHardwareLight) button.backgroundLight());
+		mainLayer.bindPressed(button, () -> {
+			holdState.enter(mainSection.getCurrentConfiguration(), button.getName());
+			mainSection.setConfiguration(menu);
 		});
-		mainLayer.bindReleased(loopButton, () -> {
+		mainLayer.bindReleased(button, () -> {
 			final LayerConfiguration layer = holdState.endHold();
 			if (layer != null) {
 				mainSection.setConfiguration(layer);
 			}
 			if (holdState.exit()) {
-				transport.isArrangerLoopEnabled().toggle();
+				value.toggle();
 			}
 		});
 	}
@@ -942,20 +967,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 			markerMenuConfig.addEncoderIncBinding(i, cueMarker.position(), 1);
 		}
 
-		mainLayer.bind(marker, (OnOffHardwareLight) markerButton.backgroundLight());
-		mainLayer.bindPressed(markerButton, () -> {
-			holdState.enter(mainSection.getCurrentConfiguration(), markerButton.getName());
-			mainSection.setConfiguration(markerMenuConfig);
-		});
-		mainLayer.bindReleased(markerButton, () -> {
-			final LayerConfiguration layer = holdState.endHold();
-			if (layer != null) {
-				mainSection.setConfiguration(layer);
-			}
-			if (holdState.exit()) {
-				marker.toggle();
-			}
-		});
+		bindHoldToggleButton(markerButton, markerMenuConfig, marker);
 		return marker;
 	}
 
