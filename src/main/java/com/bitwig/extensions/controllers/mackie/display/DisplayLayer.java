@@ -88,8 +88,14 @@ public class DisplayLayer extends Layer implements DisplaySource {
 		 * @param cellExpander the expander to check
 		 * @return false if task is not active or the current expander is the one given.
 		 */
-		public boolean runningOther(final CellExpander cellExpander) {
-			return isActive() && currentExpander != cellExpander;
+		public int overlapsWithOther(final CellExpander cellExpander) {
+			if (!isActive()) {
+				return 0;
+			}
+			if (currentExpander == cellExpander) {
+				return 0;
+			}
+			return currentExpander.overlaps(cellExpander);
 		}
 	}
 
@@ -113,6 +119,14 @@ public class DisplayLayer extends Layer implements DisplaySource {
 			if (sourceOfExistance != null) {
 				sourceOfExistance.exists().addValueObserver(this::handleExistence);
 			}
+		}
+
+		public int overlaps(final CellExpander otherExpander) {
+			if (otherExpander == this) {
+				return 0;
+			}
+			final int over = this.cell.getIndex() + span - otherExpander.cell.getIndex();
+			return Math.max(over, 0);
 		}
 
 		public boolean inRange(final int cellIndex) {
@@ -156,13 +170,18 @@ public class DisplayLayer extends Layer implements DisplaySource {
 		}
 
 		private void sendFullLength(final String v) {
-			if (!isActive() || bottomRow.isFullTextMode() || expansionTask.runningOther(this)) {
+			if (!isActive() || bottomRow.isFullTextMode()) {
+				return;
+			}
+			final int overlap = expansionTask.overlapsWithOther(this);
+			if (overlap >= span) {
 				return;
 			}
 			final String dv = frameChar != null ? frameChar.charAt(0) + v : v;
-			for (int i = 0; i < span; i++) {
+			for (int i = overlap; i < span; i++) {
 				final int index = cell.getIndex() + i;
 				final String sendString = splitString(dv, i);
+
 				if (i < span - 1) {
 					display.sendToRowFull(DisplayLayer.this, row.getRowIndex(), index, sendString);
 				} else {
@@ -182,7 +201,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
 			} else if (expansionTask.active(row.getRowIndex(), cell.getIndex())) {
 				sendFullLength(cell.getDisplayValue());
 			} else {
-				if (!isActive() || bottomRow.isFullTextMode() || expansionTask.runningOther(this)) {
+				if (!isActive() || bottomRow.isFullTextMode() || expansionTask.overlapsWithOther(this) > 0) {
 					return;
 				}
 				display.sendToRow(DisplayLayer.this, row.getRowIndex(), cell.getIndex(), cell.getDisplayValue());

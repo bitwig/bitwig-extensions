@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.mackie.configurations;
 
-import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
@@ -115,8 +114,8 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 			track.trackType().markInterested();
 			track.isGroup().markInterested();
 			track.isGroupExpanded().markInterested();
-			final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
-			slotBank.setIndication(true);
+			// final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
+			// slotBank.setIndication(true);
 
 			final HardwareButton intoDrumButton = hwControls.getButton(2, index);
 			layer.bindPressed(intoDrumButton, () -> intoDrumMode(index, track, drumFollowBanks[index]));

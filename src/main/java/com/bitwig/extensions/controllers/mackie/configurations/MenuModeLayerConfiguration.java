@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.mackie.configurations;
 
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 import com.bitwig.extension.controller.api.BooleanValue;
@@ -23,6 +24,7 @@ import com.bitwig.extensions.framework.Layer;
 public class MenuModeLayerConfiguration extends LayerConfiguration {
 	private final EncoderLayer encoderLayer;
 	private final DisplayLayer displayLayer;
+	private Consumer<String> displayEvaluation;
 
 	public MenuModeLayerConfiguration(final String name, final MixControl mixControl) {
 		super(name, mixControl);
@@ -30,6 +32,16 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
 		encoderLayer = new EncoderLayer(mixControl, name + "_ENCODER_LAYER_" + sectionIndex);
 		encoderLayer.setEncoderMode(EncoderMode.NONACCELERATED);
 		displayLayer = new DisplayLayer(name, this.mixControl);
+	}
+
+	public void setTextEvaluation(final Consumer<String> action) {
+		this.displayEvaluation = action;
+	}
+
+	public void evaluateTextDisplay(final String text) {
+		if (displayEvaluation != null) {
+			displayEvaluation.accept(text);
+		}
 	}
 
 	@Override

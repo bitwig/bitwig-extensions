@@ -37,7 +37,6 @@ import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class MixControl implements LayerStateHandler {
 	private final MixerSectionHardware hwControls;
@@ -136,7 +135,6 @@ public class MixControl implements LayerStateHandler {
 	private void setUpModifierHandling(final ModifierValueObject modifier) {
 		modifier.addValueObserver(modvalue -> {
 			// TODO this will have to change to accommodate different modes
-			RemoteConsole.out.println("MOD V={}", modvalue);
 			if (currentConfiguration.applyModifier(modvalue)) {
 				layerState.updateState(this);
 			} else if (modifier.get() > 0 && launchButtonLayer.isActive()) {

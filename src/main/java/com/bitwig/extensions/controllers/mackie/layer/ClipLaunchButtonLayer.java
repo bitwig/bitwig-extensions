@@ -19,6 +19,7 @@ public class ClipLaunchButtonLayer extends Layer {
 	private final MackieMcuProExtension driver;
 	private final Clip mainCursorClip;
 	private int blinkTicks;
+	private int trackOffset;
 
 	public ClipLaunchButtonLayer(final String name, final MixControl mixControl) {
 		super(mixControl.getDriver().getLayers(),
@@ -30,13 +31,13 @@ public class ClipLaunchButtonLayer extends Layer {
 	public void initTrackBank(final MixerSectionHardware hwControls, final TrackBank trackBank) {
 		trackBank.setChannelScrollStepSize(1);
 		this.trackBank = trackBank;
-		final int offset = hwControls.getSectionIndex() * 8;
+		trackOffset = hwControls.getSectionIndex() * 8;
 
 		for (int index = 0; index < 8; index++) {
-			final int trackIndex = index + offset;
+			final int trackIndex = index + trackOffset;
 			final Track track = trackBank.getItemAt(trackIndex);
 			final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
-			slotBank.setIndication(true);
+			slotBank.setIndication(false);
 
 			for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
 				final HardwareButton button = hwControls.getButton(slotIndex, index);
@@ -117,6 +118,24 @@ public class ClipLaunchButtonLayer extends Layer {
 			trackBank.sceneBank().scrollBackwards();
 		} else {
 			trackBank.sceneBank().scrollForwards();
+		}
+	}
+
+	@Override
+	protected void onActivate() {
+		setIndication(true);
+	}
+
+	@Override
+	protected void onDeactivate() {
+		setIndication(false);
+	}
+
+	private void setIndication(final boolean enabled) {
+		for (int index = 0; index < 8; index++) {
+			final Track track = trackBank.getItemAt(index + trackOffset);
+			final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
+			slotBank.setIndication(enabled);
 		}
 	}
 

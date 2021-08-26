@@ -75,10 +75,11 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 			evaluateTextDisplay(deviceManager.getPageCount(), deviceManager.isSpecificDevicePresent(), name);
 		});
 
-		initMenuControl(device);
+		initMenuControl(cursorDeviceControl);
 	}
 
-	private void initMenuControl(final PinnableCursorDevice device) {
+	private void initMenuControl(final CursorDeviceControl cursorDeviceControl) {
+		final PinnableCursorDevice device = cursorDeviceControl.getCursorDevice();
 		MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menuControl);
 		builder.bindBool(device.isEnabled(), "ACTIVE", "<BYPS>", device, "<NODV>", () -> device.isEnabled().toggle());
 		builder.bindBool(device.isPinned(), "PINNED", "<PIN>", device, "<NODV>", () -> device.isPinned().toggle());
@@ -89,16 +90,28 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 				() -> deviceManager.addBrowsing(getMixControl().getDriver().getBrowserConfiguration(), false));
 		builder.bindFixed("ADD>",
 				() -> deviceManager.addBrowsing(getMixControl().getDriver().getBrowserConfiguration(), true));
-		builder.bindFixed("*BRWS*", () -> deviceManager
+		builder.bindFixed("BROWSE", () -> deviceManager
 				.initiateBrowsing(getMixControl().getDriver().getBrowserConfiguration(), Type.DEVICE));
 
+		menuControl.setTextEvaluation(name -> {
+			final DisplayLayer menuLayer = menuControl.getDisplayLayer(0);
+			menuLayer.setText(0, "Device: " + name, false);
+			menuLayer.enableFullTextMode(0, true);
+		});
+
 		builder = new MenuDisplayLayerBuilder(shiftMenuControl);
-		// Make this possibly
-		// device.isNested();
-		builder.bindFixed("PARENT", () -> device.selectParent());
-		for (int i = 0; i < 7; i++) {
-			builder.insertEmpty();
-		}
+
+		final NestingNavigator navigator = new NestingNavigator(cursorDeviceControl, 8);
+		shiftMenuControl.setTextEvaluation(name -> {
+			final DisplayLayer shiftMenuLayer = shiftMenuControl.getDisplayLayer(0);
+			shiftMenuLayer.setText(0, "Device: " + name + " NAVIGATION ", false);
+			shiftMenuLayer.enableFullTextMode(0, true);
+		});
+
+		builder.bindEncAction(navigator.getSection(0), index -> navigator.doAction(index));
+		builder.bindEncAction(navigator.getSection(1), index -> navigator.doAction(index));
+		builder.bindEncAction(navigator.getSection(2), index -> navigator.doAction(index));
+		builder.bindEncAction(navigator.getSection(3), index -> navigator.doAction(index));
 	}
 
 	@Override
@@ -152,7 +165,8 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		if (deviceManager == null) {
 			return;
 		}
-		setUpMenuDisplay(deviceName);
+		menuControl.evaluateTextDisplay(deviceName);
+		shiftMenuControl.evaluateTextDisplay(deviceName);
 		final CursorRemoteControlsPage remotes = cursorDeviceControl.getRemotes();
 		if (remotes != null) {
 			if (!exists || deviceName.length() == 0) {
@@ -169,15 +183,6 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		} else {
 			displayLayer.enableFullTextMode(false);
 		}
-	}
-
-	private void setUpMenuDisplay(final String deviceName) {
-		final DisplayLayer menuLayer = menuControl.getDisplayLayer(0);
-		menuLayer.setText(0, "Device: " + deviceName, false);
-		menuLayer.enableFullTextMode(0, true);
-		final DisplayLayer shiftMenuLayer = shiftMenuControl.getDisplayLayer(0);
-		shiftMenuLayer.setText(0, "Device: " + deviceName + " NAVIGATION ", false);
-		shiftMenuLayer.enableFullTextMode(0, true);
 	}
 
 	private void setMainText(final VPotMode mode) {

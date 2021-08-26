@@ -17,8 +17,10 @@ import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
 import com.bitwig.extensions.controllers.mackie.value.CombinedStringValueObject;
+import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.controllers.mackie.value.StringIntValueObject;
 import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class BrowserConfiguration extends LayerConfiguration {
 
@@ -227,6 +229,12 @@ public class BrowserConfiguration extends LayerConfiguration {
 
 	public PopupBrowser getBrowser() {
 		return browser;
+	}
+
+	@Override
+	public boolean applyModifier(final ModifierValueObject modvalue) {
+		RemoteConsole.out.println("MODIFIER ON BROWSER {}", modvalue.get());
+		return false;
 	}
 
 	public boolean isMcuBrowserActive() {

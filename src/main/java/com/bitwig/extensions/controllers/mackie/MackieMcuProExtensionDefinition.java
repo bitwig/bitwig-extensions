@@ -10,8 +10,9 @@ import com.bitwig.extension.controller.api.ControllerHost;
 public class MackieMcuProExtensionDefinition extends ControllerExtensionDefinition {
 	private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-81ad-1de77ffa2dab");
 
-	public static final int MCU_API_VERSION = 15;
-	public static final String SOFTWARE_VERSION = "0.9";
+	private static final int MCU_API_VERSION = 15;
+	private static final String SOFTWARE_VERSION = "0.9";
+	private static final String DEVICE_NAME = "Mackie Control";
 
 	protected int nrOfExtenders;
 	protected String[] inMidiPortNames;
@@ -36,9 +37,9 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
 	@Override
 	public String getName() {
 		if (nrOfExtenders == 0) {
-			return "Mackie MCU Pro V3";
+			return DEVICE_NAME;
 		}
-		return String.format("Mackie MCU Pro V3 +%d EXTENDER", nrOfExtenders);
+		return String.format("%s +%d EXTENDER", DEVICE_NAME, nrOfExtenders);
 	}
 
 	@Override
@@ -63,7 +64,7 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
 
 	@Override
 	public String getHardwareModel() {
-		return "MCU Pro UCS";
+		return "Mackie Control";
 	}
 
 	@Override
