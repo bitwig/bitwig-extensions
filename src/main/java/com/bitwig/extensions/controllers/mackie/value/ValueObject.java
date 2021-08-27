@@ -9,7 +9,7 @@ public class ValueObject<T> {
 	T value;
 
 	public interface ChangeCallback<T> {
-		void valueChanged(T newValue);
+		void valueChanged(T oldValue, T newValue);
 	}
 
 	public ValueObject(final T initValue) {
@@ -26,9 +26,10 @@ public class ValueObject<T> {
 		if (this.value == value) {
 			return;
 		}
+		final T oldValue = this.value;
 		this.value = value;
 		for (final ChangeCallback<T> listener : callbacks) {
-			listener.valueChanged(value);
+			listener.valueChanged(oldValue, value);
 		}
 	}
 

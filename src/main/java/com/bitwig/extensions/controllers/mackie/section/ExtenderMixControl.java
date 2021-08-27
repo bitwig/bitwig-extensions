@@ -24,8 +24,8 @@ public class ExtenderMixControl extends MixControl {
 		default:
 			return;
 		}
-		activeMode = mode;
-		getDriver().getBrowserConfiguration().forceClose();
+		activeVPotMode = mode;
+		getDriver().getBrowserConfiguration().endUserBrowsing();
 		layerState.updateState(this);
 	}
 }

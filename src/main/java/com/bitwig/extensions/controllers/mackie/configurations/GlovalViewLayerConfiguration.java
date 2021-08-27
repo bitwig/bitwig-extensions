@@ -85,7 +85,7 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 		}
 		final ValueObject<MixerMode> mixMode = mixControl.getDriver().getMixerMode();
 		final BasicStringValue onOff = new BasicStringValue(toValue(mixMode.get()));
-		mixMode.addValueObserver(newMode -> onOff.set(toValue(newMode)));
+		mixMode.addValueObserver((oldMode, newMode) -> onOff.set(toValue(newMode)));
 		displayLayer.bindName(1, 0, onOff);
 		final HardwareActionBindable toggleMixModeAction = hwControls.createAction(this::toggleMixMode);
 		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(0), toggleMixModeAction));
@@ -114,8 +114,6 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 			track.trackType().markInterested();
 			track.isGroup().markInterested();
 			track.isGroupExpanded().markInterested();
-			// final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
-			// slotBank.setIndication(true);
 
 			final HardwareButton intoDrumButton = hwControls.getButton(2, index);
 			layer.bindPressed(intoDrumButton, () -> intoDrumMode(index, track, drumFollowBanks[index]));

@@ -784,8 +784,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 			}
 		});
 
-		mixerMode.addValueObserver(mode -> {
-			switch (mode) {
+		mixerMode.addValueObserver((oldMode, newMode) -> {
+			switch (newMode) {
 			case DRUM:
 				ledDisplay.setAssignment(StringUtil.toTwoCharVal(drumPadBank.scrollPosition().get()), true);
 				break;
@@ -979,9 +979,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 		led.onUpdateHardware(() -> {
 			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
 		});
-		mixerMode.addValueObserver(newValue -> {
-			if (newValue != MixerMode.DRUM) {
-				previousOverallMode = newValue;
+		mixerMode.addValueObserver((oldMode, newMode) -> {
+			if (newMode != MixerMode.DRUM) {
+				previousOverallMode = newMode;
 			}
 		});
 		mainLayer.bind(() -> lightStateMixMode(mixerMode), led);

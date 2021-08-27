@@ -244,6 +244,13 @@ public class BrowserConfiguration extends LayerConfiguration {
 	}
 
 	public void forceClose() {
+		if (browser.exists().get()) {
+			resetState = false;
+			browser.cancel();
+		}
+	}
+
+	public void endUserBrowsing() {
 		if (browser.exists().get() && browsingInitiated) {
 			resetState = false;
 			browser.cancel();

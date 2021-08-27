@@ -69,7 +69,7 @@ public class MixControl implements LayerStateHandler {
 	private DeviceTypeBank deviceTypeBank;
 	private DisplayLayer activeDisplayLayer;
 
-	protected VPotMode activeMode = VPotMode.PAN;
+	protected VPotMode activeVPotMode = VPotMode.PAN;
 	private NoteHandler noteHandler;
 
 	public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
@@ -113,7 +113,7 @@ public class MixControl implements LayerStateHandler {
 		activeDisplayLayer = infoLayer;
 
 		driver.getFlipped().addValueObserver(flipped -> layerState.updateState(this));
-		driver.getMixerMode().addValueObserver(globalView -> changeMixerMode());
+		driver.getMixerMode().addValueObserver(this::changeMixerMode);
 		driver.getButtonView().addValueObserver(this::handleButtonViewChanged);
 		driver.getTrackChannelMode().addValueObserver(trackMode -> doModeChange(driver.getVpotMode().getMode(), true));
 
@@ -123,12 +123,12 @@ public class MixControl implements LayerStateHandler {
 		}
 	}
 
-	private void handleButtonViewChanged(final ButtonViewState newState) {
+	private void handleButtonViewChanged(final ButtonViewState oldState, final ButtonViewState newState) {
 		if (newState == ButtonViewState.GLOBAL_VIEW) {
 			switchActiveConfiguration(globalViewLayerConfiguration);
 			layerState.updateState(this);
 		} else {
-			doModeChange(activeMode, true);
+			doModeChange(activeVPotMode, true);
 		}
 	}
 
@@ -287,7 +287,7 @@ public class MixControl implements LayerStateHandler {
 
 			final DeviceManager deviceTracker = currentConfiguration.getDeviceManager();
 
-			switch (activeMode) {
+			switch (activeVPotMode) {
 			case EQ:
 				if (deviceTracker != null && !deviceTracker.isSpecificDevicePresent()) {
 					final InsertionPoint ip = driver.getCursorTrack().endOfDeviceChainInsertionPoint();
@@ -316,9 +316,13 @@ public class MixControl implements LayerStateHandler {
 		}
 	}
 
-	private void changeMixerMode() {
-		determineSendTrackConfig(activeMode);
-		layerState.updateState(this);
+	private void changeMixerMode(final MixerMode oldMode, final MixerMode newMode) {
+		determineSendTrackConfig(activeVPotMode);
+		if (oldMode == MixerMode.DRUM && activeVPotMode.isDeviceMode()) {
+			driver.getVpotMode().setMode(VPotMode.PAN);
+		} else {
+			layerState.updateState(this);
+		}
 	}
 
 	void doModeChange(final VPotMode mode, final boolean focus) {
@@ -348,13 +352,13 @@ public class MixControl implements LayerStateHandler {
 		default:
 			break;
 		}
-		activeMode = mode;
+		activeVPotMode = mode;
 		if (currentConfiguration.getDeviceManager() != null && focus) {
 			focusDevice(currentConfiguration.getDeviceManager());
 		} else {
 			ensureDevicePointer(currentConfiguration.getDeviceManager());
 		}
-		getDriver().getBrowserConfiguration().forceClose();
+		getDriver().getBrowserConfiguration().endUserBrowsing();
 		layerState.updateState(this);
 	}
 
@@ -523,7 +527,7 @@ public class MixControl implements LayerStateHandler {
 	private void updateDeviceMode(final int p, final BrowserConfiguration browserConfiguration,
 			final PinnableCursorDevice cursorDevice) {
 		final VPotMode fittingMode = VPotMode.fittingMode(cursorDevice);
-		if (p >= 0 && fittingMode != null && activeMode.isDeviceMode()) {
+		if (p >= 0 && fittingMode != null && activeVPotMode.isDeviceMode()) {
 			if (!browserConfiguration.isMcuBrowserActive()) {
 				driver.getVpotMode().setMode(fittingMode);
 				doModeChange(fittingMode, false);
@@ -582,7 +586,7 @@ public class MixControl implements LayerStateHandler {
 	public void handlePadSelection(final DrumPad pad) {
 		pad.selectInEditor();
 		pad.selectInMixer();
-		if (activeMode == VPotMode.INSTRUMENT) {
+		if (activeVPotMode == VPotMode.INSTRUMENT) {
 			driver.getCursorDeviceControl().focusOnDrumDevice();
 		}
 	}

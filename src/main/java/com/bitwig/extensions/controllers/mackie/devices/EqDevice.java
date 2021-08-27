@@ -291,6 +291,9 @@ public class EqDevice implements ControlDevice, DeviceManager {
 
 	@Override
 	public void initiateBrowsing(final BrowserConfiguration browser, final Type type) {
+		if (browser.isBrowserActive()) {
+			browser.forceClose();
+		}
 		browser.setBrowsingInitiated(true, type);
 		deviceFollower.initiateBrowsing();
 	}
