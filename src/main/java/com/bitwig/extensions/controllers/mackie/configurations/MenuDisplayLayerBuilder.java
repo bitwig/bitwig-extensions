@@ -11,14 +11,14 @@ import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 
 public class MenuDisplayLayerBuilder {
 	private static final int MAX_SLOT_INDEX = 7;
-	private final MenuModeLayerConfiguration menuControl;
-	private final DisplayLayer menuDisplayLayer;
+	private final MenuModeLayerConfiguration control;
+	private final DisplayLayer displayLayer;
 	int currentSlot = 0;
 
 	public MenuDisplayLayerBuilder(final MenuModeLayerConfiguration menuControl) {
 		super();
-		this.menuControl = menuControl;
-		this.menuDisplayLayer = menuControl.getDisplayLayer(0);
+		this.control = menuControl;
+		this.displayLayer = menuControl.getDisplayLayer(0);
 	}
 
 	public void bindBool(final SettableBooleanValue value, final String trueString, final String falseString,
@@ -26,9 +26,9 @@ public class MenuDisplayLayerBuilder {
 		if (currentSlot > MAX_SLOT_INDEX) {
 			return;
 		}
-		menuDisplayLayer.bindBool(currentSlot, value, trueString, falseString, existSource, emptyString);
-		menuControl.addPressEncoderBinding(currentSlot, encIndex -> pressAction.run());
-		menuControl.addRingBoolBinding(currentSlot, value);
+		displayLayer.bindBool(currentSlot, value, trueString, falseString, existSource, emptyString);
+		control.addPressEncoderBinding(currentSlot, encIndex -> pressAction.run());
+		control.addRingBoolBinding(currentSlot, value);
 		currentSlot++;
 	}
 
@@ -36,9 +36,9 @@ public class MenuDisplayLayerBuilder {
 		if (currentSlot > MAX_SLOT_INDEX) {
 			return;
 		}
-		menuDisplayLayer.bindName(1, currentSlot, displayName);
-		menuControl.addPressEncoderBinding(currentSlot, encIndex -> pressAction.accept(encIndex));
-		menuControl.addRingFixedBinding(currentSlot);
+		displayLayer.bindName(1, currentSlot, displayName);
+		control.addPressEncoderBinding(currentSlot, encIndex -> pressAction.accept(encIndex));
+		control.addRingFixedBinding(currentSlot);
 		currentSlot++;
 	}
 
@@ -46,9 +46,9 @@ public class MenuDisplayLayerBuilder {
 		if (currentSlot > MAX_SLOT_INDEX) {
 			return;
 		}
-		menuDisplayLayer.bindFixed(currentSlot, displayName);
-		menuControl.addPressEncoderBinding(currentSlot, encIndex -> pressAction.run());
-		menuControl.addRingFixedBinding(currentSlot);
+		displayLayer.bindFixed(currentSlot, displayName);
+		control.addPressEncoderBinding(currentSlot, encIndex -> pressAction.run());
+		control.addRingFixedBinding(currentSlot);
 		currentSlot++;
 	}
 
@@ -56,10 +56,10 @@ public class MenuDisplayLayerBuilder {
 		if (currentSlot > MAX_SLOT_INDEX) {
 			return;
 		}
-		menuControl.addNameBinding(currentSlot, new BasicStringValue(title));
-		menuControl.addValueBinding(currentSlot, value, "< ON >", "<OFF >");
-		menuControl.addRingBoolBinding(currentSlot, value);
-		menuControl.addPressEncoderBinding(currentSlot, encIndex -> value.toggle());
+		control.addNameBinding(currentSlot, new BasicStringValue(title));
+		control.addValueBinding(currentSlot, value, "< ON >", "<OFF >");
+		control.addRingBoolBinding(currentSlot, value);
+		control.addPressEncoderBinding(currentSlot, encIndex -> value.toggle());
 		currentSlot++;
 	}
 
@@ -67,9 +67,9 @@ public class MenuDisplayLayerBuilder {
 		if (currentSlot > MAX_SLOT_INDEX) {
 			return;
 		}
-		menuControl.addNameBinding(currentSlot, new BasicStringValue(title));
-		menuControl.addDisplayValueBinding(currentSlot, value.displayedValue());
-		menuControl.addEncoderBinding(currentSlot, value, sensitivity);
+		control.addNameBinding(currentSlot, new BasicStringValue(title));
+		control.addDisplayValueBinding(currentSlot, value.displayedValue());
+		control.addEncoderBinding(currentSlot, value, sensitivity);
 		currentSlot++;
 	}
 
@@ -77,14 +77,14 @@ public class MenuDisplayLayerBuilder {
 		if (currentSlot > MAX_SLOT_INDEX) {
 			return;
 		}
-		menuControl.addNameBinding(currentSlot, new BasicStringValue(title));
-		menuControl.addPressEncoderBinding(currentSlot, encIndex -> action.run());
+		control.addNameBinding(currentSlot, new BasicStringValue(title));
+		control.addPressEncoderBinding(currentSlot, encIndex -> action.run());
 		currentSlot++;
 	}
 
 	public void fillRest() {
 		while (currentSlot < 8) {
-			menuControl.addRingFixedBinding(currentSlot);
+			control.addRingFixedBinding(currentSlot);
 			currentSlot++;
 		}
 	}
@@ -93,7 +93,7 @@ public class MenuDisplayLayerBuilder {
 		if (currentSlot > MAX_SLOT_INDEX) {
 			return;
 		}
-		menuControl.addRingFixedBinding(currentSlot);
+		control.addRingFixedBinding(currentSlot);
 		currentSlot++;
 	}
 

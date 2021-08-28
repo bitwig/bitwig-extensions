@@ -16,6 +16,7 @@ import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
+import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.CombinedStringValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.controllers.mackie.value.StringIntValueObject;
@@ -38,8 +39,10 @@ public class BrowserConfiguration extends LayerConfiguration {
 	private final CursorBrowserFilterItem fileTypeItem;
 	private CursorBrowserFilterItem deviceTypeItem;
 	// private CursorBrowserFilterItem deviceItem;
-	private FilterLayerConfig deviceConfig;
 	private FilterLayerConfig currentConfig;
+
+	private FilterLayerConfig shiftConfig;
+	private FilterLayerConfig deviceConfig;
 	private FilterLayerConfig presetConfig;
 	private CursorBrowserResultItem resultCursorItem;
 	private StringIntValueObject resultValue;
@@ -64,6 +67,10 @@ public class BrowserConfiguration extends LayerConfiguration {
 		public DisplayLayer getDisplayLayer() {
 			return displayLayer;
 		}
+
+		public boolean isActive() {
+			return displayLayer.isActive();
+		}
 	}
 
 	public BrowserConfiguration(final String name, final MixControl mixControl, final ControllerHost host,
@@ -73,11 +80,12 @@ public class BrowserConfiguration extends LayerConfiguration {
 		final String baseName = name + "_ENCODER_LAYER_" + sectionIndex;
 		deviceConfig = new FilterLayerConfig("DEV_" + baseName, mixControl);
 		presetConfig = new FilterLayerConfig("PRESET_" + baseName, mixControl);
+		shiftConfig = new FilterLayerConfig("SHIFT _" + baseName, mixControl);
 		currentConfig = deviceConfig;
 		// deviceItem = (CursorBrowserFilterItem)
 		// browser.deviceColumn().createCursorItem();
 		browser.selectedContentTypeIndex().addValueObserver(contentType -> {
-			if (!browsingInitiated) {
+			if (!browsingInitiated || mixControl.getDriver().getModifier().isShiftSet()) {
 				return;
 			}
 			if (contentType == 0) {
@@ -121,6 +129,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 
 		setUpDeviceBrowsing(deviceConfig, mixControl, host, browser);
 		setUpPresetBrowsing(presetConfig, mixControl, host, browser);
+		setUpShiftSection(shiftConfig, mixControl, host, browser);
 	}
 
 	private void setUpPresetBrowsing(final FilterLayerConfig config, final MixControl mixControl,
@@ -144,6 +153,39 @@ public class BrowserConfiguration extends LayerConfiguration {
 		setUpResultSection(config, mixControl, browser);
 	}
 
+	private void setUpShiftSection(final FilterLayerConfig config, final MixControl mixControl,
+			final ControllerHost host, final PopupBrowser browser) {
+		final MixerSectionHardware hwControls = mixControl.getHwControls();
+		final EncoderLayer encoderLayer = config.getEncoderLayer();
+		final DisplayLayer displayLayer = config.getDisplayLayer();
+
+		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(0),
+				hwControls.createAction(() -> browser.shouldAudition().toggle())));
+		encoderLayer.addBinding(
+				hwControls.createRingDisplayBinding(0, browser.shouldAudition(), RingDisplayType.FILL_LR_0));
+		displayLayer.bindName(0, 0, new BasicStringValue("PRE.HR"));
+		displayLayer.bindBool(0, browser.shouldAudition(), "< ON >", "<OFF >");
+
+		displayLayer.bindName(0, 1, new BasicStringValue("CONT.T"));
+		displayLayer.bindName(1, 1, browser.selectedContentTypeName());
+		encoderLayer.addBinding(
+				new ButtonBinding(hwControls.getEncoderPress(1), hwControls.createAction(() -> advanceContent(1))));
+		final RelativeHardwareKnob encoder = hwControls.getEncoder(1);
+		final RelativeHardwarControlBindable binding = mixControl.getDriver()
+				.createIncrementBinder(this::advanceContent);
+		encoderLayer.bind(encoder, binding);
+
+		for (int i = 1; i < 8; i++) {
+			encoderLayer.addBinding(hwControls.createRingDisplayBinding(i, 0, RingDisplayType.FILL_LR_0));
+		}
+	}
+
+	private void advanceContent(final int amount) {
+		int nextIndex = browser.selectedContentTypeIndex().get() + amount;
+		nextIndex = nextIndex < 0 ? 1 : nextIndex > 1 ? 0 : nextIndex;
+		browser.selectedContentTypeIndex().set(nextIndex);
+	}
+
 	private void setUpResultSection(final FilterLayerConfig config, final MixControl control,
 			final PopupBrowser browser) {
 		final MixerSectionHardware hwControls = mixControl.getHwControls();
@@ -155,7 +197,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 		encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(0),
 				hwControls.createAction(() -> browser.shouldAudition().toggle())));
 		encoderLayer.addBinding(
-				new ButtonBinding(hwControls.getEncoderPress(1), hwControls.createAction(() -> advanceMode(browser))));
+				new ButtonBinding(hwControls.getEncoderPress(1), hwControls.createAction(() -> advanceContent(1))));
 		displayLayer.bindName(0, 5, new CombinedStringValueObject("<Cncl>"));
 		final HardwareActionBindable cancelAction = hwControls.createAction(() -> browser.cancel());
 		final HardwareActionBindable commitAction = hwControls.createAction(() -> browser.commit());
@@ -178,20 +220,6 @@ public class BrowserConfiguration extends LayerConfiguration {
 		encoderLayer.bind(hwControls.getEncoder(5), resultSelectionBinding);
 		encoderLayer.bind(hwControls.getEncoder(6), resultSelectionBinding);
 		encoderLayer.bind(hwControls.getEncoder(7), resultSelectionBinding);
-	}
-
-	private void advanceMode(final PopupBrowser browser) {
-		final int current = browser.selectedContentTypeIndex().get();
-		switch (current) {
-		case 0:
-			browser.selectedContentTypeIndex().set(1);
-			break;
-		case 1:
-			browser.selectedContentTypeIndex().set(0);
-			break;
-		default:
-			browser.selectedContentTypeIndex().set(0);
-		}
 	}
 
 	private void bindBrowserItem(final int index, final FilterLayerConfig config, final MixControl mixControl,
@@ -232,11 +260,20 @@ public class BrowserConfiguration extends LayerConfiguration {
 
 	@Override
 	public boolean applyModifier(final ModifierValueObject modvalue) {
-		return false;
-	}
-
-	public boolean isMcuBrowserActive() {
-		return currentConfig.getEncoderLayer().isActive();
+		if (!isActive()) {
+			return false;
+		}
+		if (modvalue.isShiftSet()) {
+			currentConfig = shiftConfig;
+		} else {
+			final int selectContentTypeIndex = browser.selectedContentTypeIndex().get();
+			if (selectContentTypeIndex == 0) {
+				currentConfig = deviceConfig;
+			} else if (selectContentTypeIndex == 1) {
+				currentConfig = presetConfig;
+			}
+		}
+		return !currentConfig.isActive();
 	}
 
 	public boolean isBrowserActive() {

@@ -404,14 +404,12 @@ public class DisplayLayer extends Layer implements DisplaySource {
 
 		final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
 		final DisplayCell cell = row.getCell(startIndex);
-
 		final CellExpander expander = new CellExpander(cell, row, span, name, null, "", enclosing, null);
 		fixedExpanders.put(startIndex, expander);
 		for (int i = 0; i < span; i++) {
 			fixedExpanders.put(i + startIndex, expander);
 		}
-
-		cell.lastValue = name.get();
+		cell.lastValue = "";
 	}
 
 	public void bindName(final int rowIndex, final int startIndex, final int span, final StringValue name,
@@ -540,6 +538,9 @@ public class DisplayLayer extends Layer implements DisplaySource {
 		display.setDisplayBarGraphEnabled(usesLevelMeteringInLcd);
 		topRow.refresh(display, this);
 		bottomRow.refresh(display, this);
+		fixedExpanders.entrySet().forEach(entry -> {
+			entry.getValue().reset();
+		});
 	}
 
 	@Override

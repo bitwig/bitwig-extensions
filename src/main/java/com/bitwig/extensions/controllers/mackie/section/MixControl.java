@@ -403,7 +403,7 @@ public class MixControl implements LayerStateHandler {
 	private void focusDevice(final DeviceManager deviceManager) {
 		if (driver.getMixerMode().get() == MixerMode.DRUM) {
 			getDriver().getCursorDeviceControl().focusOnDrumDevice();
-		} else {
+		} else if (deviceManager.getCurrentFollower() != null) {
 			final Device device = deviceManager.getCurrentFollower().getFocusDevice();
 			getDriver().getCursorDeviceControl().selectDevice(device);
 		}
@@ -528,7 +528,7 @@ public class MixControl implements LayerStateHandler {
 			final PinnableCursorDevice cursorDevice) {
 		final VPotMode fittingMode = VPotMode.fittingMode(cursorDevice);
 		if (p >= 0 && fittingMode != null && activeVPotMode.isDeviceMode()) {
-			if (!browserConfiguration.isMcuBrowserActive()) {
+			if (!browserConfiguration.isActive()) {
 				driver.getVpotMode().setMode(fittingMode);
 				doModeChange(fittingMode, false);
 			}
