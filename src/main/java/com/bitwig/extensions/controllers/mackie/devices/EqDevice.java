@@ -3,15 +3,8 @@ package com.bitwig.extensions.controllers.mackie.devices;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extension.controller.api.PinnableCursorDevice;
-import com.bitwig.extension.controller.api.SpecificBitwigDevice;
-import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
-import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
-import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.section.InfoSource;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 /**
@@ -22,7 +15,7 @@ import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
  * ADAPTIVE_Q DECIBEL_RANGE
  *
  */
-public class EqDevice implements ControlDevice, DeviceManager {
+public class EqDevice extends SpecificDevice {
 	private final static String[] PNAMES = { "TYPE", "FREQ", "GAIN", "Q" };
 	private final static RingDisplayType[] RING_TYPES = { RingDisplayType.FILL_LR, RingDisplayType.SINGLE,
 			RingDisplayType.FILL_LR, RingDisplayType.FILL_LR };
@@ -42,24 +35,12 @@ public class EqDevice implements ControlDevice, DeviceManager {
 			new ParameterSetting("----", 1, RingDisplayType.FILL_LR), //
 			new ParameterSetting("----", 1, RingDisplayType.SINGLE), };
 
-	private final SpecificBitwigDevice bitwigDevice;
-	private int pageIndex = 0;
-
 	private final int[] enableValues = new int[8];
 	private final List<Parameter> enableParams = new ArrayList<>();
 	private final List<ParameterPage> parameterSlots = new ArrayList<>();
 
-	private DisplayLayer infoLayer;
-	private InfoSource infoSource;
-
-	private final DeviceTypeFollower deviceFollower;
-	private final CursorDeviceControl cursorDeviceControl;
-
 	public EqDevice(final CursorDeviceControl cursorDeviceControl, final DeviceTypeFollower deviceFollower) {
-		this.cursorDeviceControl = cursorDeviceControl;
-		final PinnableCursorDevice cursorDevice = cursorDeviceControl.getCursorDevice();
-		bitwigDevice = cursorDevice.createSpecificBitwigDevice(SpecialDevices.EQ_PLUS.getUuid());
-		this.deviceFollower = deviceFollower;
+		super(SpecialDevices.EQ_PLUS, cursorDeviceControl, deviceFollower);
 
 		for (int i = 0; i < 8; i++) {
 			parameterSlots.add(new ParameterPage(i, this));
@@ -78,43 +59,14 @@ public class EqDevice implements ControlDevice, DeviceManager {
 				notifyEnablementFromEnable(page, index, typeParam, v);
 			});
 		}
-// final Just code to final list all parameters final of device
-//		device.addDirectParameterIdObserver(allp -> {
-//			for (final String pname : allp) {
-//				RemoteConsole.out.println("[{}]", pname);
-//			}
-//		});
 	}
 
 	@Override
-	public void setInfoLayer(final DisplayLayer infoLayer) {
-		this.infoLayer = infoLayer;
-	}
-
-	@Override
-	public void enableInfo(final InfoSource type) {
-		infoSource = type;
-		if (infoSource == InfoSource.NAV_VERTICAL) {
-			infoLayer.setMainText(getDeviceInfo(), "", false);
-		} else if (infoSource == InfoSource.NAV_HORIZONTAL) {
-			infoLayer.setMainText(getPageInfo(), "", false);
-		}
-	}
-
-	@Override
-	public void disableInfo() {
-		infoSource = null;
-	}
-
-	@Override
-	public InfoSource getInfoSource() {
-		return infoSource;
-	}
-
 	public String getDeviceInfo() {
 		return "EQ+ Device";
 	}
 
+	@Override
 	public String getPageInfo() {
 		return "Parameter Page : " + PAGE_NAMES[pageIndex];
 	}
@@ -191,6 +143,7 @@ public class EqDevice implements ControlDevice, DeviceManager {
 		parameterSlots.forEach(ParameterPage::triggerUpdate);
 	}
 
+	@Override
 	public String getParamName(final int page, final int index) {
 		return PNAMES[index % 4] + Integer.toString(1 + index / 4 + page * 2);
 	}
@@ -240,6 +193,7 @@ public class EqDevice implements ControlDevice, DeviceManager {
 		return parameterSlots.get(index);
 	}
 
+	@Override
 	public void triggerUpdate() {
 		parameterSlots.forEach(ParameterPage::triggerUpdate);
 	}
@@ -261,16 +215,6 @@ public class EqDevice implements ControlDevice, DeviceManager {
 		}
 	}
 
-	@Override
-	public int getCurrentPage() {
-		return pageIndex;
-	}
-
-	@Override
-	public BooleanValue exists() {
-		return deviceFollower.getFocusDevice().exists();
-	}
-
 	public void toggleEnable(final Integer pindex) {
 		if (pageIndex < 4) {
 			final int bandIndex = pageIndex * 2 + pindex / 4;
@@ -285,40 +229,7 @@ public class EqDevice implements ControlDevice, DeviceManager {
 	}
 
 	@Override
-	public boolean isSpecificDevicePresent() {
-		return deviceFollower.getFocusDevice().exists().get();
-	}
-
-	@Override
-	public void initiateBrowsing(final BrowserConfiguration browser, final Type type) {
-		if (browser.isBrowserActive()) {
-			browser.forceClose();
-		}
-		browser.setBrowsingInitiated(true, type);
-		deviceFollower.initiateBrowsing();
-	}
-
-	@Override
-	public void addBrowsing(final BrowserConfiguration browser, final boolean after) {
-		browser.setBrowsingInitiated(true, Type.DEVICE);
-		if (after) {
-			deviceFollower.addNewDeviceAfter();
-		} else {
-			deviceFollower.addNewDeviceBefore();
-		}
-	}
-
-	@Override
 	public int getPageCount() {
 		return 5;
-	}
-
-	@Override
-	public void setCurrentFollower(final DeviceTypeFollower currentFollower) {
-	}
-
-	@Override
-	public DeviceTypeFollower getCurrentFollower() {
-		return deviceFollower;
 	}
 }

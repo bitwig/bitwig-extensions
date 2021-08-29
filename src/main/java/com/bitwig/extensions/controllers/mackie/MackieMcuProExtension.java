@@ -44,6 +44,7 @@ import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
 import com.bitwig.extensions.controllers.mackie.display.MotorFader;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
+import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
 import com.bitwig.extensions.controllers.mackie.section.ExtenderMixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.SectionType;
@@ -116,7 +117,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private HardwareButton cancelButton;
 	private DeviceMatcher drumMatcher;
 	private boolean shutdownHook = false;
-	private NoteHandler noteHandler;
+	private DrumNoteHandler noteHandler;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -1147,7 +1148,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return trackChannelMode;
 	}
 
-	public NoteHandler getNoteHandler() {
+	public DrumNoteHandler getNoteHandler() {
 		return noteHandler;
 	}
 }

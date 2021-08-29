@@ -9,7 +9,6 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
-import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
@@ -28,16 +27,15 @@ import com.bitwig.extensions.framework.Layers;
 
 public class TrackLayerConfiguration extends LayerConfiguration {
 
-	private final Layer faderLayer;
-	private final EncoderLayer encoderLayer;
-	private final DisplayLayer displayLayer;
-	private final DisplayLayer infoLayer;
+	protected final Layer faderLayer;
+	protected final EncoderLayer encoderLayer;
+	protected final DisplayLayer displayLayer;
+	protected final DisplayLayer infoLayer;
 
-	private DeviceManager deviceManager;
+	protected DeviceManager deviceManager;
 
-	private final MenuModeLayerConfiguration menuControl;
-	private final MenuModeLayerConfiguration shiftMenuControl;
 	private CursorDeviceControl cursorDeviceControl;
+	protected DeviceMenuConfiguration menuConfig;
 
 	public TrackLayerConfiguration(final String name, final MixControl mixControl) {
 		super(name, mixControl);
@@ -47,23 +45,16 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		faderLayer = new Layer(layers, name + "_FADER_LAYER_" + sectionIndex);
 		encoderLayer = new EncoderLayer(mixControl, name + "_ENCODER_LAYER_" + sectionIndex);
 		displayLayer = new DisplayLayer(name, this.mixControl);
-		menuControl = createMenuControl(name + "_MENU_" + sectionIndex, mixControl);
-		shiftMenuControl = createMenuControl(name + "_MENU_S_" + sectionIndex, mixControl);
 		infoLayer = new DisplayLayer(name + "_INFO", this.mixControl);
 		infoLayer.enableFullTextMode(true);
 	}
 
-	private MenuModeLayerConfiguration createMenuControl(final String name, final MixControl mixControl) {
-		final MenuModeLayerConfiguration menuControl = new MenuModeLayerConfiguration(name, mixControl);
-		menuControl.getDisplayLayer(0).displayFullTextMode(true);
-		return menuControl;
-	}
-
-	public void setDeviceManager(final DeviceManager deviceManager) {
+	public void setDeviceManager(final DeviceManager deviceManager, final DeviceMenuConfiguration menuConfig) {
 		final MackieMcuProExtension driver = mixControl.getDriver();
 		cursorDeviceControl = driver.getCursorDeviceControl();
 		this.deviceManager = deviceManager;
 		this.deviceManager.setInfoLayer(infoLayer);
+		this.menuConfig = menuConfig;
 
 		final CursorRemoteControlsPage remotes = cursorDeviceControl.getRemotes();
 		final PinnableCursorDevice device = cursorDeviceControl.getCursorDevice();
@@ -74,44 +65,11 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		device.name().addValueObserver(name -> {
 			evaluateTextDisplay(deviceManager.getPageCount(), deviceManager.isSpecificDevicePresent(), name);
 		});
-
-		initMenuControl(cursorDeviceControl);
 	}
 
-	private void initMenuControl(final CursorDeviceControl cursorDeviceControl) {
-		final PinnableCursorDevice device = cursorDeviceControl.getCursorDevice();
-		MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menuControl);
-		builder.bindBool(device.isEnabled(), "ACTIVE", "<BYPS>", device, "<NODV>", () -> device.isEnabled().toggle());
-		builder.bindBool(device.isPinned(), "PINNED", "<PIN>", device, "<NODV>", () -> device.isPinned().toggle());
-		builder.bindFixed("<Move", () -> cursorDeviceControl.moveDeviceLeft());
-		builder.bindFixed("Move>", () -> cursorDeviceControl.moveDeviceRight());
-		builder.bindFixed("REMOVE", () -> cursorDeviceControl.getCursorDevice().deleteObject());
-		builder.bindFixed("<ADD",
-				() -> deviceManager.addBrowsing(getMixControl().getDriver().getBrowserConfiguration(), false));
-		builder.bindFixed("ADD>",
-				() -> deviceManager.addBrowsing(getMixControl().getDriver().getBrowserConfiguration(), true));
-		builder.bindFixed("BROWSE", () -> deviceManager
-				.initiateBrowsing(getMixControl().getDriver().getBrowserConfiguration(), Type.DEVICE));
-
-		menuControl.setTextEvaluation(name -> {
-			final DisplayLayer menuLayer = menuControl.getDisplayLayer(0);
-			menuLayer.setText(0, "Device: " + name, false);
-			menuLayer.enableFullTextMode(0, true);
-		});
-
-		builder = new MenuDisplayLayerBuilder(shiftMenuControl);
-
-		final NestingNavigator navigator = new NestingNavigator(cursorDeviceControl, 8);
-		shiftMenuControl.setTextEvaluation(name -> {
-			final DisplayLayer shiftMenuLayer = shiftMenuControl.getDisplayLayer(0);
-			shiftMenuLayer.setText(0, "Device: " + name + " NAVIGATION ", false);
-			shiftMenuLayer.enableFullTextMode(0, true);
-		});
-
-		for (int i = 0; i < 7; i++) {
-			final int slotIndex = i;
-			builder.bindEncAction(navigator.getSection(slotIndex), index -> navigator.doAction(slotIndex));
-		}
+	@Override
+	public void doActivate() {
+		menuConfig.setDeviceManager(deviceManager);
 	}
 
 	@Override
@@ -121,13 +79,7 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public boolean applyModifier(final ModifierValueObject modvalue) {
-		if (shiftMenuControl.getDisplayLayer(0).isActive() && !modvalue.isShiftSet()) {
-			return true;
-		}
-		if (menuControl.getDisplayLayer(0).isActive() && modvalue.isShiftSet()) {
-			return true;
-		}
-		return false;
+		return menuConfig.applyModifier(modvalue);
 	}
 
 	public void registerFollowers(final DeviceTypeFollower... deviceTypeFollowers) {
@@ -165,8 +117,7 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		if (deviceManager == null) {
 			return;
 		}
-		menuControl.evaluateTextDisplay(deviceName);
-		shiftMenuControl.evaluateTextDisplay(deviceName);
+		menuConfig.evaluateTextDisplay(deviceName);
 		final CursorRemoteControlsPage remotes = cursorDeviceControl.getRemotes();
 		if (remotes != null) {
 			if (!exists || deviceName.length() == 0) {
@@ -210,10 +161,7 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 	@Override
 	public EncoderLayer getEncoderLayer() {
 		if (mixControl.getIsMenuHoldActive().get()) {
-			if (mixControl.getDriver().getModifier().isShiftSet()) {
-				return shiftMenuControl.getEncoderLayer();
-			}
-			return menuControl.getEncoderLayer();
+			return menuConfig.getEncoderLayer();
 		}
 		final boolean flipped = this.mixControl.isFlipped();
 		final MixerLayerGroup activeMixGroup = this.mixControl.getActiveMixGroup();
@@ -226,10 +174,7 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 	@Override
 	public DisplayLayer getDisplayLayer(final int which) {
 		if (mixControl.getIsMenuHoldActive().get()) {
-			if (mixControl.getDriver().getModifier().isShiftSet()) {
-				return shiftMenuControl.getDisplayLayer(0);
-			}
-			return menuControl.getDisplayLayer(0);
+			return menuConfig.getDisplayLayer();
 		}
 		if (deviceManager != null && deviceManager.getInfoSource() != null) {
 			return infoLayer;

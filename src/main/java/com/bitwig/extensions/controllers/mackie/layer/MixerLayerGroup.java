@@ -12,11 +12,11 @@ import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extensions.controllers.mackie.NoteHandler;
 import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
@@ -137,7 +137,7 @@ public class MixerLayerGroup {
 		}
 	}
 
-	public void init(final DrumPadBank drumPadBank, final NoteHandler noteHandler) {
+	public void init(final DrumPadBank drumPadBank, final DrumNoteHandler noteHandler) {
 		final int sectionIndex = control.getHwControls().getSectionIndex();
 		for (int i = 0; i < 8; i++) {
 			final int trackIndex = i + sectionIndex * 8;
@@ -153,7 +153,7 @@ public class MixerLayerGroup {
 		}
 	}
 
-	protected void setUpDrumPadControl(final int index, final DrumPad pad, final NoteHandler noteHandler) {
+	protected void setUpDrumPadControl(final int index, final DrumPad pad, final DrumNoteHandler noteHandler) {
 		final MixerSectionHardware hwControls = control.getHwControls();
 		mixerButtonLayer.setNoteHandler(noteHandler);
 		setUpChannelControl(index, hwControls, pad);

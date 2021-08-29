@@ -47,7 +47,7 @@ public class ParameterPage implements SettableRangedValue {
 
 	private final List<DeviceParameter> pages = new ArrayList<>();
 
-	public ParameterPage(final int index, final ControlDevice device) {
+	public ParameterPage(final int index, final SpecificDevice device) {
 
 		for (int page = 0; page < device.getPages(); page++) {
 			final int pIndex = pages.size();

@@ -9,6 +9,7 @@ import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.InsertionPoint;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
@@ -16,10 +17,10 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.mackie.ButtonViewState;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.MixerMode;
-import com.bitwig.extensions.controllers.mackie.NoteHandler;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
+import com.bitwig.extensions.controllers.mackie.configurations.DeviceMenuConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.GlovalViewLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.MixerLayerConfiguration;
@@ -70,7 +71,8 @@ public class MixControl implements LayerStateHandler {
 	private DisplayLayer activeDisplayLayer;
 
 	protected VPotMode activeVPotMode = VPotMode.PAN;
-	private NoteHandler noteHandler;
+	private DrumNoteHandler drumNoteHandler;
+	private ScaleNoteHandler scaleNoteHandler;
 
 	public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
 			final int sectionIndex, final SectionType type) {
@@ -455,17 +457,20 @@ public class MixControl implements LayerStateHandler {
 
 	public void initMainControl(final TrackBank mixerTrackBank, final TrackBank globalTrackBank,
 			final DrumPadBank drumPadBank) {
-		noteHandler = new NoteHandler(this.getHwControls().getMidiIn(), drumPadBank, getDriver().getCursorTrack());
+		final NoteInput noteInput = this.getHwControls().getMidiIn().createNoteInput("MIDI", "80????", "90????");
+		noteInput.setShouldConsumeEvents(true);
+		drumNoteHandler = new DrumNoteHandler(noteInput, drumPadBank, getDriver().getCursorTrack());
+		scaleNoteHandler = new ScaleNoteHandler(noteInput, getDriver().getCursorTrack());
 		mainGroup.init(mixerTrackBank);
 		globalGroup.init(globalTrackBank);
-		drumGroup.init(drumPadBank, noteHandler);
+		drumGroup.init(drumPadBank, drumNoteHandler);
 		launchButtonLayer.initTrackBank(this.getHwControls(), mixerTrackBank);
 		globalViewLayerConfiguration.init(mixerTrackBank, globalTrackBank);
 
 	}
 
-	public NoteHandler getNoteHandler() {
-		return noteHandler;
+	public DrumNoteHandler getDrumNoteHandler() {
+		return drumNoteHandler;
 	}
 
 	public void initTrackControl(final CursorTrack cursorTrack, final CursorDeviceLayer drumCursor,
@@ -488,9 +493,12 @@ public class MixControl implements LayerStateHandler {
 					(pindex, pslot) -> eqDevice.handleResetInvoked(pindex, driver.getModifier()));
 		}
 
-		cursorDeviceConfiguration.setDeviceManager(cursorDeviceManager);
+		final DeviceMenuConfiguration menuConfig = new DeviceMenuConfiguration("DEVICE_MENU", this);
+		menuConfig.initMenuControl(cursorDeviceControl);
+
+		cursorDeviceConfiguration.setDeviceManager(cursorDeviceManager, menuConfig);
 		cursorDeviceConfiguration.registerFollowers(deviceTypeBank.getStandardFollowers());
-		eqTrackConfiguration.setDeviceManager(eqDevice);
+		eqTrackConfiguration.setDeviceManager(eqDevice, menuConfig);
 		eqTrackConfiguration.registerFollowers(deviceTypeBank.getFollower(VPotMode.EQ));
 
 		sendTrackConfiguration.setNavigateHorizontalHandler(direction -> handleSendNavigation(sendBank, direction));
