@@ -28,4 +28,10 @@ public class ExtenderMixControl extends MixControl {
 		getDriver().getBrowserConfiguration().endUserBrowsing();
 		layerState.updateState(this);
 	}
+
+	@Override
+	public String getSysExHeader() {
+		return "F0 00 00 66 14 0B ";
+	}
+
 }

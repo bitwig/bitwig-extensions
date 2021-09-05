@@ -29,4 +29,8 @@ public class RingDisplay {
 		midi.sendMidi(Midi.CC, 0x30 | index, lastValue);
 	}
 
+	public void clear() {
+		midi.sendMidi(Midi.CC, 0x30 | index, 0);
+	}
+
 }

@@ -35,6 +35,7 @@ import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.layer.ClipLaunchButtonLayer;
 import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
+import com.bitwig.extensions.controllers.mackie.layer.NotePlayingButtonLayer;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
@@ -73,6 +74,7 @@ public class MixControl implements LayerStateHandler {
 	protected VPotMode activeVPotMode = VPotMode.PAN;
 	private DrumNoteHandler drumNoteHandler;
 	private ScaleNoteHandler scaleNoteHandler;
+	private final NotePlayingButtonLayer scaleButtonLayer;
 
 	public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
 			final int sectionIndex, final SectionType type) {
@@ -108,6 +110,8 @@ public class MixControl implements LayerStateHandler {
 
 		launchButtonLayer = new ClipLaunchButtonLayer("CLIP_LAUNCH", this);
 
+		scaleButtonLayer = new NotePlayingButtonLayer(this, 0);
+
 		currentConfiguration = panConfiguration;
 		panConfiguration.setActive(true);
 
@@ -117,7 +121,9 @@ public class MixControl implements LayerStateHandler {
 		driver.getFlipped().addValueObserver(flipped -> layerState.updateState(this));
 		driver.getMixerMode().addValueObserver(this::changeMixerMode);
 		driver.getButtonView().addValueObserver(this::handleButtonViewChanged);
-		driver.getTrackChannelMode().addValueObserver(trackMode -> doModeChange(driver.getVpotMode().getMode(), true));
+		driver.getTrackChannelMode().addValueObserver(trackMode -> {
+			doModeChange(driver.getVpotMode().getMode(), true);
+		});
 
 		fadersTouched.addValueObserver(v -> handleFadersTouched(v));
 		if (type == SectionType.MAIN) {
@@ -189,6 +195,10 @@ public class MixControl implements LayerStateHandler {
 			return currentConfiguration.getButtonLayer();
 		case GROUP_LAUNCH:
 			return launchButtonLayer;
+		case NOTE_PLAY:
+			return scaleButtonLayer;
+		default:
+			break;
 		}
 		return currentConfiguration.getButtonLayer();
 	}
@@ -249,6 +259,8 @@ public class MixControl implements LayerStateHandler {
 	public void navigateLeftRight(final int direction, final boolean isPressed) {
 		if (launchButtonLayer.isActive()) {
 			launchButtonLayer.navigateHorizontal(direction, isPressed);
+		} else if (scaleButtonLayer.isActive()) {
+			scaleButtonLayer.navigateHorizontal(direction, isPressed);
 		} else {
 			if (isPressed) {
 				currentConfiguration.navigateHorizontal(direction);
@@ -266,6 +278,8 @@ public class MixControl implements LayerStateHandler {
 	public void navigateUpDown(final int direction, final boolean isPressed) {
 		if (launchButtonLayer.isActive()) {
 			launchButtonLayer.navigateVertical(direction, isPressed);
+		} else if (scaleButtonLayer.isActive()) {
+			scaleButtonLayer.navigateVertical(direction, isPressed);
 		} else {
 			if (isPressed) {
 				currentConfiguration.navigateVertical(direction);
@@ -320,8 +334,13 @@ public class MixControl implements LayerStateHandler {
 
 	private void changeMixerMode(final MixerMode oldMode, final MixerMode newMode) {
 		determineSendTrackConfig(activeVPotMode);
-		if (oldMode == MixerMode.DRUM && activeVPotMode.isDeviceMode()) {
-			driver.getVpotMode().setMode(VPotMode.PAN);
+		if (oldMode == MixerMode.DRUM) {
+			driver.getCursorTrack().selectChannel(driver.getCursorTrack()); // re-assert selection to main channel
+			if (activeVPotMode.isDeviceMode()) {
+				driver.getVpotMode().setMode(VPotMode.PAN);
+			} else {
+				layerState.updateState(this);
+			}
 		} else {
 			layerState.updateState(this);
 		}
@@ -417,6 +436,7 @@ public class MixControl implements LayerStateHandler {
 
 	public void notifyBlink(final int ticks) {
 		launchButtonLayer.notifyBlink(ticks);
+		scaleButtonLayer.notifyBlink(ticks);
 		globalViewLayerConfiguration.notifyBlink(ticks);
 		activeDisplayLayer.triggerTimer();
 	}
@@ -464,6 +484,7 @@ public class MixControl implements LayerStateHandler {
 		mainGroup.init(mixerTrackBank);
 		globalGroup.init(globalTrackBank);
 		drumGroup.init(drumPadBank, drumNoteHandler);
+		scaleButtonLayer.init(scaleNoteHandler, getHwControls());
 		launchButtonLayer.initTrackBank(this.getHwControls(), mixerTrackBank);
 		globalViewLayerConfiguration.init(mixerTrackBank, globalTrackBank);
 
@@ -597,6 +618,10 @@ public class MixControl implements LayerStateHandler {
 		if (activeVPotMode == VPotMode.INSTRUMENT) {
 			driver.getCursorDeviceControl().focusOnDrumDevice();
 		}
+	}
+
+	public String getSysExHeader() {
+		return "F0 00 00 66 14 0A ";
 	}
 
 }

@@ -59,7 +59,7 @@ import com.bitwig.extensions.framework.Layers;
 
 public class MackieMcuProExtension extends ControllerExtension {
 
-	private static final String MAIN_UNIT_SYEX_HEADER = "F0 00 00 66 14 0A ";
+	private static final String MAIN_UNIT_SYEX_HEADER = "F0 00 00 66 14 ";
 	private static final String SYSEX_DEVICE_RELOAD = "f0000066140158595a";
 	private static final double[] FFWD_SPEEDS = { 0.0625, 0.25, 1.0, 4.0 };
 	private static final double[] FFWD_SPEEDS_SHIFT = { 0.25, 1.0, 4.0, 16.0 };
@@ -118,6 +118,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private DeviceMatcher drumMatcher;
 	private boolean shutdownHook = false;
 	private DrumNoteHandler noteHandler;
+	private MotorFader masterFaderResponse;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -289,7 +290,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final AbsoluteHardwareKnob masterFader = surface.createAbsoluteHardwareKnob("MASTER_FADER_");
 		masterFader.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(8));
 		masterFader.addBinding(masterTrack.volume());
-		final MotorFader masterFaderResponse = new MotorFader(midiOut, 8);
+		masterFaderResponse = new MotorFader(midiOut, 8);
 		mainLayer.addBinding(new FaderBinding(masterTrack.volume(), masterFaderResponse));
 
 		final HardwareButton masterTouchButton = surface.createHardwareButton("MASTER_TOUCH");
@@ -826,6 +827,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		createGlobalViewButton(NoteOnAssignment.GLOBAL_VIEW);
 		createGroupModeButton(NoteOnAssignment.GROUP, buttonViewMode);
+		createNoteModeButton(NoteOnAssignment.GV_USER, buttonViewMode);
 
 		initFButton(0, NoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
 		initFButton(1, NoteOnAssignment.F2, marker, cueMarkerBank,
@@ -859,7 +861,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		builder.bindBool("T.CLCK", transportClick);
 
 		transportClick.addValueObserver(value -> {
-			midiOut.sendSysex(MAIN_UNIT_SYEX_HEADER + (value ? "01" : "00") + " F7");
+			midiOut.sendSysex(MAIN_UNIT_SYEX_HEADER + (value ? "0A 01" : "0A 00") + " F7");
 		});
 		builder.fillRest();
 		bindHoldToggleButton(metroButton, menu, transport.isMetronomeEnabled());
@@ -1014,6 +1016,26 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return previousOverallMode;
 	}
 
+	public void createNoteModeButton(final NoteOnAssignment assignment, final ValueObject<ButtonViewState> valueState) {
+		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+		assignment.holdActionAssign(midiIn, button);
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
+		button.setBackgroundLight(led);
+		mainLayer.bind(() -> buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH, led);
+		mainLayer.bindPressed(button, () -> {
+			final ButtonViewState current = valueState.get();
+			switch (current) {
+			case NOTE_PLAY:
+				valueState.set(ButtonViewState.MIXER);
+				break;
+			default:
+				valueState.set(ButtonViewState.NOTE_PLAY);
+				break;
+			}
+		});
+
+	}
+
 	public void createGroupModeButton(final NoteOnAssignment assignment,
 			final ValueObject<ButtonViewState> valueState) {
 		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
@@ -1023,7 +1045,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		led.onUpdateHardware(() -> {
 			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
 		});
-		mainLayer.bind(this::lightStateButtonMode, led);
+		mainLayer.bind(() -> buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH, led);
 		mainLayer.bindPressed(button, () -> {
 			final ButtonViewState current = valueState.get();
 			switch (current) {
@@ -1035,10 +1057,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 				break;
 			}
 		});
-	}
-
-	private boolean lightStateButtonMode() {
-		return buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH;
 	}
 
 	public void initFButton(final int index, final NoteOnAssignment assign, final BooleanValueObject marker,
@@ -1086,11 +1104,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 		shutdownHook = true;
 		final Thread shutdown = new Thread(() -> {
 			ledDisplay.clearAll();
+			midiOut.sendSysex(MAIN_UNIT_SYEX_HEADER + "0A 00 F7"); // turn off click
 			sections.forEach(MixControl::resetLeds);
 			sections.forEach(MixControl::resetFaders);
+			masterFaderResponse.sendValue(0);
 			sections.forEach(MixControl::exitMessage);
 			try {
-				Thread.sleep(300);
+				Thread.sleep(350);
 			} catch (final InterruptedException e) {
 			}
 			shutdownHook = false;

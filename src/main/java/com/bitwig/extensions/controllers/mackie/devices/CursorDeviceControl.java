@@ -20,6 +20,8 @@ public class CursorDeviceControl {
 	private final DrumPadBank drumPadBank;
 	private final CursorDeviceLayer drumCursor;
 	private final DeviceBank drumDeviceBank;
+	private final CursorDeviceLayer cursorLayer;
+	private final Device cursorLayerItem;
 
 	public CursorDeviceControl(final CursorTrack cursorTrack, final int size, final int totalChannelsAvailable) {
 		this.cursorTrack = cursorTrack;
@@ -33,6 +35,11 @@ public class CursorDeviceControl {
 		drumCursor = primaryDevice.createCursorLayer();
 
 		this.drumDeviceBank = drumCursor.createDeviceBank(8);
+
+		this.cursorLayer = cursorDevice.createCursorLayer();
+		final DeviceBank layerBank = cursorLayer.createDeviceBank(1);
+		cursorLayerItem = layerBank.getItemAt(0);
+		cursorLayerItem.name().markInterested();
 
 		this.cursorDevice.name().markInterested();
 		this.cursorDevice.deviceType().markInterested();
@@ -118,6 +125,29 @@ public class CursorDeviceControl {
 
 	public void focusOnDrumDevice() {
 		cursorDevice.selectDevice(drumDeviceBank.getDevice(0));
+	}
+
+	public void handleLayerSelection() {
+		cursorDevice.selectDevice(cursorLayerItem);
+	}
+
+	public void navigateNextInLayer() {
+		this.cursorLayer.selectNext();
+	}
+
+	public void navigatePreviousInLayer() {
+		this.cursorLayer.selectPrevious();
+	}
+
+	public Device getCursorLayerItem() {
+		return cursorLayerItem;
+	}
+
+	public String getLayerDeviceInfo() {
+		if (cursorDevice.hasLayers().get()) {
+			return "SEL=" + cursorLayerItem.name().get();
+		}
+		return "";
 	}
 
 	public void navigateDevice(final int direction, final ModifierValueObject modState) {

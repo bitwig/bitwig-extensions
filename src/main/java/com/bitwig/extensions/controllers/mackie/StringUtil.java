@@ -63,6 +63,10 @@ public class StringUtil {
 		return sb.toString();
 	}
 
+	public static String limit(final String value, final int max) {
+		return value.substring(0, Math.min(max, value.length()));
+	}
+
 	public static String toAsciiDisplay(final String name, final int maxLen) {
 		final StringBuilder b = new StringBuilder();
 		for (int i = 0; i < name.length() && b.length() < maxLen; i++) {

@@ -51,17 +51,25 @@ public class DeviceMenuConfiguration {
 
 		builder = new MenuDisplayLayerBuilder(shiftMenuControl);
 
-		final NestingNavigator navigator = new NestingNavigator(cursorDeviceControl, 8);
-		shiftMenuControl.setTextEvaluation(name -> {
-			final DisplayLayer shiftMenuLayer = shiftMenuControl.getDisplayLayer(0);
-			shiftMenuLayer.setText(0, "Device: " + name + " NAVIGATION ", false);
-			shiftMenuLayer.enableFullTextMode(0, true);
+		final NestingNavigator navigator = new NestingNavigator(cursorDeviceControl);
+		shiftMenuControl
+				.setTextEvaluation(name -> shiftMainTitleEvaluation(name, cursorDeviceControl.getLayerDeviceInfo()));
+		cursorDeviceControl.getCursorLayerItem().name().addValueObserver(name -> {
+			shiftMainTitleEvaluation(cursorDeviceControl.getCursorDevice().name().get(),
+					cursorDeviceControl.getLayerDeviceInfo());
 		});
 
 		for (int i = 0; i < 7; i++) {
 			final int slotIndex = i;
 			builder.bindEncAction(navigator.getSection(slotIndex), index -> navigator.doAction(slotIndex));
 		}
+	}
+
+	private void shiftMainTitleEvaluation(final String deviceName, final String layerDeviceInfo) {
+		final DisplayLayer shiftMenuLayer = shiftMenuControl.getDisplayLayer(0);
+
+		shiftMenuLayer.setText(0, "Device: " + deviceName + " Navigation " + layerDeviceInfo, false);
+		shiftMenuLayer.enableFullTextMode(0, true);
 	}
 
 	public void evaluateTextDisplay(final String deviceName) {

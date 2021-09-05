@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.mackie.devices;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class ArpeggiatorDevice extends SpecificDevice {
 
@@ -11,11 +10,11 @@ public class ArpeggiatorDevice extends SpecificDevice {
 		super(SpecialDevices.ARPEGGIATOR, cursorDeviceControl, deviceFollower);
 		// final Just code to final list all parameters final of device
 		final PinnableCursorDevice device = cursorDeviceControl.getCursorDevice();
-		device.addDirectParameterIdObserver(allp -> {
-			for (final String pname : allp) {
-				RemoteConsole.out.println("[{}]", pname);
-			}
-		});
+//		device.addDirectParameterIdObserver(allp -> {
+//			for (final String pname : allp) {
+//				RemoteConsole.out.println("[{}]", pname);
+//			}
+//		});
 	}
 
 	@Override

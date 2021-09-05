@@ -197,6 +197,14 @@ public class MixerSectionHardware {
 		for (final NoteOnAssignment noteOnAssignment : nv) {
 			sendLedLightStatus(noteOnAssignment.getNoteNo(), 0);
 		}
+		for (int i = 0; i < 127; i++) {
+			if (lightStatusMap[i] > 0) {
+				midiOut.sendMidi(Midi.NOTE_ON, i, 0);
+			}
+		}
+		for (final RingDisplay ringDisplay : ringDisplays) {
+			ringDisplay.clear();
+		}
 	}
 
 	private void sendLedLightStatus(final int noteNr, final int value) {
@@ -208,6 +216,10 @@ public class MixerSectionHardware {
 		for (final MotorFader fader : motorFaderDest) {
 			fader.sendValue(0);
 		}
+	}
+
+	public HardwareButton getButton(final int index) {
+		return buttonMatrix[index / 8][index % 8];
 	}
 
 	public HardwareButton getButton(final int row, final int column) {

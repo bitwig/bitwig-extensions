@@ -2,22 +2,42 @@ package com.bitwig.extensions.controllers.mackie.configurations;
 
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.StringValue;
+import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 
 public class NestingNavigator {
+	private static final int MAX_SLOTS = 8;
 	final CursorDeviceControl deviceControl;
 	final BasicStringValue[] sections;
 	final Runnable[] actions;
-	private final int maxSlots;
 
-	public NestingNavigator(final CursorDeviceControl cursorDeviceControl, final int maxSlots) {
+	class Builder {
+		int currentSlot = 0;
+
+		public void addAction(final String title, final Runnable action) {
+			if (currentSlot < MAX_SLOTS) {
+				sections[currentSlot].set(title);
+				actions[currentSlot] = action;
+				currentSlot++;
+			}
+		}
+
+		public void complete() {
+			while (currentSlot < MAX_SLOTS) {
+				sections[currentSlot].set("");
+				actions[currentSlot] = null;
+				currentSlot++;
+			}
+		}
+	}
+
+	public NestingNavigator(final CursorDeviceControl cursorDeviceControl) {
 		super();
 		this.deviceControl = cursorDeviceControl;
 		final PinnableCursorDevice device = cursorDeviceControl.getCursorDevice();
-		this.maxSlots = maxSlots;
-		sections = new BasicStringValue[maxSlots];
-		actions = new Runnable[maxSlots];
+		sections = new BasicStringValue[MAX_SLOTS];
+		actions = new Runnable[MAX_SLOTS];
 		device.isNested().addValueObserver(nested -> evaluateSlots(nested, device.slotNames().get(),
 				device.hasLayers().get(), device.hasDrumPads().get()));
 		device.slotNames().addValueObserver(slotname -> evaluateSlots(device.isNested().get(), slotname,
@@ -38,15 +58,19 @@ public class NestingNavigator {
 	}
 
 	private void handleLayerSelection() {
-		deviceControl.getCursorDevice().selectFirstInLayer(0);
+		deviceControl.handleLayerSelection();
 	}
 
 	private void selectParent() {
 		deviceControl.getCursorDevice().selectParent();
 	}
 
-	private void handleDrumSelection() {
-		deviceControl.focusOnDrumDevice();
+	private void selectPreviousInLayer() {
+		deviceControl.navigatePreviousInLayer();
+	}
+
+	private void selectNextInLayer() {
+		deviceControl.navigateNextInLayer();
 	}
 
 	private void selectPrevious() {
@@ -59,39 +83,21 @@ public class NestingNavigator {
 
 	public void evaluateSlots(final boolean isNested, final String[] slotNames, final boolean hasLayers,
 			final boolean drumPads) {
-		int slot = 0;
-		sections[slot].set("<PREV");
-		actions[slot] = this::selectPrevious;
-		slot++;
-		sections[slot].set("NEXT>");
-		actions[slot] = this::selectNext;
-		slot++;
+		final Builder menuBuilder = new Builder();
+		menuBuilder.addAction("<C.PRE", this::selectPrevious);
+		menuBuilder.addAction("C.NXT>", this::selectNext);
 		if (isNested) {
-			sections[slot].set("<PARENT");
-			actions[slot] = this::selectParent;
-			slot++;
+			menuBuilder.addAction("|PRNT|", this::selectParent);
 		}
 		for (final String slotName : slotNames) {
-			sections[slot].set(slotName + ">");
-			actions[slot] = () -> this.handleSlotSelection(slotName);
-			slot++;
+			menuBuilder.addAction(StringUtil.limit(slotName, 4) + ">", () -> this.handleSlotSelection(slotName));
 		}
 		if (hasLayers) {
-			sections[slot].set("LAYER>");
-			actions[slot] = this::handleLayerSelection;
-			slot++;
+			menuBuilder.addAction("LAYER>", this::handleLayerSelection);
+			menuBuilder.addAction("<L.PR", this::selectPreviousInLayer);
+			menuBuilder.addAction("L.NX>", this::selectNextInLayer);
 		}
-		if (drumPads) {
-			sections[slot].set("PAD >");
-			actions[slot] = this::handleDrumSelection;
-			slot++;
-		}
-		while (slot < maxSlots) {
-			sections[slot].set("");
-			actions[slot] = null;
-			slot++;
-		}
-
+		menuBuilder.complete();
 	}
 
 	public StringValue getSection(final int index) {
