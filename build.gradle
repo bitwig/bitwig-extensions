@@ -6,26 +6,32 @@ plugins {
     id 'java'
 }
 
-repositories {
-    mavenLocal()
-    maven {
-        url = uri('https://maven.bitwig.com')
-    }
+var isBuildingBitwig = rootProject.getName().equals("bitwig")
 
-    maven {
-        url = uri('https://repo.maven.apache.org/maven2/')
+if (isBuildingBitwig)
+{
+    dependencies {
+        implementation ':base-extension-api'
     }
 }
+else
+{
+    repositories {
+        maven {
+            url = uri('https://maven.bitwig.com')
+        }
+    }
 
-dependencies {
-    implementation 'com.bitwig:base-extensions-api:LOCAL'
+    dependencies {
+        implementation 'com.bitwig:base-extensions-api:LOCAL'
+    }
 }
 
 group = 'com.bitwig.extensions'
 description = 'Bitwig Studio Extensions (Github)'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_16
 
     jar {
         archiveFileName = 'BitwigControllers.bwextension'
