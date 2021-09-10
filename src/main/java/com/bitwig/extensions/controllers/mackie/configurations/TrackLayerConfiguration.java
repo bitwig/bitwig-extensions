@@ -69,7 +69,9 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public void doActivate() {
-		menuConfig.setDeviceManager(deviceManager);
+		if (menuConfig != null) {
+			menuConfig.setDeviceManager(deviceManager);
+		}
 	}
 
 	@Override
@@ -79,7 +81,10 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public boolean applyModifier(final ModifierValueObject modvalue) {
-		return menuConfig.applyModifier(modvalue);
+		if (menuConfig != null) {
+			return menuConfig.applyModifier(modvalue);
+		}
+		return false;
 	}
 
 	public void registerFollowers(final DeviceTypeFollower... deviceTypeFollowers) {
@@ -117,7 +122,9 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		if (deviceManager == null) {
 			return;
 		}
-		menuConfig.evaluateTextDisplay(deviceName);
+		if (menuConfig != null) {
+			menuConfig.evaluateTextDisplay(deviceName);
+		}
 		final CursorRemoteControlsPage remotes = cursorDeviceControl.getRemotes();
 		if (remotes != null) {
 			if (!exists || deviceName.length() == 0) {
@@ -158,9 +165,13 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 		return this.mixControl.getActiveMixGroup().getFaderLayer(ParamElement.VOLUME);
 	}
 
+	private boolean isMenuActive() {
+		return menuConfig != null && mixControl.getIsMenuHoldActive().get();
+	}
+
 	@Override
 	public EncoderLayer getEncoderLayer() {
-		if (mixControl.getIsMenuHoldActive().get()) {
+		if (isMenuActive()) {
 			return menuConfig.getEncoderLayer();
 		}
 		final boolean flipped = this.mixControl.isFlipped();
@@ -173,7 +184,7 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 
 	@Override
 	public DisplayLayer getDisplayLayer(final int which) {
-		if (mixControl.getIsMenuHoldActive().get()) {
+		if (isMenuActive()) {
 			return menuConfig.getDisplayLayer();
 		}
 		if (deviceManager != null && deviceManager.getInfoSource() != null) {

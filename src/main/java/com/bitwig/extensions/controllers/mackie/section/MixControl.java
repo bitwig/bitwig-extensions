@@ -336,6 +336,7 @@ public class MixControl implements LayerStateHandler {
 		determineSendTrackConfig(activeVPotMode);
 		if (oldMode == MixerMode.DRUM) {
 			driver.getCursorTrack().selectChannel(driver.getCursorTrack()); // re-assert selection to main channel
+			driver.getCursorDeviceControl().focusOnPrimary();
 			if (activeVPotMode.isDeviceMode()) {
 				driver.getVpotMode().setMode(VPotMode.PAN);
 			} else {

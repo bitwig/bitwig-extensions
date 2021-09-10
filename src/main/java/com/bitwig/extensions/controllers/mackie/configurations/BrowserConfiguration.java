@@ -163,7 +163,7 @@ public class BrowserConfiguration extends LayerConfiguration {
 				hwControls.createAction(() -> browser.shouldAudition().toggle())));
 		encoderLayer.addBinding(
 				hwControls.createRingDisplayBinding(0, browser.shouldAudition(), RingDisplayType.FILL_LR_0));
-		displayLayer.bindName(0, 0, new BasicStringValue("PRE.HR"));
+		displayLayer.bindName(0, 0, new BasicStringValue("PRVIEW"));
 		displayLayer.bindBool(0, browser.shouldAudition(), "< ON >", "<OFF >");
 
 		displayLayer.bindName(0, 1, new BasicStringValue("CONT.T"));

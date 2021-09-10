@@ -14,9 +14,11 @@ import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 public class CursorDeviceControl {
 	private final DeviceBank deviceBank;
 	private final PinnableCursorDevice cursorDevice;
+
 	private final CursorRemoteControlsPage remotes;
 	private final CursorTrack cursorTrack;
 	private final PinnableCursorDevice primaryDevice;
+
 	private final DrumPadBank drumPadBank;
 	private final CursorDeviceLayer drumCursor;
 	private final DeviceBank drumDeviceBank;
@@ -125,6 +127,10 @@ public class CursorDeviceControl {
 
 	public void focusOnDrumDevice() {
 		cursorDevice.selectDevice(drumDeviceBank.getDevice(0));
+	}
+
+	public void focusOnPrimary() {
+		cursorDevice.selectDevice(primaryDevice);
 	}
 
 	public void handleLayerSelection() {

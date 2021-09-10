@@ -83,7 +83,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private MasterTrack masterTrack;
 	private final BooleanValueObject flipped = new BooleanValueObject();
 	private final BooleanValueObject zoomActive = new BooleanValueObject();
-	private final BooleanValueObject scrubActive = new BooleanValueObject();
+	// private final BooleanValueObject scrubActive = new BooleanValueObject();
 
 	private final ValueObject<MixerMode> mixerMode = new ValueObject<>(MixerMode.MAIN);
 	private MixerMode previousOverallMode = MixerMode.MAIN;
@@ -116,9 +116,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private HardwareButton enterButton;
 	private HardwareButton cancelButton;
 	private DeviceMatcher drumMatcher;
-	private boolean shutdownHook = false;
 	private DrumNoteHandler noteHandler;
 	private MotorFader masterFaderResponse;
+
+	private boolean enginePreviouslyActive = false;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
@@ -173,7 +174,12 @@ public class MackieMcuProExtension extends ControllerExtension {
 		sections.forEach(MixControl::clearAll);
 		ledDisplay.refreschMode();
 		host.scheduleTask(this::handlePing, 100);
-
+		application.hasActiveEngine().addValueObserver(active -> {
+			if (!active && enginePreviouslyActive) {
+				shutDownController();
+			}
+			enginePreviouslyActive = active;
+		});
 //		final Action[] as = application.getActions();
 //		for (final Action action : as) {
 //			RemoteConsole.out.println("ACTION > [{}]", action.getId());
@@ -338,7 +344,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		final HardwareButton rightButton = createPressButton(NoteOnAssignment.CURSOR_RIGHT);
 		mainLayer.bindIsPressed(rightButton, v -> navigateLeftRight(1, v));
 		createOnOfBoolButton(NoteOnAssignment.ZOOM, zoomActive);
-		createOnOfBoolButton(NoteOnAssignment.SCRUB, scrubActive);
+		// createOnOfBoolButton(NoteOnAssignment.SCRUB, scrubActive);
 	}
 
 	private void navigateTrack(final int direction, final boolean isPressed) {
@@ -1099,29 +1105,18 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return mainLayer;
 	}
 
+	private void shutDownController() {
+		ledDisplay.clearAll();
+		midiOut.sendSysex(MAIN_UNIT_SYEX_HEADER + "0A 00 F7"); // turn off click
+		sections.forEach(MixControl::resetLeds);
+		sections.forEach(MixControl::resetFaders);
+		masterFaderResponse.sendValue(0);
+		sections.forEach(MixControl::exitMessage);
+	}
+
 	@Override
 	public void exit() {
-		shutdownHook = true;
-		final Thread shutdown = new Thread(() -> {
-			ledDisplay.clearAll();
-			midiOut.sendSysex(MAIN_UNIT_SYEX_HEADER + "0A 00 F7"); // turn off click
-			sections.forEach(MixControl::resetLeds);
-			sections.forEach(MixControl::resetFaders);
-			masterFaderResponse.sendValue(0);
-			sections.forEach(MixControl::exitMessage);
-			try {
-				Thread.sleep(350);
-			} catch (final InterruptedException e) {
-			}
-			shutdownHook = false;
-		});
-		shutdown.start();
-		while (shutdownHook) {
-			try {
-				Thread.sleep(1000);
-			} catch (final InterruptedException e) {
-			}
-		}
+		shutDownController();
 		getHost().showPopupNotification(" Exit Mackie MCU Pro");
 	}
 
