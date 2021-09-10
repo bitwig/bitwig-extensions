@@ -11,7 +11,7 @@ var isBuildingBitwig = rootProject.getName().equals("bitwig")
 if (isBuildingBitwig)
 {
     dependencies {
-        implementation ':base-extension-api'
+        implementation project(':base-extensions-api')
     }
 }
 else
