@@ -2,6 +2,9 @@ package com.bitwig.extensions.controllers.mackie;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.function.IntConsumer;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
@@ -119,8 +122,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private DrumNoteHandler noteHandler;
 	private MotorFader masterFaderResponse;
 
-	private boolean enginePreviouslyActive = false;
-
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final int extenders) {
 		super(definition, host);
@@ -174,12 +175,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 		sections.forEach(MixControl::clearAll);
 		ledDisplay.refreschMode();
 		host.scheduleTask(this::handlePing, 100);
-		application.hasActiveEngine().addValueObserver(active -> {
-			if (!active && enginePreviouslyActive) {
-				shutDownController();
-			}
-			enginePreviouslyActive = active;
-		});
 //		final Action[] as = application.getActions();
 //		for (final Action action : as) {
 //			RemoteConsole.out.println("ACTION > [{}]", action.getId());
@@ -729,14 +724,14 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private void setUpMidiSysExCommands() {
 		midiIn.setSysexCallback(data -> {
 			if (data.startsWith(SYSEX_DEVICE_RELOAD)) {
-				updateAll(data);
+				updateAll();
 			} else {
 //				RemoteConsole.out.println(" MIDI SYS EX {}", data);
 			}
 		});
 	}
 
-	private void updateAll(final String command) {
+	private void updateAll() {
 		surface.updateHardware();
 		sections.forEach(MixControl::fullHardwareUpdate);
 		for (int i = 0; i < lightStatusMap.length; i++) {
@@ -1105,18 +1100,30 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return mainLayer;
 	}
 
-	private void shutDownController() {
+	private void shutDownController(final CompletableFuture<Boolean> shutdown) {
 		ledDisplay.clearAll();
 		midiOut.sendSysex(MAIN_UNIT_SYEX_HEADER + "0A 00 F7"); // turn off click
 		sections.forEach(MixControl::resetLeds);
 		sections.forEach(MixControl::resetFaders);
 		masterFaderResponse.sendValue(0);
 		sections.forEach(MixControl::exitMessage);
+		try {
+			Thread.sleep(300);
+		} catch (final InterruptedException e) {
+			e.printStackTrace();
+		}
+		shutdown.complete(true);
 	}
 
 	@Override
 	public void exit() {
-		shutDownController();
+		final CompletableFuture<Boolean> shutdown = new CompletableFuture<>();
+		Executors.newSingleThreadExecutor().execute(() -> shutDownController(shutdown));
+		try {
+			shutdown.get();
+		} catch (InterruptedException | ExecutionException e) {
+			e.printStackTrace();
+		}
 		getHost().showPopupNotification(" Exit Mackie MCU Pro");
 	}
 
