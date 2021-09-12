@@ -828,7 +828,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		createGlobalViewButton(NoteOnAssignment.GLOBAL_VIEW);
 		createGroupModeButton(NoteOnAssignment.GROUP, buttonViewMode);
-		createNoteModeButton(NoteOnAssignment.GV_USER, buttonViewMode);
+		// createNoteModeButton(NoteOnAssignment.GV_USER, buttonViewMode);
 
 		initFButton(0, NoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
 		initFButton(1, NoteOnAssignment.F2, marker, cueMarkerBank,
