@@ -32,3 +32,4 @@ build/
 /${bitwig.extension.directory}/
 /${bitwig.extension.directory}/Bitwig.bwextension
 .gradle
+/out
