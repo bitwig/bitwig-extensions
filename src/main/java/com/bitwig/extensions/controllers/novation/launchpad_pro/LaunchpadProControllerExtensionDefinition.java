@@ -69,28 +69,9 @@ public final class LaunchpadProControllerExtensionDefinition extends ControllerE
       final AutoDetectionMidiPortNamesList list,
       final PlatformType platformType)
    {
-      final String[] inputNames = new String[1];
-      final String[] outputNames = new String[1];
-
-      switch (platformType)
-      {
-      case LINUX:
-         inputNames[0] = "Launchpad Pro MIDI 2";
-         outputNames[0] = "Launchpad Pro MIDI 2";
-         break;
-
-      case WINDOWS:
-         inputNames[0] = "MIDIIN2 (Launchpad Pro)";
-         outputNames[0] = "MIDIOUT2 (Launchpad Pro)";
-         break;
-
-      case MAC:
-         inputNames[0] = "Launchpad Pro Standalone Port";
-         outputNames[0] = "Launchpad Pro Standalone Port";
-         break;
-      }
-
-      list.add(inputNames, outputNames);
+      list.add(new String[]{"Launchpad Pro MIDI 2"}, new String[]{"Launchpad Pro MIDI 2"});
+      list.add(new String[]{"MIDIIN2 (Launchpad Pro)"}, new String[]{"MIDIOUT2 (Launchpad Pro)"});
+      list.add(new String[]{"Launchpad Pro Standalone Port"}, new String[]{"Launchpad Pro Standalone Port"});
    }
 
    @Override
