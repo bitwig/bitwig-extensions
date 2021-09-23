@@ -44,7 +44,7 @@ import com.bitwig.extensions.framework.Layers;
 
 public class APC40MKIIControllerExtension extends ControllerExtension
 {
-   private static final boolean ENABLE_DEBUG_LAYER = true;
+   private static final boolean ENABLE_DEBUG_LAYER = false;
 
    private static final int CHANNEL_STRIP_NUM_PARAMS = 4;
 
