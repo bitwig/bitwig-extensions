@@ -2,7 +2,7 @@ package com.bitwig.extensions.controllers.mackie.layer;
 
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
-import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
+import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.NoteState;
@@ -15,7 +15,7 @@ public class NotePlayingButtonLayer extends ButtonLayer {
 	private int blinkTicks;
 
 	public NotePlayingButtonLayer(final MixControl mixControl, final int layerOffset) {
-		super("NOTEPLAYER", mixControl, NoteOnAssignment.REC_BASE, layerOffset);
+		super("NOTEPLAYER", mixControl, BasicNoteOnAssignment.REC_BASE, layerOffset);
 	}
 
 	public void init(final ScaleNoteHandler scaleNoteHandler, final MixerSectionHardware hwControls) {

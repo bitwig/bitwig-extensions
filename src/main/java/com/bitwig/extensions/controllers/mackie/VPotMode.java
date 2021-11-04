@@ -4,26 +4,26 @@ import com.bitwig.extension.controller.api.Device;
 
 public enum VPotMode {
 	// TRACK(NoteOnAssignment.V_TRACK, Assign.MIXER), //
-	SEND(NoteOnAssignment.V_SEND, Assign.BOTH), //
-	PAN(NoteOnAssignment.V_PAN, Assign.MIXER), //
-	PLUGIN(NoteOnAssignment.V_PLUGIN, Assign.CHANNEL, "audio-effect", "PLUGIN"), //
-	EQ(NoteOnAssignment.V_EQ, Assign.CHANNEL, "EQ+ device", "EQ", "EQ+"), // possibly both
-	INSTRUMENT(NoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL, "instrument", "INSTRUMENT"),
-	MIDI_EFFECT(NoteOnAssignment.GV_MIDI, Assign.CHANNEL, "note-effect", "MIDI TRACKS"),
-	ARPEGGIATOR(NoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL, "note-effect", "ALT+INSTRUMENT");
+	SEND(BasicNoteOnAssignment.V_SEND, Assign.BOTH), //
+	PAN(BasicNoteOnAssignment.V_PAN, Assign.MIXER), //
+	PLUGIN(BasicNoteOnAssignment.V_PLUGIN, Assign.CHANNEL, "audio-effect", "PLUGIN"), //
+	EQ(BasicNoteOnAssignment.V_EQ, Assign.CHANNEL, "EQ+ device", "EQ", "EQ+"), // possibly both
+	INSTRUMENT(BasicNoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL, "instrument", "INSTRUMENT"),
+	MIDI_EFFECT(BasicNoteOnAssignment.GV_MIDI_LF1, Assign.CHANNEL, "note-effect", "MIDI TRACKS"),
+	ARPEGGIATOR(BasicNoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL, "note-effect", "ALT+INSTRUMENT");
 
 	public enum Assign {
 		MIXER, CHANNEL, BOTH;
 	}
 
-	private final NoteOnAssignment buttonAssignment;
+	private final BasicNoteOnAssignment buttonAssignment;
 	private final Assign assign;
 	private final String typeName;
 	private final String deviceName;
 	private final String typeDisplayName;
 	private final String buttonDescription;
 
-	private VPotMode(final NoteOnAssignment buttonAssignment, final Assign assign, final String typeName,
+	private VPotMode(final BasicNoteOnAssignment buttonAssignment, final Assign assign, final String typeName,
 			final String buttonDescription, final String deviceName) {
 		this.buttonAssignment = buttonAssignment;
 		this.assign = assign;
@@ -37,12 +37,12 @@ public enum VPotMode {
 		this.buttonDescription = buttonDescription;
 	}
 
-	private VPotMode(final NoteOnAssignment buttonAssignment, final Assign assign, final String typeName,
+	private VPotMode(final BasicNoteOnAssignment buttonAssignment, final Assign assign, final String typeName,
 			final String buttonDescription) {
 		this(buttonAssignment, assign, typeName, buttonDescription, null);
 	}
 
-	private VPotMode(final NoteOnAssignment buttonAssignment, final Assign assign) {
+	private VPotMode(final BasicNoteOnAssignment buttonAssignment, final Assign assign) {
 		this(buttonAssignment, assign, null, null);
 	}
 
@@ -73,7 +73,7 @@ public enum VPotMode {
 		return assign;
 	}
 
-	public NoteOnAssignment getButtonAssignment() {
+	public BasicNoteOnAssignment getButtonAssignment() {
 		return buttonAssignment;
 	}
 

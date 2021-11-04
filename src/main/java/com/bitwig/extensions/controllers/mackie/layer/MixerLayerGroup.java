@@ -12,7 +12,7 @@ import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
+import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
@@ -46,7 +46,7 @@ public class MixerLayerGroup {
 		final int sectionIndex = control.getHwControls().getSectionIndex();
 		this.control = control;
 		final Layers layers = this.control.getDriver().getLayers();
-		mixerButtonLayer = new ButtonLayer(name, control, NoteOnAssignment.REC_BASE, sectionIndex * 8);
+		mixerButtonLayer = new ButtonLayer(name, control, BasicNoteOnAssignment.REC_BASE, sectionIndex * 8);
 
 		volumeFaderLayer = new Layer(layers, name + "_VOLUME_FADER_LAYER_" + sectionIndex);
 		volumeEncoderLayer = new EncoderLayer(control, name + "_VOLUME_ENCODER_LAYER_" + sectionIndex);

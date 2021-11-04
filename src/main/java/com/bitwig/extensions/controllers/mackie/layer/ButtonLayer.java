@@ -1,6 +1,6 @@
 package com.bitwig.extensions.controllers.mackie.layer;
 
-import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
+import com.bitwig.extensions.controllers.mackie.NoteAssignment;
 import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.framework.Layer;
@@ -11,7 +11,7 @@ public class ButtonLayer extends Layer {
 	private final int baseOffset;
 	private final int sectionOffset;
 
-	public ButtonLayer(final String name, final MixControl mixControl, final NoteOnAssignment base,
+	public ButtonLayer(final String name, final MixControl mixControl, final NoteAssignment base,
 			final int layerOffset) {
 		super(mixControl.getDriver().getLayers(),
 				name + "_" + mixControl.getHwControls().getSectionIndex() + "_BUTTON");

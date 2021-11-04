@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.mackie;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -121,11 +122,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private DeviceMatcher drumMatcher;
 	private DrumNoteHandler noteHandler;
 	private MotorFader masterFaderResponse;
+	private final Map<BasicNoteOnAssignment, Integer> assignOverrides;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
-			final int extenders) {
+			final Map<BasicNoteOnAssignment, Integer> assignOverrides, final int extenders) {
 		super(definition, host);
 		this.nrOfExtenders = extenders;
+		this.assignOverrides = assignOverrides;
 	}
 
 	@Override
@@ -149,8 +152,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		ledDisplay = new TimeCodeLed(midiOut);
 		drumMatcher = host.createBitwigDeviceMatcher(SpecialDevices.DRUM.getUuid());
 
-		enterButton = createPressButton(NoteOnAssignment.ENTER);
-		cancelButton = createPressButton(NoteOnAssignment.CANCEL);
+		enterButton = createPressButton(BasicNoteOnAssignment.ENTER);
+		cancelButton = createPressButton(BasicNoteOnAssignment.CANCEL);
 
 		browser = host.createPopupBrowser();
 
@@ -295,17 +298,17 @@ public class MackieMcuProExtension extends ControllerExtension {
 		mainLayer.addBinding(new FaderBinding(masterTrack.volume(), masterFaderResponse));
 
 		final HardwareButton masterTouchButton = surface.createHardwareButton("MASTER_TOUCH");
-		masterTouchButton.pressedAction()
-				.setActionMatcher(midiIn.createNoteOnActionMatcher(0, NoteOnAssignment.TOUCH_VOLUME.getNoteNo() + 8));
-		masterTouchButton.releasedAction()
-				.setActionMatcher(midiIn.createNoteOffActionMatcher(0, NoteOnAssignment.TOUCH_VOLUME.getNoteNo() + 8));
+		masterTouchButton.pressedAction().setActionMatcher(
+				midiIn.createNoteOnActionMatcher(0, get(BasicNoteOnAssignment.TOUCH_VOLUME).getNoteNo() + 8));
+		masterTouchButton.releasedAction().setActionMatcher(
+				midiIn.createNoteOffActionMatcher(0, get(BasicNoteOnAssignment.TOUCH_VOLUME).getNoteNo() + 8));
 		masterTouchButton.isPressed().addValueObserver(v -> {
 			// RemoteConsole.out.println("TOUCHED MASTER {}", v);
 		});
 	}
 
 	private void intiVPotModes() {
-		createOnOfBoolButton(NoteOnAssignment.V_TRACK, trackChannelMode);
+		createOnOfBoolButton(BasicNoteOnAssignment.V_TRACK, trackChannelMode);
 //		final Action[] allActions = application.getActions();
 //		for (final Action action : allActions) {
 //			RemoteConsole.out.println(" ACTION [{}] name={} id=[{}] ", action.getCategory().getName(), action.getName(),
@@ -322,23 +325,23 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void initCursorSection() {
-		final HardwareButton trackLeftButton = createPressButton(NoteOnAssignment.TRACK_LEFT);
+		final HardwareButton trackLeftButton = createPressButton(BasicNoteOnAssignment.TRACK_LEFT);
 		mainLayer.bindIsPressed(trackLeftButton, v -> navigateTrack(-1, v));
-		final HardwareButton trackRightButton = createPressButton(NoteOnAssignment.TRACK_RIGHT);
+		final HardwareButton trackRightButton = createPressButton(BasicNoteOnAssignment.TRACK_RIGHT);
 		mainLayer.bindIsPressed(trackRightButton, v -> navigateTrack(1, v));
-		final HardwareButton bankRightButton = createPressButton(NoteOnAssignment.BANK_RIGHT);
+		final HardwareButton bankRightButton = createPressButton(BasicNoteOnAssignment.BANK_RIGHT);
 		mainLayer.bindIsPressed(bankRightButton, v -> navigateBank(1, v));
-		final HardwareButton bankLeftButton = createPressButton(NoteOnAssignment.BANK_LEFT);
+		final HardwareButton bankLeftButton = createPressButton(BasicNoteOnAssignment.BANK_LEFT);
 		mainLayer.bindIsPressed(bankLeftButton, v -> navigateBank(-1, v));
-		final HardwareButton upButton = createPressButton(NoteOnAssignment.CURSOR_UP);
+		final HardwareButton upButton = createPressButton(BasicNoteOnAssignment.CURSOR_UP);
 		mainLayer.bindIsPressed(upButton, v -> navigateUpDown(1, v));
-		final HardwareButton downButton = createPressButton(NoteOnAssignment.CURSOR_DOWN);
+		final HardwareButton downButton = createPressButton(BasicNoteOnAssignment.CURSOR_DOWN);
 		mainLayer.bindIsPressed(downButton, v -> navigateUpDown(-1, v));
-		final HardwareButton leftButton = createPressButton(NoteOnAssignment.CURSOR_LEFT);
+		final HardwareButton leftButton = createPressButton(BasicNoteOnAssignment.CURSOR_LEFT);
 		mainLayer.bindIsPressed(leftButton, v -> navigateLeftRight(-1, v));
-		final HardwareButton rightButton = createPressButton(NoteOnAssignment.CURSOR_RIGHT);
+		final HardwareButton rightButton = createPressButton(BasicNoteOnAssignment.CURSOR_RIGHT);
 		mainLayer.bindIsPressed(rightButton, v -> navigateLeftRight(1, v));
-		createOnOfBoolButton(NoteOnAssignment.ZOOM, zoomActive);
+		createOnOfBoolButton(BasicNoteOnAssignment.ZOOM, zoomActive);
 		// createOnOfBoolButton(NoteOnAssignment.SCRUB, scrubActive);
 	}
 
@@ -407,7 +410,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void initModifiers() {
-		final HardwareButton shiftButton = createPressButton(NoteOnAssignment.SHIFT);
+		final HardwareButton shiftButton = createPressButton(BasicNoteOnAssignment.SHIFT);
 		shiftButton.isPressed().addValueObserver(v -> {
 			modifier.setShift(v);
 			if (v) {
@@ -416,15 +419,15 @@ public class MackieMcuProExtension extends ControllerExtension {
 				shiftLayer.deactivate();
 			}
 		});
-		final HardwareButton optionButton = createPressButton(NoteOnAssignment.OPTION);
+		final HardwareButton optionButton = createPressButton(BasicNoteOnAssignment.OPTION);
 		optionButton.isPressed().addValueObserver(v -> {
 			modifier.setOption(v);
 		});
-		final HardwareButton controlButton = createPressButton(NoteOnAssignment.CONTROL);
+		final HardwareButton controlButton = createPressButton(BasicNoteOnAssignment.CONTROL);
 		controlButton.isPressed().addValueObserver(v -> {
 			modifier.setControl(v);
 		});
-		final HardwareButton altButton = createPressButton(NoteOnAssignment.ALT);
+		final HardwareButton altButton = createPressButton(BasicNoteOnAssignment.ALT);
 		altButton.isPressed().addValueObserver(v -> {
 			modifier.setAlt(v);
 		});
@@ -432,16 +435,16 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	private void initTransport() {
 		transport.playStartPosition().markInterested();
-		final HardwareButton playButton = createButton(NoteOnAssignment.PLAY);
-		final HardwareButton recordButton = createButton(NoteOnAssignment.RECORD);
-		final HardwareButton stopButton = createButtonWState(NoteOnAssignment.STOP, transport.isPlaying(), true);
-		final HardwareButton rewindButton = createHoldButton(NoteOnAssignment.REWIND);
-		final HardwareButton fastForwardButton = createHoldButton(NoteOnAssignment.FFWD);
+		final HardwareButton playButton = createButton(BasicNoteOnAssignment.PLAY);
+		final HardwareButton recordButton = createButton(BasicNoteOnAssignment.RECORD);
+		final HardwareButton stopButton = createButtonWState(BasicNoteOnAssignment.STOP, transport.isPlaying(), true);
+		final HardwareButton rewindButton = createHoldButton(BasicNoteOnAssignment.REWIND);
+		final HardwareButton fastForwardButton = createHoldButton(BasicNoteOnAssignment.FFWD);
 
 		initCycleSection();
 		initClickSection();
 
-		final HardwareButton autoWriteButton = createButton(NoteOnAssignment.AUTO_READ_OFF);
+		final HardwareButton autoWriteButton = createButton(BasicNoteOnAssignment.AUTO_READ_OFF);
 		mainLayer.bindPressed(autoWriteButton, transport.isArrangerAutomationWriteEnabled());
 		mainLayer.bind(transport.isArrangerAutomationWriteEnabled(),
 				(OnOffHardwareLight) autoWriteButton.backgroundLight());
@@ -449,15 +452,15 @@ public class MackieMcuProExtension extends ControllerExtension {
 		shiftLayer.bind(transport.isClipLauncherAutomationWriteEnabled(),
 				(OnOffHardwareLight) autoWriteButton.backgroundLight());
 
-		final HardwareButton touchButton = createButton(NoteOnAssignment.TOUCH);
+		final HardwareButton touchButton = createButton(BasicNoteOnAssignment.TOUCH);
 		mainLayer.bindPressed(touchButton, () -> {
 			transport.automationWriteMode().set("touch");
 		});
-		final HardwareButton latchButton = createButton(NoteOnAssignment.LATCH);
+		final HardwareButton latchButton = createButton(BasicNoteOnAssignment.LATCH);
 		mainLayer.bindPressed(latchButton, () -> {
 			transport.automationWriteMode().set("latch");
 		});
-		final HardwareButton trimButton = createButton(NoteOnAssignment.AUTO_WRITE);
+		final HardwareButton trimButton = createButton(BasicNoteOnAssignment.AUTO_WRITE);
 		mainLayer.bindPressed(trimButton, () -> {
 			transport.automationWriteMode().set("write");
 		});
@@ -481,8 +484,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 			}
 		});
 
-		final HardwareButton punchInButton = createButton(NoteOnAssignment.DROP);
-		final HardwareButton punchOutButton = createButton(NoteOnAssignment.REPLACE);
+		final HardwareButton punchInButton = createButton(BasicNoteOnAssignment.DROP);
+		final HardwareButton punchOutButton = createButton(BasicNoteOnAssignment.REPLACE);
 		mainLayer.bindToggle(punchInButton, transport.isPunchInEnabled());
 		mainLayer.bindToggle(punchOutButton, transport.isPunchOutEnabled());
 
@@ -506,9 +509,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 				.addValueObserver(v -> ledDisplay.updatePosition(v, transport.playPosition().getFormatted()));
 		transport.playPositionInSeconds().addValueObserver(ledDisplay::updateTime);
 
-		createOnOfBoolButton(NoteOnAssignment.FLIP, flipped);
+		createOnOfBoolButton(BasicNoteOnAssignment.FLIP, flipped);
 
-		final HardwareButton vuModeButton = createButton(NoteOnAssignment.DIPLAY_NAME);
+		final HardwareButton vuModeButton = createButton(BasicNoteOnAssignment.DIPLAY_NAME);
 		vuModeButton.isPressed().addValueObserver(v -> {
 			if (modifier.isShift()) {
 				toogleVuMode(v);
@@ -517,7 +520,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 			}
 		});
 
-		final HardwareButton modeButton = createButton(NoteOnAssignment.DISPLAY_SMPTE);
+		final HardwareButton modeButton = createButton(BasicNoteOnAssignment.DISPLAY_SMPTE);
 		modeButton.isPressed().addValueObserver(v -> {
 			if (v) {
 				ledDisplay.toggleMode();
@@ -526,11 +529,11 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void initUndoRedo() {
-		final HardwareButton undoButton = createPressButton(NoteOnAssignment.UNDO);
+		final HardwareButton undoButton = createPressButton(BasicNoteOnAssignment.UNDO);
 		final OnOffHardwareLight undoLight = (OnOffHardwareLight) undoButton.backgroundLight();
 		application.canRedo().markInterested();
 		undoLight.onUpdateHardware(() -> {
-			sendLedUpdate(NoteOnAssignment.UNDO, undoLight.isOn().currentValue() ? 127 : 0);
+			sendLedUpdate(BasicNoteOnAssignment.UNDO, undoLight.isOn().currentValue() ? 127 : 0);
 		});
 		mainLayer.bindIsPressed(undoButton, v -> {
 			if (v) {
@@ -568,7 +571,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		}
 	}
 
-	public void createOnOfBoolButton(final NoteOnAssignment assignment, final SettableBooleanValue valueState) {
+	public void createOnOfBoolButton(final BasicNoteOnAssignment assignConst, final SettableBooleanValue valueState) {
+		final NoteAssignment assignment = get(assignConst);
 		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
 		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
@@ -601,7 +605,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		sections.forEach(section -> section.applyVuMode(this.getVuMode()));
 	}
 
-	private HardwareButton createHoldButton(final NoteOnAssignment assignment) {
+	private HardwareButton createHoldButton(final BasicNoteOnAssignment assignConst) {
+		final NoteAssignment assignment = get(assignConst);
 		final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
 
@@ -616,8 +621,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return button;
 	}
 
-	private HardwareButton createButtonWState(final NoteOnAssignment assignment,
+	private HardwareButton createButtonWState(final BasicNoteOnAssignment assignConst,
 			final SettableBooleanValue settableBooleanValue, final boolean reversedLed) {
+		final NoteAssignment assignment = get(assignConst);
 		final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
 		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "BUTTON_LED");
@@ -698,20 +704,22 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return this.trackChannelMode;
 	}
 
-	private HardwareButton createPressButton(final NoteOnAssignment assignment) {
-		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+	private HardwareButton createPressButton(final BasicNoteOnAssignment assignment) {
+		final NoteAssignment realAssignment = get(assignment);
+		final HardwareButton button = surface.createHardwareButton(realAssignment.toString() + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
-		button.setBackgroundLight(surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED"));
+		button.setBackgroundLight(surface.createOnOffHardwareLight(realAssignment.toString() + "_BUTTON_LED"));
 		return button;
 	}
 
-	private HardwareButton createButton(final NoteOnAssignment assignment) {
-		final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
-		assignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "_BUTTON_LED");
+	private HardwareButton createButton(final BasicNoteOnAssignment assignment) {
+		final NoteAssignment realAssignment = get(assignment);
+		final HardwareButton button = surface.createHardwareButton(realAssignment + "_BUTTON");
+		realAssignment.holdActionAssign(midiIn, button);
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(realAssignment + "_BUTTON_LED");
 		button.setBackgroundLight(led);
 		led.onUpdateHardware(() -> {
-			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
+			sendLedUpdate(realAssignment, led.isOn().currentValue() ? 127 : 0);
 		});
 		return button;
 	}
@@ -750,7 +758,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		cursorDeviceControl = new CursorDeviceControl(cursorTrack, 8, numberOfHwChannels);
 
-		final HardwareButton soloButton = createButtonWState(NoteOnAssignment.SOLO, cursorTrack.solo(), false);
+		final HardwareButton soloButton = createButtonWState(BasicNoteOnAssignment.SOLO, cursorTrack.solo(), false);
 		mainLayer.bindPressed(soloButton, cursorTrack.solo().toggleAction());
 
 		final TrackBank mainTrackBank = getHost().createMainTrackBank(numberOfHwChannels, 1, nrOfScenes);
@@ -826,23 +834,23 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		final BooleanValueObject marker = initCueMarkerSection(cueMarkerBank);
 
-		createGlobalViewButton(NoteOnAssignment.GLOBAL_VIEW);
-		createGroupModeButton(NoteOnAssignment.GROUP, buttonViewMode);
+		createGlobalViewButton(BasicNoteOnAssignment.GLOBAL_VIEW);
+		createGroupModeButton(BasicNoteOnAssignment.GROUP, buttonViewMode);
 		// createNoteModeButton(NoteOnAssignment.GV_USER, buttonViewMode);
 
-		initFButton(0, NoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
-		initFButton(1, NoteOnAssignment.F2, marker, cueMarkerBank,
+		initFButton(0, BasicNoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
+		initFButton(1, BasicNoteOnAssignment.F2, marker, cueMarkerBank,
 				() -> application.setPanelLayout(currentLayoutType.other().getName()));
-		initFButton(2, NoteOnAssignment.F3, marker, cueMarkerBank, () -> application.navigateToParentTrackGroup());
-		initFButton(3, NoteOnAssignment.F4, marker, cueMarkerBank, () -> {
+		initFButton(2, BasicNoteOnAssignment.F3, marker, cueMarkerBank, () -> application.navigateToParentTrackGroup());
+		initFButton(3, BasicNoteOnAssignment.F4, marker, cueMarkerBank, () -> {
 		});
-		initFButton(4, NoteOnAssignment.F5, marker, cueMarkerBank, () -> {
+		initFButton(4, BasicNoteOnAssignment.F5, marker, cueMarkerBank, () -> {
 		});
-		initFButton(5, NoteOnAssignment.F6, marker, cueMarkerBank, () -> {
+		initFButton(5, BasicNoteOnAssignment.F6, marker, cueMarkerBank, () -> {
 		});
-		initFButton(6, NoteOnAssignment.F7, marker, cueMarkerBank, () -> {
+		initFButton(6, BasicNoteOnAssignment.F7, marker, cueMarkerBank, () -> {
 		});
-		initFButton(7, NoteOnAssignment.F8, marker, cueMarkerBank, () -> {
+		initFButton(7, BasicNoteOnAssignment.F8, marker, cueMarkerBank, () -> {
 		});
 
 		application.panelLayout().addValueObserver(v -> {
@@ -851,7 +859,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void initClickSection() {
-		final HardwareButton metroButton = createButton(NoteOnAssignment.CLICK);
+		final HardwareButton metroButton = createButton(BasicNoteOnAssignment.CLICK);
 		final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
 		final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
 		builder.bindBool("METRO", transport.isMetronomeEnabled());
@@ -869,7 +877,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void initCycleSection() {
-		final HardwareButton loopButton = createButton(NoteOnAssignment.CYCLE);
+		final HardwareButton loopButton = createButton(BasicNoteOnAssignment.CYCLE);
 		final MenuModeLayerConfiguration cycleConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
 		final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
 
@@ -943,7 +951,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private BooleanValueObject initCueMarkerSection(final CueMarkerBank cueMarkerBank) {
-		final HardwareButton markerButton = createButton(NoteOnAssignment.MARKER);
+		final HardwareButton markerButton = createButton(BasicNoteOnAssignment.MARKER);
 		final BooleanValueObject marker = new BooleanValueObject();
 
 		final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
@@ -975,7 +983,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return marker;
 	}
 
-	public void createGlobalViewButton(final NoteOnAssignment assignment) {
+	public void createGlobalViewButton(final BasicNoteOnAssignment assignConst) {
+		final NoteAssignment assignment = get(assignConst);
+
 		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
 		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
@@ -1017,7 +1027,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return previousOverallMode;
 	}
 
-	public void createNoteModeButton(final NoteOnAssignment assignment, final ValueObject<ButtonViewState> valueState) {
+	public void createNoteModeButton(final BasicNoteOnAssignment assignConst,
+			final ValueObject<ButtonViewState> valueState) {
+		final NoteAssignment assignment = get(assignConst);
 		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
 		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
@@ -1037,8 +1049,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	}
 
-	public void createGroupModeButton(final NoteOnAssignment assignment,
+	public void createGroupModeButton(final BasicNoteOnAssignment assignConst,
 			final ValueObject<ButtonViewState> valueState) {
+		final NoteAssignment assignment = get(assignConst);
 		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
 		assignment.holdActionAssign(midiIn, button);
 		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
@@ -1060,7 +1073,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		});
 	}
 
-	public void initFButton(final int index, final NoteOnAssignment assign, final BooleanValueObject marker,
+	public void initFButton(final int index, final BasicNoteOnAssignment assign, final BooleanValueObject marker,
 			final CueMarkerBank cueMarkerBank, final Runnable nonMarkerFunction) {
 		final HardwareButton fButton = createPressButton(assign);
 		mainLayer.bindIsPressed(fButton, v -> {
@@ -1090,10 +1103,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return cursorTrack;
 	}
 
-	public void sendLedUpdate(final NoteOnAssignment assingment, final int value) {
-		final int noteNr = assingment.getNoteNo();
+	public void sendLedUpdate(final NoteAssignment assignment, final int value) {
+		final int noteNr = assignment.getNoteNo();
 		lightStatusMap[noteNr] = value;
-		midiOut.sendMidi(assingment.getType(), assingment.getNoteNo(), value);
+		midiOut.sendMidi(assignment.getType(), assignment.getNoteNo(), value);
 	}
 
 	public Layer getMainLayer() {
@@ -1173,4 +1186,16 @@ public class MackieMcuProExtension extends ControllerExtension {
 	public DrumNoteHandler getNoteHandler() {
 		return noteHandler;
 	}
+
+	public NoteAssignment get(final BasicNoteOnAssignment assignment) {
+		if (assignOverrides.isEmpty()) {
+			return assignment;
+		}
+		final Integer override = assignOverrides.get(assignment);
+		if (override != null) {
+			return new OverrideNoteAssignment(override);
+		}
+		return assignment;
+	}
+
 }

@@ -2,7 +2,7 @@ package com.bitwig.extensions.controllers.mackie.display;
 
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.mackie.Midi;
-import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
+import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 
 public class TimeCodeLed {
 	private final MidiOut midiOut;
@@ -43,11 +43,11 @@ public class TimeCodeLed {
 
 	public void refreschMode() {
 		if (mode == Mode.BEATS) {
-			NoteOnAssignment.BEATS_MODE.send(midiOut, 127);
-			NoteOnAssignment.SMPTE_MODE.send(midiOut, 0);
+			BasicNoteOnAssignment.BEATS_MODE.send(midiOut, 127);
+			BasicNoteOnAssignment.SMPTE_MODE.send(midiOut, 0);
 		} else {
-			NoteOnAssignment.BEATS_MODE.send(midiOut, 0);
-			NoteOnAssignment.SMPTE_MODE.send(midiOut, 127);
+			BasicNoteOnAssignment.BEATS_MODE.send(midiOut, 0);
+			BasicNoteOnAssignment.SMPTE_MODE.send(midiOut, 127);
 		}
 	}
 

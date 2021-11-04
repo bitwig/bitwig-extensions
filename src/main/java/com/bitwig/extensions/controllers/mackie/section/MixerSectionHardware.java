@@ -19,7 +19,8 @@ import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RelativeHardwareValueMatcher;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.Midi;
-import com.bitwig.extensions.controllers.mackie.NoteOnAssignment;
+import com.bitwig.extensions.controllers.mackie.NoteAssignment;
+import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.RingDisplayBoolBinding;
@@ -76,11 +77,11 @@ public class MixerSectionHardware {
 
 	private void initButtonSection(final HardwareSurface surface) {
 		for (int i = 0; i < 8; i++) {
-			final HardwareButton armButton = createLightButton("ARM", i, NoteOnAssignment.REC_BASE.getNoteNo());
-			final HardwareButton soloButton = createLightButton("SOLO", i, NoteOnAssignment.SOLO_BASE.getNoteNo());
-			final HardwareButton muteButton = createLightButton("MUTE", i, NoteOnAssignment.MUTE_BASE.getNoteNo());
+			final HardwareButton armButton = createLightButton("ARM", i, BasicNoteOnAssignment.REC_BASE.getNoteNo());
+			final HardwareButton soloButton = createLightButton("SOLO", i, BasicNoteOnAssignment.SOLO_BASE.getNoteNo());
+			final HardwareButton muteButton = createLightButton("MUTE", i, BasicNoteOnAssignment.MUTE_BASE.getNoteNo());
 			final HardwareButton selectButton = createLightButton("SELECT", i,
-					NoteOnAssignment.SELECT_BASE.getNoteNo());
+					BasicNoteOnAssignment.SELECT_BASE.getNoteNo());
 			buttonMatrix[REC_INDEX][i] = armButton;
 			buttonMatrix[SOLO_INDEX][i] = soloButton;
 			buttonMatrix[MUTE_INDEX][i] = muteButton;
@@ -171,7 +172,7 @@ public class MixerSectionHardware {
 
 	private HardwareButton createTouchButton(final String name, final int index) {
 		final HardwareSurface surface = driver.getSurface();
-		final int notNr = NoteOnAssignment.TOUCH_VOLUME.getNoteNo() + index;
+		final int notNr = BasicNoteOnAssignment.TOUCH_VOLUME.getNoteNo() + index;
 		final HardwareButton button = surface.createHardwareButton(name + "_" + sectionIndex + "_" + index);
 		button.pressedAction().setActionMatcher(midiIn.createNoteOnActionMatcher(0, notNr));
 		button.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(0, notNr));
@@ -193,8 +194,8 @@ public class MixerSectionHardware {
 	}
 
 	public void resetLeds() {
-		final NoteOnAssignment[] nv = NoteOnAssignment.values();
-		for (final NoteOnAssignment noteOnAssignment : nv) {
+		final NoteAssignment[] nv = BasicNoteOnAssignment.values();
+		for (final NoteAssignment noteOnAssignment : nv) {
 			sendLedLightStatus(noteOnAssignment.getNoteNo(), 0);
 		}
 		for (int i = 0; i < 127; i++) {
