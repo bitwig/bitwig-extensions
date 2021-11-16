@@ -50,7 +50,7 @@ com.bitwig.extensions.controllers.mackie.MackieMcuProExtensionDefinition
 com.bitwig.extensions.controllers.mackie.MackieMcuProXt1ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.MackieMcuProXt2ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.MackieMcuProXt3ExtensionDefinition
-com.bitwig.extensions.controllers.mackie.IconQconProG2ExtensionDefinition
+#com.bitwig.extensions.controllers.mackie.IconQconProG2ExtensionDefinition
 
 com.bitwig.extensions.controllers.novation.launch_control_xl.LaunchControlXlControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControllerExtensionDefinition

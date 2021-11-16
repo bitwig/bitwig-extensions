@@ -841,7 +841,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 		initFButton(0, BasicNoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
 		initFButton(1, BasicNoteOnAssignment.F2, marker, cueMarkerBank,
 				() -> application.setPanelLayout(currentLayoutType.other().getName()));
-		initFButton(2, BasicNoteOnAssignment.F3, marker, cueMarkerBank, () -> application.navigateToParentTrackGroup());
+		initFButton(2, BasicNoteOnAssignment.F3, marker, cueMarkerBank, () -> {
+		}); // application.navigateToParentTrackGroup()
 		initFButton(3, BasicNoteOnAssignment.F4, marker, cueMarkerBank, () -> {
 		});
 		initFButton(4, BasicNoteOnAssignment.F5, marker, cueMarkerBank, () -> {
