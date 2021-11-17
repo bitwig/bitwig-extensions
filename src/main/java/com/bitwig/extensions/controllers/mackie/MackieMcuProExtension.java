@@ -969,12 +969,12 @@ public class MackieMcuProExtension extends ControllerExtension {
 			markerMenuConfig.addPressEncoderBinding(i, index -> {
 				if (cueMarker.exists().get()) {
 					if (modifier.isShift()) {
-						cueMarker.remove();
+						cueMarker.deleteObject();
 					} else {
 						cueMarker.position().set(transport.getPosition().get());
 					}
 				} else {
-					transport.addCueMarkerAtCurrentPosition();
+					transport.addCueMarkerAtPlaybackPosition();
 				}
 			});
 			markerMenuConfig.addEncoderIncBinding(i, cueMarker.position(), 1);
