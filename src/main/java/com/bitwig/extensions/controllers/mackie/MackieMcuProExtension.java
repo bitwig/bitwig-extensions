@@ -964,7 +964,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 			markerMenuConfig.addValueBinding(i, cueMarker.position(), cueMarker, "---", v -> {
 				return cueMarker.position().getFormatted(formatter);
 			});
-			markerMenuConfig.addNameBinding(i, cueMarker.getName(), cueMarker, "<Cue" + (i + 1) + ">");
+			markerMenuConfig.addNameBinding(i, cueMarker.name(), cueMarker, "<Cue" + (i + 1) + ">");
 			markerMenuConfig.addRingExistsBinding(i, cueMarker);
 			markerMenuConfig.addPressEncoderBinding(i, index -> {
 				if (cueMarker.exists().get()) {
