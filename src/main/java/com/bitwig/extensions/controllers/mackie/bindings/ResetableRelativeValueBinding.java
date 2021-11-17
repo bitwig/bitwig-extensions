@@ -9,13 +9,20 @@ import com.bitwig.extensions.framework.Binding;
 public class ResetableRelativeValueBinding extends Binding<RelativeHardwareKnob, SettableRangedValue> {
 
 	private HardwareBinding hwBinding;
+	private final double sensitivity;
+
+	public ResetableRelativeValueBinding(final RelativeHardwareKnob source, final SettableRangedValue target,
+			final double sensitivity) {
+		super(source, source, target);
+		this.sensitivity = sensitivity;
+	}
 
 	public ResetableRelativeValueBinding(final RelativeHardwareKnob source, final SettableRangedValue target) {
-		super(source, source, target);
+		this(source, target, 1.0);
 	}
 
 	protected RelativeHardwareControlBinding getHardwareBinding() {
-		return getTarget().addBindingWithSensitivity(getSource(), 1.0);
+		return getTarget().addBindingWithSensitivity(getSource(), sensitivity);
 	}
 
 	public void reset() {

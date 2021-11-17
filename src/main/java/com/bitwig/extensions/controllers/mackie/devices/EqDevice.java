@@ -3,17 +3,8 @@ package com.bitwig.extensions.controllers.mackie.devices;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.bitwig.extension.controller.api.BooleanValue;
-import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
-import com.bitwig.extension.controller.api.Device;
-import com.bitwig.extension.controller.api.DeviceBank;
-import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extension.controller.api.SpecificBitwigDevice;
-import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.layer.DisplayLayer;
-import com.bitwig.extensions.controllers.mackie.layer.InfoSource;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 /**
@@ -24,13 +15,15 @@ import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
  * ADAPTIVE_Q DECIBEL_RANGE
  *
  */
-public class EqDevice implements ControlDevice, DeviceManager {
+public class EqDevice extends SpecificDevice {
 	private final static String[] PNAMES = { "TYPE", "FREQ", "GAIN", "Q" };
 	private final static RingDisplayType[] RING_TYPES = { RingDisplayType.FILL_LR, RingDisplayType.SINGLE,
 			RingDisplayType.FILL_LR, RingDisplayType.FILL_LR };
 	private final static double[] SENSITIVITIES = { 2, 0.25, 0.25, 0.25 };
 	private static final String[] TYPES = { "*Off*", "LowC-1", "LowC-2", "LowC-4", "LowC-6", "LowC-8", "LoShlv", "Bell", //
 			"HiC-1", "HiC-2", "HiC-4", "HiC-6", "HiC-8", "HiShlv", "Notch" };
+	private static final String[] PAGE_NAMES = { "Bands 1 & 2", "Bands 3 & 4", "Bands 5 & 6", "Bands 7 & 8",
+			"General" };
 
 	private static final ParameterSetting[] PAGE_5 = { //
 			new ParameterSetting("OUTPUT_GAIN", 0.125, RingDisplayType.FILL_LR), //
@@ -42,26 +35,12 @@ public class EqDevice implements ControlDevice, DeviceManager {
 			new ParameterSetting("----", 1, RingDisplayType.FILL_LR), //
 			new ParameterSetting("----", 1, RingDisplayType.SINGLE), };
 
-	private final SpecificBitwigDevice bitwigDevice;
-	private final Device device;
-	private final List<ParameterPage> parameterSlots = new ArrayList<>();
-	private int pageIndex = 0;
 	private final int[] enableValues = new int[8];
 	private final List<Parameter> enableParams = new ArrayList<>();
-	private final BooleanValue cursorOnDevice;
-	private DeviceBank overallBank;
-	private int bankIndex = 0;
-	private DisplayLayer infoLayer;
-	private InfoSource infoSource;
+	private final List<ParameterPage> parameterSlots = new ArrayList<>();
 
-	public EqDevice(final MackieMcuProExtension driver, final DeviceMatcher matcher) {
-		bitwigDevice = driver.getCursorDevice().createSpecificBitwigDevice(Devices.EQ_PLUS.getUuid());
-
-		final DeviceBank eqPlusDeviceBank = driver.getCursorTrack().createDeviceBank(1);
-		eqPlusDeviceBank.setDeviceMatcher(matcher);
-		device = eqPlusDeviceBank.getItemAt(0);
-
-		cursorOnDevice = device.createEqualsValue(driver.getCursorDevice());
+	public EqDevice(final CursorDeviceControl cursorDeviceControl, final DeviceTypeFollower deviceFollower) {
+		super(SpecialDevices.EQ_PLUS, cursorDeviceControl, deviceFollower);
 
 		for (int i = 0; i < 8; i++) {
 			parameterSlots.add(new ParameterPage(i, this));
@@ -80,67 +59,16 @@ public class EqDevice implements ControlDevice, DeviceManager {
 				notifyEnablementFromEnable(page, index, typeParam, v);
 			});
 		}
-
-		initBankTracking(driver);
-// final Just code to final list all parameters final of device
-//		device.addDirectParameterIdObserver(allp -> {
-//			for (final String pname : allp) {
-//				RemoteConsole.out.println("[{}]", pname);
-//			}
-//		});
 	}
 
 	@Override
-	public void setInfoLayer(final DisplayLayer infoLayer) {
-		this.infoLayer = infoLayer;
-	}
-
-	@Override
-	public void enableInfo(final InfoSource type) {
-		infoSource = type;
-		if (infoSource == InfoSource.NAV_VERTICAL) {
-			infoLayer.setMainText(getDeviceInfo(), "", false);
-		} else if (infoSource == InfoSource.NAV_HORIZONTAL) {
-			infoLayer.setMainText(getPageInfo(), "", false);
-		}
-	}
-
-	@Override
-	public void disableInfo() {
-		infoSource = null;
-	}
-
-	@Override
-	public InfoSource getInfoSource() {
-		return infoSource;
-	}
-
 	public String getDeviceInfo() {
 		return "EQ+ Device";
 	}
 
+	@Override
 	public String getPageInfo() {
-		return "Parameter Page : " + pageIndex;
-	}
-
-	private void initBankTracking(final MackieMcuProExtension driver) {
-		overallBank = driver.getCursorTrack().createDeviceBank(8);
-		overallBank.canScrollBackwards().markInterested();
-		overallBank.canScrollForwards().markInterested();
-		for (int i = 0; i < overallBank.getSizeOfBank(); i++) {
-			final int which = i;
-			final BooleanValue evo = overallBank.getItemAt(which).createEqualsValue(device);
-			evo.addValueObserver(v -> {
-				if (v) {
-					if (which == 0 && overallBank.canScrollBackwards().get()) {
-						overallBank.scrollBackwards();
-					} else if (which == overallBank.getSizeOfBank() - 1 && overallBank.canScrollForwards().get()) {
-						overallBank.scrollForwards();
-					}
-					bankIndex = which;
-				}
-			});
-		}
+		return "Parameter Page : " + PAGE_NAMES[pageIndex];
 	}
 
 	private void notifyEnablementFromEnable(final int page, final int bandIndexOffset, final Parameter typeParam,
@@ -155,21 +83,17 @@ public class EqDevice implements ControlDevice, DeviceManager {
 		}
 	}
 
+	@Override
 	public void handleResetInvoked(final int index, final ModifierValueObject modifier) {
 		if (modifier.isShiftSet()) {
 			toggleEnable(index);
 		} else if (modifier.isControlSet()) {
 			resetAll();
 		} else if (modifier.isOptionSet()) {
-			device.isEnabled().toggle();
+			cursorDeviceControl.getCursorDevice().isEnabled().toggle();
 		} else {
 			parameterSlots.get(index).doReset();
 		}
-	}
-
-	@Override
-	public BooleanValue getCursorOnDevice() {
-		return cursorOnDevice;
 	}
 
 	private void resetAll() {
@@ -199,27 +123,6 @@ public class EqDevice implements ControlDevice, DeviceManager {
 		return enableParam;
 	}
 
-	public void navigateParameterBanks(final int direction) {
-		if (direction < 0) {
-			navigatePrevious();
-		} else {
-			navigateNext();
-		}
-	}
-
-	@Override
-	public void navigateNext() {
-		pageIndex = (pageIndex + 1) % getPages();
-		updateSlots();
-	}
-
-	@Override
-	public void navigatePrevious() {
-		final int nextIndex = pageIndex - 1;
-		pageIndex = nextIndex < 0 ? getPages() - 1 : nextIndex < getPages() ? nextIndex : 0;
-		updateSlots();
-	}
-
 	@Override
 	public int getPages() {
 		return 5;
@@ -240,6 +143,7 @@ public class EqDevice implements ControlDevice, DeviceManager {
 		parameterSlots.forEach(ParameterPage::triggerUpdate);
 	}
 
+	@Override
 	public String getParamName(final int page, final int index) {
 		return PNAMES[index % 4] + Integer.toString(1 + index / 4 + page * 2);
 	}
@@ -285,30 +189,30 @@ public class EqDevice implements ControlDevice, DeviceManager {
 	}
 
 	@Override
-	public Device getDevice() {
-		return device;
+	public ParameterPage getParameterPage(final int index) {
+		return parameterSlots.get(index);
 	}
 
-	public List<ParameterPage> getEqBands() {
-		return parameterSlots;
-	}
-
-//	public boolean exists() {
-//		return device.exists().get();
-//	}
-
+	@Override
 	public void triggerUpdate() {
 		parameterSlots.forEach(ParameterPage::triggerUpdate);
 	}
 
 	@Override
-	public int getCurrentPage() {
-		return pageIndex;
+	public Parameter getParameter(final int index) {
+		return parameterSlots.get(index).getParameter(pageIndex);
 	}
 
 	@Override
-	public BooleanValue exists() {
-		return device.exists();
+	public void navigateDeviceParameters(final int direction) {
+		if (direction < 0) {
+			final int nextIndex = pageIndex - 1;
+			pageIndex = nextIndex < 0 ? getPages() - 1 : nextIndex < getPages() ? nextIndex : 0;
+			updateSlots();
+		} else {
+			pageIndex = (pageIndex + 1) % getPages();
+			updateSlots();
+		}
 	}
 
 	public void toggleEnable(final Integer pindex) {
@@ -325,39 +229,7 @@ public class EqDevice implements ControlDevice, DeviceManager {
 	}
 
 	@Override
-	public CursorRemoteControlsPage getRemote() {
-		return null;
-	}
-
-	@Override
-	public boolean isCanTrackMultiple() {
-		return true;
-	}
-
-	@Override
-	public void moveDeviceToLeft() {
-		if (overallBank == null) {
-			return;
-		}
-		if (bankIndex > 0) {
-			final Device nextDevice = overallBank.getItemAt(bankIndex - 1);
-			nextDevice.beforeDeviceInsertionPoint().moveDevices(device);
-		}
-	}
-
-	@Override
-	public void moveDeviceToRight() {
-		if (overallBank == null) {
-			return;
-		}
-		if (bankIndex < overallBank.getSizeOfBank() - 1) {
-			final Device nextDevice = overallBank.getItemAt(bankIndex + 1);
-			nextDevice.afterDeviceInsertionPoint().moveDevices(device);
-		}
-	}
-
-	@Override
-	public void removeDevice() {
-		device.deleteObject();
+	public int getPageCount() {
+		return 5;
 	}
 }

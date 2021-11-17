@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.mackie.bindings;
 
 import com.bitwig.extension.controller.api.Parameter;
+import com.bitwig.extensions.controllers.mackie.display.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.targets.RingDisplay;
 import com.bitwig.extensions.framework.Binding;
 
 public class RingDisplayParameterBinding extends Binding<Parameter, RingDisplay> {
@@ -17,7 +17,6 @@ public class RingDisplayParameterBinding extends Binding<Parameter, RingDisplay>
 			valueChange(type.getOffset() + v);
 		});
 		source.exists().addValueObserver(this::handleExists);
-		source.name().markInterested();
 	}
 
 	public void handleExists(final boolean exist) {

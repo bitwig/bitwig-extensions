@@ -40,6 +40,13 @@ public class StringUtil {
 		return sb.toString();
 	}
 
+	public static String toTwoCharVal(final int value) {
+		if (value < 10) {
+			return " " + Integer.toString(value);
+		}
+		return Integer.toString(value);
+	}
+
 	public static String toDisplayName(final String text) {
 		if (text.length() < 2) {
 			return text;
@@ -56,11 +63,17 @@ public class StringUtil {
 		return sb.toString();
 	}
 
+	public static String limit(final String value, final int max) {
+		return value.substring(0, Math.min(max, value.length()));
+	}
+
 	public static String toAsciiDisplay(final String name, final int maxLen) {
-		final String s = name.substring(0, Math.min(7, name.length()));
 		final StringBuilder b = new StringBuilder();
-		for (int i = 0; i < name.length() && i < maxLen; i++) {
-			final char c = s.charAt(i);
+		for (int i = 0; i < name.length() && b.length() < maxLen; i++) {
+			final char c = name.charAt(i);
+			if (c == 32) {
+				continue;
+			}
 			if (c < 128) {
 				b.append(c);
 			} else {

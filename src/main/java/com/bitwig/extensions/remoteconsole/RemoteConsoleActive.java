@@ -58,14 +58,24 @@ public class RemoteConsoleActive implements RemoteConsole {
 			int pc = 0;
 			for (int i = 1; i < split.length; i++) {
 				if (pc < params.length) {
-					sb.append(params[pc++].toString());
+					final Object v = params[pc++];
+					if (v == null) {
+						sb.append("<NULL>");
+					} else {
+						sb.append(v.toString());
+					}
 				} else {
 					sb.append(" -- ");
 				}
 				sb.append(split[i]);
 			}
 			if (pc < params.length) {
-				sb.append(params[pc++].toString());
+				final Object v = params[pc++];
+				if (v == null) {
+					sb.append("<NULL>");
+				} else {
+					sb.append(v.toString());
+				}
 			}
 			println(sb.toString());
 		}
