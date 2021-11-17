@@ -96,10 +96,11 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
 	}
 
 	@Override
-	public String getHelpFilePath() {
-		return "";
-	}
-
+   public String getHelpFilePath()
+   {
+      return "Controllers/Mackie/Mackie Control/Mackie Control Universal.pdf";
+   }
+   
 	@Override
 	public String getSupportFolderPath() {
 		return "";
