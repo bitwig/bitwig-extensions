@@ -381,7 +381,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
 	public void bindNameTemp(final int rowIndex, final int startIndex, final int tempSpan, final StringValue name,
 			final ObjectProxy sourceOfExistance, final String emptyText) {
 		assert startIndex >= 0 && startIndex < 8;
-		assert startIndex + tempSpan < 8;
+		assert startIndex + tempSpan <= 8;
 		assert tempSpan > 0;
 
 		final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
@@ -399,7 +399,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
 	public void bindName(final int rowIndex, final int startIndex, final int span, final StringValue name,
 			final String enclosing) {
 		assert startIndex >= 0 && startIndex < 8;
-		assert startIndex + span < 8;
+		assert startIndex + span <= 8;
 		assert span > 0;
 
 		final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
@@ -415,7 +415,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
 	public void bindName(final int rowIndex, final int startIndex, final int span, final StringValue name,
 			final ObjectProxy sourceOfExistance, final String emptyText, final char enclosing) {
 		assert startIndex >= 0 && startIndex < 8;
-		assert startIndex + span < 8;
+		assert startIndex + span <= 8;
 		assert span > 0;
 
 		final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
