@@ -65,11 +65,4 @@ public class NotePlayingButtonLayer extends ButtonLayer {
 		scaleHandler.navigateHorizontal(direction, pressed);
 	}
 
-	public void navigateVertical(final int direction, final boolean pressed) {
-		if (!isActive()) {
-			return;
-		}
-		scaleHandler.navigateVertical(direction, pressed);
-	}
-
 }

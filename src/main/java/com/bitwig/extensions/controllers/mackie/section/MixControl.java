@@ -279,7 +279,7 @@ public class MixControl implements LayerStateHandler {
 		if (launchButtonLayer.isActive()) {
 			launchButtonLayer.navigateVertical(direction, isPressed);
 		} else if (scaleButtonLayer.isActive()) {
-			scaleButtonLayer.navigateVertical(direction, isPressed);
+			driver.getNotePlayingSetup().modifyOctave(direction); // Problematic with note playing in multiple
 		} else {
 			if (isPressed) {
 				currentConfiguration.navigateVertical(direction);
@@ -481,7 +481,8 @@ public class MixControl implements LayerStateHandler {
 		final NoteInput noteInput = this.getHwControls().getMidiIn().createNoteInput("MIDI", "80????", "90????");
 		noteInput.setShouldConsumeEvents(true);
 		drumNoteHandler = new DrumNoteHandler(noteInput, drumPadBank, getDriver().getCursorTrack());
-		scaleNoteHandler = new ScaleNoteHandler(noteInput, getDriver().getCursorTrack());
+		scaleNoteHandler = new ScaleNoteHandler(noteInput, getDriver().getNotePlayingSetup(),
+				getDriver().getCursorTrack());
 		mainGroup.init(mixerTrackBank);
 		globalGroup.init(globalTrackBank);
 		drumGroup.init(drumPadBank, drumNoteHandler);

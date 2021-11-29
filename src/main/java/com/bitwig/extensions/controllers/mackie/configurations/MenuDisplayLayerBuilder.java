@@ -8,6 +8,8 @@ import com.bitwig.extension.controller.api.SettableRangedValue;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
+import com.bitwig.extensions.controllers.mackie.value.IntValueObject;
+import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 
 public class MenuDisplayLayerBuilder {
 	private static final int MAX_SLOT_INDEX = 7;
@@ -60,6 +62,26 @@ public class MenuDisplayLayerBuilder {
 		control.addValueBinding(currentSlot, value, "< ON >", "<OFF >");
 		control.addRingBoolBinding(currentSlot, value);
 		control.addPressEncoderBinding(currentSlot, encIndex -> value.toggle());
+		currentSlot++;
+	}
+
+	public <T> void bindValue(final String title, final ValueObject<T> enumValue) {
+		if (currentSlot > MAX_SLOT_INDEX) {
+			return;
+		}
+		control.addNameBinding(currentSlot, new BasicStringValue(title));
+		control.addEncoderIncBinding(currentSlot, enumValue);
+		control.addDisplayValueBinding(currentSlot, enumValue);
+		currentSlot++;
+	}
+
+	public void bindValue(final String title, final IntValueObject value) {
+		if (currentSlot > MAX_SLOT_INDEX) {
+			return;
+		}
+		control.addNameBinding(currentSlot, new BasicStringValue(title));
+		control.addEncoderIncBinding(currentSlot, value);
+		control.addDisplayValueBinding(currentSlot, value);
 		currentSlot++;
 	}
 

@@ -23,6 +23,9 @@ import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
+import com.bitwig.extensions.controllers.mackie.value.IncrementalValue;
+import com.bitwig.extensions.controllers.mackie.value.IntValueObject;
+import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 import com.bitwig.extensions.framework.Layer;
 
 public class MenuModeLayerConfiguration extends LayerConfiguration {
@@ -113,6 +116,14 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
 		displayLayer.bindName(1, i, value);
 	}
 
+	public void addDisplayValueBinding(final int i, final IntValueObject value) {
+		displayLayer.bindParameterValue(i, value);
+	}
+
+	public <T> void addDisplayValueBinding(final int i, final ValueObject<T> value) {
+		displayLayer.bindParameterValue(i, value);
+	}
+
 	public void addValueBinding(final int i, final DoubleValue value, final ValueConverter converter) {
 		displayLayer.bindParameterValue(i, value, converter);
 	}
@@ -127,6 +138,15 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
 		final RelativeHardwareKnob encoder = hwControls.getEncoder(i);
 		final RelativeHardwarControlBindable incBinder = getDriver().createIncrementBinder(inc -> {
 			position.set(position.get() + inc * increment);
+		});
+		encoderLayer.bind(encoder, incBinder);
+	}
+
+	public <T> void addEncoderIncBinding(final int i, final IncrementalValue value) {
+		final MixerSectionHardware hwControls = mixControl.getHwControls();
+		final RelativeHardwareKnob encoder = hwControls.getEncoder(i);
+		final RelativeHardwarControlBindable incBinder = getDriver().createIncrementBinder(inc -> {
+			value.increment(inc);
 		});
 		encoderLayer.bind(encoder, incBinder);
 	}

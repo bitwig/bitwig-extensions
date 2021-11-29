@@ -8,6 +8,7 @@ import java.util.Map;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PlayingNote;
+import com.bitwig.extensions.controllers.mackie.NotePlayingSetup;
 import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 
 public class ScaleNoteHandler {
@@ -15,6 +16,7 @@ public class ScaleNoteHandler {
 
 	private final NoteInput noteInput;
 	private final Integer[] notesTable = new Integer[128];
+	protected final Integer[] velTable = new Integer[128];
 	private final Map<Integer, List<Integer>> notesToButtonsTable = new HashMap<>();
 
 	private final List<ValueObject<NoteState>> playing = new ArrayList<>(PLAYING_BUTTONS);
@@ -23,38 +25,39 @@ public class ScaleNoteHandler {
 
 	private boolean active;
 
-	private Scale scale = Scale.MINOR;
-	private int baseNote = 0;
-	private int octaveOffset = 3;
-	private final int layoutOffset = 3; // 4ths
+	private final NotePlayingSetup notePlaying;
 
-	public ScaleNoteHandler(final NoteInput noteInput, final CursorTrack cursorTrack) {
+	public ScaleNoteHandler(final NoteInput noteInput, final NotePlayingSetup notePlaying,
+			final CursorTrack cursorTrack) {
 		this.noteInput = noteInput;
+		this.notePlaying = notePlaying;
 		for (int i = 0; i < notesTable.length; i++) {
 			notesTable[i] = Integer.valueOf(-1);
-			notesToButtonsTable.clear();
 		}
+		notesToButtonsTable.clear();
 		noteInput.setKeyTranslationTable(notesTable);
 		for (int i = 0; i < PLAYING_BUTTONS; i++) {
 			playing.add(new ValueObject<>(NoteState.OFF));
 		}
 		cursorTrack.playingNotes().addValueObserver(this::handleNotes);
-	}
-
-	public void setScale(final Scale scale) {
-		this.scale = scale;
-	}
-
-	public void setBaseNote(final int baseNote) {
-		this.baseNote = baseNote;
-	}
-
-	public Scale getScale() {
-		return scale;
-	}
-
-	public int getBaseNote() {
-		return baseNote;
+		notePlaying.getOctaveOffset().addValueObserver((oldValue, newValue) -> {
+			applyScale();
+		});
+		notePlaying.getBaseNote().addValueObserver((oldValue, newValue) -> {
+			applyScale();
+		});
+		notePlaying.getScale().addValueObserver((oldValue, newValue) -> {
+			applyScale();
+		});
+		notePlaying.getLayoutOffset().addValueObserver((oldValue, newValue) -> {
+			applyScale();
+		});
+		notePlaying.getVelocity().addValueObserver((oldValue, newValue) -> {
+			applyVelTable();
+		});
+		for (int i = 0; i < velTable.length; i++) {
+			velTable[i] = Integer.valueOf(notePlaying.getVelocity().get());
+		}
 	}
 
 	private void handleNotes(final PlayingNote[] notes) {
@@ -82,6 +85,16 @@ public class ScaleNoteHandler {
 				}
 			}
 		}
+		noteInput.setVelocityTranslationTable(velTable);
+	}
+
+	private void applyVelTable() {
+		for (int i = 0; i < velTable.length; i++) {
+			velTable[i] = Integer.valueOf(notePlaying.getVelocity().get());
+		}
+		if (active) {
+			noteInput.setVelocityTranslationTable(velTable);
+		}
 	}
 
 	public void navigateHorizontal(final int direction, final boolean pressed) {
@@ -90,23 +103,6 @@ public class ScaleNoteHandler {
 		}
 		if (direction > 0) {
 		} else {
-		}
-	}
-
-	public void navigateVertical(final int direction, final boolean pressed) {
-		if (!pressed) {
-			return;
-		}
-		if (direction > 0) {
-			if (octaveOffset < 6) {
-				octaveOffset++;
-			}
-			applyScale();
-		} else {
-			if (octaveOffset > 0) {
-				octaveOffset--;
-			}
-			applyScale();
 		}
 	}
 
@@ -121,7 +117,11 @@ public class ScaleNoteHandler {
 		}
 		notesToButtonsTable.clear();
 
-		final int[] notes = scale.getNotes();
+		final int[] notes = notePlaying.getScale().get().getNotes();
+		final int layoutOffset = notePlaying.getLayoutOffset().get();
+		final int octaveOffset = notePlaying.getOctaveOffset().get();
+		final int baseNote = notePlaying.getBaseNote().get();
+
 		for (int padMidiNoteNr = 0; padMidiNoteNr < PLAYING_BUTTONS; padMidiNoteNr++) {
 			final int row = 3 - padMidiNoteNr / 8;
 			final int col = padMidiNoteNr % 8;
@@ -145,6 +145,12 @@ public class ScaleNoteHandler {
 				l.add(padMidiNoteNr);
 			}
 		}
+		for (int i = 0; i < PLAYING_BUTTONS; i++) {
+			if (isBaseNote[i]) {
+				playing.get(i).set(NoteState.BASENOTE);
+			}
+		}
+
 		noteInput.setKeyTranslationTable(notesTable);
 	}
 

@@ -13,7 +13,10 @@ import com.bitwig.extensions.controllers.mackie.bindings.ValueConverter;
 import com.bitwig.extensions.controllers.mackie.bindings.ValueStringConverter;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
+import com.bitwig.extensions.controllers.mackie.value.IntValueObject;
+import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class DisplayLayer extends Layer implements DisplaySource {
 	private final LcdDisplay display;
@@ -328,6 +331,26 @@ public class DisplayLayer extends Layer implements DisplaySource {
 		bottomRow.getCell(index).lastValue = converter.convert(value.get());
 	}
 
+	public void bindParameterValue(final int index, final IntValueObject value) {
+		value.addValueObserver((old, v) -> {
+			bottomRow.getCell(index).lastValue = value.displayedValue();
+			if (isActive() && !bottomRow.isFullTextMode()) {
+				display.sendToRow(this, 1, index, bottomRow.getCell(index).getDisplayValue());
+			}
+		});
+		bottomRow.getCell(index).lastValue = value.displayedValue();
+	}
+
+	public <T> void bindParameterValue(final int index, final ValueObject<T> value) {
+		value.addValueObserver((old, v) -> {
+			bottomRow.getCell(index).lastValue = value.displayedValue();
+			if (isActive() && !bottomRow.isFullTextMode()) {
+				display.sendToRow(this, 1, index, bottomRow.getCell(index).getDisplayValue());
+			}
+		});
+		bottomRow.getCell(index).lastValue = value.displayedValue();
+	}
+
 	public void bindName(final int index, final StringValue name, final ObjectProxy sourceOfExistance,
 			final String emptyText) {
 		bindName(0, index, name, sourceOfExistance, emptyText);
@@ -381,7 +404,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
 	public void bindNameTemp(final int rowIndex, final int startIndex, final int tempSpan, final StringValue name,
 			final ObjectProxy sourceOfExistance, final String emptyText) {
 		assert startIndex >= 0 && startIndex < 8;
-		assert startIndex + tempSpan < 8;
+		assert startIndex + tempSpan <= 8;
 		assert tempSpan > 0;
 
 		final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
@@ -399,9 +422,10 @@ public class DisplayLayer extends Layer implements DisplaySource {
 	public void bindName(final int rowIndex, final int startIndex, final int span, final StringValue name,
 			final String enclosing) {
 		assert startIndex >= 0 && startIndex < 8;
-		assert startIndex + span < 8;
+		assert startIndex + span <= 8;
 		assert span > 0;
 
+		RemoteConsole.out.println("bind name {} {}", startIndex, span);
 		final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
 		final DisplayCell cell = row.getCell(startIndex);
 		final CellExpander expander = new CellExpander(cell, row, span, name, null, "", enclosing, null);
@@ -415,7 +439,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
 	public void bindName(final int rowIndex, final int startIndex, final int span, final StringValue name,
 			final ObjectProxy sourceOfExistance, final String emptyText, final char enclosing) {
 		assert startIndex >= 0 && startIndex < 8;
-		assert startIndex + span < 8;
+		assert startIndex + span <= 8;
 		assert span > 0;
 
 		final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;

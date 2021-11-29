@@ -13,6 +13,7 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arranger;
 import com.bitwig.extension.controller.api.BeatTimeFormatter;
@@ -123,6 +124,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 	private DrumNoteHandler noteHandler;
 	private MotorFader masterFaderResponse;
 	private final Map<BasicNoteOnAssignment, Integer> assignOverrides;
+	private NotePlayingSetup notePlayingSetup;
 
 	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
 			final Map<BasicNoteOnAssignment, Integer> assignOverrides, final int extenders) {
@@ -142,6 +144,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 		layers = new Layers(this);
 		mainLayer = new Layer(layers, "MainLayer");
 		shiftLayer = new Layer(layers, "GlobalShiftLayer");
+		notePlayingSetup = new NotePlayingSetup();
 
 		for (int i = 0; i < lightStatusMap.length; i++) {
 			lightStatusMap[i] = -1;
@@ -173,14 +176,14 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		setUpMidiSysExCommands();
 		mainLayer.activate();
-		host.showPopupNotification(" Initialized Mackie MCU Pro");
+		host.showPopupNotification(" Initialized Mackie MCU Pro v1.0a");
 		sections.forEach(MixControl::resetFaders);
 		sections.forEach(MixControl::clearAll);
 		ledDisplay.refreschMode();
 		host.scheduleTask(this::handlePing, 100);
 //		final Action[] as = application.getActions();
 //		for (final Action action : as) {
-//			RemoteConsole.out.println("ACTION > [{}]", action.getId());
+//			host.println("ACTION > [ " + action.getId() + "]");
 //		}
 	}
 
@@ -443,6 +446,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		initCycleSection();
 		initClickSection();
+		initKeyboardSection();
 
 		final HardwareButton autoWriteButton = createButton(BasicNoteOnAssignment.AUTO_READ_OFF);
 		mainLayer.bindPressed(autoWriteButton, transport.isArrangerAutomationWriteEnabled());
@@ -529,6 +533,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 	}
 
 	private void initUndoRedo() {
+		final HardwareButton saveButton = createHoldButton(BasicNoteOnAssignment.SAVE);
+		final Action saveAction = application.getAction("Save");
+		mainLayer.bindPressed(saveButton, saveAction);
+
 		final HardwareButton undoButton = createPressButton(BasicNoteOnAssignment.UNDO);
 		final OnOffHardwareLight undoLight = (OnOffHardwareLight) undoButton.backgroundLight();
 		application.canRedo().markInterested();
@@ -836,26 +844,77 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 		createGlobalViewButton(BasicNoteOnAssignment.GLOBAL_VIEW);
 		createGroupModeButton(BasicNoteOnAssignment.GROUP, buttonViewMode);
-		// createNoteModeButton(NoteOnAssignment.GV_USER, buttonViewMode);
+
+		final Action inspectAction = application.getAction("focus_or_toggle_inspector");
+		final Action detailAction = application.getAction("focus_or_toggle_detail_editor");
+		final Action deviceAction = application.getAction("focus_or_toggle_device_panel");
+		final Action rndAction = application.getAction("reverse");
 
 		initFButton(0, BasicNoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
 		initFButton(1, BasicNoteOnAssignment.F2, marker, cueMarkerBank,
 				() -> application.setPanelLayout(currentLayoutType.other().getName()));
-		initFButton(2, BasicNoteOnAssignment.F3, marker, cueMarkerBank, () -> {
-		}); // application.navigateToParentTrackGroup()
+		initFButton(2, BasicNoteOnAssignment.F3, marker, cueMarkerBank, () -> transport.resetAutomationOverrides()); // application.navigateToParentTrackGroup()
 		initFButton(3, BasicNoteOnAssignment.F4, marker, cueMarkerBank, () -> {
+			deviceAction.invoke();
+			detailAction.invoke();
 		});
 		initFButton(4, BasicNoteOnAssignment.F5, marker, cueMarkerBank, () -> {
+			inspectAction.invoke();
+			deviceAction.invoke();
 		});
 		initFButton(5, BasicNoteOnAssignment.F6, marker, cueMarkerBank, () -> {
 		});
 		initFButton(6, BasicNoteOnAssignment.F7, marker, cueMarkerBank, () -> {
+			arranger.isPlaybackFollowEnabled().toggle();
 		});
 		initFButton(7, BasicNoteOnAssignment.F8, marker, cueMarkerBank, () -> {
+			deviceAction.invoke();
+			detailAction.invoke();
+			application.selectAll();
+			rndAction.invoke();
 		});
 
 		application.panelLayout().addValueObserver(v -> {
 			currentLayoutType = LayoutType.toType(v);
+		});
+	}
+
+	private void initKeyboardSection() {
+		// createNoteModeButton(BasicNoteOnAssignment.NUDGE, buttonViewMode);
+		final NoteAssignment assignment = get(BasicNoteOnAssignment.NUDGE);
+		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+		assignment.holdActionAssign(midiIn, button);
+		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
+		led.onUpdateHardware(() -> {
+			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
+		});
+		button.setBackgroundLight(led);
+		final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("KEYBOARD_MENU", mainSection);
+		final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
+		builder.bindValue("Base.N", notePlayingSetup.getBaseNote());
+		builder.bindValue("Scale", notePlayingSetup.getScale());
+		builder.bindValue("Octave", notePlayingSetup.getOctaveOffset());
+		builder.bindValue("Velocity", notePlayingSetup.getVelocity());
+		builder.fillRest();
+		mainLayer.bind(() -> buttonViewMode.get() == ButtonViewState.NOTE_PLAY, led);
+		mainLayer.bindPressed(button, () -> {
+			holdState.enter(mainSection.getCurrentConfiguration(), button.getName());
+			mainSection.setConfiguration(menu);
+		});
+
+		mainLayer.bindReleased(button, () -> {
+			final LayerConfiguration layer = holdState.endHold();
+			if (layer != null) {
+				mainSection.setConfiguration(layer);
+			}
+			if (holdState.exit()) {
+				final ButtonViewState current = buttonViewMode.get();
+				if (current == ButtonViewState.NOTE_PLAY) {
+					buttonViewMode.set(ButtonViewState.MIXER);
+				} else {
+					buttonViewMode.set(ButtonViewState.NOTE_PLAY);
+				}
+			}
 		});
 	}
 
@@ -1028,28 +1087,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 		return previousOverallMode;
 	}
 
-	public void createNoteModeButton(final BasicNoteOnAssignment assignConst,
-			final ValueObject<ButtonViewState> valueState) {
-		final NoteAssignment assignment = get(assignConst);
-		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
-		assignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
-		button.setBackgroundLight(led);
-		mainLayer.bind(() -> buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH, led);
-		mainLayer.bindPressed(button, () -> {
-			final ButtonViewState current = valueState.get();
-			switch (current) {
-			case NOTE_PLAY:
-				valueState.set(ButtonViewState.MIXER);
-				break;
-			default:
-				valueState.set(ButtonViewState.NOTE_PLAY);
-				break;
-			}
-		});
-
-	}
-
 	public void createGroupModeButton(final BasicNoteOnAssignment assignConst,
 			final ValueObject<ButtonViewState> valueState) {
 		final NoteAssignment assignment = get(assignConst);
@@ -1186,6 +1223,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 	public DrumNoteHandler getNoteHandler() {
 		return noteHandler;
+	}
+
+	public NotePlayingSetup getNotePlayingSetup() {
+		return notePlayingSetup;
 	}
 
 	public NoteAssignment get(final BasicNoteOnAssignment assignment) {
