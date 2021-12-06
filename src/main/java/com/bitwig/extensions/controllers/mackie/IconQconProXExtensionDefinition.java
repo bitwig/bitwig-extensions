@@ -9,34 +9,52 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class IconQconProG2ExtensionDefinition extends ControllerExtensionDefinition {
-   private static final UUID DRIVER_ID = UUID.fromString("22035e35-4266-47f7-a364-f9c7284c226d");
+public class IconQconProXExtensionDefinition extends ControllerExtensionDefinition {
+   private static final UUID DRIVER_ID = UUID.fromString("d32bead3-83e4-4dc2-90f8-eb3a1a847b5d");
 
    private static final int MCU_API_VERSION = 15;
    private static final String SOFTWARE_VERSION = "0.9";
-   private static final String DEVICE_NAME = "iCON Qcon Pro G2";
+   private static final String DEVICE_NAME = "iCON Qcon Pro X";
    private static final Map<BasicNoteOnAssignment, Integer> noteOverrides = new HashMap<>();
+   private static int unusedNoteNo = 113;
 
    static {
-      IconQconProG2ExtensionDefinition.noteOverrides.put(BasicNoteOnAssignment.SHIFT, 83);
+      // DAW Mode Button => Launcher
+      overrideX(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.GLOBAL_VIEW);
+      // DVR Button => Keyboard Mode
+      override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.REPLACE);
 
-      IconQconProG2ExtensionDefinition.noteOverrides.put(BasicNoteOnAssignment.ENTER, 110); // To nowhere for now
+      override(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
+      override(BasicNoteOnAssignment.GLOBAL_VIEW, BasicNoteOnAssignment.TRIM);
+
+      overrideX(BasicNoteOnAssignment.DROP, BasicNoteOnAssignment.SAVE);
+      overrideX(BasicNoteOnAssignment.REPLACE, BasicNoteOnAssignment.CANCEL);
+      overrideX(BasicNoteOnAssignment.UNDO, BasicNoteOnAssignment.ENTER);
+   }
+
+   private static void override(final BasicNoteOnAssignment origFunction, final BasicNoteOnAssignment takeOver) {
+      noteOverrides.put(origFunction, takeOver.getNoteNo());
+   }
+
+   private static void overrideX(final BasicNoteOnAssignment origFunction, final BasicNoteOnAssignment takeOver) {
+      noteOverrides.put(origFunction, takeOver.getNoteNo());
+      noteOverrides.put(takeOver, unusedNoteNo++);
    }
 
    protected int nrOfExtenders;
    protected String[] inMidiPortNames;
    protected String[] outMidiPortNames;
 
-   public IconQconProG2ExtensionDefinition() {
+   public IconQconProXExtensionDefinition() {
       this(0);
    }
 
-   public IconQconProG2ExtensionDefinition(final int nrOfExtenders) {
+   public IconQconProXExtensionDefinition(final int nrOfExtenders) {
       this.nrOfExtenders = nrOfExtenders;
       inMidiPortNames = new String[nrOfExtenders + 1];
       outMidiPortNames = new String[nrOfExtenders + 1];
-      inMidiPortNames[0] = "iCON QCON Pro G2 V1.00";
-      outMidiPortNames[0] = "iCON QCON Pro G2 V1.00";
+      inMidiPortNames[0] = "iCON QCON Pro X V2.07";
+      outMidiPortNames[0] = "iCON QCON Pro X V2.07";
       for (int i = 1; i < nrOfExtenders + 1; i++) {
          inMidiPortNames[i] = String.format("iCON QCON Ex%d G2 V1.00", i);
          outMidiPortNames[i] = String.format("iCON QCON Ex%d G2 V1.00", i);
@@ -46,9 +64,9 @@ public class IconQconProG2ExtensionDefinition extends ControllerExtensionDefinit
    @Override
    public String getName() {
       if (nrOfExtenders == 0) {
-         return IconQconProG2ExtensionDefinition.DEVICE_NAME;
+         return IconQconProXExtensionDefinition.DEVICE_NAME;
       }
-      return String.format("%s +%d EXTENDER", IconQconProG2ExtensionDefinition.DEVICE_NAME, nrOfExtenders);
+      return String.format("%s +%d EXTENDER", IconQconProXExtensionDefinition.DEVICE_NAME, nrOfExtenders);
    }
 
    @Override
@@ -58,12 +76,12 @@ public class IconQconProG2ExtensionDefinition extends ControllerExtensionDefinit
 
    @Override
    public String getVersion() {
-      return IconQconProG2ExtensionDefinition.SOFTWARE_VERSION;
+      return IconQconProXExtensionDefinition.SOFTWARE_VERSION;
    }
 
    @Override
    public UUID getId() {
-      return IconQconProG2ExtensionDefinition.DRIVER_ID;
+      return IconQconProXExtensionDefinition.DRIVER_ID;
    }
 
    @Override
@@ -73,12 +91,12 @@ public class IconQconProG2ExtensionDefinition extends ControllerExtensionDefinit
 
    @Override
    public String getHardwareModel() {
-      return "iCON Qcon Pro G2";
+      return "iCON Qcon Pro X";
    }
 
    @Override
    public int getRequiredAPIVersion() {
-      return IconQconProG2ExtensionDefinition.MCU_API_VERSION;
+      return IconQconProXExtensionDefinition.MCU_API_VERSION;
    }
 
    @Override
@@ -115,8 +133,7 @@ public class IconQconProG2ExtensionDefinition extends ControllerExtensionDefinit
 
    @Override
    public MackieMcuProExtension createInstance(final ControllerHost host) {
-      new HashMap<>();
       return new MackieMcuProExtension(this, host,
-         new ControllerConfig(IconQconProG2ExtensionDefinition.noteOverrides, false), nrOfExtenders);
+         new ControllerConfig(IconQconProXExtensionDefinition.noteOverrides, true), nrOfExtenders);
    }
 }

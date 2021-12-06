@@ -148,6 +148,8 @@ public class ScaleNoteHandler {
 		for (int i = 0; i < PLAYING_BUTTONS; i++) {
 			if (isBaseNote[i]) {
 				playing.get(i).set(NoteState.BASENOTE);
+			} else {
+				playing.get(i).set(NoteState.OFF);
 			}
 		}
 

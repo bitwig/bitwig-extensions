@@ -126,7 +126,6 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
 
 		final TrackBank singleTrackBank = getHost().createTrackBank(1, 0, 1);
 		singleTrackBank.scrollPosition().markInterested();
-
 		cursorTrack = getHost().createCursorTrack(1, 1);
 		singleTrackBank.followCursorTrack(cursorTrack);
 

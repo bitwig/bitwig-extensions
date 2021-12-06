@@ -12,7 +12,7 @@ public class NotePlayingSetup {
 			NotePlayingSetup::convert);
 	private final IntValueObject baseNote = new IntValueObject(0, 0, 11, v -> NOTES[v]);
 	private final IntValueObject octaveOffset = new IntValueObject(4, 0, 6);
-	private final IntValueObject layoutOffset = new IntValueObject(4, 3, 4);
+	private final IntValueObject layoutOffset = new IntValueObject(3, 3, 4);
 	private final IntValueObject velocity = new IntValueObject(100, 0, 127);
 
 	public NotePlayingSetup() {

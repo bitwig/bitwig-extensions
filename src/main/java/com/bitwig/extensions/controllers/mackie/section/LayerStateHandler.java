@@ -5,9 +5,13 @@ import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.framework.Layer;
 
 public interface LayerStateHandler {
-	Layer getButtonLayer();
+   Layer getButtonLayer();
 
-	LayerConfiguration getCurrentConfig();
+   LayerConfiguration getCurrentConfig();
 
-	DisplayLayer getActiveDisplayLayer();
+   DisplayLayer getActiveDisplayLayer();
+
+   DisplayLayer getBottomDisplayLayer();
+
+   boolean hasBottomDisplay();
 }

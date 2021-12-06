@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.mackie.configurations;
 
-import java.util.function.IntConsumer;
-
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
@@ -12,120 +10,124 @@ import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
 
+import java.util.function.IntConsumer;
+
 public abstract class LayerConfiguration {
-	private final String name;
-	protected final MixControl mixControl;
-	protected IntConsumer navigateHorizontalHandler;
-	protected IntConsumer navigateVerticalHandler;
-	private boolean active;
+   private final String name;
+   protected final MixControl mixControl;
+   protected IntConsumer navigateHorizontalHandler;
+   protected IntConsumer navigateVerticalHandler;
+   private boolean active;
 
-	public LayerConfiguration(final String name, final MixControl mixControl) {
-		this.name = name;
-		this.mixControl = mixControl;
-	}
+   public LayerConfiguration(final String name, final MixControl mixControl) {
+      this.name = name;
+      this.mixControl = mixControl;
+   }
 
-	public MixControl getMixControl() {
-		return mixControl;
-	}
+   public MixControl getMixControl() {
+      return mixControl;
+   }
 
-	public MackieMcuProExtension getDriver() {
-		return mixControl.getDriver();
-	}
+   public MackieMcuProExtension getDriver() {
+      return mixControl.getDriver();
+   }
 
-	public void setNavigateHorizontalHandler(final IntConsumer navigateHorizontalHandler) {
-		this.navigateHorizontalHandler = navigateHorizontalHandler;
-	}
+   public void setNavigateHorizontalHandler(final IntConsumer navigateHorizontalHandler) {
+      this.navigateHorizontalHandler = navigateHorizontalHandler;
+   }
 
-	public void setNavigateVerticalHandler(final IntConsumer navigateVerticalHandler) {
-		this.navigateVerticalHandler = navigateVerticalHandler;
-	}
+   public void setNavigateVerticalHandler(final IntConsumer navigateVerticalHandler) {
+      this.navigateVerticalHandler = navigateVerticalHandler;
+   }
 
-	// protected abstract void navigateLeftRight(int direction);
+   // protected abstract void navigateLeftRight(int direction);
 
-	public abstract Layer getFaderLayer();
+   public abstract Layer getFaderLayer();
 
-	public abstract EncoderLayer getEncoderLayer();
+   public abstract EncoderLayer getEncoderLayer();
 
-	/**
-	 * Determine if changing the modifier button state should have any effect on the
-	 * layout.
-	 *
-	 * @param modvalue the modifier value
-	 * @return true if change of modifier should lead to change of display
-	 */
-	public boolean applyModifier(final ModifierValueObject modvalue) {
-		return false;
-	}
+   /**
+    * Determine if changing the modifier button state should have any effect on the
+    * layout.
+    *
+    * @param modvalue the modifier value
+    * @return true if change of modifier should lead to change of display
+    */
+   public boolean applyModifier(final ModifierValueObject modvalue) {
+      return false;
+   }
 
-	public Layer getButtonLayer() {
-		return this.mixControl.getActiveMixGroup().getMixerButtonLayer();
-	}
+   public Layer getButtonLayer() {
+      return mixControl.getActiveMixGroup().getMixerButtonLayer();
+   }
 
-	public abstract DisplayLayer getDisplayLayer(int which);
+   public abstract DisplayLayer getDisplayLayer(int which);
 
-	public DeviceManager getDeviceManager() {
-		return null;
-	}
+   public abstract DisplayLayer getBottomDisplayLayer(int which);
 
-	public String getName() {
-		return name;
-	}
+   public DeviceManager getDeviceManager() {
+      return null;
+   }
 
-	public void navigateHorizontal(final int direction) {
-		if (navigateHorizontalHandler != null) {
-			navigateHorizontalHandler.accept(direction);
-		}
-	}
+   public String getName() {
+      return name;
+   }
 
-	public void navigateVertical(final int direction) {
-		if (navigateVerticalHandler != null) {
-			navigateVerticalHandler.accept(direction);
-		}
-	}
+   public void navigateHorizontal(final int direction) {
+      if (navigateHorizontalHandler != null) {
+         navigateHorizontalHandler.accept(direction);
+      }
+   }
 
-	public boolean enableInfo(final InfoSource navVertical) {
-		return false;
-	}
+   public void navigateVertical(final int direction) {
+      if (navigateVerticalHandler != null) {
+         navigateVerticalHandler.accept(direction);
+      }
+   }
 
-	public boolean disableInfo() {
-		return false;
-	}
+   public boolean enableInfo(final InfoSource navVertical) {
+      return false;
+   }
 
-	/**
-	 * Let the view react to NAME-VALUE being pressed or released.
-	 *
-	 * @param pressed NAME-VALUE being pressed(=true) or released(=false)
-	 * @return if this notification had any effect, return false if nothing happens
-	 */
-	public boolean notifyDisplayName(final boolean pressed) {
-		return false;
-	}
+   public boolean disableInfo() {
+      return false;
+   }
 
-	public void setActive(final boolean active) {
-		if (active == this.active) {
-			return;
-		}
-		this.active = active;
-		if (this.active) {
-			doActivate();
-		} else {
-			doDeactivate();
-		}
-	}
+   /**
+    * Let the view react to NAME-VALUE being pressed or released.
+    *
+    * @param pressed NAME-VALUE being pressed(=true) or released(=false)
+    * @return if this notification had any effect, return false if nothing happens
+    */
+   public boolean notifyDisplayName(final boolean pressed) {
+      return false;
+   }
 
-	public boolean isActive() {
-		return active;
-	}
+   public void setActive(final boolean active) {
+      if (active == this.active) {
+         return;
+      }
+      this.active = active;
+      if (this.active) {
+         doActivate();
+      } else {
+         doDeactivate();
+      }
+   }
 
-	public void doActivate() {
+   public boolean isActive() {
+      return active;
+   }
 
-	}
+   public void doActivate() {
 
-	public void doDeactivate() {
+   }
 
-	}
+   public void doDeactivate() {
 
-	public void setCurrentFollower(final DeviceTypeFollower follower) {
-	}
+   }
+
+   public void setCurrentFollower(final DeviceTypeFollower follower) {
+   }
 
 }
