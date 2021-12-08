@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.mackie.configurations;
 
+import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.bindings.*;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
@@ -64,7 +65,7 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
 
    @Override
    public DisplayLayer getBottomDisplayLayer(final int which) {
-      return null;
+      return getMixControl().getActiveMixGroup().getDisplayConfiguration(ParamElement.VOLUME);
    }
 
    public void addNameBinding(final int index, final int span, final StringValue name) {
@@ -80,14 +81,33 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
       displayLayer.bindTitle(index, nameSource, source, emptyValue);
    }
 
-   public void addPressEncoderBinding(final int index, final IntConsumer pressaction) {
+   public void addPressEncoderBinding(final int index, final IntConsumer pressAction, final boolean feedback) {
       final MixerSectionHardware hwControls = mixControl.getHwControls();
 
-      encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(index),
-         hwControls.createAction(() -> pressaction.accept(index))));
+      final HardwareButton encoderPress = hwControls.getEncoderPress(index);
+      encoderLayer.addBinding(
+         new ButtonBinding(encoderPress, hwControls.createAction(() -> pressAction.accept(index))));
+      if (feedback) {
+         final RingDisplayBoolBinding ringBinding = hwControls.createRingDisplayBinding(index, encoderPress.isPressed(),
+            RingDisplayType.FILL_LR_0);
+         encoderLayer.addBinding(ringBinding);
+      }
    }
 
+   public void addPressEncoderBinding(final int index, final BooleanValueChangedCallback callback) {
+      final MixerSectionHardware hwControls = mixControl.getHwControls();
+      final HardwareButton encoderPress = hwControls.getEncoderPress(index);
+      encoderLayer.addBinding(
+         new ButtonBinding(encoderPress, hwControls.createAction(() -> callback.valueChanged(true))));
+   }
+
+
    public void addRingBoolBinding(final int index, final BooleanValue value) {
+      final MixerSectionHardware hwControls = mixControl.getHwControls();
+      encoderLayer.addBinding(hwControls.createRingDisplayBinding(index, value, RingDisplayType.FILL_LR_0));
+   }
+
+   public void addRingBoolBinding(final int index, final Parameter value) {
       final MixerSectionHardware hwControls = mixControl.getHwControls();
       encoderLayer.addBinding(hwControls.createRingDisplayBinding(index, value, RingDisplayType.FILL_LR_0));
    }
@@ -132,36 +152,43 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
       displayLayer.bindParameterValue(i, value, converter);
    }
 
+   public void addValueBinding(final int i, final SettableRangedValue value, final ValueConverter converter) {
+      displayLayer.bindValue(i, value, converter);
+   }
+
    public void addValueBinding(final int i, final BooleanValue value, final String trueString,
                                final String falseString) {
       displayLayer.bindBool(i, value, trueString, falseString);
+   }
+
+   public void addEncoderIncBinding(final int i, final IntConsumer intHandler) {
+      final MixerSectionHardware hwControls = mixControl.getHwControls();
+      final RelativeHardwareKnob encoder = hwControls.getEncoder(i);
+      final RelativeHardwarControlBindable incBinder = getDriver().createIncrementBinder(intHandler);
+      encoderLayer.bind(encoder, incBinder);
    }
 
    public void addEncoderIncBinding(final int i, final SettableBeatTimeValue position, final double increment,
                                     final double shiftIncrement) {
       final MixerSectionHardware hwControls = mixControl.getHwControls();
       final RelativeHardwareKnob encoder = hwControls.getEncoder(i);
-      final RelativeHardwarControlBindable incBinder = getDriver().createIncrementBinder(inc -> {
-         position.set(position.get() + inc * (modifier.isShiftSet() ? shiftIncrement : increment));
-      });
+      final RelativeHardwarControlBindable incBinder = getDriver().createIncrementBinder(
+         inc -> position.set(position.get() + inc * (modifier.isShiftSet() ? shiftIncrement : increment)));
       encoderLayer.bind(encoder, incBinder);
    }
 
    public void addEncoderIncBinding(final int i, final SettableEnumValue value, final EnumValueSetting values) {
       final MixerSectionHardware hwControls = mixControl.getHwControls();
       final RelativeHardwareKnob encoder = hwControls.getEncoder(i);
-      final RelativeHardwarControlBindable incBinder = getDriver().createIncrementBinder(inc -> {
-         values.increment(value, inc);
-      });
+      final RelativeHardwarControlBindable incBinder = getDriver().createIncrementBinder(
+         inc -> values.increment(value, inc));
       encoderLayer.bind(encoder, incBinder);
    }
 
    public <T> void addEncoderIncBinding(final int i, final IncrementalValue value) {
       final MixerSectionHardware hwControls = mixControl.getHwControls();
       final RelativeHardwareKnob encoder = hwControls.getEncoder(i);
-      final RelativeHardwarControlBindable incBinder = getDriver().createIncrementBinder(inc -> {
-         value.increment(inc);
-      });
+      final RelativeHardwarControlBindable incBinder = getDriver().createIncrementBinder(inc -> value.increment(inc));
       encoderLayer.bind(encoder, incBinder);
    }
 
@@ -170,6 +197,7 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
       final RelativeHardwareKnob encoder = hwControls.getEncoder(i);
       final ResetableRelativeValueBinding absoluteEncoderBinding = new ResetableRelativeValueBinding(encoder, value,
          sensitivity);
+      encoderLayer.setEncoderMode(EncoderMode.ACCELERATED);
       encoderLayer.addBinding(absoluteEncoderBinding);
       final RingDisplay ringDisplay = hwControls.getRingDisplay(i);
       final RingDisplayRangedValueBinding ringBinding = new RingDisplayRangedValueBinding(value, ringDisplay,
@@ -185,4 +213,11 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
       encoderLayer.addBinding(ringBinding);
    }
 
+   public void addRingBinding(final int i, final SettableRangedValue value) {
+      final MixerSectionHardware hwControls = mixControl.getHwControls();
+      final RingDisplay ringDisplay = hwControls.getRingDisplay(i);
+      final RingDisplayRangedValueBinding binding = new RingDisplayRangedValueBinding(value, ringDisplay,
+         RingDisplayType.FILL_LR_0);
+      encoderLayer.addBinding(binding);
+   }
 }

@@ -15,6 +15,7 @@ import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class GlovalViewLayerConfiguration extends LayerConfiguration {
    private final EncoderLayer encoderLayer;
@@ -62,6 +63,7 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
    @Override
    public DisplayLayer getDisplayLayer(final int which) {
       if (showTrackNames) {
+         RemoteConsole.out.println(" ACCessing VOULUME ");
          return getMixControl().getActiveMixGroup().getDisplayConfiguration(ParamElement.VOLUME);
       }
       return displayLayer;
@@ -69,7 +71,7 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
 
    @Override
    public DisplayLayer getBottomDisplayLayer(final int which) {
-      return null;
+      return getMixControl().getActiveMixGroup().getDisplayConfiguration(ParamElement.VOLUME);
    }
 
    public void notifyBlink(final int ticks) {
@@ -149,11 +151,7 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
          return false;
       }
       if (track.isGroupExpanded().get()) {
-         if (blinkTicks % 4 == 0) {
-            return false;
-         } else {
-            return true;
-         }
+         return blinkTicks % 4 != 0;
       }
       return true;
    }

@@ -18,7 +18,7 @@ import com.bitwig.extensions.framework.Layer;
 public class BrowserConfiguration extends LayerConfiguration {
 
    public enum Type {
-      DEVICE, PRESET;
+      DEVICE, PRESET
    }
 
    private final PopupBrowser browser;
@@ -30,17 +30,17 @@ public class BrowserConfiguration extends LayerConfiguration {
    private final CursorBrowserFilterItem categoryItem;
    private final CursorBrowserFilterItem tagItem;
    private final CursorBrowserFilterItem fileTypeItem;
-   private CursorBrowserFilterItem deviceTypeItem;
+   private final CursorBrowserFilterItem deviceTypeItem;
    // private CursorBrowserFilterItem deviceItem;
    private FilterLayerConfig currentConfig;
 
-   private FilterLayerConfig shiftConfig;
-   private FilterLayerConfig deviceConfig;
-   private FilterLayerConfig presetConfig;
-   private CursorBrowserResultItem resultCursorItem;
-   private StringIntValueObject resultValue;
-   private CursorBrowserFilterItem creatorItem;
-   private CursorBrowserFilterItem locationItem;
+   private final FilterLayerConfig shiftConfig;
+   private final FilterLayerConfig deviceConfig;
+   private final FilterLayerConfig presetConfig;
+   private final CursorBrowserResultItem resultCursorItem;
+   private final StringIntValueObject resultValue;
+   private final CursorBrowserFilterItem creatorItem;
+   private final CursorBrowserFilterItem locationItem;
 
    static class FilterLayerConfig {
       private final EncoderLayer encoderLayer;
@@ -193,8 +193,8 @@ public class BrowserConfiguration extends LayerConfiguration {
       encoderLayer.addBinding(
          new ButtonBinding(hwControls.getEncoderPress(1), hwControls.createAction(() -> advanceContent(1))));
       displayLayer.bindTitle(0, 5, new CombinedStringValueObject("<Cncl>"));
-      final HardwareActionBindable cancelAction = hwControls.createAction(() -> browser.cancel());
-      final HardwareActionBindable commitAction = hwControls.createAction(() -> browser.commit());
+      final HardwareActionBindable cancelAction = hwControls.createAction(browser::cancel);
+      final HardwareActionBindable commitAction = hwControls.createAction(browser::commit);
 
       encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(5), cancelAction));
       encoderLayer.bindPressed(cancelButton, cancelAction);
@@ -305,6 +305,6 @@ public class BrowserConfiguration extends LayerConfiguration {
 
    @Override
    public DisplayLayer getBottomDisplayLayer(final int which) {
-      return null;
+      return getMixControl().getActiveMixGroup().getDisplayConfiguration(ParamElement.VOLUME);
    }
 }

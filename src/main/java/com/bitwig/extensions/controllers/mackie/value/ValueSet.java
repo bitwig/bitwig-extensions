@@ -1,16 +1,21 @@
 package com.bitwig.extensions.controllers.mackie.value;
 
-import com.bitwig.extension.callback.DoubleValueChangedCallback;
-import com.bitwig.extension.controller.api.SettableDoubleValue;
+import com.bitwig.extension.callback.StringValueChangedCallback;
+import com.bitwig.extension.controller.api.StringValue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ValueSet implements IncrementalValue, SettableDoubleValue {
-   private double value;
+public class ValueSet implements IncrementalValue, StringValue {
    private int currentIndex = 0;
-   private List<DoubleValueChangedCallback> listeners;
+   private List<StringValueChangedCallback> listeners;
    private List<ValueString> values;
+
+   {
+      values = new ArrayList<>();
+      listeners = new ArrayList<>();
+   }
+
 
    private static class ValueString {
       private double value;
@@ -22,28 +27,49 @@ public class ValueSet implements IncrementalValue, SettableDoubleValue {
       }
    }
 
-   {
-      values = new ArrayList<>();
-      listeners = new ArrayList<>();
+   @Override
+   public void addValueObserver(final StringValueChangedCallback callback) {
+      listeners.add(callback);
    }
+
 
    public ValueSet add(final String valStr, final double value) {
       values.add(new ValueString(value, valStr));
       return this;
    }
 
+   public ValueSet select(final int i) {
+      if (i >= 0 && i < values.size()) {
+         currentIndex = i;
+      }
+      return this;
+   }
+
    @Override
    public void increment(final int inc) {
+      select(currentIndex + inc);
+      for (final StringValueChangedCallback listener : listeners) {
+         listener.valueChanged(values.get(currentIndex).representation);
+      }
    }
 
    @Override
    public String displayedValue() {
-      return null;
+      return values.get(currentIndex).representation;
    }
 
    @Override
-   public double get() {
-      return value;
+   public String get() {
+      return values.get(currentIndex).representation;
+   }
+
+   public double getValue() {
+      return values.get(currentIndex).value;
+   }
+
+   @Override
+   public String getLimited(final int maxLength) {
+      return values.get(currentIndex).representation;
    }
 
    @Override
@@ -51,13 +77,8 @@ public class ValueSet implements IncrementalValue, SettableDoubleValue {
    }
 
    @Override
-   public void addValueObserver(final DoubleValueChangedCallback callback) {
-      listeners.add(callback);
-   }
-
-   @Override
    public boolean isSubscribed() {
-      return !listeners.isEmpty();
+      return false;
    }
 
    @Override
@@ -72,18 +93,4 @@ public class ValueSet implements IncrementalValue, SettableDoubleValue {
    public void unsubscribe() {
    }
 
-   @Override
-   public void set(final double value) {
-      if (this.value != value) {
-         this.value = value;
-         for (final DoubleValueChangedCallback listener : listeners) {
-            listener.valueChanged(value);
-         }
-      }
-   }
-
-   @Override
-   public void inc(final double amount) {
-      set(value + amount);
-   }
 }

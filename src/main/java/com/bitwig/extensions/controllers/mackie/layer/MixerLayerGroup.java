@@ -4,6 +4,7 @@ import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
+import com.bitwig.extensions.controllers.mackie.display.MotorSlider;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
@@ -34,15 +35,17 @@ public class MixerLayerGroup {
    private final DisplayLayer volumeDisplayConfiguration;
    private final DisplayLayer panDisplayConfiguration;
    private final DisplayLayer sendDisplayConfiguration;
-   private final DisplayLayer sendDisplayAltConfiguration;
-   private DisplayLayer activeSendDisplayConfig;
+
+
+   private final DisplayLayer activeSendDisplayConfig;
+   private final DisplayLayer activePanDisplayConfig;
 
    public MixerLayerGroup(final String name, final MixControl control) {
       final int sectionIndex = control.getHwControls().getSectionIndex();
       this.control = control;
       final Layers layers = this.control.getDriver().getLayers();
 
-      mixerButtonLayer = new ButtonLayer(name, control, BasicNoteOnAssignment.REC_BASE, sectionIndex * 8);
+      mixerButtonLayer = new ButtonLayer(name, control, BasicNoteOnAssignment.REC_BASE);
 
       volumeFaderLayer = new Layer(layers, name + "_VOLUME_FADER_LAYER_" + sectionIndex);
       volumeEncoderLayer = new EncoderLayer(control, name + "_VOLUME_ENCODER_LAYER_" + sectionIndex);
@@ -60,20 +63,8 @@ public class MixerLayerGroup {
 
       panDisplayConfiguration = new DisplayLayer("MixPan", section, layers, hwControls);
       sendDisplayConfiguration = new DisplayLayer("MixSend", section, layers, hwControls);
-      sendDisplayAltConfiguration = new DisplayLayer("MixSendAlt", section, layers, hwControls);
       activeSendDisplayConfig = sendDisplayConfiguration;
-   }
-
-   public DisplayLayer getPanDisplayConfiguration() {
-      return panDisplayConfiguration;
-   }
-
-   public DisplayLayer getVolumeDisplayConfiguration() {
-      return volumeDisplayConfiguration;
-   }
-
-   public DisplayLayer getSendDisplayConfiguration() {
-      return sendDisplayConfiguration;
+      activePanDisplayConfig = panDisplayConfiguration;
    }
 
    public Layer getFaderLayer(final ParamElement type) {
@@ -91,7 +82,7 @@ public class MixerLayerGroup {
    public DisplayLayer getDisplayConfiguration(final ParamElement type) {
       switch (type) {
          case PAN:
-            return panDisplayConfiguration;
+            return activePanDisplayConfig;
          case SENDMIXER:
             return activeSendDisplayConfig;
          case VOLUME:
@@ -112,18 +103,6 @@ public class MixerLayerGroup {
       }
    }
 
-   public boolean notifyDisplayName(final boolean pressed) {
-      if (sendDisplayConfiguration.isActive() || sendDisplayAltConfiguration.isActive()) {
-         if (pressed) {
-            activeSendDisplayConfig = sendDisplayAltConfiguration;
-         } else {
-            activeSendDisplayConfig = sendDisplayConfiguration;
-         }
-         return true;
-      }
-      return false;
-   }
-
    public Layer getMixerButtonLayer() {
       return mixerButtonLayer;
    }
@@ -142,19 +121,40 @@ public class MixerLayerGroup {
       }
    }
 
-   public void init(final MasterTrack masterTrack) {
-      volumeDisplayConfiguration.bindTitle(8, masterTrack.name());
-      volumeDisplayConfiguration.bindDisplayParameterValue(8, masterTrack.volume(),
-         s -> StringUtil.condenseVolumenValue(s, 7));
-      panDisplayConfiguration.bindTitle(8, masterTrack.name());
-      panDisplayConfiguration.bindDisplayParameterValue(8, masterTrack.volume(),
-         s -> StringUtil.condenseVolumenValue(s, 7));
-      sendDisplayConfiguration.bindTitle(8, masterTrack.name());
-      sendDisplayConfiguration.bindDisplayParameterValue(8, masterTrack.volume(),
-         s -> StringUtil.condenseVolumenValue(s, 7));
-      sendDisplayAltConfiguration.bindTitle(8, masterTrack.name());
-      sendDisplayAltConfiguration.bindDisplayParameterValue(8, masterTrack.volume(),
-         s -> StringUtil.condenseVolumenValue(s, 7));
+   public void initMainSlider(final Track mainTrack, final MotorSlider slider) {
+
+      slider.bindParameter(volumeFaderLayer, mainTrack.volume());
+      slider.bindParameter(panFaderLayer, mainTrack.volume());
+      slider.bindParameter(sendFaderLayer, mainTrack.volume());
+
+      final boolean hasLower = control.getDriver().getControllerConfig().hasLowerDisplay();
+
+      if (hasLower) {
+         volumeDisplayConfiguration.bindTitle(8, mainTrack.name());
+         volumeDisplayConfiguration.bindDisplayParameterValue(8, mainTrack.volume(),
+            s -> StringUtil.condenseVolumenValue(s, 7));
+         panDisplayConfiguration.bindTitle(8, mainTrack.name());
+         panDisplayConfiguration.bindDisplayParameterValue(8, mainTrack.volume(),
+            s -> StringUtil.condenseVolumenValue(s, 7));
+         sendDisplayConfiguration.bindTitle(8, mainTrack.name());
+         sendDisplayConfiguration.bindDisplayParameterValue(8, mainTrack.volume(),
+            s -> StringUtil.condenseVolumenValue(s, 7));
+      }
+
+      final MixerSectionHardware hwControls = control.getHwControls();
+
+      if (control.getDriver().getControllerConfig().hasMasterVu()) {
+         mainTrack.addVuMeterObserver(14, 0, true, value -> {
+            if (volumeEncoderLayer.isActive() || volumeFaderLayer.isActive()) {
+               hwControls.sendMasterVuUpdateL(value);
+            }
+         });
+         mainTrack.addVuMeterObserver(14, 1, true, value -> {
+            if (volumeEncoderLayer.isActive() || volumeFaderLayer.isActive()) {
+               hwControls.sendMasterVuUpdateR(value);
+            }
+         });
+      }
    }
 
    public void init(final TrackBank trackBank) {
@@ -170,7 +170,7 @@ public class MixerLayerGroup {
       mixerButtonLayer.setNoteHandler(noteHandler);
       setUpChannelControl(index, hwControls, pad);
       final BooleanValueObject selectedInMixer = new BooleanValueObject();
-      pad.addIsSelectedInMixerObserver(v -> selectedInMixer.set(v));
+      pad.addIsSelectedInMixerObserver(selectedInMixer::set);
 
       hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
          () -> control.handlePadSelection(pad));
@@ -182,11 +182,9 @@ public class MixerLayerGroup {
    protected void setUpTrackControl(final int index, final Track track) {
       final MixerSectionHardware hwControls = control.getHwControls();
       setUpChannelControl(index, hwControls, track);
-      hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.REC_INDEX, track.arm(), () -> {
-         track.arm().toggle();
-      });
+      hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.REC_INDEX, track.arm(), track.arm()::toggle);
       final BooleanValueObject selectedInMixer = new BooleanValueObject();
-      track.addIsSelectedInEditorObserver(v -> selectedInMixer.set(v));
+      track.addIsSelectedInEditorObserver(selectedInMixer::set);
       hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
          () -> control.handleTrackSelection(track));
    }
@@ -211,22 +209,23 @@ public class MixerLayerGroup {
       panDisplayConfiguration.bindParameterValue(index, channel.pan(), StringUtil::panToString);
       sendDisplayConfiguration.bindDisplayParameterValue(index, focusSendItem,
          s -> StringUtil.condenseVolumenValue(s, 7));
-      sendDisplayAltConfiguration.bindDisplayParameterValue(index, focusSendItem,
-         s -> StringUtil.condenseVolumenValue(s, 7));
 
       final ChannelStateValueHandler trackNameHandler = ChannelStateValueHandler.create(channel);
       final TrackNameValueHandler sendNameHandler = new TrackNameValueHandler(focusSendItem.name());
 
-      volumeDisplayConfiguration.bindTitle(index, trackNameHandler, new BasicStringValue("Level"));
-      panDisplayConfiguration.bindTitle(index, trackNameHandler, new BasicStringValue("Pan"));
-      sendDisplayConfiguration.bindTitle(index, trackNameHandler, focusSendItem.name());
-      sendDisplayAltConfiguration.bindTitle(index, sendNameHandler);
+      volumeDisplayConfiguration.bindName(index, trackNameHandler);
+      if (control.getDriver().getControllerConfig().hasLowerDisplay()) {
+         panDisplayConfiguration.bindTitle(index, trackNameHandler, new BasicStringValue("Pan"));
+         sendDisplayConfiguration.bindTitle(index, trackNameHandler, focusSendItem.name());
+      } else {
+         panDisplayConfiguration.bindName(index, trackNameHandler, new BasicStringValue("Pan"));
+         sendDisplayConfiguration.bindName(index, trackNameHandler, focusSendItem.name());
+      }
 
       hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SOLO_INDEX, channel.solo(),
          () -> control.handleSoloAction(channel));
-      hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.MUTE_INDEX, channel.mute(), () -> {
-         channel.mute().toggle();
-      });
+      hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.MUTE_INDEX, channel.mute(),
+         () -> channel.mute().toggle());
    }
 
    private void setControlLayer(final int index, final Parameter parameter, final Layer faderLayer,

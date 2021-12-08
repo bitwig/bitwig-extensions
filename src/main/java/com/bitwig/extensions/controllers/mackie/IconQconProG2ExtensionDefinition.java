@@ -16,11 +16,34 @@ public class IconQconProG2ExtensionDefinition extends ControllerExtensionDefinit
    private static final String SOFTWARE_VERSION = "0.9";
    private static final String DEVICE_NAME = "iCON Qcon Pro G2";
    private static final Map<BasicNoteOnAssignment, Integer> noteOverrides = new HashMap<>();
+   private static int unusedNoteNo = 113;
 
    static {
-      IconQconProG2ExtensionDefinition.noteOverrides.put(BasicNoteOnAssignment.SHIFT, 83);
+      // DAW Mode Button => Launcher
+      overrideX(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.GLOBAL_VIEW);
+      // DVR Button => Keyboard Mode
+      override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.REPLACE);
 
-      IconQconProG2ExtensionDefinition.noteOverrides.put(BasicNoteOnAssignment.ENTER, 110); // To nowhere for now
+      override(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
+      override(BasicNoteOnAssignment.GLOBAL_VIEW, BasicNoteOnAssignment.LATCH);
+      override(BasicNoteOnAssignment.LATCH, BasicNoteOnAssignment.AUTO_WRITE);
+      override(BasicNoteOnAssignment.AUTO_WRITE, BasicNoteOnAssignment.TOUCH);
+      override(BasicNoteOnAssignment.TOUCH, BasicNoteOnAssignment.TRIM);
+
+      overrideX(BasicNoteOnAssignment.DROP, BasicNoteOnAssignment.SAVE);
+      override(BasicNoteOnAssignment.REPLACE, BasicNoteOnAssignment.UNDO);
+      overrideX(BasicNoteOnAssignment.UNDO, BasicNoteOnAssignment.ENTER);
+      override(BasicNoteOnAssignment.CLICK, BasicNoteOnAssignment.GROUP);
+      //overrideX(BasicNoteOnAssignment.xxx, BasicNoteOnAssignment.LATCH);
+   }
+
+   private static void override(final BasicNoteOnAssignment origFunction, final BasicNoteOnAssignment takeOver) {
+      noteOverrides.put(origFunction, takeOver.getNoteNo());
+   }
+
+   private static void overrideX(final BasicNoteOnAssignment origFunction, final BasicNoteOnAssignment takeOver) {
+      noteOverrides.put(origFunction, takeOver.getNoteNo());
+      noteOverrides.put(takeOver, unusedNoteNo++);
    }
 
    protected int nrOfExtenders;
@@ -115,8 +138,7 @@ public class IconQconProG2ExtensionDefinition extends ControllerExtensionDefinit
 
    @Override
    public MackieMcuProExtension createInstance(final ControllerHost host) {
-      new HashMap<>();
       return new MackieMcuProExtension(this, host,
-         new ControllerConfig(IconQconProG2ExtensionDefinition.noteOverrides, false), nrOfExtenders);
+         new ControllerConfig(IconQconProG2ExtensionDefinition.noteOverrides, false, true, false), nrOfExtenders);
    }
 }

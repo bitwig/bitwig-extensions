@@ -12,10 +12,10 @@ public class LayerState {
    private DisplayLayer bottomDisplayLayer;
 
    LayerState(final LayerStateHandler layerStateHandler) {
-      final LayerConfiguration initalConfig = layerStateHandler.getCurrentConfig();
+      final LayerConfiguration initialConfig = layerStateHandler.getCurrentConfig();
 
-      faderLayer = initalConfig.getFaderLayer();
-      encoderLayer = initalConfig.getEncoderLayer();
+      faderLayer = initialConfig.getFaderLayer();
+      encoderLayer = initialConfig.getEncoderLayer();
 
       buttonLayer = layerStateHandler.getButtonLayer();
 
@@ -32,6 +32,10 @@ public class LayerState {
    }
 
    public void updateState(final LayerStateHandler statHandler) {
+      updateState(statHandler, false);
+   }
+
+   public void updateState(final LayerStateHandler statHandler, final boolean forceDisplayUpdate) {
       final LayerConfiguration config = statHandler.getCurrentConfig();
       final DisplayLayer displayLayer = statHandler.getActiveDisplayLayer();
       final DisplayLayer newBottomDisplayLayer = statHandler.getBottomDisplayLayer();
@@ -40,7 +44,6 @@ public class LayerState {
       final Layer newEncoderLayer = config.getEncoderLayer();
 
       final Layer newButtonLayer = statHandler.getButtonLayer();
-
       if (!newFaderLayer.equals(faderLayer)) {
          faderLayer.setIsActive(false);
          faderLayer = newFaderLayer;
@@ -58,7 +61,7 @@ public class LayerState {
       }
 
       if (statHandler.hasBottomDisplay()) {
-         updateDisplayState(displayLayer, newBottomDisplayLayer);
+         updateDisplayState(displayLayer, newBottomDisplayLayer, forceDisplayUpdate);
       } else {
          updateDisplayState(displayLayer);
       }
@@ -73,7 +76,8 @@ public class LayerState {
       }
    }
 
-   private void updateDisplayState(final DisplayLayer newDisplayLayer, final DisplayLayer newBottomDisplayLayer) {
+   private void updateDisplayState(final DisplayLayer newDisplayLayer, final DisplayLayer newBottomDisplayLayer,
+                                   final boolean forceDisplayUpdate) {
       if (newBottomDisplayLayer == null || bottomDisplayLayer == newBottomDisplayLayer) {
          updateDisplayState(newDisplayLayer);
       } else {
@@ -87,10 +91,10 @@ public class LayerState {
          if (topDeactivate != null) {
             topDeactivate.setIsActive(false);
          }
+         displayLayer.focusOnTop();
+         bottomDisplayLayer.focusOnBottom();
          displayLayer.setIsActive(true);
          bottomDisplayLayer.setIsActive(true);
-         bottomDisplayLayer.focusOnBottom();
-         displayLayer.focusOnTop();
       }
    }
 }

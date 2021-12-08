@@ -93,7 +93,7 @@ public class MixControl implements LayerStateHandler {
 
       launchButtonLayer = new ClipLaunchButtonLayer("CLIP_LAUNCH", this);
 
-      scaleButtonLayer = new NotePlayingButtonLayer(this, 0);
+      scaleButtonLayer = new NotePlayingButtonLayer(this);
 
       currentConfiguration = panConfiguration;
       panConfiguration.setActive(true);
@@ -104,9 +104,7 @@ public class MixControl implements LayerStateHandler {
       driver.getFlipped().addValueObserver(flipped -> layerState.updateState(this));
       driver.getMixerMode().addValueObserver(this::changeMixerMode);
       driver.getButtonView().addValueObserver(this::handleButtonViewChanged);
-      driver.getTrackChannelMode().addValueObserver(trackMode -> {
-         doModeChange(driver.getVpotMode().getMode(), true);
-      });
+      driver.getTrackChannelMode().addValueObserver(trackMode -> doModeChange(driver.getVpotMode().getMode(), true));
 
       if (getHwControls().hasBottomDisplay()) {
          fadersTouched.addValueObserver(this::handleFadersTouchedBottom);
@@ -153,9 +151,7 @@ public class MixControl implements LayerStateHandler {
       if (touched) {
          layerState.updateDisplayState(getActiveDisplayLayer());
       } else {
-         driver.scheduleAction("TOUCH", 1500, () -> {
-            layerState.updateDisplayState(getActiveDisplayLayer());
-         });
+         driver.scheduleAction("TOUCH", 1500, () -> layerState.updateDisplayState(getActiveDisplayLayer()));
       }
    }
 
@@ -344,7 +340,7 @@ public class MixControl implements LayerStateHandler {
             layerState.updateState(this);
          }
       } else {
-         layerState.updateState(this);
+         layerState.updateState(this, true);
       }
    }
 
@@ -451,12 +447,17 @@ public class MixControl implements LayerStateHandler {
    }
 
    public void handleNameDisplay(final boolean pressed) {
-      final MixerLayerGroup activeMixerGroup = getActiveMixGroup();
-      if (activeMixerGroup.notifyDisplayName(pressed)) {
-         layerState.updateState(this);
-      } else if (currentConfiguration.notifyDisplayName(pressed)) {
-         layerState.updateState(this);
-      }
+      final DisplayLayer displayLayer = getActiveDisplayLayer();
+      displayLayer.setNameValueState(pressed);
+      displayLayer.invokeRefresh();
+//      layerState.updateDisplayState(displayLayer);
+//
+//      final MixerLayerGroup activeMixerGroup = getActiveMixGroup();
+//      if (activeMixerGroup.notifyDisplayName(pressed)) {
+//         layerState.updateState(this);
+//      } else if (currentConfiguration.notifyDisplayName(pressed)) {
+//         layerState.updateState(this);
+//      }
    }
 
    public LayerConfiguration getCurrentConfiguration() {
@@ -475,16 +476,20 @@ public class MixControl implements LayerStateHandler {
                                final DrumPadBank drumPadBank) {
       final NoteInput noteInput = getHwControls().getMidiIn().createNoteInput("MIDI", "80????", "90????");
       noteInput.setShouldConsumeEvents(true);
-      drumNoteHandler = new DrumNoteHandler(noteInput, drumPadBank, getDriver().getCursorTrack());
+      final CursorTrack cursorTrack = getDriver().getCursorTrack();
+      drumNoteHandler = new DrumNoteHandler(noteInput, drumPadBank, cursorTrack);
       final ScaleNoteHandler scaleNoteHandler = new ScaleNoteHandler(noteInput, getDriver().getNotePlayingSetup(),
-         getDriver().getCursorTrack());
+         cursorTrack);
       mainGroup.init(mixerTrackBank);
       globalGroup.init(globalTrackBank);
-      if (driver.getControllerConfig().hasLowerDisplay() && type == SectionType.MAIN) {
-         mainGroup.init(driver.getMasterTrack());
-         globalGroup.init(driver.getMasterTrack());
+      if (type == SectionType.MAIN) {
+         mainGroup.initMainSlider(driver.getMasterTrack(), driver.getMasterSlider());
+         globalGroup.initMainSlider(driver.getMasterTrack(), driver.getMasterSlider());
       }
       drumGroup.init(drumPadBank, drumNoteHandler);
+      if (type == SectionType.MAIN) {
+         drumGroup.initMainSlider(cursorTrack, driver.getMasterSlider());
+      }
       scaleButtonLayer.init(scaleNoteHandler, getHwControls());
       launchButtonLayer.initTrackBank(getHwControls(), mixerTrackBank);
       globalViewLayerConfiguration.init(mixerTrackBank, globalTrackBank);
@@ -513,6 +518,10 @@ public class MixControl implements LayerStateHandler {
          eqTrackConfiguration.addBinding(i, eqDevice.getParameterPage(i),
             (pindex, pslot) -> eqDevice.handleResetInvoked(pindex, driver.getModifier()));
       }
+      sendTrackConfiguration.addBindingFader(8, cursorTrack, driver.getMasterSlider());
+      sendDrumTrackConfiguration.addBindingFader(8, cursorTrack, driver.getMasterSlider());
+      cursorDeviceConfiguration.addBindingFader(8, cursorTrack, driver.getMasterSlider());
+      eqTrackConfiguration.addBindingFader(8, cursorTrack, driver.getMasterSlider());
 
       final DeviceMenuConfiguration menuConfig = new DeviceMenuConfiguration("DEVICE_MENU", this);
       menuConfig.initMenuControl(cursorDeviceControl);
@@ -581,12 +590,7 @@ public class MixControl implements LayerStateHandler {
       if (!channel.exists().get()) {
          return;
       }
-      if (channel.solo().get()) {
-         channel.solo().set(false);
-      } else {
-         // project.unsoloAll();
-         channel.solo().set(true);
-      }
+      channel.solo().toggle();
    }
 
    public void handleTrackSelection(final Track track) {

@@ -1,10 +1,8 @@
 package com.bitwig.extensions.controllers.mackie.configurations;
 
-import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
-import com.bitwig.extension.controller.api.Device;
-import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
+import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
@@ -12,6 +10,7 @@ import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeFollower;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
+import com.bitwig.extensions.controllers.mackie.display.MotorSlider;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
 import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
@@ -63,9 +62,9 @@ public class TrackLayerConfiguration extends LayerConfiguration {
             .addValueObserver(
                count -> evaluateTextDisplay(count, deviceManager.isSpecificDevicePresent(), device.name().get()));
       }
-      device.name().addValueObserver(name -> {
-         evaluateTextDisplay(deviceManager.getPageCount(), deviceManager.isSpecificDevicePresent(), name);
-      });
+      device.name()
+         .addValueObserver(
+            name -> evaluateTextDisplay(deviceManager.getPageCount(), deviceManager.isSpecificDevicePresent(), name));
    }
 
    @Override
@@ -195,14 +194,14 @@ public class TrackLayerConfiguration extends LayerConfiguration {
          return displayLayer;
       }
       final MixerLayerGroup activeMixGroup = mixControl.getActiveMixGroup();
-      return activeMixGroup.getDisplayConfiguration(ParamElement.VOLUME);
+      return activeMixGroup.getDisplayConfiguration(ParamElement.VOLUME).setShowTrackInformation(true);
    }
 
    @Override
    public DisplayLayer getBottomDisplayLayer(final int which) {
       if (which == 0) {
          final MixerLayerGroup activeMixGroup = mixControl.getActiveMixGroup();
-         return activeMixGroup.getDisplayConfiguration(ParamElement.VOLUME);
+         return activeMixGroup.getDisplayConfiguration(ParamElement.VOLUME).setShowTrackInformation(true);
       }
       return displayLayer;
    }
@@ -221,6 +220,12 @@ public class TrackLayerConfiguration extends LayerConfiguration {
          deviceManager.disableInfo();
       }
       return true;
+   }
+
+   public void addBindingFader(final int index, final Track track, final MotorSlider slider) {
+      slider.bindParameter(faderLayer, track.volume());
+      displayLayer.bindTitle(8, track.name());
+      displayLayer.bindDisplayParameterValue(8, track.volume(), s -> StringUtil.condenseVolumenValue(s, 7));
    }
 
    public void addBinding(final int index, final ParameterPage parameter,

@@ -2,10 +2,7 @@ package com.bitwig.extensions.controllers.mackie.section;
 
 import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
-import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
-import com.bitwig.extensions.controllers.mackie.Midi;
-import com.bitwig.extensions.controllers.mackie.NoteAssignment;
+import com.bitwig.extensions.controllers.mackie.*;
 import com.bitwig.extensions.controllers.mackie.bindings.*;
 import com.bitwig.extensions.controllers.mackie.display.*;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
@@ -13,6 +10,7 @@ import com.bitwig.extensions.framework.AbsoluteHardwareControlBinding;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.RelativeHardwareControlToRangedValueBinding;
 
+import java.util.Arrays;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -27,9 +25,9 @@ public class MixerSectionHardware {
    private final RelativeHardwareKnob[] encoders = new RelativeHardwareKnob[8];
    private final HardwareButton[] encoderPress = new HardwareButton[8];
    private final HardwareButton[] faderTouch = new HardwareButton[8];
-   private final MotorFader[] motorFaderDest = new MotorFader[8];
+   private final FaderResponse[] motorFaderDest = new FaderResponse[8];
    private final RingDisplay[] ringDisplays = new RingDisplay[8];
-   private final HardwareButton buttonMatrix[][] = new HardwareButton[4][8];
+   private final HardwareButton[][] buttonMatrix = new HardwareButton[4][8];
    private final RelativeHardwareValueMatcher[] nonAcceleratedMatchers = new RelativeHardwareValueMatcher[8];
    private final RelativeHardwareValueMatcher[] acceleratedMatchers = new RelativeHardwareValueMatcher[8];
 
@@ -46,23 +44,16 @@ public class MixerSectionHardware {
       this.midiOut = midiOut;
       this.driver = driver;
       this.sectionIndex = sectionIndex;
-      mainDisplay = new LcdDisplay(driver, midiOut, type, DisplayPart.UPPER);
-      bottomDisplay = driver.getControllerConfig().hasLowerDisplay() ?
-         new LcdDisplay(driver, midiOut, type, DisplayPart.LOWER) : null;
-
-      if (type == SectionType.MAIN && bottomDisplay != null) {
-         bottomDisplay.centerText(0, "QCon ProX");
-         bottomDisplay.centerText(1, "you are so very welcome !");
-      }
-
-      for (int i = 0; i < lightStatusMap.length; i++) {
-         lightStatusMap[i] = -1;
-      }
+      final ControllerConfig controllerConfig = driver.getControllerConfig();
+      mainDisplay = new LcdDisplay(driver, midiOut, type, DisplayPart.UPPER, controllerConfig.isHasDedicateVu());
+      bottomDisplay = controllerConfig.hasLowerDisplay() ? new LcdDisplay(driver, midiOut, type, DisplayPart.LOWER,
+         false) : null;
+      Arrays.fill(lightStatusMap, -1);
       initControlHardware(driver.getSurface());
-      initButtonSection(driver.getSurface());
+      initButtonSection();
    }
 
-   private void initButtonSection(final HardwareSurface surface) {
+   private void initButtonSection() {
       for (int i = 0; i < 8; i++) {
          final HardwareButton armButton = createLightButton("ARM", i, BasicNoteOnAssignment.REC_BASE.getNoteNo());
          final HardwareButton soloButton = createLightButton("SOLO", i, BasicNoteOnAssignment.SOLO_BASE.getNoteNo());
@@ -78,17 +69,15 @@ public class MixerSectionHardware {
 
    private void initControlHardware(final HardwareSurface surface) {
       for (int i = 0; i < 8; i++) {
-         final AbsoluteHardwareKnob knob = surface
-            .createAbsoluteHardwareKnob("VOLUME_FADER_" + sectionIndex + "_" + i);
+         final AbsoluteHardwareKnob knob = surface.createAbsoluteHardwareKnob("VOLUME_FADER_" + sectionIndex + "_" + i);
          volumeKnobs[i] = knob;
          faderTouch[i] = createTouchButton("FADER_TOUCH", i);
          knob.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(i));
 
-         motorFaderDest[i] = new MotorFader(midiOut, i);
+         motorFaderDest[i] = new FaderResponse(midiOut, i);
          ringDisplays[i] = new RingDisplay(midiOut, i);
 
-         final RelativeHardwareKnob encoder = surface
-            .createRelativeHardwareKnob("PAN_KNOB" + sectionIndex + "_" + i);
+         final RelativeHardwareKnob encoder = surface.createRelativeHardwareKnob("PAN_KNOB" + sectionIndex + "_" + i);
          encoders[i] = encoder;
          encoderPress[i] = createEncoderButon(i);
          acceleratedMatchers[i] = midiIn.createRelativeSignedBitCCValueMatcher(0x0, 0x10 + i, 200);
@@ -100,18 +89,18 @@ public class MixerSectionHardware {
          });
 
          final ControllerHost host = driver.getHost();
-         final RelativeHardwareValueMatcher stepDownMatcher = midiIn
-            .createRelativeValueMatcher("(status == 176 && data1 == " + (0x10 + i) + " && data2 > 64)", -1);
-         final RelativeHardwareValueMatcher stepUpMatcher = midiIn
-            .createRelativeValueMatcher("(status == 176 && data1 == " + (0x10 + i) + " && data2 < 65)", 1);
+         final RelativeHardwareValueMatcher stepDownMatcher = midiIn.createRelativeValueMatcher(
+            "(status == 176 && data1 == " + (0x10 + i) + " && data2 > 64)", -1);
+         final RelativeHardwareValueMatcher stepUpMatcher = midiIn.createRelativeValueMatcher(
+            "(status == 176 && data1 == " + (0x10 + i) + " && data2 < 65)", 1);
          nonAcceleratedMatchers[i] = host.createOrRelativeHardwareValueMatcher(stepDownMatcher, stepUpMatcher);
          setEncoderBehavior(i, EncoderMode.ACCELERATED, 128);
       }
    }
 
-   public void setEncoderBehavior(final EncoderMode mode, final int stepSizeDivisor) {
+   public void setEncoderBehavior(final EncoderMode[] modes, final int stepSizeDivisor) {
       for (int i = 0; i < 8; i++) {
-         setEncoderBehavior(i, mode, stepSizeDivisor);
+         setEncoderBehavior(i, modes[i], stepSizeDivisor);
       }
    }
 
@@ -127,6 +116,14 @@ public class MixerSectionHardware {
 
    public void sendVuUpdate(final int index, final int value) {
       midiOut.sendMidi(Midi.CHANNEL_AT, index << 4 | value, 0);
+   }
+
+   public void sendMasterVuUpdateL(final int value) {
+      midiOut.sendMidi(Midi.CHANNEL_AT | 0x1, 0 | value, 0);
+   }
+
+   public void sendMasterVuUpdateR(final int value) {
+      midiOut.sendMidi(Midi.CHANNEL_AT | 0x1, 0x10 | value, 0);
    }
 
    public MidiIn getMidiIn() {
@@ -171,12 +168,10 @@ public class MixerSectionHardware {
       final HardwareButton button = surface.createHardwareButton(name + "_" + sectionIndex + "_" + index);
       button.pressedAction().setActionMatcher(midiIn.createNoteOnActionMatcher(0, notNr + index));
       button.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(0, notNr + index));
-      final OnOffHardwareLight led = surface
-         .createOnOffHardwareLight(name + "BUTTON_LED" + "_" + sectionIndex + "_" + index);
+      final OnOffHardwareLight led = surface.createOnOffHardwareLight(
+         name + "BUTTON_LED" + "_" + sectionIndex + "_" + index);
       button.setBackgroundLight(led);
-      led.onUpdateHardware(() -> {
-         sendLedLightStatus(notNr + index, led.isOn().currentValue() ? 127 : 0);
-      });
+      led.onUpdateHardware(() -> sendLedLightStatus(notNr + index, led.isOn().currentValue() ? 127 : 0));
       return button;
    }
 
@@ -201,7 +196,7 @@ public class MixerSectionHardware {
    }
 
    public void resetFaders() {
-      for (final MotorFader fader : motorFaderDest) {
+      for (final FaderResponse fader : motorFaderDest) {
          fader.sendValue(0);
       }
    }
@@ -216,7 +211,7 @@ public class MixerSectionHardware {
 
    public void fullHardwareUpdate() {
       mainDisplay.refreshDisplay();
-      for (final MotorFader fader : motorFaderDest) {
+      for (final FaderResponse fader : motorFaderDest) {
          fader.refresh();
       }
 
@@ -243,7 +238,7 @@ public class MixerSectionHardware {
       return bottomDisplay != null;
    }
 
-   public MotorFader getMotorFader(final int index) {
+   public FaderResponse getMotorFader(final int index) {
       return motorFaderDest[index];
    }
 
@@ -280,7 +275,7 @@ public class MixerSectionHardware {
    }
 
    public ButtonBinding createEncoderPressBinding(final int index, final Parameter param) {
-      return new ButtonBinding(encoderPress[index], createAction(() -> param.reset()));
+      return new ButtonBinding(encoderPress[index], createAction(param::reset));
    }
 
    public RelativeHardwareControlToRangedValueBinding createEncoderToParamBinding(final int index,

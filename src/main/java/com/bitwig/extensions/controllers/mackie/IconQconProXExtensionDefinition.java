@@ -25,11 +25,16 @@ public class IconQconProXExtensionDefinition extends ControllerExtensionDefiniti
       override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.REPLACE);
 
       override(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
-      override(BasicNoteOnAssignment.GLOBAL_VIEW, BasicNoteOnAssignment.TRIM);
+      override(BasicNoteOnAssignment.GLOBAL_VIEW, BasicNoteOnAssignment.LATCH);
+      override(BasicNoteOnAssignment.LATCH, BasicNoteOnAssignment.AUTO_WRITE);
+      override(BasicNoteOnAssignment.AUTO_WRITE, BasicNoteOnAssignment.TOUCH);
+      override(BasicNoteOnAssignment.TOUCH, BasicNoteOnAssignment.TRIM);
 
       overrideX(BasicNoteOnAssignment.DROP, BasicNoteOnAssignment.SAVE);
-      overrideX(BasicNoteOnAssignment.REPLACE, BasicNoteOnAssignment.CANCEL);
+      override(BasicNoteOnAssignment.REPLACE, BasicNoteOnAssignment.UNDO);
       overrideX(BasicNoteOnAssignment.UNDO, BasicNoteOnAssignment.ENTER);
+      override(BasicNoteOnAssignment.CLICK, BasicNoteOnAssignment.GROUP);
+      //overrideX(BasicNoteOnAssignment.xxx, BasicNoteOnAssignment.LATCH);
    }
 
    private static void override(final BasicNoteOnAssignment origFunction, final BasicNoteOnAssignment takeOver) {
@@ -134,6 +139,6 @@ public class IconQconProXExtensionDefinition extends ControllerExtensionDefiniti
    @Override
    public MackieMcuProExtension createInstance(final ControllerHost host) {
       return new MackieMcuProExtension(this, host,
-         new ControllerConfig(IconQconProXExtensionDefinition.noteOverrides, true), nrOfExtenders);
+         new ControllerConfig(IconQconProXExtensionDefinition.noteOverrides, true, true, true), nrOfExtenders);
    }
 }

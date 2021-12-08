@@ -3,35 +3,43 @@ package com.bitwig.extensions.controllers.mackie.layer;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.framework.Layer;
 
+import java.util.Arrays;
+
 public class EncoderLayer extends Layer {
 
-	private final MixControl control;
-	private EncoderMode encoderMode;
-	private int stepDivisor;
+   private final MixControl control;
+   private final EncoderMode[] encoderModes = new EncoderMode[8];
+   private int stepDivisor;
 
-	public EncoderLayer(final MixControl mixControl, final String name) {
-		super(mixControl.getDriver().getLayers(), name);
-		this.control = mixControl;
-		this.encoderMode = EncoderMode.ACCELERATED;
-		this.stepDivisor = 64;
-	}
+   public EncoderLayer(final MixControl mixControl, final String name) {
+      super(mixControl.getDriver().getLayers(), name);
+      control = mixControl;
+      Arrays.fill(encoderModes, EncoderMode.ACCELERATED);
+      stepDivisor = 64;
+   }
 
-	public void setEncoderMode(final EncoderMode encoderMode) {
-		this.encoderMode = encoderMode;
-	}
+   public void setEncoderMode(final EncoderMode encoderMode) {
+      Arrays.fill(encoderModes, encoderMode);
+   }
 
-	public void setStepDivisor(final int stepDivisor) {
-		this.stepDivisor = stepDivisor;
-	}
+   public void setEncoderMode(final int index, final EncoderMode mode) {
+      if (index >= 0 && index < encoderModes.length) {
+         encoderModes[index] = mode;
+      }
+   }
 
-	@Override
-	protected void onActivate() {
-		super.onActivate();
-		control.getHwControls().setEncoderBehavior(encoderMode, stepDivisor);
-	}
+   public void setStepDivisor(final int stepDivisor) {
+      this.stepDivisor = stepDivisor;
+   }
 
-	@Override
-	protected void onDeactivate() {
-		super.onDeactivate();
-	}
+   @Override
+   protected void onActivate() {
+      super.onActivate();
+      control.getHwControls().setEncoderBehavior(encoderModes, stepDivisor);
+   }
+
+   @Override
+   protected void onDeactivate() {
+      super.onDeactivate();
+   }
 }

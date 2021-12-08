@@ -5,15 +5,13 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
-import com.bitwig.extensions.controllers.mackie.configurations.MenuDisplayLayerBuilder;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
 import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
-import com.bitwig.extensions.controllers.mackie.display.MotorFader;
+import com.bitwig.extensions.controllers.mackie.display.MotorSlider;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
@@ -26,15 +24,17 @@ import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.function.IntConsumer;
+import java.util.function.Supplier;
 
 public class MackieMcuProExtension extends ControllerExtension {
 
-   private static final String MAIN_UNIT_SYEX_HEADER = "F0 00 00 66 14 ";
+   static final String MAIN_UNIT_SYSEX_HEADER = "F0 00 00 66 14 ";
    private static final String SYSEX_DEVICE_RELOAD = "f0000066140158595a";
    private static final double[] FFWD_SPEEDS = {0.0625, 0.25, 1.0, 4.0};
    private static final double[] FFWD_SPEEDS_SHIFT = {0.25, 1.0, 4.0, 16.0};
@@ -42,6 +42,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private Layers layers;
    private Layer mainLayer;
+   private Layer cueMarkerModeLayer;
    private Layer shiftLayer;
 
    private HardwareSurface surface;
@@ -65,7 +66,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private final ValueObject<ButtonViewState> buttonViewMode = new ValueObject<>(ButtonViewState.MIXER);
    private int blinkTicks = 0;
-   private final BooleanValueObject transportClick = new BooleanValueObject();
 
    private final ModifierValueObject modifier = new ModifierValueObject();
    private final TrackModeValue trackChannelMode = new TrackModeValue();
@@ -83,6 +83,7 @@ public class MackieMcuProExtension extends ControllerExtension {
    private final List<MixControl> sections = new ArrayList<>();
 
    private final HoldCapture holdState = new HoldCapture();
+   private ActionSet actionSet;
    private Arranger arranger;
    private PopupBrowser browser;
    private BrowserConfiguration browserConfiguration;
@@ -92,10 +93,11 @@ public class MackieMcuProExtension extends ControllerExtension {
    private HardwareButton cancelButton;
    private DeviceMatcher drumMatcher;
    private DrumNoteHandler noteHandler;
-   private MotorFader masterFaderResponse;
    private final ControllerConfig controllerConfig;
    private NotePlayingSetup notePlayingSetup;
    private FocusClipView followClip;
+   private MotorSlider masterSlider;
+   private MenuCreator menuCreator;
 
    protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
                                    final ControllerConfig controllerConfig, final int extenders) {
@@ -115,11 +117,11 @@ public class MackieMcuProExtension extends ControllerExtension {
       layers = new Layers(this);
       mainLayer = new Layer(layers, "MainLayer");
       shiftLayer = new Layer(layers, "GlobalShiftLayer");
+      cueMarkerModeLayer = new Layer(layers, "Cue Marker Layer");
       notePlayingSetup = new NotePlayingSetup();
+      actionSet = new ActionSet(application);
 
-      for (int i = 0; i < lightStatusMap.length; i++) {
-         lightStatusMap[i] = -1;
-      }
+      Arrays.fill(lightStatusMap, -1);
 
       midiOut = host.getMidiOutPort(0);
       midiIn = host.getMidiInPort(0);
@@ -136,6 +138,8 @@ public class MackieMcuProExtension extends ControllerExtension {
       initJogWheel();
       initMasterSection();
       initChannelSections();
+
+      menuCreator = new MenuCreator(application, mainSection, actionSet);
       browserConfiguration = new BrowserConfiguration("BROWSER", mainSection, host, browser);
       intiVPotModes();
 
@@ -145,7 +149,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       initCursorSection();
 
-      midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) msg -> onMidi0(msg));
+      midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi0);
 
       setUpMidiSysExCommands();
       mainLayer.activate();
@@ -227,7 +231,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private void jogWheelPlayPosition(final int dir) {
       double resolution = 0.25;
-      if (modifier.isAltSet()) {
+      if (modifier.isOptionSet()) {
          resolution = 4.0;
       } else if (modifier.isShiftSet()) {
          resolution = 1.0;
@@ -269,34 +273,23 @@ public class MackieMcuProExtension extends ControllerExtension {
       return masterTrack;
    }
 
+   public MotorSlider getMasterSlider() {
+      return masterSlider;
+   }
+
    private void initMasterSection() {
       masterTrack = getHost().createMasterTrack(8);
-      masterTrack.volume().markInterested();
-      final AbsoluteHardwareKnob masterFader = surface.createAbsoluteHardwareKnob("MASTER_FADER_");
-      masterFader.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(8));
-      masterFader.addBinding(masterTrack.volume());
-      masterFaderResponse = new MotorFader(midiOut, 8);
-      mainLayer.addBinding(new FaderBinding(masterTrack.volume(), masterFaderResponse));
-
-      final HardwareButton masterTouchButton = surface.createHardwareButton("MASTER_TOUCH");
-      masterTouchButton.pressedAction()
-         .setActionMatcher(
-            midiIn.createNoteOnActionMatcher(0, get(BasicNoteOnAssignment.TOUCH_VOLUME).getNoteNo() + 8));
-      masterTouchButton.releasedAction()
-         .setActionMatcher(
-            midiIn.createNoteOffActionMatcher(0, get(BasicNoteOnAssignment.TOUCH_VOLUME).getNoteNo() + 8));
-      masterTouchButton.isPressed().addValueObserver(v -> {
-         // RemoteConsole.out.println("TOUCHED MASTER {}", v);
-      });
+      final int touchNoteNr = get(BasicNoteOnAssignment.TOUCH_VOLUME).getNoteNo() + 8;
+      masterSlider = new MotorSlider("MASTER", 8, touchNoteNr, surface, midiIn, midiOut);
    }
 
    private void intiVPotModes() {
       createOnOfBoolButton(BasicNoteOnAssignment.V_TRACK, trackChannelMode);
-//		final Action[] allActions = application.getActions();
-//		for (final Action action : allActions) {
-//			RemoteConsole.out.println(" ACTION [{}] name={} id=[{}] ", action.getCategory().getName(), action.getName(),
-//					action.getId());
-//		}
+//      final Action[] allActions = application.getActions();
+//      for (final Action action : allActions) {
+//         RemoteConsole.out.println(" ACTION [{}] name={} id=[{}] ", action.getCategory().getName(), action.getName(),
+//            action.getId());
+//   }
       // createOnOfBoolButton(NoteOnAssignment.SOLO, soloExclusive);
 
       createModeButton(VPotMode.SEND);
@@ -403,17 +396,11 @@ public class MackieMcuProExtension extends ControllerExtension {
          }
       });
       final HardwareButton optionButton = createPressButton(BasicNoteOnAssignment.OPTION);
-      optionButton.isPressed().addValueObserver(v -> {
-         modifier.setOption(v);
-      });
+      optionButton.isPressed().addValueObserver(modifier::setOption);
       final HardwareButton controlButton = createPressButton(BasicNoteOnAssignment.CONTROL);
-      controlButton.isPressed().addValueObserver(v -> {
-         modifier.setControl(v);
-      });
+      controlButton.isPressed().addValueObserver(modifier::setControl);
       final HardwareButton altButton = createPressButton(BasicNoteOnAssignment.ALT);
-      altButton.isPressed().addValueObserver(v -> {
-         modifier.setAlt(v);
-      });
+      altButton.isPressed().addValueObserver(modifier::setAlt);
    }
 
    private void initTransport() {
@@ -425,11 +412,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       final HardwareButton fastForwardButton = createHoldButton(BasicNoteOnAssignment.FFWD);
       final HardwareButton clipRecordButton = createButton(BasicNoteOnAssignment.CLIP_OVERDUB);
 
-      initCycleSection();
-      initClickSection();
-      initQuantizeSection();
       initKeyboardSection();
-      initClipSection();
 
       final HardwareButton autoWriteButton = createButton(BasicNoteOnAssignment.AUTO_READ_OFF);
       mainLayer.bindPressed(autoWriteButton, transport.isArrangerAutomationWriteEnabled());
@@ -440,17 +423,11 @@ public class MackieMcuProExtension extends ControllerExtension {
          (OnOffHardwareLight) autoWriteButton.backgroundLight());
 
       final HardwareButton touchButton = createButton(BasicNoteOnAssignment.TOUCH);
-      mainLayer.bindPressed(touchButton, () -> {
-         transport.automationWriteMode().set("touch");
-      });
+      mainLayer.bindPressed(touchButton, () -> transport.automationWriteMode().set("touch"));
       final HardwareButton latchButton = createButton(BasicNoteOnAssignment.LATCH);
-      mainLayer.bindPressed(latchButton, () -> {
-         transport.automationWriteMode().set("latch");
-      });
+      mainLayer.bindPressed(latchButton, () -> transport.automationWriteMode().set("latch"));
       final HardwareButton trimButton = createButton(BasicNoteOnAssignment.AUTO_WRITE);
-      mainLayer.bindPressed(trimButton, () -> {
-         transport.automationWriteMode().set("write");
-      });
+      mainLayer.bindPressed(trimButton, () -> transport.automationWriteMode().set("write"));
       transport.automationWriteMode().addValueObserver(v -> {
          switch (v) {
             case "latch":
@@ -490,9 +467,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       mainLayer.bindIsPressed(rewindButton, pressed -> notifyHoldForwardReverse(pressed, -1));
       initUndoRedo();
 
-      transport.timeSignature().addValueObserver(sig -> {
-         ledDisplay.setDivision(sig);
-      });
+      transport.timeSignature().addValueObserver(sig -> ledDisplay.setDivision(sig));
 
       transport.playPosition()
          .addValueObserver(v -> ledDisplay.updatePosition(v, transport.playPosition().getFormatted()));
@@ -503,7 +478,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       final HardwareButton vuModeButton = createButton(BasicNoteOnAssignment.DIPLAY_NAME);
       vuModeButton.isPressed().addValueObserver(v -> {
          if (modifier.isShift()) {
-            toogleVuMode(v);
+            toggleVuMode(v);
          } else {
             sections.forEach(section -> section.handleNameDisplay(v));
          }
@@ -527,9 +502,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       application.canRedo().markInterested();
 
       final NoteAssignment undoAssignment = get(BasicNoteOnAssignment.UNDO);
-      undoLight.onUpdateHardware(() -> {
-         sendLedUpdate(undoAssignment, undoLight.isOn().currentValue() ? 127 : 0);
-      });
+      undoLight.onUpdateHardware(() -> sendLedUpdate(undoAssignment, undoLight.isOn().currentValue() ? 127 : 0));
       mainLayer.bindIsPressed(undoButton, v -> {
          if (v) {
             application.undo();
@@ -543,12 +516,7 @@ public class MackieMcuProExtension extends ControllerExtension {
             host.showPopupNotification("Redo");
          }
       });
-      shiftLayer.bind(() -> {
-         if (application.canRedo().get() && blinkTicks % 8 < 3) {
-            return true;
-         }
-         return false;
-      }, undoLight);
+      shiftLayer.bind(() -> application.canRedo().get() && blinkTicks % 8 < 3, undoLight);
    }
 
    public void notifyHoldForwardReverse(final Boolean pressed, final int dir) {
@@ -570,25 +538,21 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    public void createOnOfBoolButton(final BasicNoteOnAssignment assignConst, final SettableBooleanValue valueState) {
       final NoteAssignment assignment = get(assignConst);
-      final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+      final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
       assignment.holdActionAssign(midiIn, button);
-      final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
+      final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "_BUTTON_LED");
       button.setBackgroundLight(led);
-      led.onUpdateHardware(() -> {
-         sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
-      });
+      led.onUpdateHardware(() -> sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0));
       mainLayer.bind(valueState, led);
-      mainLayer.bindPressed(button, () -> {
-         valueState.toggle();
-      });
+      mainLayer.bindPressed(button, valueState::toggle);
    }
 
-   private void setLed(final HardwareButton button, final boolean onoff) {
+   private void setLed(final HardwareButton button, final boolean onOff) {
       final OnOffHardwareLight light = (OnOffHardwareLight) button.backgroundLight();
-      light.isOn().setValue(onoff);
+      light.isOn().setValue(onOff);
    }
 
-   private void toogleVuMode(final boolean pressed) {
+   private void toggleVuMode(final boolean pressed) {
       if (!pressed) {
          return;
       }
@@ -609,12 +573,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "BUTTON_LED");
       button.setBackgroundLight(led);
-      led.onUpdateHardware(() -> {
-         sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
-      });
-      button.isPressed().addValueObserver(v -> {
-         led.isOn().setValue(v);
-      });
+      led.onUpdateHardware(() -> sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0));
+      button.isPressed().addValueObserver(v -> led.isOn().setValue(v));
       return button;
    }
 
@@ -631,9 +591,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       } else {
          led.onUpdateHardware(() -> sendLedUpdate(assignment, settableBooleanValue.get() ? 127 : 0));
       }
-      settableBooleanValue.addValueObserver(v -> {
-         led.isOn().setValue(!v);
-      });
+      settableBooleanValue.addValueObserver(v -> led.isOn().setValue(!v));
       return button;
    }
 
@@ -641,9 +599,8 @@ public class MackieMcuProExtension extends ControllerExtension {
     * Creates modes button
     *
     * @param modes first mode is the button, the second represents the light
-    * @return the button
     */
-   private HardwareButton createModeButton(final VPotMode... modes) {
+   private void createModeButton(final VPotMode... modes) {
       assert modes.length > 0;
       final VPotMode mode = modes[0];
 
@@ -652,9 +609,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       final OnOffHardwareLight led = surface.createOnOffHardwareLight(mode.getName() + "BUTTON_LED");
       button.setBackgroundLight(led);
-      led.onUpdateHardware(() -> {
-         sendLedUpdate(mode.getButtonAssignment(), led.isOn().currentValue() ? 127 : 0);
-      });
+      led.onUpdateHardware(() -> sendLedUpdate(mode.getButtonAssignment(), led.isOn().currentValue() ? 127 : 0));
       mainLayer.bindPressed(button, () -> setVPotMode(mode, true));
       mainLayer.bindReleased(button, () -> setVPotMode(mode, false));
       if (modes.length == 1) {
@@ -662,26 +617,17 @@ public class MackieMcuProExtension extends ControllerExtension {
       } else if (modes.length == 2) {
          mainLayer.bind(() -> lightState(mode, modes[1]), led);
       }
-
-      return button;
    }
 
    private boolean lightState(final VPotMode mode) {
-      if (trackChannelMode.getMode() == mode) {
-         return true;
-      }
-      return false;
+      return trackChannelMode.getMode() == mode;
    }
 
-   private boolean lightState(final VPotMode mode, final VPotMode shiftmode) {
+   private boolean lightState(final VPotMode mode, final VPotMode shiftMode) {
       if (trackChannelMode.getMode() == mode) {
          return true;
-      } else if (trackChannelMode.getMode() == shiftmode) {
-         if (blinkTicks % 8 < 3) {
-            return false;
-         } else {
-            return true;
-         }
+      } else if (trackChannelMode.getMode() == shiftMode) {
+         return blinkTicks % 8 >= 3;
       }
       return false;
    }
@@ -704,9 +650,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private HardwareButton createPressButton(final BasicNoteOnAssignment assignment) {
       final NoteAssignment realAssignment = get(assignment);
-      final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+      final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
       realAssignment.holdActionAssign(midiIn, button);
-      button.setBackgroundLight(surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED"));
+      button.setBackgroundLight(surface.createOnOffHardwareLight(assignment + "_BUTTON_LED"));
       return button;
    }
 
@@ -717,9 +663,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       realAssignment.holdActionAssign(midiIn, button);
       final OnOffHardwareLight led = surface.createOnOffHardwareLight(realAssignment + "_BUTTON_LED");
       button.setBackgroundLight(led);
-      led.onUpdateHardware(() -> {
-         sendLedUpdate(realAssignment, led.isOn().currentValue() ? 127 : 0);
-      });
+      led.onUpdateHardware(() -> sendLedUpdate(realAssignment, led.isOn().currentValue() ? 127 : 0));
       return button;
    }
 
@@ -749,7 +693,6 @@ public class MackieMcuProExtension extends ControllerExtension {
    }
 
    protected void initTrackBank(final int nrOfScenes) {
-      // initNaviagtion();
       final int numberOfHwChannels = 8 * (nrOfExtenders + 1);
 
       cursorTrack = getHost().createCursorTrack(8, nrOfScenes);
@@ -827,67 +770,90 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private void initMenuButtons() {
       final CueMarkerBank cueMarkerBank = arranger.createCueMarkerBank(8);
-      cueMarkerBank.itemCount().addValueObserver(items -> {
-         // RemoteConsole.out.println("Number Changed {}", items);
-      });
-
-      final BooleanValueObject marker = initCueMarkerSection(cueMarkerBank);
 
       createGlobalViewButton(BasicNoteOnAssignment.GLOBAL_VIEW);
       createGroupModeButton(BasicNoteOnAssignment.GROUP, buttonViewMode);
+      initCueMarkerSection(cueMarkerBank);
 
-      final Action inspectAction = application.getAction("focus_or_toggle_inspector");
-      final Action detailAction = application.getAction("focus_or_toggle_detail_editor");
-      final Action deviceAction = application.getAction("focus_or_toggle_device_panel");
-      final Action rndAction = application.getAction("reverse");
-
-      initFButton(0, BasicNoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
-      initFButton(1, BasicNoteOnAssignment.F2, marker, cueMarkerBank,
+      initFButton(0, BasicNoteOnAssignment.F1, cueMarkerBank, () -> transport.resetAutomationOverrides());
+      initFButton(1, BasicNoteOnAssignment.F2, cueMarkerBank, () -> transport.returnToArrangement());
+      initFButton(2, BasicNoteOnAssignment.F3, cueMarkerBank, () -> {
+      });
+      initFMenuButton(3, BasicNoteOnAssignment.F4, cueMarkerBank,
+         () -> menuCreator.createQuantizeSection(transport, followClip));
+      final Groove grove = host.createGroove();
+      initFMenuButton(4, BasicNoteOnAssignment.F5, cueMarkerBank, () -> menuCreator.createGrooveMenu(grove)); //
+      // GROOVE Menu
+      transport.tempo().markInterested();
+      initFMenuButton(5, BasicNoteOnAssignment.F6, cueMarkerBank,
+         () -> menuCreator.createTempoMenu(transport, this::modifyTempo)); // Tempo Menu
+      // Save
+      initFButton(6, BasicNoteOnAssignment.F7, cueMarkerBank, () -> actionSet.execute(ActionSet.ActionType.SAVE));
+      initFMenuButton(7, BasicNoteOnAssignment.F8, cueMarkerBank, () -> menuCreator.creatClipMenuSection()); //
+      // TOGGLE Layout
+      initActionButton(BasicNoteOnAssignment.GV_INPUTS_LF2,
          () -> application.setPanelLayout(currentLayoutType.other().getName()));
-      initFButton(2, BasicNoteOnAssignment.F3, marker, cueMarkerBank,
-         () -> transport.resetAutomationOverrides()); // application.navigateToParentTrackGroup()
-      initFButton(3, BasicNoteOnAssignment.F4, marker, cueMarkerBank, () -> {
-         deviceAction.invoke();
-         detailAction.invoke();
-      });
-      initFButton(4, BasicNoteOnAssignment.F5, marker, cueMarkerBank, () -> {
-         inspectAction.invoke();
-         deviceAction.invoke();
-      });
-      initFButton(5, BasicNoteOnAssignment.F6, marker, cueMarkerBank, () -> {
-      });
-      initFButton(6, BasicNoteOnAssignment.F7, marker, cueMarkerBank, () -> {
-         arranger.isPlaybackFollowEnabled().toggle();
-      });
-      initFButton(7, BasicNoteOnAssignment.F8, marker, cueMarkerBank, () -> {
-         deviceAction.invoke();
-         detailAction.invoke();
-         application.selectAll();
-         rndAction.invoke();
-      });
+      initActionButton(BasicNoteOnAssignment.GV_AUDIO_LF3, () -> actionSet.focusDevice());
+      initActionButton(BasicNoteOnAssignment.GV_INSTRUMENT_LF4, () -> actionSet.focusEditor());
+      initActionButton(BasicNoteOnAssignment.GV_AUX_LF5, () -> arranger.isPlaybackFollowEnabled().toggle());
 
-      application.panelLayout().addValueObserver(v -> {
-         currentLayoutType = LayoutType.toType(v);
-      });
+      initMenuToggleButton(BasicNoteOnAssignment.CLICK, menuCreator.createClickMenu(transport,
+            value -> midiOut.sendSysex(
+               MackieMcuProExtension.MAIN_UNIT_SYSEX_HEADER + (value ? "0A 01" : "0A 00") + " F7")),
+         transport.isMetronomeEnabled());
+
+      initMenuToggleButton(BasicNoteOnAssignment.CYCLE, menuCreator.createCyleMenu(host, transport),
+         transport.isArrangerLoopEnabled());
+
+      application.panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
+   }
+
+   private void modifyTempo(final int inc) {
+      RemoteConsole.out.println("=> {} {}", inc, transport.tempo().value().get());
+      double increment = 1.0 * inc;
+      if (modifier.isOptionSet() && modifier.isShiftSet()) {
+         increment *= 10;
+      } else if (modifier.isShiftSet()) {
+         increment *= 0.1;
+      } else if (modifier.isOptionSet()) {
+         increment *= 0.01;
+      }
+      transport.tempo().incRaw(increment);
+   }
+
+   private void initMenuToggleButton(final BasicNoteOnAssignment assignment, final MenuModeLayerConfiguration menu,
+                                     final SettableBooleanValue attachedValue) {
+      final HardwareButton button = createButton(assignment);
+      bindHoldToggleButton(button, menu, attachedValue);
+   }
+
+   private void initActionButton(final BasicNoteOnAssignment assignment, final Runnable action) {
+      final HardwareButton button = createButton(assignment);
+      mainLayer.bindPressed(button, action);
+   }
+
+   private void initClipSection() {
+      final HardwareButton clipButton = createButton(BasicNoteOnAssignment.GV_AUDIO_LF3);
+      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("CLIP_MENU", mainSection);
+
+      final BasicStringValue currentClipName = followClip.getCurrentClipName();
+      menu.addNameBinding(0, new BasicStringValue("Clip:"));
+      menu.addNameBinding(1, 4, currentClipName);
+      for (int i = 0; i < 8; i++) {
+         menu.addRingFixedBinding(i);
+      }
+      bindHoldButton(clipButton, menu);
    }
 
    private void initKeyboardSection() {
       // createNoteModeButton(BasicNoteOnAssignment.NUDGE, buttonViewMode);
       final NoteAssignment assignment = get(BasicNoteOnAssignment.NUDGE);
-      final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+      final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
       assignment.holdActionAssign(midiIn, button);
-      final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
-      led.onUpdateHardware(() -> {
-         sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
-      });
+      final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "_BUTTON_LED");
+      led.onUpdateHardware(() -> sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0));
       button.setBackgroundLight(led);
-      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("KEYBOARD_MENU", mainSection);
-      final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-      builder.bindValue("Base.N", notePlayingSetup.getBaseNote());
-      builder.bindValue("Scale", notePlayingSetup.getScale());
-      builder.bindValue("Octave", notePlayingSetup.getOctaveOffset());
-      builder.bindValue("Velocity", notePlayingSetup.getVelocity());
-      builder.fillRest();
+      final MenuModeLayerConfiguration menu = menuCreator.createKeyboardMenu(notePlayingSetup);
       mainLayer.bind(() -> buttonViewMode.get() == ButtonViewState.NOTE_PLAY, led);
       mainLayer.bindPressed(button, () -> {
          holdState.enter(mainSection.getCurrentConfiguration(), button.getName());
@@ -908,118 +874,6 @@ public class MackieMcuProExtension extends ControllerExtension {
             }
          }
       });
-   }
-
-   private void initQuantizeSection() {
-      final HardwareButton quantizeButton = createButton(BasicNoteOnAssignment.GV_INPUTS_LF2);
-      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("QUANTIZE_MENU", mainSection);
-      final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-      builder.bindEnum("REC.Q", new EnumValueSetting(application.recordQuantizationGrid()).add("OFF", 0)
-         .add("1/32", 3)
-         .add("1/16", 6)
-         .add("1/8", 8)
-         .add("1/4", 11));
-      builder.bindEnum("CLIP.Q", new EnumValueSetting(transport.defaultLaunchQuantization()).add("none", 0)
-         .add("8", 2)
-         .add("4", 4)
-         .add("1", 6)
-         .add("1/2", 7)//
-         .add("1/4", 8)
-         .add("1/8", 9)
-         .add("1/16", 11));
-      builder.fillRest();
-      bindHoldButton(quantizeButton, menu);
-   }
-
-   private void initClipSection() {
-      final HardwareButton clipButton = createButton(BasicNoteOnAssignment.GV_AUDIO_LF3);
-      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("CLIP_MENU", mainSection);
-
-      final BasicStringValue currentClipName = followClip.getCurrentClipName();
-      menu.addNameBinding(0, new BasicStringValue("Clip:"));
-      menu.addNameBinding(1, 4, currentClipName);
-      for (int i = 0; i < 8; i++) {
-         menu.addRingFixedBinding(i);
-      }
-      bindHoldButton(clipButton, menu);
-   }
-
-   private void initClickSection() {
-      final HardwareButton metroButton = createButton(BasicNoteOnAssignment.CLICK);
-      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
-      final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-      builder.bindBool("METRO", transport.isMetronomeEnabled());
-      builder.bindBool("Pre ->", transport.isMetronomeAudibleDuringPreRoll());
-      builder.bindEnum("ROLL", new EnumValueSetting(transport.preRoll()).add("none", "None", 0)
-         .add("one_bar", "1bar", 3)
-         .add("two_bars", "2bar", 6)
-         .add("four_bars", "4bar", 11));
-      builder.bindBool("M.TICK", transport.isMetronomeTickPlaybackEnabled());
-      builder.bindValue("M.VOL", transport.metronomeVolume(), 0.05);
-      builder.insertEmpty();
-      builder.bindBool("T.CLCK", transportClick);
-
-      transportClick.addValueObserver(value -> {
-         midiOut.sendSysex(MackieMcuProExtension.MAIN_UNIT_SYEX_HEADER + (value ? "0A 01" : "0A 00") + " F7");
-      });
-      builder.fillRest();
-      bindHoldToggleButton(metroButton, menu, transport.isMetronomeEnabled());
-   }
-
-   private void initCycleSection() {
-      final HardwareButton loopButton = createButton(BasicNoteOnAssignment.CYCLE);
-      final MenuModeLayerConfiguration cycleConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
-      final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
-
-      final SettableBeatTimeValue cycleStart = transport.arrangerLoopStart();
-      final SettableBeatTimeValue cycleLength = transport.arrangerLoopDuration();
-
-      cycleStart.markInterested();
-      cycleLength.markInterested();
-
-      cycleConfig.addNameBinding(0, new BasicStringValue("Cycle"));
-      cycleConfig.addNameBinding(1, new BasicStringValue("Start"));
-      cycleConfig.addNameBinding(2, new BasicStringValue("Len"));
-      cycleConfig.addNameBinding(4, new BasicStringValue("P.IN"));
-      cycleConfig.addNameBinding(5, new BasicStringValue("P.OUT"));
-
-      cycleConfig.addValueBinding(0, transport.isArrangerLoopEnabled(), "< ON >", "<OFF >");
-      cycleConfig.addValueBinding(1, cycleStart, v -> {
-         return cycleStart.getFormatted(formatter);
-      });
-      cycleConfig.addValueBinding(2, cycleLength, v -> {
-         return cycleLength.getFormatted(formatter);
-      });
-      cycleConfig.addValueBinding(4, transport.isPunchInEnabled(), "< ON >", "<OFF >");
-      cycleConfig.addValueBinding(5, transport.isPunchOutEnabled(), "< ON >", "<OFF >");
-
-      cycleConfig.addRingBoolBinding(0, transport.isArrangerLoopEnabled());
-      cycleConfig.addRingFixedBindingActive(1);
-      cycleConfig.addRingFixedBindingActive(2);
-      cycleConfig.addRingBoolBinding(0, transport.isPunchInEnabled());
-      cycleConfig.addRingBoolBinding(0, transport.isPunchOutEnabled());
-
-      cycleConfig.addPressEncoderBinding(0, index -> transport.isArrangerLoopEnabled().toggle());
-      cycleConfig.addPressEncoderBinding(1, index -> {
-         cycleStart.set(transport.getPosition().get());
-      });
-      cycleConfig.addPressEncoderBinding(4, index -> transport.isPunchInEnabled().toggle());
-      cycleConfig.addPressEncoderBinding(5, index -> transport.isPunchOutEnabled().toggle());
-      cycleConfig.addPressEncoderBinding(2, index -> {
-         final double startTime = cycleStart.get();
-         final double diff = transport.getPosition().get() - startTime;
-         if (diff > 0) {
-            cycleLength.set(diff);
-         }
-      });
-      cycleConfig.addEncoderIncBinding(1, cycleStart, 1, 0.25);
-      cycleConfig.addEncoderIncBinding(2, cycleLength, 1, 0.25);
-
-      cycleConfig.addRingFixedBinding(3);
-      cycleConfig.addRingFixedBinding(6);
-      cycleConfig.addRingFixedBinding(7);
-      // cycleConfig.addEncoderIncBinding(0, t, 1);
-      bindHoldToggleButton(loopButton, cycleConfig, transport.isArrangerLoopEnabled());
    }
 
    private void bindHoldToggleButton(final HardwareButton button, final MenuModeLayerConfiguration menu,
@@ -1056,7 +910,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       });
    }
 
-   private BooleanValueObject initCueMarkerSection(final CueMarkerBank cueMarkerBank) {
+   private void initCueMarkerSection(final CueMarkerBank cueMarkerBank) {
       final HardwareButton markerButton = createButton(BasicNoteOnAssignment.MARKER);
       final BooleanValueObject marker = new BooleanValueObject();
 
@@ -1066,9 +920,8 @@ public class MackieMcuProExtension extends ControllerExtension {
       for (int i = 0; i < 8; i++) {
          final CueMarker cueMarker = cueMarkerBank.getItemAt(i);
          cueMarker.exists().markInterested();
-         markerMenuConfig.addValueBinding(i, cueMarker.position(), cueMarker, "---", v -> {
-            return cueMarker.position().getFormatted(formatter);
-         });
+         markerMenuConfig.addValueBinding(i, cueMarker.position(), cueMarker, "---",
+            v -> cueMarker.position().getFormatted(formatter));
          markerMenuConfig.addNameBinding(i, cueMarker.name(), cueMarker, "<Cue" + (i + 1) + ">");
          markerMenuConfig.addRingExistsBinding(i, cueMarker);
          markerMenuConfig.addPressEncoderBinding(i, index -> {
@@ -1081,24 +934,21 @@ public class MackieMcuProExtension extends ControllerExtension {
             } else {
                transport.addCueMarkerAtPlaybackPosition();
             }
-         });
+         }, true);
          markerMenuConfig.addEncoderIncBinding(i, cueMarker.position(), 1, 0.25);
       }
-
       bindHoldToggleButton(markerButton, markerMenuConfig, marker);
-      return marker;
+      marker.addValueObserver(v -> cueMarkerModeLayer.setIsActive(v));
    }
 
    public void createGlobalViewButton(final BasicNoteOnAssignment assignConst) {
       final NoteAssignment assignment = get(assignConst);
 
-      final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+      final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
       assignment.holdActionAssign(midiIn, button);
-      final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
+      final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "_BUTTON_LED");
       button.setBackgroundLight(led);
-      led.onUpdateHardware(() -> {
-         sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
-      });
+      led.onUpdateHardware(() -> sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0));
       mixerMode.addValueObserver((oldMode, newMode) -> {
          if (newMode != MixerMode.DRUM) {
             previousOverallMode = newMode;
@@ -1120,11 +970,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       if (buttonViewMode.get() == ButtonViewState.GLOBAL_VIEW) {
          return true;
       } else if (valueState.get() == MixerMode.DRUM) {
-         if (blinkTicks % 8 < 3) {
-            return false;
-         } else {
-            return true;
-         }
+         return blinkTicks % 8 >= 3;
       }
       return false;
    }
@@ -1136,13 +982,11 @@ public class MackieMcuProExtension extends ControllerExtension {
    public void createGroupModeButton(final BasicNoteOnAssignment assignConst,
                                      final ValueObject<ButtonViewState> valueState) {
       final NoteAssignment assignment = get(assignConst);
-      final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
+      final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
       assignment.holdActionAssign(midiIn, button);
-      final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
+      final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "_BUTTON_LED");
       button.setBackgroundLight(led);
-      led.onUpdateHardware(() -> {
-         sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
-      });
+      led.onUpdateHardware(() -> sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0));
       mainLayer.bind(() -> buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH, led);
       mainLayer.bindPressed(button, () -> {
          final ButtonViewState current = valueState.get();
@@ -1157,18 +1001,19 @@ public class MackieMcuProExtension extends ControllerExtension {
       });
    }
 
-   public void initFButton(final int index, final BasicNoteOnAssignment assign, final BooleanValueObject marker,
-                           final CueMarkerBank cueMarkerBank, final Runnable nonMarkerFunction) {
+   public void initFMenuButton(final int index, final BasicNoteOnAssignment assign, final CueMarkerBank cueMarkerBank,
+                               final Supplier<MenuModeLayerConfiguration> menuCreator) {
+
       final HardwareButton fButton = createPressButton(assign);
-      mainLayer.bindIsPressed(fButton, v -> {
-         if (v) {
-            if (marker.get()) {
-               cueMarkerBank.getItemAt(index).launch(modifier.isShift());
-            } else {
-               nonMarkerFunction.run();
-            }
-         }
-      });
+      cueMarkerModeLayer.bindPressed(fButton, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
+      bindHoldButton(fButton, menuCreator.get());
+   }
+
+   public void initFButton(final int index, final BasicNoteOnAssignment assign, final CueMarkerBank cueMarkerBank,
+                           final Runnable nonMarkerFunction) {
+      final HardwareButton fButton = createPressButton(assign);
+      cueMarkerModeLayer.bindPressed(fButton, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
+      mainLayer.bindPressed(fButton, nonMarkerFunction);
    }
 
    public ValueObject<MixerMode> getMixerMode() {
@@ -1193,16 +1038,12 @@ public class MackieMcuProExtension extends ControllerExtension {
       midiOut.sendMidi(assignment.getType(), assignment.getNoteNo(), value);
    }
 
-   public Layer getMainLayer() {
-      return mainLayer;
-   }
-
    private void shutDownController(final CompletableFuture<Boolean> shutdown) {
       ledDisplay.clearAll();
-      midiOut.sendSysex(MackieMcuProExtension.MAIN_UNIT_SYEX_HEADER + "0A 00 F7"); // turn off click
+      midiOut.sendSysex(MackieMcuProExtension.MAIN_UNIT_SYSEX_HEADER + "0A 00 F7"); // turn off click
       sections.forEach(MixControl::resetLeds);
       sections.forEach(MixControl::resetFaders);
-      masterFaderResponse.sendValue(0);
+      masterSlider.sendValue(0);
       sections.forEach(MixControl::exitMessage);
       try {
          Thread.sleep(300);

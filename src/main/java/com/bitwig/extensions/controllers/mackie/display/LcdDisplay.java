@@ -6,6 +6,8 @@ import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.section.SectionType;
 
+import java.util.Arrays;
+
 /**
  * Represents 2x56 LCD display on the MCU or an extender.
  */
@@ -24,6 +26,7 @@ public class LcdDisplay implements DisplaySource {
 
    private final byte[] segBuffer;
    private final byte[] segBufferExp;
+   private final DisplayPart part;
    public String sysHead;
 
    private final String[][] lastSendGrids = new String[][]{{"", "", "", "", "", "", "", "", ""}, //
@@ -33,15 +36,16 @@ public class LcdDisplay implements DisplaySource {
 
    private final MidiOut midiOut;
 
-   private VuMode vuMode;
+   private VuMode vuMode = VuMode.LED;
 
    private boolean displayBarGraphEnabled = true;
    private boolean isLowerDisplay;
 
    private final int displayLen;
 
-   private int segmentLength;
-   private int segmentOffset;
+   private final int segmentLength;
+   private final int segmentOffset;
+   private final boolean hasDedicatedVu;
 
    /**
     * @param driver  the parent
@@ -49,8 +53,10 @@ public class LcdDisplay implements DisplaySource {
     * @param type    the main unit or a an extenter
     */
    public LcdDisplay(final MackieMcuProExtension driver, final MidiOut midiOut, final SectionType type,
-                     final DisplayPart part) {
+                     final DisplayPart part, final boolean hasDedicatedVu) {
       this.midiOut = midiOut;
+      this.hasDedicatedVu = hasDedicatedVu;
+      this.part = part;
       if (part == DisplayPart.LOWER) {
          isLowerDisplay = true;
          rowDisplayBuffer[3] = 0X67;
@@ -127,6 +133,9 @@ public class LcdDisplay implements DisplaySource {
    }
 
    public void setVuMode(final VuMode mode) {
+      if (hasDedicatedVu) {
+         return;
+      }
       vuMode = mode;
       if (!isFullModeActive()) {
          switchVuMode(mode);
@@ -162,9 +171,7 @@ public class LcdDisplay implements DisplaySource {
    }
 
    private void resetGrids(final int row) {
-      for (int cell = 0; cell < lastSendGrids[row].length; cell++) {
-         lastSendGrids[row][cell] = "      ";
-      }
+      Arrays.fill(lastSendGrids[row], "      ");
    }
 
    public void centerText(final DisplaySource source, final int row, final String text) {
@@ -175,6 +182,10 @@ public class LcdDisplay implements DisplaySource {
       sendToDisplay(this, row, pad4Center(text));
    }
 
+   @Override
+   public String toString() {
+      return "LcdDisplay " + part;
+   }
 
    private String pad4Center(final String text) {
       final int fill = displayLen - text.length();
@@ -268,7 +279,7 @@ public class LcdDisplay implements DisplaySource {
          if (fullTextMode[row]) {
             sendFullRow(row, lastSentRows[row]);
          } else {
-            for (int segment = 0; segment < 8; segment++) {
+            for (int segment = 0; segment < 8; segment++) { // TODO segment 9
                sendTextSeg(this, row, segment, lastSendGrids[row][segment]);
             }
          }

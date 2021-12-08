@@ -17,14 +17,19 @@ import java.util.Map;
 
 public class DisplayLayer extends Layer implements DisplaySource {
    private LcdDisplay display;
+
    private final LcdDisplay mainDisplay;
    private final LcdDisplay alternateDisplay;
+
    private final DisplayRow topRow = new DisplayRow(0);
    private final DisplayRow bottomRow = new DisplayRow(1);
+
    private final ExpansionTask expansionTask = new ExpansionTask();
    private final Map<Integer, CellExpander> expanders = new HashMap<>();
    private final Map<Integer, CellExpander> fixedExpanders = new HashMap<>();
    private boolean usesLevelMeteringInLcd = true;
+   private boolean showTrackInformation = false;
+   private boolean nameValueState = false;
 
    static class ExpansionTask {
       private int expansionBottomIndex = -1;
@@ -77,10 +82,6 @@ public class DisplayLayer extends Layer implements DisplaySource {
             currentExpander.reset();
          }
          currentExpander = null;
-      }
-
-      public void setToTop() {
-
       }
 
       public boolean active(final int rowIndex, final int startIndex) {
@@ -231,9 +232,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
 
    public void focusOnTop() {
       display = mainDisplay;
-      if (alternateDisplay != null) {
-         invokeRefresh();
-      }
+      invokeRefresh();
    }
 
    public void focusOnBottom() {
@@ -241,6 +240,10 @@ public class DisplayLayer extends Layer implements DisplaySource {
          display = alternateDisplay;
          invokeRefresh();
       }
+   }
+
+   public void setNameValueState(final boolean nameValueState) {
+      this.nameValueState = nameValueState;
    }
 
    public void bindFixed(final int index, final String value) {
@@ -315,6 +318,16 @@ public class DisplayLayer extends Layer implements DisplaySource {
       bottomRow.getCell(index).lastValue = valueFormatter.convert(parameter.displayedValue().get());
    }
 
+   public void bindValue(final int index, final SettableRangedValue value, final ValueConverter converter) {
+      value.addValueObserver(v -> {
+         bottomRow.getCell(index).lastValue = converter.convert(v);
+         if (isActive() && !bottomRow.isFullTextMode()) {
+            display.sendToRow(this, 1, index, bottomRow.getCell(index).getDisplayValue());
+         }
+      });
+      bottomRow.getCell(index).lastValue = converter.convert(value.get());
+   }
+
    public void bindParameterValue(final int index, final Parameter parameter, final ValueConverter converter) {
       bindExists(index, parameter);
       parameter.value().addValueObserver(v -> {
@@ -328,9 +341,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
 
    public void bindParameterValue(final int index, final Parameter parameter) {
       bindExists(index, parameter);
-      parameter.displayedValue().addValueObserver(v -> {
-         handleDisplayValueChanged(index, v);
-      });
+      parameter.displayedValue().addValueObserver(v -> handleDisplayValueChanged(index, v));
       bottomRow.getCell(index).lastValue = parameter.displayedValue().get();
    }
 
@@ -386,43 +397,9 @@ public class DisplayLayer extends Layer implements DisplaySource {
       bottomRow.getCell(index).lastValue = value.displayedValue();
    }
 
-   public void bindTitle(final int index, final StringValue name, final ObjectProxy sourceOfExistance,
-                         final String emptyText) {
-      bindTitle(0, index, name, sourceOfExistance, emptyText);
-   }
-
-   public void bindTitle(final int rowIndex, final int index, final StringValue name) {
-      final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
-      final DisplayCell cell = row.getCell(index);
-      cell.setEmptyValue("");
-      name.addValueObserver(v -> {
-         cell.lastValue = v;
-         if (isActive() && !row.isFullTextMode()) {
-            display.sendToRow(this, rowIndex, index, cell.getDisplayValue());
-         }
-      });
-      cell.lastValue = name.get();
-   }
-
-   public void bindTitle(final int rowIndex, final int index, final StringValue name,
-                         final ObjectProxy sourceOfExistance, final String emptyText) {
-      final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
-      final DisplayCell cell = row.getCell(index);
-      cell.setEmptyValue(emptyText);
-      sourceOfExistance.exists().addValueObserver(exist -> {
-         cell.setExist(exist);
-         if (isActive() && !row.isFullTextMode()) {
-            display.sendToRow(this, rowIndex, index, cell.getDisplayValue());
-         }
-      });
-      cell.setExist(sourceOfExistance.exists().get());
-      name.addValueObserver(v -> {
-         cell.lastValue = v;
-         if (isActive() && !row.isFullTextMode()) {
-            display.sendToRow(this, rowIndex, index, cell.getDisplayValue());
-         }
-      });
-      cell.lastValue = name.get();
+   public DisplayLayer setShowTrackInformation(final boolean showTrackInformation) {
+      this.showTrackInformation = showTrackInformation;
+      return this;
    }
 
    /**
@@ -489,6 +466,46 @@ public class DisplayLayer extends Layer implements DisplaySource {
       cell.lastValue = name.get();
    }
 
+   public void bindTitle(final int index, final StringValue name, final ObjectProxy sourceOfExistance,
+                         final String emptyText) {
+      bindTitle(0, index, name, sourceOfExistance, emptyText);
+   }
+
+   public void bindTitle(final int rowIndex, final int index, final StringValue name) {
+      final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
+      final DisplayCell cell = row.getCell(index);
+      cell.setEmptyValue("");
+      name.addValueObserver(v -> {
+         cell.lastValue = v;
+         if (isActive() && !row.isFullTextMode()) {
+            display.sendToRow(this, rowIndex, index, cell.getDisplayValue());
+         }
+      });
+      row.getCell(index).setRefresher(name::get);
+      cell.lastValue = name.get();
+   }
+
+   public void bindTitle(final int rowIndex, final int index, final StringValue name,
+                         final ObjectProxy sourceOfExistance, final String emptyText) {
+      final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
+      final DisplayCell cell = row.getCell(index);
+      cell.setEmptyValue(emptyText);
+      sourceOfExistance.exists().addValueObserver(exist -> {
+         cell.setExist(exist);
+         if (isActive() && !row.isFullTextMode()) {
+            display.sendToRow(this, rowIndex, index, cell.getDisplayValue());
+         }
+      });
+      cell.setExist(sourceOfExistance.exists().get());
+      name.addValueObserver(v -> {
+         cell.lastValue = v;
+         if (isActive() && !row.isFullTextMode()) {
+            display.sendToRow(this, rowIndex, index, cell.getDisplayValue());
+         }
+      });
+      cell.lastValue = name.get();
+   }
+
    private static String splitString(final String s, final int section) {
       final int startIndex = section * 7;
       if (startIndex >= s.length()) {
@@ -510,61 +527,70 @@ public class DisplayLayer extends Layer implements DisplaySource {
       return b.toString();
    }
 
-
-   private void handleNameChange(final int index, final String newStringValue, final String fixedName,
-                                 final boolean exists, final boolean groupExpand) {
-      if (display.isLowerDisplay()) {
-         topRow.getCell(index).lastValue = newStringValue;
+   public void bindName(final int index, final ChannelStateValueHandler nameHolder) {
+      nameHolder.addValueObserver((name, exists, isGroup, isExpanded, handler) -> {
+         topRow.getCell(index).lastValue = handler.toCurrentValue(null, display.getSegmentLength(), name, exists,
+            isGroup, isExpanded);
          if (isActive() && !topRow.isFullTextMode()) {
-            display.sendToRow(this, 0, index, newStringValue);
+            display.sendToRow(this, 0, index, topRow.getCell(index).lastValue);
          }
-      } else {
-         if (exists) {
-            display.sendToRow(this, 0, index, fixedName);
-         } else {
-            display.sendToRow(this, 0, index, "---");
+      });
+      topRow.getCell(index).lastValue = nameHolder.toCurrentValue(null, display.getSegmentLength());
+      topRow.getCell(index).setRefresher(() -> nameHolder.toCurrentValue(null, display.getSegmentLength()));
+   }
+
+   public void bindName(final int index, final ChannelStateValueHandler nameHolder, final StringValue otherValue) {
+      nameHolder.addValueObserver((name, exists, isGroup, isExpanded, handler) -> {
+         topRow.getCell(index).lastValue = handler.toCurrentValue(null, display.getSegmentLength(), name, exists,
+            isGroup, isExpanded);
+         sendToTopRow(index, topRow.getCell(index).lastValue);
+      });
+      otherValue.addValueObserver(v -> {
+         if (nameValueState) {
+            sendToTopRow(index, v);
          }
+      });
+      topRow.getCell(index).lastValue = nameHolder.toCurrentValue(null, display.getSegmentLength());
+      topRow.getCell(index)
+         .setRefresher(
+            () -> nameHolder.toCurrentValue(nameValueState ? otherValue.get() : null, display.getSegmentLength()));
+   }
+
+   private void sendToTopRow(final int index, final String value) {
+      if (isActive() && !topRow.isFullTextMode()) {
+         display.sendToRow(this, 0, index, value);
       }
    }
 
    public void bindTitle(final int index, final ChannelStateValueHandler nameHolder, final StringValue fixedName) {
       nameHolder.addValueObserver((name, exists, isGroup, isExpanded, handler) -> {
-         topRow.getCell(index).lastValue = handler.toCurrentValue(display.isLowerDisplay() ? null : fixedName.get(),
-            display.getSegmentLength(), name, exists, isGroup, isExpanded);
-         if (isActive() && !topRow.isFullTextMode()) {
-            display.sendToRow(this, 0, index, topRow.getCell(index).lastValue);
-         }
+         topRow.getCell(index).lastValue = handler.toCurrentValue(fixedName.get(), display.getSegmentLength(), name,
+            exists, isGroup, isExpanded);
+         sendToTopRow(index, topRow.getCell(index).lastValue);
       });
       fixedName.addValueObserver(value -> {
          if (!display.isLowerDisplay()) {
             topRow.getCell(index).lastValue = value;
-            display.sendToRow(this, 0, index, topRow.getCell(index).lastValue);
+            sendToTopRow(index, topRow.getCell(index).lastValue);
          }
       });
-      topRow.getCell(index).lastValue = nameHolder.toCurrentValue(display.isLowerDisplay() ? null : fixedName.get(),
-         display.getSegmentLength());
-      topRow.getCell(index)
-         .setRefresher(() -> nameHolder.toCurrentValue(display.isLowerDisplay() ? null : fixedName.get(),
-            display.getSegmentLength()));
+      topRow.getCell(index).lastValue = nameHolder.toCurrentValue(fixedName.get(), display.getSegmentLength());
+      topRow.getCell(index).setRefresher(() -> nameHolder.toCurrentValue(fixedName.get(), display.getSegmentLength()));
    }
 
    public void bindTitle(final int index, final StringValue name) {
       name.addValueObserver(v -> {
          topRow.getCell(index).lastValue = v;
-         if (isActive() && !topRow.isFullTextMode()) {
-            display.sendToRow(this, 0, index, v);
-         }
+         sendToTopRow(index, topRow.getCell(index).lastValue);
       });
       topRow.getCell(index).lastValue = name.get();
-      topRow.getCell(index).setRefresher(() -> name.get());
+      topRow.getCell(index).setRefresher(name::get);
    }
 
    public void bind(final int index, final ParameterPage parameter) {
       parameter.addNameObserver(v -> {
          topRow.getCell(index).lastValue = v;
-         if (isActive() && !topRow.isFullTextMode()) {
-            display.sendToRow(this, 0, index, v);
-         }
+         sendToTopRow(index, v);
       });
       topRow.getCell(index).lastValue = parameter.getCurrentName();
       parameter.addStringValueObserver(v -> handleDisplayValueChanged(index, v));
@@ -635,9 +661,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
       display.setDisplayBarGraphEnabled(usesLevelMeteringInLcd);
       topRow.refresh(display, this);
       bottomRow.refresh(display, this);
-      fixedExpanders.entrySet().forEach(entry -> {
-         entry.getValue().reset();
-      });
+      fixedExpanders.forEach((key, value) -> value.reset());
    }
 
    @Override
