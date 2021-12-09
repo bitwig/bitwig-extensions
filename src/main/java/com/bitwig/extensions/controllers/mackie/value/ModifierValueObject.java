@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.mackie.value;
 
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -15,9 +13,14 @@ public class ModifierValueObject {
 
    private int value = 0;
    private final List<Consumer<ModifierValueObject>> callbacks = new ArrayList<>(); // TODO send it self is better
+   private final List<Consumer<Boolean>> shiftCallbacks = new ArrayList<>();
 
    public void addValueObserver(final Consumer<ModifierValueObject> callback) {
       callbacks.add(callback);
+   }
+
+   public void addShiftValueObserver(final Consumer<Boolean> callback) {
+      shiftCallbacks.add(callback);
    }
 
    public int get() {
@@ -30,6 +33,10 @@ public class ModifierValueObject {
 
    private void notifyValueChanged() {
       callbacks.forEach(callback -> callback.accept(this));
+   }
+
+   private void notifyShiftChanged(final boolean newShiftValue) {
+      shiftCallbacks.forEach(callback -> callback.accept(newShiftValue));
    }
 
    public boolean isSet(final int value) {
@@ -63,9 +70,11 @@ public class ModifierValueObject {
       if (shift && !isShiftSet()) {
          value |= SHIFT;
          notifyValueChanged();
+         notifyShiftChanged(shift);
       } else if (!shift && isShiftSet()) {
          value &= ~SHIFT;
          notifyValueChanged();
+         notifyShiftChanged(shift);
       }
    }
 
@@ -134,7 +143,6 @@ public class ModifierValueObject {
    }
 
    public void setAlt(final boolean alt) {
-      RemoteConsole.out.println(" ALT {}", alt);
       if (alt && !isAltSet()) {
          value |= ALT;
          notifyValueChanged();

@@ -5,18 +5,22 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class MackieMcuProExtensionDefinition extends ControllerExtensionDefinition {
    private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-81ad-1de77ffa2dab");
 
-   private static final int MCU_API_VERSION = 15;
-   private static final String SOFTWARE_VERSION = "1.0a";
+   protected static final int MCU_API_VERSION = 15;
+   protected static final String SOFTWARE_VERSION = "1.0a";
    private static final String DEVICE_NAME = "Mackie Control";
 
    protected int nrOfExtenders;
    protected String[] inMidiPortNames;
    protected String[] outMidiPortNames;
+   protected final Map<BasicNoteOnAssignment, Integer> noteOverrides = new HashMap<>();
+   private int unusedNoteNo = 113;
 
    public MackieMcuProExtensionDefinition() {
       this(0);
@@ -32,6 +36,15 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
          inMidiPortNames[i] = String.format("MIDIIN%d (MCU Pro USB v3.1)", i);
          outMidiPortNames[i] = String.format("MIDIOUT%d (MCU Pro USB v3.1)", i);
       }
+   }
+
+   protected void override(final BasicNoteOnAssignment origFunction, final BasicNoteOnAssignment takeOver) {
+      noteOverrides.put(origFunction, takeOver.getNoteNo());
+   }
+
+   protected void overrideX(final BasicNoteOnAssignment origFunction, final BasicNoteOnAssignment takeOver) {
+      noteOverrides.put(origFunction, takeOver.getNoteNo());
+      noteOverrides.put(takeOver, unusedNoteNo++);
    }
 
    @Override
@@ -106,7 +119,6 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
 
    @Override
    public MackieMcuProExtension createInstance(final ControllerHost host) {
-      return new MackieMcuProExtension(this, host, new ControllerConfig(false),
-         nrOfExtenders);
+      return new MackieMcuProExtension(this, host, new ControllerConfig(false), nrOfExtenders);
    }
 }

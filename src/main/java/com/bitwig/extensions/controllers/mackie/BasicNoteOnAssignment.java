@@ -17,9 +17,9 @@ public enum BasicNoteOnAssignment implements NoteAssignment {
    ENCPRESS_BASE(32), //
    SIGNAL_BASE(104), //
    TOUCH_VOLUME(104), //
-   SHIFT(70), // ICON UNDO
-   OPTION(71), // ICON REDO
-   CONTROL(72), // ICON DAW
+   SHIFT(70), //
+   OPTION(71), //
+   CONTROL(72), //
    ALT(73), //
    UNDO(81), //
    SAVE(80), // ICON VST
@@ -45,8 +45,10 @@ public enum BasicNoteOnAssignment implements NoteAssignment {
    GV_BUSSES_LF6(67), //
    GV_OUTPUTS_LF7(68), //
    GV_USER_LF8(69), //
-   REDO(71), // ONLY ON ICON
-   CLIP_OVERDUB(102); // ONLY ICON
+   REDO(71), //
+   STEP_SEQ(103), // is only overridden
+   CLIP_OVERDUB(102); //
+
 
    private final int notNr;
    private final int channel;

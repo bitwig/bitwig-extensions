@@ -15,7 +15,6 @@ import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 public class GlovalViewLayerConfiguration extends LayerConfiguration {
    private final EncoderLayer encoderLayer;
@@ -63,7 +62,6 @@ public class GlovalViewLayerConfiguration extends LayerConfiguration {
    @Override
    public DisplayLayer getDisplayLayer(final int which) {
       if (showTrackNames) {
-         RemoteConsole.out.println(" ACCessing VOULUME ");
          return getMixControl().getActiveMixGroup().getDisplayConfiguration(ParamElement.VOLUME);
       }
       return displayLayer;

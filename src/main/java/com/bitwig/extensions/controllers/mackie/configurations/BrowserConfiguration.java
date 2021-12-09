@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.mackie.configurations;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
+import com.bitwig.extensions.controllers.mackie.display.MainUnitButton;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
@@ -183,8 +184,8 @@ public class BrowserConfiguration extends LayerConfiguration {
    private void setUpResultSection(final FilterLayerConfig config, final MixControl control,
                                    final PopupBrowser browser) {
       final MixerSectionHardware hwControls = mixControl.getHwControls();
-      final HardwareButton enterButton = mixControl.getDriver().getEnterButton();
-      final HardwareButton cancelButton = mixControl.getDriver().getCancelButton();
+      final MainUnitButton enterButton = mixControl.getDriver().getEnterButton();
+      final MainUnitButton cancelButton = mixControl.getDriver().getCancelButton();
       final EncoderLayer encoderLayer = config.getEncoderLayer();
       final DisplayLayer displayLayer = config.getDisplayLayer();
 
@@ -197,13 +198,13 @@ public class BrowserConfiguration extends LayerConfiguration {
       final HardwareActionBindable commitAction = hwControls.createAction(browser::commit);
 
       encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(5), cancelAction));
-      encoderLayer.bindPressed(cancelButton, cancelAction);
+      cancelButton.bindPressed(encoderLayer, cancelAction);
 
       displayLayer.bindTitle(0, 7, new CombinedStringValueObject("<Okay>"), resultCursorItem, "<---->");
       displayLayer.bindTitle(1, 5, 3, resultValue, "<>");
 
       encoderLayer.addBinding(new ButtonBinding(hwControls.getEncoderPress(7), commitAction));
-      encoderLayer.bindPressed(enterButton, commitAction);
+      enterButton.bindPressed(encoderLayer, commitAction);
       final RelativeHardwarControlBindable resultSelectionBinding = control.getDriver().createIncrementBinder(v -> {
          if (v < 0) {
             browser.selectPreviousFile();

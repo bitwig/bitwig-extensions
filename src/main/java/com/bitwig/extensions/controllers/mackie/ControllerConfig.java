@@ -33,11 +33,11 @@ public class ControllerConfig {
    }
 
    public boolean hasOverrides() {
-      return assignOverrides.isEmpty();
+      return !assignOverrides.isEmpty();
    }
 
    public NoteAssignment get(final BasicNoteOnAssignment assignment) {
-      if (hasOverrides()) {
+      if (!hasOverrides()) {
          return assignment;
       }
       final Integer override = assignOverrides.get(assignment);
@@ -50,4 +50,5 @@ public class ControllerConfig {
    public boolean hasMasterVu() {
       return hasMasterVu;
    }
+
 }
