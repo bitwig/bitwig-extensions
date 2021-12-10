@@ -6,7 +6,6 @@ import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.MotorSlider;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
-import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
@@ -21,21 +20,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MixerLayerGroup {
-   private final MixControl control;
+   protected final MixControl control;
 
    private final List<Bank<? extends Parameter>> sendBankList = new ArrayList<>();
    private final Layer volumeFaderLayer;
-   private final EncoderLayer volumeEncoderLayer;
+   protected final EncoderLayer volumeEncoderLayer;
    private final Layer panFaderLayer;
-   private final EncoderLayer panEncoderLayer;
-   private final ButtonLayer mixerButtonLayer;
+   protected final EncoderLayer panEncoderLayer;
+   protected final ButtonLayer mixerButtonLayer;
 
    private final Layer sendFaderLayer;
-   private final EncoderLayer sendEncoderLayer;
+   protected final EncoderLayer sendEncoderLayer;
    private final DisplayLayer volumeDisplayConfiguration;
    private final DisplayLayer panDisplayConfiguration;
    private final DisplayLayer sendDisplayConfiguration;
-
 
    private final DisplayLayer activeSendDisplayConfig;
    private final DisplayLayer activePanDisplayConfig;
@@ -79,7 +77,7 @@ public class MixerLayerGroup {
       }
    }
 
-   public DisplayLayer getDisplayConfiguration(final ParamElement type) {
+   public DisplayLayer getDisplayConfiguration(final ParamElement type, final DisplayLocation location) {
       switch (type) {
          case PAN:
             return activePanDisplayConfig;
@@ -110,14 +108,6 @@ public class MixerLayerGroup {
    public void navigateHorizontally(final int direction) {
       for (final Bank<?> bank : sendBankList) {
          bank.scrollBy(direction);
-      }
-   }
-
-   public void init(final DrumPadBank drumPadBank, final DrumNoteHandler noteHandler) {
-      final int sectionIndex = control.getHwControls().getSectionIndex();
-      for (int i = 0; i < 8; i++) {
-         final int trackIndex = i + sectionIndex * 8;
-         setUpDrumPadControl(i, drumPadBank.getItemAt(trackIndex), noteHandler);
       }
    }
 
@@ -163,20 +153,6 @@ public class MixerLayerGroup {
          final int trackIndex = i + sectionIndex * 8;
          setUpTrackControl(i, trackBank.getItemAt(trackIndex));
       }
-   }
-
-   protected void setUpDrumPadControl(final int index, final DrumPad pad, final DrumNoteHandler noteHandler) {
-      final MixerSectionHardware hwControls = control.getHwControls();
-      mixerButtonLayer.setNoteHandler(noteHandler);
-      setUpChannelControl(index, hwControls, pad);
-      final BooleanValueObject selectedInMixer = new BooleanValueObject();
-      pad.addIsSelectedInMixerObserver(selectedInMixer::set);
-
-      hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
-         () -> control.handlePadSelection(pad));
-      hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.REC_INDEX, noteHandler.isPlaying(index),
-         () -> {
-         });
    }
 
    protected void setUpTrackControl(final int index, final Track track) {

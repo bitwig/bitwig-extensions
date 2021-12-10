@@ -1,4 +1,6 @@
-package com.bitwig.extensions.controllers.mackie;
+package com.bitwig.extensions.controllers.mackie.definition;
+
+import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 
 public class IconQconExtensionDefinition extends MackieMcuProExtensionDefinition {
    private static final String SOFTWARE_VERSION = "0.9";

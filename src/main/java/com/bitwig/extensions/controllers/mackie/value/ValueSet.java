@@ -6,10 +6,13 @@ import com.bitwig.extension.controller.api.StringValue;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A list of double Values with their corresponding String values that can be incremented.
+ */
 public class ValueSet implements IncrementalValue, StringValue {
    private int currentIndex = 0;
-   private List<StringValueChangedCallback> listeners;
-   private List<ValueString> values;
+   private final List<StringValueChangedCallback> listeners;
+   private final List<ValueString> values;
 
    {
       values = new ArrayList<>();
@@ -18,8 +21,8 @@ public class ValueSet implements IncrementalValue, StringValue {
 
 
    private static class ValueString {
-      private double value;
-      private String representation;
+      private final double value;
+      private final String representation;
 
       public ValueString(final double value, final String representation) {
          this.value = value;

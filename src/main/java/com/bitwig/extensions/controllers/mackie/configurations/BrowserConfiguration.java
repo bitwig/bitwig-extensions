@@ -5,6 +5,7 @@ import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.MainUnitButton;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.layer.DisplayLocation;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
@@ -306,6 +307,6 @@ public class BrowserConfiguration extends LayerConfiguration {
 
    @Override
    public DisplayLayer getBottomDisplayLayer(final int which) {
-      return getMixControl().getActiveMixGroup().getDisplayConfiguration(ParamElement.VOLUME);
+      return getMixControl().getActiveMixGroup().getDisplayConfiguration(ParamElement.VOLUME, DisplayLocation.BOTTOM);
    }
 }

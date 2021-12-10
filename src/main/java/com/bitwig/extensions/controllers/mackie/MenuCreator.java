@@ -5,7 +5,6 @@ import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuDisplayLayerBuilder;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
-import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.EnumValueSetting;
 
@@ -37,51 +36,24 @@ public class MenuCreator {
    }
 
    public MenuModeLayerConfiguration createCyleMenu(final ControllerHost host, final Transport transport) {
-      //final HardwareButton loopButton = createButton(BasicNoteOnAssignment.CYCLE);
-      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
+      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("KEYBOARD_MENU", mainSection);
+      final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
       final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
-
       final SettableBeatTimeValue cycleStart = transport.arrangerLoopStart();
       final SettableBeatTimeValue cycleLength = transport.arrangerLoopDuration();
 
-      cycleStart.markInterested();
-      cycleLength.markInterested();
-
-      menu.addNameBinding(0, new BasicStringValue("Cycle"));
-      menu.addNameBinding(1, new BasicStringValue("Start"));
-      menu.addNameBinding(2, new BasicStringValue("Len"));
-      menu.addNameBinding(4, new BasicStringValue("P.IN"));
-      menu.addNameBinding(5, new BasicStringValue("P.OUT"));
-
-      menu.addValueBinding(0, transport.isArrangerLoopEnabled(), "< ON >", "<OFF >");
-      menu.addValueBinding(1, cycleStart, v -> cycleStart.getFormatted(formatter));
-      menu.addValueBinding(2, cycleLength, v -> cycleLength.getFormatted(formatter));
-      menu.addValueBinding(4, transport.isPunchInEnabled(), "< ON >", "<OFF >");
-      menu.addValueBinding(5, transport.isPunchOutEnabled(), "< ON >", "<OFF >");
-
-      menu.addRingBoolBinding(0, transport.isArrangerLoopEnabled());
-      menu.addRingFixedBindingActive(1);
-      menu.addRingFixedBindingActive(2);
-      menu.addRingBoolBinding(0, transport.isPunchInEnabled());
-      menu.addRingBoolBinding(0, transport.isPunchOutEnabled());
-
-      menu.addPressEncoderBinding(0, index -> transport.isArrangerLoopEnabled().toggle(), false);
-      menu.addPressEncoderBinding(1, index -> cycleStart.set(transport.getPosition().get()), false);
-      menu.addPressEncoderBinding(4, index -> transport.isPunchInEnabled().toggle(), false);
-      menu.addPressEncoderBinding(5, index -> transport.isPunchOutEnabled().toggle(), false);
-      menu.addPressEncoderBinding(2, index -> {
+      builder.bindBool("Cycle", transport.isArrangerLoopEnabled());
+      builder.bindValue("Start", cycleStart, index -> cycleStart.set(transport.getPosition().get()), formatter);
+      builder.bindValue("Length", cycleLength, index -> {
          final double startTime = cycleStart.get();
          final double diff = transport.getPosition().get() - startTime;
          if (diff > 0) {
             cycleLength.set(diff);
          }
-      }, false);
-      menu.addEncoderIncBinding(1, cycleStart, 1, 0.25);
-      menu.addEncoderIncBinding(2, cycleLength, 1, 0.25);
-
-      menu.addRingFixedBinding(3);
-      menu.addRingFixedBinding(6);
-      menu.addRingFixedBinding(7);
+      }, formatter);
+      builder.insertEmpty();
+      builder.bindBool("P.IN", transport.isPunchInEnabled());
+      builder.bindBool("P.OUT", transport.isPunchOutEnabled());
       return menu;
    }
 

@@ -99,8 +99,8 @@ public class MackieMcuProExtension extends ControllerExtension {
    private MotorSlider masterSlider;
    private MenuCreator menuCreator;
 
-   protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
-                                   final ControllerConfig controllerConfig, final int extenders) {
+   public MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
+                                final ControllerConfig controllerConfig, final int extenders) {
       super(definition, host);
       nrOfExtenders = extenders;
       this.controllerConfig = controllerConfig;
@@ -397,6 +397,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       transport.playStartPosition().markInterested();
 
       initKeyboardSection();
+      initSeqSection();
 
       final MainUnitButton autoWriteButton = new MainUnitButton(this, BasicNoteOnAssignment.AUTO_READ_OFF);
       autoWriteButton.bindPressed(mainLayer, transport.isArrangerAutomationWriteEnabled());
@@ -733,6 +734,13 @@ public class MackieMcuProExtension extends ControllerExtension {
       application.panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
    }
 
+   public void initFButton(final int index, final BasicNoteOnAssignment assign, final CueMarkerBank cueMarkerBank,
+                           final Runnable nonMarkerFunction) {
+      final MainUnitButton fButton = new MainUnitButton(this, assign);
+      fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
+      fButton.bindPressed(mainLayer, nonMarkerFunction);
+   }
+
    private void initActionButton(final BasicNoteOnAssignment assignment, final Runnable action) {
       new MainUnitButton(this, assignment).bindPressed(mainLayer, action);
    }
@@ -763,7 +771,6 @@ public class MackieMcuProExtension extends ControllerExtension {
    }
 
    private void initKeyboardSection() {
-      // createNoteModeButton(BasicNoteOnAssignment.NUDGE, buttonViewMode);
       final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.NUDGE);
       final MenuModeLayerConfiguration menu = menuCreator.createKeyboardMenu(notePlayingSetup);
       button.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.NOTE_PLAY);
@@ -783,6 +790,24 @@ public class MackieMcuProExtension extends ControllerExtension {
             } else {
                buttonViewMode.set(ButtonViewState.NOTE_PLAY);
             }
+         }
+      });
+   }
+
+   private void initSeqSection() {
+      final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.STEP_SEQ);
+      //final MenuModeLayerConfiguration menu = menuCreator.createKeyboardMenu(notePlayingSetup);
+      button.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER);
+
+      button.bindPressed(mainLayer, () -> {
+         final ButtonViewState current = buttonViewMode.get();
+         if (current == ButtonViewState.STEP_SEQUENCER) {
+            buttonViewMode.set(ButtonViewState.MIXER);
+         } else if (mixerMode.get() == MixerMode.DRUM) {
+            buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
+         } else if (cursorDeviceControl.hasDrumPads()) {
+            mixerMode.set(MixerMode.DRUM);
+            buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
          }
       });
    }
@@ -890,13 +915,6 @@ public class MackieMcuProExtension extends ControllerExtension {
          }
          holdState.exit();
       });
-   }
-
-   public void initFButton(final int index, final BasicNoteOnAssignment assign, final CueMarkerBank cueMarkerBank,
-                           final Runnable nonMarkerFunction) {
-      final MainUnitButton fButton = new MainUnitButton(this, assign);
-      fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
-      fButton.bindPressed(mainLayer, nonMarkerFunction);
    }
 
    public ValueObject<MixerMode> getMixerMode() {

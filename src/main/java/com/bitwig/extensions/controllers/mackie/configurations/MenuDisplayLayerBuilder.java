@@ -66,6 +66,21 @@ public class MenuDisplayLayerBuilder {
       currentSlot++;
    }
 
+   public void bindValue(final String title, final SettableBeatTimeValue value, final IntConsumer pressAction,
+                         final BeatTimeFormatter formatter) {
+      if (currentSlot > MAX_SLOT_INDEX) {
+         return;
+      }
+      value.markInterested();
+      control.addNameBinding(currentSlot, new BasicStringValue(title));
+      control.addValueBinding(currentSlot, value, v -> value.getFormatted(formatter));
+      control.addRingFixedBindingActive(currentSlot);
+      control.addEncoderIncBinding(currentSlot, value, 1, 0.25);
+      control.addPressEncoderBinding(currentSlot, pressAction, false);
+
+      currentSlot++;
+   }
+
    public void bindBool(final String title, final SettableBooleanValue value) {
       if (currentSlot > MAX_SLOT_INDEX) {
          return;
@@ -104,6 +119,8 @@ public class MenuDisplayLayerBuilder {
       control.addNameBinding(currentSlot, new BasicStringValue(title));
       control.addDisplayValueBinding(currentSlot, value);
       control.addEncoderIncBinding(currentSlot, value);
+      // TODO Press action
+      // TODO Ring binding
       currentSlot++;
    }
 

@@ -12,6 +12,7 @@ import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.MotorSlider;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
+import com.bitwig.extensions.controllers.mackie.layer.DisplayLocation;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
 import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
 import com.bitwig.extensions.controllers.mackie.section.InfoSource;
@@ -194,14 +195,16 @@ public class TrackLayerConfiguration extends LayerConfiguration {
          return displayLayer;
       }
       final MixerLayerGroup activeMixGroup = mixControl.getActiveMixGroup();
-      return activeMixGroup.getDisplayConfiguration(ParamElement.VOLUME).setShowTrackInformation(true);
+      return activeMixGroup.getDisplayConfiguration(ParamElement.VOLUME, DisplayLocation.TOP)
+         .setShowTrackInformation(true);
    }
 
    @Override
    public DisplayLayer getBottomDisplayLayer(final int which) {
       if (which == 0) {
          final MixerLayerGroup activeMixGroup = mixControl.getActiveMixGroup();
-         return activeMixGroup.getDisplayConfiguration(ParamElement.VOLUME).setShowTrackInformation(true);
+         return activeMixGroup.getDisplayConfiguration(ParamElement.VOLUME, DisplayLocation.BOTTOM)
+            .setShowTrackInformation(true);
       }
       return displayLayer;
    }

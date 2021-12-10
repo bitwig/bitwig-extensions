@@ -16,6 +16,7 @@ import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
 import com.bitwig.extensions.controllers.mackie.layer.ClipLaunchButtonLayer;
+import com.bitwig.extensions.controllers.mackie.layer.DrumMixerLayerGroup;
 import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
 import com.bitwig.extensions.controllers.mackie.layer.NotePlayingButtonLayer;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
@@ -28,7 +29,7 @@ public class MixControl implements LayerStateHandler {
 
    final MixerLayerGroup mainGroup;
    final MixerLayerGroup globalGroup;
-   final MixerLayerGroup drumGroup;
+   final DrumMixerLayerGroup drumGroup;
 
    protected final LayerState layerState;
 
@@ -49,6 +50,7 @@ public class MixControl implements LayerStateHandler {
 
    private final SectionType type;
    private final ClipLaunchButtonLayer launchButtonLayer;
+
    private final BooleanValueObject isMenuHoldActive = new BooleanValueObject();
    private final DisplayLayer infoLayer;
    private DeviceTypeBank deviceTypeBank;
@@ -71,7 +73,7 @@ public class MixControl implements LayerStateHandler {
 
       mainGroup = new MixerLayerGroup("MN", this);
       globalGroup = new MixerLayerGroup("GL", this);
-      drumGroup = new MixerLayerGroup("DR", this);
+      drumGroup = new DrumMixerLayerGroup("DR", this);
       sendConfiguration.setNavigateHorizontalHandler(direction -> {
          if (driver.getMixerMode().get() == MixerMode.DRUM) {
             drumGroup.navigateHorizontally(direction);
@@ -177,6 +179,7 @@ public class MixControl implements LayerStateHandler {
    public Layer getButtonLayer() {
       switch (driver.getButtonView().get()) {
          case MIXER:
+         case STEP_SEQUENCER:
          case GLOBAL_VIEW:
             return currentConfiguration.getButtonLayer();
          case GROUP_LAUNCH:
@@ -492,6 +495,7 @@ public class MixControl implements LayerStateHandler {
       }
       scaleButtonLayer.init(scaleNoteHandler, getHwControls());
       launchButtonLayer.initTrackBank(getHwControls(), mixerTrackBank);
+
       globalViewLayerConfiguration.init(mixerTrackBank, globalTrackBank);
    }
 

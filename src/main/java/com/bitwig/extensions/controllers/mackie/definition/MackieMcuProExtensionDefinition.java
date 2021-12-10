@@ -1,9 +1,12 @@
-package com.bitwig.extensions.controllers.mackie;
+package com.bitwig.extensions.controllers.mackie.definition;
 
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
+import com.bitwig.extensions.controllers.mackie.ControllerConfig;
+import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.configurations;
 
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
+import com.bitwig.extensions.controllers.mackie.layer.DisplayLocation;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderLayer;
 import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
@@ -48,17 +49,19 @@ public class MixerLayerConfiguration extends LayerConfiguration {
    public DisplayLayer getDisplayLayer(final int which) {
       final MixerLayerGroup activeGroup = mixControl.getActiveMixGroup();
       if (which == 0) {
-         return activeGroup.getDisplayConfiguration(encoderAssign).setShowTrackInformation(false);
+         return activeGroup.getDisplayConfiguration(encoderAssign, DisplayLocation.TOP).setShowTrackInformation(false);
       }
-      return activeGroup.getDisplayConfiguration(ParamElement.VOLUME).setShowTrackInformation(false);
+      return activeGroup.getDisplayConfiguration(ParamElement.VOLUME, DisplayLocation.TOP)
+         .setShowTrackInformation(false);
    }
 
    @Override
    public DisplayLayer getBottomDisplayLayer(final int which) {
       final MixerLayerGroup activeGroup = mixControl.getActiveMixGroup();
       if (which == 1) {
-         return activeGroup.getDisplayConfiguration(encoderAssign);
+         return activeGroup.getDisplayConfiguration(encoderAssign, DisplayLocation.BOTTOM);
       }
-      return activeGroup.getDisplayConfiguration(ParamElement.VOLUME).setShowTrackInformation(true);
+      return activeGroup.getDisplayConfiguration(ParamElement.VOLUME, DisplayLocation.BOTTOM)
+         .setShowTrackInformation(true);
    }
 }
