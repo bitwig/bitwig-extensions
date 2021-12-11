@@ -3,7 +3,13 @@ package com.bitwig.extensions.controllers.mackie.section;
 import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.*;
-import com.bitwig.extensions.controllers.mackie.bindings.*;
+import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.TouchFaderBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayBoolBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayExistsBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayFixedBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayParameterBinding;
 import com.bitwig.extensions.controllers.mackie.display.*;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
 import com.bitwig.extensions.framework.AbsoluteHardwareControlBinding;
@@ -119,7 +125,7 @@ public class MixerSectionHardware {
    }
 
    public void sendMasterVuUpdateL(final int value) {
-      midiOut.sendMidi(Midi.CHANNEL_AT | 0x1, 0 | value, 0);
+      midiOut.sendMidi(Midi.CHANNEL_AT | 0x1, value, 0);
    }
 
    public void sendMasterVuUpdateR(final int value) {

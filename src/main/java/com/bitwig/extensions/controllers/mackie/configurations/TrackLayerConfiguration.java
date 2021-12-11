@@ -228,7 +228,7 @@ public class TrackLayerConfiguration extends LayerConfiguration {
    public void addBindingFader(final int index, final Track track, final MotorSlider slider) {
       slider.bindParameter(faderLayer, track.volume());
       displayLayer.bindTitle(8, track.name());
-      displayLayer.bindDisplayParameterValue(8, track.volume(), s -> StringUtil.condenseVolumenValue(s, 7));
+      displayLayer.bindDisplayParameterValue(8, track.volume(), s -> StringUtil.condenseVolumeValue(s, 7));
    }
 
    public void addBinding(final int index, final ParameterPage parameter,

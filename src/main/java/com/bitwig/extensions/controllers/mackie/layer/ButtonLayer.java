@@ -21,12 +21,22 @@ public class ButtonLayer extends Layer {
       this.noteHandler = noteHandler;
    }
 
-   @Override
-   protected void onActivate() {
-      super.onActivate();
+   public void activateNotePlaying() {
       if (noteHandler != null) {
          noteHandler.activate(baseOffset, sectionOffset);
       }
+   }
+
+   public void deactivateNotePlaying() {
+      if (noteHandler != null) {
+         noteHandler.deactivate();
+      }
+   }
+
+   @Override
+   protected void onActivate() {
+      super.onActivate();
+      activateNotePlaying();
    }
 
    @Override
@@ -35,6 +45,7 @@ public class ButtonLayer extends Layer {
       if (noteHandler != null) {
          noteHandler.deactivate();
       }
+      deactivateNotePlaying();
    }
 
 }

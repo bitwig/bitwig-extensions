@@ -1,14 +1,9 @@
 package com.bitwig.extensions.controllers.mackie.display;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.mackie.bindings.ValueConverter;
-import com.bitwig.extensions.controllers.mackie.bindings.ValueStringConverter;
 import com.bitwig.extensions.controllers.mackie.devices.ParameterPage;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
-import com.bitwig.extensions.controllers.mackie.value.ChannelStateValueHandler;
-import com.bitwig.extensions.controllers.mackie.value.EnumValueSetting;
-import com.bitwig.extensions.controllers.mackie.value.IntValueObject;
-import com.bitwig.extensions.controllers.mackie.value.ValueObject;
+import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
@@ -307,7 +302,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
    }
 
    public void bindDisplayParameterValue(final int index, final Parameter parameter,
-                                         final ValueStringConverter valueFormatter) {
+                                         final StringValueConverter valueFormatter) {
       bindExists(index, parameter);
       parameter.displayedValue().addValueObserver(newStringValue -> {
          bottomRow.getCell(index).lastValue = valueFormatter.convert(newStringValue);
@@ -318,7 +313,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
       bottomRow.getCell(index).lastValue = valueFormatter.convert(parameter.displayedValue().get());
    }
 
-   public void bindValue(final int index, final SettableRangedValue value, final ValueConverter converter) {
+   public void bindValue(final int index, final SettableRangedValue value, final DoubleValueConverter converter) {
       value.addValueObserver(v -> {
          bottomRow.getCell(index).lastValue = converter.convert(v);
          if (isActive() && !bottomRow.isFullTextMode()) {
@@ -328,7 +323,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
       bottomRow.getCell(index).lastValue = converter.convert(value.get());
    }
 
-   public void bindParameterValue(final int index, final Parameter parameter, final ValueConverter converter) {
+   public void bindParameterValue(final int index, final Parameter parameter, final DoubleValueConverter converter) {
       bindExists(index, parameter);
       parameter.value().addValueObserver(v -> {
          bottomRow.getCell(index).lastValue = converter.convert(v);
@@ -346,7 +341,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
    }
 
    public void bindParameterValue(final int index, final DoubleValue value, final ObjectProxy existSource,
-                                  final String nonExistText, final ValueConverter converter) {
+                                  final String nonExistText, final DoubleValueConverter converter) {
       bindExists(index, existSource, nonExistText);
       value.addValueObserver(v -> {
          bottomRow.getCell(index).lastValue = converter.convert(v);
@@ -357,7 +352,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
       bottomRow.getCell(index).lastValue = converter.convert(value.get());
    }
 
-   public void bindParameterValue(final int index, final DoubleValue value, final ValueConverter converter) {
+   public void bindParameterValue(final int index, final DoubleValue value, final DoubleValueConverter converter) {
       value.addValueObserver(v -> {
          bottomRow.getCell(index).lastValue = converter.convert(v);
          if (isActive() && !bottomRow.isFullTextMode()) {
@@ -378,7 +373,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
    }
 
    public void bindParameterValue(final int index, final IntValueObject value) {
-      value.addValueObserver((old, v) -> {
+      value.addValueObserver(v -> {
          bottomRow.getCell(index).lastValue = value.displayedValue();
          if (isActive() && !bottomRow.isFullTextMode()) {
             display.sendToRow(this, 1, index, bottomRow.getCell(index).getDisplayValue());

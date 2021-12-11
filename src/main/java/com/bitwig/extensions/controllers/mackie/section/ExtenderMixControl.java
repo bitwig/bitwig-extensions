@@ -7,31 +7,27 @@ import com.bitwig.extensions.controllers.mackie.VPotMode;
 
 public class ExtenderMixControl extends MixControl {
 
-	public ExtenderMixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
-			final int sectionIndex) {
-		super(driver, midiIn, midiOut, sectionIndex, SectionType.XTENDER);
-	}
+   public ExtenderMixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
+                             final int sectionIndex) {
+      super(driver, midiIn, midiOut, sectionIndex, SectionType.XTENDER);
+   }
 
-	@Override
-	void doModeChange(final VPotMode mode, final boolean focus) {
-		switch (mode) {
-		case PAN:
-			switchActiveConfiguration(panConfiguration);
-			break;
-		case SEND:
-			determineSendTrackConfig(VPotMode.SEND);
-			break;
-		default:
-			return;
-		}
-		activeVPotMode = mode;
-		getDriver().getBrowserConfiguration().endUserBrowsing();
-		layerState.updateState(this);
-	}
+   @Override
+   void doModeChange(final VPotMode mode, final boolean focus) {
+      switch (mode) {
+         case PAN:
+            switchActiveConfiguration(panConfiguration);
+            break;
+         case SEND:
+            determineSendTrackConfig(VPotMode.SEND);
+            break;
+         default:
+            return;
+      }
+      activeVPotMode = mode;
+      getDriver().getBrowserConfiguration().endUserBrowsing();
+      layerState.updateState(this);
+   }
 
-	@Override
-	public String getSysExHeader() {
-		return "F0 00 00 66 14 0B ";
-	}
 
 }

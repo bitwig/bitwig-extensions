@@ -47,18 +47,18 @@ public enum BasicNoteOnAssignment implements NoteAssignment {
    GV_USER_LF8(69), //
    REDO(71), //
    STEP_SEQ(103), // is only overridden
-   CLIP_OVERDUB(102); //
+   CLIP_OVERDUB(104); //
 
 
    private final int notNr;
    private final int channel;
 
-   private BasicNoteOnAssignment(final int noteNo, final int channel) {
+   BasicNoteOnAssignment(final int noteNo, final int channel) {
       notNr = noteNo;
       this.channel = channel;
    }
 
-   private BasicNoteOnAssignment(final int notNo) {
+   BasicNoteOnAssignment(final int notNo) {
       notNr = notNo;
       channel = 0;
    }

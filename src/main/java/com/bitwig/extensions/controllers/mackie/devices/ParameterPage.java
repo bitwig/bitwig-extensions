@@ -6,7 +6,7 @@ import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderParameterBankBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ResetableAbsoluteValueBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ResetableRelativeValueBinding;
-import com.bitwig.extensions.controllers.mackie.bindings.RingParameterBankDisplayBinding;
+import com.bitwig.extensions.controllers.mackie.bindings.ring.RingParameterBankDisplayBinding;
 import com.bitwig.extensions.controllers.mackie.display.FaderResponse;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;

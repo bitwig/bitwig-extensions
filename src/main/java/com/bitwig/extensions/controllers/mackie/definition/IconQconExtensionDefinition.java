@@ -7,12 +7,13 @@ public class IconQconExtensionDefinition extends MackieMcuProExtensionDefinition
 
    public void initNoteOverrides() {
       // DAW Mode Button => Launcher
-      overrideX(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.GLOBAL_VIEW);
+      override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.GLOBAL_VIEW);
       // DVR Button => Keyboard Mode
       override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.REPLACE);
 
-      override(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
+      overrideX(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
       override(BasicNoteOnAssignment.GLOBAL_VIEW, BasicNoteOnAssignment.LATCH);
+
       override(BasicNoteOnAssignment.LATCH, BasicNoteOnAssignment.AUTO_WRITE);
       override(BasicNoteOnAssignment.AUTO_WRITE, BasicNoteOnAssignment.TOUCH);
       override(BasicNoteOnAssignment.TOUCH, BasicNoteOnAssignment.TRIM);
@@ -22,6 +23,7 @@ public class IconQconExtensionDefinition extends MackieMcuProExtensionDefinition
       overrideX(BasicNoteOnAssignment.UNDO, BasicNoteOnAssignment.ENTER);
       override(BasicNoteOnAssignment.CLICK, BasicNoteOnAssignment.GROUP);
       overrideX(BasicNoteOnAssignment.STEP_SEQ, BasicNoteOnAssignment.SOLO);
+
    }
 
    @Override

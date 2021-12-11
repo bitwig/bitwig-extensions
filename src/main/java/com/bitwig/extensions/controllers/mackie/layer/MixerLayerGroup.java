@@ -65,6 +65,10 @@ public class MixerLayerGroup {
       activePanDisplayConfig = panDisplayConfiguration;
    }
 
+   public boolean hasCursorNavigation() {
+      return false;
+   }
+
    public Layer getFaderLayer(final ParamElement type) {
       switch (type) {
          case PAN:
@@ -111,6 +115,10 @@ public class MixerLayerGroup {
       }
    }
 
+   public void navigateVertically(final int direction) {
+   }
+
+
    public void initMainSlider(final Track mainTrack, final MotorSlider slider) {
 
       slider.bindParameter(volumeFaderLayer, mainTrack.volume());
@@ -122,13 +130,13 @@ public class MixerLayerGroup {
       if (hasLower) {
          volumeDisplayConfiguration.bindTitle(8, mainTrack.name());
          volumeDisplayConfiguration.bindDisplayParameterValue(8, mainTrack.volume(),
-            s -> StringUtil.condenseVolumenValue(s, 7));
+            s -> StringUtil.condenseVolumeValue(s, 7));
          panDisplayConfiguration.bindTitle(8, mainTrack.name());
          panDisplayConfiguration.bindDisplayParameterValue(8, mainTrack.volume(),
-            s -> StringUtil.condenseVolumenValue(s, 7));
+            s -> StringUtil.condenseVolumeValue(s, 7));
          sendDisplayConfiguration.bindTitle(8, mainTrack.name());
          sendDisplayConfiguration.bindDisplayParameterValue(8, mainTrack.volume(),
-            s -> StringUtil.condenseVolumenValue(s, 7));
+            s -> StringUtil.condenseVolumeValue(s, 7));
       }
 
       final MixerSectionHardware hwControls = control.getHwControls();
@@ -181,10 +189,10 @@ public class MixerLayerGroup {
       sendBankList.add(sendBank);
 
       volumeDisplayConfiguration.bindDisplayParameterValue(index, channel.volume(),
-         s -> StringUtil.condenseVolumenValue(s, 7));
+         s -> StringUtil.condenseVolumeValue(s, 7));
       panDisplayConfiguration.bindParameterValue(index, channel.pan(), StringUtil::panToString);
       sendDisplayConfiguration.bindDisplayParameterValue(index, focusSendItem,
-         s -> StringUtil.condenseVolumenValue(s, 7));
+         s -> StringUtil.condenseVolumeValue(s, 7));
 
       final ChannelStateValueHandler trackNameHandler = ChannelStateValueHandler.create(channel);
       final TrackNameValueHandler sendNameHandler = new TrackNameValueHandler(focusSendItem.name());
@@ -219,4 +227,6 @@ public class MixerLayerGroup {
       encoderLayer.addBinding(hwControls.createRingDisplayBinding(index, parameter, type));
    }
 
+   public void advanceMode() {
+   }
 }

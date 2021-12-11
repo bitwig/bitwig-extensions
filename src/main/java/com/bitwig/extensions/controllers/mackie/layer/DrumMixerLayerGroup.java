@@ -9,14 +9,14 @@ import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
-import com.bitwig.extensions.controllers.mackie.seqencer.DrumSeqencerLayer;
+import com.bitwig.extensions.controllers.mackie.seqencer.DrumSequencerLayer;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 import com.bitwig.extensions.framework.Layer;
 
 public class DrumMixerLayerGroup extends MixerLayerGroup {
 
-   private final DrumSeqencerLayer drumSeqencerLayer;
+   private final DrumSequencerLayer drumSeqencerLayer;
    private final ValueObject<ButtonViewState> buttonView;
    private EditorMode editMode = EditorMode.MIX;
 
@@ -28,7 +28,7 @@ public class DrumMixerLayerGroup extends MixerLayerGroup {
 
    public DrumMixerLayerGroup(final String name, final MixControl control) {
       super(name, control);
-      drumSeqencerLayer = new DrumSeqencerLayer(control);
+      drumSeqencerLayer = new DrumSequencerLayer(control);
       buttonView = control.getDriver().getButtonView();
       buttonView.addValueObserver((oldValue, newValue) -> {
          if (newValue == ButtonViewState.STEP_SEQUENCER) {
@@ -37,6 +37,38 @@ public class DrumMixerLayerGroup extends MixerLayerGroup {
             editMode = EditorMode.MIX;
          }
       });
+   }
+
+   @Override
+   public boolean hasCursorNavigation() {
+      return true;
+   }
+
+   @Override
+   public void navigateHorizontally(final int direction) {
+      if (editMode == EditorMode.MIX) {
+         super.navigateHorizontally(direction);
+      } else {
+         drumSeqencerLayer.scrollStepsBy(direction);
+      }
+   }
+
+   public void notifyBlink(final int ticks) {
+      drumSeqencerLayer.notifyBlink(ticks);
+   }
+
+   @Override
+   public void navigateVertically(final int direction) {
+      if (editMode == EditorMode.MIX) {
+         super.navigateVertically(direction);
+      } else {
+         drumSeqencerLayer.navigateVertically(direction);
+      }
+   }
+
+   @Override
+   public void advanceMode() {
+      drumSeqencerLayer.nextMenu();
    }
 
    @Override

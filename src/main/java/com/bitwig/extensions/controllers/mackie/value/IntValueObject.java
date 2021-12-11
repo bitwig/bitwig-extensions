@@ -2,22 +2,16 @@ package com.bitwig.extensions.controllers.mackie.value;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntConsumer;
 
 public class IntValueObject implements IncrementalValue {
-   public interface IntChangeCallback {
-      void valueChanged(int oldValue, int newValue);
-   }
 
-   @FunctionalInterface
-   public interface Converter {
-      String convert(int value);
-   }
-
-   private final List<IntChangeCallback> callbacks = new ArrayList<>();
+   private final List<IntConsumer> valueChangedCallbacks = new ArrayList<>();
+   private final List<IntConsumer> maxValueChangedCallbacks = new ArrayList<>();
    private int value;
    private int min;
    private int max;
-   private final Converter converter;
+   private final IntValueConverter converter;
 
    public IntValueObject(final int initValue, final int min, final int max) {
       value = initValue;
@@ -26,7 +20,7 @@ public class IntValueObject implements IncrementalValue {
       converter = null;
    }
 
-   public IntValueObject(final int initValue, final int min, final int max, final Converter converter) {
+   public IntValueObject(final int initValue, final int min, final int max, final IntValueConverter converter) {
       value = initValue;
       this.min = min;
       this.max = max;
@@ -37,18 +31,38 @@ public class IntValueObject implements IncrementalValue {
       return max;
    }
 
+   public int getMin() {
+      return min;
+   }
+
    public void setMin(final int min) {
       this.min = min;
    }
 
    public void setMax(final int max) {
       this.max = max;
+      maxValueChangedCallbacks.forEach(callback -> callback.accept(max));
    }
 
-   public void addValueObserver(final IntChangeCallback callback) {
-      if (!callbacks.contains(callback)) {
-         callbacks.add(callback);
+   public void addValueObserver(final IntConsumer callback) {
+      if (!valueChangedCallbacks.contains(callback)) {
+         valueChangedCallbacks.add(callback);
       }
+   }
+
+   public void addMaxValueObserver(final IntConsumer callback) {
+      maxValueChangedCallbacks.add(callback);
+   }
+
+   /**
+    * Sets value to -1 for special purposes.
+    */
+   public void setDisabled() {
+      if (value == -1) {
+         return;
+      }
+      value = -1;
+      valueChangedCallbacks.forEach(listener -> listener.accept(value));
    }
 
    public void set(final int value) {
@@ -56,11 +70,8 @@ public class IntValueObject implements IncrementalValue {
       if (this.value == newValue) {
          return;
       }
-      final int oldValue = this.value;
       this.value = newValue;
-      for (final IntChangeCallback listener : callbacks) {
-         listener.valueChanged(oldValue, value);
-      }
+      valueChangedCallbacks.forEach(listener -> listener.accept(value));
    }
 
    @Override
@@ -80,5 +91,6 @@ public class IntValueObject implements IncrementalValue {
       }
       return Integer.toString(value);
    }
+
 
 }

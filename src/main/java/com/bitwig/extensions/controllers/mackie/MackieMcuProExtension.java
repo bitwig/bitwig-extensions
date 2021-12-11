@@ -183,10 +183,9 @@ public class MackieMcuProExtension extends ControllerExtension {
          if (extMidiIn != null && extMidiOut != null) {
             final MixControl extenderSection = new ExtenderMixControl(this, extMidiIn, extMidiOut, i);
             sections.add(extenderSection);
-         } else {
-            // RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing
-            // ports", i + 1);
-         }
+         }  // RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing
+         // ports", i + 1);
+
       }
    }
 
@@ -408,7 +407,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       final MainUnitButton latchButton = new MainUnitButton(this, BasicNoteOnAssignment.LATCH);
       latchButton.bindPressed(mainLayer, () -> transport.automationWriteMode().set("latch"));
       final MainUnitButton writeButton = new MainUnitButton(this, BasicNoteOnAssignment.AUTO_WRITE);
-      latchButton.bindPressed(mainLayer, () -> transport.automationWriteMode().set("write"));
+      writeButton.bindPressed(mainLayer, () -> transport.automationWriteMode().set("write"));
       transport.automationWriteMode().addValueObserver(v -> {
          switch (v) {
             case "latch":
@@ -441,6 +440,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       final MainUnitButton stopButton = new MainUnitButton(this, BasicNoteOnAssignment.STOP, true);
       stopButton.bindPressed(mainLayer, transport.stopAction());
       stopButton.bindLight(mainLayer, transport.isPlaying());
+      stopButton.bindPressed(shiftLayer, project.getRootTrackGroup().stopAction());
 
 
       final MainUnitButton recordButton = new MainUnitButton(this, BasicNoteOnAssignment.RECORD);
@@ -448,7 +448,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       recordButton.bindToggle(shiftLayer, transport.isClipLauncherOverdubEnabled());
 
       final MainUnitButton clipRecordButton = new MainUnitButton(this, BasicNoteOnAssignment.CLIP_OVERDUB);
-      clipRecordButton.bindToggle(shiftLayer, transport.isClipLauncherOverdubEnabled());
+      clipRecordButton.bindToggle(mainLayer, transport.isClipLauncherOverdubEnabled());
 
       final MainUnitButton rewindButton = new MainUnitButton(this, BasicNoteOnAssignment.REWIND).activateHoldState();
       final MainUnitButton fastForwardButton = new MainUnitButton(this, BasicNoteOnAssignment.FFWD).activateHoldState();
@@ -778,7 +778,7 @@ public class MackieMcuProExtension extends ControllerExtension {
          holdState.enter(mainSection.getCurrentConfiguration(), button.getName());
          mainSection.setConfiguration(menu);
       });
-      button.bindPressed(mainLayer, () -> {
+      button.bindReleased(mainLayer, () -> {
          final LayerConfiguration layer = holdState.endHold();
          if (layer != null) {
             mainSection.setConfiguration(layer);
@@ -810,6 +810,7 @@ public class MackieMcuProExtension extends ControllerExtension {
             buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
          }
       });
+      button.bindPressed(shiftLayer, () -> mainSection.advanceMode(ButtonViewState.STEP_SEQUENCER));
    }
 
    private void initCueMarkerSection(final CueMarkerBank cueMarkerBank) {

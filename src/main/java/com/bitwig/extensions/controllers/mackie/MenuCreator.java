@@ -25,12 +25,12 @@ public class MenuCreator {
    public MenuModeLayerConfiguration createKeyboardMenu(final NotePlayingSetup notePlayingSetup) {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("KEYBOARD_MENU", mainSection);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-      builder.bindValue("Base.N", notePlayingSetup.getBaseNote());
+      builder.bindValue("Base.N", notePlayingSetup.getBaseNote(), false);
       builder.bindValue("Scale", notePlayingSetup.getScale());
-      builder.bindValue("Octave", notePlayingSetup.getOctaveOffset());
-      builder.bindValue("Layout", notePlayingSetup.getLayoutOffset());
+      builder.bindValue("Octave", notePlayingSetup.getOctaveOffset(), false);
+      builder.bindValue("Layout", notePlayingSetup.getLayoutOffset(), false);
       builder.insertEmpty();
-      builder.bindValue("Velocity", notePlayingSetup.getVelocity());
+      builder.bindValue("Velocity", notePlayingSetup.getVelocity(), false);
       builder.fillRest();
       return menu;
    }
@@ -43,14 +43,15 @@ public class MenuCreator {
       final SettableBeatTimeValue cycleLength = transport.arrangerLoopDuration();
 
       builder.bindBool("Cycle", transport.isArrangerLoopEnabled());
-      builder.bindValue("Start", cycleStart, index -> cycleStart.set(transport.getPosition().get()), formatter);
+      builder.bindValue("Start", cycleStart, index -> cycleStart.set(transport.getPosition().get()), formatter, 1.0,
+         0.25);
       builder.bindValue("Length", cycleLength, index -> {
          final double startTime = cycleStart.get();
          final double diff = transport.getPosition().get() - startTime;
          if (diff > 0) {
             cycleLength.set(diff);
          }
-      }, formatter);
+      }, formatter, 1.0, 0.25);
       builder.insertEmpty();
       builder.bindBool("P.IN", transport.isPunchInEnabled());
       builder.bindBool("P.OUT", transport.isPunchOutEnabled());

@@ -15,7 +15,7 @@ public class EncoderLayer extends Layer {
       super(mixControl.getDriver().getLayers(), name);
       control = mixControl;
       Arrays.fill(encoderModes, EncoderMode.ACCELERATED);
-      stepDivisor = 64;
+      stepDivisor = 200;
    }
 
    public void setEncoderMode(final EncoderMode encoderMode) {

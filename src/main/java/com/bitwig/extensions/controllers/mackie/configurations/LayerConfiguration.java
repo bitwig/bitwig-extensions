@@ -80,7 +80,7 @@ public abstract class LayerConfiguration {
    }
 
    public void navigateVertical(final int direction) {
-      if (navigateVerticalHandler != null) {
+      if (isActive() && navigateVerticalHandler != null) {
          navigateVerticalHandler.accept(direction);
       }
    }

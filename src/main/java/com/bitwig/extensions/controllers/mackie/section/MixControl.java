@@ -74,6 +74,7 @@ public class MixControl implements LayerStateHandler {
       mainGroup = new MixerLayerGroup("MN", this);
       globalGroup = new MixerLayerGroup("GL", this);
       drumGroup = new DrumMixerLayerGroup("DR", this);
+
       sendConfiguration.setNavigateHorizontalHandler(direction -> {
          if (driver.getMixerMode().get() == MixerMode.DRUM) {
             drumGroup.navigateHorizontally(direction);
@@ -257,10 +258,15 @@ public class MixControl implements LayerStateHandler {
    }
 
    public void navigateLeftRight(final int direction, final boolean isPressed) {
+      // TODO this is too complicated we need redesign this
       if (launchButtonLayer.isActive()) {
          launchButtonLayer.navigateHorizontal(direction, isPressed);
       } else if (scaleButtonLayer.isActive()) {
          scaleButtonLayer.navigateHorizontal(direction, isPressed);
+      } else if (getActiveMixGroup().hasCursorNavigation()) {
+         if (isPressed) {
+            getActiveMixGroup().navigateHorizontally(direction);
+         }
       } else {
          if (isPressed) {
             currentConfiguration.navigateHorizontal(direction);
@@ -280,6 +286,10 @@ public class MixControl implements LayerStateHandler {
          launchButtonLayer.navigateVertical(direction, isPressed);
       } else if (scaleButtonLayer.isActive()) {
          driver.getNotePlayingSetup().modifyOctave(direction); // Problematic with note playing in multiple
+      } else if (getActiveMixGroup().hasCursorNavigation()) {
+         if (isPressed) {
+            getActiveMixGroup().navigateVertically(direction);
+         }
       } else {
          if (isPressed) {
             currentConfiguration.navigateVertical(direction);
@@ -432,6 +442,7 @@ public class MixControl implements LayerStateHandler {
    public void notifyBlink(final int ticks) {
       launchButtonLayer.notifyBlink(ticks);
       scaleButtonLayer.notifyBlink(ticks);
+      drumGroup.notifyBlink(ticks);
       globalViewLayerConfiguration.notifyBlink(ticks);
       activeDisplayLayer.triggerTimer();
    }
@@ -629,8 +640,9 @@ public class MixControl implements LayerStateHandler {
       }
    }
 
-   public String getSysExHeader() {
-      return "F0 00 00 66 14 0A ";
+   public void advanceMode(final ButtonViewState mode) {
+      if (mode == ButtonViewState.STEP_SEQUENCER) {
+         drumGroup.advanceMode();
+      }
    }
-
 }

@@ -5,19 +5,16 @@ import com.bitwig.extension.controller.api.StringValue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntConsumer;
 
 /**
  * A list of double Values with their corresponding String values that can be incremented.
  */
 public class ValueSet implements IncrementalValue, StringValue {
    private int currentIndex = 0;
-   private final List<StringValueChangedCallback> listeners;
-   private final List<ValueString> values;
-
-   {
-      values = new ArrayList<>();
-      listeners = new ArrayList<>();
-   }
+   private final List<StringValueChangedCallback> listeners = new ArrayList<>();
+   private final List<ValueString> values = new ArrayList<>();
+   private final List<IntConsumer> indexListeners = new ArrayList<>();
 
 
    private static class ValueString {
@@ -35,6 +32,9 @@ public class ValueSet implements IncrementalValue, StringValue {
       listeners.add(callback);
    }
 
+   public void addIndexValueObserver(final IntConsumer callback) {
+      indexListeners.add(callback);
+   }
 
    public ValueSet add(final String valStr, final double value) {
       values.add(new ValueString(value, valStr));
@@ -48,12 +48,19 @@ public class ValueSet implements IncrementalValue, StringValue {
       return this;
    }
 
+   public int size() {
+      return values.size();
+   }
+
+   public int getCurrentIndex() {
+      return currentIndex;
+   }
+
    @Override
    public void increment(final int inc) {
       select(currentIndex + inc);
-      for (final StringValueChangedCallback listener : listeners) {
-         listener.valueChanged(values.get(currentIndex).representation);
-      }
+      listeners.forEach(listener -> listener.valueChanged(values.get(currentIndex).representation));
+      indexListeners.forEach(listener -> listener.accept(currentIndex));
    }
 
    @Override

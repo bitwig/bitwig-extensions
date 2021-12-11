@@ -125,7 +125,7 @@ public class StepViewPosition {
    }
 
    public void scrollRight() {
-      if (pagePosition < pages) {
+      if (pagePosition < pages - 1) {
          pagePosition++;
          clip.scrollToStep(pagePosition * gridLength);
          updateStates();

@@ -1,9 +1,12 @@
 package com.bitwig.extensions.controllers.mackie.configurations;
 
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.value.*;
 
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.IntConsumer;
 
 public class MenuDisplayLayerBuilder {
@@ -66,8 +69,16 @@ public class MenuDisplayLayerBuilder {
       currentSlot++;
    }
 
+   public void bind(final BiConsumer<Integer, MenuModeLayerConfiguration> binder) {
+      if (currentSlot > MAX_SLOT_INDEX) {
+         return;
+      }
+      binder.accept(currentSlot, control);
+      currentSlot++;
+   }
+
    public void bindValue(final String title, final SettableBeatTimeValue value, final IntConsumer pressAction,
-                         final BeatTimeFormatter formatter) {
+                         final BeatTimeFormatter formatter, final double increment, final double shiftIncrement) {
       if (currentSlot > MAX_SLOT_INDEX) {
          return;
       }
@@ -75,7 +86,7 @@ public class MenuDisplayLayerBuilder {
       control.addNameBinding(currentSlot, new BasicStringValue(title));
       control.addValueBinding(currentSlot, value, v -> value.getFormatted(formatter));
       control.addRingFixedBindingActive(currentSlot);
-      control.addEncoderIncBinding(currentSlot, value, 1, 0.25);
+      control.addEncoderIncBinding(currentSlot, value, increment, shiftIncrement);
       control.addPressEncoderBinding(currentSlot, pressAction, false);
 
       currentSlot++;
@@ -97,18 +108,28 @@ public class MenuDisplayLayerBuilder {
          return;
       }
       control.addNameBinding(currentSlot, new BasicStringValue(title));
-      control.addEncoderIncBinding(currentSlot, enumValue);
+      control.addEncoderIncBinding(currentSlot, enumValue, false);
       control.addDisplayValueBinding(currentSlot, enumValue);
       currentSlot++;
    }
 
-   public void bindValue(final String title, final IntValueObject value) {
+   public void bindValue(final String title, final IntValueObject value, final boolean accelerated) {
       if (currentSlot > MAX_SLOT_INDEX) {
          return;
       }
       control.addNameBinding(currentSlot, new BasicStringValue(title));
-      control.addEncoderIncBinding(currentSlot, value);
+      control.addEncoderIncBinding(currentSlot, value, accelerated);
       control.addDisplayValueBinding(currentSlot, value);
+      control.addRingBinding(currentSlot, value);
+      currentSlot++;
+   }
+
+   public void bindValue(final String title, final IntValueObject value, final Function<Integer, String> converter,
+                         final boolean accelerated) {
+      control.addNameBinding(currentSlot, new BasicStringValue(title));
+      control.addEncoderIncBinding(currentSlot, value, accelerated);
+      control.addDisplayValueBinding(currentSlot, value);
+
       currentSlot++;
    }
 
@@ -118,9 +139,9 @@ public class MenuDisplayLayerBuilder {
       }
       control.addNameBinding(currentSlot, new BasicStringValue(title));
       control.addDisplayValueBinding(currentSlot, value);
-      control.addEncoderIncBinding(currentSlot, value);
+      control.addEncoderIncBinding(currentSlot, value, false);
       // TODO Press action
-      // TODO Ring binding
+      control.addRingBinding(currentSlot, value);
       currentSlot++;
    }
 
@@ -176,6 +197,73 @@ public class MenuDisplayLayerBuilder {
       currentSlot++;
    }
 
+
+   public void bindPlaying(final PinnableCursorClip clip) {
+      if (currentSlot > MAX_SLOT_INDEX) {
+         return;
+      }
+      final ClipLauncherSlot clipLauncherSlot = clip.clipLauncherSlot();
+      clipLauncherSlot.sceneIndex().markInterested();
+      final DerivedStringValueObject clipName = new DerivedStringValueObject() {
+         @Override
+         public void init() {
+            clipLauncherSlot.name()
+               .addValueObserver(name -> fireChanged(toString(name, clipLauncherSlot.exists().get())));
+            clipLauncherSlot.exists()
+               .addValueObserver(exists -> fireChanged(toString(clipLauncherSlot.name().get(), exists)));
+         }
+
+         private String toString(final String name, final boolean exists) {
+            if (!exists) {
+               return "[---]";
+            }
+            if (name.isEmpty()) {
+               return String.format("[C:%d]", clipLauncherSlot.sceneIndex().get());
+            }
+            return "[" + StringUtil.toAsciiDisplay(name, 4) + "]";
+         }
+
+         @Override
+         public String get() {
+            return toString(clipLauncherSlot.name().get(), clipLauncherSlot.exists().get());
+         }
+      };
+
+      final DerivedStringValueObject playingStatus = new DerivedStringValueObject() {
+         @Override
+         public void init() {
+            clipLauncherSlot.isPlaying()
+               .addValueObserver(playing -> fireChanged(toString(playing, clipLauncherSlot.isPlaybackQueued().get())));
+            clipLauncherSlot.isPlaybackQueued()
+               .addValueObserver(queued -> fireChanged(toString(clipLauncherSlot.isPlaying().get(), queued)));
+         }
+
+         private String toString(final boolean playing, final boolean queued) {
+            return queued ? "[Queu]" : (playing ? "[Play]" : "[Stop]");
+         }
+
+         @Override
+         public String get() {
+            return toString(clipLauncherSlot.isPlaying().get(), clipLauncherSlot.isPlaybackQueued().get());
+         }
+      };
+
+      control.addNameBinding(currentSlot, clipName);
+      control.addDisplayValueBinding(currentSlot, playingStatus);
+      control.addPressEncoderBinding(currentSlot, encIndex -> activate(clip, control.getModifier()), false);
+      control.addRingBoolBinding(currentSlot, clipLauncherSlot.isPlaying());
+      currentSlot++;
+   }
+
+   private void activate(final PinnableCursorClip clip, final ModifierValueObject modifier) {
+      final ClipLauncherSlot slot = clip.clipLauncherSlot();
+      final Track track = clip.getTrack();
+      if (modifier.isShiftSet()) {
+         track.stop();
+      } else {
+         slot.launch();
+      }
+   }
 
    public void bindAction(final String title, final String subTitle, final Runnable action) {
       if (currentSlot > MAX_SLOT_INDEX) {

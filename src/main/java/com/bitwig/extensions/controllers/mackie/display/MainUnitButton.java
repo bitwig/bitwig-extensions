@@ -16,6 +16,7 @@ public class MainUnitButton {
 
    private final OnOffHardwareLight led;
    private final HardwareButton button;
+   private final NoteAssignment assignment;
 
    public static MainUnitButton assignToggle(final MackieMcuProExtension driver, final BasicNoteOnAssignment assignment,
                                              final Layer layer, final SettableBooleanValue value) {
@@ -39,18 +40,18 @@ public class MainUnitButton {
    public MainUnitButton(final MackieMcuProExtension driver, final BasicNoteOnAssignment assignment,
                          final boolean reverseLed) {
       final NoteAssignment actualAssignment = driver.get(assignment);
+      this.assignment = actualAssignment;
+      final int noteNr = actualAssignment.getNoteNo();
       button = driver.getSurface().createHardwareButton(actualAssignment + "_BUTTON");
       actualAssignment.holdActionAssign(driver.getMidiIn(), button);
       led = driver.getSurface().createOnOffHardwareLight(actualAssignment + "_BUTTON_LED");
       button.setBackgroundLight(led);
-      final int noteNr = actualAssignment.getNoteNo();
       if (reverseLed) {
          led.onUpdateHardware(() -> driver.sendLedUpdate(noteNr, led.isOn().currentValue() ? 0 : 127));
       } else {
          led.onUpdateHardware(() -> driver.sendLedUpdate(noteNr, led.isOn().currentValue() ? 127 : 0));
       }
    }
-
 
    public void setLed(final boolean onOff) {
       led.isOn().setValue(onOff);
