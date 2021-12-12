@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.mackie.seqencer;
 
 import com.bitwig.extensions.controllers.mackie.value.DerivedStringValueObject;
 import com.bitwig.extensions.controllers.mackie.value.DoubleRangeValue;
+import com.bitwig.extensions.controllers.mackie.value.DoubleValueConverter;
 import com.bitwig.extensions.controllers.mackie.value.IncrementalValue;
 
 import java.util.ArrayList;
@@ -11,6 +12,8 @@ import java.util.function.DoubleConsumer;
 public class StepValue extends DerivedStringValueObject implements IncrementalValue, DoubleRangeValue {
 
    private final List<DoubleConsumer> callbacks = new ArrayList<>();
+   private DoubleValueConverter converter = v -> String.format("%2.1f", v * 100) + "%";
+
    private final double min;
    private final double max;
    private final double defaultValue;
@@ -56,7 +59,11 @@ public class StepValue extends DerivedStringValueObject implements IncrementalVa
    }
 
    private String convert(final double value) {
-      return set ? String.format("%2.1f", value * 100) + "%" : "<--->";
+      return set ? converter.convert(value) : "<--->";
+   }
+
+   public void setConverter(final DoubleValueConverter converter) {
+      this.converter = converter;
    }
 
    @Override
@@ -77,6 +84,15 @@ public class StepValue extends DerivedStringValueObject implements IncrementalVa
    @Override
    public void increment(final int inc) {
       final double newValue = Math.min(Math.max(min, value + inc * 0.01), max);
+      if (newValue != value) {
+         value = newValue;
+         callbacks.forEach(callback -> callback.accept(value));
+         fireChanged(convert(value));
+      }
+   }
+
+   public void increment(final double inc) {
+      final double newValue = Math.min(Math.max(min, value + inc), max);
       if (newValue != value) {
          value = newValue;
          callbacks.forEach(callback -> callback.accept(value));

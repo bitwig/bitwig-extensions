@@ -571,7 +571,7 @@ public class MixControl implements LayerStateHandler {
          .addValueObserver(
             nested -> updateDeviceMode(cursorDevice.position().get(), browserConfiguration, cursorDevice));
 
-      deviceTypeBank.addListenter((type, exists) -> {
+      deviceTypeBank.addListener((type, exists) -> {
          if (driver.getVpotMode().getMode() == type) {
             focusDevice(currentConfiguration.getDeviceManager());
          }

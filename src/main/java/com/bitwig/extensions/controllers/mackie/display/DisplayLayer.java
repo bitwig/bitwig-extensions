@@ -109,7 +109,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
       private final ExpansionTask task;
 
       public CellExpander(final DisplayCell cell, final DisplayRow row, final int span, final StringValue name,
-                          final ObjectProxy sourceOfExistance, final String emptyText, final String frameChar,
+                          final ObjectProxy sourceOfExistence, final String emptyText, final String frameChar,
                           final ExpansionTask task) {
          this.cell = cell;
          this.row = row;
@@ -118,8 +118,8 @@ public class DisplayLayer extends Layer implements DisplaySource {
          this.task = task;
 
          name.addValueObserver(this::handleNameChange);
-         if (sourceOfExistance != null) {
-            sourceOfExistance.exists().addValueObserver(this::handleExistence);
+         if (sourceOfExistence != null) {
+            sourceOfExistence.exists().addValueObserver(this::handleExistence);
          }
       }
 
@@ -187,9 +187,9 @@ public class DisplayLayer extends Layer implements DisplaySource {
             if (i < span - 1) {
                display.sendToRowFull(DisplayLayer.this, row.getRowIndex(), index, sendString);
             } else {
-               final char endc = frameChar != null ? frameChar.charAt(1) : ' ';
+               final char endCharacter = frameChar != null ? frameChar.charAt(1) : ' ';
                display.sendToRow(DisplayLayer.this, row.getRowIndex(), index,
-                  DisplayLayer.padEndChar(sendString, endc, 5));
+                  DisplayLayer.padEndChar(sendString, endCharacter, 5));
             }
          }
       }
@@ -405,11 +405,11 @@ public class DisplayLayer extends Layer implements DisplaySource {
     * @param startIndex        the cell index
     * @param tempSpan          the temporary span
     * @param name              name value observed
-    * @param sourceOfExistance source of existence
+    * @param sourceOfExistence source of existence
     * @param emptyText         default empty text
     */
    public void bindNameTemp(final int rowIndex, final int startIndex, final int tempSpan, final StringValue name,
-                            final ObjectProxy sourceOfExistance, final String emptyText) {
+                            final ObjectProxy sourceOfExistence, final String emptyText) {
       assert startIndex >= 0 && startIndex < 8;
       assert startIndex + tempSpan <= 8;
       assert tempSpan > 0;
@@ -418,11 +418,11 @@ public class DisplayLayer extends Layer implements DisplaySource {
       final DisplayCell cell = row.getCell(startIndex);
       cell.setEmptyValue(emptyText);
 
-      final CellExpander expander = new CellExpander(cell, row, tempSpan, name, sourceOfExistance, emptyText, "[]",
+      final CellExpander expander = new CellExpander(cell, row, tempSpan, name, sourceOfExistence, emptyText, "[]",
          expansionTask);
       expanders.put(startIndex, expander);
 
-      cell.setExist(sourceOfExistance.exists().get());
+      cell.setExist(sourceOfExistence.exists().get());
       cell.lastValue = name.get();
    }
 
@@ -443,7 +443,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
    }
 
    public void bindTitle(final int rowIndex, final int startIndex, final int span, final StringValue name,
-                         final ObjectProxy sourceOfExistance, final String emptyText, final char enclosing) {
+                         final ObjectProxy sourceOfExistence, final String emptyText, final char enclosing) {
       assert startIndex >= 0 && startIndex < 8;
       assert startIndex + span <= 8;
       assert span > 0;
@@ -451,7 +451,7 @@ public class DisplayLayer extends Layer implements DisplaySource {
       final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
       final DisplayCell cell = row.getCell(startIndex);
 
-      final CellExpander expander = new CellExpander(cell, row, span, name, sourceOfExistance, emptyText, "<>", null);
+      final CellExpander expander = new CellExpander(cell, row, span, name, sourceOfExistence, emptyText, "<>", null);
       fixedExpanders.put(startIndex, expander);
       for (int i = 0; i < span; i++) {
          fixedExpanders.put(i + startIndex, expander);
@@ -461,9 +461,9 @@ public class DisplayLayer extends Layer implements DisplaySource {
       cell.lastValue = name.get();
    }
 
-   public void bindTitle(final int index, final StringValue name, final ObjectProxy sourceOfExistance,
+   public void bindTitle(final int index, final StringValue name, final ObjectProxy sourceOfExistence,
                          final String emptyText) {
-      bindTitle(0, index, name, sourceOfExistance, emptyText);
+      bindTitle(0, index, name, sourceOfExistence, emptyText);
    }
 
    public void bindTitle(final int rowIndex, final int index, final StringValue name) {
@@ -481,17 +481,17 @@ public class DisplayLayer extends Layer implements DisplaySource {
    }
 
    public void bindTitle(final int rowIndex, final int index, final StringValue name,
-                         final ObjectProxy sourceOfExistance, final String emptyText) {
+                         final ObjectProxy sourceOfExistence, final String emptyText) {
       final DisplayRow row = rowIndex == 0 ? topRow : bottomRow;
       final DisplayCell cell = row.getCell(index);
       cell.setEmptyValue(emptyText);
-      sourceOfExistance.exists().addValueObserver(exist -> {
+      sourceOfExistence.exists().addValueObserver(exist -> {
          cell.setExist(exist);
          if (isActive() && !row.isFullTextMode()) {
             display.sendToRow(this, rowIndex, index, cell.getDisplayValue());
          }
       });
-      cell.setExist(sourceOfExistance.exists().get());
+      cell.setExist(sourceOfExistence.exists().get());
       name.addValueObserver(v -> {
          cell.lastValue = v;
          if (isActive() && !row.isFullTextMode()) {

@@ -244,7 +244,8 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
       final MixerSectionHardware hwControls = mixControl.getHwControls();
       final RingDisplay ringDisplay = hwControls.getRingDisplay(i);
       final RingDisplayType type = value.getMin() < 0 ? RingDisplayType.PAN_FILL : RingDisplayType.FILL_LR_0;
-      final RingDisplayRangedStepValueBinding binding = new RingDisplayRangedStepValueBinding(value, ringDisplay, type);
+      final RingDisplayDoubleRangeValueBinding binding = new RingDisplayDoubleRangeValueBinding(value, ringDisplay,
+         type);
       encoderLayer.addBinding(binding);
    }
 

@@ -36,7 +36,7 @@ public class IntSetValue extends DerivedStringValueObject {
       final int newSize = values.size();
       if (oldSize != newSize) {
          sizeListener.forEach(l -> l.valueChanged(oldSize, newSize));
-         fireChanged(Integer.toString(newSize));
+         fireChanged(convert(newSize));
       }
    }
 
@@ -54,7 +54,7 @@ public class IntSetValue extends DerivedStringValueObject {
       if (value == 0) {
          return "[---]";
       }
-      return "[ " + values.size() + " ]";
+      return String.format("[ %2d]", value);
    }
 
    @Override

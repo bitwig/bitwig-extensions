@@ -22,6 +22,7 @@ import com.bitwig.extensions.controllers.mackie.section.SectionType;
 import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -591,9 +592,8 @@ public class MackieMcuProExtension extends ControllerExtension {
       midiIn.setSysexCallback(data -> {
          if (data.startsWith(MackieMcuProExtension.SYSEX_DEVICE_RELOAD)) {
             updateAll();
-         } else {
-//				RemoteConsole.out.println(" MIDI SYS EX {}", data);
          }
+         // Otherwise, track sysex here
       });
    }
 
@@ -801,17 +801,25 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       button.bindPressed(mainLayer, () -> {
          final ButtonViewState current = buttonViewMode.get();
+         RemoteConsole.out.println(" >> {} hdp={} inst={}", current, cursorDeviceControl.hasDrumPads(),
+            cursorTrack.trackType().get().equals("Instrument"));
          if (current == ButtonViewState.STEP_SEQUENCER) {
             buttonViewMode.set(ButtonViewState.MIXER);
          } else if (mixerMode.get() == MixerMode.DRUM) {
             buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
-         } else if (cursorDeviceControl.hasDrumPads()) {
+         } else if (cursorDeviceControl.cursorHasDrumPads()) {
             mixerMode.set(MixerMode.DRUM);
             buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
          }
       });
       button.bindPressed(shiftLayer, () -> mainSection.advanceMode(ButtonViewState.STEP_SEQUENCER));
+      mixerMode.addValueObserver((oldMode, mode) -> {
+         if (buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER && mode != MixerMode.DRUM) {
+            buttonViewMode.set(ButtonViewState.MIXER);
+         }
+      });
    }
+
 
    private void initCueMarkerSection(final CueMarkerBank cueMarkerBank) {
       final MainUnitButton markerButton = new MainUnitButton(this, BasicNoteOnAssignment.MARKER);

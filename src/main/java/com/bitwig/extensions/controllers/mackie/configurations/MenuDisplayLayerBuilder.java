@@ -1,7 +1,6 @@
 package com.bitwig.extensions.controllers.mackie.configurations;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.value.*;
 
@@ -195,74 +194,6 @@ public class MenuDisplayLayerBuilder {
       });
       control.addRingBinding(currentSlot, value);
       currentSlot++;
-   }
-
-
-   public void bindPlaying(final PinnableCursorClip clip) {
-      if (currentSlot > MAX_SLOT_INDEX) {
-         return;
-      }
-      final ClipLauncherSlot clipLauncherSlot = clip.clipLauncherSlot();
-      clipLauncherSlot.sceneIndex().markInterested();
-      final DerivedStringValueObject clipName = new DerivedStringValueObject() {
-         @Override
-         public void init() {
-            clipLauncherSlot.name()
-               .addValueObserver(name -> fireChanged(toString(name, clipLauncherSlot.exists().get())));
-            clipLauncherSlot.exists()
-               .addValueObserver(exists -> fireChanged(toString(clipLauncherSlot.name().get(), exists)));
-         }
-
-         private String toString(final String name, final boolean exists) {
-            if (!exists) {
-               return "[---]";
-            }
-            if (name.isEmpty()) {
-               return String.format("[C:%d]", clipLauncherSlot.sceneIndex().get());
-            }
-            return "[" + StringUtil.toAsciiDisplay(name, 4) + "]";
-         }
-
-         @Override
-         public String get() {
-            return toString(clipLauncherSlot.name().get(), clipLauncherSlot.exists().get());
-         }
-      };
-
-      final DerivedStringValueObject playingStatus = new DerivedStringValueObject() {
-         @Override
-         public void init() {
-            clipLauncherSlot.isPlaying()
-               .addValueObserver(playing -> fireChanged(toString(playing, clipLauncherSlot.isPlaybackQueued().get())));
-            clipLauncherSlot.isPlaybackQueued()
-               .addValueObserver(queued -> fireChanged(toString(clipLauncherSlot.isPlaying().get(), queued)));
-         }
-
-         private String toString(final boolean playing, final boolean queued) {
-            return queued ? "[Queu]" : (playing ? "[Play]" : "[Stop]");
-         }
-
-         @Override
-         public String get() {
-            return toString(clipLauncherSlot.isPlaying().get(), clipLauncherSlot.isPlaybackQueued().get());
-         }
-      };
-
-      control.addNameBinding(currentSlot, clipName);
-      control.addDisplayValueBinding(currentSlot, playingStatus);
-      control.addPressEncoderBinding(currentSlot, encIndex -> activate(clip, control.getModifier()), false);
-      control.addRingBoolBinding(currentSlot, clipLauncherSlot.isPlaying());
-      currentSlot++;
-   }
-
-   private void activate(final PinnableCursorClip clip, final ModifierValueObject modifier) {
-      final ClipLauncherSlot slot = clip.clipLauncherSlot();
-      final Track track = clip.getTrack();
-      if (modifier.isShiftSet()) {
-         track.stop();
-      } else {
-         slot.launch();
-      }
    }
 
    public void bindAction(final String title, final String subTitle, final Runnable action) {

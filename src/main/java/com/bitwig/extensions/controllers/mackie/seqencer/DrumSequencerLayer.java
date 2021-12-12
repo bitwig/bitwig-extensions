@@ -2,170 +2,37 @@ package com.bitwig.extensions.controllers.mackie.seqencer;
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
-import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
-import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuDisplayLayerBuilder;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
-import com.bitwig.extensions.controllers.mackie.layer.ButtonLayer;
-import com.bitwig.extensions.controllers.mackie.layer.DrumMixerLayerGroup;
 import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
-import com.bitwig.extensions.controllers.mackie.value.*;
-import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
+import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-public class DrumSequencerLayer extends ButtonLayer {
-   private boolean deselectEnabled = true;
-   private final NoteStep[] assignments = new NoteStep[32];
-   private final IntSetValue heldSteps = new IntSetValue();
-   private final Set<Integer> addedSteps = new HashSet<>();
-   private final Set<Integer> modifiedSteps = new HashSet<>();
-   private final HashMap<Integer, NoteStep> expectedNoteChanges = new HashMap<>();
+public class DrumSequencerLayer extends SequencerLayer {
 
-   private final MackieMcuProExtension driver;
-   private final MixControl control;
-   private PinnableCursorClip cursorClip;
-   private StepViewPosition positionHandler;
+   public static final int STEPS = 16;
+
    private int drumScrollOffset;
-   private int blinkTicks;
-   private int playingStep;
-   private final double gatePercent = 0.98;
    private MenuModeLayerConfiguration clipEditMenu;
    private MenuModeLayerConfiguration stepValueMenu;
-   private MenuModeLayerConfiguration currentMenu;
-   private final Layer recurrenceLayer;
-
-   private final IntValueObject velocity = new IntValueObject(100, 0, 127);
-   private final ValueSet gridResolution;
-   private final IntValueObject pageIndex;
-   private int selectedPadIndex = -1;
    private DrumPadBank drumPadBank;
-   private long firstDown = -1;
-   private final IntValueObject applyVelocity = new IntValueObject(-1, 0, 127, v -> v == -1 ? "<--->" : " " + v);
-   private final IntValueObject recurrence = new IntValueObject(-1, 1, 8,
-      v -> v == -1 ? "<--->" : (v == 1 ? " OFF " : " " + v));
-   private final IntValueObject recurrenceMask = new IntValueObject(-1, 0, 255,
-      v -> v == -1 ? "<--->" : (v == 1 ? " OFF " : " " + v));
-   private final StepValue timbre = new StepValue(-1, 1, 0);
-   private final StepValue chance = new StepValue(0, 1, 1);
-   private final StepValue pressure = new StepValue(0, 1, 0);
-   private final StepValue velSpread = new StepValue(0, 1, 0);
-
+   protected final NoteStep[] assignments = new NoteStep[STEPS];
 
    public DrumSequencerLayer(final MixControl mixControl) {
       super("DrumSeq_" + mixControl.getHwControls().getSectionIndex(), mixControl, BasicNoteOnAssignment.REC_BASE);
-      driver = mixControl.getDriver();
-      control = mixControl;
-      recurrenceLayer = new Layer(mixControl.getDriver().getLayers(), "Recurrence Editor");
-      gridResolution = new ValueSet().add("1/32", 0.125).add("1/16", 0.25).add("1/8", 0.5).add("1/4", 1.0).select(1);
-      pageIndex = new IntValueObject(0, 0, 1, v -> StringUtil.toBarBeats(v * gridResolution.getValue() * 4));
-      applyVelocity.addValueObserver(value -> {
-         if (!heldSteps.isEmpty()) {
-            getHeldNotes().forEach(noteStep -> noteStep.setVelocity(value / 127.0));
-         }
-      });
-      recurrence.addValueObserver(value -> {
-         if (!heldSteps.isEmpty() && value != -1) {
-            final int recValue = recurrenceMask.get() == -1 ? 0 : recurrenceMask.get();
-            getHeldNotes().forEach(noteStep -> noteStep.setRecurrence(value, recValue));
-         }
-      });
-      recurrenceMask.addValueObserver(value -> {
-         if (!heldSteps.isEmpty() && value != -1 && recurrence.get() != -1) {
-            getHeldNotes().forEach(noteStep -> noteStep.setRecurrence(recurrence.get(), value));
-         }
-      });
-      timbre.addDoubleValueObserver(v -> {
-         if (!heldSteps.isEmpty()) {
-            getHeldNotes().forEach(noteStep -> noteStep.setTimbre(v));
-         }
-      });
-      chance.addDoubleValueObserver(v -> {
-         if (!heldSteps.isEmpty()) {
-            getHeldNotes().forEach(noteStep -> noteStep.setChance(v));
-         }
-      });
-      velSpread.addDoubleValueObserver(v -> {
-         if (!heldSteps.isEmpty()) {
-            getHeldNotes().forEach(noteStep -> noteStep.setVelocitySpread(v));
-         }
-      });
-      heldSteps.addSizeValueListener((oldSize, size) -> {
-         if (oldSize == 0 && size > 0) {
-            updateNotesSelected();
-            firstDown = System.currentTimeMillis();
-         } else if (size == 0) {
-            deselectEnabled = true;
-            applyVelocity.setDisabled();
-            timbre.unset();
-            chance.unset();
-            pressure.unset();
-            velSpread.unset();
-            recurrence.setDisabled();
-            recurrenceMask.setDisabled();
-            if (recurrenceLayer.isActive()) {
-               activateRecurrence(false);
-            }
-         }
-      });
-   }
-
-   private void updateNotesSelected() {
-      if (!heldSteps.isEmpty()) {
-         getHeldNotes().stream().findFirst().ifPresent(noteStep -> {
-            applyVelocity.set((int) Math.round(noteStep.velocity() * 127));
-            timbre.set(noteStep.timbre());
-            chance.set(noteStep.chance());
-            pressure.set(noteStep.pressure());
-            velSpread.set(noteStep.velocitySpread());
-            RemoteConsole.out.println(" UPDATE NOTE SEL msk={}", noteStep.recurrenceMask());
-
-            recurrenceMask.set(noteStep.recurrenceMask());
-            recurrence.set(noteStep.recurrenceLength());
-         });
-      }
-   }
-
-   public void scrollStepsBy(final int direction) {
-      if (!isActive()) {
-         return;
-      }
-      if (control.getModifier().isShiftSet()) {
-         nextMenu();
-      } else {
-         if (direction < 0) {
-            positionHandler.scrollLeft();
-         } else {
-            positionHandler.scrollRight();
-         }
-      }
-   }
-
-
-   public void navigateVertically(final int direction) {
-      if (!isActive()) {
-         return;
-      }
-
-      if (direction > 0) {
-         cursorClip.selectPrevious();
-      } else {
-         cursorClip.selectNext();
-      }
    }
 
    public void init(final DrumPadBank drumPadBank, final DrumNoteHandler noteHandler) {
       final MixerSectionHardware hwControls = control.getHwControls();
       final int sectionIndex = hwControls.getSectionIndex();
-      cursorClip = driver.getCursorTrack().createLauncherCursorClip(16, 1);
-      positionHandler = new StepViewPosition(cursorClip, 16);
+      cursorClip = getCursorTrack().createLauncherCursorClip(STEPS, 1);
+      positionHandler = new StepViewPosition(cursorClip, STEPS);
       this.drumPadBank = drumPadBank;
       drumPadBank.scrollPosition().addValueObserver(offset -> drumScrollOffset = offset);
       pageIndex.setMax(positionHandler.getPages() - 1);
@@ -179,6 +46,9 @@ public class DrumSequencerLayer extends ButtonLayer {
       gridResolution.addValueObserver(s -> positionHandler.setGridResolution(gridResolution.getValue()));
       pageIndex.addValueObserver(val -> positionHandler.setPage(val));
 
+      clipNameValue = createClipNameValue(cursorClip);
+      clipPlayStatus = createPlayingStatusValue(cursorClip);
+
       initSelection(sectionIndex, hwControls, drumPadBank, noteHandler);
 
       for (int row = 0; row < 2; row++) {
@@ -188,19 +58,76 @@ public class DrumSequencerLayer extends ButtonLayer {
             bindStepButton(button, step);
          }
       }
-      clipEditMenu = initClipMenu();
-      stepValueMenu = initStepValueMenu();
+      clipEditMenu = initPage1Menu();
+      stepValueMenu = initPage2Menu();
+      stepLenValueMenu = initPage3Menu();
       currentMenu = clipEditMenu;
    }
 
+   @Override
+   List<NoteStep> getHeldNotes() {
+      return heldSteps.stream()//
+         .map(idx -> assignments[idx])//
+         .filter(ns -> ns != null && ns.state() == NoteStep.State.NoteOn) //
+         .collect(Collectors.toList());
+   }
+
+   public void scrollStepsBy(final int direction) {
+      if (!isActive()) {
+         return;
+      }
+      if (control.getModifier().isShiftSet()) {
+         if (direction < 0) {
+            previousMenu();
+         } else {
+            nextMenu();
+         }
+      } else {
+         if (direction < 0) {
+            positionHandler.scrollLeft();
+         } else {
+            positionHandler.scrollRight();
+         }
+      }
+   }
+
+   public void navigateVertically(final int direction) {
+      if (!isActive()) {
+         return;
+      }
+      if (direction > 0) {
+         cursorClip.selectPrevious();
+      } else {
+         cursorClip.selectNext();
+      }
+   }
+
+   @Override
    public void nextMenu() {
       if (!isActive()) {
          return;
       }
       if (currentMenu == clipEditMenu) {
          currentMenu = stepValueMenu;
+      } else if (currentMenu == stepValueMenu) {
+         currentMenu = stepLenValueMenu;
       } else {
          currentMenu = clipEditMenu;
+      }
+      control.applyUpdate();
+   }
+
+   @Override
+   public void previousMenu() {
+      if (!isActive()) {
+         return;
+      }
+      if (currentMenu == clipEditMenu) {
+         currentMenu = stepLenValueMenu;
+      } else if (currentMenu == stepValueMenu) {
+         currentMenu = clipEditMenu;
+      } else {
+         currentMenu = stepValueMenu;
       }
       control.applyUpdate();
    }
@@ -213,7 +140,7 @@ public class DrumSequencerLayer extends ButtonLayer {
       bind(() -> stepState(step), light);
    }
 
-   private MenuModeLayerConfiguration initClipMenu() {
+   private MenuModeLayerConfiguration initPage1Menu() {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("STEP_CLIP_MENU", control);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
       final SettableBeatTimeValue clipLength = cursorClip.getLoopLength();
@@ -227,22 +154,17 @@ public class DrumSequencerLayer extends ButtonLayer {
       builder.bindAction("Dbl.Cnt", "<EXE>", () -> cursorClip.duplicateContent());
       builder.bindAction("Duplicate", "<EXE>", () -> cursorClip.duplicate());
       builder.bindAction("Clear", "<EXE>", () -> cursorClip.clearSteps());
-      builder.bindPlaying(cursorClip);
-
+      builder.bind((index, control) -> bindMenuNavigate(index, control, true, false));
       builder.fillRest();
 
       return menu;
    }
 
-   private MenuModeLayerConfiguration initStepValueMenu() {
+   private MenuModeLayerConfiguration initPage2Menu() {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("STEP_CLIP_MENU", control);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-      builder.bindPlaying(cursorClip);
-      builder.bind((index, control) -> {
-         control.addNameBinding(index, new BasicStringValue("<Sel>"));
-         control.addDisplayValueBinding(index, heldSteps);
-         control.addPressEncoderBinding(index, v -> deselectEnabled = false, true);
-      });
+      builder.bind((index, control) -> bindMenuNavigate(index, control, false, false));
+      builder.bind(this::bindClipControl);
       builder.bind((index, control) -> {
          control.addNameBinding(index, new BasicStringValue("N.Vel"));
          control.addDisplayValueBinding(index, applyVelocity);
@@ -256,6 +178,39 @@ public class DrumSequencerLayer extends ButtonLayer {
       builder.bind((index, control) -> bindStepValue(index, control, "Press", pressure));
       builder.bind((index, control) -> bindStepValue(index, control, "Vl.Spr", velSpread));
       builder.bind((index, control) -> bindStepValue(index, control, "Chance", chance));
+      builder.bind((index, control) -> bindMenuNavigate(index, control, true, true));
+
+      builder.fillRest();
+      return menu;
+   }
+
+   private MenuModeLayerConfiguration initPage3Menu() {
+      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("STEP_CLIP_MENU_2", control);
+      final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
+      builder.bind((index, control) -> bindMenuNavigate(index, control, false, false));
+      builder.bind(this::bindClipControl);
+      builder.bind((index, control) -> {
+         final BooleanValueObject encoderHold = new BooleanValueObject();
+         control.addNameBinding(index, new BasicStringValue("Len"));
+         control.addDisplayValueBinding(index, duration);
+         control.addEncoderIncBinding(index, inc -> {
+            if (encoderHold.get()) {
+               duration.increment(gridResolution.getValue() * inc * 0.1);
+            } else {
+               duration.increment(gridResolution.getValue() * inc);
+            }
+            deselectEnabled = false;
+         }, true);
+         control.addRingBinding(index, duration);
+         control.addPressEncoderBinding(index, which -> {
+            if (control.getModifier().isClearSet()) {
+               duration.set(gridResolution.getValue());
+            } else {
+               encoderHold.set(true);
+            }
+         });
+         control.addReleaseEncoderBinding(index, which -> encoderHold.set(false));
+      });
       builder.bind((index, control) -> {
          control.addNameBinding(index, new BasicStringValue("Recur"));
          control.addDisplayValueBinding(index, recurrence);
@@ -267,47 +222,24 @@ public class DrumSequencerLayer extends ButtonLayer {
          control.addPressEncoderBinding(index, idx -> activateRecurrence(!recurrenceLayer.isActive()));
          control.addRingBinding(index, recurrence);
       });
+      builder.bind((index, control) -> {
+         control.addNameBinding(index, new BasicStringValue("Rpeat"));
+         control.addDisplayValueBinding(index, repeat);
+         control.addEncoderIncBinding(index, inc -> {
+            repeat.increment(inc);
+            deselectEnabled = false;
+         }, true);
+         control.addPressEncoderBinding(index, idx -> repeat.set(1));
+         control.addRingBinding(index, recurrence);
+      });
+      builder.bind((index, control) -> bindStepValue(index, control, "Rp.Crv", repeatCurve));
+      builder.bind((index, control) -> bindStepValue(index, control, "Rp.Vel", repeatVelocity));
+      builder.bind((index, control) -> bindStepValue(index, control, "RpVEnd", repeatVelocityEnd));
 
       builder.fillRest();
       return menu;
    }
 
-   private void bindStepValue(final int index, final MenuModeLayerConfiguration control, final String title,
-                              final StepValue value) {
-      control.addNameBinding(index, new BasicStringValue(title));
-      control.addDisplayValueBinding(index, value);
-      control.addEncoderIncBinding(index, inc -> {
-         value.increment(inc);
-         deselectEnabled = false;
-      }, true);
-      control.addRingBinding(index, value);
-      control.addPressEncoderBinding(index, which -> value.reset(), false);
-   }
-
-   public void activateRecurrence(final boolean activate) {
-      if (activate) {
-         if (!recurrenceLayer.isActive()) {
-            deactivateNotePlaying();
-            recurrenceLayer.activate();
-         }
-      } else {
-         if (recurrenceLayer.isActive()) {
-            activateNotePlaying();
-            recurrenceLayer.deactivate();
-         }
-      }
-   }
-
-   List<NoteStep> getHeldNotes() {
-      return heldSteps.stream()//
-         .map(idx -> assignments[idx])//
-         .filter(ns -> ns != null && ns.state() == NoteStep.State.NoteOn) //
-         .collect(Collectors.toList());
-   }
-
-   public MenuModeLayerConfiguration getMenu(final DrumMixerLayerGroup.EditorMode mode) {
-      return currentMenu;
-   }
 
    private void initSelection(final int sectionIndex, final MixerSectionHardware hwControls,
                               final DrumPadBank drumPadBank, final DrumNoteHandler noteHandler) {
@@ -325,7 +257,7 @@ public class DrumSequencerLayer extends ButtonLayer {
             }
          });
          hwControls.bindButton(this, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
-            () -> control.handlePadSelection(pad));
+            () -> handleSelection(index, pad));
          hwControls.bindButton(this, index, MixerSectionHardware.REC_INDEX, noteHandler.isPlaying(index), () -> {
          });
          final int mask = 0x1 << index;
@@ -334,28 +266,18 @@ public class DrumSequencerLayer extends ButtonLayer {
       }
    }
 
-   private boolean maskLighting(final int mask, final int index) {
-      if (recurrenceMask.get() < 1 || recurrence.get() < 2) {
-         return false;
-      }
-      if (index >= recurrence.get()) {
-         return false;
-      }
-      if ((mask & recurrenceMask.get()) != 0) {
-         return true;
-      }
-      return blinkTicks % 4 == 1;
-   }
-
-   private void editMask(final int mask) {
-      int value = recurrenceMask.get();
-      RemoteConsole.out.println("Edit {} v={}", mask, value);
-      if ((mask & value) != 0) {
-         value &= ~mask;
+   private void handleSelection(final int index, final DrumPad pad) {
+      if (control.getModifier().isClearSet()) {
+         if (selectedPadIndex == index) {
+            cursorClip.clearStepsAtY(0, 0);
+         } else {
+            cursorClip.scrollToKey(index + drumScrollOffset);
+            cursorClip.clearStepsAtY(0, 0);
+            cursorClip.scrollToKey(index + selectedPadIndex);
+         }
       } else {
-         value |= mask;
+         control.handlePadSelection(pad);
       }
-      recurrenceMask.set(value);
    }
 
    public boolean stepState(final int step) {
@@ -363,28 +285,33 @@ public class DrumSequencerLayer extends ButtonLayer {
       final int steps = positionHandler.getAvailableSteps();
       //if (step < steps) {
       if (state == NoteStep.State.NoteOn) {
+         if (copyNote != null && assignments[step] != null && assignments[step].x() == copyNote.x()) {
+            return blinkTicks % 2 == 1;
+         }
          return playingStep != step;
       } else {
          return playingStep == step;
       }
-
-      // }
-      //return false;
    }
 
    public void handleStepPressed(final int step) {
       heldSteps.add(step);
       final NoteStep note = assignments[step];
-      if (note == null || note.state() == NoteStep.State.Empty || note.state() == NoteStep.State.NoteSustain) {
+      if (copyNote != null) {
+         RemoteConsole.out.println(" DUPLICATE ");
+         handleNoteCopyAction(step, copyNote);
+      } else if (note == null || note.state() == NoteStep.State.Empty || note.state() == NoteStep.State.NoteSustain) {
          cursorClip.setStep(step, 0, velocity.get(), positionHandler.getGridResolution() * gatePercent);
          addedSteps.add(step);
+      } else if (note.state() == NoteStep.State.NoteOn && control.getModifier().isDuplicateSet()) {
+         copyNote = note;
       }
    }
 
    public void handleStepReleased(final int step) {
       final long diff = System.currentTimeMillis() - firstDown;
       final NoteStep note = assignments[step];
-      final boolean doToggle = deselectEnabled && diff < 1000;
+      final boolean doToggle = deselectEnabled && diff < 1000 && copyNote == null;
       heldSteps.remove(step);
       if (note != null && note.state() == NoteStep.State.NoteOn && !addedSteps.contains(step)) {
          if (!modifiedSteps.contains(step)) {
@@ -398,10 +325,6 @@ public class DrumSequencerLayer extends ButtonLayer {
       addedSteps.remove(step);
    }
 
-   public void notifyBlink(final int ticks) {
-      blinkTicks = ticks;
-   }
-
    private void handleNoteStep(final NoteStep noteStep) {
       final int newStep = noteStep.x();
       assignments[newStep] = noteStep;
@@ -411,14 +334,8 @@ public class DrumSequencerLayer extends ButtonLayer {
       if (expectedNoteChanges.containsKey(newStep)) {
          final NoteStep previousStep = expectedNoteChanges.get(newStep);
          expectedNoteChanges.remove(newStep);
+         applyValues(noteStep, previousStep);
       }
-   }
-
-   private void handlePlayingStep(final int playingStep) {
-      if (playingStep == -1) {
-         this.playingStep = -1;
-      }
-      this.playingStep = playingStep - positionHandler.getStepOffset();
    }
 
    @Override
@@ -429,6 +346,6 @@ public class DrumSequencerLayer extends ButtonLayer {
       } else {
          drumPadBank.getItemAt(0).selectInMixer();
       }
-
    }
+
 }

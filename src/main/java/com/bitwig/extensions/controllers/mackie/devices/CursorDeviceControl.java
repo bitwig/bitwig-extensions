@@ -19,9 +19,12 @@ public class CursorDeviceControl {
 
    public CursorDeviceControl(final CursorTrack cursorTrack, final int size, final int totalChannelsAvailable) {
       this.cursorTrack = cursorTrack;
+      cursorTrack.trackType().markInterested();
       cursorDevice = cursorTrack.createCursorDevice();
       primaryDevice = cursorTrack.createCursorDevice("drumdetection", "Pad Device", 8,
          CursorDeviceFollowMode.FIRST_INSTRUMENT);
+      primaryDevice.hasDrumPads().markInterested();
+      primaryDevice.exists().markInterested();
 
       drumPadBank = primaryDevice.createDrumPadBank(totalChannelsAvailable);
 
@@ -52,8 +55,7 @@ public class CursorDeviceControl {
       remotes = cursorDevice.createCursorRemoteControlsPage(8);
 
       for (int i = 0; i < deviceBank.getSizeOfBank(); i++) {
-         final int index = i;
-         final Device device = deviceBank.getDevice(index);
+         final Device device = deviceBank.getDevice(i);
          device.deviceType().markInterested();
          device.name().markInterested();
          device.position().markInterested();
@@ -169,6 +171,13 @@ public class CursorDeviceControl {
             cursorDevice.selectPrevious(); // Arrow Button UP ist previous Device
          }
       }
+   }
+
+   public boolean cursorHasDrumPads() {
+      if (cursorTrack.trackType().get().equals("Instrument")) {
+         return primaryDevice.exists().get() && primaryDevice.hasDrumPads().get();
+      }
+      return false;
    }
 
    public boolean hasDrumPads() {
