@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.mackie.layer;
 import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extensions.controllers.mackie.ButtonViewState;
-import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
@@ -11,32 +10,15 @@ import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
 import com.bitwig.extensions.controllers.mackie.seqencer.DrumSequencerLayer;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
-import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 import com.bitwig.extensions.framework.Layer;
 
 public class DrumMixerLayerGroup extends MixerLayerGroup {
 
-   private final DrumSequencerLayer drumSeqencerLayer;
-   private final ValueObject<ButtonViewState> buttonView;
-   private EditorMode editMode = EditorMode.MIX;
-
-   MenuModeLayerConfiguration clipMenu;
-
-   public enum EditorMode {
-      MIX, CLIP
-   }
+   private final DrumSequencerLayer drumSequencerLayer;
 
    public DrumMixerLayerGroup(final String name, final MixControl control) {
       super(name, control);
-      drumSeqencerLayer = new DrumSequencerLayer(control);
-      buttonView = control.getDriver().getButtonView();
-      buttonView.addValueObserver((oldValue, newValue) -> {
-         if (newValue == ButtonViewState.STEP_SEQUENCER) {
-            editMode = EditorMode.CLIP;
-         } else {
-            editMode = EditorMode.MIX;
-         }
-      });
+      drumSequencerLayer = new DrumSequencerLayer(control);
    }
 
    @Override
@@ -49,12 +31,12 @@ public class DrumMixerLayerGroup extends MixerLayerGroup {
       if (editMode == EditorMode.MIX) {
          super.navigateHorizontally(direction);
       } else {
-         drumSeqencerLayer.scrollStepsBy(direction);
+         drumSequencerLayer.scrollStepsBy(direction);
       }
    }
 
    public void notifyBlink(final int ticks) {
-      drumSeqencerLayer.notifyBlink(ticks);
+      drumSequencerLayer.notifyBlink(ticks);
    }
 
    @Override
@@ -62,19 +44,19 @@ public class DrumMixerLayerGroup extends MixerLayerGroup {
       if (editMode == EditorMode.MIX) {
          super.navigateVertically(direction);
       } else {
-         drumSeqencerLayer.navigateVertically(direction);
+         drumSequencerLayer.navigateVertically(direction);
       }
    }
 
    @Override
    public void advanceMode() {
-      drumSeqencerLayer.nextMenu();
+      drumSequencerLayer.nextMenu();
    }
 
    @Override
    public Layer getMixerButtonLayer() {
-      if (buttonView.get() == ButtonViewState.STEP_SEQUENCER) {
-         return drumSeqencerLayer;
+      if (control.getDriver().getButtonView().get() == ButtonViewState.STEP_SEQUENCER) {
+         return drumSequencerLayer;
       }
       return mixerButtonLayer;
    }
@@ -84,7 +66,7 @@ public class DrumMixerLayerGroup extends MixerLayerGroup {
       if (editMode == EditorMode.MIX) {
          return super.getEncoderLayer(type);
       }
-      return drumSeqencerLayer.getMenu(editMode).getEncoderLayer();
+      return drumSequencerLayer.getMenu().getEncoderLayer();
    }
 
    @Override
@@ -92,12 +74,12 @@ public class DrumMixerLayerGroup extends MixerLayerGroup {
       if (location == DisplayLocation.BOTTOM || editMode == EditorMode.MIX) {
          return super.getDisplayConfiguration(type, DisplayLocation.BOTTOM);
       }
-      return drumSeqencerLayer.getMenu(editMode).getDisplayLayer(0);
+      return drumSequencerLayer.getMenu().getDisplayLayer(0);
    }
 
    public void init(final DrumPadBank drumPadBank, final DrumNoteHandler noteHandler) {
       final int sectionIndex = control.getHwControls().getSectionIndex();
-      drumSeqencerLayer.init(drumPadBank, noteHandler);
+      drumSequencerLayer.init(drumPadBank, noteHandler);
       for (int i = 0; i < 8; i++) {
          final int trackIndex = i + sectionIndex * 8;
          setUpDrumPadControl(i, drumPadBank.getItemAt(trackIndex), noteHandler);

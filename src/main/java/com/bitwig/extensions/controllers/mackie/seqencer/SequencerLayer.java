@@ -6,7 +6,6 @@ import com.bitwig.extensions.controllers.mackie.NoteAssignment;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.layer.ButtonLayer;
-import com.bitwig.extensions.controllers.mackie.layer.DrumMixerLayerGroup;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
@@ -80,8 +79,7 @@ public abstract class SequencerLayer extends ButtonLayer {
 
    abstract List<NoteStep> getHeldNotes();
 
-
-   public MenuModeLayerConfiguration getMenu(final DrumMixerLayerGroup.EditorMode mode) {
+   public MenuModeLayerConfiguration getMenu() {
       return currentMenu;
    }
 

@@ -22,7 +22,6 @@ import com.bitwig.extensions.controllers.mackie.section.SectionType;
 import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -158,7 +157,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       host.showPopupNotification(" Initialized Mackie MCU Pro v1.0a");
       sections.forEach(MixControl::resetFaders);
       sections.forEach(MixControl::clearAll);
-      ledDisplay.refreschMode();
+      ledDisplay.refreshMode();
       host.scheduleTask(this::handlePing, 100);
 
 //		final Action[] as = application.getActions();
@@ -460,8 +459,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       transport.timeSignature().addValueObserver(sig -> ledDisplay.setDivision(sig));
 
-      transport.playPosition()
-         .addValueObserver(v -> ledDisplay.updatePosition(v, transport.playPosition().getFormatted()));
+      transport.playPosition().addValueObserver(v -> ledDisplay.updatePosition(v));
       transport.playPositionInSeconds().addValueObserver(ledDisplay::updateTime);
 
       MainUnitButton.assignToggle(this, BasicNoteOnAssignment.FLIP, mainLayer, flipped);
@@ -796,19 +794,18 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private void initSeqSection() {
       final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.STEP_SEQ);
-      //final MenuModeLayerConfiguration menu = menuCreator.createKeyboardMenu(notePlayingSetup);
       button.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER);
 
       button.bindPressed(mainLayer, () -> {
          final ButtonViewState current = buttonViewMode.get();
-         RemoteConsole.out.println(" >> {} hdp={} inst={}", current, cursorDeviceControl.hasDrumPads(),
-            cursorTrack.trackType().get().equals("Instrument"));
          if (current == ButtonViewState.STEP_SEQUENCER) {
             buttonViewMode.set(ButtonViewState.MIXER);
          } else if (mixerMode.get() == MixerMode.DRUM) {
             buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
          } else if (cursorDeviceControl.cursorHasDrumPads()) {
             mixerMode.set(MixerMode.DRUM);
+            buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
+         } else {
             buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
          }
       });

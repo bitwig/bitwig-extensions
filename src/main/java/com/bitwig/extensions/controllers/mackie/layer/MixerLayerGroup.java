@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.mackie.layer;
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
+import com.bitwig.extensions.controllers.mackie.ButtonViewState;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.MotorSlider;
@@ -9,10 +10,8 @@ import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
-import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
-import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
-import com.bitwig.extensions.controllers.mackie.value.ChannelStateValueHandler;
-import com.bitwig.extensions.controllers.mackie.value.TrackNameValueHandler;
+import com.bitwig.extensions.controllers.mackie.seqencer.NoteSequenceLayer;
+import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
@@ -37,6 +36,12 @@ public class MixerLayerGroup {
 
    private final DisplayLayer activeSendDisplayConfig;
    private final DisplayLayer activePanDisplayConfig;
+   protected EditorMode editMode = EditorMode.MIX;
+   private NoteSequenceLayer sequenceLayer;
+
+   public enum EditorMode {
+      MIX, CLIP
+   }
 
    public MixerLayerGroup(final String name, final MixControl control) {
       final int sectionIndex = control.getHwControls().getSectionIndex();
@@ -63,6 +68,22 @@ public class MixerLayerGroup {
       sendDisplayConfiguration = new DisplayLayer("MixSend", section, layers, hwControls);
       activeSendDisplayConfig = sendDisplayConfiguration;
       activePanDisplayConfig = panDisplayConfiguration;
+      final ValueObject<ButtonViewState> buttonView = control.getDriver().getButtonView();
+      buttonView.addValueObserver((oldValue, newValue) -> {
+         if (sequenceLayer == null) {
+            return;
+         }
+         if (newValue == ButtonViewState.STEP_SEQUENCER) {
+            editMode = EditorMode.CLIP;
+         } else {
+            editMode = EditorMode.MIX;
+         }
+      });
+
+   }
+
+   public void setSequenceLayer(final NoteSequenceLayer sequenceLayer) {
+      this.sequenceLayer = sequenceLayer;
    }
 
    public boolean hasCursorNavigation() {
@@ -81,7 +102,7 @@ public class MixerLayerGroup {
       }
    }
 
-   public DisplayLayer getDisplayConfiguration(final ParamElement type, final DisplayLocation location) {
+   private DisplayLayer getDisplayConfigurationMix(final ParamElement type, final DisplayLocation location) {
       switch (type) {
          case PAN:
             return activePanDisplayConfig;
@@ -93,7 +114,7 @@ public class MixerLayerGroup {
       }
    }
 
-   public EncoderLayer getEncoderLayer(final ParamElement type) {
+   private EncoderLayer getEncoderLayerMix(final ParamElement type) {
       switch (type) {
          case PAN:
             return panEncoderLayer;
@@ -106,7 +127,24 @@ public class MixerLayerGroup {
    }
 
    public Layer getMixerButtonLayer() {
-      return mixerButtonLayer;
+      if (editMode == EditorMode.MIX || sequenceLayer == null) {
+         return mixerButtonLayer;
+      }
+      return sequenceLayer;
+   }
+
+   public DisplayLayer getDisplayConfiguration(final ParamElement type, final DisplayLocation location) {
+      if (editMode == EditorMode.MIX || sequenceLayer == null || location == DisplayLocation.BOTTOM) {
+         return getDisplayConfigurationMix(type, location);
+      }
+      return sequenceLayer.getMenu().getDisplayLayer(0);
+   }
+
+   public EncoderLayer getEncoderLayer(final ParamElement type) {
+      if (editMode == EditorMode.MIX || sequenceLayer == null) {
+         return getEncoderLayerMix(type);
+      }
+      return sequenceLayer.getMenu().getEncoderLayer();
    }
 
    public void navigateHorizontally(final int direction) {

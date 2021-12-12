@@ -9,7 +9,6 @@ public class RingDisplayDoubleRangeValueBinding extends RingDisplayBinding<Doubl
    public RingDisplayDoubleRangeValueBinding(final DoubleRangeValue source, final RingDisplay target,
                                              final RingDisplayType type) {
       super(target, source, type);
-      final int vintRange = type.getRange() + 1;
       source.addDoubleValueObserver(v -> valueChange(type.getOffset() + source.scale(v, type.getRange())));
    }
 

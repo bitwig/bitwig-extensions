@@ -41,9 +41,11 @@ public class MainUnitButton {
                          final boolean reverseLed) {
       final NoteAssignment actualAssignment = driver.get(assignment);
       this.assignment = actualAssignment;
+
       final int noteNr = actualAssignment.getNoteNo();
       button = driver.getSurface().createHardwareButton(actualAssignment + "_BUTTON");
       actualAssignment.holdActionAssign(driver.getMidiIn(), button);
+
       led = driver.getSurface().createOnOffHardwareLight(actualAssignment + "_BUTTON_LED");
       button.setBackgroundLight(led);
       if (reverseLed) {
@@ -51,6 +53,10 @@ public class MainUnitButton {
       } else {
          led.onUpdateHardware(() -> driver.sendLedUpdate(noteNr, led.isOn().currentValue() ? 127 : 0));
       }
+   }
+
+   public NoteAssignment getAssignment() {
+      return assignment;
    }
 
    public void setLed(final boolean onOff) {

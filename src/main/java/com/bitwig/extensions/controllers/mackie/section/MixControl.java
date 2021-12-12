@@ -19,6 +19,7 @@ import com.bitwig.extensions.controllers.mackie.layer.ClipLaunchButtonLayer;
 import com.bitwig.extensions.controllers.mackie.layer.DrumMixerLayerGroup;
 import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
 import com.bitwig.extensions.controllers.mackie.layer.NotePlayingButtonLayer;
+import com.bitwig.extensions.controllers.mackie.seqencer.NoteSequenceLayer;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
@@ -32,6 +33,7 @@ public class MixControl implements LayerStateHandler {
    final DrumMixerLayerGroup drumGroup;
 
    protected final LayerState layerState;
+   private NoteSequenceLayer noteSequenceLayer;
 
    protected LayerConfiguration currentConfiguration;
 
@@ -83,6 +85,12 @@ public class MixControl implements LayerStateHandler {
             globalGroup.navigateHorizontally(direction);
          }
       });
+
+      if (type == SectionType.MAIN) {
+         noteSequenceLayer = new NoteSequenceLayer("NOTE_SEQUENCER", this);
+         mainGroup.setSequenceLayer(noteSequenceLayer);
+         globalGroup.setSequenceLayer(noteSequenceLayer);
+      }
 
       sendTrackConfiguration = new TrackLayerConfiguration("SN_TR", this);
 
@@ -503,6 +511,7 @@ public class MixControl implements LayerStateHandler {
       drumGroup.init(drumPadBank, drumNoteHandler);
       if (type == SectionType.MAIN) {
          drumGroup.initMainSlider(cursorTrack, driver.getMasterSlider());
+         noteSequenceLayer.init();
       }
       scaleButtonLayer.init(scaleNoteHandler, getHwControls());
       launchButtonLayer.initTrackBank(getHwControls(), mixerTrackBank);

@@ -9,7 +9,6 @@ import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -298,7 +297,6 @@ public class DrumSequencerLayer extends SequencerLayer {
       heldSteps.add(step);
       final NoteStep note = assignments[step];
       if (copyNote != null) {
-         RemoteConsole.out.println(" DUPLICATE ");
          handleNoteCopyAction(step, copyNote);
       } else if (note == null || note.state() == NoteStep.State.Empty || note.state() == NoteStep.State.NoteSustain) {
          cursorClip.setStep(step, 0, velocity.get(), positionHandler.getGridResolution() * gatePercent);

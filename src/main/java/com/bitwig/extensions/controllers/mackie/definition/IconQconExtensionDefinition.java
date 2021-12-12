@@ -11,7 +11,7 @@ public class IconQconExtensionDefinition extends MackieMcuProExtensionDefinition
       // DVR Button => Keyboard Mode
       override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.REPLACE);
 
-      overrideX(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
+      override(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
       override(BasicNoteOnAssignment.GLOBAL_VIEW, BasicNoteOnAssignment.LATCH);
 
       override(BasicNoteOnAssignment.LATCH, BasicNoteOnAssignment.AUTO_WRITE);

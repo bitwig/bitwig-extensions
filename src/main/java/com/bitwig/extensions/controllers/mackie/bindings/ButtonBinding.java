@@ -8,13 +8,13 @@ import com.bitwig.extensions.framework.HardwareBinding;
 
 public class ButtonBinding extends HardwareBinding<HardwareAction, HardwareActionBindable, com.bitwig.extension.controller.api.HardwareActionBinding> {
 
-   public ButtonBinding(final HardwareButton excusiveButtonSource, final HardwareActionBindable target) {
-      this(excusiveButtonSource, excusiveButtonSource.pressedAction(), target);
+   public ButtonBinding(final HardwareButton exclusiveButtonSource, final HardwareActionBindable target) {
+      this(exclusiveButtonSource, exclusiveButtonSource.pressedAction(), target);
    }
 
-   public ButtonBinding(final HardwareButton excusiveButtonSource, final HardwareAction action,
+   public ButtonBinding(final HardwareButton exclusiveButtonSource, final HardwareAction action,
                         final HardwareActionBindable target) {
-      super(excusiveButtonSource, action, target);
+      super(exclusiveButtonSource, action, target);
    }
 
    @Override
