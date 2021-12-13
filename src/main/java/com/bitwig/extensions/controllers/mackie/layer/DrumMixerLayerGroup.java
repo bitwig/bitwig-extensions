@@ -9,6 +9,7 @@ import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
 import com.bitwig.extensions.controllers.mackie.seqencer.DrumSequencerLayer;
+import com.bitwig.extensions.controllers.mackie.seqencer.SequencerLayer;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.framework.Layer;
 
@@ -19,6 +20,11 @@ public class DrumMixerLayerGroup extends MixerLayerGroup {
    public DrumMixerLayerGroup(final String name, final MixControl control) {
       super(name, control);
       drumSequencerLayer = new DrumSequencerLayer(control);
+   }
+
+   @Override
+   public SequencerLayer getSequenceLayer() {
+      return drumSequencerLayer;
    }
 
    @Override
@@ -64,7 +70,7 @@ public class DrumMixerLayerGroup extends MixerLayerGroup {
    @Override
    public EncoderLayer getEncoderLayer(final ParamElement type) {
       if (editMode == EditorMode.MIX) {
-         return super.getEncoderLayer(type);
+         return getEncoderLayerMix(type);
       }
       return drumSequencerLayer.getMenu().getEncoderLayer();
    }
@@ -72,7 +78,7 @@ public class DrumMixerLayerGroup extends MixerLayerGroup {
    @Override
    public DisplayLayer getDisplayConfiguration(final ParamElement type, final DisplayLocation location) {
       if (location == DisplayLocation.BOTTOM || editMode == EditorMode.MIX) {
-         return super.getDisplayConfiguration(type, DisplayLocation.BOTTOM);
+         return getDisplayConfigurationMix(type, location);
       }
       return drumSequencerLayer.getMenu().getDisplayLayer(0);
    }

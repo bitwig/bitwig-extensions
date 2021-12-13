@@ -11,6 +11,7 @@ import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
 import com.bitwig.extensions.controllers.mackie.seqencer.NoteSequenceLayer;
+import com.bitwig.extensions.controllers.mackie.seqencer.SequencerLayer;
 import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -70,7 +71,7 @@ public class MixerLayerGroup {
       activePanDisplayConfig = panDisplayConfiguration;
       final ValueObject<ButtonViewState> buttonView = control.getDriver().getButtonView();
       buttonView.addValueObserver((oldValue, newValue) -> {
-         if (sequenceLayer == null) {
+         if (getSequenceLayer() == null) {
             return;
          }
          if (newValue == ButtonViewState.STEP_SEQUENCER) {
@@ -79,7 +80,10 @@ public class MixerLayerGroup {
             editMode = EditorMode.MIX;
          }
       });
+   }
 
+   public SequencerLayer getSequenceLayer() {
+      return sequenceLayer;
    }
 
    public void setSequenceLayer(final NoteSequenceLayer sequenceLayer) {
@@ -102,7 +106,7 @@ public class MixerLayerGroup {
       }
    }
 
-   private DisplayLayer getDisplayConfigurationMix(final ParamElement type, final DisplayLocation location) {
+   public DisplayLayer getDisplayConfigurationMix(final ParamElement type, final DisplayLocation location) {
       switch (type) {
          case PAN:
             return activePanDisplayConfig;
@@ -114,7 +118,7 @@ public class MixerLayerGroup {
       }
    }
 
-   private EncoderLayer getEncoderLayerMix(final ParamElement type) {
+   public EncoderLayer getEncoderLayerMix(final ParamElement type) {
       switch (type) {
          case PAN:
             return panEncoderLayer;

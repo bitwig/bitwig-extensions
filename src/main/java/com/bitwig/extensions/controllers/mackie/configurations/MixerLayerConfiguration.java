@@ -48,6 +48,7 @@ public class MixerLayerConfiguration extends LayerConfiguration {
    @Override
    public DisplayLayer getDisplayLayer(final int which) {
       final MixerLayerGroup activeGroup = mixControl.getActiveMixGroup();
+
       if (which == 0) {
          return activeGroup.getDisplayConfiguration(encoderAssign, DisplayLocation.TOP).setShowTrackInformation(false);
       }

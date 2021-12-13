@@ -1,33 +1,52 @@
 package com.bitwig.extensions.controllers.mackie.seqencer;
 
-import com.bitwig.extensions.controllers.mackie.NotePlayingSetup;
 import com.bitwig.extensions.controllers.mackie.value.DerivedStringValueObject;
 import com.bitwig.extensions.controllers.mackie.value.IncrementalValue;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntConsumer;
 
-public class NoteValue extends DerivedStringValueObject implements IncrementalValue {
+public class EditorValue extends DerivedStringValueObject implements IncrementalValue {
+   private final Converter converter;
 
-   private final boolean active = false;
-   private int noteValue;
+   public interface Converter {
+      String convert(boolean edit, int value);
+   }
+
+   private boolean edit = false;
+   private int setValue;
    private final List<IntConsumer> valueChangedCallbacks = new ArrayList<>();
+   private int editValue;
 
-   public NoteValue(final int initValue) {
-      noteValue = initValue;
+   public EditorValue(final int initValue, final Converter converter) {
+      setValue = initValue;
+      this.converter = converter;
    }
 
    public int getIntValue() {
-      return noteValue;
+      return setValue;
    }
 
    public void set(final int noteValue) {
-      if (noteValue != this.noteValue) {
-         this.noteValue = noteValue;
+      if (noteValue != setValue) {
+         setValue = noteValue;
          fireChanged(displayedValue());
          fireChanged(noteValue);
       }
+   }
+
+   public void setEditValue(final int value) {
+      edit = true;
+      editValue = value;
+      fireChanged(displayedValue());
+   }
+
+   public void exitEdit() {
+      edit = false;
+      RemoteConsole.out.println("Exit");
+      fireChanged(displayedValue());
    }
 
    public void addIntValueObserver(final IntConsumer callback) {
@@ -42,9 +61,9 @@ public class NoteValue extends DerivedStringValueObject implements IncrementalVa
 
    @Override
    public void increment(final int inc) {
-      final int newValue = noteValue + inc;
+      final int newValue = setValue + inc;
       if (newValue >= 0 && newValue < 128) {
-         noteValue = newValue;
+         setValue = newValue;
          fireChanged(displayedValue());
          fireChanged(newValue);
       }
@@ -52,12 +71,10 @@ public class NoteValue extends DerivedStringValueObject implements IncrementalVa
 
    @Override
    public String displayedValue() {
-      final String base = NotePlayingSetup.NOTES[noteValue % 12];
-      final int octave = noteValue / 12;
-      if (active) {
-         return String.format("<%s%d>", base, octave - 2);
+      if (edit) {
+         return converter.convert(edit, editValue);
       }
-      return String.format("%s%d", base, octave - 2);
+      return converter.convert(edit, setValue);
    }
 
    @Override

@@ -188,28 +188,7 @@ public class DrumSequencerLayer extends SequencerLayer {
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
       builder.bind((index, control) -> bindMenuNavigate(index, control, false, false));
       builder.bind(this::bindClipControl);
-      builder.bind((index, control) -> {
-         final BooleanValueObject encoderHold = new BooleanValueObject();
-         control.addNameBinding(index, new BasicStringValue("Len"));
-         control.addDisplayValueBinding(index, duration);
-         control.addEncoderIncBinding(index, inc -> {
-            if (encoderHold.get()) {
-               duration.increment(gridResolution.getValue() * inc * 0.1);
-            } else {
-               duration.increment(gridResolution.getValue() * inc);
-            }
-            deselectEnabled = false;
-         }, true);
-         control.addRingBinding(index, duration);
-         control.addPressEncoderBinding(index, which -> {
-            if (control.getModifier().isClearSet()) {
-               duration.set(gridResolution.getValue());
-            } else {
-               encoderHold.set(true);
-            }
-         });
-         control.addReleaseEncoderBinding(index, which -> encoderHold.set(false));
-      });
+      builder.bind(this::bindNoteLength);
       builder.bind((index, control) -> {
          control.addNameBinding(index, new BasicStringValue("Recur"));
          control.addDisplayValueBinding(index, recurrence);

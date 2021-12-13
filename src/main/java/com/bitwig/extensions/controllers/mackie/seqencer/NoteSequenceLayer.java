@@ -7,20 +7,38 @@ import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConf
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
 
 public class NoteSequenceLayer extends SequencerLayer {
+   public final static String[] NOTES = {" C", "C#", " D", "D#", " E", " F", "F#", " G", "G#", " A", "A#", " B"};
    private static final int STEPS = 32;
-   protected final NoteStep[] assignments = new NoteStep[STEPS];
-   private final NoteValue noteValue = new NoteValue(60);
+   protected final NoteStepSlot[] assignments = new NoteStepSlot[STEPS];
+   private final EditorValue noteValue = new EditorValue(60, (edit, value) -> {
+      final String base = NOTES[value % 12];
+      final int octave = value / 12 - 2;
+      if (edit) {
+         return String.format("*%s%d", base, octave);
+      }
+      return String.format("<%s%d>", base, octave);
+   });
+   private final EditorValue velocityValue = new EditorValue(100,
+      (edit, value) -> edit ? "* " + value : String.format("<%3d>", value));
+
+   private final HashMap<Integer, NoteStep> expectedTranspose = new HashMap<>();
 
    private MenuModeLayerConfiguration page1Menu;
 
    public NoteSequenceLayer(final String name, final MixControl mixControl) {
       super("NoteSeq_" + mixControl.getHwControls().getSectionIndex(), mixControl, BasicNoteOnAssignment.REC_BASE);
+      for (int i = 0; i < STEPS; i++) {
+         assignments[i] = new NoteStepSlot(i);
+      }
    }
 
    public void init() {
@@ -40,7 +58,7 @@ public class NoteSequenceLayer extends SequencerLayer {
 
       clipNameValue = createClipNameValue(cursorClip);
       clipPlayStatus = createPlayingStatusValue(cursorClip);
-
+      initNoteValues();
 
       for (int row = 0; row < 4; row++) {
          for (int col = 0; col < 8; col++) {
@@ -53,14 +71,22 @@ public class NoteSequenceLayer extends SequencerLayer {
       currentMenu = page1Menu;
    }
 
-   public boolean stepState(final int step) {
-      final NoteStep.State state = assignments[step] == null ? NoteStep.State.Empty : assignments[step].state();
-      final int steps = positionHandler.getAvailableSteps();
-      //if (step < steps) {
-      if (state == NoteStep.State.NoteOn) {
-         if (copyNote != null && assignments[step] != null && assignments[step].x() == copyNote.x()) {
-            return blinkTicks % 2 == 1;
+
+   void initNoteValues() {
+      noteValue.addIntValueObserver(value -> {
+         if (!heldSteps.isEmpty()) {
+            RemoteConsole.out.println(">> {}", value);
          }
+      });
+   }
+
+   public boolean stepState(final int step) {
+      final boolean hasStep = assignments[step].hasNotes();
+      final int steps = positionHandler.getAvailableSteps();
+      if (hasStep) {
+//         if (copyNote != null && assignments[step] != null && assignments[step].x() == copyNote.x()) {
+//            return blinkTicks % 2 == 1;
+//         }
          return playingStep != step;
       } else {
          return playingStep == step;
@@ -77,33 +103,60 @@ public class NoteSequenceLayer extends SequencerLayer {
 
    public void handleStepPressed(final int step) {
       heldSteps.add(step);
-      final NoteStep note = assignments[step];
-      if (copyNote != null) {
-         handleNoteCopyAction(step, copyNote);
-      } else if (note == null || note.state() == NoteStep.State.Empty || note.state() == NoteStep.State.NoteSustain) {
-         cursorClip.setStep(step, noteValue.getIntValue(), velocity.get(),
+      if (!assignments[step].hasNotes()) {
+         cursorClip.setStep(step, noteValue.getIntValue(), velocityValue.getIntValue(),
             positionHandler.getGridResolution() * gatePercent);
+         noteValue.setEditValue(noteValue.getIntValue());
+         velocityValue.setEditValue(noteValue.getIntValue());
          addedSteps.add(step);
-      } else if (note.state() == NoteStep.State.NoteOn && control.getModifier().isDuplicateSet()) {
-         copyNote = note;
       }
+
+//      if (copyNote != null) {
+//         handleNoteCopyAction(step, copyNote);
+//      } else if (note == null || note.state() == NoteStep.State.Empty || note.state() == NoteStep.State.NoteSustain) {
+//         cursorClip.setStep(step, noteValue.getIntValue(), velocity.get(),
+//            positionHandler.getGridResolution() * gatePercent);
+//         addedSteps.add(step);
+//      } else if (note.state() == NoteStep.State.NoteOn && control.getModifier().isDuplicateSet()) {
+//         copyNote = note;
+//      }
    }
 
    public void handleStepReleased(final int step) {
       final long diff = System.currentTimeMillis() - firstDown;
-      final NoteStep note = assignments[step];
+
       final boolean doToggle = deselectEnabled && diff < 1000 && copyNote == null;
-      heldSteps.remove(step);
-      if (note != null && note.state() == NoteStep.State.NoteOn && !addedSteps.contains(step)) {
-         if (!modifiedSteps.contains(step)) {
-            if (doToggle) {
-               cursorClip.clearStepsAtX(0, step);
-            }
-         } else {
-            modifiedSteps.remove(step);
+      if (assignments[step].hasNotes() && !addedSteps.contains(step)) {
+         if (doToggle) {
+            cursorClip.clearStepsAtX(0, step);
          }
       }
       addedSteps.remove(step);
+      heldSteps.remove(step);
+//      if (note != null && note.state() == NoteStep.State.NoteOn && !addedSteps.contains(step)) {
+//         if (!modifiedSteps.contains(step)) {
+//            if (doToggle) {
+//               cursorClip.clearStepsAtX(0, step);
+//            }
+//         } else {
+//            modifiedSteps.remove(step);
+//         }
+//      }
+//      addedSteps.remove(step);
+   }
+
+   @Override
+   void handleSelect() {
+      getHeldNotes().stream().findFirst().ifPresent(note -> {
+         noteValue.setEditValue(note.y());
+         velocityValue.setEditValue((int) Math.round(127 * note.velocity()));
+      });
+   }
+
+   @Override
+   void handleReleased() {
+      noteValue.exitEdit();
+      velocityValue.exitEdit();
    }
 
    private MenuModeLayerConfiguration initPage1Menu() {
@@ -116,18 +169,63 @@ public class NoteSequenceLayer extends SequencerLayer {
       }, formatter, 4.0, 1.0);
       builder.bindValue("Offset", pageIndex, false);
       builder.bindValueSet("Grid", gridResolution);
-      builder.bindValue("In.Vel", velocity, true);
+      builder.bind((index, control) -> {
+         control.addNameBinding(index, new BasicStringValue("Vel"));
+         control.addEncoderIncBinding(index, this::incrementVelocityValue, true);
+         control.addDisplayValueBinding(index, velocityValue);
+      });
+
       builder.bind((index, control) -> {
          control.addNameBinding(index, new BasicStringValue("Note"));
-         control.addEncoderIncBinding(index, inc -> {
-            noteValue.increment(inc);
-         }, true);
+         control.addEncoderIncBinding(index, this::incrementNoteValue, true);
          control.addDisplayValueBinding(index, noteValue);
       });
+      builder.bind(this::bindNoteLength);
       builder.bind(this::bindClipControl);
       builder.bind((index, control) -> bindMenuNavigate(index, control, true, false));
       builder.fillRest();
       return menu;
+   }
+
+   private void incrementVelocityValue(final int increment) {
+      if (!heldSteps.isEmpty()) {
+         final List<NoteStep> notes = getHeldNotes();
+         notes.forEach(note -> incrementVelocity(note, increment));
+      } else {
+         velocityValue.increment(increment);
+      }
+   }
+
+   private void incrementVelocity(final NoteStep note, final int amount) {
+      final int vel = (int) Math.round(note.velocity() * 127);
+      final int newVel = Math.max(0, Math.min(127, vel + amount));
+      if (newVel != vel) {
+         velocityValue.setEditValue(newVel);
+         note.setVelocity(newVel / 127.0);
+      }
+   }
+
+
+   private void incrementNoteValue(final int increment) {
+      if (!heldSteps.isEmpty()) {
+         final List<NoteStep> notes = getHeldNotes();
+         notes.forEach(note -> transpose(note, increment));
+      } else {
+         noteValue.increment(increment);
+      }
+   }
+
+   private void transpose(final NoteStep note, final int amount) {
+      final int origX = note.x();
+      final int origY = note.y();
+      final int newY = origY + amount;
+      if (newY >= 0 && newY < 128) {
+         final int vx = origX << 8 | newY;
+         expectedTranspose.put(vx, note);
+         noteValue.setEditValue(newY);
+         cursorClip.clearStep(0, origX, origY);
+         cursorClip.setStep(origX, newY, (int) (note.velocity() * 127), note.duration());
+      }
    }
 
    @Override
@@ -143,28 +241,22 @@ public class NoteSequenceLayer extends SequencerLayer {
    @Override
    List<NoteStep> getHeldNotes() {
       return heldSteps.stream()//
-         .map(idx -> assignments[idx])//
-         .filter(ns -> ns != null && ns.state() == NoteStep.State.NoteOn) //
+         .map(idx -> assignments[idx].steps())//
+         .flatMap(Collection::stream) //
          .collect(Collectors.toList());
-   }
-
-   @Override
-   protected void updateNotesSelected() {
-      super.updateNotesSelected();
-      if (!heldSteps.isEmpty()) {
-
-      }
    }
 
    private void handleNoteStep(final NoteStep noteStep) {
       final int newStep = noteStep.x();
-      assignments[newStep] = noteStep;
+      final int xyIndex = noteStep.x() << 8 | noteStep.y();
+      assignments[newStep].updateNote(noteStep);
+
       if (isActive()) {
          updateNotesSelected();
       }
-      if (expectedNoteChanges.containsKey(newStep)) {
-         final NoteStep previousStep = expectedNoteChanges.get(newStep);
-         expectedNoteChanges.remove(newStep);
+      if (expectedTranspose.containsKey(xyIndex)) {
+         final NoteStep previousStep = expectedTranspose.get(xyIndex);
+         expectedNoteChanges.remove(xyIndex);
          applyValues(noteStep, previousStep);
       }
    }

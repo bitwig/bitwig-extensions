@@ -49,7 +49,7 @@ public abstract class SequencerLayer extends ButtonLayer {
    protected final StepValue chance = new StepValue(0, 1, 1);
    protected final StepValue pressure = new StepValue(0, 1, 0);
    protected final StepValue velSpread = new StepValue(0, 1, 0);
-   protected final StepValue duration = new StepValue(0, 16, 0);
+   protected final StepValue duration = new StepValue(0.02, 16, 0);
    protected final StepValue repeatCurve = new StepValue(-1, 1, 0);
    protected final StepValue repeatVelocity = new StepValue(0, 1, 0);
    protected final StepValue repeatVelocityEnd = new StepValue(-1, 1, 0);
@@ -83,7 +83,7 @@ public abstract class SequencerLayer extends ButtonLayer {
       return currentMenu;
    }
 
-   private void initStepValues() {
+   void initStepValues() {
       applyVelocity.addValueObserver(value -> {
          if (!heldSteps.isEmpty()) {
             getHeldNotes().forEach(noteStep -> noteStep.setVelocity(value / 127.0));
@@ -150,6 +150,7 @@ public abstract class SequencerLayer extends ButtonLayer {
          if (oldSize == 0 && size > 0) {
             updateNotesSelected();
             firstDown = System.currentTimeMillis();
+            handleSelect();
          } else if (size == 0) {
             deselectEnabled = true;
             applyVelocity.setDisabled();
@@ -167,8 +168,16 @@ public abstract class SequencerLayer extends ButtonLayer {
             if (recurrenceLayer.isActive()) {
                activateRecurrence(false);
             }
+            handleReleased();
          }
       });
+   }
+
+   void handleSelect() {
+   }
+
+   void handleReleased() {
+
    }
 
    protected CursorTrack getCursorTrack() {
@@ -227,6 +236,30 @@ public abstract class SequencerLayer extends ButtonLayer {
       control.addPressEncoderBinding(index, encIndex -> activate(cursorClip, control.getModifier()), false);
       control.addRingBoolBinding(index, cursorClip.clipLauncherSlot().isPlaying());
    }
+
+   void bindNoteLength(final Integer index, final MenuModeLayerConfiguration control) {
+      final BooleanValueObject encoderHold = new BooleanValueObject();
+      control.addNameBinding(index, new BasicStringValue("Len"));
+      control.addDisplayValueBinding(index, duration);
+      control.addEncoderIncBinding(index, inc -> {
+         if (encoderHold.get()) {
+            duration.increment(gridResolution.getValue() * inc * 0.1);
+         } else {
+            duration.increment(gridResolution.getValue() * inc);
+         }
+         deselectEnabled = false;
+      }, true);
+      control.addRingBinding(index, duration);
+      control.addPressEncoderBinding(index, which -> {
+         if (control.getModifier().isClearSet()) {
+            duration.set(gridResolution.getValue());
+         } else {
+            encoderHold.set(true);
+         }
+      });
+      control.addReleaseEncoderBinding(index, which -> encoderHold.set(false));
+   }
+
 
    void bindMenuNavigate(final Integer index, final MenuModeLayerConfiguration control, final boolean forward,
                          final boolean showHeldSteps) {
@@ -308,18 +341,39 @@ public abstract class SequencerLayer extends ButtonLayer {
    }
 
    void applyValues(final NoteStep dest, final NoteStep src) {
-      dest.setChance(src.chance());
-      dest.setTimbre(src.timbre());
-      dest.setPressure(src.pressure());
-      dest.setVelocitySpread(src.velocitySpread());
-      dest.setRepeatCount(src.repeatCount());
-      dest.setRepeatVelocityCurve(src.repeatVelocityCurve());
-      dest.setRepeatVelocityEnd(src.repeatVelocityEnd());
-      dest.setRepeatCurve(src.repeatCurve());
-      dest.setPan(src.pan());
-      dest.setRepeatVelocityEnd(src.repeatVelocityEnd());
-      dest.setRecurrence(src.recurrenceLength(), src.recurrenceMask());
-      dest.setOccurrence(src.occurrence());
+      if (src.chance() != dest.chance()) {
+         dest.setChance(src.chance());
+      }
+      if (src.timbre() != dest.timbre()) {
+         dest.setTimbre(src.timbre());
+      }
+      if (src.pressure() != dest.pressure()) {
+         dest.setPressure(src.pressure());
+      }
+      if (src.velocitySpread() == dest.velocitySpread()) {
+         dest.setVelocitySpread(src.velocitySpread());
+      }
+      if (src.repeatCount() != dest.repeatCount()) {
+         dest.setRepeatCount(src.repeatCount());
+      }
+      if (src.repeatVelocityCurve() != dest.repeatVelocityCurve()) {
+         dest.setRepeatVelocityCurve(src.repeatVelocityCurve());
+      }
+      if (src.repeatVelocityEnd() != dest.repeatVelocityEnd()) {
+         dest.setRepeatVelocityEnd(src.repeatVelocityEnd());
+      }
+      if (src.repeatCurve() != dest.repeatCurve()) {
+         dest.setRepeatCurve(src.repeatCurve());
+      }
+      if (src.pan() != dest.pan()) {
+         dest.setPan(src.pan());
+      }
+      if (dest.recurrenceLength() != src.recurrenceLength() && dest.recurrenceMask() != src.recurrenceMask()) {
+         dest.setRecurrence(src.recurrenceLength(), src.recurrenceMask());
+      }
+      if (src.occurrence() != dest.occurrence()) {
+         dest.setOccurrence(src.occurrence());
+      }
    }
 
    DerivedStringValueObject createClipNameValue(final PinnableCursorClip clip) {
