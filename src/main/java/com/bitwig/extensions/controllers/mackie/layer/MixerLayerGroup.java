@@ -41,7 +41,8 @@ public class MixerLayerGroup {
    private NoteSequenceLayer sequenceLayer;
 
    public enum EditorMode {
-      MIX, CLIP
+      MIX,
+      CLIP
    }
 
    public MixerLayerGroup(final String name, final MixControl control) {
@@ -91,7 +92,7 @@ public class MixerLayerGroup {
    }
 
    public boolean hasCursorNavigation() {
-      return false;
+      return editMode == EditorMode.CLIP && sequenceLayer != null;
    }
 
    public Layer getFaderLayer(final ParamElement type) {
@@ -152,12 +153,19 @@ public class MixerLayerGroup {
    }
 
    public void navigateHorizontally(final int direction) {
-      for (final Bank<?> bank : sendBankList) {
-         bank.scrollBy(direction);
+      if (editMode == EditorMode.CLIP && sequenceLayer != null) {
+         sequenceLayer.scrollStepsBy(direction);
+      } else {
+         for (final Bank<?> bank : sendBankList) {
+            bank.scrollBy(direction);
+         }
       }
    }
 
    public void navigateVertically(final int direction) {
+      if (editMode == EditorMode.CLIP && sequenceLayer != null) {
+         sequenceLayer.navigateVertically(direction);
+      }
    }
 
 

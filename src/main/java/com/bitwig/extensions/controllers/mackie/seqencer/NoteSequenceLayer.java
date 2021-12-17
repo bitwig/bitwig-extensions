@@ -2,12 +2,12 @@ package com.bitwig.extensions.controllers.mackie.seqencer;
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
+import com.bitwig.extensions.controllers.mackie.NotePlayingSetup;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuDisplayLayerBuilder;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,22 +27,71 @@ public class NoteSequenceLayer extends SequencerLayer {
       }
       return String.format("<%s%d>", base, octave);
    });
-   private final EditorValue velocityValue = new EditorValue(100,
-      (edit, value) -> edit ? "* " + value : String.format("<%3d>", value));
 
-   private final HashMap<Integer, NoteStep> expectedTranspose = new HashMap<>();
+   private final HashMap<Integer, NoteStep> expectedNoteChange = new HashMap<>();
 
+   NoteStepSlot copyNote = null;
    private MenuModeLayerConfiguration page1Menu;
+   private MenuModeLayerConfiguration page2Menu;
+   private NotePlayingSetup notePlayingSetup;
+   private TransposeMode mode = TransposeMode.SCALE;
+   private final ChordHandler chordHandler = new ChordHandler();
+
+   private MenuModeLayerConfiguration page3Menu;
+   private boolean prehearSteps = false;
+
+   private enum TransposeMode {
+      SCALE("s"),
+      CHROMATIC("c"),
+      OCTAVE("o");
+      private final String symb;
+
+      TransposeMode(final String symb) {
+         this.symb = symb;
+      }
+
+      public String getSymb() {
+         return symb;
+      }
+
+      public TransposeMode next() {
+         switch (this) {
+            case SCALE:
+               return TransposeMode.CHROMATIC;
+            case CHROMATIC:
+               return TransposeMode.OCTAVE;
+            case OCTAVE:
+               return TransposeMode.SCALE;
+         }
+         return TransposeMode.SCALE;
+      }
+   }
 
    public NoteSequenceLayer(final String name, final MixControl mixControl) {
       super("NoteSeq_" + mixControl.getHwControls().getSectionIndex(), mixControl, BasicNoteOnAssignment.REC_BASE);
       for (int i = 0; i < STEPS; i++) {
          assignments[i] = new NoteStepSlot(i);
       }
+      control.getModifier().addValueObserver(modifierValueObject -> {
+         if (copyNote != null) {
+            if (!modifierValueObject.isDuplicateSet()) {
+               copyNote = null;
+            }
+         } else if (modifierValueObject.isDuplicateSet() && !heldSteps.isEmpty()) {
+            getHeldNotes().stream()
+               .findFirst()
+               .map(noteStep -> assignments[noteStep.x()])
+               .filter(NoteStepSlot::hasNotes)
+               .ifPresent(slot -> copyNote = slot.copy());
+         }
+         prehearSteps = modifierValueObject.isOption();
+      });
    }
 
-   public void init() {
+   public void init(final NotePlayingSetup notePlayingSetup, final NoteInput noteInput) {
       final MixerSectionHardware hwControls = control.getHwControls();
+      this.notePlayingSetup = notePlayingSetup;
+      chordHandler.init(noteInput);
       cursorClip = getCursorTrack().createLauncherCursorClip(STEPS, 127);
       positionHandler = new StepViewPosition(cursorClip, STEPS);
       pageIndex.setMax(positionHandler.getPages() - 1);
@@ -57,9 +106,9 @@ public class NoteSequenceLayer extends SequencerLayer {
       pageIndex.addValueObserver(val -> positionHandler.setPage(val));
 
       clipNameValue = createClipNameValue(cursorClip);
-      clipPlayStatus = createPlayingStatusValue(cursorClip);
+      clipPlayStatus = createPlayingStatusValue(cursorClip, control.getModifier());
       initNoteValues();
-
+//      initSelection(hwControls);  // no good as long as the step sequencer uses all rows
       for (int row = 0; row < 4; row++) {
          for (int col = 0; col < 8; col++) {
             final int step = row * 8 + col;
@@ -68,25 +117,31 @@ public class NoteSequenceLayer extends SequencerLayer {
          }
       }
       page1Menu = initPage1Menu();
+      page2Menu = initPage2Menu();
+      page3Menu = initPage3Menu();
       currentMenu = page1Menu;
+   }
+
+   private void initSelection(final MixerSectionHardware hwControls) {
+      for (int i = 0; i < 8; i++) {
+         final int index = i;
+         final int mask = 0x1 << index;
+         hwControls.bindButton(recurrenceLayer, index, MixerSectionHardware.REC_INDEX, () -> maskLighting(mask, index),
+            () -> editMask(mask));
+      }
    }
 
 
    void initNoteValues() {
-      noteValue.addIntValueObserver(value -> {
-         if (!heldSteps.isEmpty()) {
-            RemoteConsole.out.println(">> {}", value);
-         }
-      });
    }
 
    public boolean stepState(final int step) {
       final boolean hasStep = assignments[step].hasNotes();
       final int steps = positionHandler.getAvailableSteps();
       if (hasStep) {
-//         if (copyNote != null && assignments[step] != null && assignments[step].x() == copyNote.x()) {
-//            return blinkTicks % 2 == 1;
-//         }
+         if (copyNote != null && assignments[step] != null && assignments[step].getSlotNr() == copyNote.getSlotNr()) {
+            return blinkTicks % 2 == 1;
+         }
          return playingStep != step;
       } else {
          return playingStep == step;
@@ -102,30 +157,39 @@ public class NoteSequenceLayer extends SequencerLayer {
    }
 
    public void handleStepPressed(final int step) {
-      heldSteps.add(step);
-      if (!assignments[step].hasNotes()) {
-         cursorClip.setStep(step, noteValue.getIntValue(), velocityValue.getIntValue(),
-            positionHandler.getGridResolution() * gatePercent);
-         noteValue.setEditValue(noteValue.getIntValue());
-         velocityValue.setEditValue(noteValue.getIntValue());
-         addedSteps.add(step);
+      if (prehearSteps) {
+         if (assignments[step].hasNotes()) {
+            chordHandler.playNotes(assignments[step]);
+         }
+      } else if (copyNote != null) {
+         handleNoteCopyAction(step, copyNote);
+      } else if (control.getModifier().isClearSet()) {
+         if (assignments[step].hasNotes() && !addedSteps.contains(step)) {
+            cursorClip.clearStepsAtX(0, step);
+         }
+      } else {
+         heldSteps.add(step);
+         if (!assignments[step].hasNotes()) {
+            placeNotes(step);
+            noteValue.setEditValue(noteValue.getSetValue());
+            velocityValue.setEditValue(noteValue.getSetValue());
+            addedSteps.add(step);
+         } else if (control.getModifier().isDuplicateSet()) {
+            copyNote = assignments[step].copy();
+            heldSteps.remove(step);
+         }
       }
-
-//      if (copyNote != null) {
-//         handleNoteCopyAction(step, copyNote);
-//      } else if (note == null || note.state() == NoteStep.State.Empty || note.state() == NoteStep.State.NoteSustain) {
-//         cursorClip.setStep(step, noteValue.getIntValue(), velocity.get(),
-//            positionHandler.getGridResolution() * gatePercent);
-//         addedSteps.add(step);
-//      } else if (note.state() == NoteStep.State.NoteOn && control.getModifier().isDuplicateSet()) {
-//         copyNote = note;
-//      }
    }
 
    public void handleStepReleased(final int step) {
       final long diff = System.currentTimeMillis() - firstDown;
+      chordHandler.release();
+      if (control.getModifier().isClearSet() || copyNote != null) {
+         heldSteps.remove(step);
+         return;
+      }
 
-      final boolean doToggle = deselectEnabled && diff < 1000 && copyNote == null;
+      final boolean doToggle = deselectEnabled && diff < 1000; // && copyNote != null
       if (assignments[step].hasNotes() && !addedSteps.contains(step)) {
          if (doToggle) {
             cursorClip.clearStepsAtX(0, step);
@@ -133,30 +197,53 @@ public class NoteSequenceLayer extends SequencerLayer {
       }
       addedSteps.remove(step);
       heldSteps.remove(step);
-//      if (note != null && note.state() == NoteStep.State.NoteOn && !addedSteps.contains(step)) {
-//         if (!modifiedSteps.contains(step)) {
-//            if (doToggle) {
-//               cursorClip.clearStepsAtX(0, step);
-//            }
-//         } else {
-//            modifiedSteps.remove(step);
-//         }
-//      }
-//      addedSteps.remove(step);
    }
 
    @Override
    void handleSelect() {
-      getHeldNotes().stream().findFirst().ifPresent(note -> {
-         noteValue.setEditValue(note.y());
-         velocityValue.setEditValue((int) Math.round(127 * note.velocity()));
-      });
+      getHeldNotes().stream().findFirst().ifPresent(note -> noteValue.setEditValue(note.y()));
    }
+
+   private void placeNotes(final int step) {
+      if (page3Menu.isActive()) {
+         applyChordToStep(step, chordHandler.getNotes());
+      } else {
+         cursorClip.setStep(step, noteValue.getSetValue(), velocityValue.getSetValue(),
+            positionHandler.getGridResolution() * gatePercent);
+      }
+   }
+
+   private void applyChordToStep(final int step, final List<Integer> notes) {
+      cursorClip.clearStepsAtX(0, step);
+      for (final Integer noteNr : notes) {
+         cursorClip.setStep(step, noteNr, velocityValue.getSetValue(),
+            positionHandler.getGridResolution() * gatePercent);
+      }
+   }
+
+
+   private void handleNoteCopyAction(final int destinationIndex, final NoteStepSlot copyNote) {
+      if (copyNote != null) {
+         if (destinationIndex == copyNote.getSlotNr()) {
+            return;
+         }
+         cursorClip.clearStepsAtX(0, destinationIndex);
+         copyNote.steps().forEach(step -> copyNote(step, destinationIndex));
+      }
+   }
+
+   private void copyNote(final NoteStep noteStep, final int destinationIndex) {
+      final int vel = (int) Math.round(noteStep.velocity() * 127);
+      final double duration = noteStep.duration();
+      final int vx = destinationIndex << 8 | noteStep.y();
+      expectedNoteChange.put(vx, noteStep);
+      cursorClip.setStep(destinationIndex, noteStep.y(), vel, duration);
+   }
+
 
    @Override
    void handleReleased() {
       noteValue.exitEdit();
-      velocityValue.exitEdit();
    }
 
    private MenuModeLayerConfiguration initPage1Menu() {
@@ -169,59 +256,102 @@ public class NoteSequenceLayer extends SequencerLayer {
       }, formatter, 4.0, 1.0);
       builder.bindValue("Offset", pageIndex, false);
       builder.bindValueSet("Grid", gridResolution);
+      builder.bind(this::bindVelocityValue);
       builder.bind((index, control) -> {
-         control.addNameBinding(index, new BasicStringValue("Vel"));
-         control.addEncoderIncBinding(index, this::incrementVelocityValue, true);
-         control.addDisplayValueBinding(index, velocityValue);
-      });
-
-      builder.bind((index, control) -> {
-         control.addNameBinding(index, new BasicStringValue("Note"));
-         control.addEncoderIncBinding(index, this::incrementNoteValue, true);
+         final BasicStringValue title = new BasicStringValue(mode.getSymb() + " Note");
+         control.addNameBinding(index, title);
+         control.addEncoderIncBinding(index, this::incrementNoteValue, false);
          control.addDisplayValueBinding(index, noteValue);
+         control.addPressEncoderBinding(index, which -> {
+            mode = mode.next();
+            title.set(mode.getSymb() + " Note");
+         });
       });
       builder.bind(this::bindNoteLength);
+      builder.bind(this::bindClipControl);
+      builder.bind((index, control) -> bindMenuNavigate(index, control, true, true));
+      builder.fillRest();
+      return menu;
+   }
+
+   private MenuModeLayerConfiguration initPage2Menu() {
+      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("STEP_CLIP_MENU", control);
+      final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
+      builder.bind((index, control) -> bindMenuNavigate(index, control, false, false));
+      builder.bind((index, control) -> bindStepValue(index, control, "Timbre", timbre));
+      builder.bind((index, control) -> bindStepValue(index, control, "Press", pressure));
+      builder.bind((index, control) -> bindStepValue(index, control, "Chance", chance));
+      builder.bind(this::bindRepeatValue);
+      builder.bind(this::bindRecurrence);
       builder.bind(this::bindClipControl);
       builder.bind((index, control) -> bindMenuNavigate(index, control, true, false));
       builder.fillRest();
       return menu;
    }
 
-   private void incrementVelocityValue(final int increment) {
+   private MenuModeLayerConfiguration initPage3Menu() {
+      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("STEP_CLIP_MENU", control);
+      final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
+      builder.bind((index, control) -> bindMenuNavigate(index, control, false, true,
+         () -> control.getDriver().getActionSet().zoomToFitEditor()));
+      builder.bindValue("Note", chordHandler.getChordBaseNote(), false);
+      builder.bindValue("Chord", chordHandler.getChordType());
+      builder.bindValue("Octave", chordHandler.getOctaveOffset(), false);
+      builder.bindValue("Inv", chordHandler.getInversion(), false);
+      builder.bindValue("Exp", chordHandler.getExpansion(), false);
+      builder.bind((index, control) -> {
+         control.addNameBinding(index, new BasicStringValue("P.Hear"));
+         control.addPressEncoderBinding(index, which -> chordHandler.play(velocityValue.getSetValue()));
+         control.addReleaseEncoderBinding(index, which -> chordHandler.release());
+         control.addRingFixedBinding(index);
+      });
+
+      chordHandler.getChordType().addValueObserver((old, chordType) -> notifyChordChanged());
+      chordHandler.getChordBaseNote().addValueObserver(v -> notifyChordChanged());
+      chordHandler.getInversion().addValueObserver(v -> notifyChordChanged());
+      chordHandler.getExpansion().addIntValueObserver(v -> notifyChordChanged());
+      chordHandler.getOctaveOffset().addIntValueObserver(v -> notifyChordChanged());
+
+      builder.fillRest();
+      return menu;
+   }
+
+   private void notifyChordChanged() {
       if (!heldSteps.isEmpty()) {
-         final List<NoteStep> notes = getHeldNotes();
-         notes.forEach(note -> incrementVelocity(note, increment));
-      } else {
-         velocityValue.increment(increment);
+         heldSteps.forEach(step -> applyChordToStep(step, chordHandler.getNotes()));
       }
    }
-
-   private void incrementVelocity(final NoteStep note, final int amount) {
-      final int vel = (int) Math.round(note.velocity() * 127);
-      final int newVel = Math.max(0, Math.min(127, vel + amount));
-      if (newVel != vel) {
-         velocityValue.setEditValue(newVel);
-         note.setVelocity(newVel / 127.0);
-      }
-   }
-
 
    private void incrementNoteValue(final int increment) {
       if (!heldSteps.isEmpty()) {
          final List<NoteStep> notes = getHeldNotes();
-         notes.forEach(note -> transpose(note, increment));
+
+         if (mode == TransposeMode.SCALE) {
+            notes.forEach(note -> transpose(note, increment, true));
+         } else if (mode == TransposeMode.OCTAVE) {
+            notes.forEach(note -> transpose(note, increment * 12, false));
+         } else {
+            notes.forEach(note -> transpose(note, increment, false));
+         }
+         deselectEnabled = false;
       } else {
-         noteValue.increment(increment);
+         if (mode == TransposeMode.SCALE) {
+            noteValue.set(notePlayingSetup.transpose(noteValue.getSetValue(), increment));
+         } else if (mode == TransposeMode.OCTAVE) {
+            noteValue.increment(increment * 12);
+         } else {
+            noteValue.increment(increment);
+         }
       }
    }
 
-   private void transpose(final NoteStep note, final int amount) {
+   private void transpose(final NoteStep note, final int amount, final boolean scale) {
       final int origX = note.x();
       final int origY = note.y();
-      final int newY = origY + amount;
+      final int newY = !scale ? origY + amount : notePlayingSetup.transpose(origY, amount);
       if (newY >= 0 && newY < 128) {
          final int vx = origX << 8 | newY;
-         expectedTranspose.put(vx, note);
+         expectedNoteChange.put(vx, note);
          noteValue.setEditValue(newY);
          cursorClip.clearStep(0, origX, origY);
          cursorClip.setStep(origX, newY, (int) (note.velocity() * 127), note.duration());
@@ -230,12 +360,32 @@ public class NoteSequenceLayer extends SequencerLayer {
 
    @Override
    public void nextMenu() {
-
+      if (!isActive()) {
+         return;
+      }
+      if (currentMenu == page1Menu) {
+         currentMenu = page2Menu;
+      } else if (currentMenu == page2Menu) {
+         currentMenu = page3Menu;
+      } else if (currentMenu == page3Menu) {
+         currentMenu = page1Menu;
+      }
+      control.applyUpdate();
    }
 
    @Override
    public void previousMenu() {
-
+      if (!isActive()) {
+         return;
+      }
+      if (currentMenu == page1Menu) {
+         currentMenu = page3Menu;
+      } else if (currentMenu == page2Menu) {
+         currentMenu = page1Menu;
+      } else if (currentMenu == page3Menu) {
+         currentMenu = page2Menu;
+      }
+      control.applyUpdate();
    }
 
    @Override
@@ -254,12 +404,17 @@ public class NoteSequenceLayer extends SequencerLayer {
       if (isActive()) {
          updateNotesSelected();
       }
-      if (expectedTranspose.containsKey(xyIndex)) {
-         final NoteStep previousStep = expectedTranspose.get(xyIndex);
-         expectedNoteChanges.remove(xyIndex);
+      final NoteStep previousStep = expectedNoteChange.get(xyIndex);
+      if (previousStep != null) {
+         expectedNoteChange.remove(xyIndex);
          applyValues(noteStep, previousStep);
       }
    }
 
-
+   @Override
+   protected void onDeactivate() {
+      super.onDeactivate();
+      chordHandler.release();
+      heldSteps.clear();
+   }
 }

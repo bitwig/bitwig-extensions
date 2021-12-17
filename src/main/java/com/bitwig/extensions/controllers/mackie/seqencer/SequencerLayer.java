@@ -11,7 +11,6 @@ import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,7 +18,6 @@ import java.util.Set;
 public abstract class SequencerLayer extends ButtonLayer {
    private final MackieMcuProExtension driver;
    protected final MixControl control;
-   protected final IntValueObject velocity = new IntValueObject(100, 0, 127);
    protected final ValueSet gridResolution;
    protected final IntValueObject pageIndex;
 
@@ -29,16 +27,17 @@ public abstract class SequencerLayer extends ButtonLayer {
    protected final IntSetValue heldSteps = new IntSetValue();
    protected final Set<Integer> addedSteps = new HashSet<>();
    protected final Set<Integer> modifiedSteps = new HashSet<>();
-   protected final HashMap<Integer, NoteStep> expectedNoteChanges = new HashMap<>();
 
    protected int blinkTicks;
    protected int playingStep;
    protected final double gatePercent = 0.98;
    protected int selectedPadIndex = -1;
    protected final Layer recurrenceLayer;
-   protected NoteStep copyNote = null;
    protected long firstDown = -1;
-   protected final IntValueObject applyVelocity = new IntValueObject(-1, 0, 127, v -> v == -1 ? "<--->" : " " + v);
+
+   protected final EditorValue velocityValue = new EditorValue(100,
+      (edit, value) -> edit ? "* " + value : String.format("<%3d>", value));
+
    protected final IntValueObject recurrence = new IntValueObject(-1, 1, 8,
       v -> v == -1 ? "<--->" : (v == 1 ? " OFF " : " " + v));
    protected final IntValueObject recurrenceMask = new IntValueObject(-1, 0, 255,
@@ -53,6 +52,19 @@ public abstract class SequencerLayer extends ButtonLayer {
    protected final StepValue repeatCurve = new StepValue(-1, 1, 0);
    protected final StepValue repeatVelocity = new StepValue(0, 1, 0);
    protected final StepValue repeatVelocityEnd = new StepValue(-1, 1, 0);
+   protected final EnumConfigValue<NoteOccurrence> occurrence = new EnumConfigValue<NoteOccurrence>() //
+      .add(NoteOccurrence.ALWAYS, "Always")
+      .add(NoteOccurrence.FIRST, "First")
+      .add(NoteOccurrence.NOT_FIRST, "N.Frst")
+      .add(NoteOccurrence.PREV, "Prev")
+      .add(NoteOccurrence.NOT_PREV, "N.Prev")
+      .add(NoteOccurrence.PREV_KEY, "PrvKey")
+      .add(NoteOccurrence.NOT_PREV_KEY, "N.PrKY")
+      .add(NoteOccurrence.PREV_CHANNEL, "PrvCH")
+      .add(NoteOccurrence.NOT_PREV_CHANNEL, "N.PrCH")
+      .add(NoteOccurrence.FILL, "Fill")
+      .add(NoteOccurrence.NOT_FILL, "NotFll")
+      .init(NoteOccurrence.ALWAYS);
    protected DerivedStringValueObject clipNameValue;
    protected DerivedStringValueObject clipPlayStatus;
    protected MenuModeLayerConfiguration stepLenValueMenu;
@@ -66,11 +78,36 @@ public abstract class SequencerLayer extends ButtonLayer {
       gridResolution = new ValueSet().add("1/32", 0.125).add("1/16", 0.25).add("1/8", 0.5).add("1/4", 1.0).select(1);
       pageIndex = new IntValueObject(0, 0, 1, v -> StringUtil.toBarBeats(v * gridResolution.getValue() * 4));
       initStepValues();
-      control.getModifier().addValueObserver(modifierValueObject -> {
-         if (!modifierValueObject.isDuplicateSet() && copyNote != null) {
-            copyNote = null;
+   }
+
+   public void scrollStepsBy(final int direction) {
+      if (!isActive()) {
+         return;
+      }
+      if (control.getModifier().isShiftSet()) {
+         if (direction < 0) {
+            previousMenu();
+         } else {
+            nextMenu();
          }
-      });
+      } else {
+         if (direction < 0) {
+            positionHandler.scrollLeft();
+         } else {
+            positionHandler.scrollRight();
+         }
+      }
+   }
+
+   public void navigateVertically(final int direction) {
+      if (!isActive()) {
+         return;
+      }
+      if (direction > 0) {
+         cursorClip.selectPrevious();
+      } else {
+         cursorClip.selectNext();
+      }
    }
 
    public abstract void nextMenu();
@@ -84,9 +121,9 @@ public abstract class SequencerLayer extends ButtonLayer {
    }
 
    void initStepValues() {
-      applyVelocity.addValueObserver(value -> {
+      occurrence.addEnumValueObserver(v -> {
          if (!heldSteps.isEmpty()) {
-            getHeldNotes().forEach(noteStep -> noteStep.setVelocity(value / 127.0));
+            getHeldNotes().forEach(noteStep -> noteStep.setOccurrence(v));
          }
       });
       repeat.addValueObserver(v -> {
@@ -153,7 +190,7 @@ public abstract class SequencerLayer extends ButtonLayer {
             handleSelect();
          } else if (size == 0) {
             deselectEnabled = true;
-            applyVelocity.setDisabled();
+            velocityValue.exitEdit();
             timbre.unset();
             chance.unset();
             pressure.unset();
@@ -201,7 +238,7 @@ public abstract class SequencerLayer extends ButtonLayer {
    protected void updateNotesSelected() {
       if (!heldSteps.isEmpty()) {
          getHeldNotes().stream().findFirst().ifPresent(noteStep -> {
-            applyVelocity.set((int) Math.round(noteStep.velocity() * 127));
+            velocityValue.setEditValue((int) Math.round(127 * noteStep.velocity()));
             timbre.set(noteStep.timbre());
             chance.set(noteStep.chance());
             pressure.set(noteStep.pressure());
@@ -214,8 +251,47 @@ public abstract class SequencerLayer extends ButtonLayer {
             repeatVelocity.set(noteStep.repeatVelocityCurve());
             repeatVelocityEnd.set(noteStep.repeatVelocityEnd());
             duration.set(noteStep.duration());
+            occurrence.set(noteStep.occurrence());
          });
       }
+   }
+
+   void bindVelocityValue(final Integer index, final MenuModeLayerConfiguration control) {
+      control.addNameBinding(index, new BasicStringValue("Vel"));
+      control.addEncoderIncBinding(index, this::incrementVelocityValue, true);
+      control.addDisplayValueBinding(index, velocityValue);
+      control.addRingBinding(index, velocityValue);
+   }
+
+   private void incrementVelocityValue(final int increment) {
+      if (!heldSteps.isEmpty()) {
+         final List<NoteStep> notes = getHeldNotes();
+         notes.forEach(note -> incrementVelocity(note, increment));
+         deselectEnabled = false;
+      } else {
+         velocityValue.increment(increment);
+      }
+   }
+
+   private void incrementVelocity(final NoteStep note, final int amount) {
+      final int vel = (int) Math.round(note.velocity() * 127);
+      final int newVel = Math.max(0, Math.min(127, vel + amount));
+      if (newVel != vel) {
+         velocityValue.setEditValue(newVel);
+         note.setVelocity(newVel / 127.0);
+      }
+   }
+
+   protected void bindRecurrence(final Integer index, final MenuModeLayerConfiguration control) {
+      control.addNameBinding(index, new BasicStringValue("Recur"));
+      control.addDisplayValueBinding(index, recurrence);
+      control.addEncoderIncBinding(index, inc -> {
+         recurrence.increment(inc);
+         activateRecurrence(recurrence.get() > 1);
+         deselectEnabled = false;
+      }, true);
+      control.addPressEncoderBinding(index, idx -> activateRecurrence(!recurrenceLayer.isActive()));
+      control.addRingBinding(index, recurrence);
    }
 
    void bindStepValue(final int index, final MenuModeLayerConfiguration control, final String title,
@@ -235,6 +311,17 @@ public abstract class SequencerLayer extends ButtonLayer {
       control.addDisplayValueBinding(index, clipPlayStatus);
       control.addPressEncoderBinding(index, encIndex -> activate(cursorClip, control.getModifier()), false);
       control.addRingBoolBinding(index, cursorClip.clipLauncherSlot().isPlaying());
+   }
+
+   void bindRepeatValue(final Integer index, final MenuModeLayerConfiguration control) {
+      control.addNameBinding(index, new BasicStringValue("Rpeat"));
+      control.addDisplayValueBinding(index, repeat);
+      control.addEncoderIncBinding(index, inc -> {
+         repeat.increment(inc);
+         deselectEnabled = false;
+      }, true);
+      control.addPressEncoderBinding(index, idx -> repeat.set(1));
+      control.addRingBinding(index, repeat);
    }
 
    void bindNoteLength(final Integer index, final MenuModeLayerConfiguration control) {
@@ -263,27 +350,40 @@ public abstract class SequencerLayer extends ButtonLayer {
 
    void bindMenuNavigate(final Integer index, final MenuModeLayerConfiguration control, final boolean forward,
                          final boolean showHeldSteps) {
-      if (forward) {
-         control.addDisplayValueBinding(index, new BasicStringValue("====>"));
-      } else {
-         control.addDisplayValueBinding(index, new BasicStringValue("<===="));
-      }
-      if (showHeldSteps) {
-         control.addNameBinding(index, heldSteps);
-      } else {
-         control.addNameBinding(index, new BasicStringValue(" "));
-      }
-      if (forward) {
-         control.addPressEncoderBinding(index, which -> nextMenu(), true);
-      } else {
-         control.addPressEncoderBinding(index, which -> previousMenu(), true);
-      }
+      bindMenuNavigate(index, control, forward, showHeldSteps, null);
    }
+
+   void bindMenuNavigate(final Integer index, final MenuModeLayerConfiguration control, final boolean forward,
+                         final boolean showHeldSteps, final Runnable shiftFuntion) {
+      control.addDisplayValueBinding(index, forward ? new BasicStringValue("====>") : new BasicStringValue("<===="));
+      control.addNameBinding(index, showHeldSteps ? heldSteps : new BasicStringValue(" "));
+      if (shiftFuntion != null) {
+         control.addPressEncoderBinding(index, which -> {
+            if (control.getModifier().isShiftSet()) {
+               shiftFuntion.run();
+            } else if (forward) {
+               nextMenu();
+            } else {
+               previousMenu();
+            }
+         }, true);
+      } else {
+         control.addPressEncoderBinding(index, forward ? which -> nextMenu() : which -> previousMenu(), true);
+      }
+
+   }
+
 
    protected void activate(final PinnableCursorClip clip, final ModifierValueObject modifier) {
       final ClipLauncherSlot slot = clip.clipLauncherSlot();
       final Track track = clip.getTrack();
-      if (modifier.isShiftSet()) {
+      if (modifier.isShiftSet() && modifier.isDuplicateSet()) {
+         clip.duplicate();
+      } else if (modifier.isClearSet()) {
+         clip.clearSteps();
+      } else if (modifier.isDuplicateSet()) {
+         clip.duplicateContent();
+      } else if (modifier.isShiftSet()) {
          track.stop();
       } else {
          slot.launch();
@@ -326,19 +426,6 @@ public abstract class SequencerLayer extends ButtonLayer {
       this.playingStep = playingStep - positionHandler.getStepOffset();
    }
 
-   void handleNoteCopyAction(final int destinationIndex, final NoteStep note) {
-      if (copyNote != null) {
-         if (destinationIndex == copyNote.x()) {
-            return;
-         }
-         final int vel = (int) Math.round(copyNote.velocity() * 127);
-         final double duration = copyNote.duration();
-         expectedNoteChanges.put(destinationIndex, copyNote);
-         cursorClip.setStep(destinationIndex, 0, vel, duration);
-      } else if (note != null && note.state() == NoteStep.State.NoteOn) {
-         copyNote = note;
-      }
-   }
 
    void applyValues(final NoteStep dest, final NoteStep src) {
       if (src.chance() != dest.chance()) {
@@ -405,14 +492,14 @@ public abstract class SequencerLayer extends ButtonLayer {
       };
    }
 
-   DerivedStringValueObject createPlayingStatusValue(final PinnableCursorClip clip) {
+   DerivedStringValueObject createPlayingStatusValue(final PinnableCursorClip clip,
+                                                     final ModifierValueObject modifier) {
       final ClipLauncherSlot csSlot = clip.clipLauncherSlot();
       csSlot.sceneIndex().markInterested();
       return new DerivedStringValueObject() {
          @Override
          public void init() {
             csSlot.isPlaying()
-
                .addValueObserver(playing -> fireChanged(
                   toString(playing, csSlot.isPlaybackQueued().get(), csSlot.isStopQueued().get(),
                      csSlot.isRecording().get())));
@@ -427,10 +514,25 @@ public abstract class SequencerLayer extends ButtonLayer {
                .addValueObserver(recording -> fireChanged(
                   toString(csSlot.isPlaying().get(), csSlot.isPlaybackQueued().get(), csSlot.isStopQueued().get(),
                      recording)));
+            modifier.addValueObserver(value -> fireChanged(
+               toString(csSlot.isPlaying().get(), csSlot.isPlaybackQueued().get(), csSlot.isStopQueued().get(),
+                  csSlot.isRecording().get())));
          }
 
          private String toString(final boolean playing, final boolean queued, final boolean stopQueued,
                                  final boolean recording) {
+            if (modifier.isShiftSet() && modifier.isDuplicateSet()) {
+               return ">Duplicate";
+            }
+            if (modifier.isClearSet()) {
+               return ">Clear";
+            }
+            if (modifier.isDuplicateSet()) {
+               return ">Dbl";
+            }
+            if (modifier.isShiftSet()) {
+               return ">Stop";
+            }
             if (stopQueued || queued) {
                return "[Qued]";
             }

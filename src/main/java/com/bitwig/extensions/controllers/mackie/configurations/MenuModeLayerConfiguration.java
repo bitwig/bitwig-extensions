@@ -265,7 +265,7 @@ public class MenuModeLayerConfiguration extends LayerConfiguration {
       encoderLayer.addBinding(binding);
    }
 
-   public void addRingBinding(final int i, final IntValueObject value) {
+   public void addRingBinding(final int i, final IntValue value) {
       final MixerSectionHardware hwControls = mixControl.getHwControls();
       final RingDisplay ringDisplay = hwControls.getRingDisplay(i);
       final RingDisplayIntValueBinding binding = new RingDisplayIntValueBinding(ringDisplay, value,

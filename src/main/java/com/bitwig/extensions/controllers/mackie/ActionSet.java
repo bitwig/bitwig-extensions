@@ -16,8 +16,20 @@ public class ActionSet {
    private final Action detailAction;
    private final Action deviceAction;
 
+
    public enum ActionType {
-      QUANTIZE, DOUBLE, REVERSE, SCALE200, SCALE50, TRANSUP, TRANSDOWN, OCTUP, OCTDOWN, SAVE
+      QUANTIZE,
+      DOUBLE,
+      REVERSE,
+      SCALE200,
+      SCALE50,
+      TRANSUP,
+      TRANSDOWN,
+      OCTUP,
+      OCTDOWN,
+      SAVE,
+      SELECT_ALL,
+      UNSELECT_ALL
    }
 
    public ActionSet(final Application application) {
@@ -37,6 +49,8 @@ public class ActionSet {
       actionMap.put(ActionType.OCTUP, application.getAction("transpose_octave_up"));
       actionMap.put(ActionType.OCTDOWN, application.getAction("transpose_octave_down"));
       actionMap.put(ActionType.SAVE, application.getAction("Save"));
+      actionMap.put(ActionType.SELECT_ALL, application.getAction("Select All"));
+      actionMap.put(ActionType.UNSELECT_ALL, application.getAction("Unselect All"));
    }
 
    public void execute(final ActionType type) {
@@ -50,10 +64,15 @@ public class ActionSet {
       final Action action = actionMap.get(type);
       if (action != null) {
          focusEditor();
-         clipLauncherAction.invoke();
+//         clipLauncherAction.invoke();
          action.invoke();
          zoomToFitAction.invoke();
       }
+   }
+
+   public void zoomToFitEditor() {
+      focusEditor();
+      zoomToFitAction.invoke();
    }
 
    public void focusDevice() {

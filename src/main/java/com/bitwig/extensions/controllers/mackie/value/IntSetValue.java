@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 
 public class IntSetValue extends DerivedStringValueObject {
@@ -30,6 +31,10 @@ public class IntSetValue extends DerivedStringValueObject {
       return values.stream();
    }
 
+   public void forEach(final IntConsumer consumer) {
+      values.forEach(consumer::accept);
+   }
+
    public void remove(final int index) {
       final int oldSize = values.size();
       values.remove(index);
@@ -39,6 +44,16 @@ public class IntSetValue extends DerivedStringValueObject {
          fireChanged(convert(newSize));
       }
    }
+
+   public void clear() {
+      final int oldsize = values.size();
+      if (oldsize > 0) {
+         values.clear();
+         fireChanged(convert(0));
+         sizeListener.forEach(l -> l.valueChanged(oldsize, 0));
+      }
+   }
+
 
    public void add(final int index) {
       final int oldSize = values.size();

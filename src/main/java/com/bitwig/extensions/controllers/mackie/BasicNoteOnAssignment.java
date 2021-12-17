@@ -12,9 +12,15 @@ public enum BasicNoteOnAssignment implements NoteAssignment {
    FFWD(92), //
    AUTO_WRITE(75), //
    AUTO_READ_OFF(74), //
-   TRIM(76), TOUCH(77), LATCH(78), GROUP(79), //
-   SOLO_BASE(8), REC_BASE(0), MUTE_BASE(16), SELECT_BASE(24), //
-   ENCPRESS_BASE(32), //
+   TRIM(76),
+   TOUCH(77),
+   LATCH(78),
+   GROUP(79), //
+   SOLO_BASE(8),
+   REC_BASE(0),
+   MUTE_BASE(16),
+   SELECT_BASE(24), //
+   ENC_PRESS_BASE(32), //
    SIGNAL_BASE(104), //
    TOUCH_VOLUME(104), //
    SHIFT(70), //
@@ -23,17 +29,42 @@ public enum BasicNoteOnAssignment implements NoteAssignment {
    ALT(73), //
    UNDO(81), //
    SAVE(80), // ICON VST
-   CANCEL(82), ENTER(83), //
-   MARKER(84), NUDGE(85), CYCLE(86), DROP(87), REPLACE(88), //
-   CLICK(89), SOLO(90), //
+   CANCEL(82),
+   ENTER(83), //
+   MARKER(84),
+   NUDGE(85),
+   CYCLE(86),
+   DROP(87),
+   REPLACE(88), //
+   CLICK(89),
+   SOLO(90), //
    FLIP(50), //
-   DIPLAY_NAME(52), DISPLAY_SMPTE(53), //
-   BEATS_MODE(114), SMPTE_MODE(113), //
-   V_TRACK(40), V_SEND(41), V_PAN(42), V_PLUGIN(43), V_EQ(44), V_INSTRUMENT(45), //
-   F1(54), F2(55), F3(56), F4(57), F5(58), F6(59), F7(60), F8(61), //
-   CURSOR_UP(96), CURSOR_DOWN(97), CURSOR_LEFT(98), CURSOR_RIGHT(99), //
-   ZOOM(100), SCRUB(101), //
-   BANK_LEFT(46), BANK_RIGHT(47), //
+   DISPLAY_NAME(52),
+   DISPLAY_SMPTE(53), //
+   BEATS_MODE(114),
+   SMPTE_MODE(113), //
+   V_TRACK(40),
+   V_SEND(41),
+   V_PAN(42),
+   V_PLUGIN(43),
+   V_EQ(44),
+   V_INSTRUMENT(45), //
+   F1(54),
+   F2(55),
+   F3(56),
+   F4(57),
+   F5(58),
+   F6(59),
+   F7(60),
+   F8(61), //
+   CURSOR_UP(96),
+   CURSOR_DOWN(97),
+   CURSOR_LEFT(98),
+   CURSOR_RIGHT(99), //
+   ZOOM(100),
+   SCRUB(101), //
+   BANK_LEFT(46),
+   BANK_RIGHT(47), //
    TRACK_LEFT(48), //
    TRACK_RIGHT(49), //
    GLOBAL_VIEW(51), //

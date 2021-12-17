@@ -2,13 +2,14 @@ package com.bitwig.extensions.controllers.mackie.seqencer;
 
 import com.bitwig.extensions.controllers.mackie.value.DerivedStringValueObject;
 import com.bitwig.extensions.controllers.mackie.value.IncrementalValue;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
+import com.bitwig.extensions.controllers.mackie.value.IntValue;
+import com.bitwig.extensions.controllers.mackie.value.RangeChangedCallback;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntConsumer;
 
-public class EditorValue extends DerivedStringValueObject implements IncrementalValue {
+public class EditorValue extends DerivedStringValueObject implements IncrementalValue, IntValue {
    private final Converter converter;
 
    public interface Converter {
@@ -25,8 +26,38 @@ public class EditorValue extends DerivedStringValueObject implements Incremental
       this.converter = converter;
    }
 
+   @Override
+   public int getMax() {
+      return 127;
+   }
+
+   @Override
+   public int getMin() {
+      return 0;
+   }
+
+   @Override
+   public void addIntValueObserver(final IntConsumer callback) {
+      valueChangedCallbacks.add(callback);
+   }
+
+   @Override
+   public void addRangeObserver(RangeChangedCallback callback) {
+
+   }
+
+   @Override
    public int getIntValue() {
+      return edit ? editValue : setValue;
+   }
+
+   public int getSetValue() {
       return setValue;
+   }
+
+   @Override
+   public String get() {
+      return displayedValue();
    }
 
    public void set(final int noteValue) {
@@ -41,18 +72,13 @@ public class EditorValue extends DerivedStringValueObject implements Incremental
       edit = true;
       editValue = value;
       fireChanged(displayedValue());
+      fireChanged(editValue);
    }
 
    public void exitEdit() {
       edit = false;
-      RemoteConsole.out.println("Exit");
       fireChanged(displayedValue());
-   }
-
-   public void addIntValueObserver(final IntConsumer callback) {
-      if (!valueChangedCallbacks.contains(callback)) {
-         valueChangedCallbacks.add(callback);
-      }
+      fireChanged(setValue);
    }
 
    public void fireChanged(final int value) {
@@ -82,8 +108,4 @@ public class EditorValue extends DerivedStringValueObject implements Incremental
 
    }
 
-   @Override
-   public String get() {
-      return displayedValue();
-   }
 }

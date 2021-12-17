@@ -21,6 +21,10 @@ public class NoteStepSlot {
       }
    }
 
+   public int getSlotNr() {
+      return slotNr;
+   }
+
    public void clear() {
       map.clear();
    }
@@ -31,5 +35,11 @@ public class NoteStepSlot {
 
    public Collection<NoteStep> steps() {
       return map.values();
+   }
+
+   public NoteStepSlot copy() {
+      final NoteStepSlot copy = new NoteStepSlot(slotNr);
+      copy.map.putAll(map);
+      return copy;
    }
 }

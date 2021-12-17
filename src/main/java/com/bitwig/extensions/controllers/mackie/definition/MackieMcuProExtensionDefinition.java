@@ -8,9 +8,7 @@ import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.ControllerConfig;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class MackieMcuProExtensionDefinition extends ControllerExtensionDefinition {
    private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-81ad-1de77ffa2dab");
@@ -20,8 +18,6 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
    private static final String DEVICE_NAME = "Mackie Control";
 
    protected int nrOfExtenders;
-   protected String[] inMidiPortNames;
-   protected String[] outMidiPortNames;
    protected final Map<BasicNoteOnAssignment, Integer> noteOverrides = new HashMap<>();
    private int unusedNoteNo = 113;
 
@@ -31,14 +27,28 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
 
    public MackieMcuProExtensionDefinition(final int nrOfExtenders) {
       this.nrOfExtenders = nrOfExtenders;
-      inMidiPortNames = new String[nrOfExtenders + 1];
-      outMidiPortNames = new String[nrOfExtenders + 1];
-      inMidiPortNames[0] = "MCU Pro USB v3.1";
-      outMidiPortNames[0] = "MCU Pro USB v3.1";
+   }
+
+   protected List<String[]> getInPorts(final PlatformType platformType) {
+      final String[] inPortNames = new String[nrOfExtenders + 1];
+      inPortNames[0] = "MCU Pro USB v3.1";
       for (int i = 1; i < nrOfExtenders + 1; i++) {
-         inMidiPortNames[i] = String.format("MIDIIN%d (MCU Pro USB v3.1)", i);
-         outMidiPortNames[i] = String.format("MIDIOUT%d (MCU Pro USB v3.1)", i);
+         inPortNames[i] = String.format("MIDIIN%d (MCU Pro USB v3.1)", i);
       }
+      final List<String[]> portList = new ArrayList<>();
+      portList.add(inPortNames);
+      return portList;
+   }
+
+   protected List<String[]> getOutPorts(final PlatformType platformType) {
+      final String[] outPortNames = new String[nrOfExtenders + 1];
+      outPortNames[0] = "MCU Pro USB v3.1";
+      for (int i = 1; i < nrOfExtenders + 1; i++) {
+         outPortNames[i] = String.format("MIDIOUT%d (MCU Pro USB v3.1)", i);
+      }
+      final List<String[]> portList = new ArrayList<>();
+      portList.add(outPortNames);
+      return portList;
    }
 
    protected void override(final BasicNoteOnAssignment origFunction, final BasicNoteOnAssignment takeOver) {
@@ -101,12 +111,11 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
    @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
-      if (platformType == PlatformType.WINDOWS) {
-         list.add(inMidiPortNames, outMidiPortNames);
-      } else if (platformType == PlatformType.MAC) {
-         list.add(inMidiPortNames, outMidiPortNames);
-      } else if (platformType == PlatformType.LINUX) {
-         list.add(inMidiPortNames, outMidiPortNames);
+      final List<String[]> inPorts = getInPorts(platformType);
+      final List<String[]> outPorts = getOutPorts(platformType);
+
+      for (int i = 0; i < inPorts.size(); i++) {
+         list.add(inPorts.get(i), outPorts.get(i));
       }
    }
 

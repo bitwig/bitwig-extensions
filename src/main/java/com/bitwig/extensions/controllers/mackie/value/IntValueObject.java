@@ -4,10 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntConsumer;
 
-public class IntValueObject implements IncrementalValue {
-
+public class IntValueObject implements IncrementalValue, IntValue {
    private final List<IntConsumer> valueChangedCallbacks = new ArrayList<>();
-   private final List<IntConsumer> maxValueChangedCallbacks = new ArrayList<>();
+   private final List<RangeChangedCallback> rangeChangedCallbacks = new ArrayList<>();
    private int value;
    private int min;
    private int max;
@@ -27,31 +26,46 @@ public class IntValueObject implements IncrementalValue {
       this.converter = converter;
    }
 
+   @Override
    public int getMax() {
       return max;
    }
 
+   @Override
    public int getMin() {
       return min;
    }
 
+   @Override
+   public void addIntValueObserver(final IntConsumer callback) {
+      valueChangedCallbacks.add(callback);
+   }
+
    public void setMin(final int min) {
       this.min = min;
+      if (value < min) {
+         value = min;
+         valueChangedCallbacks.forEach(listener -> listener.accept(value));
+      }
+      rangeChangedCallbacks.forEach(callback -> callback.rangeChanged(min, max));
    }
 
    public void setMax(final int max) {
       this.max = max;
-      maxValueChangedCallbacks.forEach(callback -> callback.accept(max));
+      if (value > max) {
+         value = max;
+         valueChangedCallbacks.forEach(listener -> listener.accept(value));
+      }
+      rangeChangedCallbacks.forEach(callback -> callback.rangeChanged(min, max));
    }
 
    public void addValueObserver(final IntConsumer callback) {
-      if (!valueChangedCallbacks.contains(callback)) {
-         valueChangedCallbacks.add(callback);
-      }
+      valueChangedCallbacks.add(callback);
    }
 
-   public void addMaxValueObserver(final IntConsumer callback) {
-      maxValueChangedCallbacks.add(callback);
+   @Override
+   public void addRangeObserver(final RangeChangedCallback callback) {
+      rangeChangedCallbacks.add(callback);
    }
 
    /**
@@ -81,6 +95,11 @@ public class IntValueObject implements IncrementalValue {
    }
 
    public int get() {
+      return value;
+   }
+
+   @Override
+   public int getIntValue() {
       return value;
    }
 

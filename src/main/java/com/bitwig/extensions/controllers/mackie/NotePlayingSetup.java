@@ -31,6 +31,17 @@ public class NotePlayingSetup {
       return values[newOrd];
    }
 
+   public int transpose(final int note, final int amount) {
+      int nextNote = note + amount;
+      while (nextNote >= 0 && nextNote < 128 && !scale.get().inScale(baseNote.get(), nextNote)) {
+         nextNote += amount;
+      }
+      if (scale.get().inScale(baseNote.get(), nextNote)) {
+         return nextNote;
+      }
+      return note;
+   }
+
    private static String convert(final Scale scale) {
       return scale.getShortName();
    }

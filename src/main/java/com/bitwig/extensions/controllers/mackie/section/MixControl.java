@@ -451,6 +451,9 @@ public class MixControl implements LayerStateHandler {
       launchButtonLayer.notifyBlink(ticks);
       scaleButtonLayer.notifyBlink(ticks);
       drumGroup.notifyBlink(ticks);
+      if (noteSequenceLayer != null) {
+         noteSequenceLayer.notifyBlink(ticks);
+      }
       globalViewLayerConfiguration.notifyBlink(ticks);
       activeDisplayLayer.triggerTimer();
    }
@@ -511,7 +514,7 @@ public class MixControl implements LayerStateHandler {
       drumGroup.init(drumPadBank, drumNoteHandler);
       if (type == SectionType.MAIN) {
          drumGroup.initMainSlider(cursorTrack, driver.getMasterSlider());
-         noteSequenceLayer.init();
+         noteSequenceLayer.init(getDriver().getNotePlayingSetup(), noteInput);
       }
       scaleButtonLayer.init(scaleNoteHandler, getHwControls());
       launchButtonLayer.initTrackBank(getHwControls(), mixerTrackBank);

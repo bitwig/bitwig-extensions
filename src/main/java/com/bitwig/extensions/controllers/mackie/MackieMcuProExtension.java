@@ -104,7 +104,6 @@ public class MackieMcuProExtension extends ControllerExtension {
       super(definition, host);
       nrOfExtenders = extenders;
       this.controllerConfig = controllerConfig;
-      host.println(">> " + controllerConfig.hasOverrides());
    }
 
    @Override
@@ -154,7 +153,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       setUpMidiSysExCommands();
       mainLayer.activate();
-      host.showPopupNotification(" Initialized Mackie MCU Pro v1.0a");
+      host.showPopupNotification(
+         " Initialized " + getExtensionDefinition().getName() + " " + getExtensionDefinition().getVersion());
       sections.forEach(MixControl::resetFaders);
       sections.forEach(MixControl::clearAll);
       ledDisplay.refreshMode();
@@ -464,7 +464,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       MainUnitButton.assignToggle(this, BasicNoteOnAssignment.FLIP, mainLayer, flipped);
 
-      final MainUnitButton vuModeButton = new MainUnitButton(this, BasicNoteOnAssignment.DIPLAY_NAME);
+      final MainUnitButton vuModeButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_NAME);
       vuModeButton.bindIsPressed(mainLayer, v -> {
          if (modifier.isShift()) {
             toggleVuMode(v);
@@ -974,7 +974,8 @@ public class MackieMcuProExtension extends ControllerExtension {
       } catch (final InterruptedException | ExecutionException e) {
          e.printStackTrace();
       }
-      getHost().showPopupNotification(" Exit Mackie MCU Pro");
+      getHost().showPopupNotification(
+         " Exit " + getExtensionDefinition().getName() + " " + getExtensionDefinition().getVersion());
    }
 
    public RelativeHardwarControlBindable createIncrementBinder(final IntConsumer consumer) {
@@ -1038,5 +1039,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    public ControllerConfig getControllerConfig() {
       return controllerConfig;
+   }
+
+   public ActionSet getActionSet() {
+      return actionSet;
    }
 }
