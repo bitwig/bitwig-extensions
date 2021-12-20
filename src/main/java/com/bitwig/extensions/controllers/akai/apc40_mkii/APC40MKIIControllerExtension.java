@@ -444,9 +444,13 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mShiftLayer.bindPressed(clipButton, slot.launchWithOptionsAction("none", "continue_immediately"));
             mShiftLayer.bindReleased(clipButton, track.launchLastClipWithOptionsAction("none", "continue_immediately"));
          }
+      }
 
+      for (int i = 0; i < 5; ++i)
+      {
          final Scene scene = mSceneBank.getScene(i);
          mShiftLayer.bindPressed(mSceneButtons[i], scene.launchWithOptionsAction("none", "continue_immediately"));
+         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchLastClipWithOptionsAction("none", "continue_immediately"));
       }
    }
 
