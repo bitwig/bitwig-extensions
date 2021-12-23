@@ -9,7 +9,6 @@ import com.bitwig.extensions.controllers.mackie.layer.ButtonLayer;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 import java.util.HashSet;
 import java.util.List;
@@ -202,6 +201,7 @@ public abstract class SequencerLayer extends ButtonLayer {
             repeatCurve.unset();
             repeatVelocityEnd.unset();
             repeatVelocity.unset();
+            occurrence.unset();
             if (recurrenceLayer.isActive()) {
                activateRecurrence(false);
             }
@@ -355,7 +355,7 @@ public abstract class SequencerLayer extends ButtonLayer {
 
    void bindMenuNavigate(final Integer index, final MenuModeLayerConfiguration control, final boolean forward,
                          final boolean showHeldSteps, final Runnable shiftFuntion) {
-      control.addDisplayValueBinding(index, forward ? new BasicStringValue("====>") : new BasicStringValue("<===="));
+      control.addDisplayValueBinding(index, forward ? new BasicStringValue(" -->") : new BasicStringValue(" <--"));
       control.addNameBinding(index, showHeldSteps ? heldSteps : new BasicStringValue(" "));
       if (shiftFuntion != null) {
          control.addPressEncoderBinding(index, which -> {
@@ -370,7 +370,6 @@ public abstract class SequencerLayer extends ButtonLayer {
       } else {
          control.addPressEncoderBinding(index, forward ? which -> nextMenu() : which -> previousMenu(), true);
       }
-
    }
 
 
@@ -383,6 +382,7 @@ public abstract class SequencerLayer extends ButtonLayer {
          clip.clearSteps();
       } else if (modifier.isDuplicateSet()) {
          clip.duplicateContent();
+         driver.getActionSet().zoomToFitEditor();
       } else if (modifier.isShiftSet()) {
          track.stop();
       } else {
@@ -392,7 +392,6 @@ public abstract class SequencerLayer extends ButtonLayer {
 
    void editMask(final int mask) {
       int value = recurrenceMask.get();
-      RemoteConsole.out.println("Edit {} v={}", mask, value);
       if ((mask & value) != 0) {
          value &= ~mask;
       } else {

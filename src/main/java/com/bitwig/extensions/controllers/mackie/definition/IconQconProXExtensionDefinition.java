@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.mackie.definition;
 
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.ControllerConfig;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 
@@ -26,6 +27,34 @@ public class IconQconProXExtensionDefinition extends IconQconExtensionDefinition
       initNoteOverrides();
    }
 
+   @Override
+   public void initNoteOverrides() {
+      // DAW Mode Button => Launcher
+      override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.GLOBAL_VIEW);
+      // DVR Button => Keyboard Mode
+      override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.REPLACE);
+      // STEP Sequencer
+      overrideX(BasicNoteOnAssignment.STEP_SEQ, BasicNoteOnAssignment.SOLO);
+
+      // Clip Overdub
+      override(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
+
+      // Automation Section
+      override(BasicNoteOnAssignment.AUTO_WRITE, BasicNoteOnAssignment.TOUCH);
+      override(BasicNoteOnAssignment.GLOBAL_VIEW, BasicNoteOnAssignment.LATCH);
+      override(BasicNoteOnAssignment.LATCH, BasicNoteOnAssignment.AUTO_WRITE);
+      override(BasicNoteOnAssignment.TOUCH, BasicNoteOnAssignment.TRIM);
+
+      // Punch In
+      overrideX(BasicNoteOnAssignment.DROP, BasicNoteOnAssignment.SAVE);
+      // Punch Out
+      override(BasicNoteOnAssignment.REPLACE, BasicNoteOnAssignment.UNDO);
+
+      // Undo
+      overrideX(BasicNoteOnAssignment.UNDO, BasicNoteOnAssignment.ENTER);
+      // Metronome
+      override(BasicNoteOnAssignment.CLICK, BasicNoteOnAssignment.GROUP);
+   }
 
    @Override
    protected List<String[]> getInPorts(final PlatformType platformType) {

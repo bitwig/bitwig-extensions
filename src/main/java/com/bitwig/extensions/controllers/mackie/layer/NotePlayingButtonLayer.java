@@ -29,12 +29,7 @@ public class NotePlayingButtonLayer extends ButtonLayer {
    }
 
    public boolean getLightState(final ValueObject<NoteState> state) {
-      if (state.get() == NoteState.BASENOTE) {
-         return blinkTicks % 4 != 0;
-      } else if (state.get() == NoteState.PLAYING) {
-         return true;
-      }
-      return false;
+      return state.get() == NoteState.BASENOTE || state.get() == NoteState.PLAYING;
    }
 
    @Override

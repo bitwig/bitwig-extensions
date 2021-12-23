@@ -64,7 +64,7 @@ public class ActionSet {
       final Action action = actionMap.get(type);
       if (action != null) {
          focusEditor();
-//         clipLauncherAction.invoke();
+         clipLauncherAction.invoke();
          action.invoke();
          zoomToFitAction.invoke();
       }

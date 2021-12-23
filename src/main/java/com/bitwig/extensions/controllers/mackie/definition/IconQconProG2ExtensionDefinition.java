@@ -20,22 +20,38 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
    @Override
    public void initNoteOverrides() {
       // DAW Mode Button => Launcher
-      override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.GLOBAL_VIEW);
+      override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.MARKER);
       // DVR Button => Keyboard Mode
-      override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.REPLACE);
+      override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.SAVE);
+      // STEP Sequencer
+      overrideX(BasicNoteOnAssignment.STEP_SEQ, BasicNoteOnAssignment.UNDO);
 
-      override(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
-      override(BasicNoteOnAssignment.GLOBAL_VIEW, BasicNoteOnAssignment.LATCH);
+      override(BasicNoteOnAssignment.MARKER, BasicNoteOnAssignment.REPLACE);
+      override(BasicNoteOnAssignment.SHIFT, BasicNoteOnAssignment.ENTER);
+      override(BasicNoteOnAssignment.OPTION, BasicNoteOnAssignment.CANCEL);
+      // ALT is Duplicate
+      override(BasicNoteOnAssignment.ALT, BasicNoteOnAssignment.OPTION);
+      // CONTROL is Clear
+      override(BasicNoteOnAssignment.CONTROL, BasicNoteOnAssignment.SHIFT);
 
-      override(BasicNoteOnAssignment.LATCH, BasicNoteOnAssignment.AUTO_WRITE);
+
+      // Automation Section
       override(BasicNoteOnAssignment.AUTO_WRITE, BasicNoteOnAssignment.TOUCH);
+      override(BasicNoteOnAssignment.GLOBAL_VIEW, BasicNoteOnAssignment.LATCH);
+      override(BasicNoteOnAssignment.LATCH, BasicNoteOnAssignment.AUTO_WRITE);
       override(BasicNoteOnAssignment.TOUCH, BasicNoteOnAssignment.TRIM);
 
-      overrideX(BasicNoteOnAssignment.DROP, BasicNoteOnAssignment.SAVE);
-      override(BasicNoteOnAssignment.REPLACE, BasicNoteOnAssignment.UNDO);
-      overrideX(BasicNoteOnAssignment.UNDO, BasicNoteOnAssignment.ENTER);
-      override(BasicNoteOnAssignment.CLICK, BasicNoteOnAssignment.GROUP);
-      overrideX(BasicNoteOnAssignment.STEP_SEQ, BasicNoteOnAssignment.REDO);
+      // Punch In
+      //overrideX(BasicNoteOnAssignment.DROP, BasicNoteOnAssignment.SAVE);
+      // Punch Out
+      //override(BasicNoteOnAssignment.REPLACE, BasicNoteOnAssignment.UNDO);
+
+      // Undo
+      override(BasicNoteOnAssignment.UNDO, BasicNoteOnAssignment.CONTROL);
+      // Clip Overdub
+      // N.a.: override(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
+      // Metronome
+      // N.a.: override(BasicNoteOnAssignment.CLICK, BasicNoteOnAssignment.GROUP);
    }
 
    public IconQconProG2ExtensionDefinition() {

@@ -9,6 +9,7 @@ import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
+import com.bitwig.extensions.framework.Layer;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,8 @@ import java.util.stream.Collectors;
 public class DrumSequencerLayer extends SequencerLayer {
 
    public static final int STEPS = 16;
+
+   private final Layer chordMemoryLayer;
 
    private int drumScrollOffset;
    private MenuModeLayerConfiguration clipEditMenu;
@@ -33,6 +36,7 @@ public class DrumSequencerLayer extends SequencerLayer {
             copyNote = null;
          }
       });
+      chordMemoryLayer = new Layer(mixControl.getDriver().getLayers(), "ChordSelector");
    }
 
    public void init(final DrumPadBank drumPadBank, final DrumNoteHandler noteHandler) {

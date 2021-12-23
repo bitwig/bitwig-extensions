@@ -102,16 +102,15 @@ public class MenuCreator {
       return menu;
    }
 
-   public MenuModeLayerConfiguration creatClipMenuSection() {
+   public MenuModeLayerConfiguration createClipMenuSection() {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("CLIP_MENU_MENU", mainSection);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-
       builder.bindAction("<DBL>", "double", () -> actionSet.executeClip(ActionSet.ActionType.DOUBLE));
       builder.bindAction("<REV>", "reverse", () -> actionSet.executeClip(ActionSet.ActionType.REVERSE));
       builder.bindAction("<SCL>", "50%", () -> actionSet.executeClip(ActionSet.ActionType.SCALE50));
       builder.bindAction("<SCL>", "200%", () -> actionSet.executeClip(ActionSet.ActionType.SCALE200));
-      builder.bindAction("<TrP>", "-semi", () -> actionSet.executeClip(ActionSet.ActionType.TRANSDOWN));
-      builder.bindAction("<Trp>", "+semi", () -> actionSet.executeClip(ActionSet.ActionType.TRANSUP));
+      builder.bindAction("<Trns>", "-semi", () -> actionSet.executeClip(ActionSet.ActionType.TRANSDOWN));
+      builder.bindAction("<Trns>", "+semi", () -> actionSet.executeClip(ActionSet.ActionType.TRANSUP));
       builder.bindAction("<Oct>", "-oct", () -> actionSet.executeClip(ActionSet.ActionType.OCTDOWN));
       builder.bindAction("<Oct>", "+oct", () -> actionSet.executeClip(ActionSet.ActionType.OCTUP));
       return menu;

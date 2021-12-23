@@ -63,6 +63,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private final ValueObject<MixerMode> mixerMode = new ValueObject<>(MixerMode.MAIN);
    private MixerMode previousOverallMode = MixerMode.MAIN;
+   private boolean forcedIntoDrumMixMode = false;
 
    private final ValueObject<ButtonViewState> buttonViewMode = new ValueObject<>(ButtonViewState.MIXER);
    private int blinkTicks = 0;
@@ -437,6 +438,11 @@ public class MackieMcuProExtension extends ControllerExtension {
       punchInButton.bindToggle(mainLayer, transport.isPunchInEnabled());
       punchOutButton.bindToggle(mainLayer, transport.isPunchOutEnabled());
 
+      punchInButton.bindPressed(shiftLayer, transport.jumpToPreviousCueMarkerAction());
+      punchOutButton.bindPressed(shiftLayer, transport.jumpToNextCueMarkerAction());
+      punchInButton.bindPressedState(shiftLayer);
+      punchOutButton.bindPressedState(shiftLayer);
+
       final MainUnitButton stopButton = new MainUnitButton(this, BasicNoteOnAssignment.STOP, true);
       stopButton.bindPressed(mainLayer, transport.stopAction());
       stopButton.bindLight(mainLayer, transport.isPlaying());
@@ -713,7 +719,7 @@ public class MackieMcuProExtension extends ControllerExtension {
          () -> menuCreator.createTempoMenu(transport, this::modifyTempo)); // Tempo Menu
       // Save
       initFButton(6, BasicNoteOnAssignment.F7, cueMarkerBank, () -> actionSet.execute(ActionSet.ActionType.SAVE));
-      initFMenuButton(7, BasicNoteOnAssignment.F8, cueMarkerBank, () -> menuCreator.creatClipMenuSection()); //
+      initFMenuButton(7, BasicNoteOnAssignment.F8, cueMarkerBank, () -> menuCreator.createClipMenuSection()); //
       // TOGGLE Layout
       initActionButton(BasicNoteOnAssignment.GV_INPUTS_LF2,
          () -> application.setPanelLayout(currentLayoutType.other().getName()));
@@ -793,23 +799,29 @@ public class MackieMcuProExtension extends ControllerExtension {
    }
 
    private void initSeqSection() {
-      final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.STEP_SEQ);
-      button.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER);
+      final MainUnitButton stepSequencerButton = new MainUnitButton(this, BasicNoteOnAssignment.STEP_SEQ);
+      stepSequencerButton.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER);
 
-      button.bindPressed(mainLayer, () -> {
+      stepSequencerButton.bindPressed(mainLayer, () -> {
          final ButtonViewState current = buttonViewMode.get();
          if (current == ButtonViewState.STEP_SEQUENCER) {
             buttonViewMode.set(ButtonViewState.MIXER);
+            if (forcedIntoDrumMixMode && !modifier.isOptionSet()) {
+               forcedIntoDrumMixMode = false;
+               mixerMode.set(MixerMode.MAIN);
+            }
          } else if (mixerMode.get() == MixerMode.DRUM) {
             buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
+            forcedIntoDrumMixMode = false;
          } else if (cursorDeviceControl.cursorHasDrumPads()) {
             mixerMode.set(MixerMode.DRUM);
             buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
+            forcedIntoDrumMixMode = true;
          } else {
             buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
          }
       });
-      button.bindPressed(shiftLayer, () -> mainSection.advanceMode(ButtonViewState.STEP_SEQUENCER));
+      stepSequencerButton.bindPressed(shiftLayer, () -> mainSection.advanceMode(ButtonViewState.STEP_SEQUENCER));
       mixerMode.addValueObserver((oldMode, mode) -> {
          if (buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER && mode != MixerMode.DRUM) {
             buttonViewMode.set(ButtonViewState.MIXER);

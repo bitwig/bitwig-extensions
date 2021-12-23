@@ -13,7 +13,7 @@ import java.util.List;
 public class ChordHandler {
    public final static String[] NOTES = {"  C", " C#", "  D", " D#", "  E", "  F", " F#", "  G", " G#", "  A", " A#", "  B"};
 
-   NoteInput noteInput;
+   private NoteInput noteInput;
 
    private final ValueObject<ChordType> chordType = new ValueObject<>(ChordType.MAJ, ChordType::increment,
       ChordType::convert);
@@ -56,6 +56,14 @@ public class ChordHandler {
 
    public ValueObject<ChordType> getChordType() {
       return chordType;
+   }
+
+   public void apply(final Chord chord) {
+      chordType.set(chord.getChordType());
+      octaveOffset.set(chord.getOctaveOffset());
+      chordBaseNote.set(chord.getChordBaseNote());
+      expansion.set(chord.getExpansion());
+      inversion.set(chord.getInversion());
    }
 
    public List<Integer> getNotes() {

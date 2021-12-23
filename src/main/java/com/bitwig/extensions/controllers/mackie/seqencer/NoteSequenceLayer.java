@@ -9,6 +9,7 @@ import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 
 public class NoteSequenceLayer extends SequencerLayer {
    public final static String[] NOTES = {" C", "C#", " D", "D#", " E", " F", "F#", " G", "G#", " A", "A#", " B"};
-   private static final int STEPS = 32;
+   private static final int STEPS = 16;
    protected final NoteStepSlot[] assignments = new NoteStepSlot[STEPS];
    private final EditorValue noteValue = new EditorValue(60, (edit, value) -> {
       final String base = NOTES[value % 12];
@@ -36,6 +37,8 @@ public class NoteSequenceLayer extends SequencerLayer {
    private NotePlayingSetup notePlayingSetup;
    private TransposeMode mode = TransposeMode.SCALE;
    private final ChordHandler chordHandler = new ChordHandler();
+   private final ChordBank chordBank = new ChordBank();
+   private final List<Integer> overallHeldNotes = new ArrayList<>();
 
    private MenuModeLayerConfiguration page3Menu;
    private boolean prehearSteps = false;
@@ -72,6 +75,7 @@ public class NoteSequenceLayer extends SequencerLayer {
       for (int i = 0; i < STEPS; i++) {
          assignments[i] = new NoteStepSlot(i);
       }
+      chordBank.init();
       control.getModifier().addValueObserver(modifierValueObject -> {
          if (copyNote != null) {
             if (!modifierValueObject.isDuplicateSet()) {
@@ -93,6 +97,7 @@ public class NoteSequenceLayer extends SequencerLayer {
       this.notePlayingSetup = notePlayingSetup;
       chordHandler.init(noteInput);
       cursorClip = getCursorTrack().createLauncherCursorClip(STEPS, 127);
+
       positionHandler = new StepViewPosition(cursorClip, STEPS);
       pageIndex.setMax(positionHandler.getPages() - 1);
 
@@ -108,10 +113,10 @@ public class NoteSequenceLayer extends SequencerLayer {
       clipNameValue = createClipNameValue(cursorClip);
       clipPlayStatus = createPlayingStatusValue(cursorClip, control.getModifier());
       initNoteValues();
-//      initSelection(hwControls);  // no good as long as the step sequencer uses all rows
-      for (int row = 0; row < 4; row++) {
+      initSelection(hwControls);  // no good as long as the step sequencer uses all rows
+      for (int row = 1; row < 3; row++) {
          for (int col = 0; col < 8; col++) {
-            final int step = row * 8 + col;
+            final int step = (row - 1) * 8 + col;
             final HardwareButton button = hwControls.getButton(row, col);
             bindStepButton(button, step);
          }
@@ -126,11 +131,22 @@ public class NoteSequenceLayer extends SequencerLayer {
       for (int i = 0; i < 8; i++) {
          final int index = i;
          final int mask = 0x1 << index;
+         hwControls.bindButton(this, index, MixerSectionHardware.REC_INDEX,
+            () -> chordBank.getSelectedIndex().get() == index, press -> selectChord(press, index));
          hwControls.bindButton(recurrenceLayer, index, MixerSectionHardware.REC_INDEX, () -> maskLighting(mask, index),
             () -> editMask(mask));
       }
    }
 
+   private void selectChord(final boolean press, final int index) {
+      if (press) {
+         chordBank.getSelectedIndex().set(index);
+         chordHandler.apply(chordBank.get());
+         chordHandler.play(velocityValue.getSetValue());
+      } else {
+         chordHandler.release();
+      }
+   }
 
    void initNoteValues() {
    }
@@ -214,6 +230,7 @@ public class NoteSequenceLayer extends SequencerLayer {
    }
 
    private void applyChordToStep(final int step, final List<Integer> notes) {
+      // TO Preserver values of chord as best possible
       cursorClip.clearStepsAtX(0, step);
       for (final Integer noteNr : notes) {
          cursorClip.setStep(step, noteNr, velocityValue.getSetValue(),
@@ -295,22 +312,41 @@ public class NoteSequenceLayer extends SequencerLayer {
       builder.bind((index, control) -> bindMenuNavigate(index, control, false, true,
          () -> control.getDriver().getActionSet().zoomToFitEditor()));
       builder.bindValue("Note", chordHandler.getChordBaseNote(), false);
-      builder.bindValue("Chord", chordHandler.getChordType());
-      builder.bindValue("Octave", chordHandler.getOctaveOffset(), false);
-      builder.bindValue("Inv", chordHandler.getInversion(), false);
-      builder.bindValue("Exp", chordHandler.getExpansion(), false);
       builder.bind((index, control) -> {
-         control.addNameBinding(index, new BasicStringValue("P.Hear"));
+         control.addNameBinding(index, new BasicStringValue("Chord"));
+         control.addEncoderIncBinding(index, chordHandler.getChordType(), false);
+         control.addDisplayValueBinding(index, chordHandler.getChordType());
+//         control.addRingBinding(index, chordHandler.getChordType());
          control.addPressEncoderBinding(index, which -> chordHandler.play(velocityValue.getSetValue()));
          control.addReleaseEncoderBinding(index, which -> chordHandler.release());
          control.addRingFixedBinding(index);
       });
+      builder.bindValue("Octave", chordHandler.getOctaveOffset(), false);
+      builder.bindValue("Inv", chordHandler.getInversion(), false);
+      builder.bindValue("Exp", chordHandler.getExpansion(), false);
+      builder.bind(this::bindVelocityValue);
+      builder.bind(this::bindNoteLength);
 
-      chordHandler.getChordType().addValueObserver((old, chordType) -> notifyChordChanged());
-      chordHandler.getChordBaseNote().addValueObserver(v -> notifyChordChanged());
-      chordHandler.getInversion().addValueObserver(v -> notifyChordChanged());
-      chordHandler.getExpansion().addIntValueObserver(v -> notifyChordChanged());
-      chordHandler.getOctaveOffset().addIntValueObserver(v -> notifyChordChanged());
+      chordHandler.getChordType().addValueObserver((old, chordType) -> {
+         chordBank.get().setChordType(chordType);
+         notifyChordChanged();
+      });
+      chordHandler.getChordBaseNote().addValueObserver(v -> {
+         chordBank.get().setChordBaseNote(v);
+         notifyChordChanged();
+      });
+      chordHandler.getInversion().addValueObserver(v -> {
+         chordBank.get().setInversion(v);
+         notifyChordChanged();
+      });
+      chordHandler.getExpansion().addIntValueObserver(v -> {
+         chordBank.get().setExpansion(v);
+         notifyChordChanged();
+      });
+      chordHandler.getOctaveOffset().addIntValueObserver(v -> {
+         chordBank.get().setOctaveOffset(v);
+         notifyChordChanged();
+      });
 
       builder.fillRest();
       return menu;

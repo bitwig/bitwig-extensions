@@ -75,6 +75,11 @@ public class MainUnitButton {
       layer.bindPressed(button, action);
    }
 
+   public void bindPressedState(final Layer layer) {
+      layer.bind(button.isPressed(), led);
+   }
+
+
    public void bindPressed(final Layer layer, final Runnable pressedAction) {
       layer.bindPressed(button, pressedAction);
    }

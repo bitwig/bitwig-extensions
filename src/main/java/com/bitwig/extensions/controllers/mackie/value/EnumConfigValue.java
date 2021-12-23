@@ -19,6 +19,7 @@ public class EnumConfigValue<T> implements IncrementalValue, StringValue, IntVal
    private final Map<T, String> valueToDisplay = new HashMap<>();
    private final Map<T, Integer> valueToIndex = new HashMap<>();
    private T value;
+   private boolean set = false;
 
    public EnumConfigValue<T> add(final T value, final String display) {
       values.add(value);
@@ -33,13 +34,22 @@ public class EnumConfigValue<T> implements IncrementalValue, StringValue, IntVal
    }
 
    public void set(final T value) {
-      if (value != this.value) {
+      if (!set || value != this.value) {
          this.value = value;
+         set = true;
          callbacks.forEach(c -> c.valueChanged(displayedValue()));
          intCallbacks.forEach(c -> c.accept(getIntValue()));
          valueCallbacks.forEach(c -> c.accept(value));
       }
    }
+
+   public void unset() {
+      set = false;
+      callbacks.forEach(c -> c.valueChanged(displayedValue()));
+      intCallbacks.forEach(c -> c.accept(getIntValue()));
+      valueCallbacks.forEach(c -> c.accept(value));
+   }
+
 
    public void reset() {
       set(values.get(0));
@@ -89,7 +99,7 @@ public class EnumConfigValue<T> implements IncrementalValue, StringValue, IntVal
 
    @Override
    public int getIntValue() {
-      if (value == null) {
+      if (value == null || !set) {
          return 0;
       }
       return valueToIndex.get(value);
@@ -97,7 +107,7 @@ public class EnumConfigValue<T> implements IncrementalValue, StringValue, IntVal
 
    @Override
    public String displayedValue() {
-      return valueToDisplay.get(value);
+      return set ? valueToDisplay.get(value) : "<--->";
    }
 
    @Override
