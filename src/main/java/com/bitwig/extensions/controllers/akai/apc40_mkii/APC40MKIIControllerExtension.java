@@ -528,7 +528,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          mUserLayers[userIndex] = new Layer(mLayers, "User-" + userIndex);
          for (int i = 0; i < 8; ++i)
-            mUserLayers[userIndex].bind(mTopControlKnobs[i], mUserControls.getControl(i + mUserIndex * 8));
+            mUserLayers[userIndex].bind(mTopControlKnobs[i], mUserControls.getControl(i + userIndex * 8));
       }
    }
 
