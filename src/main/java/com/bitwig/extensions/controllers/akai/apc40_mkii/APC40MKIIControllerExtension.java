@@ -441,16 +441,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          {
             final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
             final HardwareButton clipButton = mGridButtons[i + 8 * j];
-            mShiftLayer.bindPressed(clipButton, slot.launchWithOptionsAction("none", "continue_immediately"));
-            mShiftLayer.bindReleased(clipButton, track.launchLastClipWithOptionsAction("none", "continue_immediately"));
+            mShiftLayer.bindPressed(clipButton, slot.launchWithOptionsAction("off", "continue_immediately"));
+            mShiftLayer.bindReleased(clipButton, track.launchLastClipWithOptionsAction("off", "continue_immediately"));
          }
       }
 
       for (int i = 0; i < 5; ++i)
       {
          final Scene scene = mSceneBank.getScene(i);
-         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchWithOptionsAction("none", "continue_immediately"));
-         mShiftLayer.bindReleased(mSceneButtons[i], scene.launchLastClipWithOptionsAction("none", "continue_immediately"));
+         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchWithOptionsAction("off", "continue_immediately"));
+         mShiftLayer.bindReleased(mSceneButtons[i], scene.launchLastClipWithOptionsAction("off", "continue_immediately"));
       }
    }
 
