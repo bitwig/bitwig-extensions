@@ -24,12 +24,14 @@ hs_err_pid*
 
 bitwig-extensions.iml
 
-target/
-build/
+/target/
+/build/
 /.idea
 /.classpath
 /.project
 /${bitwig.extension.directory}/
 /${bitwig.extension.directory}/Bitwig.bwextension
-.gradle
+/.gradle
 /out
+/bin/
+/.settings/
