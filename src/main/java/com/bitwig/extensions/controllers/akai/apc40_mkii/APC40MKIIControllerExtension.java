@@ -223,6 +223,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int j = 0; j < 5; ++j)
       {
          final Scene scene = mSceneBank.getScene(j);
+         scene.setIndication(true);
          scene.exists().markInterested();
          scene.color().markInterested();
       }
