@@ -8,6 +8,7 @@ import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.definition.ControllerConfig;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
 import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
@@ -42,8 +43,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private Layers layers;
    private Layer mainLayer;
-   private Layer cueMarkerModeLayer;
    private Layer shiftLayer;
+   private Layer optionLayer;
+
+   private Layer cueMarkerModeLayer;
 
    private HardwareSurface surface;
    private Transport transport;
@@ -118,9 +121,12 @@ public class MackieMcuProExtension extends ControllerExtension {
       layers = new Layers(this);
       mainLayer = new Layer(layers, "MainLayer");
       shiftLayer = new Layer(layers, "GlobalShiftLayer");
+      optionLayer = new Layer(layers, "OptionLayer");
       cueMarkerModeLayer = new Layer(layers, "Cue Marker Layer");
       notePlayingSetup = new NotePlayingSetup();
       actionSet = new ActionSet(application);
+
+      modifier.setUsesDuplicateClear(controllerConfig.isUseClearDuplicateModifiers());
 
       Arrays.fill(lightStatusMap, -1);
 
@@ -381,13 +387,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private void initModifiers() {
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.SHIFT, mainLayer, modifier::setShift);
-      modifier.addShiftValueObserver(shiftState -> {
-         if (shiftState) {
-            shiftLayer.activate();
-         } else {
-            shiftLayer.deactivate();
-         }
-      });
+      modifier.addShiftValueObserver(shiftState -> shiftLayer.setIsActive(shiftState));
+      modifier.addOptionValueObserver(optionState -> optionLayer.setIsActive(optionState));
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.OPTION, mainLayer, modifier::setOption);
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.CONTROL, mainLayer, modifier::setControl);
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.ALT, mainLayer, modifier::setAlt);
@@ -470,13 +471,19 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       MainUnitButton.assignToggle(this, BasicNoteOnAssignment.FLIP, mainLayer, flipped);
 
-      final MainUnitButton vuModeButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_NAME);
-      vuModeButton.bindIsPressed(mainLayer, v -> {
-         if (modifier.isShift()) {
-            toggleVuMode(v);
-         } else {
-            sections.forEach(section -> section.handleNameDisplay(v));
-         }
+      initVuModeButton();
+
+   }
+
+   private void initVuModeButton() {
+      final MainUnitButton displayNameButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_NAME);
+      if (getControllerConfig().isHasDedicateVu()) {
+         displayNameButton.bindIsPressed(mainLayer, v -> sections.forEach(section -> section.handleNameDisplay(v)));
+      } else {
+         displayNameButton.bindIsPressed(mainLayer, v -> sections.forEach(section -> section.handleNameDisplay(v)));
+         displayNameButton.bindIsPressed(shiftLayer, this::toggleVuMode);
+      }
+      displayNameButton.bindIsPressed(optionLayer, v -> {
       });
 
       final MainUnitButton timeModeButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_SMPTE);
@@ -743,10 +750,13 @@ public class MackieMcuProExtension extends ControllerExtension {
       final MainUnitButton fButton = new MainUnitButton(this, assign);
       fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
       fButton.bindPressed(mainLayer, nonMarkerFunction);
+      fButton.activateHoldState();
    }
 
    private void initActionButton(final BasicNoteOnAssignment assignment, final Runnable action) {
-      new MainUnitButton(this, assignment).bindPressed(mainLayer, action);
+      final MainUnitButton fButton = new MainUnitButton(this, assignment);
+      fButton.bindPressed(mainLayer, action);
+      fButton.activateHoldState();
    }
 
    private void modifyTempo(final int inc) {
@@ -898,6 +908,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       final MainUnitButton fButton = new MainUnitButton(this, assign);
       fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
       bindHoldButton(fButton, menuCreator.get());
+      fButton.activateHoldState();
    }
 
    private void bindHoldToggleButton(final MainUnitButton button, final MenuModeLayerConfiguration menu,

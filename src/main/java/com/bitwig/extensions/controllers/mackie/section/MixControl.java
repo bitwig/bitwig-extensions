@@ -93,17 +93,11 @@ public class MixControl implements LayerStateHandler {
       }
 
       sendTrackConfiguration = new TrackLayerConfiguration("SN_TR", this);
-
       sendDrumTrackConfiguration = new TrackLayerConfiguration("SEND_DRUM_TRACK", this);
-
       cursorDeviceConfiguration = new TrackLayerConfiguration("INSTRUMENT", this);
-
       eqTrackConfiguration = new TrackLayerConfiguration("EQ_DEVICE", this);
-
       globalViewLayerConfiguration = new GlovalViewLayerConfiguration("GLOBAL_VIEW", this);
-
       launchButtonLayer = new ClipLaunchButtonLayer("CLIP_LAUNCH", this);
-
       scaleButtonLayer = new NotePlayingButtonLayer(this);
 
       currentConfiguration = panConfiguration;
@@ -141,16 +135,17 @@ public class MixControl implements LayerStateHandler {
          // TODO this will have to change to accommodate different modes
          if (currentConfiguration.applyModifier(modvalue)) {
             layerState.updateState(this);
-         } else if (modifier.get() > 0 && launchButtonLayer.isActive()) {
-            infoLayer.setMainText("Clip mods:  Shft+Opt=delete  Shft+Alt=double content",
-               "Opt=duplicate alt=stop track", false);
-            infoLayer.enableFullTextMode(true);
-            infoLayer.setIsActive(true);
-            layerState.updateState(this);
-         } else if (infoLayer.isActive()) {
-            infoLayer.setIsActive(false);
-            layerState.updateState(this);
          }
+//         else if (modifier.get() > 0 && launchButtonLayer.isActive()) {
+//            infoLayer.setMainText("Clip mods:  Shft+Opt=delete  Shft+Alt=double content",
+//               "Opt=duplicate alt=stop track", false);
+//            infoLayer.enableFullTextMode(true);
+//            infoLayer.setIsActive(true);
+//            layerState.updateState(this);
+//         } else if (infoLayer.isActive()) {
+//            infoLayer.setIsActive(false);
+//            layerState.updateState(this);
+//      }
       });
    }
 
@@ -206,18 +201,18 @@ public class MixControl implements LayerStateHandler {
       if (infoLayer.isActive()) {
          activeDisplayLayer = infoLayer;
       } else {
-         final boolean flipped = driver.getFlipped().get();
+         final boolean flipped = getActiveMixGroup().isFlipped();
          final boolean touched = fadersTouched.get();
-         final int displayer = !flipped && touched || flipped && !touched ? 1 : 0;
-         activeDisplayLayer = currentConfiguration.getDisplayLayer(displayer);
+         final int whichLayer = !flipped && touched || flipped && !touched ? 1 : 0;
+
+         activeDisplayLayer = currentConfiguration.getDisplayLayer(whichLayer);
       }
       return activeDisplayLayer;
    }
 
    @Override
    public DisplayLayer getBottomDisplayLayer() {
-      final boolean flipped = driver.getFlipped().get();
-      return currentConfiguration.getBottomDisplayLayer(flipped ? 1 : 0);
+      return currentConfiguration.getBottomDisplayLayer(getActiveMixGroup().isFlipped() ? 1 : 0);
    }
 
    @Override
@@ -247,10 +242,6 @@ public class MixControl implements LayerStateHandler {
 
    public void clearAll() {
       hwControls.getMainDisplay().clearAll();
-   }
-
-   public boolean isFlipped() {
-      return driver.getFlipped().get();
    }
 
    public void exitMessage() {
@@ -621,22 +612,25 @@ public class MixControl implements LayerStateHandler {
    }
 
    public void handleTrackSelection(final Track track) {
+      final ModifierValueObject modifier = driver.getModifier();
       if (track.exists().get()) {
-         if (driver.getModifier().isShift()) {
+         if (modifier.isShift()) {
             track.isGroupExpanded().toggle();
-         } else if (driver.getModifier().isControl()) {
+         } else if (modifier.isControl() || modifier.isClearSet()) {
             track.deleteObject();
-         } else if (driver.getModifier().isAlt()) {
+         } else if (modifier.isAlt()) {
             track.stop();
-         } else if (driver.getModifier().isOption()) {
+         } else if (modifier.isOption()) {
             driver.getApplication().navigateIntoTrackGroup(track);
+         } else if (modifier.isDuplicateSet()) {
+            track.duplicate();
          } else {
             track.selectInMixer();
          }
       } else {
-         if (driver.getModifier().isShift()) {
+         if (modifier.isShift()) {
             driver.getApplication().createAudioTrack(-1);
-         } else if (driver.getModifier().isSet(ModifierValueObject.ALT)) {
+         } else if (modifier.isSet(ModifierValueObject.ALT)) {
             driver.getApplication().createEffectTrack(-1);
          } else {
             driver.getApplication().createInstrumentTrack(-1);

@@ -18,6 +18,7 @@ import com.bitwig.extensions.framework.Layers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class MixerLayerGroup {
    protected final MixControl control;
@@ -37,12 +38,13 @@ public class MixerLayerGroup {
 
    private final DisplayLayer activeSendDisplayConfig;
    private final DisplayLayer activePanDisplayConfig;
+   private boolean flipped;
    protected EditorMode editMode = EditorMode.MIX;
    private NoteSequenceLayer sequenceLayer;
 
    public enum EditorMode {
       MIX,
-      CLIP
+      SEQUENCE
    }
 
    public MixerLayerGroup(final String name, final MixControl control) {
@@ -76,11 +78,12 @@ public class MixerLayerGroup {
             return;
          }
          if (newValue == ButtonViewState.STEP_SEQUENCER) {
-            editMode = EditorMode.CLIP;
+            editMode = EditorMode.SEQUENCE;
          } else {
             editMode = EditorMode.MIX;
          }
       });
+      control.getDriver().getFlipped().addValueObserver(flipped -> this.flipped = flipped);
    }
 
    public SequencerLayer getSequenceLayer() {
@@ -92,7 +95,7 @@ public class MixerLayerGroup {
    }
 
    public boolean hasCursorNavigation() {
-      return editMode == EditorMode.CLIP && sequenceLayer != null;
+      return editMode == EditorMode.SEQUENCE && sequenceLayer != null;
    }
 
    public Layer getFaderLayer(final ParamElement type) {
@@ -138,8 +141,30 @@ public class MixerLayerGroup {
       return sequenceLayer;
    }
 
+   public boolean isFlipped() {
+      if (editMode == EditorMode.SEQUENCE) {
+         return false;
+      }
+      return flipped;
+   }
+
+   public Optional<DisplayLayer> getModeDisplayLayer() {
+      if (editMode == EditorMode.SEQUENCE) {
+         return Optional.of(sequenceLayer.getMenu().getDisplayLayer(0));
+      }
+      return Optional.empty();
+   }
+
+   public Optional<EncoderLayer> getModeEncoderLayer() {
+      if (editMode == EditorMode.SEQUENCE) {
+         return Optional.of(sequenceLayer.getMenu().getEncoderLayer());
+      }
+      return Optional.empty();
+   }
+
+
    public DisplayLayer getDisplayConfiguration(final ParamElement type, final DisplayLocation location) {
-      if (editMode == EditorMode.MIX || sequenceLayer == null || location == DisplayLocation.BOTTOM) {
+      if (location == DisplayLocation.BOTTOM || editMode == EditorMode.MIX || sequenceLayer == null) {
          return getDisplayConfigurationMix(type, location);
       }
       return sequenceLayer.getMenu().getDisplayLayer(0);
@@ -153,7 +178,7 @@ public class MixerLayerGroup {
    }
 
    public void navigateHorizontally(final int direction) {
-      if (editMode == EditorMode.CLIP && sequenceLayer != null) {
+      if (editMode == EditorMode.SEQUENCE && sequenceLayer != null) {
          sequenceLayer.scrollStepsBy(direction);
       } else {
          for (final Bank<?> bank : sendBankList) {
@@ -163,7 +188,7 @@ public class MixerLayerGroup {
    }
 
    public void navigateVertically(final int direction) {
-      if (editMode == EditorMode.CLIP && sequenceLayer != null) {
+      if (editMode == EditorMode.SEQUENCE && sequenceLayer != null) {
          sequenceLayer.navigateVertically(direction);
       }
    }

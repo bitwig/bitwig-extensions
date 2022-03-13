@@ -5,7 +5,6 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
-import com.bitwig.extensions.controllers.mackie.ControllerConfig;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 
 import java.util.*;
@@ -131,6 +130,8 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
 
    @Override
    public MackieMcuProExtension createInstance(final ControllerHost host) {
-      return new MackieMcuProExtension(this, host, new ControllerConfig(false), nrOfExtenders);
+      return new MackieMcuProExtension(this, host, //
+         new ControllerConfig(false) //
+            .setHasDedicateVu(false).setHasMasterVu(false), nrOfExtenders);
    }
 }

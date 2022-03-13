@@ -558,19 +558,22 @@ public class DisplayLayer extends Layer implements DisplaySource {
    }
 
    public void bindTitle(final int index, final ChannelStateValueHandler nameHolder, final StringValue fixedName) {
+      final DisplayCell cell = topRow.getCell(index);
+
       nameHolder.addValueObserver((name, exists, isGroup, isExpanded, handler) -> {
-         topRow.getCell(index).lastValue = handler.toCurrentValue(fixedName.get(), display.getSegmentLength(), name,
-            exists, isGroup, isExpanded);
-         sendToTopRow(index, topRow.getCell(index).lastValue);
+         cell.lastValue = handler.toCurrentValue(nameValueState ? null : fixedName.get(), display.getSegmentLength(),
+            name, exists, isGroup, isExpanded);
+         sendToTopRow(index, cell.lastValue);
       });
       fixedName.addValueObserver(value -> {
          if (!display.isLowerDisplay()) {
-            topRow.getCell(index).lastValue = value;
-            sendToTopRow(index, topRow.getCell(index).lastValue);
+            cell.lastValue = value;
+            sendToTopRow(index, cell.lastValue);
          }
       });
-      topRow.getCell(index).lastValue = nameHolder.toCurrentValue(fixedName.get(), display.getSegmentLength());
-      topRow.getCell(index).setRefresher(() -> nameHolder.toCurrentValue(fixedName.get(), display.getSegmentLength()));
+      cell.lastValue = nameHolder.toCurrentValue(fixedName.get(), display.getSegmentLength());
+      cell.setRefresher(
+         () -> nameHolder.toCurrentValue(nameValueState ? null : fixedName.get(), display.getSegmentLength()));
    }
 
    public void bindTitle(final int index, final StringValue name) {

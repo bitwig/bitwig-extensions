@@ -14,6 +14,8 @@ public class ModifierValueObject {
    private int value = 0;
    private final List<Consumer<ModifierValueObject>> callbacks = new ArrayList<>(); // TODO send it self is better
    private final List<Consumer<Boolean>> shiftCallbacks = new ArrayList<>();
+   private final List<Consumer<Boolean>> optionCallbacks = new ArrayList<>();
+   private boolean useClearDuplicateModifiers;
 
    public void addValueObserver(final Consumer<ModifierValueObject> callback) {
       callbacks.add(callback);
@@ -23,8 +25,16 @@ public class ModifierValueObject {
       shiftCallbacks.add(callback);
    }
 
+   public void addOptionValueObserver(final Consumer<Boolean> callback) {
+      optionCallbacks.add(callback);
+   }
+
    public int get() {
       return value;
+   }
+
+   public void setUsesDuplicateClear(final boolean useClearDuplicateModifiers) {
+      this.useClearDuplicateModifiers = useClearDuplicateModifiers;
    }
 
    public boolean notSet() {
@@ -37,6 +47,10 @@ public class ModifierValueObject {
 
    private void notifyShiftChanged(final boolean newShiftValue) {
       shiftCallbacks.forEach(callback -> callback.accept(newShiftValue));
+   }
+
+   private void notifyOptionChanged(final boolean newOptionValue) {
+      optionCallbacks.forEach(callback -> callback.accept(newOptionValue));
    }
 
    public boolean isSet(final int value) {
@@ -70,11 +84,11 @@ public class ModifierValueObject {
       if (shift && !isShiftSet()) {
          value |= SHIFT;
          notifyValueChanged();
-         notifyShiftChanged(shift);
+         notifyShiftChanged(true);
       } else if (!shift && isShiftSet()) {
          value &= ~SHIFT;
          notifyValueChanged();
-         notifyShiftChanged(shift);
+         notifyShiftChanged(false);
       }
    }
 
@@ -96,9 +110,11 @@ public class ModifierValueObject {
       if (option && !isOptionSet()) {
          value |= OPTION;
          notifyValueChanged();
+         notifyOptionChanged(true);
       } else if (!option && isOptionSet()) {
          value &= ~OPTION;
          notifyValueChanged();
+         notifyOptionChanged(false);
       }
    }
 
@@ -106,6 +122,9 @@ public class ModifierValueObject {
     * @return if the control button is held down
     */
    public boolean isControlSet() {
+      if (useClearDuplicateModifiers) {
+         return false;
+      }
       return (value & CONTROL) != 0;
    }
 
@@ -113,20 +132,26 @@ public class ModifierValueObject {
     * @return if exactly only the control button is held down
     */
    public boolean isControl() {
+      if (useClearDuplicateModifiers) {
+         return false;
+      }
       return value == CONTROL;
    }
 
    public void setControl(final boolean control) {
-      if (control && !isControlSet()) {
+      if (control && (value & CONTROL) == 0) {
          value |= CONTROL;
          notifyValueChanged();
-      } else if (!control && isControlSet()) {
+      } else if (!control && (value & CONTROL) != 0) {
          value &= ~CONTROL;
          notifyValueChanged();
       }
    }
 
    public boolean isAltSet() {
+      if (useClearDuplicateModifiers) {
+         return false;
+      }
       return (value & ALT) != 0;
    }
 
@@ -139,14 +164,17 @@ public class ModifierValueObject {
    }
 
    public boolean isAlt() {
+      if (useClearDuplicateModifiers) {
+         return false;
+      }
       return value == ALT;
    }
 
    public void setAlt(final boolean alt) {
-      if (alt && !isAltSet()) {
+      if (alt && (value & ALT) == 0) {
          value |= ALT;
          notifyValueChanged();
-      } else if (!alt && isAltSet()) {
+      } else if (!alt && (value & ALT) != 0) {
          value &= ~ALT;
          notifyValueChanged();
       }

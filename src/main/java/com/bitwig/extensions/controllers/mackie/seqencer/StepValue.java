@@ -30,6 +30,16 @@ public class StepValue extends DerivedStringValueObject implements IncrementalVa
       set(defaultValue);
    }
 
+   public void resetOnUnset() {
+      if (set) {
+         set(defaultValue);
+      }
+   }
+
+   public boolean isSet() {
+      return set;
+   }
+
    @Override
    public double getMin() {
       return min;

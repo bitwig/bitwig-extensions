@@ -19,9 +19,8 @@ public class MixerLayerConfiguration extends LayerConfiguration {
 
    @Override
    public Layer getFaderLayer() {
-      final boolean flipped = mixControl.isFlipped();
       final MixerLayerGroup activeGroup = mixControl.getActiveMixGroup();
-      if (flipped) {
+      if (activeGroup.isFlipped()) {
          return activeGroup.getFaderLayer(encoderAssign);
       } else {
          return activeGroup.getFaderLayer(ParamElement.VOLUME);
@@ -30,10 +29,9 @@ public class MixerLayerConfiguration extends LayerConfiguration {
 
    @Override
    public EncoderLayer getEncoderLayer() {
-      final boolean flipped = mixControl.isFlipped();
       final MixerLayerGroup activeGroup = mixControl.getActiveMixGroup();
 
-      if (flipped) {
+      if (activeGroup.isFlipped()) {
          return activeGroup.getEncoderLayer(ParamElement.VOLUME);
       } else {
          return activeGroup.getEncoderLayer(encoderAssign);
@@ -48,11 +46,11 @@ public class MixerLayerConfiguration extends LayerConfiguration {
    @Override
    public DisplayLayer getDisplayLayer(final int which) {
       final MixerLayerGroup activeGroup = mixControl.getActiveMixGroup();
-
       if (which == 0) {
-         return activeGroup.getDisplayConfiguration(encoderAssign, DisplayLocation.TOP).setShowTrackInformation(false);
+         return activeGroup.getDisplayConfiguration(encoderAssign, DisplayLocation.TOP) //
+            .setShowTrackInformation(false);
       }
-      return activeGroup.getDisplayConfiguration(ParamElement.VOLUME, DisplayLocation.TOP)
+      return activeGroup.getDisplayConfigurationMix(ParamElement.VOLUME, DisplayLocation.TOP)
          .setShowTrackInformation(false);
    }
 

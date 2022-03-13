@@ -8,6 +8,7 @@ import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConf
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
+import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +43,7 @@ public class NoteSequenceLayer extends SequencerLayer {
 
    private MenuModeLayerConfiguration page3Menu;
    private boolean prehearSteps = false;
+   private Chord chordCopy;
 
    private enum TransposeMode {
       SCALE("s"),
@@ -76,20 +78,33 @@ public class NoteSequenceLayer extends SequencerLayer {
          assignments[i] = new NoteStepSlot(i);
       }
       chordBank.init();
-      control.getModifier().addValueObserver(modifierValueObject -> {
-         if (copyNote != null) {
-            if (!modifierValueObject.isDuplicateSet()) {
-               copyNote = null;
-            }
-         } else if (modifierValueObject.isDuplicateSet() && !heldSteps.isEmpty()) {
-            getHeldNotes().stream()
-               .findFirst()
-               .map(noteStep -> assignments[noteStep.x()])
-               .filter(NoteStepSlot::hasNotes)
-               .ifPresent(slot -> copyNote = slot.copy());
+      control.getModifier().addValueObserver(this::handleModifierChanged);
+      velocityValue.addIntValueObserver(vel -> {
+         if (!velocityValue.isEdit()) {
+            chordBank.get().setVelocity(vel);
          }
-         prehearSteps = modifierValueObject.isOption();
       });
+   }
+
+   private void handleModifierChanged(final ModifierValueObject modifierValueObject) {
+      if (copyNote != null) {
+         if (!modifierValueObject.isDuplicateSet()) {
+            copyNote = null;
+         }
+      } else if (modifierValueObject.isDuplicateSet() && !heldSteps.isEmpty()) {
+         getHeldNotes().stream()
+            .findFirst()
+            .map(noteStep -> assignments[noteStep.x()])
+            .filter(NoteStepSlot::hasNotes)
+            .ifPresent(slot -> copyNote = slot.copy());
+      }
+      if (chordCopy != null) {
+         if (!modifierValueObject.isDuplicateSet()) {
+            chordCopy = null;
+         }
+      }
+      prehearSteps = modifierValueObject.isOption();
+
    }
 
    public void init(final NotePlayingSetup notePlayingSetup, final NoteInput noteInput) {
@@ -97,6 +112,9 @@ public class NoteSequenceLayer extends SequencerLayer {
       this.notePlayingSetup = notePlayingSetup;
       chordHandler.init(noteInput);
       cursorClip = getCursorTrack().createLauncherCursorClip(STEPS, 127);
+//      getCursorTrack().clipLauncherSlotBank().cursorIndex().addValueObserver(v -> {
+//         RemoteConsole.out.println(" SLOT {}", v);
+//      });
 
       positionHandler = new StepViewPosition(cursorClip, STEPS);
       pageIndex.setMax(positionHandler.getPages() - 1);
@@ -125,26 +143,71 @@ public class NoteSequenceLayer extends SequencerLayer {
       page2Menu = initPage2Menu();
       page3Menu = initPage3Menu();
       currentMenu = page1Menu;
+      menuPageIndex.addValueObserver(this::setPageIndex);
+   }
+
+   private void setPageIndex(final int v) {
+      switch (v) {
+         case 0:
+            currentMenu = page1Menu;
+            break;
+         case 1:
+            currentMenu = page2Menu;
+            break;
+         case 2:
+            currentMenu = page3Menu;
+            break;
+      }
+      control.applyUpdate();
    }
 
    private void initSelection(final MixerSectionHardware hwControls) {
       for (int i = 0; i < 8; i++) {
          final int index = i;
          final int mask = 0x1 << index;
-         hwControls.bindButton(this, index, MixerSectionHardware.REC_INDEX,
-            () -> chordBank.getSelectedIndex().get() == index, press -> selectChord(press, index));
+         hwControls.bindButton(this, index, MixerSectionHardware.REC_INDEX, () -> chordSlot(index),
+            press -> selectChord(press, index));
          hwControls.bindButton(recurrenceLayer, index, MixerSectionHardware.REC_INDEX, () -> maskLighting(mask, index),
             () -> editMask(mask));
+         hwControls.bindButton(this, index, MixerSectionHardware.SELECT_INDEX, () -> menuPageIndex.get() == index,
+            press -> selectMenuPage(press, index));
+      }
+   }
+
+   private boolean chordSlot(final int index) {
+      if (chordCopy != null && chordCopy.getSlotIndex() == index) {
+         return blinkTicks % 2 == 1;
+      }
+      return chordBank.getSelectedIndex().get() == index;
+   }
+
+   private void selectMenuPage(final boolean press, final int index) {
+      if (menuPageIndex.inRange(index)) {
+         menuPageIndex.set(index);
       }
    }
 
    private void selectChord(final boolean press, final int index) {
-      if (press) {
-         chordBank.getSelectedIndex().set(index);
-         chordHandler.apply(chordBank.get());
-         chordHandler.play(velocityValue.getSetValue());
+      if (control.getModifier().isDuplicateSet()) {
+         if (press) {
+            if (chordCopy != null) {
+               final Chord destChord = chordBank.get(index);
+               if (chordCopy.getSlotIndex() != destChord.getSlotIndex()) {
+                  destChord.apply(chordCopy);
+               }
+            } else {
+               chordCopy = chordBank.get(index).copy();
+            }
+         }
       } else {
-         chordHandler.release();
+         if (press) {
+            chordBank.getSelectedIndex().set(index);
+            chordHandler.apply(chordBank.get());
+            velocityValue.set(chordBank.get().getVelocity());
+            chordHandler.play(chordBank.get());
+         } else {
+            chordHandler.release(chordBank.get());
+         }
       }
    }
 
@@ -224,6 +287,7 @@ public class NoteSequenceLayer extends SequencerLayer {
       if (page3Menu.isActive()) {
          applyChordToStep(step, chordHandler.getNotes());
       } else {
+
          cursorClip.setStep(step, noteValue.getSetValue(), velocityValue.getSetValue(),
             positionHandler.getGridResolution() * gatePercent);
       }
@@ -273,7 +337,6 @@ public class NoteSequenceLayer extends SequencerLayer {
       }, formatter, 4.0, 1.0);
       builder.bindValue("Offset", pageIndex, false);
       builder.bindValueSet("Grid", gridResolution);
-      builder.bind(this::bindVelocityValue);
       builder.bind((index, control) -> {
          final BasicStringValue title = new BasicStringValue(mode.getSymb() + " Note");
          control.addNameBinding(index, title);
@@ -284,9 +347,10 @@ public class NoteSequenceLayer extends SequencerLayer {
             title.set(mode.getSymb() + " Note");
          });
       });
+      builder.bind(this::bindVelocityValue);
       builder.bind(this::bindNoteLength);
+      builder.bind((index, control) -> bindStepValue(index, control, "Vl.Spr", velSpread));
       builder.bind(this::bindClipControl);
-      builder.bind((index, control) -> bindMenuNavigate(index, control, true, true));
       builder.fillRest();
       return menu;
    }
@@ -294,14 +358,13 @@ public class NoteSequenceLayer extends SequencerLayer {
    private MenuModeLayerConfiguration initPage2Menu() {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("STEP_CLIP_MENU", control);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-      builder.bind((index, control) -> bindMenuNavigate(index, control, false, false));
       builder.bind((index, control) -> bindStepValue(index, control, "Timbre", timbre));
       builder.bind((index, control) -> bindStepValue(index, control, "Press", pressure));
       builder.bind((index, control) -> bindStepValue(index, control, "Chance", chance));
       builder.bind(this::bindRepeatValue);
       builder.bind(this::bindRecurrence);
+      builder.bind(this::bindOccurrence);
       builder.bind(this::bindClipControl);
-      builder.bind((index, control) -> bindMenuNavigate(index, control, true, false));
       builder.fillRest();
       return menu;
    }
@@ -309,8 +372,8 @@ public class NoteSequenceLayer extends SequencerLayer {
    private MenuModeLayerConfiguration initPage3Menu() {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("STEP_CLIP_MENU", control);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-      builder.bind((index, control) -> bindMenuNavigate(index, control, false, true,
-         () -> control.getDriver().getActionSet().zoomToFitEditor()));
+//      builder.bind((index, control) -> bindMenuNavigate(index, control, false, true,
+//         () -> control.getDriver().getActionSet().zoomToFitEditor()));
       builder.bindValue("Note", chordHandler.getChordBaseNote(), false);
       builder.bind((index, control) -> {
          control.addNameBinding(index, new BasicStringValue("Chord"));
@@ -326,6 +389,7 @@ public class NoteSequenceLayer extends SequencerLayer {
       builder.bindValue("Exp", chordHandler.getExpansion(), false);
       builder.bind(this::bindVelocityValue);
       builder.bind(this::bindNoteLength);
+      builder.bind(this::bindClipControl);
 
       chordHandler.getChordType().addValueObserver((old, chordType) -> {
          chordBank.get().setChordType(chordType);
@@ -399,13 +463,7 @@ public class NoteSequenceLayer extends SequencerLayer {
       if (!isActive()) {
          return;
       }
-      if (currentMenu == page1Menu) {
-         currentMenu = page2Menu;
-      } else if (currentMenu == page2Menu) {
-         currentMenu = page3Menu;
-      } else if (currentMenu == page3Menu) {
-         currentMenu = page1Menu;
-      }
+      menuPageIndex.increment(1);
       control.applyUpdate();
    }
 
@@ -414,13 +472,7 @@ public class NoteSequenceLayer extends SequencerLayer {
       if (!isActive()) {
          return;
       }
-      if (currentMenu == page1Menu) {
-         currentMenu = page3Menu;
-      } else if (currentMenu == page2Menu) {
-         currentMenu = page1Menu;
-      } else if (currentMenu == page3Menu) {
-         currentMenu = page2Menu;
-      }
+      menuPageIndex.increment(-1);
       control.applyUpdate();
    }
 

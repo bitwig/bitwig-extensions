@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.mackie.definition;
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
-import com.bitwig.extensions.controllers.mackie.ControllerConfig;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 
 import java.util.List;
@@ -22,7 +21,7 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
       // DAW Mode Button => Launcher
       override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.MARKER);
       // DVR Button => Keyboard Mode
-      override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.SAVE);
+      overrideX(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.SAVE);
       // STEP Sequencer
       overrideX(BasicNoteOnAssignment.STEP_SEQ, BasicNoteOnAssignment.UNDO);
 
@@ -104,7 +103,9 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
 
    @Override
    public MackieMcuProExtension createInstance(final ControllerHost host) {
-      return new MackieMcuProExtension(this, host, new ControllerConfig(noteOverrides, false, true, false),
-         nrOfExtenders);
+      return new MackieMcuProExtension(this, host, //
+         new ControllerConfig(noteOverrides, false) //
+            .setHasDedicateVu(true) //
+            .setUseClearDuplicateModifiers(true), nrOfExtenders);
    }
 }

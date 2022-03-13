@@ -20,10 +20,17 @@ public class ChordBank {
       chords.add(new Chord(ChordType.MAJ7, 0, 5));
       chords.add(new Chord(ChordType.MIN, 9, 4));
       chords.add(new Chord(ChordType.MIN, 7, 4));
+      for (int i = 0; i < chords.size(); i++) {
+         chords.get(i).setSlotIndex(i);
+      }
    }
 
    public Chord get() {
       return chords.get(selectedIndex.get());
+   }
+
+   public Chord get(final int index) {
+      return chords.get(index);
    }
 
    public IntValueObject getSelectedIndex() {

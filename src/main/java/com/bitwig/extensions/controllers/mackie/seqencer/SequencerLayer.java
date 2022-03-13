@@ -26,6 +26,7 @@ public abstract class SequencerLayer extends ButtonLayer {
    protected final IntSetValue heldSteps = new IntSetValue();
    protected final Set<Integer> addedSteps = new HashSet<>();
    protected final Set<Integer> modifiedSteps = new HashSet<>();
+   protected final IntValueObject menuPageIndex = new IntValueObject(0, 0, 2);
 
    protected int blinkTicks;
    protected int playingStep;
@@ -76,6 +77,7 @@ public abstract class SequencerLayer extends ButtonLayer {
       recurrenceLayer = new Layer(mixControl.getDriver().getLayers(), "Recurrence Editor");
       gridResolution = new ValueSet().add("1/32", 0.125).add("1/16", 0.25).add("1/8", 0.5).add("1/4", 1.0).select(1);
       pageIndex = new IntValueObject(0, 0, 1, v -> StringUtil.toBarBeats(v * gridResolution.getValue() * 4));
+
       initStepValues();
    }
 
@@ -102,6 +104,7 @@ public abstract class SequencerLayer extends ButtonLayer {
       if (!isActive()) {
          return;
       }
+
       if (direction > 0) {
          cursorClip.selectPrevious();
       } else {
@@ -282,13 +285,26 @@ public abstract class SequencerLayer extends ButtonLayer {
       }
    }
 
+   protected void bindOccurrence(final Integer index, final MenuModeLayerConfiguration control) {
+      control.addNameBinding(index, new BasicStringValue("Occur"));
+      control.addDisplayValueBinding(index, occurrence);
+      control.addEncoderIncBinding(index, inc -> {
+         occurrence.increment(inc);
+         deselectEnabled = false;
+      }, false);
+      control.addRingBinding(index, occurrence);
+      control.addPressEncoderBinding(index, which -> occurrence.reset(), false);
+   }
+
    protected void bindRecurrence(final Integer index, final MenuModeLayerConfiguration control) {
       control.addNameBinding(index, new BasicStringValue("Recur"));
       control.addDisplayValueBinding(index, recurrence);
       control.addEncoderIncBinding(index, inc -> {
-         recurrence.increment(inc);
-         activateRecurrence(recurrence.get() > 1);
-         deselectEnabled = false;
+         if (recurrence.get() != -1) {
+            recurrence.increment(inc);
+            activateRecurrence(recurrence.get() > 1);
+            deselectEnabled = false;
+         }
       }, true);
       control.addPressEncoderBinding(index, idx -> activateRecurrence(!recurrenceLayer.isActive()));
       control.addRingBinding(index, recurrence);
@@ -303,7 +319,7 @@ public abstract class SequencerLayer extends ButtonLayer {
          deselectEnabled = false;
       }, true);
       control.addRingBinding(index, value);
-      control.addPressEncoderBinding(index, which -> value.reset(), false);
+      control.addPressEncoderBinding(index, which -> value.resetOnUnset(), false);
    }
 
    protected void bindClipControl(final Integer index, final MenuModeLayerConfiguration control) {
@@ -469,24 +485,30 @@ public abstract class SequencerLayer extends ButtonLayer {
          @Override
          public void init() {
             clipLauncherSlot.name()
-               .addValueObserver(name -> fireChanged(toString(name, clipLauncherSlot.exists().get())));
+               .addValueObserver(name -> fireChanged(
+                  toString(name, clipLauncherSlot.exists().get(), clipLauncherSlot.sceneIndex().get())));
             clipLauncherSlot.exists()
-               .addValueObserver(exists -> fireChanged(toString(clipLauncherSlot.name().get(), exists)));
+               .addValueObserver(exists -> fireChanged(
+                  toString(clipLauncherSlot.name().get(), exists, clipLauncherSlot.sceneIndex().get())));
+            clipLauncherSlot.sceneIndex()
+               .addValueObserver(index -> fireChanged(
+                  toString(clipLauncherSlot.name().get(), clipLauncherSlot.exists().get(), index)));
          }
 
-         private String toString(final String name, final boolean exists) {
+         private String toString(final String name, final boolean exists, final int sceneIndex) {
             if (!exists) {
                return "[---]";
             }
             if (name.isEmpty()) {
-               return String.format("[C:%d]", clipLauncherSlot.sceneIndex().get());
+               return String.format("[C:%d]", sceneIndex);
             }
             return "[" + StringUtil.toAsciiDisplay(name, 4) + "]";
          }
 
          @Override
          public String get() {
-            return toString(clipLauncherSlot.name().get(), clipLauncherSlot.exists().get());
+            return toString(clipLauncherSlot.name().get(), clipLauncherSlot.exists().get(),
+               clipLauncherSlot.sceneIndex().get());
          }
       };
    }

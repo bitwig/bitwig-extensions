@@ -23,6 +23,7 @@ import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 public class TrackLayerConfiguration extends LayerConfiguration {
@@ -159,8 +160,7 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 
    @Override
    public Layer getFaderLayer() {
-      final boolean flipped = mixControl.isFlipped();
-      if (flipped) {
+      if (mixControl.getActiveMixGroup().isFlipped()) {
          return faderLayer;
       }
       return mixControl.getActiveMixGroup().getFaderLayer(ParamElement.VOLUME);
@@ -175,9 +175,14 @@ public class TrackLayerConfiguration extends LayerConfiguration {
       if (isMenuActive()) {
          return menuConfig.getEncoderLayer();
       }
-      final boolean flipped = mixControl.isFlipped();
+
+      final MixerLayerGroup activeGroup = mixControl.getActiveMixGroup();
+      final Optional<EncoderLayer> overrideLayer = activeGroup.getModeEncoderLayer();
+      if (overrideLayer.isPresent()) {
+         return overrideLayer.get();
+      }
       final MixerLayerGroup activeMixGroup = mixControl.getActiveMixGroup();
-      if (flipped) {
+      if (activeMixGroup.isFlipped()) {
          return activeMixGroup.getEncoderLayer(ParamElement.VOLUME);
       }
       return encoderLayer;
@@ -191,11 +196,11 @@ public class TrackLayerConfiguration extends LayerConfiguration {
       if (deviceManager != null && deviceManager.getInfoSource() != null) {
          return infoLayer;
       }
+      final MixerLayerGroup activeGroup = mixControl.getActiveMixGroup();
       if (which == 0) {
-         return displayLayer;
+         return activeGroup.getModeDisplayLayer().orElse(displayLayer);
       }
-      final MixerLayerGroup activeMixGroup = mixControl.getActiveMixGroup();
-      return activeMixGroup.getDisplayConfiguration(ParamElement.VOLUME, DisplayLocation.TOP)
+      return activeGroup.getDisplayConfiguration(ParamElement.VOLUME, DisplayLocation.TOP)
          .setShowTrackInformation(true);
    }
 

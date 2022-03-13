@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.mackie.definition;
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
-import com.bitwig.extensions.controllers.mackie.ControllerConfig;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 
 import java.util.List;
@@ -86,7 +85,10 @@ public class IconQconProXExtensionDefinition extends IconQconExtensionDefinition
 
    @Override
    public MackieMcuProExtension createInstance(final ControllerHost host) {
-      return new MackieMcuProExtension(this, host, new ControllerConfig(noteOverrides, true, true, true),
-         nrOfExtenders);
+      return new MackieMcuProExtension(this, host, //
+         new ControllerConfig(noteOverrides, true) //
+            .setHasMasterVu(true) //
+            .setHasDedicateVu(true) //
+            .setUseClearDuplicateModifiers(true), nrOfExtenders);
    }
 }

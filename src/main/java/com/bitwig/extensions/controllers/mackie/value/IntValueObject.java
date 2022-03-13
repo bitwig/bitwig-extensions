@@ -111,5 +111,7 @@ public class IntValueObject implements IncrementalValue, IntValue {
       return Integer.toString(value);
    }
 
-
+   public boolean inRange(final int index) {
+      return min <= index && index <= max;
+   }
 }

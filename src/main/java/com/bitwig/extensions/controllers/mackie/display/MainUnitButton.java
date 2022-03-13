@@ -106,4 +106,7 @@ public class MainUnitButton {
    public String getName() {
       return button.getName();
    }
+
+   public void bindLigthPressed(final Layer mainLayer) {
+   }
 }

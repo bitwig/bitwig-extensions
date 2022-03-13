@@ -42,7 +42,7 @@ public class EditorValue extends DerivedStringValueObject implements Incremental
    }
 
    @Override
-   public void addRangeObserver(RangeChangedCallback callback) {
+   public void addRangeObserver(final RangeChangedCallback callback) {
 
    }
 
@@ -79,6 +79,10 @@ public class EditorValue extends DerivedStringValueObject implements Incremental
       edit = false;
       fireChanged(displayedValue());
       fireChanged(setValue);
+   }
+
+   public boolean isEdit() {
+      return edit;
    }
 
    public void fireChanged(final int value) {

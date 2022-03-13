@@ -9,15 +9,27 @@ import java.util.List;
 
 public class Chord {
    private ChordType chordType;
+   private int slotIndex;
    private int chordBaseNote;
    private int octaveOffset;
    private int inversion;
    private int expansion;
+   private int velocity;
+   final List<Integer> heldNotes = new ArrayList<>();
 
    public Chord(final ChordType chordType, final int chordBaseNote, final int octaveOffset) {
       this.chordType = chordType;
       this.chordBaseNote = chordBaseNote;
       this.octaveOffset = octaveOffset;
+      velocity = 100;
+   }
+
+   public void setSlotIndex(final int slotIndex) {
+      this.slotIndex = slotIndex;
+   }
+
+   public int getSlotIndex() {
+      return slotIndex;
    }
 
    public ChordType getChordType() {
@@ -60,6 +72,14 @@ public class Chord {
       this.expansion = expansion;
    }
 
+   public int getVelocity() {
+      return velocity;
+   }
+
+   public void setVelocity(final int velocity) {
+      this.velocity = velocity;
+   }
+
    public List<Integer> getNotes() {
       final int[] notes = chordType.getNotes();
       final int limit = notes.length + expansion;
@@ -80,16 +100,33 @@ public class Chord {
       return noteList;
    }
 
-   public void play(final List<Integer> heldNotes, final NoteInput noteInput, final int velocity) {
-      release(heldNotes, noteInput);
+   public void play(final NoteInput noteInput) {
+      release(noteInput);
       heldNotes.addAll(getNotes());
       heldNotes.forEach(noteNr -> noteInput.sendRawMidiEvent(Midi.NOTE_ON, noteNr, velocity));
    }
 
-   public void release(final List<Integer> heldNotes, final NoteInput noteInput) {
+   public void release(final NoteInput noteInput) {
       heldNotes.forEach(noteNr -> noteInput.sendRawMidiEvent(Midi.NOTE_OFF, noteNr, 0));
       heldNotes.clear();
    }
 
+   public Chord copy() {
+      final Chord copy = new Chord(chordType, chordBaseNote, octaveOffset);
+      copy.inversion = inversion;
+      copy.expansion = expansion;
+      copy.velocity = velocity;
+      copy.slotIndex = slotIndex;
+      return copy;
+   }
 
+
+   public void apply(final Chord copy) {
+      chordType = copy.chordType;
+      velocity = copy.velocity;
+      expansion = copy.expansion;
+      inversion = copy.inversion;
+      chordBaseNote = copy.chordBaseNote;
+      octaveOffset = copy.octaveOffset;
+   }
 }

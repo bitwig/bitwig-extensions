@@ -7,7 +7,6 @@ import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConf
 import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
-import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.framework.Layer;
 
@@ -146,16 +145,7 @@ public class DrumSequencerLayer extends SequencerLayer {
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
       builder.bind((index, control) -> bindMenuNavigate(index, control, false, false));
       builder.bind(this::bindClipControl);
-      builder.bind((index, control) -> {
-         control.addNameBinding(index, new BasicStringValue("Occur"));
-         control.addDisplayValueBinding(index, occurrence);
-         control.addEncoderIncBinding(index, inc -> {
-            occurrence.increment(inc);
-            deselectEnabled = false;
-         }, false);
-         control.addRingBinding(index, occurrence);
-         control.addPressEncoderBinding(index, which -> occurrence.reset(), false);
-      });
+      builder.bind(this::bindOccurrence);
       builder.bind((index, control) -> bindStepValue(index, control, "Chance", chance));
       builder.bind(this::bindNoteLength);
       builder.bind(this::bindRecurrence);

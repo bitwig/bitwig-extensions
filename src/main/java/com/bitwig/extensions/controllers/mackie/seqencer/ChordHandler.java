@@ -86,6 +86,14 @@ public class ChordHandler {
       return noteList;
    }
 
+   public void play(final Chord chord) {
+      chord.play(noteInput);
+   }
+
+   public void release(final Chord chord) {
+      chord.release(noteInput);
+   }
+
    public void play(final int velocity) {
       heldNotes.clear();
       heldNotes.addAll(getNotes());
