@@ -4,10 +4,7 @@ import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extensions.controllers.mackie.ButtonViewState;
 import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
-import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
-import com.bitwig.extensions.controllers.mackie.section.MixControl;
-import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
-import com.bitwig.extensions.controllers.mackie.section.ParamElement;
+import com.bitwig.extensions.controllers.mackie.section.*;
 import com.bitwig.extensions.controllers.mackie.seqencer.DrumSequencerLayer;
 import com.bitwig.extensions.controllers.mackie.seqencer.SequencerLayer;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
@@ -17,8 +14,8 @@ public class DrumMixerLayerGroup extends MixerLayerGroup {
 
    private final DrumSequencerLayer drumSequencerLayer;
 
-   public DrumMixerLayerGroup(final String name, final MixControl control) {
-      super(name, control);
+   public DrumMixerLayerGroup(final String name, final MixControl control, final TrackSelectionHandler selectionHandler) {
+      super(name, control, selectionHandler);
       drumSequencerLayer = new DrumSequencerLayer(control);
    }
 

@@ -15,10 +15,7 @@ import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.layer.ClipLaunchButtonLayer;
-import com.bitwig.extensions.controllers.mackie.layer.DrumMixerLayerGroup;
-import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
-import com.bitwig.extensions.controllers.mackie.layer.NotePlayingButtonLayer;
+import com.bitwig.extensions.controllers.mackie.layer.*;
 import com.bitwig.extensions.controllers.mackie.seqencer.NoteSequenceLayer;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
@@ -73,9 +70,10 @@ public class MixControl implements LayerStateHandler {
       }
       infoLayer = new DisplayLayer("HINT_DISP_LAYER", sectionIndex, getDriver().getLayers(), hwControls);
 
-      mainGroup = new MixerLayerGroup("MN", this);
-      globalGroup = new MixerLayerGroup("GL", this);
-      drumGroup = new DrumMixerLayerGroup("DR", this);
+      final TrackSelectionHandler trackSelectionHandler = driver.createTrackSelectionHandler();
+      mainGroup = new MixerLayerGroup("MN", this, trackSelectionHandler);
+      globalGroup = new MixerLayerGroup("GL", this, trackSelectionHandler);
+      drumGroup = new DrumMixerLayerGroup("DR", this, trackSelectionHandler);
 
       sendConfiguration.setNavigateHorizontalHandler(direction -> {
          if (driver.getMixerMode().get() == MixerMode.DRUM) {
@@ -97,7 +95,7 @@ public class MixControl implements LayerStateHandler {
       cursorDeviceConfiguration = new TrackLayerConfiguration("INSTRUMENT", this);
       eqTrackConfiguration = new TrackLayerConfiguration("EQ_DEVICE", this);
       globalViewLayerConfiguration = new GlovalViewLayerConfiguration("GLOBAL_VIEW", this);
-      launchButtonLayer = new ClipLaunchButtonLayer("CLIP_LAUNCH", this);
+      launchButtonLayer = new ClipLaunchButtonLayer("CLIP_LAUNCH", this, driver.createSlotHandler());
       scaleButtonLayer = new NotePlayingButtonLayer(this);
 
       currentConfiguration = panConfiguration;
@@ -476,6 +474,23 @@ public class MixControl implements LayerStateHandler {
 //      }
    }
 
+   public void handleInfoDisplay(final boolean active) {
+      final DisplayLayer displayLayer = getActiveDisplayLayer();
+      final Layer buttonLayer = getButtonLayer();
+
+      HelperInfo.getInfo(buttonLayer.getName(), displayLayer.getName(), driver.getControllerConfig().getSubType())
+         .ifPresent(info -> {
+            if (active) {
+               displayLayer.enableFullTextMode(true);
+               displayLayer.setMainText(info.getTopInfo(), info.getBottomInfo(), false);
+               displayLayer.invokeRefresh();
+            } else {
+               displayLayer.enableFullTextMode(false);
+            }
+         });
+      getDriver().getHost().println(" " + displayLayer.getName() + " " + buttonLayer.getName());
+   }
+
    public LayerConfiguration getCurrentConfiguration() {
       return currentConfiguration;
    }
@@ -609,33 +624,6 @@ public class MixControl implements LayerStateHandler {
          return;
       }
       channel.solo().toggle();
-   }
-
-   public void handleTrackSelection(final Track track) {
-      final ModifierValueObject modifier = driver.getModifier();
-      if (track.exists().get()) {
-         if (modifier.isShift()) {
-            track.isGroupExpanded().toggle();
-         } else if (modifier.isControl() || modifier.isClearSet()) {
-            track.deleteObject();
-         } else if (modifier.isAlt()) {
-            track.stop();
-         } else if (modifier.isOption()) {
-            driver.getApplication().navigateIntoTrackGroup(track);
-         } else if (modifier.isDuplicateSet()) {
-            track.duplicate();
-         } else {
-            track.selectInMixer();
-         }
-      } else {
-         if (modifier.isShift()) {
-            driver.getApplication().createAudioTrack(-1);
-         } else if (modifier.isSet(ModifierValueObject.ALT)) {
-            driver.getApplication().createEffectTrack(-1);
-         } else {
-            driver.getApplication().createInstrumentTrack(-1);
-         }
-      }
    }
 
    public void handlePadSelection(final DrumPad pad) {

@@ -10,6 +10,7 @@ import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.section.ParamElement;
+import com.bitwig.extensions.controllers.mackie.section.TrackSelectionHandler;
 import com.bitwig.extensions.controllers.mackie.seqencer.NoteSequenceLayer;
 import com.bitwig.extensions.controllers.mackie.seqencer.SequencerLayer;
 import com.bitwig.extensions.controllers.mackie.value.*;
@@ -41,17 +42,19 @@ public class MixerLayerGroup {
    private boolean flipped;
    protected EditorMode editMode = EditorMode.MIX;
    private NoteSequenceLayer sequenceLayer;
+   private final TrackSelectionHandler selectionHandler;
 
    public enum EditorMode {
       MIX,
       SEQUENCE
    }
 
-   public MixerLayerGroup(final String name, final MixControl control) {
+   public MixerLayerGroup(final String name, final MixControl control, final TrackSelectionHandler selectionHandler) {
       final int sectionIndex = control.getHwControls().getSectionIndex();
       this.control = control;
       final Layers layers = this.control.getDriver().getLayers();
 
+      this.selectionHandler = selectionHandler;
       mixerButtonLayer = new ButtonLayer(name, control, BasicNoteOnAssignment.REC_BASE);
 
       volumeFaderLayer = new Layer(layers, name + "_VOLUME_FADER_LAYER_" + sectionIndex);
@@ -245,7 +248,7 @@ public class MixerLayerGroup {
       final BooleanValueObject selectedInMixer = new BooleanValueObject();
       track.addIsSelectedInEditorObserver(selectedInMixer::set);
       hwControls.bindButton(mixerButtonLayer, index, MixerSectionHardware.SELECT_INDEX, selectedInMixer,
-         () -> control.handleTrackSelection(track));
+         () -> selectionHandler.handleTrackSelection(track));
    }
 
    protected void setUpChannelControl(final int index, final MixerSectionHardware hwControls, final Channel channel) {

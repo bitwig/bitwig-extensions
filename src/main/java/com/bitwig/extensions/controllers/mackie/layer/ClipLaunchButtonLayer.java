@@ -18,20 +18,17 @@ public class ClipLaunchButtonLayer extends Layer {
    private int trackOffset;
    private final Layer launcherLayer;
    private final Layer arrangerLayer;
+   private final SlotHandler slotHandler;
 
-   public ClipLaunchButtonLayer(final String name, final MixControl mixControl) {
+   public ClipLaunchButtonLayer(final String name, final MixControl mixControl, final SlotHandler slotHandler) {
       super(mixControl.getDriver().getLayers(),
          name + "_" + mixControl.getHwControls().getSectionIndex() + "_ClipLaunch");
       driver = mixControl.getDriver();
+      this.slotHandler = slotHandler;
       mainCursorClip = driver.getHost().createLauncherCursorClip(16, 1);
       launcherLayer = new Layer(driver.getLayers(), name + "_LAUNCH");
       arrangerLayer = new Layer(driver.getLayers(), name + "_ARRANGE");
       layoutType = LayoutType.LAUNCHER;
-//         driver.getApplication().panelLayout().addValueObserver(v -> {
-//         layoutType = LayoutType.toType(v);
-//         RemoteConsole.out.println("LAYOUT TYPE = {}", layoutType);
-//         applyLayer();
-//      });
    }
 
    public void initTrackBank(final MixerSectionHardware hwControls, final TrackBank trackBank) {
@@ -69,28 +66,7 @@ public class ClipLaunchButtonLayer extends Layer {
 
    public void handleSlotPressed(final Track track, final ClipLauncherSlot slot) {
       final ModifierValueObject modifier = driver.getModifier();
-      if (modifier.isSet(ModifierValueObject.SHIFT, ModifierValueObject.OPTION) || modifier.isClearSet()) {
-         slot.deleteObject();
-      } else if (modifier.isSet(ModifierValueObject.SHIFT,
-         ModifierValueObject.ALT) || modifier.isShiftSet() && modifier.isDuplicateSet()) {
-         slot.select();
-         mainCursorClip.duplicateContent();
-      } else if (modifier.isDuplicateSet()) {
-         if (!slot.hasContent().get()) {
-            slot.createEmptyClip(4);
-            slot.select();
-         } else {
-            slot.duplicateClip();
-         }
-      } else if (modifier.isAlt()) {
-         track.stop();
-      } else if (modifier.isOption()) {
-         slot.duplicateClip();
-      } else if (modifier.isShift()) {
-         slot.select();
-      } else {
-         slot.launch();
-      }
+      slotHandler.handleSlotPressed(track, slot, mainCursorClip, modifier);
    }
 
    public void notifyBlink(final int ticks) {

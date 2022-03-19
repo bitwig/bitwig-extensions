@@ -10,14 +10,17 @@ import java.util.Map;
 public class ControllerConfig {
    private final Map<BasicNoteOnAssignment, Integer> assignOverrides;
    private final boolean hasLowerDisplay;
+   private final SubType subType;
    private boolean hasDedicateVu;
    private boolean hasMasterVu;
    private boolean useClearDuplicateModifiers = false;
    private boolean functionSectionLayered = false;
 
-   public ControllerConfig(final Map<BasicNoteOnAssignment, Integer> assignOverrides, final boolean hasLowerDisplay) {
+   public ControllerConfig(final Map<BasicNoteOnAssignment, Integer> assignOverrides, final SubType subType,
+                           final boolean hasLowerDisplay) {
       this.assignOverrides = assignOverrides;
       this.hasLowerDisplay = hasLowerDisplay;
+      this.subType = subType;
       hasDedicateVu = false;
       hasMasterVu = false;
    }
@@ -25,6 +28,7 @@ public class ControllerConfig {
    public ControllerConfig(final boolean hasLowerDisplay) {
       assignOverrides = new HashMap<>();
       this.hasLowerDisplay = hasLowerDisplay;
+      subType = SubType.MACKIE;
       hasDedicateVu = true;
       hasMasterVu = false;
    }
@@ -78,6 +82,10 @@ public class ControllerConfig {
          return new OverrideNoteAssignment(override);
       }
       return assignment;
+   }
+
+   public SubType getSubType() {
+      return subType;
    }
 
    public boolean hasMasterVu() {

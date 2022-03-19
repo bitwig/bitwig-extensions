@@ -9,6 +9,7 @@ import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfigurat
 import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.definition.ControllerConfig;
+import com.bitwig.extensions.controllers.mackie.definition.SubType;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
 import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
@@ -16,9 +17,9 @@ import com.bitwig.extensions.controllers.mackie.display.MainUnitButton;
 import com.bitwig.extensions.controllers.mackie.display.MotorSlider;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.section.ExtenderMixControl;
-import com.bitwig.extensions.controllers.mackie.section.MixControl;
-import com.bitwig.extensions.controllers.mackie.section.SectionType;
+import com.bitwig.extensions.controllers.mackie.layer.SlotHandler;
+import com.bitwig.extensions.controllers.mackie.layer.SlotHandlerIcon;
+import com.bitwig.extensions.controllers.mackie.section.*;
 import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -392,6 +393,8 @@ public class MackieMcuProExtension extends ControllerExtension {
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.OPTION, mainLayer, modifier::setOption);
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.CONTROL, mainLayer, modifier::setControl);
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.ALT, mainLayer, modifier::setAlt);
+
+      cancelButton.bindPressed(optionLayer, () -> application.navigateToParentTrackGroup());
    }
 
    private void initTransport() {
@@ -483,8 +486,7 @@ public class MackieMcuProExtension extends ControllerExtension {
          displayNameButton.bindIsPressed(mainLayer, v -> sections.forEach(section -> section.handleNameDisplay(v)));
          displayNameButton.bindIsPressed(shiftLayer, this::toggleVuMode);
       }
-      displayNameButton.bindIsPressed(optionLayer, v -> {
-      });
+      displayNameButton.bindIsPressed(optionLayer, v -> sections.forEach(section -> section.handleInfoDisplay(v)));
 
       final MainUnitButton timeModeButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_SMPTE);
       timeModeButton.bindPressed(mainLayer, () -> ledDisplay.toggleMode());
@@ -1084,5 +1086,19 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    public ActionSet getActionSet() {
       return actionSet;
+   }
+
+   public SlotHandler createSlotHandler() {
+      if (controllerConfig.getSubType() == SubType.ICON) {
+         return new SlotHandlerIcon();
+      }
+      return new SlotHandler();
+   }
+
+   public TrackSelectionHandler createTrackSelectionHandler() {
+      if (controllerConfig.getSubType() == SubType.ICON) {
+         return new TrackSelectionHandlerIcon(this);
+      }
+      return new TrackSelectionHandler(this);
    }
 }
