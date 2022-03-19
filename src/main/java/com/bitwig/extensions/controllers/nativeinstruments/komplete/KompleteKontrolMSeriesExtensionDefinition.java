@@ -58,6 +58,12 @@ public class KompleteKontrolMSeriesExtensionDefinition extends ControllerExtensi
 		return 2;
 	}
 
+   @java.lang.Override
+   public java.lang.String getHelpFilePath()
+   {
+      return "Controllers/Native Instruments/Komplete Kontrol A_M-Series/Komplete Kontrol A_M-Series.pdf";
+   }
+
 	@Override
 	public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
 			final PlatformType platformType) {

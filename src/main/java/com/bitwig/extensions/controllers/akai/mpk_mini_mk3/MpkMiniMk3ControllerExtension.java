@@ -23,6 +23,8 @@ import com.bitwig.extensions.framework.Layers;
 
 public class MpkMiniMk3ControllerExtension extends ControllerExtension
 {
+   static final boolean SHOW_KNOB_NAME = false;
+
    public MpkMiniMk3ControllerExtension(
       final MpkMiniMk3ControllerExtensionDefinition definition,
       final ControllerHost host)
@@ -67,11 +69,15 @@ public class MpkMiniMk3ControllerExtension extends ControllerExtension
          parameter.setIndication(true);
          parameter.markInterested();
          parameter.exists().markInterested();
-         parameter.name().markInterested();
-         parameter.name().addValueObserver(newValue -> {
-            mShouldFlushSysex = true;
-            getHost().requestFlush();
-         });
+
+         if (SHOW_KNOB_NAME)
+         {
+            parameter.name().markInterested();
+            parameter.name().addValueObserver(newValue -> {
+               mShouldFlushSysex = true;
+               getHost().requestFlush();
+            });
+         }
 
          final String id = "K" + (i + 1);
 
@@ -132,7 +138,6 @@ public class MpkMiniMk3ControllerExtension extends ControllerExtension
       surface.hardwareElementWithId("pad6").setBounds(90.25, 10.75, 28.5, 28.25);
       surface.hardwareElementWithId("pad7").setBounds(125.25, 10.75, 28.5, 28.25);
       surface.hardwareElementWithId("pad8").setBounds(160.5, 10.75, 28.5, 28.25);
-
    }
 
    @Override
@@ -152,7 +157,11 @@ public class MpkMiniMk3ControllerExtension extends ControllerExtension
    void sendSysex()
    {
       String sysexBitwig2 = "F0 47 7F 49 64 01 76 00 50 47 4D 3A 42 49 54 57 " // pG.Id.v.PGM:MPC.
-         + "49 47 00 00 00 00 00 00 09 01 00 04 00 00 04 01 " // ................
+         + "49 47 00 00 00 00 00 00 09 01 00";
+
+      sysexBitwig2 += String.format(" %02X", mOctave);
+
+      sysexBitwig2 += " 00 00 04 01 " // ................
          + "00 00 03 00 78 00 00 00 00 02 01 01 24 00 10 25 " // ....x.......$..%
          + "01 11 26 02 12 27 03 13 28 04 14 29 05 15 2A 06 " // ..&..'..(..)..*.
          + "16 2B 07 17 2C 08 18 2D 09 19 2E 0A 1A 2F 0B 1B " // .+..,..-...../..
@@ -160,14 +169,17 @@ public class MpkMiniMk3ControllerExtension extends ControllerExtension
 
       for (int i = 0; i < 8; ++i)
       {
-         String name = "none - " + (i + 1);
-         final RemoteControl parameter = mCursorRemoteControls.getParameter(i);
+         String name = "K" + (i + 1);
 
-         if (parameter.exists().get())
+         if (SHOW_KNOB_NAME)
          {
-            final String paramName = parameter.name().get();
-            if (!paramName.isBlank())
-               name = paramName;
+            final RemoteControl parameter = mCursorRemoteControls.getParameter(i);
+            if (parameter.exists().get())
+            {
+               final String paramName = parameter.name().get();
+               if (!paramName.isBlank())
+                  name = paramName;
+            }
          }
 
          sysexBitwig2 += configureKnob(70 + i, name);
@@ -209,4 +221,7 @@ public class MpkMiniMk3ControllerExtension extends ControllerExtension
    private HardwareSurface mHardwareSurface;
 
    private boolean mShouldFlushSysex = true;
+
+   // TODO: find out how to do octave tracking
+   private int mOctave = 4;
 }

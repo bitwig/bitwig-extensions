@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.icon;
 
-import java.util.Arrays;
 import java.util.UUID;
 
 import com.bitwig.extension.api.PlatformType;
@@ -11,7 +10,15 @@ import com.bitwig.extension.controller.api.ControllerHost;
 
 public class VCastDefinition extends ControllerExtensionDefinition
 {
-   public static String[] VERSIONS = {"V1.00", "V1.01", "V1.02", "V1.03", "V1.04", "V1.05", "V1.06", "V1.07"};
+   public static String[] VERSIONS = new String[21];
+
+   static
+   {
+      for (int i = 0; i < VERSIONS.length; ++i)
+      {
+         VERSIONS[i] = String.format("V1.%02d", i);
+      }
+   }
 
    @Override
    public String getName()
@@ -28,7 +35,7 @@ public class VCastDefinition extends ControllerExtensionDefinition
    @Override
    public String getVersion()
    {
-      return "0.1";
+      return "1.0";
    }
 
    @Override
