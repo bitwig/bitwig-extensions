@@ -25,7 +25,7 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
       // STEP Sequencer
       overrideX(BasicNoteOnAssignment.STEP_SEQ, BasicNoteOnAssignment.UNDO);
 
-      override(BasicNoteOnAssignment.MARKER, BasicNoteOnAssignment.REPLACE);
+      //override(BasicNoteOnAssignment.MARKER, BasicNoteOnAssignment.REPLACE);
       override(BasicNoteOnAssignment.SHIFT, BasicNoteOnAssignment.ENTER);
       override(BasicNoteOnAssignment.OPTION, BasicNoteOnAssignment.CANCEL);
       // ALT is Duplicate
@@ -50,7 +50,8 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
       // Clip Overdub
       // N.a.: override(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
       // Metronome
-      // N.a.: override(BasicNoteOnAssignment.CLICK, BasicNoteOnAssignment.GROUP);
+      override(BasicNoteOnAssignment.CLICK, BasicNoteOnAssignment.GROUP);
+      override(BasicNoteOnAssignment.MARKER, BasicNoteOnAssignment.CLICK);
    }
 
    public IconQconProG2ExtensionDefinition() {
@@ -106,6 +107,7 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
       return new MackieMcuProExtension(this, host, //
          new ControllerConfig(noteOverrides, false) //
             .setHasDedicateVu(true) //
+            .setFunctionSectionLayered(true) //
             .setUseClearDuplicateModifiers(true), nrOfExtenders);
    }
 }

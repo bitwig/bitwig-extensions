@@ -16,7 +16,6 @@ import com.bitwig.extensions.controllers.mackie.display.MainUnitButton;
 import com.bitwig.extensions.controllers.mackie.display.MotorSlider;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
 import com.bitwig.extensions.controllers.mackie.section.ExtenderMixControl;
 import com.bitwig.extensions.controllers.mackie.section.MixControl;
 import com.bitwig.extensions.controllers.mackie.section.SectionType;
@@ -96,7 +95,8 @@ public class MackieMcuProExtension extends ControllerExtension {
    private MainUnitButton enterButton;
    private MainUnitButton cancelButton;
    private DeviceMatcher drumMatcher;
-   private DrumNoteHandler noteHandler;
+   private MainUnitButton noteFxButton;
+
    private final ControllerConfig controllerConfig;
    private NotePlayingSetup notePlayingSetup;
    private FocusClipView followClip;
@@ -258,8 +258,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       if (position != newPos) {
          if (quantize) {
-            final double intup = Math.floor(newPos / resolution);
-            newPos = intup * resolution;
+            final double intPosition = Math.floor(newPos / resolution);
+            newPos = intPosition * resolution;
          }
          transport.playStartPosition().set(newPos);
          if (transport.isPlaying().get()) {
@@ -305,7 +305,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       createModeButton(VPotMode.PLUGIN);
       createModeButton(VPotMode.EQ);
       createModeButton(VPotMode.INSTRUMENT, VPotMode.MIDI_EFFECT);
-      createModeButton(VPotMode.MIDI_EFFECT);
+      noteFxButton = createModeButton(VPotMode.MIDI_EFFECT);
    }
 
    private void initCursorSection() {
@@ -551,8 +551,9 @@ public class MackieMcuProExtension extends ControllerExtension {
     * Creates modes button
     *
     * @param modes first mode is the button, the second represents the light
+    * @return the created button
     */
-   private void createModeButton(final VPotMode... modes) {
+   private MainUnitButton createModeButton(final VPotMode... modes) {
       assert modes.length > 0;
       final VPotMode mode = modes[0];
       final MainUnitButton button = new MainUnitButton(this, mode.getButtonAssignment());
@@ -563,6 +564,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       } else if (modes.length == 2) {
          button.bindLight(mainLayer, () -> lightState(mode, modes[1]));
       }
+      return button;
    }
 
    private boolean lightState(final VPotMode mode) {
@@ -579,8 +581,8 @@ public class MackieMcuProExtension extends ControllerExtension {
    }
 
    public void setVPotMode(final VPotMode mode, final boolean down) {
-      final VPotMode cmode = trackChannelMode.getMode();
-      if (cmode != mode && cmode != null) {
+      final VPotMode trackMode = trackChannelMode.getMode();
+      if (trackMode != mode && trackMode != null) {
          if (down) {
             trackChannelMode.setMode(mode);
          }
@@ -711,28 +713,39 @@ public class MackieMcuProExtension extends ControllerExtension {
       });
 
       initCueMarkerSection(cueMarkerBank);
+      transport.tempo().markInterested();
 
-      initFButton(0, BasicNoteOnAssignment.F1, cueMarkerBank, () -> transport.resetAutomationOverrides());
-      initFButton(1, BasicNoteOnAssignment.F2, cueMarkerBank, () -> transport.returnToArrangement());
-      initFButton(2, BasicNoteOnAssignment.F3, cueMarkerBank, () -> {
-      });
+      initFButton(0, BasicNoteOnAssignment.F1, cueMarkerBank, () -> transport.resetAutomationOverrides(), null);
+      initFButton(1, BasicNoteOnAssignment.F2, cueMarkerBank, () -> transport.returnToArrangement(), null);
+      initFButton(2, BasicNoteOnAssignment.F3, cueMarkerBank, () -> transport.isFillModeActive().toggle(),
+         transport.isFillModeActive());
       initFMenuButton(3, BasicNoteOnAssignment.F4, cueMarkerBank,
          () -> menuCreator.createQuantizeSection(transport, followClip));
       final Groove grove = host.createGroove();
       initFMenuButton(4, BasicNoteOnAssignment.F5, cueMarkerBank, () -> menuCreator.createGrooveMenu(grove)); //
       // GROOVE Menu
-      transport.tempo().markInterested();
       initFMenuButton(5, BasicNoteOnAssignment.F6, cueMarkerBank,
          () -> menuCreator.createTempoMenu(transport, this::modifyTempo)); // Tempo Menu
       // Save
-      initFButton(6, BasicNoteOnAssignment.F7, cueMarkerBank, () -> actionSet.execute(ActionSet.ActionType.SAVE));
+      initFButton(6, BasicNoteOnAssignment.F7, cueMarkerBank, () -> actionSet.execute(ActionSet.ActionType.SAVE), null);
       initFMenuButton(7, BasicNoteOnAssignment.F8, cueMarkerBank, () -> menuCreator.createClipMenuSection()); //
       // TOGGLE Layout
-      initActionButton(BasicNoteOnAssignment.GV_INPUTS_LF2,
+
+      if (controllerConfig.isFunctionSectionLayered()) {
+         noteFxButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(0).launch(modifier.isShift()));
+      }
+      initActionButton(1, BasicNoteOnAssignment.GV_INPUTS_LF2, cueMarkerBank,
          () -> application.setPanelLayout(currentLayoutType.other().getName()));
-      initActionButton(BasicNoteOnAssignment.GV_AUDIO_LF3, () -> actionSet.focusDevice());
-      initActionButton(BasicNoteOnAssignment.GV_INSTRUMENT_LF4, () -> actionSet.focusEditor());
-      initActionButton(BasicNoteOnAssignment.GV_AUX_LF5, () -> arranger.isPlaybackFollowEnabled().toggle());
+      initActionButton(2, BasicNoteOnAssignment.GV_AUDIO_LF3, cueMarkerBank, () -> actionSet.focusDevice());
+      initActionButton(3, BasicNoteOnAssignment.GV_INSTRUMENT_LF4, cueMarkerBank, () -> actionSet.focusEditor());
+      initActionButton(4, BasicNoteOnAssignment.GV_AUX_LF5, cueMarkerBank,
+         () -> arranger.isPlaybackFollowEnabled().toggle());
+      initActionButton(5, BasicNoteOnAssignment.GV_BUSSES_LF6, cueMarkerBank, () -> {
+      });
+      initActionButton(6, BasicNoteOnAssignment.GV_OUTPUTS_LF7, cueMarkerBank, () -> {
+      });
+      initActionButton(7, BasicNoteOnAssignment.GV_USER_LF8, cueMarkerBank, () -> {
+      });
 
       final MainUnitButton clickButton = new MainUnitButton(this, BasicNoteOnAssignment.CLICK);
       final MenuModeLayerConfiguration metroMenu = menuCreator.createClickMenu(transport, value -> midiOut.sendSysex(
@@ -746,17 +759,26 @@ public class MackieMcuProExtension extends ControllerExtension {
    }
 
    public void initFButton(final int index, final BasicNoteOnAssignment assign, final CueMarkerBank cueMarkerBank,
-                           final Runnable nonMarkerFunction) {
+                           final Runnable nonMarkerFunction, final BooleanValue lightState) {
       final MainUnitButton fButton = new MainUnitButton(this, assign);
       fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
       fButton.bindPressed(mainLayer, nonMarkerFunction);
-      fButton.activateHoldState();
+      fButton.bindLigthPressed(cueMarkerModeLayer);
+      if (lightState == null) {
+         fButton.bindLigthPressed(mainLayer);
+      } else {
+         fButton.bindLight(mainLayer, lightState);
+      }
    }
 
-   private void initActionButton(final BasicNoteOnAssignment assignment, final Runnable action) {
+   private void initActionButton(final int index, final BasicNoteOnAssignment assignment,
+                                 final CueMarkerBank cueMarkerBank, final Runnable action) {
       final MainUnitButton fButton = new MainUnitButton(this, assignment);
       fButton.bindPressed(mainLayer, action);
       fButton.activateHoldState();
+      if (controllerConfig.isFunctionSectionLayered()) {
+         fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
+      }
    }
 
    private void modifyTempo(final int inc) {
@@ -1042,10 +1064,6 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    public TrackModeValue getTrackChannelMode() {
       return trackChannelMode;
-   }
-
-   public DrumNoteHandler getNoteHandler() {
-      return noteHandler;
    }
 
    public NotePlayingSetup getNotePlayingSetup() {

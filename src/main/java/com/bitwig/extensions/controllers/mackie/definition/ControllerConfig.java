@@ -13,6 +13,7 @@ public class ControllerConfig {
    private boolean hasDedicateVu;
    private boolean hasMasterVu;
    private boolean useClearDuplicateModifiers = false;
+   private boolean functionSectionLayered = false;
 
    public ControllerConfig(final Map<BasicNoteOnAssignment, Integer> assignOverrides, final boolean hasLowerDisplay) {
       this.assignOverrides = assignOverrides;
@@ -41,6 +42,15 @@ public class ControllerConfig {
    public ControllerConfig setUseClearDuplicateModifiers(final boolean useClearDuplicateModifiers) {
       this.useClearDuplicateModifiers = useClearDuplicateModifiers;
       return this;
+   }
+
+   public ControllerConfig setFunctionSectionLayered(final boolean functionSectionLayer) {
+      functionSectionLayered = functionSectionLayer;
+      return this;
+   }
+
+   public boolean isFunctionSectionLayered() {
+      return functionSectionLayered;
    }
 
    public boolean isUseClearDuplicateModifiers() {

@@ -51,6 +51,7 @@ com.bitwig.extensions.controllers.mackie.definition.MackieMcuProXt1ExtensionDefi
 com.bitwig.extensions.controllers.mackie.definition.MackieMcuProXt2ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.MackieMcuProXt3ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconQconProG2ExtensionDefinition
+com.bitwig.extensions.controllers.mackie.definition.IconQconProG2X1ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt1ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXOneDExtensionDefinition

@@ -89,6 +89,7 @@ public class IconQconProXExtensionDefinition extends IconQconExtensionDefinition
          new ControllerConfig(noteOverrides, true) //
             .setHasMasterVu(true) //
             .setHasDedicateVu(true) //
+            .setFunctionSectionLayered(true) //
             .setUseClearDuplicateModifiers(true), nrOfExtenders);
    }
 }
