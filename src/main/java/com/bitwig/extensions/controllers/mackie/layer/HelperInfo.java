@@ -15,13 +15,14 @@ public enum HelperInfo {
    LAUNCHER_ICON("CLIP_LAUNCH", SubType.ICON, //
       "Launcher: Shift=select Clear=Delete Duplicate=Duplicate", //
       "Shft+Dup=Dup.Content Option=Stop"),
-   SEQUENCER("NoteSeq", "Note Sequencer: Step+Duplicate=Duplication", ""),
-   DRUM_SEQUENCER("DrumSeq", "Drum: Step+Duplicate=Duplication", ""),
+   SEQUENCER("NoteSeq", "Note Sequencer: Step+Duplicate=Duplication Mode", ""),
+   DRUM_SEQUENCER("DrumSeq", "Drum: Step+Duplicate=Duplication Mode", ""),
    TRACK("MN", SubType.MACKIE, "Tr.Select: +Shift=GroupExp +Dup=Dup.Track", //
       "+Alt=Stop +Control=Delete"), //
    TRACK_ICON("MN", SubType.ICON, "Tr.Select: +Shift=GroupExp +Dup=Dup.Track +Clear=Delete", //
       "+Shf+Opt=Stop +Option=Nav into Group (exit OPT+CANCEL) "),
-   TRACK_GL("GL", "Sel=Select Sel+Shift=GroupExp", "");
+   TRACK_GL("GL", SubType.MACKIE, TRACK.topInfo, TRACK.bottomInfo),
+   TRACK_GL_ICON("GL", SubType.ICON, TRACK_ICON.topInfo, TRACK_ICON.bottomInfo);
 
    private final String prefixButtonLayer;
    private final String topInfo;
@@ -51,10 +52,7 @@ public enum HelperInfo {
    }
 
    private boolean matchesButtonLayer(final String buttonLayerName, final SubType type) {
-      if (buttonLayerName.startsWith(prefixButtonLayer) && (specType == null || type == specType)) {
-         return true;
-      }
-      return false;
+      return buttonLayerName.startsWith(prefixButtonLayer) && (specType == null || type == specType);
    }
 
    public static Optional<HelperInfo> getInfo(final String nameButtonLayer, final String nameDisplayLayer,

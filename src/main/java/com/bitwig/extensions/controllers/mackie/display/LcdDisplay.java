@@ -198,6 +198,15 @@ public class LcdDisplay implements DisplaySource {
       return StringUtil.padString(text, fill / 2);
    }
 
+   public void sendDirect(final String topString, final String bottomString) {
+      lastSentRows[0] = topString;
+      lastSentRows[1] = bottomString;
+      resetGrids(0);
+      resetGrids(1);
+      sendFullRow(0, topString);
+      sendFullRow(1, bottomString);
+   }
+
    public void sendToDisplay(final DisplaySource source, final int row, final String text) {
       if (text.equals(lastSentRows[row])) {
          return;

@@ -10,10 +10,7 @@ import com.bitwig.extensions.controllers.mackie.section.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -426,13 +423,7 @@ public class NoteSequenceLayer extends SequencerLayer {
       if (!heldSteps.isEmpty()) {
          final List<NoteStep> notes = getHeldNotes();
 
-         if (mode == TransposeMode.SCALE) {
-            notes.forEach(note -> transpose(note, increment, true));
-         } else if (mode == TransposeMode.OCTAVE) {
-            notes.forEach(note -> transpose(note, increment * 12, false));
-         } else {
-            notes.forEach(note -> transpose(note, increment, false));
-         }
+         handleTranspose(notes, increment);
          deselectEnabled = false;
       } else {
          if (mode == TransposeMode.SCALE) {
@@ -445,17 +436,64 @@ public class NoteSequenceLayer extends SequencerLayer {
       }
    }
 
-   private void transpose(final NoteStep note, final int amount, final boolean scale) {
-      final int origX = note.x();
-      final int origY = note.y();
+   static class NoteTranspose {
+      NoteStep step;
+      int destNote;
+
+      public NoteTranspose(final NoteStep step, final int destNote) {
+         this.step = step;
+         this.destNote = destNote;
+      }
+   }
+
+   private void handleTranspose(final List<NoteStep> notes, final int increment) {
+      if (notes.isEmpty()) {
+         return;
+      }
+      if (notes.size() == 1) {
+         final int destNote = calcTranspose(notes.get(0).y(), mode == TransposeMode.OCTAVE ? increment * 12 : increment,
+            mode == TransposeMode.SCALE);
+         if (destNote != -1) {
+            transpose(notes.get(0), destNote);
+         }
+      } else {
+         final List<NoteTranspose> list = new ArrayList<>();
+
+         for (final NoteStep step : notes) {
+            final int destNote = calcTranspose(step.y(), mode == TransposeMode.OCTAVE ? increment * 12 : increment,
+               mode == TransposeMode.SCALE);
+            if (destNote != -1) {
+               list.add(new NoteTranspose(step, destNote));
+            }
+         }
+
+         if (increment > 0) {
+            list.sort((t1, t2) -> t2.destNote - t1.destNote);
+         } else {
+            list.sort(Comparator.comparingInt(t -> t.destNote));
+         }
+
+         for (final NoteTranspose t : list) {
+            transpose(t.step, t.destNote);
+         }
+      }
+   }
+
+   private int calcTranspose(final int origY, final int amount, final boolean scale) {
       final int newY = !scale ? origY + amount : notePlayingSetup.transpose(origY, amount);
       if (newY >= 0 && newY < 128) {
-         final int vx = origX << 8 | newY;
-         expectedNoteChange.put(vx, note);
-         noteValue.setEditValue(newY);
-         cursorClip.clearStep(0, origX, origY);
-         cursorClip.setStep(origX, newY, (int) (note.velocity() * 127), note.duration());
+         return newY;
       }
+      return -1;
+   }
+
+   private void transpose(final NoteStep note, final int destNote) {
+      final int origX = note.x();
+      final int origY = note.y();
+      final int vx = origX << 8 | destNote;
+      expectedNoteChange.put(vx, note);
+      noteValue.setEditValue(destNote);
+      cursorClip.moveStep(origX, origY, 0, destNote - origY);
    }
 
    @Override
@@ -481,6 +519,7 @@ public class NoteSequenceLayer extends SequencerLayer {
       return heldSteps.stream()//
          .map(idx -> assignments[idx].steps())//
          .flatMap(Collection::stream) //
+         .filter(ns -> ns.state() == NoteStep.State.NoteOn) //
          .collect(Collectors.toList());
    }
 

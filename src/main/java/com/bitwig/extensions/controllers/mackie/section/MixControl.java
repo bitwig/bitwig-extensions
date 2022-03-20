@@ -481,14 +481,12 @@ public class MixControl implements LayerStateHandler {
       HelperInfo.getInfo(buttonLayer.getName(), displayLayer.getName(), driver.getControllerConfig().getSubType())
          .ifPresent(info -> {
             if (active) {
-               displayLayer.enableFullTextMode(true);
-               displayLayer.setMainText(info.getTopInfo(), info.getBottomInfo(), false);
-               displayLayer.invokeRefresh();
+               displayLayer.showInfo(info.getTopInfo(), info.getBottomInfo());
             } else {
-               displayLayer.enableFullTextMode(false);
+               displayLayer.invokeRefresh();
             }
          });
-      getDriver().getHost().println(" " + displayLayer.getName() + " " + buttonLayer.getName());
+      //getDriver().getHost().println(" " + displayLayer.getName() + " " + buttonLayer.getName());
    }
 
    public LayerConfiguration getCurrentConfiguration() {

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 public abstract class SequencerLayer extends ButtonLayer {
-   private final MackieMcuProExtension driver;
+   protected final MackieMcuProExtension driver;
    protected final MixControl control;
    protected final ValueSet gridResolution;
    protected final IntValueObject pageIndex;
