@@ -143,6 +143,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       cancelButton = new MainUnitButton(this, controllerConfig.getSubType() == SubType.G2 ? //
          BasicNoteOnAssignment.GV_USER_LF8 : BasicNoteOnAssignment.CANCEL);
+      cancelButton.activateHoldState();
 
       final PopupBrowser browser = host.createPopupBrowser();
       followClip = new FocusClipView(host);
@@ -309,7 +310,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       createModeButton(VPotMode.PAN);
       createModeButton(VPotMode.PLUGIN);
       createModeButton(VPotMode.EQ);
-      createModeButton(VPotMode.INSTRUMENT, VPotMode.MIDI_EFFECT);
+      createModeButton(VPotMode.INSTRUMENT);
       noteFxButton = createModeButton(VPotMode.MIDI_EFFECT);
    }
 

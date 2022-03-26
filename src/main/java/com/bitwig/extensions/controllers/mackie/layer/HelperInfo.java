@@ -13,16 +13,18 @@ public enum HelperInfo {
       "Launcher: Shift=Select Opt=Duplicate Alt=Stop", //
       "Shift+Opt=Delete Shift+Alt=Dbl.Content/EmptySl=new clip"), //
    LAUNCHER_ICON("CLIP_LAUNCH", ManufacturerType.ICON, //
-      "Launcher: Shift=select Clear=Delete Duplicate=Duplicate", //
-      "Shft+Dup=Dbl.Content Option=Stop/EmptySl=new clip"),
-   SEQUENCER("NoteSeq", ManufacturerType.MACKIE, "Note Sequencer: Alt+Step=Duplication Mode", ""),
-   SEQUENCER_ICON("NoteSeq", ManufacturerType.ICON, "Note Sequencer: Duplicate+Step=Duplication Mode", ""),
+      "Launcher: Shft=select Clear=Delete Option=Stop", //
+      "Shft+Dup=Dbl.Content Duplicate=Duplicate/EmptySl=new clip"),
+   SEQUENCER("NoteSeq", ManufacturerType.MACKIE, "Note Sequencer: Alt+Step=Duplication Mode",
+      "Clear+Step=Delete Option+Step=Audition"),
+   SEQUENCER_ICON("NoteSeq", ManufacturerType.ICON, "Note Sequencer: Duplicate+Step=Duplication Mode",
+      "Clear+Step=Delete Option+Step=Audition"),
    DRUM_SEQUENCER("DrumSeq", ManufacturerType.MACKIE, "Drum: Alt+Step=Duplication Mode", ""),
    DRUM_SEQUENCER_ICON("DrumSeq", ManufacturerType.ICON, "Drum: Duplicate+Step=Duplication Mode", ""),
    TRACK("MN", ManufacturerType.MACKIE, "Tr.Select: Shift=GroupExp Dup=Dup.Track", //
       "Alt=Stop Control=Delete"), //
    TRACK_ICON("MN", ManufacturerType.ICON, "Tr.Select: Shift=GroupExp Dup=Dup.Track Clear=Delete", //
-      "Shf+Opt=Stop Option=Nav into Group (exit OPT+CANCEL) "),
+      "Shf+Opt=Stop Option=Nav into Group (exit Opt+Cancel) "),
    TRACK_GL("GL", ManufacturerType.MACKIE, TRACK.topInfo, TRACK.bottomInfo),
    TRACK_GL_ICON("GL", ManufacturerType.ICON, TRACK_ICON.topInfo, TRACK_ICON.bottomInfo);
 

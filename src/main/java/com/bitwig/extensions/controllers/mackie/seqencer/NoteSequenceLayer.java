@@ -100,7 +100,6 @@ public class NoteSequenceLayer extends SequencerLayer {
          }
       }
       prehearSteps = modifierValueObject.isOption();
-
    }
 
    public void init(final NotePlayingSetup notePlayingSetup, final NoteInput noteInput) {
