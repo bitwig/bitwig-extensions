@@ -9,6 +9,7 @@ import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfigurat
 import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.definition.ControllerConfig;
+import com.bitwig.extensions.controllers.mackie.definition.ManufacturerType;
 import com.bitwig.extensions.controllers.mackie.definition.SubType;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
@@ -23,6 +24,7 @@ import com.bitwig.extensions.controllers.mackie.section.*;
 import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,7 +91,6 @@ public class MackieMcuProExtension extends ControllerExtension {
    private final HoldCapture holdState = new HoldCapture();
    private ActionSet actionSet;
    private Arranger arranger;
-   private PopupBrowser browser;
    private BrowserConfiguration browserConfiguration;
 
    private CursorDeviceControl cursorDeviceControl;
@@ -114,6 +115,7 @@ public class MackieMcuProExtension extends ControllerExtension {
    @Override
    public void init() {
       host = getHost();
+      RemoteConsole.init(host);
       surface = host.createHardwareSurface();
       transport = host.createTransport();
       application = host.createApplication();
@@ -138,9 +140,11 @@ public class MackieMcuProExtension extends ControllerExtension {
       drumMatcher = host.createBitwigDeviceMatcher(SpecialDevices.DRUM.getUuid());
 
       enterButton = new MainUnitButton(this, BasicNoteOnAssignment.ENTER);
-      cancelButton = new MainUnitButton(this, BasicNoteOnAssignment.CANCEL);
 
-      browser = host.createPopupBrowser();
+      cancelButton = new MainUnitButton(this, controllerConfig.getSubType() == SubType.G2 ? //
+         BasicNoteOnAssignment.GV_USER_LF8 : BasicNoteOnAssignment.CANCEL);
+
+      final PopupBrowser browser = host.createPopupBrowser();
       followClip = new FocusClipView(host);
 
       initJogWheel();
@@ -393,8 +397,6 @@ public class MackieMcuProExtension extends ControllerExtension {
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.OPTION, mainLayer, modifier::setOption);
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.CONTROL, mainLayer, modifier::setControl);
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.ALT, mainLayer, modifier::setAlt);
-
-      cancelButton.bindPressed(optionLayer, () -> application.navigateToParentTrackGroup());
    }
 
    private void initTransport() {
@@ -528,11 +530,6 @@ public class MackieMcuProExtension extends ControllerExtension {
       } else {
          holdAction.stop();
       }
-   }
-
-   private void setLed(final HardwareButton button, final boolean onOff) {
-      final OnOffHardwareLight light = (OnOffHardwareLight) button.backgroundLight();
-      light.isOn().setValue(onOff);
    }
 
    private void toggleVuMode(final boolean pressed) {
@@ -688,14 +685,11 @@ public class MackieMcuProExtension extends ControllerExtension {
       }
       mainSection.initTrackControl(cursorTrack, cursorDeviceControl.getDrumCursor(), deviceTypeBank);
       initMenuButtons();
+      cancelButton.bindPressed(optionLayer, () -> application.navigateToParentTrackGroup());
    }
 
    public BrowserConfiguration getBrowserConfiguration() {
       return browserConfiguration;
-   }
-
-   public void setBrowserConfiguration(final BrowserConfiguration browserConfiguration) {
-      this.browserConfiguration = browserConfiguration;
    }
 
    private void initMenuButtons() {
@@ -746,18 +740,29 @@ public class MackieMcuProExtension extends ControllerExtension {
       });
       initActionButton(6, BasicNoteOnAssignment.GV_OUTPUTS_LF7, cueMarkerBank, () -> {
       });
-      initActionButton(7, BasicNoteOnAssignment.GV_USER_LF8, cueMarkerBank, () -> {
-      });
+      // Icon Pro G2 this is the cancel Button
+      if (controllerConfig.getSubType() == SubType.G2) {
+         cancelButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(7).launch(modifier.isShift()));
+      } else if (controllerConfig.getManufacturerType() != ManufacturerType.MACKIE) {
+         initActionButton(7, BasicNoteOnAssignment.GV_USER_LF8, cueMarkerBank, () -> {
+         });
+      }
 
       final MainUnitButton clickButton = new MainUnitButton(this, BasicNoteOnAssignment.CLICK);
       final MenuModeLayerConfiguration metroMenu = menuCreator.createClickMenu(transport, value -> midiOut.sendSysex(
          MackieMcuProExtension.MAIN_UNIT_SYSEX_HEADER + (value ? "0A 01" : "0A 00") + " F7"));
+
       bindHoldToggleButton(clickButton, metroMenu, transport.isMetronomeEnabled());
 
       final MainUnitButton loopButton = new MainUnitButton(this, BasicNoteOnAssignment.CYCLE);
-      bindHoldToggleButton(loopButton, menuCreator.createCyleMenu(host, transport), transport.isArrangerLoopEnabled());
 
-      application.panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
+      bindHoldToggleButton(loopButton, menuCreator.createCyleMenu(host, transport), transport.
+
+         isArrangerLoopEnabled());
+
+      application.panelLayout().
+
+         addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
    }
 
    public void initFButton(final int index, final BasicNoteOnAssignment assign, final CueMarkerBank cueMarkerBank,
@@ -773,14 +778,15 @@ public class MackieMcuProExtension extends ControllerExtension {
       }
    }
 
-   private void initActionButton(final int index, final BasicNoteOnAssignment assignment,
-                                 final CueMarkerBank cueMarkerBank, final Runnable action) {
+   private MainUnitButton initActionButton(final int index, final BasicNoteOnAssignment assignment,
+                                           final CueMarkerBank cueMarkerBank, final Runnable action) {
       final MainUnitButton fButton = new MainUnitButton(this, assignment);
       fButton.bindPressed(mainLayer, action);
       fButton.activateHoldState();
       if (controllerConfig.isFunctionSectionLayered()) {
          fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
       }
+      return fButton;
    }
 
    private void modifyTempo(final int inc) {
@@ -832,8 +838,15 @@ public class MackieMcuProExtension extends ControllerExtension {
       });
    }
 
+   private BasicNoteOnAssignment getStepSequencerButton() {
+      if (controllerConfig.getManufacturerType() == ManufacturerType.MACKIE) {
+         return BasicNoteOnAssignment.GV_USER_LF8;
+      }
+      return BasicNoteOnAssignment.STEP_SEQ;
+   }
+
    private void initSeqSection() {
-      final MainUnitButton stepSequencerButton = new MainUnitButton(this, BasicNoteOnAssignment.STEP_SEQ);
+      final MainUnitButton stepSequencerButton = new MainUnitButton(this, getStepSequencerButton());
       stepSequencerButton.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER);
 
       stepSequencerButton.bindPressed(mainLayer, () -> {
@@ -1072,10 +1085,6 @@ public class MackieMcuProExtension extends ControllerExtension {
       return notePlayingSetup;
    }
 
-   public FocusClipView getFollowClip() {
-      return followClip;
-   }
-
    public NoteAssignment get(final BasicNoteOnAssignment assignment) {
       return controllerConfig.get(assignment);
    }
@@ -1089,14 +1098,14 @@ public class MackieMcuProExtension extends ControllerExtension {
    }
 
    public SlotHandler createSlotHandler() {
-      if (controllerConfig.getSubType() == SubType.ICON) {
+      if (controllerConfig.getManufacturerType() == ManufacturerType.ICON) {
          return new SlotHandlerIcon();
       }
       return new SlotHandler();
    }
 
    public TrackSelectionHandler createTrackSelectionHandler() {
-      if (controllerConfig.getSubType() == SubType.ICON) {
+      if (controllerConfig.getManufacturerType() == ManufacturerType.ICON) {
          return new TrackSelectionHandlerIcon(this);
       }
       return new TrackSelectionHandler(this);

@@ -36,7 +36,6 @@ public class NoteSequenceLayer extends SequencerLayer {
    private TransposeMode mode = TransposeMode.SCALE;
    private final ChordHandler chordHandler = new ChordHandler();
    private final ChordBank chordBank = new ChordBank();
-   private final List<Integer> overallHeldNotes = new ArrayList<>();
 
    private MenuModeLayerConfiguration page3Menu;
    private boolean prehearSteps = false;
@@ -201,9 +200,10 @@ public class NoteSequenceLayer extends SequencerLayer {
             chordBank.getSelectedIndex().set(index);
             chordHandler.apply(chordBank.get());
             velocityValue.set(chordBank.get().getVelocity());
-            chordHandler.play(chordBank.get());
+
+            chordHandler.play(chordBank.get(index));
          } else {
-            chordHandler.release(chordBank.get());
+            chordHandler.release(chordBank.get(index));
          }
       }
    }

@@ -14,17 +14,15 @@ public class SlotHandler {
       } else if (modifier.isSet(ModifierValueObject.SHIFT, ModifierValueObject.ALT)) {
          slot.select();
          cursorClip.duplicateContent();
-      } else if (modifier.isDuplicateSet()) {
+      } else if (modifier.isAlt()) {
+         track.stop();
+      } else if (modifier.isOption()) {
          if (!slot.hasContent().get()) {
             slot.createEmptyClip(4);
             slot.select();
          } else {
             slot.duplicateClip();
          }
-      } else if (modifier.isAlt()) {
-         track.stop();
-      } else if (modifier.isOption()) {
-         slot.duplicateClip();
       } else if (modifier.isShift()) {
          slot.select();
       } else {

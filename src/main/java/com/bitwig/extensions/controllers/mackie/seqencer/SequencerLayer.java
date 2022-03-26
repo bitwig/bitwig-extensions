@@ -500,7 +500,7 @@ public abstract class SequencerLayer extends ButtonLayer {
                return "[---]";
             }
             if (name.isEmpty()) {
-               return String.format("[C:%d]", sceneIndex);
+               return String.format("[C:%d]", sceneIndex + 1);
             }
             return "[" + StringUtil.toAsciiDisplay(name, 4) + "]";
          }

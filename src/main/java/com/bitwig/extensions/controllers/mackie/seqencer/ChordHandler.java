@@ -8,6 +8,7 @@ import com.bitwig.extensions.controllers.mackie.value.IntValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ChordHandler {
@@ -21,9 +22,10 @@ public class ChordHandler {
    private final IntValueObject octaveOffset = new IntValueObject(4, 0, 8);
    private final IntValueObject inversion = new IntValueObject(0, 0, 3);
    private final IntValueObject expansion = new IntValueObject(0, -1, 4);
-   private final List<Integer> heldNotes = new ArrayList<>();
+   private final int[] heldNotes = new int[128];
 
    public ChordHandler() {
+      Arrays.fill(heldNotes, 0);
       expansion.addValueObserver(v -> {
          final int notes = chordType.get().getNotes().length + v - 1;
          inversion.setMax((1 << notes) - 1);
@@ -87,29 +89,45 @@ public class ChordHandler {
    }
 
    public void play(final Chord chord) {
-      chord.play(noteInput);
+      final List<Integer> notes = chord.getNotes();
+      for (final Integer noteNr : notes) {
+         heldNotes[noteNr]++;
+         noteInput.sendRawMidiEvent(Midi.NOTE_ON, noteNr, chord.getVelocity());
+      }
    }
 
    public void release(final Chord chord) {
-      chord.release(noteInput);
+      final List<Integer> notes = chord.getNotes();
+      for (final Integer noteNr : notes) {
+         heldNotes[noteNr]--;
+         if (heldNotes[noteNr] <= 0) {
+            noteInput.sendRawMidiEvent(Midi.NOTE_OFF, noteNr, 0);
+         }
+      }
+      release();
    }
 
    public void play(final int velocity) {
-      heldNotes.clear();
-      heldNotes.addAll(getNotes());
-      heldNotes.forEach(noteNr -> noteInput.sendRawMidiEvent(Midi.NOTE_ON, noteNr, velocity));
+      final List<Integer> notes = getNotes();
+      for (final Integer noteNr : notes) {
+         heldNotes[noteNr]++;
+         noteInput.sendRawMidiEvent(Midi.NOTE_ON, noteNr, velocity);
+      }
    }
 
    public void release() {
-      heldNotes.forEach(noteNr -> noteInput.sendRawMidiEvent(Midi.NOTE_OFF, noteNr, 0));
-      heldNotes.clear();
+      for (int noteNr = 0; noteNr < heldNotes.length; noteNr++) {
+         if (heldNotes[noteNr] > 0) {
+            noteInput.sendRawMidiEvent(Midi.NOTE_OFF, noteNr, 0);
+         }
+         heldNotes[noteNr] = 0;
+      }
    }
 
    public void playNotes(final NoteStepSlot slot) {
-      release();
       for (final NoteStep step : slot.steps()) {
          noteInput.sendRawMidiEvent(Midi.NOTE_ON, step.y(), (int) Math.round(step.velocity() * 127));
-         heldNotes.add(step.y());
+         heldNotes[step.y()]++;
       }
    }
 

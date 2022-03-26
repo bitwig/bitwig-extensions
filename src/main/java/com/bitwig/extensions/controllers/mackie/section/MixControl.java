@@ -478,14 +478,14 @@ public class MixControl implements LayerStateHandler {
       final DisplayLayer displayLayer = getActiveDisplayLayer();
       final Layer buttonLayer = getButtonLayer();
 
-      HelperInfo.getInfo(buttonLayer.getName(), displayLayer.getName(), driver.getControllerConfig().getSubType())
-         .ifPresent(info -> {
-            if (active) {
-               displayLayer.showInfo(info.getTopInfo(), info.getBottomInfo());
-            } else {
-               displayLayer.invokeRefresh();
-            }
-         });
+      HelperInfo.getInfo(buttonLayer.getName(), displayLayer.getName(),
+         driver.getControllerConfig().getManufacturerType()).ifPresent(info -> {
+         if (active) {
+            displayLayer.showInfo(info.getTopInfo(), info.getBottomInfo());
+         } else {
+            displayLayer.invokeRefresh();
+         }
+      });
       //getDriver().getHost().println(" " + displayLayer.getName() + " " + buttonLayer.getName());
    }
 

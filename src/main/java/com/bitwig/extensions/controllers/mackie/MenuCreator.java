@@ -53,8 +53,8 @@ public class MenuCreator {
          }
       }, formatter, 1.0, 0.25);
       builder.insertEmpty();
-      builder.bindBool("P.IN", transport.isPunchInEnabled());
-      builder.bindBool("P.OUT", transport.isPunchOutEnabled());
+      builder.bindBool("P.In", transport.isPunchInEnabled());
+      builder.bindBool("P.Out", transport.isPunchOutEnabled());
       return menu;
    }
 
@@ -62,7 +62,7 @@ public class MenuCreator {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("GROOVE_MENU", mainSection);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
       builder.bindBool("Groove", groove.getEnabled());
-      builder.bindValue("Shf.Rt", groove.getShuffleRate().value(), 2);
+      builder.bindValue("Sfl.Rt", groove.getShuffleRate().value(), 2);
       builder.bindValue("Sfl.Am", groove.getShuffleAmount().value(), 1, 0.5);
       builder.insertEmpty();
       builder.bindValue("Acc.Rt", groove.getAccentRate().value(), 3);
@@ -76,8 +76,8 @@ public class MenuCreator {
    public MenuModeLayerConfiguration createTempoMenu(final Transport transport, final IntConsumer tempoHandler) {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("TEMP_MENU", mainSection);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-      builder.bindInc("TEMPO", transport.tempo().value(), tempoHandler);
-      builder.bindAction("<TAP>", "", transport::tapTempo);
+      builder.bindInc("Tempo", transport.tempo().value(), tempoHandler);
+      builder.bindAction("<Tap>", "", transport::tapTempo);
       builder.fillRest();
       return menu;
    }
@@ -87,16 +87,16 @@ public class MenuCreator {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
       final BooleanValueObject transportClick = new BooleanValueObject();
-      builder.bindBool("METRO", transport.isMetronomeEnabled());
+      builder.bindBool("Metro", transport.isMetronomeEnabled());
       builder.bindBool("Pre ->", transport.isMetronomeAudibleDuringPreRoll());
-      builder.bindEnum("ROLL", new EnumValueSetting(transport.preRoll()).add("none", "None", 0)
+      builder.bindEnum("Roll", new EnumValueSetting(transport.preRoll()).add("none", "None", 0)
          .add("one_bar", "1bar", 3)
          .add("two_bars", "2bar", 6)
          .add("four_bars", "4bar", 11));
-      builder.bindBool("M.TICK", transport.isMetronomeTickPlaybackEnabled());
-      builder.bindValue("M.VOL", transport.metronomeVolume(), 0.05, 0.6);
+      builder.bindBool("M.Tick", transport.isMetronomeTickPlaybackEnabled());
+      builder.bindValue("M.Vol", transport.metronomeVolume(), 0.05, 0.6);
       builder.insertEmpty();
-      builder.bindBool("T.CLCK", transportClick);
+      builder.bindBool("T.Clck", transportClick);
       transportClick.addValueObserver(clickHandler);
       builder.fillRest();
       return menu;
@@ -105,10 +105,10 @@ public class MenuCreator {
    public MenuModeLayerConfiguration createClipMenuSection() {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("CLIP_MENU_MENU", mainSection);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-      builder.bindAction("<DBL>", "double", () -> actionSet.executeClip(ActionSet.ActionType.DOUBLE));
-      builder.bindAction("<REV>", "reverse", () -> actionSet.executeClip(ActionSet.ActionType.REVERSE));
-      builder.bindAction("<SCL>", "50%", () -> actionSet.executeClip(ActionSet.ActionType.SCALE50));
-      builder.bindAction("<SCL>", "200%", () -> actionSet.executeClip(ActionSet.ActionType.SCALE200));
+      builder.bindAction("<Dbl>", "double", () -> actionSet.executeClip(ActionSet.ActionType.DOUBLE));
+      builder.bindAction("<Rev>", "reverse", () -> actionSet.executeClip(ActionSet.ActionType.REVERSE));
+      builder.bindAction("<Scl>", "50%", () -> actionSet.executeClip(ActionSet.ActionType.SCALE50));
+      builder.bindAction("<Scl>", "200%", () -> actionSet.executeClip(ActionSet.ActionType.SCALE200));
       builder.bindAction("<Trns>", "-semi", () -> actionSet.executeClip(ActionSet.ActionType.TRANSDOWN));
       builder.bindAction("<Trns>", "+semi", () -> actionSet.executeClip(ActionSet.ActionType.TRANSUP));
       builder.bindAction("<Oct>", "-oct", () -> actionSet.executeClip(ActionSet.ActionType.OCTDOWN));
@@ -119,13 +119,13 @@ public class MenuCreator {
    public MenuModeLayerConfiguration createQuantizeSection(final Transport transport, final FocusClipView followClip) {
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("QUANTIZE_MENU", mainSection);
       final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-      builder.bindEnum("REC.Q", new EnumValueSetting(application.recordQuantizationGrid()).add("OFF", 0)
+      builder.bindEnum("Rec.Q", new EnumValueSetting(application.recordQuantizationGrid()).add("OFF", 0)
          .add("1/32", 3)
          .add("1/16", 6)
          .add("1/8", 8)
          .add("1/4", 11));
-      builder.bindBool("LEN.Q", application.recordQuantizeNoteLength());
-      builder.bindEnum("CLIP.Q", new EnumValueSetting(transport.defaultLaunchQuantization()).add("none", 0)
+      builder.bindBool("Len.Q", application.recordQuantizeNoteLength());
+      builder.bindEnum("Clip.Q", new EnumValueSetting(transport.defaultLaunchQuantization()).add("none", 0)
          .add("8", 2)
          .add("4", 4)
          .add("1", 6)
