@@ -8,40 +8,40 @@ import com.bitwig.extensions.framework.Binding;
 
 public class ResetableAbsoluteValueBinding extends Binding<AbsoluteHardwareControl, SettableRangedValue> {
 
-	HardwareBinding hwBinding;
+   HardwareBinding hwBinding;
 
-	public ResetableAbsoluteValueBinding(final AbsoluteHardwareControl source, final SettableRangedValue target) {
-		super(source, source, target);
-	}
+   public ResetableAbsoluteValueBinding(final AbsoluteHardwareControl source, final SettableRangedValue target) {
+      super(source, source, target);
+   }
 
-	protected AbsoluteHardwareControlBinding getHardwareBinding() {
-		return getTarget().addBinding(getSource());
-	}
+   protected AbsoluteHardwareControlBinding getHardwareBinding() {
+      return getTarget().addBinding(getSource());
+   }
 
-	public void reset() {
-		if (!isActive()) {
-			return;
-		}
-		if (hwBinding != null) {
-			hwBinding.removeBinding();
-		}
-		hwBinding = getHardwareBinding();
-	}
+   public void reset() {
+      if (!isActive()) {
+         return;
+      }
+      if (hwBinding != null) {
+         hwBinding.removeBinding();
+      }
+      hwBinding = getHardwareBinding();
+   }
 
-	@Override
-	protected void deactivate() {
-		if (hwBinding != null) {
-			hwBinding.removeBinding();
-			hwBinding = null;
-		}
-	}
+   @Override
+   protected void deactivate() {
+      if (hwBinding != null) {
+         hwBinding.removeBinding();
+         hwBinding = null;
+      }
+   }
 
-	@Override
-	protected void activate() {
-		if (hwBinding != null) {
-			hwBinding.removeBinding();
-		}
-		hwBinding = getHardwareBinding();
-	}
+   @Override
+   protected void activate() {
+      if (hwBinding != null) {
+         hwBinding.removeBinding();
+      }
+      hwBinding = getHardwareBinding();
+   }
 
 }

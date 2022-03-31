@@ -1,1202 +1,1104 @@
 package com.bitwig.extensions.controllers.mackie;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.function.IntConsumer;
-
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
-import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
-import com.bitwig.extension.controller.api.Application;
-import com.bitwig.extension.controller.api.Arranger;
-import com.bitwig.extension.controller.api.BeatTimeFormatter;
-import com.bitwig.extension.controller.api.ControllerHost;
-import com.bitwig.extension.controller.api.CueMarker;
-import com.bitwig.extension.controller.api.CueMarkerBank;
-import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.DeviceMatcher;
-import com.bitwig.extension.controller.api.DrumPadBank;
-import com.bitwig.extension.controller.api.HardwareActionBindable;
-import com.bitwig.extension.controller.api.HardwareButton;
-import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.MasterTrack;
-import com.bitwig.extension.controller.api.MidiIn;
-import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.OnOffHardwareLight;
-import com.bitwig.extension.controller.api.PopupBrowser;
-import com.bitwig.extension.controller.api.Project;
-import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
-import com.bitwig.extension.controller.api.RelativeHardwareKnob;
-import com.bitwig.extension.controller.api.SettableBeatTimeValue;
-import com.bitwig.extension.controller.api.SettableBooleanValue;
-import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
+import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
-import com.bitwig.extensions.controllers.mackie.configurations.MenuDisplayLayerBuilder;
 import com.bitwig.extensions.controllers.mackie.configurations.MenuModeLayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.definition.ControllerConfig;
+import com.bitwig.extensions.controllers.mackie.definition.SubType;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
 import com.bitwig.extensions.controllers.mackie.devices.SpecialDevices;
-import com.bitwig.extensions.controllers.mackie.display.MotorFader;
+import com.bitwig.extensions.controllers.mackie.display.MainUnitButton;
+import com.bitwig.extensions.controllers.mackie.display.MotorSlider;
 import com.bitwig.extensions.controllers.mackie.display.TimeCodeLed;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.section.DrumNoteHandler;
-import com.bitwig.extensions.controllers.mackie.section.ExtenderMixControl;
-import com.bitwig.extensions.controllers.mackie.section.MixControl;
-import com.bitwig.extensions.controllers.mackie.section.SectionType;
-import com.bitwig.extensions.controllers.mackie.value.BasicStringValue;
-import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
-import com.bitwig.extensions.controllers.mackie.value.LayoutType;
-import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
-import com.bitwig.extensions.controllers.mackie.value.TrackModeValue;
-import com.bitwig.extensions.controllers.mackie.value.ValueObject;
+import com.bitwig.extensions.controllers.mackie.layer.SlotHandler;
+import com.bitwig.extensions.controllers.mackie.layer.SlotHandlerIcon;
+import com.bitwig.extensions.controllers.mackie.section.*;
+import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.function.IntConsumer;
+import java.util.function.Supplier;
+
 public class MackieMcuProExtension extends ControllerExtension {
 
-	private static final String MAIN_UNIT_SYEX_HEADER = "F0 00 00 66 14 ";
-	private static final String SYSEX_DEVICE_RELOAD = "f0000066140158595a";
-	private static final double[] FFWD_SPEEDS = { 0.0625, 0.25, 1.0, 4.0 };
-	private static final double[] FFWD_SPEEDS_SHIFT = { 0.25, 1.0, 4.0, 16.0 };
-	private static final long[] FFWD_TIMES = { 500, 1000, 2000, 3000, 4000 };
+   static final String MAIN_UNIT_SYSEX_HEADER = "F0 00 00 66 14 ";
+   private static final String SYSEX_DEVICE_RELOAD = "f0000066140158595a";
+   private static final double[] FFWD_SPEEDS = {0.0625, 0.25, 1.0, 4.0};
+   private static final double[] FFWD_SPEEDS_SHIFT = {0.25, 1.0, 4.0, 16.0};
+   private static final long[] FFWD_TIMES = {500, 1000, 2000, 3000, 4000};
 
-	private Layers layers;
-	private Layer mainLayer;
-	private Layer shiftLayer;
+   private Layers layers;
+   private Layer mainLayer;
+   private Layer shiftLayer;
+   private Layer optionLayer;
 
-	private HardwareSurface surface;
-	private Transport transport;
-	private Application application;
-	private Project project;
-	private MidiOut midiOut;
-	private MidiIn midiIn;
-	private CursorTrack cursorTrack;
-	private TrackBank mixerTrackBank;
-	private TrackBank globalTrackBank;
-	private ControllerHost host;
-	private TimeCodeLed ledDisplay;
-	private MasterTrack masterTrack;
-	private final BooleanValueObject flipped = new BooleanValueObject();
-	private final BooleanValueObject zoomActive = new BooleanValueObject();
-	// private final BooleanValueObject scrubActive = new BooleanValueObject();
+   private Layer cueMarkerModeLayer;
 
-	private final ValueObject<MixerMode> mixerMode = new ValueObject<>(MixerMode.MAIN);
-	private MixerMode previousOverallMode = MixerMode.MAIN;
+   private HardwareSurface surface;
+   private Transport transport;
+   private Application application;
+   private Project project;
+   private MidiOut midiOut;
+   private MidiIn midiIn;
+   private CursorTrack cursorTrack;
+   private TrackBank mixerTrackBank;
+   private TrackBank globalTrackBank;
+   private ControllerHost host;
+   private TimeCodeLed ledDisplay;
+   private MasterTrack masterTrack;
+   private final BooleanValueObject flipped = new BooleanValueObject();
+   private final BooleanValueObject zoomActive = new BooleanValueObject();
+   // private final BooleanValueObject scrubActive = new BooleanValueObject();
 
-	private final ValueObject<ButtonViewState> buttonViewMode = new ValueObject<>(ButtonViewState.MIXER);
-	private int blinkTicks = 0;
-	private final BooleanValueObject transportClick = new BooleanValueObject();
+   private final ValueObject<MixerMode> mixerMode = new ValueObject<>(MixerMode.MAIN);
+   private MixerMode previousOverallMode = MixerMode.MAIN;
+   private boolean forcedIntoDrumMixMode = false;
 
-	private final ModifierValueObject modifier = new ModifierValueObject();
-	private final TrackModeValue trackChannelMode = new TrackModeValue();
+   private final ValueObject<ButtonViewState> buttonViewMode = new ValueObject<>(ButtonViewState.MIXER);
+   private int blinkTicks = 0;
 
-	private VuMode vuMode = VuMode.LED;
-	private final int nrOfExtenders;
-	private DelayAction delayedAction = null; // TODO this needs to be a queue
+   private final ModifierValueObject modifier = new ModifierValueObject();
+   private final TrackModeValue trackChannelMode = new TrackModeValue();
 
-	private final HoldMenuButtonState holdAction = new HoldMenuButtonState();
-	private final int[] lightStatusMap = new int[127];
+   private VuMode vuMode = VuMode.LED;
+   private final int nrOfExtenders;
+   private DelayAction delayedAction = null; // TODO this needs to be a queue
 
-	private LayoutType currentLayoutType;
+   private final HoldMenuButtonState holdAction = new HoldMenuButtonState();
+   private final int[] lightStatusMap = new int[127];
 
-	private MixControl mainSection;
-	private final List<MixControl> sections = new ArrayList<>();
+   private LayoutType currentLayoutType;
 
-	private final HoldCapture holdState = new HoldCapture();
-	private Arranger arranger;
-	private PopupBrowser browser;
-	private BrowserConfiguration browserConfiguration;
+   private MixControl mainSection;
+   private final List<MixControl> sections = new ArrayList<>();
 
-	private CursorDeviceControl cursorDeviceControl;
-	private HardwareButton enterButton;
-	private HardwareButton cancelButton;
-	private DeviceMatcher drumMatcher;
-	private DrumNoteHandler noteHandler;
-	private MotorFader masterFaderResponse;
-	private final Map<BasicNoteOnAssignment, Integer> assignOverrides;
+   private final HoldCapture holdState = new HoldCapture();
+   private ActionSet actionSet;
+   private Arranger arranger;
+   private PopupBrowser browser;
+   private BrowserConfiguration browserConfiguration;
 
-	protected MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
-			final Map<BasicNoteOnAssignment, Integer> assignOverrides, final int extenders) {
-		super(definition, host);
-		this.nrOfExtenders = extenders;
-		this.assignOverrides = assignOverrides;
-	}
+   private CursorDeviceControl cursorDeviceControl;
+   private MainUnitButton enterButton;
+   private MainUnitButton cancelButton;
+   private DeviceMatcher drumMatcher;
+   private MainUnitButton noteFxButton;
 
-	@Override
-	public void init() {
-		host = getHost();
-		surface = host.createHardwareSurface();
-		transport = host.createTransport();
-		application = host.createApplication();
-		arranger = host.createArranger();
-		project = host.getProject();
-		layers = new Layers(this);
-		mainLayer = new Layer(layers, "MainLayer");
-		shiftLayer = new Layer(layers, "GlobalShiftLayer");
+   private final ControllerConfig controllerConfig;
+   private NotePlayingSetup notePlayingSetup;
+   private FocusClipView followClip;
+   private MotorSlider masterSlider;
+   private MenuCreator menuCreator;
 
-		for (int i = 0; i < lightStatusMap.length; i++) {
-			lightStatusMap[i] = -1;
-		}
+   public MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
+                                final ControllerConfig controllerConfig, final int extenders) {
+      super(definition, host);
+      nrOfExtenders = extenders;
+      this.controllerConfig = controllerConfig;
+   }
 
-		midiOut = host.getMidiOutPort(0);
-		midiIn = host.getMidiInPort(0);
-		ledDisplay = new TimeCodeLed(midiOut);
-		drumMatcher = host.createBitwigDeviceMatcher(SpecialDevices.DRUM.getUuid());
+   @Override
+   public void init() {
+      host = getHost();
+      surface = host.createHardwareSurface();
+      transport = host.createTransport();
+      application = host.createApplication();
+      arranger = host.createArranger();
+      project = host.getProject();
+      layers = new Layers(this);
+      mainLayer = new Layer(layers, "MainLayer");
+      shiftLayer = new Layer(layers, "GlobalShiftLayer");
+      optionLayer = new Layer(layers, "OptionLayer");
+      cueMarkerModeLayer = new Layer(layers, "Cue Marker Layer");
+      notePlayingSetup = new NotePlayingSetup();
+      actionSet = new ActionSet(application);
 
-		enterButton = createPressButton(BasicNoteOnAssignment.ENTER);
-		cancelButton = createPressButton(BasicNoteOnAssignment.CANCEL);
+      modifier.setUsesDuplicateClear(controllerConfig.isUseClearDuplicateModifiers());
 
-		browser = host.createPopupBrowser();
+      Arrays.fill(lightStatusMap, -1);
 
-		initJogWheel();
-		initMasterSection();
-		initChannelSections();
-		browserConfiguration = new BrowserConfiguration("BROWSER", mainSection, host, browser);
-		intiVPotModes();
+      midiOut = host.getMidiOutPort(0);
+      midiIn = host.getMidiInPort(0);
 
-		initTransport();
-		initTrackBank(4);
-		initModifiers();
+      ledDisplay = new TimeCodeLed(midiOut);
+      drumMatcher = host.createBitwigDeviceMatcher(SpecialDevices.DRUM.getUuid());
 
-		initCursorSection();
+      enterButton = new MainUnitButton(this, BasicNoteOnAssignment.ENTER);
+      cancelButton = new MainUnitButton(this, BasicNoteOnAssignment.CANCEL);
 
-		midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) msg -> onMidi0(msg));
+      browser = host.createPopupBrowser();
+      followClip = new FocusClipView(host);
 
-		setUpMidiSysExCommands();
-		mainLayer.activate();
-		host.showPopupNotification(" Initialized Mackie MCU Pro");
-		sections.forEach(MixControl::resetFaders);
-		sections.forEach(MixControl::clearAll);
-		ledDisplay.refreschMode();
-		host.scheduleTask(this::handlePing, 100);
+      initJogWheel();
+      initMasterSection();
+      initChannelSections();
+
+      menuCreator = new MenuCreator(application, mainSection, actionSet);
+      browserConfiguration = new BrowserConfiguration("BROWSER", mainSection, host, browser);
+      intiVPotModes();
+
+      initTransport();
+      initTrackBank(4);
+      initModifiers();
+
+      initCursorSection();
+
+      midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi0);
+
+      setUpMidiSysExCommands();
+      mainLayer.activate();
+      host.showPopupNotification(
+         " Initialized " + getExtensionDefinition().getName() + " " + getExtensionDefinition().getVersion());
+      sections.forEach(MixControl::resetFaders);
+      sections.forEach(MixControl::clearAll);
+      ledDisplay.refreshMode();
+      host.scheduleTask(this::handlePing, 100);
+
 //		final Action[] as = application.getActions();
 //		for (final Action action : as) {
-//			RemoteConsole.out.println("ACTION > [{}]", action.getId());
+//			host.println("ACTION > [ " + action.getId() + "]");
 //		}
-	}
-
-	public HardwareButton getEnterButton() {
-		return enterButton;
-	}
-
-	public HardwareButton getCancelButton() {
-		return cancelButton;
-	}
-
-	public void initChannelSections() {
-		mainSection = new MixControl(this, midiIn, midiOut, nrOfExtenders, SectionType.MAIN);
-		sections.add(mainSection);
-		for (int i = 0; i < nrOfExtenders; i++) {
-			final MidiOut extMidiOut = host.getMidiOutPort(i + 1);
-			final MidiIn extMidiIn = host.getMidiInPort(i + 1);
-			if (extMidiIn != null && extMidiOut != null) {
-				final MixControl extenderSection = new ExtenderMixControl(this, extMidiIn, extMidiOut, i);
-				sections.add(extenderSection);
-			} else {
-				// RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing
-				// ports", i + 1);
-			}
-		}
-	}
-
-	public void doActionImmediate(final String actionId) {
-		if (delayedAction != null && actionId.equals(delayedAction.getActionId())) {
-			delayedAction.run();
-			delayedAction = null;
-		}
-	}
-
-	public void cancelAction(final String actionId) {
-		if (delayedAction != null && actionId.equals(delayedAction.getActionId())) {
-			delayedAction = null;
-		}
-	}
-
-	public void scheduleAction(final String actionId, final int duration, final Runnable action) {
-		delayedAction = new DelayAction(duration, actionId, action);
-	}
-
-	private void handlePing() {
-		if (delayedAction != null && delayedAction.isReady()) {
-			delayedAction.run();
-			delayedAction = null;
-		}
-		if (holdAction.isRunning()) {
-			holdAction.execute();
-		}
-		sections.forEach(section -> section.notifyBlink(blinkTicks));
-		blinkTicks++;
-		host.scheduleTask(this::handlePing, 100);
-	}
-
-	private void initJogWheel() {
-		final RelativeHardwareKnob fourDKnob = surface.createRelativeHardwareKnob("JOG_WHEEL");
-		fourDKnob.setAdjustValueMatcher(midiIn.createRelativeSignedBitCCValueMatcher(0, 60, 128));
-		fourDKnob.setStepSize(1 / 128.0);
-
-		final HardwareActionBindable incAction = host.createAction(() -> jogWheelPlayPosition(1), () -> "+");
-		final HardwareActionBindable decAction = host.createAction(() -> jogWheelPlayPosition(-1), () -> "-");
-		mainLayer.bind(fourDKnob, host.createRelativeHardwareControlStepTarget(incAction, decAction));
-	}
-
-	private void jogWheelPlayPosition(final int dir) {
-		double resolution = 0.25;
-		if (modifier.isAltSet()) {
-			resolution = 4.0;
-		} else if (modifier.isShiftSet()) {
-			resolution = 1.0;
-		}
-		changePlayPosition(dir, resolution, !modifier.isOptionSet(), !modifier.isControlSet());
-	}
-
-	private void changePlayPosition(final int inc, final double resolution, final boolean restrictToStart,
-			final boolean quantize) {
-
-		final double position = transport.playStartPosition().get();
-		double newPos = position + resolution * inc;
-
-		if (restrictToStart && newPos < 0) {
-			newPos = 0;
-		}
-
-		if (position != newPos) {
-			if (quantize) {
-				final double intup = Math.floor(newPos / resolution);
-				newPos = intup * resolution;
-			}
-			transport.playStartPosition().set(newPos);
-			if (transport.isPlaying().get()) {
-				transport.jumpToPlayStartPosition();
-			}
-		}
-	}
-
-	public VuMode getVuMode() {
-		return vuMode;
-	}
-
-	public DeviceMatcher getDrumMatcher() {
-		return drumMatcher;
-	}
-
-	private void initMasterSection() {
-		masterTrack = getHost().createMasterTrack(8);
-		masterTrack.volume().markInterested();
-		final AbsoluteHardwareKnob masterFader = surface.createAbsoluteHardwareKnob("MASTER_FADER_");
-		masterFader.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(8));
-		masterFader.addBinding(masterTrack.volume());
-		masterFaderResponse = new MotorFader(midiOut, 8);
-		mainLayer.addBinding(new FaderBinding(masterTrack.volume(), masterFaderResponse));
-
-		final HardwareButton masterTouchButton = surface.createHardwareButton("MASTER_TOUCH");
-		masterTouchButton.pressedAction().setActionMatcher(
-				midiIn.createNoteOnActionMatcher(0, get(BasicNoteOnAssignment.TOUCH_VOLUME).getNoteNo() + 8));
-		masterTouchButton.releasedAction().setActionMatcher(
-				midiIn.createNoteOffActionMatcher(0, get(BasicNoteOnAssignment.TOUCH_VOLUME).getNoteNo() + 8));
-		masterTouchButton.isPressed().addValueObserver(v -> {
-			// RemoteConsole.out.println("TOUCHED MASTER {}", v);
-		});
-	}
-
-	private void intiVPotModes() {
-		createOnOfBoolButton(BasicNoteOnAssignment.V_TRACK, trackChannelMode);
-//		final Action[] allActions = application.getActions();
-//		for (final Action action : allActions) {
-//			RemoteConsole.out.println(" ACTION [{}] name={} id=[{}] ", action.getCategory().getName(), action.getName(),
-//					action.getId());
-//		}
-		// createOnOfBoolButton(NoteOnAssignment.SOLO, soloExclusive);
-
-		createModeButton(VPotMode.SEND);
-		createModeButton(VPotMode.PAN);
-		createModeButton(VPotMode.PLUGIN);
-		createModeButton(VPotMode.EQ);
-		createModeButton(VPotMode.INSTRUMENT, VPotMode.MIDI_EFFECT);
-		createModeButton(VPotMode.MIDI_EFFECT);
-	}
-
-	private void initCursorSection() {
-		final HardwareButton trackLeftButton = createPressButton(BasicNoteOnAssignment.TRACK_LEFT);
-		mainLayer.bindIsPressed(trackLeftButton, v -> navigateTrack(-1, v));
-		final HardwareButton trackRightButton = createPressButton(BasicNoteOnAssignment.TRACK_RIGHT);
-		mainLayer.bindIsPressed(trackRightButton, v -> navigateTrack(1, v));
-		final HardwareButton bankRightButton = createPressButton(BasicNoteOnAssignment.BANK_RIGHT);
-		mainLayer.bindIsPressed(bankRightButton, v -> navigateBank(1, v));
-		final HardwareButton bankLeftButton = createPressButton(BasicNoteOnAssignment.BANK_LEFT);
-		mainLayer.bindIsPressed(bankLeftButton, v -> navigateBank(-1, v));
-		final HardwareButton upButton = createPressButton(BasicNoteOnAssignment.CURSOR_UP);
-		mainLayer.bindIsPressed(upButton, v -> navigateUpDown(1, v));
-		final HardwareButton downButton = createPressButton(BasicNoteOnAssignment.CURSOR_DOWN);
-		mainLayer.bindIsPressed(downButton, v -> navigateUpDown(-1, v));
-		final HardwareButton leftButton = createPressButton(BasicNoteOnAssignment.CURSOR_LEFT);
-		mainLayer.bindIsPressed(leftButton, v -> navigateLeftRight(-1, v));
-		final HardwareButton rightButton = createPressButton(BasicNoteOnAssignment.CURSOR_RIGHT);
-		mainLayer.bindIsPressed(rightButton, v -> navigateLeftRight(1, v));
-		createOnOfBoolButton(BasicNoteOnAssignment.ZOOM, zoomActive);
-		// createOnOfBoolButton(NoteOnAssignment.SCRUB, scrubActive);
-	}
-
-	private void navigateTrack(final int direction, final boolean isPressed) {
-		if (!isPressed) {
-			return;
-		}
-		if (direction > 0) {
-			if (mixerMode.get() == MixerMode.DRUM) {
-				cursorDeviceControl.getDrumPadBank().scrollForwards();
-			} else {
-				mixerTrackBank.scrollForwards();
-				globalTrackBank.scrollForwards();
-			}
-		} else {
-			if (mixerMode.get() == MixerMode.DRUM) {
-				cursorDeviceControl.getDrumPadBank().scrollBackwards();
-			} else {
-				mixerTrackBank.scrollBackwards();
-				globalTrackBank.scrollBackwards();
-			}
-		}
-	}
-
-	private void navigateBank(final int direction, final boolean isPressed) {
-		if (!isPressed) {
-			return;
-		}
-		final int numberOfTracksToControl = 8 * (nrOfExtenders + 1);
-		if (mixerMode.get() == MixerMode.DRUM) {
-			cursorDeviceControl.getDrumPadBank().scrollBy(direction * numberOfTracksToControl);
-		} else {
-			mixerTrackBank.scrollBy(direction * numberOfTracksToControl);
-			globalTrackBank.scrollBy(direction * numberOfTracksToControl);
-		}
-	}
-
-	private void navigateUpDown(final int direction, final boolean isPressed) {
-		if (!zoomActive.get()) {
-			sections.forEach(section -> section.navigateUpDown(direction, isPressed));
-		} else {
-			if (!isPressed) {
-				return;
-			}
-			if (direction > 0) {
-				arranger.zoomOutLaneHeightsAll();
-			} else {
-				arranger.zoomInLaneHeightsAll();
-			}
-		}
-	}
-
-	private void navigateLeftRight(final int direction, final boolean isPressed) {
-		if (!zoomActive.get()) {
-			sections.forEach(section -> section.navigateLeftRight(direction, isPressed));
-		} else {
-			if (!isPressed) {
-				return;
-			}
-			if (direction < 0) {
-				arranger.zoomOut();
-			} else {
-				arranger.zoomIn();
-			}
-		}
-	}
-
-	private void initModifiers() {
-		final HardwareButton shiftButton = createPressButton(BasicNoteOnAssignment.SHIFT);
-		shiftButton.isPressed().addValueObserver(v -> {
-			modifier.setShift(v);
-			if (v) {
-				shiftLayer.activate();
-			} else {
-				shiftLayer.deactivate();
-			}
-		});
-		final HardwareButton optionButton = createPressButton(BasicNoteOnAssignment.OPTION);
-		optionButton.isPressed().addValueObserver(v -> {
-			modifier.setOption(v);
-		});
-		final HardwareButton controlButton = createPressButton(BasicNoteOnAssignment.CONTROL);
-		controlButton.isPressed().addValueObserver(v -> {
-			modifier.setControl(v);
-		});
-		final HardwareButton altButton = createPressButton(BasicNoteOnAssignment.ALT);
-		altButton.isPressed().addValueObserver(v -> {
-			modifier.setAlt(v);
-		});
-	}
-
-	private void initTransport() {
-		transport.playStartPosition().markInterested();
-		final HardwareButton playButton = createButton(BasicNoteOnAssignment.PLAY);
-		final HardwareButton recordButton = createButton(BasicNoteOnAssignment.RECORD);
-		final HardwareButton stopButton = createButtonWState(BasicNoteOnAssignment.STOP, transport.isPlaying(), true);
-		final HardwareButton rewindButton = createHoldButton(BasicNoteOnAssignment.REWIND);
-		final HardwareButton fastForwardButton = createHoldButton(BasicNoteOnAssignment.FFWD);
-
-		initCycleSection();
-		initClickSection();
-
-		final HardwareButton autoWriteButton = createButton(BasicNoteOnAssignment.AUTO_READ_OFF);
-		mainLayer.bindPressed(autoWriteButton, transport.isArrangerAutomationWriteEnabled());
-		mainLayer.bind(transport.isArrangerAutomationWriteEnabled(),
-				(OnOffHardwareLight) autoWriteButton.backgroundLight());
-		shiftLayer.bindPressed(autoWriteButton, transport.isClipLauncherAutomationWriteEnabled());
-		shiftLayer.bind(transport.isClipLauncherAutomationWriteEnabled(),
-				(OnOffHardwareLight) autoWriteButton.backgroundLight());
-
-		final HardwareButton touchButton = createButton(BasicNoteOnAssignment.TOUCH);
-		mainLayer.bindPressed(touchButton, () -> {
-			transport.automationWriteMode().set("touch");
-		});
-		final HardwareButton latchButton = createButton(BasicNoteOnAssignment.LATCH);
-		mainLayer.bindPressed(latchButton, () -> {
-			transport.automationWriteMode().set("latch");
-		});
-		final HardwareButton trimButton = createButton(BasicNoteOnAssignment.AUTO_WRITE);
-		mainLayer.bindPressed(trimButton, () -> {
-			transport.automationWriteMode().set("write");
-		});
-		transport.automationWriteMode().addValueObserver(v -> {
-			switch (v) {
-			case "latch":
-				setLed(latchButton, true);
-				setLed(touchButton, false);
-				setLed(trimButton, false);
-				break;
-			case "touch":
-				setLed(latchButton, false);
-				setLed(touchButton, true);
-				setLed(trimButton, false);
-				break;
-			case "write":
-				setLed(latchButton, false);
-				setLed(touchButton, false);
-				setLed(trimButton, true);
-				break;
-			}
-		});
-
-		final HardwareButton punchInButton = createButton(BasicNoteOnAssignment.DROP);
-		final HardwareButton punchOutButton = createButton(BasicNoteOnAssignment.REPLACE);
-		mainLayer.bindToggle(punchInButton, transport.isPunchInEnabled());
-		mainLayer.bindToggle(punchOutButton, transport.isPunchOutEnabled());
-
-		mainLayer.bindPressed(playButton, transport.continuePlaybackAction());
-		mainLayer.bind(transport.isPlaying(), (OnOffHardwareLight) playButton.backgroundLight());
-		mainLayer.bindPressed(stopButton, transport.stopAction());
-
-		mainLayer.bindToggle(recordButton, transport.isArrangerRecordEnabled());
-		shiftLayer.bindToggle(recordButton, transport.isClipLauncherOverdubEnabled());
-
-		mainLayer.bindIsPressed(fastForwardButton, pressed -> notifyHoldForwardReverse(pressed, 1));
-
-		mainLayer.bindIsPressed(rewindButton, pressed -> notifyHoldForwardReverse(pressed, -1));
-		initUndoRedo();
-
-		transport.timeSignature().addValueObserver(sig -> {
-			ledDisplay.setDivision(sig);
-		});
-
-		transport.playPosition()
-				.addValueObserver(v -> ledDisplay.updatePosition(v, transport.playPosition().getFormatted()));
-		transport.playPositionInSeconds().addValueObserver(ledDisplay::updateTime);
-
-		createOnOfBoolButton(BasicNoteOnAssignment.FLIP, flipped);
-
-		final HardwareButton vuModeButton = createButton(BasicNoteOnAssignment.DIPLAY_NAME);
-		vuModeButton.isPressed().addValueObserver(v -> {
-			if (modifier.isShift()) {
-				toogleVuMode(v);
-			} else {
-				sections.forEach(section -> section.handleNameDisplay(v));
-			}
-		});
-
-		final HardwareButton modeButton = createButton(BasicNoteOnAssignment.DISPLAY_SMPTE);
-		modeButton.isPressed().addValueObserver(v -> {
-			if (v) {
-				ledDisplay.toggleMode();
-			}
-		});
-	}
-
-	private void initUndoRedo() {
-		final HardwareButton undoButton = createPressButton(BasicNoteOnAssignment.UNDO);
-		final OnOffHardwareLight undoLight = (OnOffHardwareLight) undoButton.backgroundLight();
-		application.canRedo().markInterested();
-		undoLight.onUpdateHardware(() -> {
-			sendLedUpdate(BasicNoteOnAssignment.UNDO, undoLight.isOn().currentValue() ? 127 : 0);
-		});
-		mainLayer.bindIsPressed(undoButton, v -> {
-			if (v) {
-				application.undo();
-				host.showPopupNotification("Undo");
-			}
-		});
-		mainLayer.bind(application.canUndo(), undoLight);
-		shiftLayer.bindIsPressed(undoButton, v -> {
-			if (v) {
-				application.redo();
-				host.showPopupNotification("Redo");
-			}
-		});
-		shiftLayer.bind(() -> {
-			if (application.canRedo().get() && blinkTicks % 8 < 3) {
-				return true;
-			}
-			return false;
-		}, undoLight);
-	}
-
-	public void notifyHoldForwardReverse(final Boolean pressed, final int dir) {
-		if (pressed) {
-			holdAction.start(stage -> {
-				if (modifier.isShiftSet()) {
-					changePlayPosition(dir, FFWD_SPEEDS_SHIFT[Math.min(stage, FFWD_SPEEDS_SHIFT.length - 1)], true,
-							true);
-				} else {
-					changePlayPosition(dir, FFWD_SPEEDS[Math.min(stage, FFWD_SPEEDS.length - 1)], true, true);
-				}
-			}, FFWD_TIMES);
-		} else {
-			holdAction.stop();
-		}
-	}
-
-	public void createOnOfBoolButton(final BasicNoteOnAssignment assignConst, final SettableBooleanValue valueState) {
-		final NoteAssignment assignment = get(assignConst);
-		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
-		assignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
-		button.setBackgroundLight(led);
-		led.onUpdateHardware(() -> {
-			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
-		});
-		mainLayer.bind(valueState, led);
-		mainLayer.bindPressed(button, () -> {
-			valueState.toggle();
-		});
-	}
-
-	private void setLed(final HardwareButton button, final boolean onoff) {
-		final OnOffHardwareLight light = (OnOffHardwareLight) button.backgroundLight();
-		light.isOn().setValue(onoff);
-	}
-
-	private void toogleVuMode(final boolean pressed) {
-		if (!pressed) {
-			return;
-		}
-		if (this.vuMode == VuMode.LED) {
-			this.vuMode = VuMode.LED_LCD_VERTICAL;
-		} else if (this.vuMode == VuMode.LED_LCD_VERTICAL) {
-			this.vuMode = VuMode.LED_LCD_HORIZONTAL;
-		} else {
-			this.vuMode = VuMode.LED;
-		}
-		sections.forEach(section -> section.applyVuMode(this.getVuMode()));
-	}
-
-	private HardwareButton createHoldButton(final BasicNoteOnAssignment assignConst) {
-		final NoteAssignment assignment = get(assignConst);
-		final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
-		assignment.holdActionAssign(midiIn, button);
-
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "BUTTON_LED");
-		button.setBackgroundLight(led);
-		led.onUpdateHardware(() -> {
-			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
-		});
-		button.isPressed().addValueObserver(v -> {
-			led.isOn().setValue(v);
-		});
-		return button;
-	}
-
-	private HardwareButton createButtonWState(final BasicNoteOnAssignment assignConst,
-			final SettableBooleanValue settableBooleanValue, final boolean reversedLed) {
-		final NoteAssignment assignment = get(assignConst);
-		final HardwareButton button = surface.createHardwareButton(assignment + "_BUTTON");
-		assignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment + "BUTTON_LED");
-		button.setBackgroundLight(led);
-		if (reversedLed) {
-			led.onUpdateHardware(() -> sendLedUpdate(assignment, settableBooleanValue.get() ? 0 : 127));
-		} else {
-			led.onUpdateHardware(() -> sendLedUpdate(assignment, settableBooleanValue.get() ? 127 : 0));
-		}
-		settableBooleanValue.addValueObserver(v -> {
-			led.isOn().setValue(!v);
-		});
-		return button;
-	}
-
-	/**
-	 * Creates modes button
-	 *
-	 * @param modes first mode is the button, the second represents the light
-	 * @return the button
-	 */
-	private HardwareButton createModeButton(final VPotMode... modes) {
-		assert modes.length > 0;
-		final VPotMode mode = modes[0];
-
-		final HardwareButton button = surface.createHardwareButton(mode.getName() + "_BUTTON");
-		mode.getButtonAssignment().holdActionAssign(midiIn, button);
-
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(mode.getName() + "BUTTON_LED");
-		button.setBackgroundLight(led);
-		led.onUpdateHardware(() -> {
-			sendLedUpdate(mode.getButtonAssignment(), led.isOn().currentValue() ? 127 : 0);
-		});
-		mainLayer.bindPressed(button, () -> setVPotMode(mode, true));
-		mainLayer.bindReleased(button, () -> setVPotMode(mode, false));
-		if (modes.length == 1) {
-			mainLayer.bind(() -> lightState(mode), led);
-		} else if (modes.length == 2) {
-			mainLayer.bind(() -> lightState(mode, modes[1]), led);
-		}
-
-		return button;
-	}
-
-	private boolean lightState(final VPotMode mode) {
-		if (this.trackChannelMode.getMode() == mode) {
-			return true;
-		}
-		return false;
-	}
-
-	private boolean lightState(final VPotMode mode, final VPotMode shiftmode) {
-		if (this.trackChannelMode.getMode() == mode) {
-			return true;
-		} else if (this.trackChannelMode.getMode() == shiftmode) {
-			if (blinkTicks % 8 < 3) {
-				return false;
-			} else {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public void setVPotMode(final VPotMode mode, final boolean down) {
-		final VPotMode cmode = this.trackChannelMode.getMode();
-		if (cmode != mode && cmode != null) {
-			if (down) {
-				this.trackChannelMode.setMode(mode);
-			}
-			sections.forEach(section -> section.notifyModeChange(mode, down));
-		} else {
-			sections.forEach(control -> control.notifyModeAdvance(mode, down));
-		}
-	}
-
-	public TrackModeValue getVpotMode() {
-		return this.trackChannelMode;
-	}
-
-	private HardwareButton createPressButton(final BasicNoteOnAssignment assignment) {
-		final NoteAssignment realAssignment = get(assignment);
-		final HardwareButton button = surface.createHardwareButton(realAssignment.toString() + "_BUTTON");
-		assignment.holdActionAssign(midiIn, button);
-		button.setBackgroundLight(surface.createOnOffHardwareLight(realAssignment.toString() + "_BUTTON_LED"));
-		return button;
-	}
-
-	private HardwareButton createButton(final BasicNoteOnAssignment assignment) {
-		final NoteAssignment realAssignment = get(assignment);
-		final HardwareButton button = surface.createHardwareButton(realAssignment + "_BUTTON");
-		realAssignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(realAssignment + "_BUTTON_LED");
-		button.setBackgroundLight(led);
-		led.onUpdateHardware(() -> {
-			sendLedUpdate(realAssignment, led.isOn().currentValue() ? 127 : 0);
-		});
-		return button;
-	}
-
-	private void onMidi0(final ShortMidiMessage msg) {
-//		RemoteConsole.out.println(" MIDI ch={} st={} d1={} d2={}", msg.getChannel(), msg.getStatusByte(),
-//				msg.getData1(), msg.getData2());
-	}
-
-	private void setUpMidiSysExCommands() {
-		midiIn.setSysexCallback(data -> {
-			if (data.startsWith(SYSEX_DEVICE_RELOAD)) {
-				updateAll();
-			} else {
-//				RemoteConsole.out.println(" MIDI SYS EX {}", data);
-			}
-		});
-	}
-
-	private void updateAll() {
-		surface.updateHardware();
-		sections.forEach(MixControl::fullHardwareUpdate);
-		for (int i = 0; i < lightStatusMap.length; i++) {
-			if (lightStatusMap[i] >= 0) {
-				midiOut.sendMidi(Midi.NOTE_ON, i, lightStatusMap[i]);
-			}
-		}
-	}
-
-	protected void initTrackBank(final int nrOfScenes) {
-		// initNaviagtion();
-		final int numberOfHwChannels = 8 * (nrOfExtenders + 1);
-
-		cursorTrack = getHost().createCursorTrack(8, nrOfScenes);
-		cursorTrack.color().markInterested();
-
-		cursorDeviceControl = new CursorDeviceControl(cursorTrack, 8, numberOfHwChannels);
-
-		final HardwareButton soloButton = createButtonWState(BasicNoteOnAssignment.SOLO, cursorTrack.solo(), false);
-		mainLayer.bindPressed(soloButton, cursorTrack.solo().toggleAction());
-
-		final TrackBank mainTrackBank = getHost().createMainTrackBank(numberOfHwChannels, 1, nrOfScenes);
-
-		mainTrackBank.followCursorTrack(cursorTrack);
-
-		mixerTrackBank = getHost().createMainTrackBank(numberOfHwChannels, 1, nrOfScenes);
-		mixerTrackBank.setSkipDisabledItems(false);
-		mixerTrackBank.canScrollChannelsDown().markInterested();
-		mixerTrackBank.canScrollChannelsUp().markInterested();
-		mixerTrackBank.scrollPosition().addValueObserver(offset -> {
-			if (mixerMode.get() == MixerMode.MAIN) {
-				ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
-			}
-		});
-
-		globalTrackBank = host.createTrackBank(numberOfHwChannels, 1, nrOfScenes);
-		globalTrackBank.setSkipDisabledItems(false);
-		globalTrackBank.canScrollChannelsDown().markInterested();
-		globalTrackBank.canScrollChannelsUp().markInterested();
-		globalTrackBank.scrollPosition().addValueObserver(offset -> {
-			if (mixerMode.get() == MixerMode.GLOBAL) {
-				ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
-			}
-		});
-
-		final DeviceTypeBank deviceTypeBank = new DeviceTypeBank(host, cursorDeviceControl);
-
-		final DrumPadBank drumPadBank = cursorDeviceControl.getDrumPadBank();
-		drumPadBank.setIndication(true);
-		drumPadBank.scrollPosition().addValueObserver(offset -> {
-			if (mixerMode.get() == MixerMode.DRUM) {
-				ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset), true);
-			}
-		});
-
-		mixerMode.addValueObserver((oldMode, newMode) -> {
-			switch (newMode) {
-			case DRUM:
-				ledDisplay.setAssignment(StringUtil.toTwoCharVal(drumPadBank.scrollPosition().get()), true);
-				break;
-			case GLOBAL:
-				ledDisplay.setAssignment(StringUtil.toTwoCharVal(globalTrackBank.scrollPosition().get() + 1), false);
-				break;
-			case MAIN:
-				ledDisplay.setAssignment(StringUtil.toTwoCharVal(mixerTrackBank.scrollPosition().get() + 1), false);
-				break;
-			default:
-				break;
-			}
-		});
-
-		for (final MixControl channelSection : sections) {
-			channelSection.initMainControl(mixerTrackBank, globalTrackBank, drumPadBank);
-		}
-		mainSection.initTrackControl(cursorTrack, cursorDeviceControl.getDrumCursor(), deviceTypeBank);
-		initMenuButtons();
-	}
-
-	public BrowserConfiguration getBrowserConfiguration() {
-		return browserConfiguration;
-	}
-
-	public void setBrowserConfiguration(final BrowserConfiguration browserConfiguration) {
-		this.browserConfiguration = browserConfiguration;
-	}
-
-	private void initMenuButtons() {
-		final CueMarkerBank cueMarkerBank = arranger.createCueMarkerBank(8);
-		cueMarkerBank.itemCount().addValueObserver(items -> {
-			// RemoteConsole.out.println("Number Changed {}", items);
-		});
-
-		final BooleanValueObject marker = initCueMarkerSection(cueMarkerBank);
-
-		createGlobalViewButton(BasicNoteOnAssignment.GLOBAL_VIEW);
-		createGroupModeButton(BasicNoteOnAssignment.GROUP, buttonViewMode);
-		// createNoteModeButton(NoteOnAssignment.GV_USER, buttonViewMode);
-
-		initFButton(0, BasicNoteOnAssignment.F1, marker, cueMarkerBank, () -> transport.returnToArrangement());
-		initFButton(1, BasicNoteOnAssignment.F2, marker, cueMarkerBank,
-				() -> application.setPanelLayout(currentLayoutType.other().getName()));
-		initFButton(2, BasicNoteOnAssignment.F3, marker, cueMarkerBank, () -> {
-		}); // application.navigateToParentTrackGroup()
-		initFButton(3, BasicNoteOnAssignment.F4, marker, cueMarkerBank, () -> {
-		});
-		initFButton(4, BasicNoteOnAssignment.F5, marker, cueMarkerBank, () -> {
-		});
-		initFButton(5, BasicNoteOnAssignment.F6, marker, cueMarkerBank, () -> {
-		});
-		initFButton(6, BasicNoteOnAssignment.F7, marker, cueMarkerBank, () -> {
-		});
-		initFButton(7, BasicNoteOnAssignment.F8, marker, cueMarkerBank, () -> {
-		});
-
-		application.panelLayout().addValueObserver(v -> {
-			currentLayoutType = LayoutType.toType(v);
-		});
-	}
-
-	private void initClickSection() {
-		final HardwareButton metroButton = createButton(BasicNoteOnAssignment.CLICK);
-		final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
-		final MenuDisplayLayerBuilder builder = new MenuDisplayLayerBuilder(menu);
-		builder.bindBool("METRO", transport.isMetronomeEnabled());
-		builder.bindBool("P.ROLL", transport.isMetronomeAudibleDuringPreRoll());
-		builder.bindBool("M.TICK", transport.isMetronomeTickPlaybackEnabled());
-		builder.bindValue("M.VOL", transport.metronomeVolume(), 0.05);
-		builder.insertEmpty();
-		builder.bindBool("T.CLCK", transportClick);
-
-		transportClick.addValueObserver(value -> {
-			midiOut.sendSysex(MAIN_UNIT_SYEX_HEADER + (value ? "0A 01" : "0A 00") + " F7");
-		});
-		builder.fillRest();
-		bindHoldToggleButton(metroButton, menu, transport.isMetronomeEnabled());
-	}
-
-	private void initCycleSection() {
-		final HardwareButton loopButton = createButton(BasicNoteOnAssignment.CYCLE);
-		final MenuModeLayerConfiguration cycleConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
-		final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
-
-		final SettableBeatTimeValue cycleStart = transport.arrangerLoopStart();
-		final SettableBeatTimeValue cycleLength = transport.arrangerLoopDuration();
-
-		cycleStart.markInterested();
-		cycleLength.markInterested();
-
-		cycleConfig.addNameBinding(0, new BasicStringValue("Cycle"));
-		cycleConfig.addNameBinding(1, new BasicStringValue("Start"));
-		cycleConfig.addNameBinding(2, new BasicStringValue("Len"));
-		cycleConfig.addNameBinding(4, new BasicStringValue("P.IN"));
-		cycleConfig.addNameBinding(5, new BasicStringValue("P.OUT"));
-
-		cycleConfig.addValueBinding(0, transport.isArrangerLoopEnabled(), "< ON >", "<OFF >");
-		cycleConfig.addValueBinding(1, cycleStart, v -> {
-			return cycleStart.getFormatted(formatter);
-		});
-		cycleConfig.addValueBinding(2, cycleLength, v -> {
-			return cycleLength.getFormatted(formatter);
-		});
-		cycleConfig.addValueBinding(4, transport.isPunchInEnabled(), "< ON >", "<OFF >");
-		cycleConfig.addValueBinding(5, transport.isPunchOutEnabled(), "< ON >", "<OFF >");
-
-		cycleConfig.addRingBoolBinding(0, transport.isArrangerLoopEnabled());
-		cycleConfig.addRingFixedBindingActive(1);
-		cycleConfig.addRingFixedBindingActive(2);
-		cycleConfig.addRingBoolBinding(0, transport.isPunchInEnabled());
-		cycleConfig.addRingBoolBinding(0, transport.isPunchOutEnabled());
-
-		cycleConfig.addPressEncoderBinding(0, index -> transport.isArrangerLoopEnabled().toggle());
-		cycleConfig.addPressEncoderBinding(1, index -> {
-			cycleStart.set(transport.getPosition().get());
-		});
-		cycleConfig.addPressEncoderBinding(4, index -> transport.isPunchInEnabled().toggle());
-		cycleConfig.addPressEncoderBinding(5, index -> transport.isPunchOutEnabled().toggle());
-		cycleConfig.addPressEncoderBinding(2, index -> {
-			final double startTime = cycleStart.get();
-			final double diff = transport.getPosition().get() - startTime;
-			if (diff > 0) {
-				cycleLength.set(diff);
-			}
-		});
-		cycleConfig.addEncoderIncBinding(1, cycleStart, 1);
-		cycleConfig.addEncoderIncBinding(2, cycleLength, 1);
-
-		cycleConfig.addRingFixedBinding(3);
-		cycleConfig.addRingFixedBinding(6);
-		cycleConfig.addRingFixedBinding(7);
-		// cycleConfig.addEncoderIncBinding(0, t, 1);
-		bindHoldToggleButton(loopButton, cycleConfig, transport.isArrangerLoopEnabled());
-	}
-
-	private void bindHoldToggleButton(final HardwareButton button, final MenuModeLayerConfiguration menu,
-			final SettableBooleanValue value) {
-		mainLayer.bind(value, (OnOffHardwareLight) button.backgroundLight());
-		mainLayer.bindPressed(button, () -> {
-			holdState.enter(mainSection.getCurrentConfiguration(), button.getName());
-			mainSection.setConfiguration(menu);
-		});
-		mainLayer.bindReleased(button, () -> {
-			final LayerConfiguration layer = holdState.endHold();
-			if (layer != null) {
-				mainSection.setConfiguration(layer);
-			}
-			if (holdState.exit()) {
-				value.toggle();
-			}
-		});
-	}
-
-	private BooleanValueObject initCueMarkerSection(final CueMarkerBank cueMarkerBank) {
-		final HardwareButton markerButton = createButton(BasicNoteOnAssignment.MARKER);
-		final BooleanValueObject marker = new BooleanValueObject();
-
-		final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
-
-		final MenuModeLayerConfiguration markerMenuConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
-		for (int i = 0; i < 8; i++) {
-			final CueMarker cueMarker = cueMarkerBank.getItemAt(i);
-			cueMarker.exists().markInterested();
-			markerMenuConfig.addValueBinding(i, cueMarker.position(), cueMarker, "---", v -> {
-				return cueMarker.position().getFormatted(formatter);
-			});
-			markerMenuConfig.addNameBinding(i, cueMarker.name(), cueMarker, "<Cue" + (i + 1) + ">");
-			markerMenuConfig.addRingExistsBinding(i, cueMarker);
-			markerMenuConfig.addPressEncoderBinding(i, index -> {
-				if (cueMarker.exists().get()) {
-					if (modifier.isShift()) {
-						cueMarker.deleteObject();
-					} else {
-						cueMarker.position().set(transport.getPosition().get());
-					}
-				} else {
-					transport.addCueMarkerAtPlaybackPosition();
-				}
-			});
-			markerMenuConfig.addEncoderIncBinding(i, cueMarker.position(), 1);
-		}
-
-		bindHoldToggleButton(markerButton, markerMenuConfig, marker);
-		return marker;
-	}
-
-	public void createGlobalViewButton(final BasicNoteOnAssignment assignConst) {
-		final NoteAssignment assignment = get(assignConst);
-
-		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
-		assignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
-		button.setBackgroundLight(led);
-		led.onUpdateHardware(() -> {
-			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
-		});
-		mixerMode.addValueObserver((oldMode, newMode) -> {
-			if (newMode != MixerMode.DRUM) {
-				previousOverallMode = newMode;
-			}
-		});
-		mainLayer.bind(() -> lightStateMixMode(mixerMode), led);
-		mainLayer.bindPressed(button, () -> {
-			if (mixerMode.get() == MixerMode.DRUM) {
-				mixerMode.set(previousOverallMode);
-			} else if (buttonViewMode.get() == ButtonViewState.GLOBAL_VIEW) {
-				buttonViewMode.set(ButtonViewState.MIXER);
-			} else {
-				buttonViewMode.set(ButtonViewState.GLOBAL_VIEW);
-			}
-		});
-	}
-
-	private boolean lightStateMixMode(final ValueObject<MixerMode> valueState) {
-		if (buttonViewMode.get() == ButtonViewState.GLOBAL_VIEW) {
-			return true;
-		} else if (valueState.get() == MixerMode.DRUM) {
-			if (blinkTicks % 8 < 3) {
-				return false;
-			} else {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public MixerMode getPreviousOverallMode() {
-		return previousOverallMode;
-	}
-
-	public void createNoteModeButton(final BasicNoteOnAssignment assignConst,
-			final ValueObject<ButtonViewState> valueState) {
-		final NoteAssignment assignment = get(assignConst);
-		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
-		assignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
-		button.setBackgroundLight(led);
-		mainLayer.bind(() -> buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH, led);
-		mainLayer.bindPressed(button, () -> {
-			final ButtonViewState current = valueState.get();
-			switch (current) {
-			case NOTE_PLAY:
-				valueState.set(ButtonViewState.MIXER);
-				break;
-			default:
-				valueState.set(ButtonViewState.NOTE_PLAY);
-				break;
-			}
-		});
-
-	}
-
-	public void createGroupModeButton(final BasicNoteOnAssignment assignConst,
-			final ValueObject<ButtonViewState> valueState) {
-		final NoteAssignment assignment = get(assignConst);
-		final HardwareButton button = surface.createHardwareButton(assignment.toString() + "_BUTTON");
-		assignment.holdActionAssign(midiIn, button);
-		final OnOffHardwareLight led = surface.createOnOffHardwareLight(assignment.toString() + "_BUTTON_LED");
-		button.setBackgroundLight(led);
-		led.onUpdateHardware(() -> {
-			sendLedUpdate(assignment, led.isOn().currentValue() ? 127 : 0);
-		});
-		mainLayer.bind(() -> buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH, led);
-		mainLayer.bindPressed(button, () -> {
-			final ButtonViewState current = valueState.get();
-			switch (current) {
-			case GROUP_LAUNCH:
-				valueState.set(ButtonViewState.MIXER);
-				break;
-			default:
-				valueState.set(ButtonViewState.GROUP_LAUNCH);
-				break;
-			}
-		});
-	}
-
-	public void initFButton(final int index, final BasicNoteOnAssignment assign, final BooleanValueObject marker,
-			final CueMarkerBank cueMarkerBank, final Runnable nonMarkerFunction) {
-		final HardwareButton fButton = createPressButton(assign);
-		mainLayer.bindIsPressed(fButton, v -> {
-			if (v) {
-				if (marker.get()) {
-					cueMarkerBank.getItemAt(index).launch(modifier.isShift());
-				} else {
-					nonMarkerFunction.run();
-				}
-			}
-		});
-	}
-
-	public ValueObject<MixerMode> getMixerMode() {
-		return mixerMode;
-	}
-
-	public ValueObject<ButtonViewState> getButtonView() {
-		return buttonViewMode;
-	}
-
-	public CursorDeviceControl getCursorDeviceControl() {
-		return cursorDeviceControl;
-	}
-
-	public CursorTrack getCursorTrack() {
-		return cursorTrack;
-	}
-
-	public void sendLedUpdate(final NoteAssignment assignment, final int value) {
-		final int noteNr = assignment.getNoteNo();
-		lightStatusMap[noteNr] = value;
-		midiOut.sendMidi(assignment.getType(), assignment.getNoteNo(), value);
-	}
-
-	public Layer getMainLayer() {
-		return mainLayer;
-	}
-
-	private void shutDownController(final CompletableFuture<Boolean> shutdown) {
-		ledDisplay.clearAll();
-		midiOut.sendSysex(MAIN_UNIT_SYEX_HEADER + "0A 00 F7"); // turn off click
-		sections.forEach(MixControl::resetLeds);
-		sections.forEach(MixControl::resetFaders);
-		masterFaderResponse.sendValue(0);
-		sections.forEach(MixControl::exitMessage);
-		try {
-			Thread.sleep(300);
-		} catch (final InterruptedException e) {
-			e.printStackTrace();
-		}
-		shutdown.complete(true);
-	}
-
-	@Override
-	public void exit() {
-		final CompletableFuture<Boolean> shutdown = new CompletableFuture<>();
-		Executors.newSingleThreadExecutor().execute(() -> shutDownController(shutdown));
-		try {
-			shutdown.get();
-		} catch (InterruptedException | ExecutionException e) {
-			e.printStackTrace();
-		}
-		getHost().showPopupNotification(" Exit Mackie MCU Pro");
-	}
-
-	public RelativeHardwarControlBindable createIncrementBinder(final IntConsumer consumer) {
-		return host.createRelativeHardwareControlStepTarget(//
-				host.createAction(() -> consumer.accept(1), () -> "+"),
-				host.createAction(() -> consumer.accept(-1), () -> "-"));
-	}
-
-	public Layers getLayers() {
-		return layers;
-	}
-
-	public MidiIn getMidiIn() {
-		return midiIn;
-	}
-
-	public HardwareSurface getSurface() {
-		return surface;
-	}
-
-	@Override
-	public void flush() {
-		surface.updateHardware();
-	}
-
-	public Project getProject() {
-		return project;
-	}
-
-	public Application getApplication() {
-		return application;
-	}
-
-	public ModifierValueObject getModifier() {
-		return modifier;
-	}
-
-	public BooleanValueObject getFlipped() {
-		return flipped;
-	}
-
-	public TrackModeValue getTrackChannelMode() {
-		return trackChannelMode;
-	}
-
-	public DrumNoteHandler getNoteHandler() {
-		return noteHandler;
-	}
-
-	public NoteAssignment get(final BasicNoteOnAssignment assignment) {
-		if (assignOverrides.isEmpty()) {
-			return assignment;
-		}
-		final Integer override = assignOverrides.get(assignment);
-		if (override != null) {
-			return new OverrideNoteAssignment(override);
-		}
-		return assignment;
-	}
-
+   }
+
+   public MainUnitButton getEnterButton() {
+      return enterButton;
+   }
+
+   public MainUnitButton getCancelButton() {
+      return cancelButton;
+   }
+
+   public void initChannelSections() {
+      mainSection = new MixControl(this, midiIn, midiOut, nrOfExtenders, SectionType.MAIN);
+      sections.add(mainSection);
+      for (int i = 0; i < nrOfExtenders; i++) {
+         final MidiOut extMidiOut = host.getMidiOutPort(i + 1);
+         final MidiIn extMidiIn = host.getMidiInPort(i + 1);
+         if (extMidiIn != null && extMidiOut != null) {
+            final MixControl extenderSection = new ExtenderMixControl(this, extMidiIn, extMidiOut, i);
+            sections.add(extenderSection);
+         }  // RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing
+         // ports", i + 1);
+
+      }
+   }
+
+   public void doActionImmediate(final String actionId) {
+      if (delayedAction != null && actionId.equals(delayedAction.getActionId())) {
+         delayedAction.run();
+         delayedAction = null;
+      }
+   }
+
+   public void cancelAction(final String actionId) {
+      if (delayedAction != null && actionId.equals(delayedAction.getActionId())) {
+         delayedAction = null;
+      }
+   }
+
+   public void scheduleAction(final String actionId, final int duration, final Runnable action) {
+      delayedAction = new DelayAction(duration, actionId, action);
+   }
+
+   private void handlePing() {
+      if (delayedAction != null && delayedAction.isReady()) {
+         delayedAction.run();
+         delayedAction = null;
+      }
+      if (holdAction.isRunning()) {
+         holdAction.execute();
+      }
+      sections.forEach(section -> section.notifyBlink(blinkTicks));
+      blinkTicks++;
+      host.scheduleTask(this::handlePing, 100);
+   }
+
+   private void initJogWheel() {
+      final RelativeHardwareKnob fourDKnob = surface.createRelativeHardwareKnob("JOG_WHEEL");
+      fourDKnob.setAdjustValueMatcher(midiIn.createRelativeSignedBitCCValueMatcher(0, 60, 128));
+      fourDKnob.setStepSize(1 / 128.0);
+
+      final HardwareActionBindable incAction = host.createAction(() -> jogWheelPlayPosition(1), () -> "+");
+      final HardwareActionBindable decAction = host.createAction(() -> jogWheelPlayPosition(-1), () -> "-");
+      mainLayer.bind(fourDKnob, host.createRelativeHardwareControlStepTarget(incAction, decAction));
+   }
+
+   private void jogWheelPlayPosition(final int dir) {
+      double resolution = 0.25;
+      if (modifier.isOptionSet()) {
+         resolution = 4.0;
+      } else if (modifier.isShiftSet()) {
+         resolution = 1.0;
+      }
+      changePlayPosition(dir, resolution, !modifier.isOptionSet(), !modifier.isControlSet());
+   }
+
+   private void changePlayPosition(final int inc, final double resolution, final boolean restrictToStart,
+                                   final boolean quantize) {
+
+      final double position = transport.playStartPosition().get();
+      double newPos = position + resolution * inc;
+
+      if (restrictToStart && newPos < 0) {
+         newPos = 0;
+      }
+
+      if (position != newPos) {
+         if (quantize) {
+            final double intPosition = Math.floor(newPos / resolution);
+            newPos = intPosition * resolution;
+         }
+         transport.playStartPosition().set(newPos);
+         if (transport.isPlaying().get()) {
+            transport.jumpToPlayStartPosition();
+         }
+      }
+   }
+
+   public VuMode getVuMode() {
+      return vuMode;
+   }
+
+   public DeviceMatcher getDrumMatcher() {
+      return drumMatcher;
+   }
+
+   public MasterTrack getMasterTrack() {
+      return masterTrack;
+   }
+
+   public MotorSlider getMasterSlider() {
+      return masterSlider;
+   }
+
+   private void initMasterSection() {
+      masterTrack = getHost().createMasterTrack(8);
+      final int touchNoteNr = get(BasicNoteOnAssignment.TOUCH_VOLUME).getNoteNo() + 8;
+      masterSlider = new MotorSlider("MASTER", 8, touchNoteNr, surface, midiIn, midiOut);
+   }
+
+   private void intiVPotModes() {
+      MainUnitButton.assignToggle(this, BasicNoteOnAssignment.V_TRACK, mainLayer, trackChannelMode);
+
+//      final Action[] allActions = application.getActions();
+//      for (final Action action : allActions) {
+//         RemoteConsole.out.println(" ACTION [{}] name={} id=[{}] ", action.getCategory().getName(), action.getName(),
+//            action.getId());
+//   }
+      // createOnOfBoolButton(NoteOnAssignment.SOLO, soloExclusive);
+
+      createModeButton(VPotMode.SEND);
+      createModeButton(VPotMode.PAN);
+      createModeButton(VPotMode.PLUGIN);
+      createModeButton(VPotMode.EQ);
+      createModeButton(VPotMode.INSTRUMENT, VPotMode.MIDI_EFFECT);
+      noteFxButton = createModeButton(VPotMode.MIDI_EFFECT);
+   }
+
+   private void initCursorSection() {
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.TRACK_LEFT, mainLayer, v -> navigateTrack(-1, v));
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.TRACK_RIGHT, mainLayer, v -> navigateTrack(1, v));
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.BANK_RIGHT, mainLayer, v -> navigateBank(1, v));
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.BANK_LEFT, mainLayer, v -> navigateBank(-1, v));
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.CURSOR_UP, mainLayer, v -> navigateUpDown(1, v));
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.CURSOR_DOWN, mainLayer, v -> navigateUpDown(-1, v));
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.CURSOR_LEFT, mainLayer, v -> navigateLeftRight(-1, v));
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.CURSOR_RIGHT, mainLayer, v -> navigateLeftRight(1, v));
+      MainUnitButton.assignToggle(this, BasicNoteOnAssignment.ZOOM, mainLayer, zoomActive);
+      // createOnOfBoolButton(NoteOnAssignment.SCRUB, scrubActive);
+   }
+
+   private void navigateTrack(final int direction, final boolean isPressed) {
+      if (!isPressed) {
+         return;
+      }
+      if (direction > 0) {
+         if (mixerMode.get() == MixerMode.DRUM) {
+            cursorDeviceControl.getDrumPadBank().scrollForwards();
+         } else {
+            mixerTrackBank.scrollForwards();
+            globalTrackBank.scrollForwards();
+         }
+      } else {
+         if (mixerMode.get() == MixerMode.DRUM) {
+            cursorDeviceControl.getDrumPadBank().scrollBackwards();
+         } else {
+            mixerTrackBank.scrollBackwards();
+            globalTrackBank.scrollBackwards();
+         }
+      }
+   }
+
+   private void navigateBank(final int direction, final boolean isPressed) {
+      if (!isPressed) {
+         return;
+      }
+      final int numberOfTracksToControl = 8 * (nrOfExtenders + 1);
+      if (mixerMode.get() == MixerMode.DRUM) {
+         cursorDeviceControl.getDrumPadBank().scrollBy(direction * numberOfTracksToControl);
+      } else {
+         mixerTrackBank.scrollBy(direction * numberOfTracksToControl);
+         globalTrackBank.scrollBy(direction * numberOfTracksToControl);
+      }
+   }
+
+   private void navigateUpDown(final int direction, final boolean isPressed) {
+      if (!zoomActive.get()) {
+         sections.forEach(section -> section.navigateUpDown(direction, isPressed));
+      } else {
+         if (!isPressed) {
+            return;
+         }
+         if (direction > 0) {
+            arranger.zoomOutLaneHeightsAll();
+         } else {
+            arranger.zoomInLaneHeightsAll();
+         }
+      }
+   }
+
+   private void navigateLeftRight(final int direction, final boolean isPressed) {
+      if (!zoomActive.get()) {
+         sections.forEach(section -> section.navigateLeftRight(direction, isPressed));
+      } else {
+         if (!isPressed) {
+            return;
+         }
+         if (direction < 0) {
+            arranger.zoomOut();
+         } else {
+            arranger.zoomIn();
+         }
+      }
+   }
+
+   private void initModifiers() {
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.SHIFT, mainLayer, modifier::setShift);
+      modifier.addShiftValueObserver(shiftState -> shiftLayer.setIsActive(shiftState));
+      modifier.addOptionValueObserver(optionState -> optionLayer.setIsActive(optionState));
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.OPTION, mainLayer, modifier::setOption);
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.CONTROL, mainLayer, modifier::setControl);
+      MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.ALT, mainLayer, modifier::setAlt);
+
+      cancelButton.bindPressed(optionLayer, () -> application.navigateToParentTrackGroup());
+   }
+
+   private void initTransport() {
+      transport.playStartPosition().markInterested();
+
+      initKeyboardSection();
+      initSeqSection();
+
+      final MainUnitButton autoWriteButton = new MainUnitButton(this, BasicNoteOnAssignment.AUTO_READ_OFF);
+      autoWriteButton.bindPressed(mainLayer, transport.isArrangerAutomationWriteEnabled());
+      autoWriteButton.bindPressed(shiftLayer, transport.isClipLauncherAutomationWriteEnabled());
+
+      final MainUnitButton touchButton = new MainUnitButton(this, BasicNoteOnAssignment.TOUCH);
+      touchButton.bindPressed(mainLayer, () -> transport.automationWriteMode().set("touch"));
+      final MainUnitButton latchButton = new MainUnitButton(this, BasicNoteOnAssignment.LATCH);
+      latchButton.bindPressed(mainLayer, () -> transport.automationWriteMode().set("latch"));
+      final MainUnitButton writeButton = new MainUnitButton(this, BasicNoteOnAssignment.AUTO_WRITE);
+      writeButton.bindPressed(mainLayer, () -> transport.automationWriteMode().set("write"));
+      transport.automationWriteMode().addValueObserver(v -> {
+         switch (v) {
+            case "latch":
+               latchButton.setLed(true);
+               touchButton.setLed(false);
+               writeButton.setLed(false);
+               break;
+            case "touch":
+               latchButton.setLed(false);
+               touchButton.setLed(true);
+               writeButton.setLed(false);
+               break;
+            case "write":
+               latchButton.setLed(false);
+               touchButton.setLed(false);
+               writeButton.setLed(true);
+               break;
+         }
+      });
+
+      final MainUnitButton playButton = new MainUnitButton(this, BasicNoteOnAssignment.PLAY);
+      playButton.bindPressed(mainLayer, transport.continuePlaybackAction());
+      playButton.bindLight(mainLayer, transport.isPlaying());
+
+      final MainUnitButton punchInButton = new MainUnitButton(this, BasicNoteOnAssignment.DROP);
+      final MainUnitButton punchOutButton = new MainUnitButton(this, BasicNoteOnAssignment.REPLACE);
+      punchInButton.bindToggle(mainLayer, transport.isPunchInEnabled());
+      punchOutButton.bindToggle(mainLayer, transport.isPunchOutEnabled());
+
+      punchInButton.bindPressed(shiftLayer, transport.jumpToPreviousCueMarkerAction());
+      punchOutButton.bindPressed(shiftLayer, transport.jumpToNextCueMarkerAction());
+      punchInButton.bindPressedState(shiftLayer);
+      punchOutButton.bindPressedState(shiftLayer);
+
+      final MainUnitButton stopButton = new MainUnitButton(this, BasicNoteOnAssignment.STOP, true);
+      stopButton.bindPressed(mainLayer, transport.stopAction());
+      stopButton.bindLight(mainLayer, transport.isPlaying());
+      stopButton.bindPressed(shiftLayer, project.getRootTrackGroup().stopAction());
+
+
+      final MainUnitButton recordButton = new MainUnitButton(this, BasicNoteOnAssignment.RECORD);
+      recordButton.bindToggle(mainLayer, transport.isArrangerRecordEnabled());
+      recordButton.bindToggle(shiftLayer, transport.isClipLauncherOverdubEnabled());
+
+      final MainUnitButton clipRecordButton = new MainUnitButton(this, BasicNoteOnAssignment.CLIP_OVERDUB);
+      clipRecordButton.bindToggle(mainLayer, transport.isClipLauncherOverdubEnabled());
+
+      final MainUnitButton rewindButton = new MainUnitButton(this, BasicNoteOnAssignment.REWIND).activateHoldState();
+      final MainUnitButton fastForwardButton = new MainUnitButton(this, BasicNoteOnAssignment.FFWD).activateHoldState();
+      fastForwardButton.bindIsPressed(mainLayer, pressed -> notifyHoldForwardReverse(pressed, 1));
+      rewindButton.bindIsPressed(mainLayer, pressed -> notifyHoldForwardReverse(pressed, 1));
+
+      initUndoRedo();
+
+      transport.timeSignature().addValueObserver(sig -> ledDisplay.setDivision(sig));
+
+      transport.playPosition().addValueObserver(v -> ledDisplay.updatePosition(v));
+      transport.playPositionInSeconds().addValueObserver(ledDisplay::updateTime);
+
+      MainUnitButton.assignToggle(this, BasicNoteOnAssignment.FLIP, mainLayer, flipped);
+
+      initVuModeButton();
+
+   }
+
+   private void initVuModeButton() {
+      final MainUnitButton displayNameButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_NAME);
+      if (getControllerConfig().isHasDedicateVu()) {
+         displayNameButton.bindIsPressed(mainLayer, v -> sections.forEach(section -> section.handleNameDisplay(v)));
+      } else {
+         displayNameButton.bindIsPressed(mainLayer, v -> sections.forEach(section -> section.handleNameDisplay(v)));
+         displayNameButton.bindIsPressed(shiftLayer, this::toggleVuMode);
+      }
+      displayNameButton.bindIsPressed(optionLayer, v -> sections.forEach(section -> section.handleInfoDisplay(v)));
+
+      final MainUnitButton timeModeButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_SMPTE);
+      timeModeButton.bindPressed(mainLayer, () -> ledDisplay.toggleMode());
+   }
+
+   private void initUndoRedo() {
+      final MainUnitButton saveButton = new MainUnitButton(this, BasicNoteOnAssignment.SAVE);
+      final Action saveAction = application.getAction("Save");
+      saveButton.bindPressed(mainLayer, saveAction);
+
+      application.canRedo().markInterested();
+      application.canUndo().markInterested();
+
+      final MainUnitButton undoButton = new MainUnitButton(this, BasicNoteOnAssignment.UNDO);
+      undoButton.bindLight(mainLayer, application.canUndo());
+      undoButton.bindPressed(mainLayer, () -> {
+         application.undo();
+         host.showPopupNotification("Undo");
+      });
+      undoButton.bindLight(shiftLayer, () -> application.canRedo().get() && blinkTicks % 8 < 3);
+      undoButton.bindPressed(shiftLayer, () -> {
+         application.redo();
+         host.showPopupNotification("Redo");
+      });
+   }
+
+   public void notifyHoldForwardReverse(final Boolean pressed, final int dir) {
+      if (pressed) {
+         holdAction.start(stage -> {
+            if (modifier.isShiftSet()) {
+               changePlayPosition(dir, MackieMcuProExtension.FFWD_SPEEDS_SHIFT[Math.min(stage,
+                  MackieMcuProExtension.FFWD_SPEEDS_SHIFT.length - 1)], true, true);
+            } else {
+               changePlayPosition(dir,
+                  MackieMcuProExtension.FFWD_SPEEDS[Math.min(stage, MackieMcuProExtension.FFWD_SPEEDS.length - 1)],
+                  true, true);
+            }
+         }, MackieMcuProExtension.FFWD_TIMES);
+      } else {
+         holdAction.stop();
+      }
+   }
+
+   private void setLed(final HardwareButton button, final boolean onOff) {
+      final OnOffHardwareLight light = (OnOffHardwareLight) button.backgroundLight();
+      light.isOn().setValue(onOff);
+   }
+
+   private void toggleVuMode(final boolean pressed) {
+      if (!pressed) {
+         return;
+      }
+      if (vuMode == VuMode.LED) {
+         vuMode = VuMode.LED_LCD_VERTICAL;
+      } else if (vuMode == VuMode.LED_LCD_VERTICAL) {
+         vuMode = VuMode.LED_LCD_HORIZONTAL;
+      } else {
+         vuMode = VuMode.LED;
+      }
+      sections.forEach(section -> section.applyVuMode(getVuMode()));
+   }
+
+   /**
+    * Creates modes button
+    *
+    * @param modes first mode is the button, the second represents the light
+    * @return the created button
+    */
+   private MainUnitButton createModeButton(final VPotMode... modes) {
+      assert modes.length > 0;
+      final VPotMode mode = modes[0];
+      final MainUnitButton button = new MainUnitButton(this, mode.getButtonAssignment());
+      button.bindPressed(mainLayer, () -> setVPotMode(mode, true));
+      button.bindReleased(mainLayer, () -> setVPotMode(mode, false));
+      if (modes.length == 1) {
+         button.bindLight(mainLayer, () -> lightState(mode));
+      } else if (modes.length == 2) {
+         button.bindLight(mainLayer, () -> lightState(mode, modes[1]));
+      }
+      return button;
+   }
+
+   private boolean lightState(final VPotMode mode) {
+      return trackChannelMode.getMode() == mode;
+   }
+
+   private boolean lightState(final VPotMode mode, final VPotMode shiftMode) {
+      if (trackChannelMode.getMode() == mode) {
+         return true;
+      } else if (trackChannelMode.getMode() == shiftMode) {
+         return blinkTicks % 8 >= 3;
+      }
+      return false;
+   }
+
+   public void setVPotMode(final VPotMode mode, final boolean down) {
+      final VPotMode trackMode = trackChannelMode.getMode();
+      if (trackMode != mode && trackMode != null) {
+         if (down) {
+            trackChannelMode.setMode(mode);
+         }
+         sections.forEach(section -> section.notifyModeChange(mode, down));
+      } else {
+         sections.forEach(control -> control.notifyModeAdvance(mode, down));
+      }
+   }
+
+   public TrackModeValue getVpotMode() {
+      return trackChannelMode;
+   }
+
+   private void onMidi0(final ShortMidiMessage msg) {
+//      RemoteConsole.out.println(" MIDI ch={} st={} d1={} d2={}", msg.getChannel(), msg.getStatusByte(), msg.getData1(),
+//         msg.getData2());
+   }
+
+   private void setUpMidiSysExCommands() {
+      midiIn.setSysexCallback(data -> {
+         if (data.startsWith(MackieMcuProExtension.SYSEX_DEVICE_RELOAD)) {
+            updateAll();
+         }
+         // Otherwise, track sysex here
+      });
+   }
+
+   private void updateAll() {
+      surface.updateHardware();
+      sections.forEach(MixControl::fullHardwareUpdate);
+      for (int i = 0; i < lightStatusMap.length; i++) {
+         if (lightStatusMap[i] >= 0) {
+            midiOut.sendMidi(Midi.NOTE_ON, i, lightStatusMap[i]);
+         }
+      }
+   }
+
+   protected void initTrackBank(final int nrOfScenes) {
+      final int numberOfHwChannels = 8 * (nrOfExtenders + 1);
+
+      cursorTrack = getHost().createCursorTrack(8, nrOfScenes);
+      cursorTrack.color().markInterested();
+
+      cursorDeviceControl = new CursorDeviceControl(cursorTrack, 8, numberOfHwChannels);
+
+      final MainUnitButton soloButton = new MainUnitButton(this, BasicNoteOnAssignment.SOLO);
+      soloButton.bindToggle(mainLayer, cursorTrack.solo());
+
+      final TrackBank mainTrackBank = getHost().createMainTrackBank(numberOfHwChannels, 1, nrOfScenes);
+
+      mainTrackBank.followCursorTrack(cursorTrack);
+
+      mixerTrackBank = getHost().createMainTrackBank(numberOfHwChannels, 1, nrOfScenes);
+      mixerTrackBank.setSkipDisabledItems(false);
+      mixerTrackBank.canScrollChannelsDown().markInterested();
+      mixerTrackBank.canScrollChannelsUp().markInterested();
+      mixerTrackBank.scrollPosition().addValueObserver(offset -> {
+         if (mixerMode.get() == MixerMode.MAIN) {
+            ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
+         }
+      });
+
+      globalTrackBank = host.createTrackBank(numberOfHwChannels, 1, nrOfScenes);
+      globalTrackBank.setSkipDisabledItems(false);
+      globalTrackBank.canScrollChannelsDown().markInterested();
+      globalTrackBank.canScrollChannelsUp().markInterested();
+      globalTrackBank.scrollPosition().addValueObserver(offset -> {
+         if (mixerMode.get() == MixerMode.GLOBAL) {
+            ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
+         }
+      });
+
+      final DeviceTypeBank deviceTypeBank = new DeviceTypeBank(host, cursorDeviceControl);
+
+      final DrumPadBank drumPadBank = cursorDeviceControl.getDrumPadBank();
+      drumPadBank.setIndication(true);
+      drumPadBank.scrollPosition().addValueObserver(offset -> {
+         if (mixerMode.get() == MixerMode.DRUM) {
+            ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset), true);
+         }
+      });
+
+      mixerMode.addValueObserver((oldMode, newMode) -> {
+         switch (newMode) {
+            case DRUM:
+               ledDisplay.setAssignment(StringUtil.toTwoCharVal(drumPadBank.scrollPosition().get()), true);
+               break;
+            case GLOBAL:
+               ledDisplay.setAssignment(StringUtil.toTwoCharVal(globalTrackBank.scrollPosition().get() + 1), false);
+               break;
+            case MAIN:
+               ledDisplay.setAssignment(StringUtil.toTwoCharVal(mixerTrackBank.scrollPosition().get() + 1), false);
+               break;
+            default:
+               break;
+         }
+      });
+
+      for (final MixControl channelSection : sections) {
+         channelSection.initMainControl(mixerTrackBank, globalTrackBank, drumPadBank);
+      }
+      mainSection.initTrackControl(cursorTrack, cursorDeviceControl.getDrumCursor(), deviceTypeBank);
+      initMenuButtons();
+   }
+
+   public BrowserConfiguration getBrowserConfiguration() {
+      return browserConfiguration;
+   }
+
+   public void setBrowserConfiguration(final BrowserConfiguration browserConfiguration) {
+      this.browserConfiguration = browserConfiguration;
+   }
+
+   private void initMenuButtons() {
+      final CueMarkerBank cueMarkerBank = arranger.createCueMarkerBank(8);
+
+      createGlobalViewButton(BasicNoteOnAssignment.GLOBAL_VIEW);
+
+      final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.GROUP);
+      button.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH);
+      button.bindPressed(mainLayer, () -> {
+         final ButtonViewState current = buttonViewMode.get();
+         if (current == ButtonViewState.GROUP_LAUNCH) {
+            buttonViewMode.set(ButtonViewState.MIXER);
+         } else {
+            buttonViewMode.set(ButtonViewState.GROUP_LAUNCH);
+         }
+      });
+
+      initCueMarkerSection(cueMarkerBank);
+      transport.tempo().markInterested();
+
+      initFButton(0, BasicNoteOnAssignment.F1, cueMarkerBank, () -> transport.resetAutomationOverrides(), null);
+      initFButton(1, BasicNoteOnAssignment.F2, cueMarkerBank, () -> transport.returnToArrangement(), null);
+      initFButton(2, BasicNoteOnAssignment.F3, cueMarkerBank, () -> transport.isFillModeActive().toggle(),
+         transport.isFillModeActive());
+      initFMenuButton(3, BasicNoteOnAssignment.F4, cueMarkerBank,
+         () -> menuCreator.createQuantizeSection(transport, followClip));
+      final Groove grove = host.createGroove();
+      initFMenuButton(4, BasicNoteOnAssignment.F5, cueMarkerBank, () -> menuCreator.createGrooveMenu(grove)); //
+      // GROOVE Menu
+      initFMenuButton(5, BasicNoteOnAssignment.F6, cueMarkerBank,
+         () -> menuCreator.createTempoMenu(transport, this::modifyTempo)); // Tempo Menu
+      // Save
+      initFButton(6, BasicNoteOnAssignment.F7, cueMarkerBank, () -> actionSet.execute(ActionSet.ActionType.SAVE), null);
+      initFMenuButton(7, BasicNoteOnAssignment.F8, cueMarkerBank, () -> menuCreator.createClipMenuSection()); //
+      // TOGGLE Layout
+
+      if (controllerConfig.isFunctionSectionLayered()) {
+         noteFxButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(0).launch(modifier.isShift()));
+      }
+      initActionButton(1, BasicNoteOnAssignment.GV_INPUTS_LF2, cueMarkerBank,
+         () -> application.setPanelLayout(currentLayoutType.other().getName()));
+      initActionButton(2, BasicNoteOnAssignment.GV_AUDIO_LF3, cueMarkerBank, () -> actionSet.focusDevice());
+      initActionButton(3, BasicNoteOnAssignment.GV_INSTRUMENT_LF4, cueMarkerBank, () -> actionSet.focusEditor());
+      initActionButton(4, BasicNoteOnAssignment.GV_AUX_LF5, cueMarkerBank,
+         () -> arranger.isPlaybackFollowEnabled().toggle());
+      initActionButton(5, BasicNoteOnAssignment.GV_BUSSES_LF6, cueMarkerBank, () -> {
+      });
+      initActionButton(6, BasicNoteOnAssignment.GV_OUTPUTS_LF7, cueMarkerBank, () -> {
+      });
+      initActionButton(7, BasicNoteOnAssignment.GV_USER_LF8, cueMarkerBank, () -> {
+      });
+
+      final MainUnitButton clickButton = new MainUnitButton(this, BasicNoteOnAssignment.CLICK);
+      final MenuModeLayerConfiguration metroMenu = menuCreator.createClickMenu(transport, value -> midiOut.sendSysex(
+         MackieMcuProExtension.MAIN_UNIT_SYSEX_HEADER + (value ? "0A 01" : "0A 00") + " F7"));
+      bindHoldToggleButton(clickButton, metroMenu, transport.isMetronomeEnabled());
+
+      final MainUnitButton loopButton = new MainUnitButton(this, BasicNoteOnAssignment.CYCLE);
+      bindHoldToggleButton(loopButton, menuCreator.createCyleMenu(host, transport), transport.isArrangerLoopEnabled());
+
+      application.panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
+   }
+
+   public void initFButton(final int index, final BasicNoteOnAssignment assign, final CueMarkerBank cueMarkerBank,
+                           final Runnable nonMarkerFunction, final BooleanValue lightState) {
+      final MainUnitButton fButton = new MainUnitButton(this, assign);
+      fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
+      fButton.bindPressed(mainLayer, nonMarkerFunction);
+      fButton.bindLigthPressed(cueMarkerModeLayer);
+      if (lightState == null) {
+         fButton.bindLigthPressed(mainLayer);
+      } else {
+         fButton.bindLight(mainLayer, lightState);
+      }
+   }
+
+   private void initActionButton(final int index, final BasicNoteOnAssignment assignment,
+                                 final CueMarkerBank cueMarkerBank, final Runnable action) {
+      final MainUnitButton fButton = new MainUnitButton(this, assignment);
+      fButton.bindPressed(mainLayer, action);
+      fButton.activateHoldState();
+      if (controllerConfig.isFunctionSectionLayered()) {
+         fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
+      }
+   }
+
+   private void modifyTempo(final int inc) {
+      double increment = 1.0 * inc;
+      if (modifier.isOptionSet() && modifier.isShiftSet()) {
+         increment *= 10;
+      } else if (modifier.isShiftSet()) {
+         increment *= 0.1;
+      } else if (modifier.isOptionSet()) {
+         increment *= 0.01;
+      }
+      transport.tempo().incRaw(increment);
+   }
+
+   private void initClipSection() {
+      final MainUnitButton clipButton = new MainUnitButton(this, BasicNoteOnAssignment.GV_AUDIO_LF3);
+      final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("CLIP_MENU", mainSection);
+
+      final BasicStringValue currentClipName = followClip.getCurrentClipName();
+      menu.addNameBinding(0, new BasicStringValue("Clip:"));
+      menu.addNameBinding(1, 4, currentClipName);
+      for (int i = 0; i < 8; i++) {
+         menu.addRingFixedBinding(i);
+      }
+      bindHoldButton(clipButton, menu);
+   }
+
+   private void initKeyboardSection() {
+      final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.NUDGE);
+      final MenuModeLayerConfiguration menu = menuCreator.createKeyboardMenu(notePlayingSetup);
+      button.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.NOTE_PLAY);
+      button.bindPressed(mainLayer, () -> {
+         holdState.enter(mainSection.getCurrentConfiguration(), button.getName());
+         mainSection.setConfiguration(menu);
+      });
+      button.bindReleased(mainLayer, () -> {
+         final LayerConfiguration layer = holdState.endHold();
+         if (layer != null) {
+            mainSection.setConfiguration(layer);
+         }
+         if (holdState.exit()) {
+            final ButtonViewState current = buttonViewMode.get();
+            if (current == ButtonViewState.NOTE_PLAY) {
+               buttonViewMode.set(ButtonViewState.MIXER);
+            } else {
+               buttonViewMode.set(ButtonViewState.NOTE_PLAY);
+            }
+         }
+      });
+   }
+
+   private void initSeqSection() {
+      final MainUnitButton stepSequencerButton = new MainUnitButton(this, BasicNoteOnAssignment.STEP_SEQ);
+      stepSequencerButton.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER);
+
+      stepSequencerButton.bindPressed(mainLayer, () -> {
+         final ButtonViewState current = buttonViewMode.get();
+         if (current == ButtonViewState.STEP_SEQUENCER) {
+            buttonViewMode.set(ButtonViewState.MIXER);
+            if (forcedIntoDrumMixMode && !modifier.isOptionSet()) {
+               forcedIntoDrumMixMode = false;
+               mixerMode.set(MixerMode.MAIN);
+            }
+         } else if (mixerMode.get() == MixerMode.DRUM) {
+            buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
+            forcedIntoDrumMixMode = false;
+         } else if (cursorDeviceControl.cursorHasDrumPads()) {
+            mixerMode.set(MixerMode.DRUM);
+            buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
+            forcedIntoDrumMixMode = true;
+         } else {
+            buttonViewMode.set(ButtonViewState.STEP_SEQUENCER);
+         }
+      });
+      stepSequencerButton.bindPressed(shiftLayer, () -> mainSection.advanceMode(ButtonViewState.STEP_SEQUENCER));
+      mixerMode.addValueObserver((oldMode, mode) -> {
+         if (buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER && mode != MixerMode.DRUM) {
+            buttonViewMode.set(ButtonViewState.MIXER);
+         }
+      });
+   }
+
+
+   private void initCueMarkerSection(final CueMarkerBank cueMarkerBank) {
+      final MainUnitButton markerButton = new MainUnitButton(this, BasicNoteOnAssignment.MARKER);
+      final BooleanValueObject marker = new BooleanValueObject();
+
+      final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
+
+      final MenuModeLayerConfiguration markerMenuConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
+      for (int i = 0; i < 8; i++) {
+         final CueMarker cueMarker = cueMarkerBank.getItemAt(i);
+         cueMarker.exists().markInterested();
+         markerMenuConfig.addValueBinding(i, cueMarker.position(), cueMarker, "---",
+            v -> cueMarker.position().getFormatted(formatter));
+         markerMenuConfig.addNameBinding(i, cueMarker.name(), cueMarker, "<Cue" + (i + 1) + ">");
+         markerMenuConfig.addRingExistsBinding(i, cueMarker);
+         markerMenuConfig.addPressEncoderBinding(i, index -> {
+            if (cueMarker.exists().get()) {
+               if (modifier.isShift()) {
+                  cueMarker.deleteObject();
+               } else {
+                  cueMarker.position().set(transport.getPosition().get());
+               }
+            } else {
+               transport.addCueMarkerAtPlaybackPosition();
+            }
+         }, true);
+         markerMenuConfig.addEncoderIncBinding(i, cueMarker.position(), 1, 0.25);
+      }
+      bindHoldToggleButton(markerButton, markerMenuConfig, marker);
+      marker.addValueObserver(v -> cueMarkerModeLayer.setIsActive(v));
+   }
+
+   public void createGlobalViewButton(final BasicNoteOnAssignment assignConst) {
+      final MainUnitButton button = new MainUnitButton(this, assignConst);
+      mixerMode.addValueObserver((oldMode, newMode) -> {
+         if (newMode != MixerMode.DRUM) {
+            previousOverallMode = newMode;
+         }
+      });
+      button.bindLight(mainLayer, () -> lightStateMixMode(mixerMode));
+      button.bindPressed(mainLayer, () -> {
+         if (mixerMode.get() == MixerMode.DRUM) {
+            mixerMode.set(previousOverallMode);
+         } else if (buttonViewMode.get() == ButtonViewState.GLOBAL_VIEW) {
+            buttonViewMode.set(ButtonViewState.MIXER);
+         } else {
+            buttonViewMode.set(ButtonViewState.GLOBAL_VIEW);
+         }
+      });
+   }
+
+   private boolean lightStateMixMode(final ValueObject<MixerMode> valueState) {
+      if (buttonViewMode.get() == ButtonViewState.GLOBAL_VIEW) {
+         return true;
+      } else if (valueState.get() == MixerMode.DRUM) {
+         return blinkTicks % 8 >= 3;
+      }
+      return false;
+   }
+
+   public MixerMode getPreviousOverallMode() {
+      return previousOverallMode;
+   }
+
+   public void initFMenuButton(final int index, final BasicNoteOnAssignment assign, final CueMarkerBank cueMarkerBank,
+                               final Supplier<MenuModeLayerConfiguration> menuCreator) {
+      final MainUnitButton fButton = new MainUnitButton(this, assign);
+      fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
+      bindHoldButton(fButton, menuCreator.get());
+      fButton.activateHoldState();
+   }
+
+   private void bindHoldToggleButton(final MainUnitButton button, final MenuModeLayerConfiguration menu,
+                                     final SettableBooleanValue value) {
+      button.bindLight(mainLayer, value);
+      button.bindPressed(mainLayer, () -> {
+         holdState.enter(mainSection.getCurrentConfiguration(), button.getName());
+         mainSection.setConfiguration(menu);
+      });
+      button.bindReleased(mainLayer, () -> {
+         final LayerConfiguration layer = holdState.endHold();
+         if (layer != null) {
+            mainSection.setConfiguration(layer);
+         }
+         if (holdState.exit()) {
+            value.toggle();
+         }
+      });
+   }
+
+
+   private void bindHoldButton(final MainUnitButton button, final MenuModeLayerConfiguration menu) {
+      // mainLayer.bind(value, (OnOffHardwareLight) button.backgroundLight());
+      // TODO consider light
+      button.bindPressed(mainLayer, () -> {
+         holdState.enter(mainSection.getCurrentConfiguration(), button.getName());
+         mainSection.setConfiguration(menu);
+      });
+      button.bindReleased(mainLayer, () -> {
+         final LayerConfiguration layer = holdState.endHold();
+         if (layer != null) {
+            mainSection.setConfiguration(layer);
+         }
+         holdState.exit();
+      });
+   }
+
+   public ValueObject<MixerMode> getMixerMode() {
+      return mixerMode;
+   }
+
+   public ValueObject<ButtonViewState> getButtonView() {
+      return buttonViewMode;
+   }
+
+   public CursorDeviceControl getCursorDeviceControl() {
+      return cursorDeviceControl;
+   }
+
+   public CursorTrack getCursorTrack() {
+      return cursorTrack;
+   }
+
+   public void sendLedUpdate(final NoteAssignment assignment, final int value) {
+      final int noteNr = assignment.getNoteNo();
+      lightStatusMap[noteNr] = value;
+      midiOut.sendMidi(assignment.getType(), assignment.getNoteNo(), value);
+   }
+
+   public void sendLedUpdate(final int noteNr, final int value) {
+      lightStatusMap[noteNr] = value;
+      midiOut.sendMidi(Midi.NOTE_ON, noteNr, value);
+   }
+
+   private void shutDownController(final CompletableFuture<Boolean> shutdown) {
+      ledDisplay.clearAll();
+      midiOut.sendSysex(MackieMcuProExtension.MAIN_UNIT_SYSEX_HEADER + "0A 00 F7"); // turn off click
+      sections.forEach(MixControl::resetLeds);
+      sections.forEach(MixControl::resetFaders);
+      masterSlider.sendValue(0);
+      sections.forEach(MixControl::exitMessage);
+      try {
+         Thread.sleep(300);
+      } catch (final InterruptedException e) {
+         e.printStackTrace();
+      }
+      shutdown.complete(true);
+   }
+
+   @Override
+   public void exit() {
+      final CompletableFuture<Boolean> shutdown = new CompletableFuture<>();
+      Executors.newSingleThreadExecutor().execute(() -> shutDownController(shutdown));
+      try {
+         shutdown.get();
+      } catch (final InterruptedException | ExecutionException e) {
+         e.printStackTrace();
+      }
+      getHost().showPopupNotification(
+         " Exit " + getExtensionDefinition().getName() + " " + getExtensionDefinition().getVersion());
+   }
+
+   public RelativeHardwarControlBindable createIncrementBinder(final IntConsumer consumer) {
+      return host.createRelativeHardwareControlStepTarget(//
+         host.createAction(() -> consumer.accept(1), () -> "+"),
+         host.createAction(() -> consumer.accept(-1), () -> "-"));
+   }
+
+   public Layers getLayers() {
+      return layers;
+   }
+
+   public MidiIn getMidiIn() {
+      return midiIn;
+   }
+
+   public HardwareSurface getSurface() {
+      return surface;
+   }
+
+   @Override
+   public void flush() {
+      surface.updateHardware();
+   }
+
+   public Project getProject() {
+      return project;
+   }
+
+   public Application getApplication() {
+      return application;
+   }
+
+   public ModifierValueObject getModifier() {
+      return modifier;
+   }
+
+   public BooleanValueObject getFlipped() {
+      return flipped;
+   }
+
+   public TrackModeValue getTrackChannelMode() {
+      return trackChannelMode;
+   }
+
+   public NotePlayingSetup getNotePlayingSetup() {
+      return notePlayingSetup;
+   }
+
+   public FocusClipView getFollowClip() {
+      return followClip;
+   }
+
+   public NoteAssignment get(final BasicNoteOnAssignment assignment) {
+      return controllerConfig.get(assignment);
+   }
+
+   public ControllerConfig getControllerConfig() {
+      return controllerConfig;
+   }
+
+   public ActionSet getActionSet() {
+      return actionSet;
+   }
+
+   public SlotHandler createSlotHandler() {
+      if (controllerConfig.getSubType() == SubType.ICON) {
+         return new SlotHandlerIcon();
+      }
+      return new SlotHandler();
+   }
+
+   public TrackSelectionHandler createTrackSelectionHandler() {
+      if (controllerConfig.getSubType() == SubType.ICON) {
+         return new TrackSelectionHandlerIcon(this);
+      }
+      return new TrackSelectionHandler(this);
+   }
 }
