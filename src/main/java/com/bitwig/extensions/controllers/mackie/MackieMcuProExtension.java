@@ -142,7 +142,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       enterButton = new MainUnitButton(this, BasicNoteOnAssignment.ENTER);
 
       cancelButton = new MainUnitButton(this, controllerConfig.getSubType() == SubType.G2 ? //
-         BasicNoteOnAssignment.GV_USER_LF8 : BasicNoteOnAssignment.CANCEL);
+         BasicNoteOnAssignment.GV_USER_LF8_G2 : BasicNoteOnAssignment.CANCEL);
       cancelButton.activateHoldState();
 
       final PopupBrowser browser = host.createPopupBrowser();

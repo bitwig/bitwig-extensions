@@ -6,7 +6,7 @@ public enum VPotMode {
    // TRACK(NoteOnAssignment.V_TRACK, Assign.MIXER), //
    SEND(BasicNoteOnAssignment.V_SEND, Assign.BOTH), //
    PAN(BasicNoteOnAssignment.V_PAN, Assign.MIXER), //
-   PLUGIN(BasicNoteOnAssignment.V_PLUGIN, Assign.CHANNEL, "audio-effect", "PLUGIN"), //
+   PLUGIN(BasicNoteOnAssignment.V_PLUGIN, Assign.CHANNEL, "audio-effect", "DEVICE"), // TODO PLUGIN mackie
    EQ(BasicNoteOnAssignment.V_EQ, Assign.CHANNEL, "EQ+ device", "EQ", "EQ+"), // possibly both
    INSTRUMENT(BasicNoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL, "instrument", "INSTRUMENT"),
    MIDI_EFFECT(BasicNoteOnAssignment.GV_MIDI_LF1, Assign.CHANNEL, "note-effect", "NOTE FX"),
