@@ -90,4 +90,10 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
             .setFunctionSectionLayered(true) //
             .setUseClearDuplicateModifiers(true), nrOfExtenders);
    }
+
+   @Override
+   public String getHelpFilePath() {
+      return "Controllers/Icon/Mackie Control/Mackie Control Universal.pdf";
+   }
+
 }

@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.mackie.section;
 
+import com.bitwig.extension.api.Color;
 import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
@@ -31,7 +32,7 @@ public class MixerSectionHardware {
    public static final int SELECT_INDEX = 3;
 
    private final int[] lightStatusMap = new int[127];
-   private final AbsoluteHardwareKnob[] volumeKnobs = new AbsoluteHardwareKnob[8];
+   private final HardwareSlider[] volumeKnobs = new HardwareSlider[8];
    private final RelativeHardwareKnob[] encoders = new RelativeHardwareKnob[8];
    private final HardwareButton[] encoderPress = new HardwareButton[8];
    private final HardwareButton[] faderTouch = new HardwareButton[8];
@@ -74,15 +75,34 @@ public class MixerSectionHardware {
          buttonMatrix[MixerSectionHardware.SOLO_INDEX][i] = soloButton;
          buttonMatrix[MixerSectionHardware.MUTE_INDEX][i] = muteButton;
          buttonMatrix[MixerSectionHardware.SELECT_INDEX][i] = selectButton;
+         armButton.setBounds(10 + i * 20, 80, 15, 15);
+         armButton.setLabel("Arm");
+         armButton.setLabelColor(Color.fromHex("#f00"));
+         soloButton.setBounds(10 + i * 20, 100, 15, 15);
+         soloButton.setLabel("Solo");
+         soloButton.setLabelColor(Color.fromHex("#ff8c00"));
+         muteButton.setBounds(10 + i * 20, 120, 15, 15);
+         muteButton.setLabel("Mute");
+         muteButton.setLabelColor(Color.fromHex("#ff0"));
+         selectButton.setBounds(10 + i * 20, 140, 15, 15);
+         selectButton.setLabel("Sel");
+         selectButton.setLabelColor(Color.fromHex("#00f"));
       }
    }
 
    private void initControlHardware(final HardwareSurface surface) {
       for (int i = 0; i < 8; i++) {
-         final AbsoluteHardwareKnob knob = surface.createAbsoluteHardwareKnob("VOLUME_FADER_" + sectionIndex + "_" + i);
-         volumeKnobs[i] = knob;
+         final HardwareSlider slider = surface.createHardwareSlider("VOLUME_FADER_" + sectionIndex + "_" + i);
+
+         volumeKnobs[i] = slider;
          faderTouch[i] = createTouchButton("FADER_TOUCH", i);
-         knob.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(i));
+         slider.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(i));
+
+         slider.setBounds(10 + i * 20, 185, 15, 100);
+         slider.setLabel("VOL " + (i + 1));
+         slider.setLabelColor(Color.fromHex("#0f0"));
+         slider.setLabelPosition(RelativePosition.BELOW);
+
 
          motorFaderDest[i] = new FaderResponse(midiOut, i);
          ringDisplays[i] = new RingDisplay(midiOut, i);
@@ -91,6 +111,8 @@ public class MixerSectionHardware {
          encoders[i] = encoder;
          encoderPress[i] = createEncoderButon(i);
          acceleratedMatchers[i] = midiIn.createRelativeSignedBitCCValueMatcher(0x0, 0x10 + i, 200);
+
+         encoder.setBounds(10 + i * 20, 50, 15, 15);
 
          encoder.isUpdatingTargetValue().addValueObserver(v -> {
             if (v) {
@@ -260,7 +282,7 @@ public class MixerSectionHardware {
       return encoderPress[index];
    }
 
-   public AbsoluteHardwareKnob getVolumeFader(final int index) {
+   public HardwareSlider getVolumeFader(final int index) {
       return volumeKnobs[index];
    }
 

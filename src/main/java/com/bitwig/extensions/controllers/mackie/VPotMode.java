@@ -1,6 +1,8 @@
 package com.bitwig.extensions.controllers.mackie;
 
 import com.bitwig.extension.controller.api.Device;
+import com.bitwig.extensions.controllers.mackie.definition.ControllerConfig;
+import com.bitwig.extensions.controllers.mackie.definition.ManufacturerType;
 
 public enum VPotMode {
    // TRACK(NoteOnAssignment.V_TRACK, Assign.MIXER), //
@@ -9,7 +11,7 @@ public enum VPotMode {
    PLUGIN(BasicNoteOnAssignment.V_PLUGIN, Assign.CHANNEL, "audio-effect", "DEVICE"), // TODO PLUGIN mackie
    EQ(BasicNoteOnAssignment.V_EQ, Assign.CHANNEL, "EQ+ device", "EQ", "EQ+"), // possibly both
    INSTRUMENT(BasicNoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL, "instrument", "INSTRUMENT"),
-   MIDI_EFFECT(BasicNoteOnAssignment.GV_MIDI_LF1, Assign.CHANNEL, "note-effect", "NOTE FX"),
+   MIDI_EFFECT(BasicNoteOnAssignment.GV_MIDI_LF1, Assign.CHANNEL, "note-effect", "NOTEFX"),
    ARPEGGIATOR(BasicNoteOnAssignment.V_INSTRUMENT, Assign.CHANNEL, "note-effect", "ALT+INSTRUMENT");
 
    public enum Assign {
@@ -95,8 +97,15 @@ public enum VPotMode {
       return typeDisplayName;
    }
 
-   public String getButtonDescription() {
-      return buttonDescription;
+   public String getButtonDescription(final ControllerConfig config) {
+      switch (buttonDescription) {
+         case "DEVICE":
+            return config.getManufacturerType() == ManufacturerType.MACKIE ? "PLUG-IN" : buttonDescription;
+         case "NOTEFX":
+            return config.getManufacturerType() == ManufacturerType.MACKIE ? "MIDI TRACKS" : "NOTE FX";
+         default:
+            return buttonDescription;
+      }
    }
 
 }

@@ -1,9 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.display;
 
-import com.bitwig.extension.controller.api.HardwareActionBindable;
-import com.bitwig.extension.controller.api.HardwareButton;
-import com.bitwig.extension.controller.api.OnOffHardwareLight;
-import com.bitwig.extension.controller.api.SettableBooleanValue;
+import com.bitwig.extension.api.Color;
+import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.NoteAssignment;
@@ -35,6 +33,13 @@ public class MainUnitButton {
 
    public MainUnitButton(final MackieMcuProExtension driver, final BasicNoteOnAssignment assignment) {
       this(driver, assignment, false);
+   }
+
+   public void configureSimulator(final String label, final int x, final int y) {
+      button.setLabel(label);
+      button.setBounds(200 + 20 * x, 10 + 20 * y, 15, 10);
+      button.setLabelPosition(RelativePosition.BELOW);
+      button.setLabelColor(Color.fromHex("#fff"));
    }
 
    public MainUnitButton(final MackieMcuProExtension driver, final BasicNoteOnAssignment assignment,

@@ -1,5 +1,8 @@
 package com.bitwig.extensions.controllers.mackie.display;
 
+import com.bitwig.extension.api.Color;
+import com.bitwig.extension.controller.api.HardwareTextDisplay;
+import com.bitwig.extension.controller.api.HardwareTextDisplayLine;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.Midi;
@@ -27,6 +30,7 @@ public class LcdDisplay implements DisplaySource {
    private final byte[] segBuffer;
    private final byte[] segBufferExp;
    private final DisplayPart part;
+   private final HardwareTextDisplay displayRep;
    public String sysHead;
 
    private final String[][] lastSendGrids = new String[][]{{"", "", "", "", "", "", "", "", ""}, //
@@ -47,6 +51,8 @@ public class LcdDisplay implements DisplaySource {
    private final int segmentOffset;
    private final boolean hasDedicatedVu;
 
+   private final char[][] lines = new char[2][60];
+
    /**
     * @param driver  the parent
     * @param midiOut the MIDI out destination for the Display
@@ -57,6 +63,9 @@ public class LcdDisplay implements DisplaySource {
       this.midiOut = midiOut;
       this.hasDedicatedVu = hasDedicatedVu;
       this.part = part;
+      displayRep = driver.getSurface().createHardwareTextDisplay("DISPLAY_SIMU_" + part, 2);
+      initSimulation(part);
+
       if (part == DisplayPart.LOWER) {
          isLowerDisplay = true;
          rowDisplayBuffer[3] = 0X67;
@@ -98,6 +107,22 @@ public class LcdDisplay implements DisplaySource {
          segmentOffset = 0;
       }
       setVuMode(driver.getVuMode());
+   }
+
+   private void initSimulation(final DisplayPart part) {
+      displayRep.setBounds(10, 10 + ((part == DisplayPart.UPPER) ? 0 : 150), 180, 15);
+      displayRep.setLabel("DISPLAY");
+      displayRep.setLabelColor(Color.fromHex("#fff"));
+      for (int i = 0; i < 2; i++) {
+         final HardwareTextDisplayLine line = displayRep.line(i);
+         line.text().setMaxChars(56);
+         Arrays.fill(lines[i], ' ');
+
+         line.textColor().setValue(Color.fromHex("#fff"));
+         line.backgroundColor().setValue(Color.fromHex("#00f"));
+
+         line.text().setValue("");
+      }
    }
 
    public int getSegmentLength() {
@@ -222,6 +247,7 @@ public class LcdDisplay implements DisplaySource {
       for (int i = 0; i < displayLen; i++) {
          rowDisplayBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
       }
+      displayRep.line(row).text().setValue(text);
       midiOut.sendSysex(rowDisplayBuffer);
    }
 
@@ -250,8 +276,10 @@ public class LcdDisplay implements DisplaySource {
       final char[] ca = text.toCharArray();
       for (int i = 0; i < segmentLength; i++) {
          segBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+         lines[row][segment * 7 + i] = (char) segBuffer[i + 7];
       }
       midiOut.sendSysex(segBuffer);
+      displayRep.line(row).text().setValue(String.valueOf(lines[row]));
    }
 
    private void sendTextSeg(final DisplaySource source, final int row, final int segment, final String text) {
@@ -264,11 +292,13 @@ public class LcdDisplay implements DisplaySource {
          segBuffer[6] = (byte) (row * LcdDisplay.ROW2_START + segment * segmentLength + segmentOffset);
          for (int i = 0; i < segmentLength - 1; i++) {
             segBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+            lines[row][segment * 7 + i] = (char) segBuffer[i + 7];
          }
          if (segment < segmentLength) {
             segBuffer[6 + segmentLength] = ' ';
          }
          midiOut.sendSysex(segBuffer);
+         displayRep.line(row).text().setValue(String.valueOf(lines[row]));
       }
    }
 

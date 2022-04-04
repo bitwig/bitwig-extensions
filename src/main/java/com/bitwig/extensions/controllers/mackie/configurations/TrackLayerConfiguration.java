@@ -149,10 +149,11 @@ public class TrackLayerConfiguration extends LayerConfiguration {
       final String line1 = String.format("no %s on track", mode.getTypeDisplayName());
       final String line2;
       if (mode.getDeviceName() == null) {
-         line2 = String.format("<< press %s again to browse >>", mode.getButtonDescription());
+         line2 = String.format("<< press %s again to browse >>",
+            mode.getButtonDescription(mixControl.getDriver().getControllerConfig()));
       } else {
-         line2 = String.format("<< press %s again to create %s device >>", mode.getButtonDescription(),
-            mode.getDeviceName());
+         line2 = String.format("<< press %s again to create %s device >>",
+            mode.getButtonDescription(mixControl.getDriver().getControllerConfig()), mode.getDeviceName());
       }
       displayLayer.setMainText(line1, line2, true);
       displayLayer.enableFullTextMode(true);
