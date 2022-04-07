@@ -17,21 +17,18 @@ public class MainUnitButton {
    private final HardwareButton button;
    private final NoteAssignment assignment;
 
-   public static MainUnitButton assignToggle(
-      final MackieMcuProExtension driver,
-      final BasicNoteOnAssignment assignment,
-      final Layer layer,
-      final SettableBooleanValue value,
-      final ControllerConfig controllerConfig) {
+   public static MainUnitButton assignToggle(final MackieMcuProExtension driver, final BasicNoteOnAssignment assignment,
+                                             final Layer layer, final SettableBooleanValue value,
+                                             final ControllerConfig controllerConfig) {
       final MainUnitButton button = new MainUnitButton(driver, assignment);
       button.bindToggle(layer, value);
-      controllerConfig.simuLayout(assignment,button);
+      controllerConfig.simuLayout(assignment, button);
       return button;
    }
 
    public static MainUnitButton assignIsPressed(final MackieMcuProExtension driver,
                                                 final BasicNoteOnAssignment assignment, final Layer layer,
-                                                final Consumer<Boolean> target, ControllerConfig config) {
+                                                final Consumer<Boolean> target, final ControllerConfig config) {
       final MainUnitButton button = new MainUnitButton(driver, assignment);
       button.bindIsPressed(layer, target);
       config.simuLayout(assignment, button);
@@ -44,8 +41,8 @@ public class MainUnitButton {
 
    public void configureSimulator(final String label, final int x, final int y) {
       button.setLabel(label);
-      button.setBounds(200 + 20 * x, 10 + 20 * y, 15, 10);
       button.setLabelPosition(RelativePosition.BELOW);
+      button.setBounds(200 + 20 * x, 10 + 20 * y, 15, 10);
       button.setLabelColor(Color.fromHex("#fff"));
    }
 
@@ -69,6 +66,10 @@ public class MainUnitButton {
 
    public NoteAssignment getAssignment() {
       return assignment;
+   }
+
+   public HardwareButton getButton() {
+      return button;
    }
 
    public void setLed(final boolean onOff) {
