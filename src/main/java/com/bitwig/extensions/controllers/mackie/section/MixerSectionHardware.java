@@ -96,7 +96,9 @@ public class MixerSectionHardware {
 
          volumeKnobs[i] = slider;
          faderTouch[i] = createTouchButton("FADER_TOUCH", i);
+         slider.setHardwareButton(faderTouch[i]);
          slider.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(i));
+
 
          slider.setBounds(10 + i * 20, 185, 15, 100);
          slider.setLabel("VOL " + (i + 1));
@@ -113,6 +115,8 @@ public class MixerSectionHardware {
          acceleratedMatchers[i] = midiIn.createRelativeSignedBitCCValueMatcher(0x0, 0x10 + i, 200);
 
          encoder.setBounds(10 + i * 20, 50, 15, 15);
+         encoderPress[i].setBounds(12+ i *20, 67, 9, 9);
+         encoderPress[i].setLabel("P"+(i+1));
 
          encoder.isUpdatingTargetValue().addValueObserver(v -> {
             if (v) {

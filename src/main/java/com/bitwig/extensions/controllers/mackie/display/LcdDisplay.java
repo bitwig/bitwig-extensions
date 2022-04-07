@@ -110,7 +110,7 @@ public class LcdDisplay implements DisplaySource {
    }
 
    private void initSimulation(final DisplayPart part) {
-      displayRep.setBounds(10, 10 + ((part == DisplayPart.UPPER) ? 0 : 150), 180, 15);
+      displayRep.setBounds(10, 10 + ((part == DisplayPart.UPPER) ? 0 : 155), 180, 15);
       displayRep.setLabel("DISPLAY");
       displayRep.setLabelColor(Color.fromHex("#fff"));
       for (int i = 0; i < 2; i++) {

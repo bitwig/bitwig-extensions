@@ -5,6 +5,7 @@ import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.NoteAssignment;
+import com.bitwig.extensions.controllers.mackie.definition.ControllerConfig;
 import com.bitwig.extensions.framework.Layer;
 
 import java.util.function.BooleanSupplier;
@@ -16,18 +17,24 @@ public class MainUnitButton {
    private final HardwareButton button;
    private final NoteAssignment assignment;
 
-   public static MainUnitButton assignToggle(final MackieMcuProExtension driver, final BasicNoteOnAssignment assignment,
-                                             final Layer layer, final SettableBooleanValue value) {
+   public static MainUnitButton assignToggle(
+      final MackieMcuProExtension driver,
+      final BasicNoteOnAssignment assignment,
+      final Layer layer,
+      final SettableBooleanValue value,
+      final ControllerConfig controllerConfig) {
       final MainUnitButton button = new MainUnitButton(driver, assignment);
       button.bindToggle(layer, value);
+      controllerConfig.simuLayout(assignment,button);
       return button;
    }
 
    public static MainUnitButton assignIsPressed(final MackieMcuProExtension driver,
                                                 final BasicNoteOnAssignment assignment, final Layer layer,
-                                                final Consumer<Boolean> target) {
+                                                final Consumer<Boolean> target, ControllerConfig config) {
       final MainUnitButton button = new MainUnitButton(driver, assignment);
       button.bindIsPressed(layer, target);
+      config.simuLayout(assignment, button);
       return button;
    }
 
