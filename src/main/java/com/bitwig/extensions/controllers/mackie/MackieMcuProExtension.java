@@ -139,13 +139,12 @@ public class MackieMcuProExtension extends ControllerExtension {
       ledDisplay = new TimeCodeLed(midiOut);
       drumMatcher = host.createBitwigDeviceMatcher(SpecialDevices.DRUM.getUuid());
 
-      enterButton = new MainUnitButton(this, BasicNoteOnAssignment.ENTER);
+      enterButton = new MainUnitButton(this, BasicNoteOnAssignment.ENTER, controllerConfig.getSimulationLayout());
 
       final BasicNoteOnAssignment cancelAssignment = controllerConfig.getSubType() == SubType.G2 ? //
          BasicNoteOnAssignment.GV_USER_LF8_G2 : BasicNoteOnAssignment.CANCEL;
-      cancelButton = new MainUnitButton(this, cancelAssignment);
+      cancelButton = new MainUnitButton(this, cancelAssignment, controllerConfig.getSimulationLayout());
       cancelButton.activateHoldState();
-      controllerConfig.simuLayout(cancelAssignment, cancelButton);
 
       final PopupBrowser browser = host.createPopupBrowser();
       cursorTrack = getHost().createCursorTrack(8, 4);
@@ -176,7 +175,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       ledDisplay.refreshMode();
       host.scheduleTask(this::handlePing, 100);
 
-      surface.setPhysicalSize(460, 300);
+      controllerConfig.getSimulationLayout().setSurfaceSize(surface, nrOfExtenders);
 
 //		final Action[] as = application.getActions();
 //		for (final Action action : as) {
@@ -201,9 +200,7 @@ public class MackieMcuProExtension extends ControllerExtension {
          if (extMidiIn != null && extMidiOut != null) {
             final MixControl extenderSection = new ExtenderMixControl(this, extMidiIn, extMidiOut, i);
             sections.add(extenderSection);
-         }  // RemoteConsole.out.println(" CREATE Extender Section {} failed due to missing
-         // ports", i + 1);
-
+         }
       }
    }
 
@@ -245,7 +242,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       final HardwareActionBindable incAction = host.createAction(() -> jogWheelPlayPosition(1), () -> "+");
       final HardwareActionBindable decAction = host.createAction(() -> jogWheelPlayPosition(-1), () -> "-");
       mainLayer.bind(fourDKnob, host.createRelativeHardwareControlStepTarget(incAction, decAction));
-      fourDKnob.setBounds(200 + 20 * 6, 10 + 20 * 11, 15 * 3, 15 * 3);
+      controllerConfig.getSimulationLayout().layoutJogwheel(fourDKnob);
    }
 
    private void jogWheelPlayPosition(final int dir) {
@@ -300,6 +297,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       masterTrack = getHost().createMasterTrack(8);
       final int touchNoteNr = get(BasicNoteOnAssignment.TOUCH_VOLUME).getNoteNo() + 8;
       masterSlider = new MotorSlider("MASTER", 8, touchNoteNr, surface, midiIn, midiOut);
+      controllerConfig.getSimulationLayout().layoutMainSlider(masterSlider.getFader());
    }
 
    private void intiVPotModes() {
@@ -432,21 +430,21 @@ public class MackieMcuProExtension extends ControllerExtension {
       initKeyboardSection();
       initSeqSection();
 
-      final MainUnitButton autoWriteButton = new MainUnitButton(this, BasicNoteOnAssignment.AUTO_READ_OFF);
+      final MainUnitButton autoWriteButton = new MainUnitButton(this, BasicNoteOnAssignment.AUTO_READ_OFF,
+         controllerConfig.getSimulationLayout());
       autoWriteButton.bindPressed(mainLayer, transport.isArrangerAutomationWriteEnabled());
       autoWriteButton.bindPressed(shiftLayer, transport.isClipLauncherAutomationWriteEnabled());
 
-      final MainUnitButton touchButton = new MainUnitButton(this, BasicNoteOnAssignment.TOUCH);
+      final MainUnitButton touchButton = new MainUnitButton(this, BasicNoteOnAssignment.TOUCH,
+         controllerConfig.getSimulationLayout());
       touchButton.bindPressed(mainLayer, () -> transport.automationWriteMode().set("touch"));
-      final MainUnitButton latchButton = new MainUnitButton(this, BasicNoteOnAssignment.LATCH);
+      final MainUnitButton latchButton = new MainUnitButton(this, BasicNoteOnAssignment.LATCH,
+         controllerConfig.getSimulationLayout());
       latchButton.bindPressed(mainLayer, () -> transport.automationWriteMode().set("latch"));
-      final MainUnitButton writeButton = new MainUnitButton(this, BasicNoteOnAssignment.AUTO_WRITE);
+      final MainUnitButton writeButton = new MainUnitButton(this, BasicNoteOnAssignment.AUTO_WRITE,
+         controllerConfig.getSimulationLayout());
       writeButton.bindPressed(mainLayer, () -> transport.automationWriteMode().set("write"));
 
-      controllerConfig.simuLayout(BasicNoteOnAssignment.AUTO_READ_OFF, autoWriteButton);
-      controllerConfig.simuLayout(BasicNoteOnAssignment.TOUCH, touchButton);
-      controllerConfig.simuLayout(BasicNoteOnAssignment.LATCH, latchButton);
-      controllerConfig.simuLayout(BasicNoteOnAssignment.AUTO_WRITE, writeButton);
       transport.automationWriteMode().addValueObserver(v -> {
          switch (v) {
             case "latch":
@@ -467,13 +465,15 @@ public class MackieMcuProExtension extends ControllerExtension {
          }
       });
 
-      final MainUnitButton playButton = new MainUnitButton(this, BasicNoteOnAssignment.PLAY);
+      final MainUnitButton playButton = new MainUnitButton(this, BasicNoteOnAssignment.PLAY,
+         controllerConfig.getSimulationLayout());
       playButton.bindPressed(mainLayer, transport.continuePlaybackAction());
       playButton.bindLight(mainLayer, transport.isPlaying());
-      controllerConfig.simuLayout(playButton);
 
-      final MainUnitButton punchInButton = new MainUnitButton(this, BasicNoteOnAssignment.DROP);
-      final MainUnitButton punchOutButton = new MainUnitButton(this, BasicNoteOnAssignment.REPLACE);
+      final MainUnitButton punchInButton = new MainUnitButton(this, BasicNoteOnAssignment.DROP,
+         controllerConfig.getSimulationLayout());
+      final MainUnitButton punchOutButton = new MainUnitButton(this, BasicNoteOnAssignment.REPLACE,
+         controllerConfig.getSimulationLayout());
       punchInButton.bindToggle(mainLayer, transport.isPunchInEnabled());
       punchOutButton.bindToggle(mainLayer, transport.isPunchOutEnabled());
 
@@ -481,31 +481,29 @@ public class MackieMcuProExtension extends ControllerExtension {
       punchOutButton.bindPressed(shiftLayer, transport.jumpToNextCueMarkerAction());
       punchInButton.bindPressedState(shiftLayer);
       punchOutButton.bindPressedState(shiftLayer);
-      controllerConfig.simuLayout(BasicNoteOnAssignment.DROP, punchInButton);
-      controllerConfig.simuLayout(BasicNoteOnAssignment.REPLACE, punchOutButton);
 
-      final MainUnitButton stopButton = new MainUnitButton(this, BasicNoteOnAssignment.STOP, true);
+      final MainUnitButton stopButton = new MainUnitButton(this, BasicNoteOnAssignment.STOP,
+         controllerConfig.getSimulationLayout(), true);
       stopButton.bindPressed(mainLayer, transport.stopAction());
       stopButton.bindLight(mainLayer, transport.isPlaying());
       stopButton.bindPressed(shiftLayer, project.getRootTrackGroup().stopAction());
-      controllerConfig.simuLayout(stopButton);
 
 
-      final MainUnitButton recordButton = new MainUnitButton(this, BasicNoteOnAssignment.RECORD);
+      final MainUnitButton recordButton = new MainUnitButton(this, BasicNoteOnAssignment.RECORD,
+         controllerConfig.getSimulationLayout());
       recordButton.bindToggle(mainLayer, transport.isArrangerRecordEnabled());
       recordButton.bindToggle(shiftLayer, transport.isClipLauncherOverdubEnabled());
-      controllerConfig.simuLayout(recordButton);
 
-      final MainUnitButton clipRecordButton = new MainUnitButton(this, BasicNoteOnAssignment.CLIP_OVERDUB);
+      final MainUnitButton clipRecordButton = new MainUnitButton(this, BasicNoteOnAssignment.CLIP_OVERDUB,
+         controllerConfig.getSimulationLayout());
       clipRecordButton.bindToggle(mainLayer, transport.isClipLauncherOverdubEnabled());
-      controllerConfig.simuLayout(clipRecordButton);
 
-      final MainUnitButton rewindButton = new MainUnitButton(this, BasicNoteOnAssignment.REWIND).activateHoldState();
-      final MainUnitButton fastForwardButton = new MainUnitButton(this, BasicNoteOnAssignment.FFWD).activateHoldState();
+      final MainUnitButton rewindButton = new MainUnitButton(this, BasicNoteOnAssignment.REWIND,
+         controllerConfig.getSimulationLayout()).activateHoldState();
+      final MainUnitButton fastForwardButton = new MainUnitButton(this, BasicNoteOnAssignment.FFWD,
+         controllerConfig.getSimulationLayout()).activateHoldState();
       fastForwardButton.bindIsPressed(mainLayer, pressed -> notifyHoldForwardReverse(pressed, 1));
       rewindButton.bindIsPressed(mainLayer, pressed -> notifyHoldForwardReverse(pressed, 1));
-      controllerConfig.simuLayout(rewindButton);
-      controllerConfig.simuLayout(fastForwardButton);
 
       initUndoRedo();
 
@@ -516,15 +514,14 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       final MainUnitButton flipButton = MainUnitButton.assignToggle(this, BasicNoteOnAssignment.FLIP, mainLayer,
          flipped, controllerConfig);
-      controllerConfig.simuLayout(flipButton);
 
       initVuModeButton();
 
    }
 
    private void initVuModeButton() {
-      final MainUnitButton displayNameButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_NAME);
-      controllerConfig.simuLayout(displayNameButton);
+      final MainUnitButton displayNameButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_NAME,
+         controllerConfig.getSimulationLayout());
       if (getControllerConfig().isHasDedicateVu()) {
          displayNameButton.bindIsPressed(mainLayer, v -> sections.forEach(section -> section.handleNameDisplay(v)));
          displayNameButton.bindIsPressed(shiftLayer, v -> sections.forEach(section -> section.handleInfoDisplay(v)));
@@ -534,20 +531,21 @@ public class MackieMcuProExtension extends ControllerExtension {
          displayNameButton.bindIsPressed(optionLayer, v -> sections.forEach(section -> section.handleInfoDisplay(v)));
       }
 
-      final MainUnitButton timeModeButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_SMPTE);
-      controllerConfig.simuLayout(timeModeButton);
+      final MainUnitButton timeModeButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_SMPTE,
+         controllerConfig.getSimulationLayout());
    }
 
    private void initUndoRedo() {
-      final MainUnitButton saveButton = new MainUnitButton(this, BasicNoteOnAssignment.SAVE);
+      final MainUnitButton saveButton = new MainUnitButton(this, BasicNoteOnAssignment.SAVE,
+         controllerConfig.getSimulationLayout());
       final Action saveAction = application.getAction("Save");
       saveButton.bindPressed(mainLayer, saveAction);
-      controllerConfig.simuLayout(BasicNoteOnAssignment.SAVE, saveButton);
 
       application.canRedo().markInterested();
       application.canUndo().markInterested();
 
-      final MainUnitButton undoButton = new MainUnitButton(this, BasicNoteOnAssignment.UNDO);
+      final MainUnitButton undoButton = new MainUnitButton(this, BasicNoteOnAssignment.UNDO,
+         controllerConfig.getSimulationLayout());
       undoButton.bindLight(mainLayer, application.canUndo());
       undoButton.bindPressed(mainLayer, () -> {
          application.undo();
@@ -558,7 +556,6 @@ public class MackieMcuProExtension extends ControllerExtension {
          application.redo();
          host.showPopupNotification("Redo");
       });
-      controllerConfig.simuLayout(BasicNoteOnAssignment.UNDO, undoButton);
    }
 
    public void notifyHoldForwardReverse(final Boolean pressed, final int dir) {
@@ -601,8 +598,8 @@ public class MackieMcuProExtension extends ControllerExtension {
    private MainUnitButton createModeButton(final VPotMode... modes) {
       assert modes.length > 0;
       final VPotMode mode = modes[0];
-      final MainUnitButton button = new MainUnitButton(this, mode.getButtonAssignment());
-      controllerConfig.simuLayout(button);
+      final MainUnitButton button = new MainUnitButton(this, mode.getButtonAssignment(),
+         controllerConfig.getSimulationLayout());
 
       button.bindPressed(mainLayer, () -> setVPotMode(mode, true));
       button.bindReleased(mainLayer, () -> setVPotMode(mode, false));
@@ -674,7 +671,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       cursorDeviceControl = new CursorDeviceControl(cursorTrack, 8, numberOfHwChannels);
 
-      final MainUnitButton soloButton = new MainUnitButton(this, BasicNoteOnAssignment.SOLO);
+      final MainUnitButton soloButton = new MainUnitButton(this, BasicNoteOnAssignment.SOLO,
+         controllerConfig.getSimulationLayout());
       soloButton.bindToggle(mainLayer, cursorTrack.solo());
 
       final TrackBank mainTrackBank = getHost().createMainTrackBank(numberOfHwChannels, 1, nrOfScenes);
@@ -744,8 +742,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       createGlobalViewButton(BasicNoteOnAssignment.GLOBAL_VIEW);
 
-      final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.GROUP);
-      controllerConfig.simuLayout(BasicNoteOnAssignment.GROUP, button);
+      final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.GROUP,
+         controllerConfig.getSimulationLayout());
       button.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH);
       button.bindPressed(mainLayer, () -> {
          final ButtonViewState current = buttonViewMode.get();
@@ -795,14 +793,15 @@ public class MackieMcuProExtension extends ControllerExtension {
          });
       }
 
-      final MainUnitButton clickButton = new MainUnitButton(this, BasicNoteOnAssignment.CLICK);
+      final MainUnitButton clickButton = new MainUnitButton(this, BasicNoteOnAssignment.CLICK,
+         controllerConfig.getSimulationLayout());
       final MenuModeLayerConfiguration metroMenu = menuCreator.createClickMenu(transport, value -> midiOut.sendSysex(
          MackieMcuProExtension.MAIN_UNIT_SYSEX_HEADER + (value ? "0A 01" : "0A 00") + " F7"));
 
       bindHoldToggleButton(clickButton, metroMenu, transport.isMetronomeEnabled());
 
-      final MainUnitButton loopButton = new MainUnitButton(this, BasicNoteOnAssignment.CYCLE);
-      controllerConfig.simuLayout(loopButton);
+      final MainUnitButton loopButton = new MainUnitButton(this, BasicNoteOnAssignment.CYCLE,
+         controllerConfig.getSimulationLayout());
 
       bindHoldToggleButton(loopButton, menuCreator.createCyleMenu(host, transport), transport.isArrangerLoopEnabled());
 
@@ -812,11 +811,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    public void initFButton(final int index, final BasicNoteOnAssignment assign, final CueMarkerBank cueMarkerBank,
                            final Runnable nonMarkerFunction, final BooleanValue lightState) {
-      final MainUnitButton fButton = new MainUnitButton(this, assign);
+      final MainUnitButton fButton = new MainUnitButton(this, assign, controllerConfig.getSimulationLayout());
       fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
       fButton.bindPressed(mainLayer, nonMarkerFunction);
       fButton.bindLigthPressed(cueMarkerModeLayer);
-      controllerConfig.simuLayout(fButton);
       if (lightState == null) {
          fButton.bindLigthPressed(mainLayer);
       } else {
@@ -826,10 +824,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private MainUnitButton initActionButton(final int index, final BasicNoteOnAssignment assignment,
                                            final CueMarkerBank cueMarkerBank, final Runnable action) {
-      final MainUnitButton fButton = new MainUnitButton(this, assignment);
+      final MainUnitButton fButton = new MainUnitButton(this, assignment, controllerConfig.getSimulationLayout());
       fButton.bindPressed(mainLayer, action);
       fButton.activateHoldState();
-      controllerConfig.simuLayout(fButton);
       if (controllerConfig.isFunctionSectionLayered()) {
          fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
       }
@@ -849,7 +846,8 @@ public class MackieMcuProExtension extends ControllerExtension {
    }
 
    private void initClipSection() {
-      final MainUnitButton clipButton = new MainUnitButton(this, BasicNoteOnAssignment.GV_AUDIO_LF3);
+      final MainUnitButton clipButton = new MainUnitButton(this, BasicNoteOnAssignment.GV_AUDIO_LF3,
+         controllerConfig.getSimulationLayout());
       final MenuModeLayerConfiguration menu = new MenuModeLayerConfiguration("CLIP_MENU", mainSection);
 
       final BasicStringValue currentClipName = followClip.getCurrentClipName();
@@ -862,8 +860,8 @@ public class MackieMcuProExtension extends ControllerExtension {
    }
 
    private void initKeyboardSection() {
-      final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.NUDGE);
-      controllerConfig.simuLayout(BasicNoteOnAssignment.NUDGE, button);
+      final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.NUDGE,
+         controllerConfig.getSimulationLayout());
       final MenuModeLayerConfiguration menu = menuCreator.createKeyboardMenu(notePlayingSetup);
       button.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.NOTE_PLAY);
       button.bindPressed(mainLayer, () -> {
@@ -895,9 +893,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private void initSeqSection() {
       final BasicNoteOnAssignment seqButtonAssign = getStepSequencerButton();
-      final MainUnitButton stepSequencerButton = new MainUnitButton(this, seqButtonAssign);
+      final MainUnitButton stepSequencerButton = new MainUnitButton(this, seqButtonAssign,
+         controllerConfig.getSimulationLayout());
       stepSequencerButton.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER);
-      controllerConfig.simuLayout(seqButtonAssign, stepSequencerButton);
 
       stepSequencerButton.bindPressed(mainLayer, () -> {
          final ButtonViewState current = buttonViewMode.get();
@@ -928,7 +926,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 
 
    private void initCueMarkerSection(final CueMarkerBank cueMarkerBank) {
-      final MainUnitButton markerButton = new MainUnitButton(this, BasicNoteOnAssignment.MARKER);
+      final MainUnitButton markerButton = new MainUnitButton(this, BasicNoteOnAssignment.MARKER,
+         controllerConfig.getSimulationLayout());
       final BooleanValueObject marker = new BooleanValueObject();
 
       final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
@@ -959,7 +958,7 @@ public class MackieMcuProExtension extends ControllerExtension {
    }
 
    public void createGlobalViewButton(final BasicNoteOnAssignment assignConst) {
-      final MainUnitButton button = new MainUnitButton(this, assignConst);
+      final MainUnitButton button = new MainUnitButton(this, assignConst, controllerConfig.getSimulationLayout());
       mixerMode.addValueObserver((oldMode, newMode) -> {
          if (newMode != MixerMode.DRUM) {
             previousOverallMode = newMode;
@@ -992,10 +991,9 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    public void initFMenuButton(final int index, final BasicNoteOnAssignment assign, final CueMarkerBank cueMarkerBank,
                                final Supplier<MenuModeLayerConfiguration> menuCreator) {
-      final MainUnitButton fButton = new MainUnitButton(this, assign);
+      final MainUnitButton fButton = new MainUnitButton(this, assign, controllerConfig.getSimulationLayout());
       fButton.bindPressed(cueMarkerModeLayer, () -> cueMarkerBank.getItemAt(index).launch(modifier.isShift()));
       bindHoldButton(fButton, menuCreator.get());
-      controllerConfig.simuLayout(fButton);
       fButton.activateHoldState();
    }
 

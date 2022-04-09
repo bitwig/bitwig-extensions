@@ -15,6 +15,7 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
    private static final int MAJOR_VERSION = 1;
    private static final int MINOR_VERSION_LOW = 9;
    private static final int MINOR_VERSION_HIGH = 14;
+   public static final int TRANSPORT_ROW = 9;
 
    @Override
    public void initNoteOverrides() {
@@ -89,14 +90,68 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
          .setHasDedicateVu(true) //
          .setFunctionSectionLayered(true) //
          .setUseClearDuplicateModifiers(true);
-      initSimuLayout(controllerConfig.getSimulationLayout());
+      initSimulationLayout(controllerConfig.getSimulationLayout());
       return new MackieMcuProExtension(this, host, //
          controllerConfig, nrOfExtenders);
    }
 
+
    @Override
    public String getHelpFilePath() {
-      return "Controllers/Icon/Mackie Control/Mackie Control Universal.pdf";
+      return "Controllers/iCon/iCon Pro G2.pdf";
    }
 
+
+   @Override
+   protected void initSimulationLayout(final SimulationLayout layout) {
+      super.initSimulationLayout(layout);
+      layout.add(BasicNoteOnAssignment.FLIP, "FLIP", -1, 1);
+      layout.add(BasicNoteOnAssignment.TRACK_LEFT, "<T", -1, 2);
+      layout.add(BasicNoteOnAssignment.TRACK_RIGHT, "T>", -1, 3);
+      layout.add(BasicNoteOnAssignment.BANK_LEFT, "<B", -1, 4);
+      layout.add(BasicNoteOnAssignment.BANK_RIGHT, "B>", -1, 5);
+
+      layout.add(BasicNoteOnAssignment.DISPLAY_NAME, "NM/V", 3, 0);
+      layout.add(BasicNoteOnAssignment.DISPLAY_SMPTE, "SMPT", 4, 0);
+      layout.add(BasicNoteOnAssignment.ALT, "CLR", 5, 0);
+      layout.add(BasicNoteOnAssignment.CONTROL, "DUP", 6, 0);
+      layout.add(BasicNoteOnAssignment.UNDO, "UNDO", 7, 0);
+
+      layout.add(BasicNoteOnAssignment.GV_USER_LF8_G2, "CANCEL", 7, F2_ROW);
+
+      layout.add(BasicNoteOnAssignment.V_TRACK, "TRACK", 2, 3);
+      layout.add(BasicNoteOnAssignment.V_SEND, "SEND", 3, 3);
+      layout.add(BasicNoteOnAssignment.V_PAN, "PAN", 4, 3);
+      layout.add(BasicNoteOnAssignment.V_PLUGIN, "DVCE", 5, 3);
+      layout.add(BasicNoteOnAssignment.V_EQ, "EQ", 6, 3);
+      layout.add(BasicNoteOnAssignment.V_INSTRUMENT, "INST", 7, 3);
+
+      layout.add(BasicNoteOnAssignment.AUTO_READ_OFF, "READ", 2, 4);
+      layout.add(BasicNoteOnAssignment.LATCH, "LATCH", 3, 4);
+      layout.add(BasicNoteOnAssignment.TOUCH, "TOUCH", 4, 4);
+      layout.add(BasicNoteOnAssignment.AUTO_WRITE, "WRITE", 5, 4);
+      layout.add(BasicNoteOnAssignment.GLOBAL_VIEW, "GROUPS", 6, 4);
+      layout.add(BasicNoteOnAssignment.CLICK, "CLICK", 7, 4);
+
+      layout.add(BasicNoteOnAssignment.NUDGE, "KEY/P.IN", 2, 5);
+      layout.add(BasicNoteOnAssignment.STEP_SEQ, "SP/P.OU", 3, 5);
+      layout.add(BasicNoteOnAssignment.SHIFT, "SHIFT", 4, 5);
+      layout.add(BasicNoteOnAssignment.REWIND, "<<", 5, 5);
+      layout.add(BasicNoteOnAssignment.CYCLE, "CYCLE", 6, 5);
+      layout.add(BasicNoteOnAssignment.FFWD, ">>", 7, 5);
+
+      layout.add(BasicNoteOnAssignment.GROUP, "CLIPS", 2, 6);
+      layout.add(BasicNoteOnAssignment.MARKER, "MARKER", 3, 6);
+      layout.add(BasicNoteOnAssignment.OPTION, "OPT", 4, 6);
+      layout.add(BasicNoteOnAssignment.RECORD, "Rec", 5, 6);
+      layout.add(BasicNoteOnAssignment.PLAY, ">", 6, 6);
+      layout.add(BasicNoteOnAssignment.STOP, "STP", 7, 6);
+
+      layout.add(BasicNoteOnAssignment.CURSOR_LEFT, "<", 0, 9);
+      layout.add(BasicNoteOnAssignment.CURSOR_RIGHT, ">", 2, 9);
+      layout.add(BasicNoteOnAssignment.CURSOR_UP, "^", 1, 8);
+      layout.add(BasicNoteOnAssignment.CURSOR_DOWN, "v", 1, 10);
+      layout.add(BasicNoteOnAssignment.ZOOM, "Zoom", 1, 9);
+      layout.setJogWheelPos(20 * 4, 20 * 8);
+   }
 }

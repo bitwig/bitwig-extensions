@@ -56,9 +56,10 @@ public class MixerSectionHardware {
       this.driver = driver;
       this.sectionIndex = sectionIndex;
       final ControllerConfig controllerConfig = driver.getControllerConfig();
-      mainDisplay = new LcdDisplay(driver, midiOut, type, DisplayPart.UPPER, controllerConfig.isHasDedicateVu());
-      bottomDisplay = controllerConfig.hasLowerDisplay() ? new LcdDisplay(driver, midiOut, type, DisplayPart.LOWER,
-         false) : null;
+      mainDisplay = new LcdDisplay(driver, sectionIndex, midiOut, type, DisplayPart.UPPER,
+         controllerConfig.isHasDedicateVu());
+      bottomDisplay = controllerConfig.hasLowerDisplay() ? new LcdDisplay(driver, sectionIndex, midiOut, type,
+         DisplayPart.LOWER, false) : null;
       Arrays.fill(lightStatusMap, -1);
       initControlHardware(driver.getSurface());
       initButtonSection();
@@ -99,12 +100,7 @@ public class MixerSectionHardware {
          slider.setHardwareButton(faderTouch[i]);
          slider.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(i));
 
-
-         slider.setBounds(10 + i * 20, 185, 15, 100);
-         slider.setLabel("VOL " + (i + 1));
-         slider.setLabelColor(Color.fromHex("#0f0"));
-         slider.setLabelPosition(RelativePosition.BELOW);
-
+         driver.getControllerConfig().getSimulationLayout().layoutSlider(sectionIndex, i, slider);
 
          motorFaderDest[i] = new FaderResponse(midiOut, i);
          ringDisplays[i] = new RingDisplay(midiOut, i);
@@ -114,9 +110,8 @@ public class MixerSectionHardware {
          encoderPress[i] = createEncoderButon(i);
          acceleratedMatchers[i] = midiIn.createRelativeSignedBitCCValueMatcher(0x0, 0x10 + i, 200);
 
-         encoder.setBounds(10 + i * 20, 50, 15, 15);
-         encoderPress[i].setBounds(12+ i *20, 67, 9, 9);
-         encoderPress[i].setLabel("P"+(i+1));
+         encoder.setHardwareButton(encoderPress[i]);
+         driver.getControllerConfig().getSimulationLayout().layoutEncoder(sectionIndex, i, encoder);
 
          encoder.isUpdatingTargetValue().addValueObserver(v -> {
             if (v) {

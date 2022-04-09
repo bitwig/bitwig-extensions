@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.mackie.definition;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.NoteAssignment;
 import com.bitwig.extensions.controllers.mackie.OverrideNoteAssignment;
-import com.bitwig.extensions.controllers.mackie.display.MainUnitButton;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -106,18 +105,6 @@ public class ControllerConfig {
 
    public boolean hasMasterVu() {
       return hasMasterVu;
-   }
-
-
-   public void simuLayout(final MainUnitButton... buttons) {
-      for (final MainUnitButton button : buttons) {
-         simulationLayout.layout(button);
-      }
-   }
-
-
-   public void simuLayout(final BasicNoteOnAssignment assignment, final MainUnitButton button) {
-      simulationLayout.layout(assignment, button);
    }
 
 }

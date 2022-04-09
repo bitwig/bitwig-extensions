@@ -453,6 +453,7 @@ public class MixControl implements LayerStateHandler {
       } else if (touchCount > 0) {
          touchCount--;
       }
+      driver.getHost().println("TCOUNT => " + touchCount);
       if (touchCount > 0 && !fadersTouched.get()) {
          fadersTouched.set(true);
       } else if (touchCount == 0 && fadersTouched.get()) {

@@ -1,8 +1,6 @@
 package com.bitwig.extensions.controllers.mackie.display;
 
-import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.HardwareTextDisplay;
-import com.bitwig.extension.controller.api.HardwareTextDisplayLine;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.Midi;
@@ -58,13 +56,14 @@ public class LcdDisplay implements DisplaySource {
     * @param midiOut the MIDI out destination for the Display
     * @param type    the main unit or a an extenter
     */
-   public LcdDisplay(final MackieMcuProExtension driver, final MidiOut midiOut, final SectionType type,
-                     final DisplayPart part, final boolean hasDedicatedVu) {
+   public LcdDisplay(final MackieMcuProExtension driver, final int sectionIndex, final MidiOut midiOut,
+                     final SectionType type, final DisplayPart part, final boolean hasDedicatedVu) {
       this.midiOut = midiOut;
       this.hasDedicatedVu = hasDedicatedVu;
       this.part = part;
       displayRep = driver.getSurface().createHardwareTextDisplay("DISPLAY_SIMU_" + part, 2);
-      initSimulation(part);
+
+      initSimulation(driver, sectionIndex, part);
 
       if (part == DisplayPart.LOWER) {
          isLowerDisplay = true;
@@ -109,19 +108,10 @@ public class LcdDisplay implements DisplaySource {
       setVuMode(driver.getVuMode());
    }
 
-   private void initSimulation(final DisplayPart part) {
-      displayRep.setBounds(10, 10 + ((part == DisplayPart.UPPER) ? 0 : 155), 180, 15);
-      displayRep.setLabel("DISPLAY");
-      displayRep.setLabelColor(Color.fromHex("#fff"));
+   private void initSimulation(final MackieMcuProExtension driver, final int sectionIndex, final DisplayPart part) {
+      driver.getControllerConfig().getSimulationLayout().layoutDisplay(part, sectionIndex, displayRep);
       for (int i = 0; i < 2; i++) {
-         final HardwareTextDisplayLine line = displayRep.line(i);
-         line.text().setMaxChars(56);
          Arrays.fill(lines[i], ' ');
-
-         line.textColor().setValue(Color.fromHex("#fff"));
-         line.backgroundColor().setValue(Color.fromHex("#00f"));
-
-         line.text().setValue("");
       }
    }
 

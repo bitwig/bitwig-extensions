@@ -85,11 +85,14 @@ public class IconQconProXOneDExtensionDefinition extends IconQconExtensionDefini
 
    @Override
    public MackieMcuProExtension createInstance(final ControllerHost host) {
+      final ControllerConfig controllerConfig = new ControllerConfig(noteOverrides, ManufacturerType.ICON,
+         SubType.PRO_X, false) //
+         .setHasDedicateVu(true) //
+         .setHasMasterVu(true) //
+         .setFunctionSectionLayered(true) //
+         .setUseClearDuplicateModifiers(true);
+      initSimulationLayout(controllerConfig.getSimulationLayout());
       return new MackieMcuProExtension(this, host, //
-         new ControllerConfig(noteOverrides, ManufacturerType.ICON, SubType.PRO_X, false) //
-            .setHasDedicateVu(true) //
-            .setHasMasterVu(true) //
-            .setFunctionSectionLayered(true) //
-            .setUseClearDuplicateModifiers(true), nrOfExtenders);
+         controllerConfig, nrOfExtenders);
    }
 }
