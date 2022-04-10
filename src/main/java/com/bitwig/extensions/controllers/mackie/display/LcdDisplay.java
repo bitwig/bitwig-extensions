@@ -61,7 +61,7 @@ public class LcdDisplay implements DisplaySource {
       this.midiOut = midiOut;
       this.hasDedicatedVu = hasDedicatedVu;
       this.part = part;
-      displayRep = driver.getSurface().createHardwareTextDisplay("DISPLAY_SIMU_" + part, 2);
+      displayRep = driver.getSurface().createHardwareTextDisplay("DISPLAY_SIMU_" + part + "_" + sectionIndex, 2);
 
       initSimulation(driver, sectionIndex, part);
 

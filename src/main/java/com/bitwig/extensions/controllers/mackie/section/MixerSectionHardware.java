@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.mackie.section;
 
-import com.bitwig.extension.api.Color;
 import com.bitwig.extension.callback.BooleanValueChangedCallback;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
@@ -15,6 +14,7 @@ import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayExistsB
 import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayFixedBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayParameterBinding;
 import com.bitwig.extensions.controllers.mackie.definition.ControllerConfig;
+import com.bitwig.extensions.controllers.mackie.definition.SimulationLayout;
 import com.bitwig.extensions.controllers.mackie.display.*;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
 import com.bitwig.extensions.framework.AbsoluteHardwareControlBinding;
@@ -76,18 +76,12 @@ public class MixerSectionHardware {
          buttonMatrix[MixerSectionHardware.SOLO_INDEX][i] = soloButton;
          buttonMatrix[MixerSectionHardware.MUTE_INDEX][i] = muteButton;
          buttonMatrix[MixerSectionHardware.SELECT_INDEX][i] = selectButton;
-         armButton.setBounds(10 + i * 20, 80, 15, 15);
-         armButton.setLabel("Arm");
-         armButton.setLabelColor(Color.fromHex("#f00"));
-         soloButton.setBounds(10 + i * 20, 100, 15, 15);
-         soloButton.setLabel("Solo");
-         soloButton.setLabelColor(Color.fromHex("#ff8c00"));
-         muteButton.setBounds(10 + i * 20, 120, 15, 15);
-         muteButton.setLabel("Mute");
-         muteButton.setLabelColor(Color.fromHex("#ff0"));
-         selectButton.setBounds(10 + i * 20, 140, 15, 15);
-         selectButton.setLabel("Sel");
-         selectButton.setLabelColor(Color.fromHex("#00f"));
+
+         final SimulationLayout simulationLayout = driver.getControllerConfig().getSimulationLayout();
+         simulationLayout.layoutMatrixButton(sectionIndex, i, 0, armButton, "Arm", "#f00");
+         simulationLayout.layoutMatrixButton(sectionIndex, i, 1, soloButton, "Solo", "#ff8c00");
+         simulationLayout.layoutMatrixButton(sectionIndex, i, 2, muteButton, "Mute", "#ff0");
+         simulationLayout.layoutMatrixButton(sectionIndex, i, 3, selectButton, "Sel", "#00f");
       }
    }
 

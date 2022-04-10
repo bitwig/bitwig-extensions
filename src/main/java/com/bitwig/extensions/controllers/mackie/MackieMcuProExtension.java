@@ -128,6 +128,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       cueMarkerModeLayer = new Layer(layers, "Cue Marker Layer");
       notePlayingSetup = new NotePlayingSetup();
       actionSet = new ActionSet(application);
+      controllerConfig.getSimulationLayout().setSurfaceSize(surface, nrOfExtenders);
 
       modifier.setUsesDuplicateClear(controllerConfig.isUseClearDuplicateModifiers());
 
@@ -174,8 +175,6 @@ public class MackieMcuProExtension extends ControllerExtension {
       sections.forEach(MixControl::clearAll);
       ledDisplay.refreshMode();
       host.scheduleTask(this::handlePing, 100);
-
-      controllerConfig.getSimulationLayout().setSurfaceSize(surface, nrOfExtenders);
 
 //		final Action[] as = application.getActions();
 //		for (final Action action : as) {

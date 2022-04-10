@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class IconQconExtensionDefinition extends MackieMcuProExtensionDefinition {
-   private static final String SOFTWARE_VERSION = "0.9";
+   private static final String SOFTWARE_VERSION = "1.0";
 
    public abstract void initNoteOverrides();
 
@@ -60,7 +60,6 @@ public abstract class IconQconExtensionDefinition extends MackieMcuProExtensionD
 
    @Override
    protected void initSimulationLayout(final SimulationLayout layout) {
-      super.initSimulationLayout(layout);
       layout.add(BasicNoteOnAssignment.F1, "F1", 0, F1_ROW);
       layout.add(BasicNoteOnAssignment.F2, "F2", 1, F1_ROW);
       layout.add(BasicNoteOnAssignment.F3, "F3", 2, F1_ROW);

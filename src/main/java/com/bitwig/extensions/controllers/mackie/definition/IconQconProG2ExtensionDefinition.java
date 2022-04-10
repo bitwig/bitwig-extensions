@@ -15,7 +15,6 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
    private static final int MAJOR_VERSION = 1;
    private static final int MINOR_VERSION_LOW = 9;
    private static final int MINOR_VERSION_HIGH = 14;
-   public static final int TRANSPORT_ROW = 9;
 
    @Override
    public void initNoteOverrides() {
