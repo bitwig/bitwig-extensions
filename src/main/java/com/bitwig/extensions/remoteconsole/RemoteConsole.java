@@ -1,11 +1,17 @@
 package com.bitwig.extensions.remoteconsole;
 
+import com.bitwig.extension.controller.api.ControllerHost;
+
 public interface RemoteConsole {
-	public static final RemoteConsole out = new RemoteConsoleActive();
+   RemoteConsole out = new RemoteConsoleHost();
 
-	void printSysEx(String prefix, byte[] data);
+   static void init(final ControllerHost host) {
+      ((RemoteConsoleHost) out).init(host);
+   }
 
-	void println(String format, Object... params);
+   void printSysEx(String prefix, byte[] data);
 
-	String getStackTrace(final int max);
+   void println(String format, Object... params);
+
+   String getStackTrace(final int max);
 }

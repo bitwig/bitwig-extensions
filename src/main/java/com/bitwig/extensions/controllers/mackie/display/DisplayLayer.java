@@ -639,6 +639,10 @@ public class DisplayLayer extends Layer implements DisplaySource {
       }
    }
 
+   public void showInfo(final String top, final String bottom) {
+      display.sendDirect(top, bottom);
+   }
+
    public void invokeRefresh() {
       if (!isActive()) {
          return;

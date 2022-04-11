@@ -14,6 +14,7 @@ import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayExistsB
 import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayFixedBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayParameterBinding;
 import com.bitwig.extensions.controllers.mackie.definition.ControllerConfig;
+import com.bitwig.extensions.controllers.mackie.definition.SimulationLayout;
 import com.bitwig.extensions.controllers.mackie.display.*;
 import com.bitwig.extensions.controllers.mackie.layer.EncoderMode;
 import com.bitwig.extensions.framework.AbsoluteHardwareControlBinding;
@@ -31,7 +32,7 @@ public class MixerSectionHardware {
    public static final int SELECT_INDEX = 3;
 
    private final int[] lightStatusMap = new int[127];
-   private final AbsoluteHardwareKnob[] volumeKnobs = new AbsoluteHardwareKnob[8];
+   private final HardwareSlider[] volumeKnobs = new HardwareSlider[8];
    private final RelativeHardwareKnob[] encoders = new RelativeHardwareKnob[8];
    private final HardwareButton[] encoderPress = new HardwareButton[8];
    private final HardwareButton[] faderTouch = new HardwareButton[8];
@@ -55,9 +56,10 @@ public class MixerSectionHardware {
       this.driver = driver;
       this.sectionIndex = sectionIndex;
       final ControllerConfig controllerConfig = driver.getControllerConfig();
-      mainDisplay = new LcdDisplay(driver, midiOut, type, DisplayPart.UPPER, controllerConfig.isHasDedicateVu());
-      bottomDisplay = controllerConfig.hasLowerDisplay() ? new LcdDisplay(driver, midiOut, type, DisplayPart.LOWER,
-         false) : null;
+      mainDisplay = new LcdDisplay(driver, sectionIndex, midiOut, type, DisplayPart.UPPER,
+         controllerConfig.isHasDedicateVu());
+      bottomDisplay = controllerConfig.hasLowerDisplay() ? new LcdDisplay(driver, sectionIndex, midiOut, type,
+         DisplayPart.LOWER, false) : null;
       Arrays.fill(lightStatusMap, -1);
       initControlHardware(driver.getSurface());
       initButtonSection();
@@ -74,15 +76,25 @@ public class MixerSectionHardware {
          buttonMatrix[MixerSectionHardware.SOLO_INDEX][i] = soloButton;
          buttonMatrix[MixerSectionHardware.MUTE_INDEX][i] = muteButton;
          buttonMatrix[MixerSectionHardware.SELECT_INDEX][i] = selectButton;
+
+         final SimulationLayout simulationLayout = driver.getControllerConfig().getSimulationLayout();
+         simulationLayout.layoutMatrixButton(sectionIndex, i, 0, armButton, "Arm", "#f00");
+         simulationLayout.layoutMatrixButton(sectionIndex, i, 1, soloButton, "Solo", "#ff8c00");
+         simulationLayout.layoutMatrixButton(sectionIndex, i, 2, muteButton, "Mute", "#ff0");
+         simulationLayout.layoutMatrixButton(sectionIndex, i, 3, selectButton, "Sel", "#00f");
       }
    }
 
    private void initControlHardware(final HardwareSurface surface) {
       for (int i = 0; i < 8; i++) {
-         final AbsoluteHardwareKnob knob = surface.createAbsoluteHardwareKnob("VOLUME_FADER_" + sectionIndex + "_" + i);
-         volumeKnobs[i] = knob;
+         final HardwareSlider slider = surface.createHardwareSlider("VOLUME_FADER_" + sectionIndex + "_" + i);
+
+         volumeKnobs[i] = slider;
          faderTouch[i] = createTouchButton("FADER_TOUCH", i);
-         knob.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(i));
+         slider.setHardwareButton(faderTouch[i]);
+         slider.setAdjustValueMatcher(midiIn.createAbsolutePitchBendValueMatcher(i));
+
+         driver.getControllerConfig().getSimulationLayout().layoutSlider(sectionIndex, i, slider);
 
          motorFaderDest[i] = new FaderResponse(midiOut, i);
          ringDisplays[i] = new RingDisplay(midiOut, i);
@@ -91,6 +103,9 @@ public class MixerSectionHardware {
          encoders[i] = encoder;
          encoderPress[i] = createEncoderButon(i);
          acceleratedMatchers[i] = midiIn.createRelativeSignedBitCCValueMatcher(0x0, 0x10 + i, 200);
+
+         encoder.setHardwareButton(encoderPress[i]);
+         driver.getControllerConfig().getSimulationLayout().layoutEncoder(sectionIndex, i, encoder);
 
          encoder.isUpdatingTargetValue().addValueObserver(v -> {
             if (v) {
@@ -260,7 +275,7 @@ public class MixerSectionHardware {
       return encoderPress[index];
    }
 
-   public AbsoluteHardwareKnob getVolumeFader(final int index) {
+   public HardwareSlider getVolumeFader(final int index) {
       return volumeKnobs[index];
    }
 

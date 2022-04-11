@@ -76,6 +76,7 @@ public enum BasicNoteOnAssignment implements NoteAssignment {
    GV_BUSSES_LF6(67), //
    GV_OUTPUTS_LF7(68), //
    GV_USER_LF8(69), //
+   GV_USER_LF8_G2(51),
    REDO(71), //
    STEP_SEQ(103), // is only overridden
    CLIP_OVERDUB(104); // is only overidden

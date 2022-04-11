@@ -10,27 +10,38 @@ import java.util.Map;
 public class ControllerConfig {
    private final Map<BasicNoteOnAssignment, Integer> assignOverrides;
    private final boolean hasLowerDisplay;
+   private final ManufacturerType manufacturerType;
    private final SubType subType;
    private boolean hasDedicateVu;
    private boolean hasMasterVu;
    private boolean useClearDuplicateModifiers = false;
    private boolean functionSectionLayered = false;
+   private final SimulationLayout simulationLayout;
 
-   public ControllerConfig(final Map<BasicNoteOnAssignment, Integer> assignOverrides, final SubType subType,
+   public ControllerConfig(final Map<BasicNoteOnAssignment, Integer> assignOverrides,
+                           final ManufacturerType manufacturerType, final SubType subType,
                            final boolean hasLowerDisplay) {
       this.assignOverrides = assignOverrides;
       this.hasLowerDisplay = hasLowerDisplay;
+      this.manufacturerType = manufacturerType;
       this.subType = subType;
       hasDedicateVu = false;
       hasMasterVu = false;
+      simulationLayout = new SimulationLayout();
    }
 
    public ControllerConfig(final boolean hasLowerDisplay) {
       assignOverrides = new HashMap<>();
       this.hasLowerDisplay = hasLowerDisplay;
-      subType = SubType.MACKIE;
+      manufacturerType = ManufacturerType.MACKIE;
       hasDedicateVu = true;
       hasMasterVu = false;
+      subType = SubType.UNSPECIFIED;
+      simulationLayout = new SimulationLayout();
+   }
+
+   public SimulationLayout getSimulationLayout() {
+      return simulationLayout;
    }
 
    public ControllerConfig setHasDedicateVu(final boolean hasDedicateVu) {
@@ -82,6 +93,10 @@ public class ControllerConfig {
          return new OverrideNoteAssignment(override);
       }
       return assignment;
+   }
+
+   public ManufacturerType getManufacturerType() {
+      return manufacturerType;
    }
 
    public SubType getSubType() {

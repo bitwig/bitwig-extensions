@@ -29,5 +29,7 @@ public class SlotHandlerIcon extends SlotHandler {
       } else {
          slot.launch();
       }
+
+
    }
 }

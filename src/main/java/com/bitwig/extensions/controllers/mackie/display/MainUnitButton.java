@@ -7,6 +7,8 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extensions.controllers.mackie.BasicNoteOnAssignment;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.NoteAssignment;
+import com.bitwig.extensions.controllers.mackie.definition.ControllerConfig;
+import com.bitwig.extensions.controllers.mackie.definition.SimulationLayout;
 import com.bitwig.extensions.framework.Layer;
 
 import java.util.function.BooleanSupplier;
@@ -19,26 +21,29 @@ public class MainUnitButton {
    private final NoteAssignment assignment;
 
    public static MainUnitButton assignToggle(final MackieMcuProExtension driver, final BasicNoteOnAssignment assignment,
-                                             final Layer layer, final SettableBooleanValue value) {
-      final MainUnitButton button = new MainUnitButton(driver, assignment);
+                                             final Layer layer, final SettableBooleanValue value,
+                                             final ControllerConfig controllerConfig) {
+      final MainUnitButton button = new MainUnitButton(driver, assignment, controllerConfig.getSimulationLayout());
       button.bindToggle(layer, value);
       return button;
    }
 
    public static MainUnitButton assignIsPressed(final MackieMcuProExtension driver,
                                                 final BasicNoteOnAssignment assignment, final Layer layer,
-                                                final Consumer<Boolean> target) {
-      final MainUnitButton button = new MainUnitButton(driver, assignment);
+                                                final Consumer<Boolean> target, final ControllerConfig config) {
+      final MainUnitButton button = new MainUnitButton(driver, assignment, config.getSimulationLayout());
       button.bindIsPressed(layer, target);
+
       return button;
    }
 
-   public MainUnitButton(final MackieMcuProExtension driver, final BasicNoteOnAssignment assignment) {
-      this(driver, assignment, false);
+   public MainUnitButton(final MackieMcuProExtension driver, final BasicNoteOnAssignment assignment,
+                         final SimulationLayout layout) {
+      this(driver, assignment, layout, false);
    }
 
    public MainUnitButton(final MackieMcuProExtension driver, final BasicNoteOnAssignment assignment,
-                         final boolean reverseLed) {
+                         final SimulationLayout layout, final boolean reverseLed) {
       final NoteAssignment actualAssignment = driver.get(assignment);
       this.assignment = actualAssignment;
 
@@ -53,10 +58,15 @@ public class MainUnitButton {
       } else {
          led.onUpdateHardware(() -> driver.sendLedUpdate(noteNr, led.isOn().currentValue() ? 127 : 0));
       }
+      layout.layout(assignment, button);
    }
 
    public NoteAssignment getAssignment() {
       return assignment;
+   }
+
+   public HardwareButton getButton() {
+      return button;
    }
 
    public void setLed(final boolean onOff) {

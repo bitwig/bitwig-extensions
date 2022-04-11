@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.mackie.seqencer;
 
-import com.bitwig.extension.controller.api.NoteInput;
-import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.value.ChordType;
 
 import java.util.ArrayList;
@@ -15,7 +13,6 @@ public class Chord {
    private int inversion;
    private int expansion;
    private int velocity;
-   final List<Integer> heldNotes = new ArrayList<>();
 
    public Chord(final ChordType chordType, final int chordBaseNote, final int octaveOffset) {
       this.chordType = chordType;
@@ -98,17 +95,6 @@ public class Chord {
          }
       }
       return noteList;
-   }
-
-   public void play(final NoteInput noteInput) {
-      release(noteInput);
-      heldNotes.addAll(getNotes());
-      heldNotes.forEach(noteNr -> noteInput.sendRawMidiEvent(Midi.NOTE_ON, noteNr, velocity));
-   }
-
-   public void release(final NoteInput noteInput) {
-      heldNotes.forEach(noteNr -> noteInput.sendRawMidiEvent(Midi.NOTE_OFF, noteNr, 0));
-      heldNotes.clear();
    }
 
    public Chord copy() {

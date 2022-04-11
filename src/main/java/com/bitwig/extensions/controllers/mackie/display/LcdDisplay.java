@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.mackie.display;
 
+import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.Midi;
@@ -27,6 +28,7 @@ public class LcdDisplay implements DisplaySource {
    private final byte[] segBuffer;
    private final byte[] segBufferExp;
    private final DisplayPart part;
+   private final HardwareTextDisplay displayRep;
    public String sysHead;
 
    private final String[][] lastSendGrids = new String[][]{{"", "", "", "", "", "", "", "", ""}, //
@@ -47,16 +49,22 @@ public class LcdDisplay implements DisplaySource {
    private final int segmentOffset;
    private final boolean hasDedicatedVu;
 
+   private final char[][] lines = new char[2][60];
+
    /**
     * @param driver  the parent
     * @param midiOut the MIDI out destination for the Display
     * @param type    the main unit or a an extenter
     */
-   public LcdDisplay(final MackieMcuProExtension driver, final MidiOut midiOut, final SectionType type,
-                     final DisplayPart part, final boolean hasDedicatedVu) {
+   public LcdDisplay(final MackieMcuProExtension driver, final int sectionIndex, final MidiOut midiOut,
+                     final SectionType type, final DisplayPart part, final boolean hasDedicatedVu) {
       this.midiOut = midiOut;
       this.hasDedicatedVu = hasDedicatedVu;
       this.part = part;
+      displayRep = driver.getSurface().createHardwareTextDisplay("DISPLAY_SIMU_" + part + "_" + sectionIndex, 2);
+
+      initSimulation(driver, sectionIndex, part);
+
       if (part == DisplayPart.LOWER) {
          isLowerDisplay = true;
          rowDisplayBuffer[3] = 0X67;
@@ -98,6 +106,13 @@ public class LcdDisplay implements DisplaySource {
          segmentOffset = 0;
       }
       setVuMode(driver.getVuMode());
+   }
+
+   private void initSimulation(final MackieMcuProExtension driver, final int sectionIndex, final DisplayPart part) {
+      driver.getControllerConfig().getSimulationLayout().layoutDisplay(part, sectionIndex, displayRep);
+      for (int i = 0; i < 2; i++) {
+         Arrays.fill(lines[i], ' ');
+      }
    }
 
    public int getSegmentLength() {
@@ -198,6 +213,15 @@ public class LcdDisplay implements DisplaySource {
       return StringUtil.padString(text, fill / 2);
    }
 
+   public void sendDirect(final String topString, final String bottomString) {
+      lastSentRows[0] = topString;
+      lastSentRows[1] = bottomString;
+      resetGrids(0);
+      resetGrids(1);
+      sendFullRow(0, topString);
+      sendFullRow(1, bottomString);
+   }
+
    public void sendToDisplay(final DisplaySource source, final int row, final String text) {
       if (text.equals(lastSentRows[row])) {
          return;
@@ -213,6 +237,7 @@ public class LcdDisplay implements DisplaySource {
       for (int i = 0; i < displayLen; i++) {
          rowDisplayBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
       }
+      displayRep.line(row).text().setValue(text);
       midiOut.sendSysex(rowDisplayBuffer);
    }
 
@@ -241,8 +266,10 @@ public class LcdDisplay implements DisplaySource {
       final char[] ca = text.toCharArray();
       for (int i = 0; i < segmentLength; i++) {
          segBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+         lines[row][segment * 7 + i] = (char) segBuffer[i + 7];
       }
       midiOut.sendSysex(segBuffer);
+      displayRep.line(row).text().setValue(String.valueOf(lines[row]));
    }
 
    private void sendTextSeg(final DisplaySource source, final int row, final int segment, final String text) {
@@ -255,11 +282,13 @@ public class LcdDisplay implements DisplaySource {
          segBuffer[6] = (byte) (row * LcdDisplay.ROW2_START + segment * segmentLength + segmentOffset);
          for (int i = 0; i < segmentLength - 1; i++) {
             segBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+            lines[row][segment * 7 + i] = (char) segBuffer[i + 7];
          }
          if (segment < segmentLength) {
             segBuffer[6 + segmentLength] = ' ';
          }
          midiOut.sendSysex(segBuffer);
+         displayRep.line(row).text().setValue(String.valueOf(lines[row]));
       }
    }
 

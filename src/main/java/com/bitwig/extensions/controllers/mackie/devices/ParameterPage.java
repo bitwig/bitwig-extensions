@@ -103,7 +103,7 @@ public class ParameterPage implements SettableRangedValue {
       return relativeEncoderBinding;
    }
 
-   public ResetableAbsoluteValueBinding getFaderBinding(final AbsoluteHardwareKnob fader) {
+   public ResetableAbsoluteValueBinding getFaderBinding(final HardwareSlider fader) {
       absoluteEncoderBinding = new ResetableAbsoluteValueBinding(fader, this);
       return absoluteEncoderBinding;
    }

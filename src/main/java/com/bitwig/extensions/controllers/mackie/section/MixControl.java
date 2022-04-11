@@ -453,6 +453,7 @@ public class MixControl implements LayerStateHandler {
       } else if (touchCount > 0) {
          touchCount--;
       }
+      driver.getHost().println("TCOUNT => " + touchCount);
       if (touchCount > 0 && !fadersTouched.get()) {
          fadersTouched.set(true);
       } else if (touchCount == 0 && fadersTouched.get()) {
@@ -478,17 +479,15 @@ public class MixControl implements LayerStateHandler {
       final DisplayLayer displayLayer = getActiveDisplayLayer();
       final Layer buttonLayer = getButtonLayer();
 
-      HelperInfo.getInfo(buttonLayer.getName(), displayLayer.getName(), driver.getControllerConfig().getSubType())
-         .ifPresent(info -> {
-            if (active) {
-               displayLayer.enableFullTextMode(true);
-               displayLayer.setMainText(info.getTopInfo(), info.getBottomInfo(), false);
-               displayLayer.invokeRefresh();
-            } else {
-               displayLayer.enableFullTextMode(false);
-            }
-         });
-      getDriver().getHost().println(" " + displayLayer.getName() + " " + buttonLayer.getName());
+      HelperInfo.getInfo(buttonLayer.getName(), displayLayer.getName(),
+         driver.getControllerConfig().getManufacturerType()).ifPresent(info -> {
+         if (active) {
+            displayLayer.showInfo(info.getTopInfo(), info.getBottomInfo());
+         } else {
+            displayLayer.invokeRefresh();
+         }
+      });
+      //getDriver().getHost().println(" " + displayLayer.getName() + " " + buttonLayer.getName());
    }
 
    public LayerConfiguration getCurrentConfiguration() {
