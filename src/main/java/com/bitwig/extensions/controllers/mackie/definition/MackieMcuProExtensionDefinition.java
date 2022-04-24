@@ -50,10 +50,27 @@ public class MackieMcuProExtensionDefinition extends ControllerExtensionDefiniti
       return portList;
    }
 
+   /**
+    * Marks a given function to represented by a different button assignment.
+    * {@code override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.REPLACE);}
+    * states that the GROUP function is now bound to the REPLACE button, i.e. that note number.
+    *
+    * @param origFunction the original function
+    * @param takeOver     the button assignment that now overrides the previous assignment.
+    */
    protected void override(final BasicNoteOnAssignment origFunction, final BasicNoteOnAssignment takeOver) {
       noteOverrides.put(origFunction, takeOver.getNoteNo());
    }
 
+   /**
+    * Marks a given function to represented by a different button assignment and assigns the takeover function to a note
+    * that has no button representation, thus making that function not available in the given implementation.
+    * {@code override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.REPLACE);}
+    * states that the GROUP function is now bound to the REPLACE button, i.e. that note number.
+    *
+    * @param origFunction the original function
+    * @param takeOver     the button assignment that now overrides the previous assignment.
+    */
    protected void overrideX(final BasicNoteOnAssignment origFunction, final BasicNoteOnAssignment takeOver) {
       noteOverrides.put(origFunction, takeOver.getNoteNo());
       noteOverrides.put(takeOver, unusedNoteNo++);

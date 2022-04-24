@@ -475,7 +475,6 @@ public class MackieMcuProExtension extends ControllerExtension {
          controllerConfig.getSimulationLayout());
       punchInButton.bindToggle(mainLayer, transport.isPunchInEnabled());
       punchOutButton.bindToggle(mainLayer, transport.isPunchOutEnabled());
-
       punchInButton.bindPressed(shiftLayer, transport.jumpToPreviousCueMarkerAction());
       punchOutButton.bindPressed(shiftLayer, transport.jumpToNextCueMarkerAction());
       punchInButton.bindPressedState(shiftLayer);
@@ -741,10 +740,10 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       createGlobalViewButton(BasicNoteOnAssignment.GLOBAL_VIEW);
 
-      final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.GROUP,
+      final MainUnitButton groupButton = new MainUnitButton(this, BasicNoteOnAssignment.GROUP,
          controllerConfig.getSimulationLayout());
-      button.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH);
-      button.bindPressed(mainLayer, () -> {
+      groupButton.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.GROUP_LAUNCH);
+      groupButton.bindPressed(mainLayer, () -> {
          final ButtonViewState current = buttonViewMode.get();
          if (current == ButtonViewState.GROUP_LAUNCH) {
             buttonViewMode.set(ButtonViewState.MIXER);
@@ -861,6 +860,10 @@ public class MackieMcuProExtension extends ControllerExtension {
    private void initKeyboardSection() {
       final MainUnitButton button = new MainUnitButton(this, BasicNoteOnAssignment.NUDGE,
          controllerConfig.getSimulationLayout());
+
+      if (controllerConfig.getSubType() == SubType.G2) {
+         button.bindToggle(shiftLayer, transport.isPunchInEnabled());
+      }
       final MenuModeLayerConfiguration menu = menuCreator.createKeyboardMenu(notePlayingSetup);
       button.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.NOTE_PLAY);
       button.bindPressed(mainLayer, () -> {
@@ -892,8 +895,12 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    private void initSeqSection() {
       final BasicNoteOnAssignment seqButtonAssign = getStepSequencerButton();
+
       final MainUnitButton stepSequencerButton = new MainUnitButton(this, seqButtonAssign,
          controllerConfig.getSimulationLayout());
+      if (controllerConfig.getSubType() == SubType.G2) {
+         stepSequencerButton.bindToggle(shiftLayer, transport.isPunchOutEnabled());
+      }
       stepSequencerButton.bindLight(mainLayer, () -> buttonViewMode.get() == ButtonViewState.STEP_SEQUENCER);
 
       stepSequencerButton.bindPressed(mainLayer, () -> {
@@ -928,7 +935,6 @@ public class MackieMcuProExtension extends ControllerExtension {
       final MainUnitButton markerButton = new MainUnitButton(this, BasicNoteOnAssignment.MARKER,
          controllerConfig.getSimulationLayout());
       final BooleanValueObject marker = new BooleanValueObject();
-
       final BeatTimeFormatter formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
 
       final MenuModeLayerConfiguration markerMenuConfig = new MenuModeLayerConfiguration("MARKER_MENU", mainSection);
