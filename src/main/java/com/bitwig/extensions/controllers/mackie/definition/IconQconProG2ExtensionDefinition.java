@@ -40,9 +40,9 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
       override(BasicNoteOnAssignment.CLICK, BasicNoteOnAssignment.GROUP);
 
       // Lower left row Launcher | Marker | Option
-      override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.REPLACE);
-      override(BasicNoteOnAssignment.MARKER, BasicNoteOnAssignment.CLICK);
-      override(BasicNoteOnAssignment.OPTION, BasicNoteOnAssignment.SOLO);
+      override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.MARKER);
+      override(BasicNoteOnAssignment.MARKER, BasicNoteOnAssignment.NUDGE);
+      override(BasicNoteOnAssignment.OPTION, BasicNoteOnAssignment.CANCEL);
    }
 
    public IconQconProG2ExtensionDefinition() {
@@ -97,7 +97,7 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
 
    @Override
    public String getHelpFilePath() {
-      return "Controllers/iCon/iCon Pro G2.pdf";
+      return "Controllers/iCon/iCon QCon Pro G2.pdf";
    }
 
 
