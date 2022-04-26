@@ -98,7 +98,7 @@ public class IconQconProXExtensionDefinition extends IconQconExtensionDefinition
 
    @Override
    public String getHelpFilePath() {
-      return "Controllers/iCon/iCon ProX.pdf";
+      return "Controllers/iCon/iCon QCon Pro X.pdf";
    }
 
 
@@ -118,11 +118,11 @@ public class IconQconProXExtensionDefinition extends IconQconExtensionDefinition
 
 
       layout.add(BasicNoteOnAssignment.V_TRACK, "TRACK", 2, 3);
-      layout.add(BasicNoteOnAssignment.V_PAN, "PAN", 3, 3);
-      layout.add(BasicNoteOnAssignment.V_SEND, "SEND", 4, 3);
+      layout.add(BasicNoteOnAssignment.V_SEND, "SEND", 3, 3);
+      layout.add(BasicNoteOnAssignment.V_PAN, "PAN", 4, 3);
       layout.add(BasicNoteOnAssignment.V_PLUGIN, "DVCE", 5, 3);
-      layout.add(BasicNoteOnAssignment.V_INSTRUMENT, "INST", 6, 3);
-      layout.add(BasicNoteOnAssignment.V_EQ, "EQ", 7, 3);
+      layout.add(BasicNoteOnAssignment.V_EQ, "EQ", 6, 3);
+      layout.add(BasicNoteOnAssignment.V_INSTRUMENT, "INST", 7, 3);
 
       layout.add(BasicNoteOnAssignment.AUTO_READ_OFF, "READ", 2, 4);
       layout.add(BasicNoteOnAssignment.LATCH, "LATCH", 3, 4);

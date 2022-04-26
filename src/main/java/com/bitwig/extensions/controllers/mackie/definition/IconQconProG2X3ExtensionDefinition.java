@@ -3,7 +3,7 @@ package com.bitwig.extensions.controllers.mackie.definition;
 import java.util.UUID;
 
 public class IconQconProG2X3ExtensionDefinition extends IconQconProG2ExtensionDefinition {
-   private static final UUID DRIVER_ID = UUID.fromString("d32bead3-83e4-4dc2-90f8-eb3a1a847bf1");
+   private static final UUID DRIVER_ID = UUID.fromString("807d0bf1-9560-494f-a3a7-a24cf25db51c");
 
    public IconQconProG2X3ExtensionDefinition() {
       super(3);

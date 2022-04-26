@@ -97,7 +97,7 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
 
    @Override
    public String getHelpFilePath() {
-      return "Controllers/iCon/iCon Pro G2.pdf";
+      return "Controllers/iCon/iCon QCon Pro G2.pdf";
    }
 
 
