@@ -35,3 +35,4 @@ bitwig-extensions.iml
 /out
 /bin/
 /.settings/
+.DS_Store
