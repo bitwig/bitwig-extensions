@@ -13,6 +13,7 @@ public class HwControls {
    private final HardwareSlider[] sliders = new HardwareSlider[8];
    private final HardwareSlider masterSlider;
    private final RgbNoteButton[] sessionButtons = new RgbNoteButton[16];
+   private final RgbNoteButton[] deviceButtons = new RgbNoteButton[16];
    private final RgbCcButton[] trackButtons = new RgbCcButton[8];
    private final RgbCcButton navUpButton;
    private final RgbCcButton navDownButton;
@@ -28,8 +29,10 @@ public class HwControls {
       final HardwareSurface surface = driver.getSurface();
       final MidiIn midiIn = driver.getMidiIn();
       for (int i = 0; i < 16; i++) {
-         final int note = i < 8 ? 96 + i : 104 + i;
+         final int note = (i < 8 ? 96 : 112 - 8) + i;
          sessionButtons[i] = new RgbNoteButton(driver, "SESSION_BUTTON", i, note);
+         final int deviceNote = (i < 8 ? 64 : 80 - 8) + i;
+         deviceButtons[i] = new RgbNoteButton(driver, "DEVICE_BUTTON", i, deviceNote);
       }
       for (int i = 0; i < 8; i++) {
          trackButtons[i] = new RgbCcButton(driver, "TRACK_BUTTON", i, 37 + i, 15);
@@ -72,6 +75,10 @@ public class HwControls {
 
    public RgbNoteButton[] getSessionButtons() {
       return sessionButtons;
+   }
+
+   public RgbNoteButton[] getDeviceButtons() {
+      return deviceButtons;
    }
 
    public RgbCcButton getNavUpButton() {

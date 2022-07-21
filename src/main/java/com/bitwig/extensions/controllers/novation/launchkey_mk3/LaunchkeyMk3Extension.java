@@ -5,8 +5,8 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.Button;
-import com.bitwig.extensions.controllers.novation.launchkey_mk3.layer.SessionLayer;
-import com.bitwig.extensions.controllers.novation.launchkey_mk3.layer.TrackControlLayer;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcButton;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.layer.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
@@ -32,6 +32,9 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
    private Application application;
    private MasterTrack masterTrack;
    private CursorTrack cursorTrack;
+   private PinnableCursorDevice cursorDevice;
+   private CursorRemoteControlsPage remoteControlBank;
+   private DeviceSelectionLayer deviceSelectionLayer;
 
    protected LaunchkeyMk3Extension(final LaunchkeyMk3ExtensionDefinition definition, final ControllerHost host) {
       super(definition, host);
@@ -58,27 +61,38 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       shiftLayer = new Layer(layers, "SHIFT_LAYER");
       trackBank = host.createMainTrackBank(8, 2, 2);
       cursorTrack = host.createCursorTrack(2, 2);
+      cursorDevice = cursorTrack.createCursorDevice();
+      remoteControlBank = cursorDevice.createCursorRemoteControlsPage(8);
+
       hwControl = new HwControls(this);
       initTransport();
-
-      for (int i = 0; i < 8; i++) {
-         final HardwareSlider slider = hwControl.getSliders()[i];
-         final int index = 80 + i;
-         final Track track = trackBank.getItemAt(i);
-         mainLayer.bind(slider, track.volume());
-         track.volume().displayedValue().addValueObserver(v -> lcdDisplay.setValue(v, index));
-         track.name().addValueObserver(name -> lcdDisplay.setParameter("Volume - " + name, index));
-      }
+      initDeviceHandlingButton();
 
       sessionLayer = new SessionLayer(this);
+      deviceSelectionLayer = new DeviceSelectionLayer(this);
+      final FaderLayer faderLayer = new FaderLayer(this);
+      final KnobLayer knobLayer = new KnobLayer(this);
       final TrackControlLayer trackSelectLayer = new TrackControlLayer(this);
 
       mainLayer.activate();
       sessionLayer.activate();
       trackSelectLayer.activate();
+      faderLayer.activate();
+      knobLayer.activate();
       host.println("########### Init Launchkey Mk3 ############ ");
       midiOut.sendSysex("f07e7f0601f7");
       host.showPopupNotification("Launchkey Initialized");
+   }
+
+   public void initDeviceHandlingButton() {
+      final Button deviceButton = hwControl.getDeviceSelectButton();
+      deviceButton.bindIsPressed(mainLayer, pressed -> {
+         if (pressed) {
+            deviceSelectionLayer.setIsActive(true);
+         } else {
+            deviceSelectionLayer.setIsActive(false);
+         }
+      });
    }
 
    public void initTransport() {
@@ -127,6 +141,11 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
          }
       });
 
+      final RgbCcButton pinButton = hwControl.getDeviceLockButton();
+      cursorDevice.isPinned().markInterested();
+      pinButton.bindPressed(mainLayer, () -> cursorDevice.isPinned().toggle(),
+         () -> cursorDevice.isPinned().get() ? RgbState.OFF : RgbState.WHITE);
+
       final Button clickButton = new Button(this, "CLICK_BUTTON", 76, 15);
       clickButton.bindToggle(mainLayer, transport.isMetronomeEnabled());
       clickButton.bind(shiftLayer, transport.tapTempoAction());
@@ -156,12 +175,24 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       return trackBank;
    }
 
+   public PinnableCursorDevice getCursorDevice() {
+      return cursorDevice;
+   }
+
+   public CursorRemoteControlsPage getRemoteControlBank() {
+      return remoteControlBank;
+   }
+
    public CursorTrack getCursorTrack() {
       return cursorTrack;
    }
 
    public HwControls getHwControl() {
       return hwControl;
+   }
+
+   public LcdDisplay getLcdDisplay() {
+      return lcdDisplay;
    }
 
    private String[] getMask() {

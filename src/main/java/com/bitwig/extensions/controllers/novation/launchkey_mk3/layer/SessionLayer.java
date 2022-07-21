@@ -89,7 +89,6 @@ public class SessionLayer extends Layer {
          }
       }
 
-
       final RgbCcButton navUpButton = driver.getHwControl().getNavUpButton();
       navUpButton.bindPressed(this, () -> trackBank.sceneBank().scrollBackwards(), () -> {
          if (trackBank.sceneBank().canScrollBackwards().get()) {
