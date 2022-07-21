@@ -1,7 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk3.layer;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.novation.launchkey_mk3.HwControls;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyMk3Extension;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.LcdDisplay;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.LcdDeviceParameterBinding;
@@ -12,10 +11,11 @@ import com.bitwig.extensions.framework.Layer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KnobLayer extends Layer {
+public class ControlLayer extends Layer {
    private final Layer deviceLayer;
    private final Layer volumeLayer;
-   private final Layer sendsLayer;
+   private final Layer sendsALayer;
+   private final Layer sendsBLayer;
    private final Layer panLayer;
 
    private Layer currentLayer;
@@ -23,54 +23,61 @@ public class KnobLayer extends Layer {
    private final ControllerHost host;
    private final Map<ControlMode, Layer> layerMap = new HashMap<>();
 
-   public KnobLayer(final LaunchkeyMk3Extension driver) {
-      super(driver.getLayers(), "CONTROL_LAYER");
-      final HwControls hwControl = driver.getHwControl();
+   public ControlLayer(final String id, final LaunchkeyMk3Extension driver, final AbsoluteHardwareControl[] controls,
+                       final int modeButtonCc, final int paramIndex, final ControlMode initMode) {
+      super(driver.getLayers(), id + "_CONTROL_LAYER");
       final LcdDisplay lcdDisplay = driver.getLcdDisplay();
       host = driver.getHost();
       final TrackBank trackBank = driver.getTrackBank();
-      final CursorTrack cursorTrack = driver.getCursorTrack();
-      deviceLayer = new Layer(driver.getLayers(), "KNOB_DEVICE_LAYER");
-      volumeLayer = new Layer(driver.getLayers(), "KNOB_VOLUME_LAYER");
-      sendsLayer = new Layer(driver.getLayers(), "KNOB_SEND_LAYER");
-      panLayer = new Layer(driver.getLayers(), "KNOB_PAN_LAYER");
+      mode = initMode;
+      deviceLayer = new Layer(driver.getLayers(), id + "_DEVICE_LAYER");
+      volumeLayer = new Layer(driver.getLayers(), id + "_VOLUME_LAYER");
+      sendsALayer = new Layer(driver.getLayers(), id + "_SEND_A_LAYER");
+      sendsBLayer = new Layer(driver.getLayers(), id + "_SEND_B_LAYER");
+      panLayer = new Layer(driver.getLayers(), id + "_PAN_LAYER");
 
-      final ModeButton deviceModeButton = new ModeButton("KNOB", driver, 9, ControlMode.DEVICE);
-      final ModeButton volumeModeButton = new ModeButton("KNOB", driver, 9, ControlMode.VOLUME);
-      final ModeButton sendAModeButton = new ModeButton("KNOB", driver, 9, ControlMode.SEND_A);
-      final ModeButton panModeButton = new ModeButton("KNOB", driver, 9, ControlMode.PAN);
+      final ModeButton deviceModeButton = new ModeButton(id, driver, modeButtonCc, ControlMode.DEVICE);
+      final ModeButton volumeModeButton = new ModeButton(id, driver, modeButtonCc, ControlMode.VOLUME);
+      final ModeButton sendAModeButton = new ModeButton(id, driver, modeButtonCc, ControlMode.SEND_A);
+      final ModeButton sendBModeButton = new ModeButton(id, driver, modeButtonCc, ControlMode.SEND_B);
+      final ModeButton panModeButton = new ModeButton(id, driver, modeButtonCc, ControlMode.PAN);
 
       deviceModeButton.bind(this, this::changeMode);
       volumeModeButton.bind(this, this::changeMode);
       sendAModeButton.bind(this, this::changeMode);
+      sendBModeButton.bind(this, this::changeMode);
       panModeButton.bind(this, this::changeMode);
       layerMap.put(ControlMode.DEVICE, deviceLayer);
       layerMap.put(ControlMode.VOLUME, volumeLayer);
-      layerMap.put(ControlMode.SEND_A, sendsLayer);
+      layerMap.put(ControlMode.SEND_A, sendsALayer);
+      layerMap.put(ControlMode.SEND_B, sendsBLayer);
       layerMap.put(ControlMode.PAN, panLayer);
 
       final CursorRemoteControlsPage remoteParameters = driver.getRemoteControlBank();
       for (int i = 0; i < 8; i++) {
-         final AbsoluteHardwareKnob knob = hwControl.getKnobs()[i];
+         final AbsoluteHardwareControl knob = controls[i];
          final Parameter parameter = remoteParameters.getParameter(i);
-         final int index = 56 + i;
+         final int index = paramIndex + i;
          final Track track = trackBank.getItemAt(i);
          final Send send1 = track.sendBank().getItemAt(0);
+         final Send send2 = track.sendBank().getItemAt(1);
          volumeLayer.bind(knob, track.volume());
          volumeLayer.addBinding(new LcdTrackParameterBinding("Vol", track, track.volume(), lcdDisplay, index));
 
          panLayer.bind(knob, track.pan());
          panLayer.addBinding(new LcdTrackParameterBinding("Pan", track, track.pan(), lcdDisplay, index));
 
-         sendsLayer.bind(knob, send1);
-         sendsLayer.addBinding(new LcdTrackParameterBinding("SendA", track, send1, lcdDisplay, index));
+         sendsALayer.bind(knob, send1);
+         sendsALayer.addBinding(new LcdTrackParameterBinding("SendA", track, send1, lcdDisplay, index));
+
+         sendsBLayer.bind(knob, send2);
+         sendsBLayer.addBinding(new LcdTrackParameterBinding("SendB", track, send2, lcdDisplay, index));
 
          deviceLayer.bind(knob, parameter);
          deviceLayer.addBinding(new LcdDeviceParameterBinding(remoteParameters, parameter, lcdDisplay, index));
       }
 
-
-      currentLayer = panLayer;
+      currentLayer = layerMap.get(initMode);
    }
 
    private void changeMode(final ControlMode newMode) {

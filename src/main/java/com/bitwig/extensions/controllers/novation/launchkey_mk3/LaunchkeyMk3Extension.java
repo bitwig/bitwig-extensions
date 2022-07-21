@@ -70,8 +70,10 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
 
       sessionLayer = new SessionLayer(this);
       deviceSelectionLayer = new DeviceSelectionLayer(this);
-      final FaderLayer faderLayer = new FaderLayer(this);
-      final KnobLayer knobLayer = new KnobLayer(this);
+
+      final ControlLayer knobLayer = new ControlLayer("KNOB", this, hwControl.getKnobs(), 9, 56, ControlMode.PAN);
+      final ControlLayer faderLayer = new ControlLayer("FADER", this, hwControl.getSliders(), 10, 80,
+         ControlMode.VOLUME);
       final TrackControlLayer trackSelectLayer = new TrackControlLayer(this);
 
       mainLayer.activate();
