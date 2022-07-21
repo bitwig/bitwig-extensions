@@ -1,6 +1,7 @@
-package com.bitwig.extensions.controllers.novation.launchkey_mk3;
+package com.bitwig.extensions.controllers.novation.launchkey_mk3.control;
 
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyMk3Extension;
 import com.bitwig.extensions.framework.Layer;
 
 import java.util.function.Consumer;

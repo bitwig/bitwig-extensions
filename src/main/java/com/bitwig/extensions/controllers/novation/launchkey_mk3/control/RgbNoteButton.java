@@ -1,7 +1,9 @@
-package com.bitwig.extensions.controllers.novation.launchkey_mk3;
+package com.bitwig.extensions.controllers.novation.launchkey_mk3.control;
 
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyMk3Extension;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.RgbState;
 
 public class RgbNoteButton extends RgbButton {
 

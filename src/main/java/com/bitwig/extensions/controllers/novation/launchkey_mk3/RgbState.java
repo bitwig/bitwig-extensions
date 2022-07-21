@@ -7,6 +7,14 @@ import java.util.Objects;
 
 public class RgbState extends InternalHardwareLightState {
 
+   public static final RgbState OFF = new RgbState(0);
+   public static final RgbState WHITE = new RgbState(3);
+   public static final RgbState LOW_WHITE = new RgbState(1);
+   public static final RgbState DIM_WHITE = new RgbState(2);
+   public static final RgbState RED = new RgbState(5);
+   public static final RgbState RED_LO = new RgbState(7);
+
+
    private final int colorIndex;
    private final int altColorIndex;
 
@@ -14,14 +22,21 @@ public class RgbState extends InternalHardwareLightState {
 
    private static final RgbState[] registry = new RgbState[128];
 
-   public RgbState(final int colorIndex, final LightState state) {
+   private RgbState(final int colorIndex) {
+      super();
+      this.colorIndex = colorIndex;
+      state = LightState.NORMAL;
+      altColorIndex = colorIndex;
+   }
+
+   private RgbState(final int colorIndex, final LightState state) {
       super();
       this.colorIndex = colorIndex;
       this.state = state;
       altColorIndex = 0;
    }
 
-   public RgbState(final int colorIndex, final LightState state, final int altColorIndex) {
+   private RgbState(final int colorIndex, final LightState state, final int altColorIndex) {
       super();
       this.colorIndex = colorIndex;
       this.state = state;
@@ -82,7 +97,7 @@ public class RgbState extends InternalHardwareLightState {
          return false;
       }
       final RgbState other = (RgbState) obj;
-      return colorIndex == other.colorIndex && state == other.state;
+      return colorIndex == other.colorIndex && state == other.state && altColorIndex == other.altColorIndex;
    }
 
 

@@ -4,6 +4,9 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.Button;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcButton;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbNoteButton;
 
 public class HwControls {
    private final AbsoluteHardwareKnob[] knobs = new AbsoluteHardwareKnob[8];
@@ -18,6 +21,8 @@ public class HwControls {
    private final RgbCcButton deviceLockButton;
    private final Button trackLeftButton;
    private final Button trackRightButton;
+   private final Button deviceSelectButton;
+   private final RgbCcButton armSelectButton;
 
    public HwControls(final LaunchkeyMk3Extension driver) {
       final HardwareSurface surface = driver.getSurface();
@@ -41,9 +46,12 @@ public class HwControls {
       navDownButton = new RgbCcButton(driver, "NAV_DOWN", 1, 107, 15);
       sceneLaunchButton = new RgbCcButton(driver, "SCENE_L", 2, 104, 0);
       modeRow2Button = new RgbCcButton(driver, "MROW2", 4, 105, 0);
-      deviceLockButton = new RgbCcButton(driver, "DEV_LOCK", 5, 52, 15);
       trackLeftButton = new Button(driver, "TRACK_LEFT", 103, 15);
       trackRightButton = new Button(driver, "TRACK_RIGHT", 102, 15);
+
+      armSelectButton = new RgbCcButton(driver, "ARM_SELECT", 6, 45, 15);
+      deviceLockButton = new RgbCcButton(driver, "DEV_LOCK", 5, 52, 15);
+      deviceSelectButton = new Button(driver, "DEVICE_SELECT", 51, 15);
    }
 
    public HardwareSlider getMasterSlider() {
@@ -88,5 +96,17 @@ public class HwControls {
 
    public Button getTrackRightButton() {
       return trackRightButton;
+   }
+
+   public Button getDeviceSelectButton() {
+      return deviceSelectButton;
+   }
+
+   public RgbCcButton getArmSelectButton() {
+      return armSelectButton;
+   }
+
+   public RgbCcButton getModeRow2Button() {
+      return modeRow2Button;
    }
 }
