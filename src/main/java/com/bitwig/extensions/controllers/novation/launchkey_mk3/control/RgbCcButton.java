@@ -7,9 +7,9 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk3.RgbState;
 
 public class RgbCcButton extends RgbButton {
 
-   public RgbCcButton(final LaunchkeyMk3Extension driver, final String name, final int index, final int ccNr,
-                      final int channel) {
-      super(driver, name, index, ccNr, channel);
+   public RgbCcButton(final LaunchkeyMk3Extension driver, final String name, final int index, final int channel,
+                      final int ccNr) {
+      super(driver, name, index, channel, ccNr);
       final MidiIn midiIn = driver.getMidiIn();
       hwButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(channel, ccNr, 127));
       hwButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(channel, ccNr, 0));

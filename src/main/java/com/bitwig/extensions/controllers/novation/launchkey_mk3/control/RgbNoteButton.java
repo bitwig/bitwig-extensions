@@ -7,8 +7,11 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk3.RgbState;
 
 public class RgbNoteButton extends RgbButton {
 
-   public RgbNoteButton(final LaunchkeyMk3Extension driver, final String name, final int index, final int noteNr) {
-      super(driver, name, index, noteNr, 0);
+   private final int colorCodeBase;
+
+   public RgbNoteButton(final LaunchkeyMk3Extension driver, final String name, final int index, final int channel,
+                        final int noteNr) {
+      super(driver, name, index, channel, noteNr);
       final MidiIn midiIn = driver.getMidiIn();
       final String format = String.format("(status==%d && data1==%d && data2>0)", 0x90 | channel, noteNr);
       hwButton.pressedAction().setActionMatcher(midiIn.createActionMatcher(format));
@@ -16,6 +19,7 @@ public class RgbNoteButton extends RgbButton {
          .setActionMatcher(
             midiIn.createActionMatcher(String.format("(status==%d && data1==%d && data2==0)", 0x90 | channel, noteNr)));
       hwLight.state().onUpdateHardware(this::updateState);
+      colorCodeBase = channel == 9 ? 0x99 : 0x90;
    }
 
    private void updateState(final InternalHardwareLightState state) {
@@ -23,18 +27,18 @@ public class RgbNoteButton extends RgbButton {
          final RgbState rgbState = (RgbState) state;
          switch (rgbState.getState()) {
             case NORMAL:
-               midiOut.sendMidi(0x90, number, rgbState.getColorIndex());
+               midiOut.sendMidi(colorCodeBase, number, rgbState.getColorIndex());
                break;
             case FLASHING:
-               midiOut.sendMidi(0x90, number, rgbState.getAltColor());
-               midiOut.sendMidi(0x91, number, rgbState.getColorIndex());
+               midiOut.sendMidi(colorCodeBase, number, rgbState.getAltColor());
+               midiOut.sendMidi(colorCodeBase + 1, number, rgbState.getColorIndex());
                break;
             case PULSING:
-               midiOut.sendMidi(0x92, number, rgbState.getColorIndex());
+               midiOut.sendMidi(colorCodeBase + 2, number, rgbState.getColorIndex());
                break;
          }
       } else {
-         midiOut.sendMidi(0x90, number, 0);
+         midiOut.sendMidi(colorCodeBase, number, 0);
       }
    }
 

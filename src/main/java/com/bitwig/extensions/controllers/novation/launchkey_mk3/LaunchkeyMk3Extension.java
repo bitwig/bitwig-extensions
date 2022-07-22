@@ -5,6 +5,7 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.Button;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.ModeType;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.layer.*;
 import com.bitwig.extensions.framework.Layer;
@@ -37,6 +38,9 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
    private DeviceSelectionLayer deviceSelectionLayer;
 
    private HoldTask holdTask = null;
+   private DeviceBank deviceBank;
+   private DrumPadLayer drumPadLayer;
+   private PinnableCursorDevice primaryDevice;
 
    protected LaunchkeyMk3Extension(final LaunchkeyMk3ExtensionDefinition definition, final ControllerHost host) {
       super(definition, host);
@@ -64,8 +68,11 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       trackBank = host.createMainTrackBank(8, 2, 2);
       cursorTrack = host.createCursorTrack(2, 2);
       cursorDevice = cursorTrack.createCursorDevice();
+      deviceBank = cursorTrack.createDeviceBank(8);
       remoteControlBank = cursorDevice.createCursorRemoteControlsPage(8);
       trackBank.followCursorTrack(cursorTrack);
+      primaryDevice = cursorTrack.createCursorDevice("DrumDetection", "Pad Device", 16,
+         CursorDeviceFollowMode.FIRST_INSTRUMENT);
 
       hwControl = new HwControls(this);
       initTransport();
@@ -73,11 +80,13 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
 
       sessionLayer = new SessionLayer(this);
       deviceSelectionLayer = new DeviceSelectionLayer(this);
+      drumPadLayer = new DrumPadLayer(this);
 
       final ControlLayer knobLayer = new ControlLayer("KNOB", this, hwControl.getKnobs(), 9, 56, ControlMode.PAN);
       final ControlLayer faderLayer = new ControlLayer("FADER", this, hwControl.getSliders(), 10, 80,
          ControlMode.VOLUME);
       final TrackControlLayer trackSelectLayer = new TrackControlLayer(this);
+      ModeType.bindButton(PadMode.values(), this, "PADS", 3, mainLayer, this::changePadMode);
 
       mainLayer.activate();
       sessionLayer.activate();
@@ -90,13 +99,34 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       host.scheduleTask(this::handlePing, 100);
    }
 
+   private void changePadMode(final PadMode padMode) {
+      host.println("MODE CHANGE " + padMode);
+      switch (padMode) {
+         case SESSION:
+            drumPadLayer.setIsActive(false);
+            sessionLayer.setIsActive(true);
+            break;
+         case DRUM:
+            sessionLayer.setIsActive(false);
+            drumPadLayer.setIsActive(true);
+            break;
+         default:
+            sessionLayer.setIsActive(false);
+            drumPadLayer.setIsActive(false);
+            break;
+      }
+   }
+
    public void initDeviceHandlingButton() {
       final Button deviceButton = hwControl.getDeviceSelectButton();
       deviceButton.bindIsPressed(mainLayer, pressed -> {
          if (pressed) {
             deviceSelectionLayer.setIsActive(true);
+            lcdDisplay.sendText(cursorDevice.name().get(), 0);
+            lcdDisplay.sendText("", 1);
          } else {
             deviceSelectionLayer.setIsActive(false);
+            lcdDisplay.clearDisplay();
          }
       });
    }
@@ -150,7 +180,7 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       final RgbCcButton pinButton = hwControl.getDeviceLockButton();
       cursorDevice.isPinned().markInterested();
       pinButton.bindPressed(mainLayer, () -> cursorDevice.isPinned().toggle(),
-         () -> cursorDevice.isPinned().get() ? RgbState.OFF : RgbState.WHITE);
+         () -> cursorDevice.isPinned().get() ? RgbState.WHITE : RgbState.OFF);
 
       final Button clickButton = new Button(this, "CLICK_BUTTON", 76, 15);
       clickButton.bindToggle(mainLayer, transport.isMetronomeEnabled());
@@ -184,18 +214,23 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
    }
 
    public void startHold(final Runnable action) {
-      startHold(500, 90, action);
+      startHold(500, 100, action);
    }
 
    public void stopHold() {
       holdTask = null;
    }
 
+   public void setTransientText(final String row1, final String row2) {
+      lcdDisplay.sendText(row1, 0);
+      lcdDisplay.sendText(row2, 1);
+   }
+
    private void handlePing() {
       if (holdTask != null) {
          holdTask.ping();
       }
-      host.scheduleTask(this::handlePing, 100);
+      host.scheduleTask(this::handlePing, 50);
    }
 
    public HardwareSurface getSurface() {
@@ -236,6 +271,14 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
 
    public LcdDisplay getLcdDisplay() {
       return lcdDisplay;
+   }
+
+   public DeviceBank getDeviceBank() {
+      return deviceBank;
+   }
+
+   public PinnableCursorDevice getPrimaryDevice() {
+      return primaryDevice;
    }
 
    private String[] getMask() {

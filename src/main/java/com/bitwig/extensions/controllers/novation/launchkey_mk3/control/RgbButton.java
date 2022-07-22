@@ -17,8 +17,8 @@ public class RgbButton {
    protected final ControllerHost host;
    protected int channel;
 
-   public RgbButton(final LaunchkeyMk3Extension driver, final String name, final int index, final int noteCcNr,
-                    final int channel) {
+   public RgbButton(final LaunchkeyMk3Extension driver, final String name, final int index, final int channel,
+                    final int noteCcNr) {
       number = noteCcNr;
       this.channel = channel;
       final HardwareSurface surface = driver.getSurface();
@@ -35,6 +35,14 @@ public class RgbButton {
       layer.bind(hwButton, hwButton.pressedAction(), () -> target.accept(true));
       layer.bind(hwButton, hwButton.releasedAction(), () -> target.accept(false));
       layer.bindLightState(lightSource::get, hwLight);
+   }
+
+   public void bindIsPressed(final Layer layer, final Consumer<Boolean> target, final RgbState downColor,
+                             final RgbState releaseColor) {
+      layer.bind(hwButton, hwButton.pressedAction(), () -> target.accept(true));
+      layer.bind(hwButton, hwButton.releasedAction(), () -> target.accept(false));
+      hwButton.isPressed().markInterested();
+      layer.bindLightState(() -> hwButton.isPressed().get() ? downColor : releaseColor, hwLight);
    }
 
    public void bindPressed(final Layer layer, final Runnable action, final Supplier<RgbState> lightSource) {
