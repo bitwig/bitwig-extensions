@@ -36,6 +36,8 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
    private CursorRemoteControlsPage remoteControlBank;
    private DeviceSelectionLayer deviceSelectionLayer;
 
+   private HoldTask holdTask = null;
+
    protected LaunchkeyMk3Extension(final LaunchkeyMk3ExtensionDefinition definition, final ControllerHost host) {
       super(definition, host);
    }
@@ -63,6 +65,7 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       cursorTrack = host.createCursorTrack(2, 2);
       cursorDevice = cursorTrack.createCursorDevice();
       remoteControlBank = cursorDevice.createCursorRemoteControlsPage(8);
+      trackBank.followCursorTrack(cursorTrack);
 
       hwControl = new HwControls(this);
       initTransport();
@@ -84,6 +87,7 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       host.println("########### Init Launchkey Mk3 ############ ");
       midiOut.sendSysex("f07e7f0601f7");
       host.showPopupNotification("Launchkey Initialized");
+      host.scheduleTask(this::handlePing, 100);
    }
 
    public void initDeviceHandlingButton() {
@@ -155,6 +159,43 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       final Button undoButton = new Button(this, "UNDO_BUTTON", 77, 15);
       undoButton.bind(mainLayer, application.undoAction());
       undoButton.bind(shiftLayer, application.redoAction());
+
+      final Button trackLeftButton = hwControl.getTrackLeftButton();
+      trackLeftButton.bindIsPressed(mainLayer, pressed -> {
+         if (pressed) {
+            startHold(() -> cursorTrack.selectPrevious());
+         } else {
+            stopHold();
+         }
+      });
+      final Button trackRightButton = hwControl.getTrackRightButton();
+      trackRightButton.bindIsPressed(mainLayer, pressed -> {
+         if (pressed) {
+            startHold(() -> cursorTrack.selectNext());
+         } else {
+            stopHold();
+         }
+      });
+   }
+
+   public void startHold(final int initTime, final int repeatTime, final Runnable action) {
+      action.run();
+      holdTask = new HoldTask(initTime, repeatTime, action);
+   }
+
+   public void startHold(final Runnable action) {
+      startHold(500, 90, action);
+   }
+
+   public void stopHold() {
+      holdTask = null;
+   }
+
+   private void handlePing() {
+      if (holdTask != null) {
+         holdTask.ping();
+      }
+      host.scheduleTask(this::handlePing, 100);
    }
 
    public HardwareSurface getSurface() {

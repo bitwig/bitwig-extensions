@@ -90,7 +90,13 @@ public class SessionLayer extends Layer {
       }
 
       final RgbCcButton navUpButton = driver.getHwControl().getNavUpButton();
-      navUpButton.bindPressed(this, () -> trackBank.sceneBank().scrollBackwards(), () -> {
+      navUpButton.bindIsPressed(this, pressed -> {
+         if (pressed) {
+            driver.startHold(() -> trackBank.sceneBank().scrollBackwards());
+         } else {
+            driver.stopHold();
+         }
+      }, () -> {
          if (trackBank.sceneBank().canScrollBackwards().get()) {
             return RgbState.DIM_WHITE;
          } else {
@@ -98,7 +104,13 @@ public class SessionLayer extends Layer {
          }
       });
       final RgbCcButton navDownButton = driver.getHwControl().getNavDownButton();
-      navDownButton.bindPressed(this, () -> trackBank.sceneBank().scrollForwards(), () -> {
+      navDownButton.bindIsPressed(this, pressed -> {
+         if (pressed) {
+            driver.startHold(() -> trackBank.sceneBank().scrollForwards());
+         } else {
+            driver.stopHold();
+         }
+      }, () -> {
          if (trackBank.sceneBank().canScrollForwards().get()) {
             return RgbState.DIM_WHITE;
          } else {
