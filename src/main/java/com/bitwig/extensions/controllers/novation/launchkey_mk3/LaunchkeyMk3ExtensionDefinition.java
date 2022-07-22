@@ -62,8 +62,8 @@ public class LaunchkeyMk3ExtensionDefinition extends ControllerExtensionDefiniti
          list.add(new String[]{"MIDIIN2 (LKMK3 MIDI)", "LKMK3 MIDI"},
             new String[]{"MIDIOUT2 (LKMK3 MIDI)", "LKMK3 MIDI"});
       } else if (platformType == PlatformType.MAC) {
-         list.add(new String[]{"MIDIIN2 (LKMK3 MIDI)", "LKMK3 MIDI"},
-            new String[]{"MIDIOUT2 (LKMK3 MIDI)", "LKMK3 MIDI"});
+         list.add(new String[]{"Launchkey MK3 49 LKMK3 DAW Out", "Launchkey MK3 49 LKMK3 MIDI Out"},
+            new String[]{"Launchkey MK3 49 LKMK3 DAW In", "Launchkey MK3 49 LKMK3 MIDI In"});
       } else if (platformType == PlatformType.LINUX) {
          list.add(new String[]{"MIDIIN2 (LKMK3 MIDI)", "LKMK3 MIDI"},
             new String[]{"MIDIOUT2 (LKMK3 MIDI)", "LKMK3 MIDI"});
