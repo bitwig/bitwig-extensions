@@ -145,7 +145,7 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
          if (pressed) {
             deviceSelectionLayer.setIsActive(true);
             lcdDisplay.sendText(cursorDevice.name().get(), 0);
-            lcdDisplay.sendText("", 1);
+            lcdDisplay.sendText(deviceSelectionLayer.getCurrentBankName(), 1);
          } else {
             deviceSelectionLayer.setIsActive(false);
             lcdDisplay.clearDisplay();

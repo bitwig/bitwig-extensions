@@ -7,6 +7,7 @@ import com.bitwig.extensions.framework.Layer;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class RgbButton {
@@ -63,6 +64,15 @@ public class RgbButton {
          }
       }, hwLight);
    }
+
+   public void bindIsPressed(final Layer layer, final Consumer<Boolean> target,
+                             final Function<Boolean, RgbState> colorProvider) {
+      layer.bind(hwButton, hwButton.pressedAction(), () -> target.accept(true));
+      layer.bind(hwButton, hwButton.releasedAction(), () -> target.accept(false));
+      hwButton.isPressed().markInterested();
+      layer.bindLightState(() -> colorProvider.apply(hwButton.isPressed().get()), hwLight);
+   }
+
 
    public void bindPressed(final Layer layer, final Runnable action, final Supplier<RgbState> lightSource) {
       layer.bind(hwButton, hwButton.pressedAction(), action);

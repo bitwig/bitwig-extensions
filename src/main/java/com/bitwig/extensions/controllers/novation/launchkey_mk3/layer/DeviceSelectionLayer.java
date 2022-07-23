@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk3.layer;
 
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.HwControls;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyMk3Extension;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.RgbState;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcButton;
@@ -38,7 +39,9 @@ public class DeviceSelectionLayer extends Layer {
    public DeviceSelectionLayer(final LaunchkeyMk3Extension driver) {
       super(driver.getLayers(), "DEVICE_LAYER");
 
-      final RgbNoteButton[] buttons = driver.getHwControl().getDeviceButtons();
+      final HwControls hwControl = driver.getHwControl();
+
+      final RgbNoteButton[] buttons = hwControl.getDeviceButtons();
       final CursorRemoteControlsPage remoteControlBank = driver.getRemoteControlBank();
       final DeviceBank deviceBank = driver.getDeviceBank();
       final PinnableCursorDevice cursorDevice = driver.getCursorDevice();
@@ -48,7 +51,7 @@ public class DeviceSelectionLayer extends Layer {
       cursorDevice.name().addValueObserver(name -> {
          deviceName = name;
          if (cursorDownDown || cursorUpDown) {
-            driver.setTransientText(deviceName, selectedDeviceIndex != -1 ? pageNames[selectedDeviceIndex] : "");
+            driver.setTransientText(deviceName, getCurrentBankName());
          }
       });
       remoteControlBank.pageNames().addValueObserver(newNames -> pageNames = newNames);
@@ -62,8 +65,10 @@ public class DeviceSelectionLayer extends Layer {
          final RgbNoteButton pageButton = buttons[i];
          pageButton.bindIsPressed(this, pressed -> {
             if (pressed) {
-               remoteControlBank.selectedPageIndex().set(index);
-               driver.setTransientText(deviceName, pageNames[index]);
+               if (index < pageNames.length) {
+                  remoteControlBank.selectedPageIndex().set(index);
+                  driver.setTransientText(deviceName, pageNames[index]);
+               }
             } else {
                driver.releaseText();
             }
@@ -77,6 +82,7 @@ public class DeviceSelectionLayer extends Layer {
                selectedDeviceIndex = index;
             }
          });
+
          final DeviceSlot slot = new DeviceSlot(index, device);
          device.hasDrumPads().addValueObserver(hasPads -> slot.hasDrumPads = hasPads);
          device.exists().addValueObserver(ex -> slot.hasDevice = ex);
@@ -87,14 +93,14 @@ public class DeviceSelectionLayer extends Layer {
       }
 
       host = driver.getHost();
-      final RgbCcButton navUpButton = driver.getHwControl().getNavUpButton();
+      final RgbCcButton navUpButton = hwControl.getNavUpButton();
       navUpButton.bindIsPressed(this, pressed -> {
          if (pressed) {
             cursorDevice.selectPrevious();
          }
          cursorUpDown = pressed;
       }, () -> cursorDevice.hasPrevious().get() ? RgbState.WHITE : RgbState.OFF);
-      final RgbCcButton navDownButton = driver.getHwControl().getNavDownButton();
+      final RgbCcButton navDownButton = hwControl.getNavDownButton();
       navDownButton.bindIsPressed(this, pressed -> {
          if (pressed) {
             cursorDevice.selectNext();
@@ -102,11 +108,10 @@ public class DeviceSelectionLayer extends Layer {
          cursorDownDown = pressed;
       }, () -> cursorDevice.hasNext().get() ? RgbState.WHITE : RgbState.OFF);
 
-      final RgbCcButton sceneLaunchButton = driver.getHwControl().getSceneLaunchButton();
+      final RgbCcButton sceneLaunchButton = hwControl.getSceneLaunchButton();
       sceneLaunchButton.bindIsPressed(this, pressed -> sceneDown = pressed, RgbState.DIM_WHITE, RgbState.OFF);
 
-
-      final RgbCcButton modeButton = driver.getHwControl().getModeRow2Button();
+      final RgbCcButton modeButton = hwControl.getModeRow2Button();
       modeButton.bindIsPressed(this, pressed -> modeDown = pressed, RgbState.DIM_WHITE, RgbState.OFF);
    }
 
@@ -121,8 +126,12 @@ public class DeviceSelectionLayer extends Layer {
          deviceSlot.device.deleteObject();
       } else {
          cursorDevice.selectDevice(deviceSlot.device);
-         driver.setTransientText(deviceSlot.name, selectedDeviceIndex != -1 ? pageNames[selectedDeviceIndex] : "");
+         driver.setTransientText(deviceSlot.name, getCurrentBankName());
       }
+   }
+
+   public String getCurrentBankName() {
+      return selectedDeviceIndex != -1 && selectedDeviceIndex < pageNames.length ? pageNames[selectedDeviceIndex] : "";
    }
 
    private RgbState getDeviceColor(final DeviceSlot slot) {

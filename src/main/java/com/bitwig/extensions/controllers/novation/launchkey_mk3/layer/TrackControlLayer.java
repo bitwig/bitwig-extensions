@@ -17,7 +17,8 @@ public class TrackControlLayer extends Layer {
    private Mode mode = Mode.SELECT;
    private final int[] trackColors = new int[8];
    private final boolean[] selectedInEditor = new boolean[8];
-   private final boolean trackDown = false;
+   private boolean trackDown = false;
+   private String deviceName = "";
 
    private enum Mode {
       ARM,
@@ -35,6 +36,13 @@ public class TrackControlLayer extends Layer {
       selectLayer = new Layer(driver.getLayers(), "TRACK_SELECT_LAYER");
       final PinnableCursorDevice primaryDevice = driver.getPrimaryDevice();
       primaryDevice.name().markInterested();
+
+      primaryDevice.name().addValueObserver(newName -> {
+         deviceName = newName;
+         if (trackDown) {
+            driver.getLcdDisplay().sendText(deviceName, 1);
+         }
+      });
 
       for (int i = 0; i < 8; i++) {
          final int index = i;
@@ -54,8 +62,10 @@ public class TrackControlLayer extends Layer {
             if (pressed) {
                cursorTrack.selectChannel(track);
                driver.setTransientText(track.name().get(), primaryDevice.name().get());
+               trackDown = true;
             } else {
                driver.releaseText();
+               trackDown = false;
             }
          }, () -> getSelectState(index, track));
       }

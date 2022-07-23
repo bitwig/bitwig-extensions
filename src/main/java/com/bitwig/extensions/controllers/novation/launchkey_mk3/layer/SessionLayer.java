@@ -96,9 +96,9 @@ public class SessionLayer extends Layer {
          } else {
             driver.stopHold();
          }
-      }, () -> {
+      }, pressed -> {
          if (trackBank.sceneBank().canScrollBackwards().get()) {
-            return RgbState.DIM_WHITE;
+            return pressed ? RgbState.WHITE : RgbState.LOW_WHITE;
          } else {
             return RgbState.OFF;
          }
@@ -110,9 +110,9 @@ public class SessionLayer extends Layer {
          } else {
             driver.stopHold();
          }
-      }, () -> {
+      }, pressed -> {
          if (trackBank.sceneBank().canScrollForwards().get()) {
-            return RgbState.DIM_WHITE;
+            return pressed ? RgbState.WHITE : RgbState.LOW_WHITE;
          } else {
             return RgbState.OFF;
          }

@@ -13,16 +13,48 @@ import java.util.Set;
 public class DrumPadLayer extends Layer {
 
    private final DrumPadBank padBank;
+
    private final NoteInput noteInput;
    private final Set<Integer> padNotes = new HashSet<>();
+   private final PinnableCursorDevice cursorDevice;
+   private boolean selectModeActive = false;
    private int padsNoteOffset = 32;
    private int keyNoteOffset = 32;
    private final int[] hangingNotes = new int[16];
    private final Integer[] noteTable = new Integer[128];
    private final boolean[] isPlaying = new boolean[128];
-   private final int[] padColors = new int[16];
+
+   private final PadSlot[] padSlots = new PadSlot[16];
    private int trackColor = 0;
+
    private boolean focusOnDrums = true;
+
+   public static class PadSlot {
+      private final DrumPad pad;
+      private final int index;
+      private final Device device;
+      private int color;
+
+      public PadSlot(final int index, final DrumPad pad) {
+         this.index = index;
+         this.pad = pad;
+         final DeviceBank deviceBank = pad.createDeviceBank(1);
+         device = deviceBank.getDevice(0);
+      }
+
+      public void setColor(final int color) {
+         this.color = color;
+      }
+
+      public int getColor() {
+         return color;
+      }
+
+      public void select(final PinnableCursorDevice cursorDevice) {
+         pad.selectInEditor();
+         cursorDevice.selectDevice(device);
+      }
+   }
 
    public DrumPadLayer(final LaunchkeyMk3Extension driver) {
       super(driver.getLayers(), "DRUM_LAYER");
@@ -33,6 +65,7 @@ public class DrumPadLayer extends Layer {
       noteInput = driver.getMidiIn().createNoteInput("MIDI", "89????", "99????", "A9????");
       noteInput.setShouldConsumeEvents(false);
       final PinnableCursorDevice primaryDevice = driver.getPrimaryDevice();
+      cursorDevice = driver.getCursorDevice();
       padBank = primaryDevice.createDrumPadBank(16);
       padBank.scrollPosition().addValueObserver(index -> {
          padsNoteOffset = index;
@@ -41,9 +74,7 @@ public class DrumPadLayer extends Layer {
          }
       });
       padBank.exists().markInterested();
-      padBank.scrollPosition().set(30);
-      padBank.canScrollChannelsUp().markInterested();
-      padBank.canScrollChannelsDown().markInterested();
+      padBank.scrollPosition().set(padsNoteOffset);
 
       primaryDevice.hasDrumPads().addValueObserver(hasDrumPads -> {
          focusOnDrums = hasDrumPads;
@@ -57,9 +88,10 @@ public class DrumPadLayer extends Layer {
          final int index = i;
          final RgbNoteButton button = buttons[i];
          final DrumPad pad = padBank.getItemAt(i);
+         padSlots[index] = new PadSlot(index, pad);
          padNotes.add(buttons[i].getNumber());
          pad.exists().markInterested();
-         pad.color().addValueObserver((r, g, b) -> padColors[index] = ColorLookup.toColor(r, g, b));
+         pad.color().addValueObserver((r, g, b) -> padSlots[index].setColor(ColorLookup.toColor(r, g, b)));
          button.bindPressed(this, () -> {
          }, () -> getColor(index, pad));
       }
@@ -82,13 +114,12 @@ public class DrumPadLayer extends Layer {
          }
       }, this::canScrollDown, RgbState.YELLOW, RgbState.YELLOW_LO);
       final RgbCcButton sceneLaunchButton = hwControl.getSceneLaunchButton();
-      sceneLaunchButton.bindPressed(this, () -> {
-
-      }, () -> RgbState.WHITE);
+      sceneLaunchButton.bindIsPressed(this, pressed -> selectModeActive = pressed,
+         pressed -> pressed ? RgbState.WHITE : RgbState.OFF);
       final RgbCcButton row2ModeButton = hwControl.getModeRow2Button();
-      row2ModeButton.bindPressed(this, () -> {
+      row2ModeButton.bindIsPressed(this, pressed -> {
 
-      }, () -> RgbState.OFF);
+      }, pressed -> pressed ? RgbState.ORANGE_LO : RgbState.OFF);
       cursorTrack.playingNotes().addValueObserver(this::handleNotes);
       cursorTrack.color().addValueObserver((r, g, b) -> trackColor = ColorLookup.toColor(r, g, b));
    }
@@ -137,10 +168,11 @@ public class DrumPadLayer extends Layer {
       if (!focusOnDrums) {
          return RgbState.of(isPlaying[noteValue] ? trackColor - 2 : trackColor + 1);
       } else if (pad.exists().get()) {
-         if (padColors[index] == 0) {
+         final int color = padSlots[index].getColor();
+         if (color == 0) {
             return RgbState.of(isPlaying[noteValue] ? trackColor - 2 : trackColor + 1);
          }
-         return RgbState.of(isPlaying[noteValue] ? padColors[index] - 1 : padColors[index]);
+         return RgbState.of(isPlaying[noteValue] ? color - 1 : color);
       }
       return RgbState.OFF;
    }
@@ -164,6 +196,9 @@ public class DrumPadLayer extends Layer {
       final int notePlayed = focusOnDrums ? padsNoteOffset + index : keyNoteOffset + index;
       if (sb == LaunchkeyConstants.NOTE_ON && vel > 0) {
          hangingNotes[index] = notePlayed;
+         if (selectModeActive) {
+            padSlots[index].select(cursorDevice);
+         }
       } else {
          if (hangingNotes[index] != -1 && hangingNotes[index] != notePlayed) {
             noteInput.sendRawMidiEvent(LaunchkeyConstants.NOTE_OFF | LaunchkeyConstants.DRUM_CHANNEL,
