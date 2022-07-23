@@ -1,29 +1,14 @@
-package com.bitwig.extensions.controllers.novation.launchkey_mk3;
+package com.bitwig.extensions.controllers.novation.launchkey_mk3.definition;
 
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
-import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyMk3Extension;
 
 import java.util.UUID;
 
-public class LaunchkeyMk3ExtensionDefinition extends ControllerExtensionDefinition {
+public class Launchkey49Mk3ExtensionDefinition extends LaunchkeyMk3ExtensionDefinition {
    private static final UUID DRIVER_ID = UUID.fromString("4840b76d-318e-40c8-bab0-0eb780061276");
-
-   @Override
-   public String getName() {
-      return "Launchkey 49 Mk3";
-   }
-
-   @Override
-   public String getAuthor() {
-      return "Bitwig";
-   }
-
-   @Override
-   public String getVersion() {
-      return "0.0b";
-   }
 
    @Override
    public UUID getId() {
@@ -31,28 +16,8 @@ public class LaunchkeyMk3ExtensionDefinition extends ControllerExtensionDefiniti
    }
 
    @Override
-   public String getHardwareVendor() {
-      return "Novation";
-   }
-
-   @Override
-   public String getHardwareModel() {
-      return "Launchkey 49 Mk3";
-   }
-
-   @Override
-   public int getRequiredAPIVersion() {
-      return 15;
-   }
-
-   @Override
-   public int getNumMidiInPorts() {
-      return 2;
-   }
-
-   @Override
-   public int getNumMidiOutPorts() {
-      return 2;
+   public int numberOfKeys() {
+      return 49;
    }
 
    @Override
@@ -72,6 +37,7 @@ public class LaunchkeyMk3ExtensionDefinition extends ControllerExtensionDefiniti
 
    @Override
    public LaunchkeyMk3Extension createInstance(final ControllerHost host) {
-      return new LaunchkeyMk3Extension(this, host);
+      return new LaunchkeyMk3Extension(this, host, true);
    }
+
 }

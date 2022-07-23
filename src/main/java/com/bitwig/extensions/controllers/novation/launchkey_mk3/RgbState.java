@@ -13,6 +13,10 @@ public class RgbState extends InternalHardwareLightState {
    public static final RgbState DIM_WHITE = new RgbState(2);
    public static final RgbState RED = new RgbState(5);
    public static final RgbState RED_LO = new RgbState(7);
+   public static final RgbState YELLOW = new RgbState(13);
+   public static final RgbState YELLOW_LO = new RgbState(15);
+   public static final RgbState ORANGE = new RgbState(9);
+   public static final RgbState ORANGE_LO = new RgbState(11);
 
 
    private final int colorIndex;

@@ -7,6 +7,7 @@ import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.Button;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.ModeType;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcButton;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.LaunchkeyMk3ExtensionDefinition;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.layer.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -15,6 +16,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LaunchkeyMk3Extension extends ControllerExtension {
+   public static final int QUANTIZE_BUTTON_CC = 75;
+   public static final int CLICK_BUTTON_CC = 76;
+   public static final int UNDO_BUTTON_CC = 77;
+
+   public static final int SHIFT_BUTTON_CC = 108;
+   public static final int START_BUTTON_CC = 115;
+   public static final int STOP_BUTTON_CC = 116;
+   public static final int REC_BUTTON_CC = 117;
+   public static final int LOOP_BUTTON_CC = 118;
+
+   public static final int HOLD_INIT_TIME = 500;
+   public static final int HOLD_REPEAT_INTERVAL = 100;
+   public static final int TEXT_TRANSIENT_TIME = 1500;
+   public static final int TEXT_RELEASE_TRANSIENT_TIME = 700;
+
+
+   private final boolean hasFaders;
    private Layers layers;
    private MidiIn midiIn;
    private MidiIn playMidiIn;
@@ -37,13 +55,16 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
    private CursorRemoteControlsPage remoteControlBank;
    private DeviceSelectionLayer deviceSelectionLayer;
 
-   private HoldTask holdTask = null;
+   private RepeatTask repeatWhileHoldTask = null;
+   private DelayedTask delayedTask = null;
    private DeviceBank deviceBank;
    private DrumPadLayer drumPadLayer;
    private PinnableCursorDevice primaryDevice;
 
-   protected LaunchkeyMk3Extension(final LaunchkeyMk3ExtensionDefinition definition, final ControllerHost host) {
+   public LaunchkeyMk3Extension(final LaunchkeyMk3ExtensionDefinition definition, final ControllerHost host,
+                                final boolean hasFaders) {
       super(definition, host);
+      this.hasFaders = hasFaders;
    }
 
    @Override
@@ -71,7 +92,7 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       deviceBank = cursorTrack.createDeviceBank(8);
       remoteControlBank = cursorDevice.createCursorRemoteControlsPage(8);
       trackBank.followCursorTrack(cursorTrack);
-      primaryDevice = cursorTrack.createCursorDevice("DrumDetection", "Pad Device", 16,
+      primaryDevice = cursorTrack.createCursorDevice("DrumDetection", "Pad Device", 2,
          CursorDeviceFollowMode.FIRST_INSTRUMENT);
 
       hwControl = new HwControls(this);
@@ -82,25 +103,26 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       deviceSelectionLayer = new DeviceSelectionLayer(this);
       drumPadLayer = new DrumPadLayer(this);
 
-      final ControlLayer knobLayer = new ControlLayer("KNOB", this, hwControl.getKnobs(), 9, 56, ControlMode.PAN);
-      final ControlLayer faderLayer = new ControlLayer("FADER", this, hwControl.getSliders(), 10, 80,
-         ControlMode.VOLUME);
+      final ControlLayer knobLayer = new ControlLayer("KNOB", this, hwControl.getKnobs(),
+         LaunchkeyConstants.BUTTON_CC_KNOB, LaunchkeyConstants.KNOB_PARAM_OFFSET, ControlMode.PAN);
+      final ControlLayer faderLayer = new ControlLayer("FADER", this, hwControl.getSliders(),
+         LaunchkeyConstants.BUTTON_CC_FADER, LaunchkeyConstants.FADER_PARAM_OFFSET, ControlMode.VOLUME);
+
       final TrackControlLayer trackSelectLayer = new TrackControlLayer(this);
-      ModeType.bindButton(PadMode.values(), this, "PADS", 3, mainLayer, this::changePadMode);
+      ModeType.bindButton(PadMode.values(), this, "PADS", LaunchkeyConstants.BUTTON_CC_PADS, mainLayer,
+         this::changePadMode);
 
       mainLayer.activate();
-      sessionLayer.activate();
       trackSelectLayer.activate();
       faderLayer.activate();
       knobLayer.activate();
-      host.println("########### Init Launchkey Mk3 ############ ");
-      midiOut.sendSysex("f07e7f0601f7");
-      host.showPopupNotification("Launchkey Initialized");
-      host.scheduleTask(this::handlePing, 100);
+      final LaunchkeyMk3ExtensionDefinition def = (LaunchkeyMk3ExtensionDefinition) getExtensionDefinition();
+      midiOut.sendSysex(LaunchkeyConstants.DEVICE_INQUIRY);
+      host.showPopupNotification(String.format("Launchkey %d Mk3 Initialized", def.numberOfKeys()));
+      host.scheduleTask(this::handlePing, HOLD_REPEAT_INTERVAL);
    }
 
    private void changePadMode(final PadMode padMode) {
-      host.println("MODE CHANGE " + padMode);
       switch (padMode) {
          case SESSION:
             drumPadLayer.setIsActive(false);
@@ -144,24 +166,24 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       masterTrack.volume().displayedValue().addValueObserver(v -> lcdDisplay.setValue(v, 88));
       masterTrack.name().addValueObserver(name -> lcdDisplay.setParameter("Volume - " + name, 88));
 
-      final Button shiftButton = new Button(this, "SHIFT", 108, 0);
+      final Button shiftButton = new Button(this, "SHIFT", SHIFT_BUTTON_CC, 0);
       shiftButton.bindIsPressed(mainLayer, pressed -> shiftLayer.setIsActive(pressed));
 
-      final Button startButton = new Button(this, "START_BUTTON", 115, 15);
+      final Button startButton = new Button(this, "START_BUTTON", START_BUTTON_CC, 15);
       startButton.bind(mainLayer, transport.playAction());
       startButton.bind(shiftLayer, transport.restartAction());
 
-      final Button stopButton = new Button(this, "STOP_BUTTON", 116, 15);
+      final Button stopButton = new Button(this, "STOP_BUTTON", STOP_BUTTON_CC, 15);
       stopButton.bind(mainLayer, transport.stopAction());
 
-      final Button recButton = new Button(this, "REC_BUTTON", 117, 15);
+      final Button recButton = new Button(this, "REC_BUTTON", REC_BUTTON_CC, 15);
       recButton.bind(mainLayer, transport.recordAction());
       recButton.bindToggle(shiftLayer, transport.isClipLauncherOverdubEnabled());
 
-      final Button loopButton = new Button(this, "LOOP_BUTTON", 118, 15);
+      final Button loopButton = new Button(this, "LOOP_BUTTON", LOOP_BUTTON_CC, 15);
       loopButton.bindToggle(mainLayer, transport.isArrangerLoopEnabled());
 
-      final Button quantizeButton = new Button(this, "QUANTIZE_BUTTON", 75, 15);
+      final Button quantizeButton = new Button(this, "QUANTIZE_BUTTON", QUANTIZE_BUTTON_CC, 15);
       quantizeButton.bindPressed(mainLayer, () -> {
          cursorClip.quantize(1.0);
          arrangerClip.quantize(1.0);
@@ -182,11 +204,11 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       pinButton.bindPressed(mainLayer, () -> cursorDevice.isPinned().toggle(),
          () -> cursorDevice.isPinned().get() ? RgbState.WHITE : RgbState.OFF);
 
-      final Button clickButton = new Button(this, "CLICK_BUTTON", 76, 15);
+      final Button clickButton = new Button(this, "CLICK_BUTTON", CLICK_BUTTON_CC, 15);
       clickButton.bindToggle(mainLayer, transport.isMetronomeEnabled());
       clickButton.bind(shiftLayer, transport.tapTempoAction());
 
-      final Button undoButton = new Button(this, "UNDO_BUTTON", 77, 15);
+      final Button undoButton = new Button(this, "UNDO_BUTTON", UNDO_BUTTON_CC, 15);
       undoButton.bind(mainLayer, application.undoAction());
       undoButton.bind(shiftLayer, application.redoAction());
 
@@ -210,25 +232,34 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
 
    public void startHold(final int initTime, final int repeatTime, final Runnable action) {
       action.run();
-      holdTask = new HoldTask(initTime, repeatTime, action);
+      repeatWhileHoldTask = new RepeatTask(initTime, repeatTime, action);
    }
 
    public void startHold(final Runnable action) {
-      startHold(500, 100, action);
+      startHold(HOLD_INIT_TIME, HOLD_REPEAT_INTERVAL, action);
    }
 
    public void stopHold() {
-      holdTask = null;
+      repeatWhileHoldTask = null;
    }
 
    public void setTransientText(final String row1, final String row2) {
       lcdDisplay.sendText(row1, 0);
       lcdDisplay.sendText(row2, 1);
+      delayedTask = new DelayedTask(TEXT_TRANSIENT_TIME, () -> lcdDisplay.clearDisplay());
+   }
+
+   public void releaseText() {
+      delayedTask = new DelayedTask(TEXT_RELEASE_TRANSIENT_TIME, () -> lcdDisplay.clearDisplay());
    }
 
    private void handlePing() {
-      if (holdTask != null) {
-         holdTask.ping();
+      if (repeatWhileHoldTask != null) {
+         repeatWhileHoldTask.ping();
+      }
+      if (delayedTask != null && delayedTask.expired()) {
+         delayedTask.execute();
+         delayedTask = null;
       }
       host.scheduleTask(this::handlePing, 50);
    }
@@ -281,6 +312,10 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       return primaryDevice;
    }
 
+   public void println(final String format, final Object... args) {
+      host.println(String.format(format, args));
+   }
+
    private String[] getMask() {
       final List<String> masks = new ArrayList<>();
       masks.add("8?????"); // Note On
@@ -295,26 +330,27 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
    private void onMidi0(final ShortMidiMessage msg) {
       final int channel = msg.getChannel();
       final int sb = msg.getStatusByte() & (byte) 0xF0;
-      if (sb != 0xA0) {
-         getHost().println("MIDI " + sb + " <" + channel + "> " + msg.getData1() + " " + msg.getData2());
+      if (channel == LaunchkeyConstants.DRUM_CHANNEL) {
+         drumPadLayer.notifyNote(sb, msg.getData1(), msg.getData2());
       }
+      // if (sb != 0xA0) {
+      // getHost().println("MIDI " + sb + " <" + channel + "> " + msg.getData1() + " " + msg.getData2());
+      // }
    }
 
-//   private void onMidi1(final ShortMidiMessage msg) {
-//      final int channel = msg.getChannel();
-//      final int sb = msg.getStatusByte() & (byte) 0xF0;
-//      getHost().println("Play " + sb + " <" + channel + "> " + msg.getData1() + " " + msg.getData2());
-//   }
-
    private void onSysEx(final String sysEx) {
-      if (sysEx.equals("f07e0006020020293601000000010907f7")) {
+      if (sysEx.startsWith(LaunchkeyConstants.SYS_EX_DEVICE_INQUIRY_HEAD)) {
+         final String deviceId = LaunchkeyConstants.getDeviceId(sysEx);
+         final String appId = LaunchkeyConstants.getAppId(sysEx);
+         println("Connect device=%s app=%s", deviceId, appId);
          setDawMode(true);
+         changePadMode(PadMode.SESSION);
+      } else {
+         host.println("Launchkey SysEx= : " + sysEx);
       }
-      host.println("Launchkey SysEx= : " + sysEx);
    }
 
    private void setDawMode(final boolean enable) {
-      host.println("to daw mode > " + enable);
       midiOut.sendMidi(0x9F, 0xC, enable ? 0x7f : 0x00);
       //midiOut.sendMidi(0xBF, 0xC, enable ? 0x7f : 0x00);
    }
@@ -322,7 +358,7 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
    @Override
    public void exit() {
       setDawMode(false);
-      host.println("EXIT Launchkey");
+      host.println(" *************** EXIT Launchkey");
    }
 
    @Override

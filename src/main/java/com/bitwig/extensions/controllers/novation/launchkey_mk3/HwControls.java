@@ -9,6 +9,23 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcBut
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbNoteButton;
 
 public class HwControls {
+   private static final int KNOB_CC_BASE = 21;
+   private static final int FADER_CC_BASE = 53;
+   private static final int TRACK_BUTTON_CC_BASE = 37;
+   private static final int MASTER_SLIDER_CC = 61;
+
+   private static final int NAV_UP_CC = 106;
+   private static final int NAV_DOWN_CC = 107;
+   private static final int SCENE_LAUNCH_CC = 104;
+   private static final int MODE_ROW2_CC = 105;
+   private static final int TRACK_LEFT_CC = 103;
+   private static final int TRACK_RIGHT_CC = 102;
+   private static final int ARM_SELECT_CC = 45;
+   private static final int DEVICE_LOCK_CC = 52;
+   private static final int DEVICE_SELECT_CC = 51;
+   private static final int BASE_CC_CHANNEL = 15;
+   public static final int DRUM_PAD_BASE = 36;
+
    private final AbsoluteHardwareKnob[] knobs = new AbsoluteHardwareKnob[8];
    private final HardwareSlider[] sliders = new HardwareSlider[8];
    private final HardwareSlider masterSlider;
@@ -31,34 +48,31 @@ public class HwControls {
       final MidiIn midiIn = driver.getMidiIn();
 
       for (int i = 0; i < 16; i++) {
-         final int note = (i < 8 ? 96 : 112 - 8) + i;
-         sessionButtons[i] = new RgbNoteButton(driver, "SESSION_BUTTON", i, 0, note);
-         final int deviceNote = (i < 8 ? 64 : 80 - 8) + i;
-         deviceButtons[i] = new RgbNoteButton(driver, "DEVICE_BUTTON", i, 0, deviceNote);
-         final int drumNote = 36 + i;
-         drumButtons[i] = new RgbNoteButton(driver, "DRUM_BUTTON", i, 9, drumNote);
+         sessionButtons[i] = new RgbNoteButton(driver, "SESSION_BUTTON", i, 0, (i < 8 ? 96 : 112 - 8) + i);
+         deviceButtons[i] = new RgbNoteButton(driver, "DEVICE_BUTTON", i, 0, (i < 8 ? 64 : 80 - 8) + i);
+         drumButtons[i] = new RgbNoteButton(driver, "DRUM_BUTTON", i, 9, DRUM_PAD_BASE + i);
       }
       for (int i = 0; i < 8; i++) {
-         trackButtons[i] = new RgbCcButton(driver, "TRACK_BUTTON", i, 15, 37 + i);
+         trackButtons[i] = new RgbCcButton(driver, "TRACK_BUTTON", i, BASE_CC_CHANNEL, TRACK_BUTTON_CC_BASE + i);
          knobs[i] = surface.createAbsoluteHardwareKnob("KNOB_" + (i + 1));
-         knobs[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 21 + i));
+         knobs[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(BASE_CC_CHANNEL, KNOB_CC_BASE + i));
          sliders[i] = surface.createHardwareSlider("SLIDER_" + (i + 1));
-         sliders[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 53 + i));
+         sliders[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(BASE_CC_CHANNEL, FADER_CC_BASE + i));
       }
 
       masterSlider = surface.createHardwareSlider("MASTER_SLIDER");
-      masterSlider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(15, 61));
+      masterSlider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(BASE_CC_CHANNEL, MASTER_SLIDER_CC));
 
-      navUpButton = new RgbCcButton(driver, "NAV_UP", 0, 15, 106);
-      navDownButton = new RgbCcButton(driver, "NAV_DOWN", 1, 15, 107);
-      sceneLaunchButton = new RgbCcButton(driver, "SCENE_L", 2, 0, 104);
-      modeRow2Button = new RgbCcButton(driver, "MROW2", 4, 0, 105);
-      trackLeftButton = new Button(driver, "TRACK_LEFT", 103, 15);
-      trackRightButton = new Button(driver, "TRACK_RIGHT", 102, 15);
+      navUpButton = new RgbCcButton(driver, "NAV_UP", 0, BASE_CC_CHANNEL, NAV_UP_CC);
+      navDownButton = new RgbCcButton(driver, "NAV_DOWN", 1, BASE_CC_CHANNEL, NAV_DOWN_CC);
+      sceneLaunchButton = new RgbCcButton(driver, "SCENE_L", 2, 0, SCENE_LAUNCH_CC);
+      modeRow2Button = new RgbCcButton(driver, "MROW2", 4, 0, MODE_ROW2_CC);
+      trackLeftButton = new Button(driver, "TRACK_LEFT", TRACK_LEFT_CC, BASE_CC_CHANNEL);
+      trackRightButton = new Button(driver, "TRACK_RIGHT", TRACK_RIGHT_CC, BASE_CC_CHANNEL);
 
-      armSelectButton = new RgbCcButton(driver, "ARM_SELECT", 6, 15, 45);
-      deviceLockButton = new RgbCcButton(driver, "DEV_LOCK", 5, 15, 52);
-      deviceSelectButton = new Button(driver, "DEVICE_SELECT", 51, 15);
+      armSelectButton = new RgbCcButton(driver, "ARM_SELECT", 6, BASE_CC_CHANNEL, ARM_SELECT_CC);
+      deviceLockButton = new RgbCcButton(driver, "DEV_LOCK", 5, BASE_CC_CHANNEL, DEVICE_LOCK_CC);
+      deviceSelectButton = new Button(driver, "DEVICE_SELECT", DEVICE_SELECT_CC, BASE_CC_CHANNEL);
    }
 
    public RgbNoteButton[] getDrumButtons() {

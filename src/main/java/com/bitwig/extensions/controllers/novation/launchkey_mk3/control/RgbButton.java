@@ -5,6 +5,7 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyMk3Exte
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.RgbState;
 import com.bitwig.extensions.framework.Layer;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -31,6 +32,10 @@ public class RgbButton {
       hwButton.setBackgroundLight(hwLight);
    }
 
+   public int getNumber() {
+      return number;
+   }
+
    public void bindIsPressed(final Layer layer, final Consumer<Boolean> target, final Supplier<RgbState> lightSource) {
       layer.bind(hwButton, hwButton.pressedAction(), () -> target.accept(true));
       layer.bind(hwButton, hwButton.releasedAction(), () -> target.accept(false));
@@ -43,6 +48,20 @@ public class RgbButton {
       layer.bind(hwButton, hwButton.releasedAction(), () -> target.accept(false));
       hwButton.isPressed().markInterested();
       layer.bindLightState(() -> hwButton.isPressed().get() ? downColor : releaseColor, hwLight);
+   }
+
+   public void bindIsPressed(final Layer layer, final Consumer<Boolean> target, final BooleanSupplier active,
+                             final RgbState downColor, final RgbState releaseColor) {
+      layer.bind(hwButton, hwButton.pressedAction(), () -> target.accept(true));
+      layer.bind(hwButton, hwButton.releasedAction(), () -> target.accept(false));
+      hwButton.isPressed().markInterested();
+      layer.bindLightState(() -> {
+         if (active.getAsBoolean()) {
+            return hwButton.isPressed().get() ? downColor : releaseColor;
+         } else {
+            return RgbState.OFF;
+         }
+      }, hwLight);
    }
 
    public void bindPressed(final Layer layer, final Runnable action, final Supplier<RgbState> lightSource) {

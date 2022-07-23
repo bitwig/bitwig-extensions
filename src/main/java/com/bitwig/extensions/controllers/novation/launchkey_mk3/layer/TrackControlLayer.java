@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk3.layer;
 
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.ColorLookup;
@@ -16,6 +17,7 @@ public class TrackControlLayer extends Layer {
    private Mode mode = Mode.SELECT;
    private final int[] trackColors = new int[8];
    private final boolean[] selectedInEditor = new boolean[8];
+   private final boolean trackDown = false;
 
    private enum Mode {
       ARM,
@@ -31,6 +33,8 @@ public class TrackControlLayer extends Layer {
       final RgbCcButton armSelectButton = driver.getHwControl().getArmSelectButton();
       armLayer = new Layer(driver.getLayers(), "TRACK_ARM_LAYER");
       selectLayer = new Layer(driver.getLayers(), "TRACK_SELECT_LAYER");
+      final PinnableCursorDevice primaryDevice = driver.getPrimaryDevice();
+      primaryDevice.name().markInterested();
 
       for (int i = 0; i < 8; i++) {
          final int index = i;
@@ -38,6 +42,7 @@ public class TrackControlLayer extends Layer {
          final RgbCcButton button = trackButtons[i];
          track.arm().markInterested();
          track.exists().markInterested();
+         track.name().markInterested();
          track.addIsSelectedInEditorObserver(selected -> selectedInEditor[index] = selected);
          track.color().addValueObserver((r, g, b) -> trackColors[index] = ColorLookup.toColor(r, g, b));
          button.bindIsPressed(armLayer, pressed -> {
@@ -48,6 +53,9 @@ public class TrackControlLayer extends Layer {
          button.bindIsPressed(selectLayer, pressed -> {
             if (pressed) {
                cursorTrack.selectChannel(track);
+               driver.setTransientText(track.name().get(), primaryDevice.name().get());
+            } else {
+               driver.releaseText();
             }
          }, () -> getSelectState(index, track));
       }

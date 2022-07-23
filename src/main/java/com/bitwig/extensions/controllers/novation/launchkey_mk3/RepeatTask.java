@@ -1,14 +1,14 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk3;
 
-public class HoldTask {
+public class RepeatTask {
 
    private final int initTime;
    private final int repeatTime;
    private final Runnable action;
-   private long startTime = 0;
+   private final long startTime;
    private long lastRepeat = -1;
 
-   HoldTask(final int initTime, final int repeatTime, final Runnable action) {
+   RepeatTask(final int initTime, final int repeatTime, final Runnable action) {
       this.initTime = initTime;
       this.repeatTime = repeatTime;
       this.action = action;

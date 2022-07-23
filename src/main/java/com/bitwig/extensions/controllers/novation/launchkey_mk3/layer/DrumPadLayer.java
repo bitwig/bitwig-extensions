@@ -1,27 +1,28 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk3.layer;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.novation.launchkey_mk3.ColorLookup;
-import com.bitwig.extensions.controllers.novation.launchkey_mk3.HwControls;
-import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyMk3Extension;
-import com.bitwig.extensions.controllers.novation.launchkey_mk3.RgbState;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.*;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbNoteButton;
 import com.bitwig.extensions.framework.Layer;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class DrumPadLayer extends Layer {
+
    private final DrumPadBank padBank;
    private final NoteInput noteInput;
-   private final int keysNoteOffset = 60;
+   private final Set<Integer> padNotes = new HashSet<>();
    private int padsNoteOffset = 32;
+   private int keyNoteOffset = 32;
    private final int[] hangingNotes = new int[16];
    private final Integer[] noteTable = new Integer[128];
    private final boolean[] isPlaying = new boolean[128];
-   private final int padColors[] = new int[16];
+   private final int[] padColors = new int[16];
    private int trackColor = 0;
-   private final boolean focusOnDrums = true;
+   private boolean focusOnDrums = true;
 
    public DrumPadLayer(final LaunchkeyMk3Extension driver) {
       super(driver.getLayers(), "DRUM_LAYER");
@@ -35,18 +36,18 @@ public class DrumPadLayer extends Layer {
       padBank = primaryDevice.createDrumPadBank(16);
       padBank.scrollPosition().addValueObserver(index -> {
          padsNoteOffset = index;
-         if (isActive()) {
+         if (isActive() && focusOnDrums) {
             applyNotes(padsNoteOffset);
          }
       });
+      padBank.exists().markInterested();
       padBank.scrollPosition().set(30);
       padBank.canScrollChannelsUp().markInterested();
       padBank.canScrollChannelsDown().markInterested();
 
       primaryDevice.hasDrumPads().addValueObserver(hasDrumPads -> {
-         if (isActive()) {
-            applyNotes(hasDrumPads ? padsNoteOffset : keysNoteOffset);
-         }
+         focusOnDrums = hasDrumPads;
+         applyNotes(focusOnDrums ? padsNoteOffset : keyNoteOffset);
       });
       final RgbNoteButton[] buttons = hwControl.getDrumButtons();
 
@@ -56,11 +57,9 @@ public class DrumPadLayer extends Layer {
          final int index = i;
          final RgbNoteButton button = buttons[i];
          final DrumPad pad = padBank.getItemAt(i);
+         padNotes.add(buttons[i].getNumber());
          pad.exists().markInterested();
-         pad.color().addValueObserver((r, g, b) -> {
-            padColors[index] = ColorLookup.toColor(r, g, b);
-            driver.getHost().println("COOR PA " + index + " " + padColors[index]);
-         });
+         pad.color().addValueObserver((r, g, b) -> padColors[index] = ColorLookup.toColor(r, g, b));
          button.bindPressed(this, () -> {
          }, () -> getColor(index, pad));
       }
@@ -68,23 +67,20 @@ public class DrumPadLayer extends Layer {
       final RgbCcButton navUpButton = hwControl.getNavUpButton();
       navUpButton.bindIsPressed(this, pressed -> {
          if (pressed) {
-            driver.startHold(() -> padBank.scrollBy(4));
+            driver.startHold(() -> scrollPadBank(1));
          } else {
             driver.stopHold();
          }
-      }, () -> {
-         return padBank.scrollPosition().get() + 4 < 128 ? RgbState.DIM_WHITE : RgbState.OFF;
-      });
+      }, this::canScrollUp, RgbState.YELLOW, RgbState.YELLOW_LO);
+
       final RgbCcButton navDownButton = hwControl.getNavDownButton();
       navDownButton.bindIsPressed(this, pressed -> {
          if (pressed) {
-            driver.startHold(() -> padBank.scrollBy(-4));
+            driver.startHold(() -> scrollPadBank(-1));
          } else {
             driver.stopHold();
          }
-      }, () -> {
-         return padBank.scrollPosition().get() - 4 >= 0 ? RgbState.DIM_WHITE : RgbState.OFF;
-      });
+      }, this::canScrollDown, RgbState.YELLOW, RgbState.YELLOW_LO);
       final RgbCcButton sceneLaunchButton = hwControl.getSceneLaunchButton();
       sceneLaunchButton.bindPressed(this, () -> {
 
@@ -92,16 +88,57 @@ public class DrumPadLayer extends Layer {
       final RgbCcButton row2ModeButton = hwControl.getModeRow2Button();
       row2ModeButton.bindPressed(this, () -> {
 
-      }, () -> RgbState.RED_LO);
+      }, () -> RgbState.OFF);
       cursorTrack.playingNotes().addValueObserver(this::handleNotes);
       cursorTrack.color().addValueObserver((r, g, b) -> trackColor = ColorLookup.toColor(r, g, b));
    }
 
+   private boolean canScrollUp() {
+      if (focusOnDrums) {
+         return padsNoteOffset + 16 < 128;
+      }
+      return keyNoteOffset + 16 < 128;
+   }
+
+   private boolean canScrollDown() {
+      if (focusOnDrums) {
+         return padsNoteOffset - 4 >= 0;
+      }
+      return keyNoteOffset - 4 >= 0;
+   }
+
+   private void scrollPadBank(final int dir) {
+      if (padBank.exists().get()) {
+         if (dir < 0) {
+            final int amount = padsNoteOffset > 8 ? -16 : -4;
+            padBank.scrollBy(amount);
+         } else {
+            final int amount = padsNoteOffset == 0 ? 4 : 16;
+            padBank.scrollBy(amount);
+         }
+      } else {
+         final int newPos;
+         if (dir < 0) {
+            final int amount = keyNoteOffset > 8 ? -16 : -4;
+            newPos = Math.max(0, keyNoteOffset + amount);
+         } else {
+            final int amount = keyNoteOffset == 0 ? 4 : 16;
+            newPos = Math.min(124, keyNoteOffset + amount);
+         }
+         if (newPos != keyNoteOffset) {
+            keyNoteOffset = newPos;
+            applyNotes(keyNoteOffset);
+         }
+      }
+   }
+
    private RgbState getColor(final int index, final DrumPad pad) {
-      if (pad.exists().get()) {
-         final int noteValue = (focusOnDrums ? padsNoteOffset : keysNoteOffset) + index;
+      final int noteValue = (focusOnDrums ? padsNoteOffset : keyNoteOffset) + index;
+      if (!focusOnDrums) {
+         return RgbState.of(isPlaying[noteValue] ? trackColor - 2 : trackColor + 1);
+      } else if (pad.exists().get()) {
          if (padColors[index] == 0) {
-            return RgbState.of(isPlaying[noteValue] ? trackColor : trackColor + 2);
+            return RgbState.of(isPlaying[noteValue] ? trackColor - 2 : trackColor + 1);
          }
          return RgbState.of(isPlaying[noteValue] ? padColors[index] - 1 : padColors[index]);
       }
@@ -115,6 +152,24 @@ public class DrumPadLayer extends Layer {
       Arrays.fill(isPlaying, false);
       for (final PlayingNote playingNote : playingNotes) {
          isPlaying[playingNote.pitch()] = true;
+      }
+   }
+
+   public void notifyNote(final int sb, final int noteValue, final int vel) {
+      if (!isActive() || !padNotes.contains(
+         noteValue) || (sb != LaunchkeyConstants.NOTE_ON && sb != LaunchkeyConstants.NOTE_OFF)) {
+         return;
+      }
+      final int index = noteValue - 36;
+      final int notePlayed = focusOnDrums ? padsNoteOffset + index : keyNoteOffset + index;
+      if (sb == LaunchkeyConstants.NOTE_ON && vel > 0) {
+         hangingNotes[index] = notePlayed;
+      } else {
+         if (hangingNotes[index] != -1 && hangingNotes[index] != notePlayed) {
+            noteInput.sendRawMidiEvent(LaunchkeyConstants.NOTE_OFF | LaunchkeyConstants.DRUM_CHANNEL,
+               hangingNotes[index], 0);
+         }
+         hangingNotes[index] = -1;
       }
    }
 
@@ -135,7 +190,7 @@ public class DrumPadLayer extends Layer {
    @Override
    protected void onActivate() {
       super.onActivate();
-      applyNotes(focusOnDrums ? padsNoteOffset : keysNoteOffset);
+      applyNotes(focusOnDrums ? padsNoteOffset : keyNoteOffset);
    }
 
    @Override

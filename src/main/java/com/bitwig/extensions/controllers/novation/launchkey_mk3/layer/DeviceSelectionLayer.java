@@ -43,12 +43,12 @@ public class DeviceSelectionLayer extends Layer {
       final DeviceBank deviceBank = driver.getDeviceBank();
       final PinnableCursorDevice cursorDevice = driver.getCursorDevice();
 
-      deviceBank.itemCount().addValueObserver(itmes -> driver.getHost().println(" DB ITEMS = " + itmes));
+      deviceBank.itemCount().markInterested();
 
       cursorDevice.name().addValueObserver(name -> {
          deviceName = name;
          if (cursorDownDown || cursorUpDown) {
-            driver.setTransientText(deviceName, "");
+            driver.setTransientText(deviceName, selectedDeviceIndex != -1 ? pageNames[selectedDeviceIndex] : "");
          }
       });
       remoteControlBank.pageNames().addValueObserver(newNames -> pageNames = newNames);
@@ -60,9 +60,13 @@ public class DeviceSelectionLayer extends Layer {
       for (int i = 0; i < 8; i++) {
          final int index = i;
          final RgbNoteButton pageButton = buttons[i];
-         pageButton.bindPressed(this, () -> {
-            remoteControlBank.selectedPageIndex().set(index);
-            driver.setTransientText(pageNames[index], deviceName);
+         pageButton.bindIsPressed(this, pressed -> {
+            if (pressed) {
+               remoteControlBank.selectedPageIndex().set(index);
+               driver.setTransientText(deviceName, pageNames[index]);
+            } else {
+               driver.releaseText();
+            }
          }, () -> index < numberOfPages ? (index == pageIndex ? RgbState.of(53) : RgbState.of(55)) : RgbState.OFF);
 
          final RgbNoteButton deviceButton = buttons[i + 8];
@@ -99,15 +103,11 @@ public class DeviceSelectionLayer extends Layer {
       }, () -> cursorDevice.hasNext().get() ? RgbState.WHITE : RgbState.OFF);
 
       final RgbCcButton sceneLaunchButton = driver.getHwControl().getSceneLaunchButton();
-      sceneLaunchButton.bindIsPressed(this, pressed -> {
-         sceneDown = pressed;
-      }, RgbState.DIM_WHITE, RgbState.OFF);
+      sceneLaunchButton.bindIsPressed(this, pressed -> sceneDown = pressed, RgbState.DIM_WHITE, RgbState.OFF);
 
 
       final RgbCcButton modeButton = driver.getHwControl().getModeRow2Button();
-      modeButton.bindIsPressed(this, pressed -> {
-         modeDown = pressed;
-      }, RgbState.DIM_WHITE, RgbState.OFF);
+      modeButton.bindIsPressed(this, pressed -> modeDown = pressed, RgbState.DIM_WHITE, RgbState.OFF);
    }
 
    private void selectDevice(final LaunchkeyMk3Extension driver, final PinnableCursorDevice cursorDevice,
@@ -121,7 +121,7 @@ public class DeviceSelectionLayer extends Layer {
          deviceSlot.device.deleteObject();
       } else {
          cursorDevice.selectDevice(deviceSlot.device);
-         driver.setTransientText(deviceSlot.name, "");
+         driver.setTransientText(deviceSlot.name, selectedDeviceIndex != -1 ? pageNames[selectedDeviceIndex] : "");
       }
    }
 

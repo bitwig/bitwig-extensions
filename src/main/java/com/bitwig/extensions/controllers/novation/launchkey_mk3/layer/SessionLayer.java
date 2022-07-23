@@ -159,11 +159,11 @@ public class SessionLayer extends Layer {
          case LAUNCH:
             return RgbState.WHITE;
          case STOP:
-            return RgbState.of(5);
+            return RgbState.RED;
          case MUTE:
-            return RgbState.of(9);
+            return RgbState.ORANGE;
          case SOLO:
-            return RgbState.of(13);
+            return RgbState.YELLOW;
       }
       return RgbState.OFF;
    }
@@ -243,9 +243,9 @@ public class SessionLayer extends Layer {
    private RgbState getMuteState(final int index, final Track track) {
       if (track.exists().get()) {
          if (track.mute().get()) {
-            return RgbState.of(9);
+            return RgbState.ORANGE;
          }
-         return RgbState.of(11);
+         return RgbState.ORANGE_LO;
       }
       return RgbState.OFF;
    }
@@ -253,9 +253,9 @@ public class SessionLayer extends Layer {
    private RgbState getSoloState(final int index, final Track track) {
       if (track.exists().get()) {
          if (track.solo().get()) {
-            return RgbState.of(13);
+            return RgbState.YELLOW;
          }
-         return RgbState.of(15);
+         return RgbState.YELLOW_LO;
       }
       return RgbState.OFF;
    }
