@@ -119,7 +119,7 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       final LaunchkeyMk3ExtensionDefinition def = (LaunchkeyMk3ExtensionDefinition) getExtensionDefinition();
       midiOut.sendSysex(LaunchkeyConstants.DEVICE_INQUIRY);
       host.showPopupNotification(String.format("Launchkey %d Mk3 Initialized", def.numberOfKeys()));
-      host.scheduleTask(this::handlePing, HOLD_REPEAT_INTERVAL);
+      host.scheduleTask(this::handlePing, 50);
    }
 
    private void changePadMode(final PadMode padMode) {
