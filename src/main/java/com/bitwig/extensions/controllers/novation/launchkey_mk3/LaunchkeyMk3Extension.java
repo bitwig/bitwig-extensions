@@ -116,9 +116,9 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       trackSelectLayer.activate();
       faderLayer.activate();
       knobLayer.activate();
-      final LaunchkeyMk3ExtensionDefinition def = (LaunchkeyMk3ExtensionDefinition) getExtensionDefinition();
+      final LaunchkeyMk3ExtensionDefinition extensionDefinition = (LaunchkeyMk3ExtensionDefinition) getExtensionDefinition();
       midiOut.sendSysex(LaunchkeyConstants.DEVICE_INQUIRY);
-      host.showPopupNotification(String.format("Launchkey %d Mk3 Initialized", def.numberOfKeys()));
+      host.showPopupNotification(String.format("Launchkey %d Mk3 Initialized", extensionDefinition.numberOfKeys()));
       host.scheduleTask(this::handlePing, 50);
    }
 

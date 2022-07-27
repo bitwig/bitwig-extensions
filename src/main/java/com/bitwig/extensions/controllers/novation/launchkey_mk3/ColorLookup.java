@@ -1,26 +1,7 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk3;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class ColorLookup {
-
    private static final Hsb BLACK_HSB = new Hsb(0, 0, 0);
-
-   private static final Map<Integer, LaunchColor> colorLookupTable = new HashMap<>();
-
-   public static LaunchColor toColor(final double red, final double green, final double blue) {
-      final int rv = (int) Math.floor(red * 255);
-      final int gv = (int) Math.floor(green * 255);
-      final int bv = (int) Math.floor(blue * 255);
-      final int colorKey = rv << 16 | gv << 8 | bv;
-      final LaunchColor color = colorLookupTable.get(colorKey);
-      if (color == null) {
-
-      }
-      return LaunchColor.BLACK;
-   }
-
 
    public static int toColor(final float r, final float g, final float b) {
       final int rv = (int) Math.floor(r * 255);
@@ -56,7 +37,7 @@ public class ColorLookup {
       final float rgb_min = Math.min(Math.min(rv, gv), bv);
       final int bright = (int) rgb_max;
       if (bright == 0) {
-         return BLACK_HSB; // Dark Dark Black
+         return BLACK_HSB; // Black
       }
       final int sat = (int) (255 * (rgb_max - rgb_min) / bright);
       if (sat == 0) {

@@ -47,10 +47,6 @@ public class RgbState extends InternalHardwareLightState {
       this.altColorIndex = altColorIndex;
    }
 
-   public static RgbState of(final LaunchColor color) {
-      return of(color.getIndex());
-   }
-
    public static RgbState flash(final int colorIndex, final int altColor) {
       return new RgbState(colorIndex, LightState.FLASHING, altColor);
    }
