@@ -16,6 +16,8 @@ com.bitwig.extensions.controllers.bajaao.EDrumControllerExtensionDefinition
 
 com.bitwig.extensions.controllers.befaco.BefacoVCMCDefinition
 
+com.bitwig.extensions.controllers.esi.XjamDefinition
+
 com.bitwig.extensions.controllers.devine.EzCreatorFadeDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorKeyDefinition
 com.bitwig.extensions.controllers.devine.EzCreatorKeyXLDefinition
@@ -82,3 +84,5 @@ com.bitwig.extensions.controllers.vault.Apex49ControllerDefinition
 com.bitwig.extensions.controllers.vault.Apex61ControllerDefinition
 
 # com.bitwig.extensions.controllers.studiologic.SLMixfaceExtensionDefinition
+
+
