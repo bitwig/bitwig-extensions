@@ -63,7 +63,7 @@ com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt1ExtensionDefi
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt2ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt3ExtensionDefinition
 
-#com.bitwig.extensions.controllers.m_audio.OxygenPro25Definition                                       
+com.bitwig.extensions.controllers.m_audio.OxygenPro25Definition                                       
 
 com.bitwig.extensions.controllers.novation.launch_control_xl.LaunchControlXlControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControllerExtensionDefinition
