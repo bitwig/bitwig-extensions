@@ -10,7 +10,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 
 public class LaunchpadMiniDefinition extends ControllerExtensionDefinition {
 
-    private final static UUID ID = UUID.fromString("09baa665-d1df-4bc8-8cd6-b108875cacf7");
+    private final static UUID ID = UUID.fromString("09bba665-d1df-4bc8-8cd6-b108875cacf7");
 
     @Override
     public String getHardwareVendor() {
@@ -19,7 +19,7 @@ public class LaunchpadMiniDefinition extends ControllerExtensionDefinition {
 
     @Override
     public String getHardwareModel() {
-        return "Launchpad Mini";
+        return "Launchpad Mini mk3";
     }
 
     @Override
@@ -56,7 +56,7 @@ public class LaunchpadMiniDefinition extends ControllerExtensionDefinition {
 
     @Override
     public String getName() {
-        return "Novation Launchpad Mini";
+        return "Novation Launchpad Mini mk3";
     }
 
     @Override

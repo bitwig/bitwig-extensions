@@ -69,9 +69,9 @@ com.bitwig.extensions.controllers.novation.launch_control_xl.LaunchControlXlCont
 com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk2.LaunchkeyMk2ControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchpad_pro.LaunchpadProControllerExtensionDefinition
-com.bitwig.extensions.controllers.novation.launchpad_pro_mk3.LaunchpadProMK3Definition                  #####
-#com.bitwig.extensions.controllers.novation.launchpad_x.LaunchpadXDefinition                          
-#com.bitwig.extensions.controllers.novation.launchpad_mini.LaunchpadMiniDefinition                         
+com.bitwig.extensions.controllers.novation.launchpad_pro_mk3.LaunchpadProMK3Definition 
+com.bitwig.extensions.controllers.novation.launchpad_x.LaunchpadXDefinition                          
+com.bitwig.extensions.controllers.novation.launchpad_mini.LaunchpadMiniDefinition                         
 
 com.bitwig.extensions.controllers.presonus.atom.PresonusAtomDefinition
 com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort8Definition
