@@ -456,7 +456,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
                     }, mBottomLights[i][j]);
                     mStopLayer.bindLightState(() -> {
                         if (mTrackBank.getItemAt(jx).trackType().get() != "Master"
-                                && mTrackBank.getItemAt(jx).exists().get())
+                                && mTrackBank.getItemAt(jx).exists().get() && !mTrackBank.getItemAt(jx).isStopped().get())
                             return RGBState.RED;
                         return RGBState.OFF;
                     }, mBottomLights[i][j]);
@@ -678,6 +678,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
             track.exists().markInterested();
             track.name().markInterested();
             track.trackType().markInterested();
+            track.isStopped().markInterested();
 
             for (int j = 0; j < 8; j++) {
                 track.sendBank().getItemAt(j).markInterested();
@@ -695,6 +696,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
                 slot.isRecordingQueued().markInterested();
                 slot.isStopQueued().markInterested();
                 slot.hasContent().markInterested();
+                slot.color().markInterested();
                 mSessionLayer.bindPressed(mButtons[i][j], () -> {
                     if (mClearButton.isPressed().get())
                         slot.deleteObject();
@@ -726,7 +728,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
                     else if (slot.isStopQueued().getAsBoolean())
                         return RGBState.YELLOW;
                     else if (slot.hasContent().get())
-                        return new RGBState(track.color().get());
+                        return new RGBState(slot.color().get());
                     else if (track.arm().getAsBoolean())
                         return RGBState.TRACK_ARM;
                     else
