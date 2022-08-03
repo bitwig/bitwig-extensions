@@ -10,7 +10,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 
 public class LaunchpadMiniDefinition extends ControllerExtensionDefinition {
 
-    private final static UUID ID = UUID.fromString("09bba665-d1df-4bc8-8cd6-b108875cacf7");
+    private final static UUID ID = UUID.fromString("19bda665-d1df-4bc8-8cd6-b108875cacf7");
 
     @Override
     public String getHardwareVendor() {
@@ -29,23 +29,23 @@ public class LaunchpadMiniDefinition extends ControllerExtensionDefinition {
 
     @Override
     public int getNumMidiOutPorts() {
-        return 1;
+        return 2;
     }
 
     @Override
     public void listAutoDetectionMidiPortNames(AutoDetectionMidiPortNamesList list, PlatformType platformType) {
-        switch (platformType)
-      {
-         case MAC:
-            list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
-            break;
-         case WINDOWS:
-            list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
-            break;
-         case LINUX:
-            list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
-            break;
-      }
+    //     switch (platformType)
+    //   {
+    //      case MAC:
+    //         list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
+    //         break;
+    //      case WINDOWS:
+    //         list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
+    //         break;
+    //      case LINUX:
+    //         list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
+    //         break;
+    //   }
         
     }
 

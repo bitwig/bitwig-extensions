@@ -13,6 +13,7 @@ public class Hardware {
     protected MidiIn mMidiIn0;
     protected MidiIn mMidiIn1;
     protected MidiOut mMidiOut;
+    protected MidiOut mMidiOut1;
 
     // Hardware Proxy
     protected HardwareButton[][] mButtons = new HardwareButton[8][8];
@@ -45,6 +46,7 @@ public class Hardware {
         mMidiIn0 = mHost.getMidiInPort(0);
         mMidiIn1 = mHost.getMidiInPort(1);
         mMidiOut = mHost.getMidiOutPort(0);
+        mMidiOut1 = mHost.getMidiOutPort(1);
 
         initHardwareControlls();
     }

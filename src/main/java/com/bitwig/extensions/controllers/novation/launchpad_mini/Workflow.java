@@ -59,6 +59,7 @@ public class Workflow extends Hardware {
         mMidiIn0 = mHost.getMidiInPort(0);
         mMidiIn1 = mHost.getMidiInPort(1);
         mMidiOut = mHost.getMidiOutPort(0);
+        mMidiOut1  = mHost.getMidiOutPort(1);
 
         mMidiOut.sendSysex(DAW_MODE);
         mMidiOut.sendSysex(SESSION_LAYOUT);
@@ -68,11 +69,12 @@ public class Workflow extends Hardware {
         mMidiIn0.setSysexCallback(s -> {
             midiCallback(s);
         });
-
+        mMidiOut.sendSysex(NOTE_FEEDBACK);
     }
 
-    private void midiCallback(String s) {
+    public void midiCallback(String s) {
         mHost.println(s);
+        mHost.println("midi");
         if (isNoteIntputActive) {
             if (mDrumPadBank.exists().get()) {
                 mMidiOut.sendSysex(DRUM_MODE);
@@ -99,18 +101,15 @@ public class Workflow extends Hardware {
     }
 
     private void sendPlayingNotesToDevice(boolean drums, int midi, RGBState onColor) {
-        if (drums) {
-            for (int i = 0; i < 64; i++) {
-                if (mDrumPadBank.getItemAt(i).exists().get())
-                    mMidiOut.sendMidi(0x98, 36 + i, new RGBState(mDrumPadBank.getItemAt(i).color().get()).getMessage());
-            }
-        } else {
-            for (int j = 0; j < 88; j++)
-                mMidiOut.sendMidi(0x8f, j, onColor.getMessage());
+        int NoteOn = 0x9f;
+        int NoteOff = 0x8f;
+        if (mLastPlayingNotes != null && mLastPlayingNotes.length != 0) {
+            for (PlayingNote l : mLastPlayingNotes)
+                mMidiOut.sendMidi(NoteOff, l.pitch(), onColor.getMessage());
         }
         if (mPlayingNotes != null && mPlayingNotes.length != 0) {
             for (PlayingNote n : mPlayingNotes)
-                mMidiOut.sendMidi(midi, n.pitch(), onColor.getMessage());
+                mMidiOut.sendMidi(NoteOn, n.pitch(), onColor.getMessage());
         }
     }
 
@@ -158,7 +157,10 @@ public class Workflow extends Hardware {
         mCursorClip = mHost.createLauncherCursorClip(192, 128);
         mCursorClip.getLoopLength().markInterested();
         mCursorTrack.canHoldNoteData().markInterested();
-        mCursorTrack.playingNotes().addValueObserver(notes -> mPlayingNotes = notes);
+        mCursorTrack.playingNotes().addValueObserver(notes -> {
+            mLastPlayingNotes = mPlayingNotes;
+            mPlayingNotes = notes;
+        });
 
         mDeviceBank = mCursorTrack.createDeviceBank(8);
         mDeviceBank.cursorIndex().markInterested();
@@ -263,7 +265,8 @@ public class Workflow extends Hardware {
             int ix = i;
             mSceneBank.getScene(7 - i).exists().markInterested();
             mSceneBank.getScene(7 - i).color().markInterested();
-            mSessionLayer.bindPressed(mRightButtons[i], mSceneBank.getScene(7 - ix).launchAction());
+            if (i != 0)
+                mSessionLayer.bindPressed(mRightButtons[i], mSceneBank.getScene(7 - ix).launchAction());
         }
 
         for (int i = 0; i < 8; i++) {
@@ -293,41 +296,50 @@ public class Workflow extends Hardware {
                 return RGBState.OFF;
             }, mRightLights[ix]);
         }
-        
+
         // Stop/Solo/Mute
         mSessionLayer.bindPressed(mRightButtons[0], () -> {
             incrementSsmIndex();
-            if (ssmIndex > 0) {
-                switchLayer(mMixerLayers[4+ssmIndex]);
+            if (ssmIndex == 1) {
+                switchLayer(mMixerLayers[4]);
+                mMixerLayer.deactivate();
+            } else if (ssmIndex == 2) {
+                switchLayer(mMixerLayers[6]);
+                mMixerLayer.deactivate();
+            } else if (ssmIndex == 3) {
+                switchLayer(mMixerLayers[5]);
                 mMixerLayer.deactivate();
             } else {
                 switchLayer(mSessionLayer);
                 mMixerLayer.deactivate();
             }
-            
         });
+
         mSessionLayer.bindLightState(() -> {
             switch (ssmIndex) {
                 case 0:
-                    return RGBState.OFF;
+                    return RGBState.GREY;
                 case 1:
-                    return RGBState.ORANGE;
+                    return RGBState.RED;
                 case 2:
                     return RGBState.YELLOW;
                 case 3:
-                    return RGBState.RED;
+                    return RGBState.ORANGE;
                 default:
                     return RGBState.OFF;
             }
         }, mRightLights[0]);
 
-        
     }
 
     private void incrementSsmIndex() {
         ssmIndex += 1;
         if (ssmIndex >= 4)
             ssmIndex = 0;
+    }
+
+    private void resetSsmIndex() {
+        ssmIndex = 0;
     }
 
     private void initFaderLayer(Layer l, int p, int indexOffset) {
@@ -373,8 +385,10 @@ public class Workflow extends Hardware {
     private void initNavigation() {
         mSessionLayer.bindPressed(mSessionButton, () -> {
             if (!mMixerLayer.isActive() && !isNoteIntputActive) {
-                mMixerLayer.activate();
-                mMixerLayers[0].activate();
+                switchLayer(mMixerLayers[0]);
+                resetSsmIndex();
+                // mMixerLayer.activate();
+                // mMixerLayers[0].activate();
                 mMidiOut.sendSysex(DAW_VOLUME_FADER);
                 mMidiOut.sendSysex(DAW_FADER_ON);
                 mMidiOut.sendSysex(MIXER_MODE_LED);
@@ -482,6 +496,9 @@ public class Workflow extends Hardware {
     private static final int NOTES_MIDI_CHANNEL = 0x9f;
     private static final int DRUM_MIDI_CHANNEL = 0x98;
     // SYSEX
+    private final String BRIGHTNESS = "F0 00 20 29 02 0D 08 F0 F7";
+    private final String NOTE_FEEDBACK = "F0 00 20 29 02 0D 0A 01 01 F7";
+
     private final String DAW_MODE = "F0 00 20 29 02 0D 10 01 F7";
 
     private final String SESSION_LAYOUT = "F0 00 20 29 02 0D 00 00 00 00 F7";
@@ -513,6 +530,7 @@ public class Workflow extends Hardware {
     private NoteInput mNoteInput;
     private NoteInput mDrumInput;
     private PlayingNote[] mPlayingNotes;
+    private PlayingNote[] mLastPlayingNotes;
 
     private Transport mTransport;
     private TrackBank mTrackBank;

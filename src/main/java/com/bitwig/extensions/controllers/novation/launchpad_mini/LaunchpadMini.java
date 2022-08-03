@@ -74,6 +74,7 @@ public class LaunchpadMini extends ControllerExtension {
     @Override
     public void flush() {
         mHardwareSurface.updateHardware();
+        mWorkflow.midiCallback("flush");
     }
 
     private Workflow mWorkflow;
