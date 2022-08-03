@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.novation.launchpad_x;
+package com.bitwig.extensions.controllers.novation.launchpad_mk3;
 
 import java.util.UUID;
 
@@ -8,9 +8,13 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
-public class LaunchpadXDefinition extends ControllerExtensionDefinition {
+public abstract class LaunchpadMk3Definition extends ControllerExtensionDefinition {
 
-    private final static UUID ID = UUID.fromString("09baa665-d1df-4bc8-8cd6-b108875cacf7");
+    protected final static String LAUNCHPAD_MINI_MODEL = "Mini";
+    protected final static String LAUNCHPAD_X_MODEL = "X";
+    private String MODEL_NAME;
+
+    abstract String getModelName();
 
     @Override
     public String getHardwareVendor() {
@@ -19,7 +23,7 @@ public class LaunchpadXDefinition extends ControllerExtensionDefinition {
 
     @Override
     public String getHardwareModel() {
-        return "Launchpad X";
+        return "Launchpad " + getModelName() + " mk3";
     }
 
     @Override
@@ -34,29 +38,29 @@ public class LaunchpadXDefinition extends ControllerExtensionDefinition {
 
     @Override
     public void listAutoDetectionMidiPortNames(AutoDetectionMidiPortNamesList list, PlatformType platformType) {
-        switch (platformType)
-      {
-         case MAC:
-            list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
-            break;
-         case WINDOWS:
-            list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
-            break;
-         case LINUX:
-            list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
-            break;
-      }
+    //     switch (platformType)
+    //   {
+    //      case MAC:
+    //         list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
+    //         break;
+    //      case WINDOWS:
+    //         list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
+    //         break;
+    //      case LINUX:
+    //         list.add(new String[]{"Launchpad X", "Launchpad X"}, new String[]{"Launchpad X"});
+    //         break;
+    //   }
         
     }
 
     @Override
     public ControllerExtension createInstance(ControllerHost host) {
-        return new LaunchpadX(this, host);
+        return new LaunchpadMk3(this, host, getModelName());
     }
 
     @Override
     public String getName() {
-        return "Novation Launchpad X";
+        return "Launchpad " + getModelName() + " mk3";
     }
 
     @Override
@@ -67,11 +71,6 @@ public class LaunchpadXDefinition extends ControllerExtensionDefinition {
     @Override
     public String getVersion() {
         return "1.0";
-    }
-
-    @Override
-    public UUID getId() {
-        return ID;
     }
 
     @Override

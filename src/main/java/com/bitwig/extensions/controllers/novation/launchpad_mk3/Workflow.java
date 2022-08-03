@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.novation.launchpad_mini;
+package com.bitwig.extensions.controllers.novation.launchpad_mk3;
 
 import java.util.List;
 
@@ -8,11 +8,56 @@ import com.bitwig.extensions.framework.*;
 
 public class Workflow extends Hardware {
 
-    public Workflow(ControllerExtension driver) {
+    public Workflow(ControllerExtension driver, String model) {
         super(driver);
         mHost = driver.getHost();
         mLayers = new Layers(driver);
+        initSysexMessages(model);
         initWorkflow();
+    }
+
+    private void initSysexMessages(String model) {
+        switch (model) {
+            case "Mini":
+                formatSysexStrings("D");
+                break;
+
+            case "X":
+                formatSysexStrings("C");
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    private void formatSysexStrings(String s) {
+        DAW_MODE = String.format(DAW_MODE, s);
+
+        SESSION_LAYOUT = String.format(SESSION_LAYOUT, s);
+        SESSION_MODE_PREFIX = String.format(SESSION_MODE_PREFIX, s.toLowerCase());
+
+        SESSION_MODE_LED = String.format(SESSION_MODE_LED, s);
+        MIXER_MODE_LED = String.format(MIXER_MODE_LED, s);
+
+        DRUM_MODE = String.format(DRUM_MODE, s);
+        NOTE_MODE = String.format(NOTE_MODE, s);
+
+        DAW_VOLUME_FADER = String.format(DAW_VOLUME_FADER, s);
+        DAW_PAN_FADER = String.format(DAW_PAN_FADER, s);
+        DAW_SEND_A_FADER = String.format(DAW_SEND_A_FADER, s);
+        DAW_SEND_B_FADER = String.format(DAW_SEND_B_FADER, s);
+        DAW_FADER_ON = String.format(DAW_FADER_ON, s);
+        DAW_FADER_OFF = String.format(DAW_FADER_OFF, s);
+
+        String[] DAW_FADER_MODES_TEMP = {
+                DAW_VOLUME_FADER,
+                DAW_PAN_FADER,
+                DAW_SEND_A_FADER,
+                DAW_SEND_B_FADER
+        };
+
+        DAW_FADER_MODES = DAW_FADER_MODES_TEMP;
     }
 
     private void initWorkflow() {
@@ -59,7 +104,6 @@ public class Workflow extends Hardware {
         mMidiIn0 = mHost.getMidiInPort(0);
         mMidiIn1 = mHost.getMidiInPort(1);
         mMidiOut = mHost.getMidiOutPort(0);
-        mMidiOut1  = mHost.getMidiOutPort(1);
 
         mMidiOut.sendSysex(DAW_MODE);
         mMidiOut.sendSysex(SESSION_LAYOUT);
@@ -69,7 +113,6 @@ public class Workflow extends Hardware {
         mMidiIn0.setSysexCallback(s -> {
             midiCallback(s);
         });
-        mMidiOut.sendSysex(NOTE_FEEDBACK);
     }
 
     public void midiCallback(String s) {
@@ -101,15 +144,28 @@ public class Workflow extends Hardware {
     }
 
     private void sendPlayingNotesToDevice(boolean drums, int midi, RGBState onColor) {
+        if (drums) {
+            for (int i = 0; i < 64; i++) {
+                if (mDrumPadBank.getItemAt(i).exists().get())
+                    mMidiOut.sendMidi(0x98, 36 + i, new RGBState(mDrumPadBank.getItemAt(i).color().get()).getMessage());
+                else
+                    mMidiOut.sendMidi(0x98, 36 + i, RGBState.OFF.getMessage());
+
+            }
+        }
         int NoteOn = 0x9f;
         int NoteOff = 0x8f;
+        int DrumNoteOn = 0x98;
         if (mLastPlayingNotes != null && mLastPlayingNotes.length != 0) {
-            for (PlayingNote l : mLastPlayingNotes)
+            for (PlayingNote l : mLastPlayingNotes) {
                 mMidiOut.sendMidi(NoteOff, l.pitch(), onColor.getMessage());
+            }
         }
         if (mPlayingNotes != null && mPlayingNotes.length != 0) {
-            for (PlayingNote n : mPlayingNotes)
+            for (PlayingNote n : mPlayingNotes) {
+                mMidiOut.sendMidi(DrumNoteOn, n.pitch(), onColor.getMessage());
                 mMidiOut.sendMidi(NoteOn, n.pitch(), onColor.getMessage());
+            }
         }
     }
 
@@ -496,34 +552,28 @@ public class Workflow extends Hardware {
     private static final int NOTES_MIDI_CHANNEL = 0x9f;
     private static final int DRUM_MIDI_CHANNEL = 0x98;
     // SYSEX
-    private final String BRIGHTNESS = "F0 00 20 29 02 0D 08 F0 F7";
-    private final String NOTE_FEEDBACK = "F0 00 20 29 02 0D 0A 01 01 F7";
 
-    private final String DAW_MODE = "F0 00 20 29 02 0D 10 01 F7";
+    private String DAW_MODE = "F0 00 20 29 02 0%s 10 01 F7";
 
-    private final String SESSION_LAYOUT = "F0 00 20 29 02 0D 00 00 00 00 F7";
-    private final String SESSION_MODE_PREFIX = "f0002029020d00000000";
+    private String SESSION_LAYOUT = "F0 00 20 29 02 0%s 00 00 00 00 F7";
+    private String SESSION_MODE_PREFIX = "f0002029020%s00000000";
 
-    private final String SESSION_MODE_LED = "F0 00 20 29 02 0D 14 14 01 F7";
-    private final String MIXER_MODE_LED = "F0 00 20 29 02 0D 14 24 01 F7";
+    private String SESSION_MODE_LED = "F0 00 20 29 02 0%s 14 14 01 F7";
+    private String MIXER_MODE_LED = "F0 00 20 29 02 0%s 14 24 01 F7";
 
-    private final String DRUM_MODE = "F0 00 20 29 02 0D 0F 01 F7";
-    private final String NOTE_MODE = "F0 00 20 29 02 0D 0F 00 F7";
+    private String DRUM_MODE = "F0 00 20 29 02 0%s 0F 01 F7";
+    private String NOTE_MODE = "F0 00 20 29 02 0%s 0F 00 F7";
 
-    private final String DAW_VOLUME_FADER = "F0 00 20 29 02 0D 01 00 00 00 00 00 00 01 00 01 00 02 00 02 00 03 00 03 00 04 00 04 00 05 00 05 00 06 00 06 00 07 00 07 00 F7";
-    private final String DAW_PAN_FADER = "F0 00 20 29 02 0D 01 01 01 00 01 08 00 01 01 09 00 02 01 0A 00 03 01 0B 00 04 01 0C 00 05 01 0D 00 06 01 0E 00 07 01 0F 00 F7";
-    private final String DAW_SEND_A_FADER = "F0 00 20 29 02 0D 01 02 00 00 00 10 00 01 00 11 00 02 00 12 00 03 00 13 00 04 00 14 00 05 00 15 00 06 00 16 00 07 00 17 00 F7";
-    private final String DAW_SEND_B_FADER = "F0 00 20 29 02 0D 01 03 00 00 00 18 00 01 00 19 00 02 00 1A 00 03 00 1B 00 04 00 1C 00 05 00 1D 00 06 00 1E 00 07 00 1F 00 F7";
+    private String DAW_VOLUME_FADER = "F0 00 20 29 02 0%s 01 00 00 00 00 00 00 01 00 01 00 02 00 02 00 03 00 03 00 04 00 04 00 05 00 05 00 06 00 06 00 07 00 07 00 F7";
+    private String DAW_PAN_FADER = "F0 00 20 29 02 0%s 01 01 01 00 01 08 00 01 01 09 00 02 01 0A 00 03 01 0B 00 04 01 0C 00 05 01 0D 00 06 01 0E 00 07 01 0F 00 F7";
+    private String DAW_SEND_A_FADER = "F0 00 20 29 02 0%s 01 02 00 00 00 10 00 01 00 11 00 02 00 12 00 03 00 13 00 04 00 14 00 05 00 15 00 06 00 16 00 07 00 17 00 F7";
+    private String DAW_SEND_B_FADER = "F0 00 20 29 02 0%s 01 03 00 00 00 18 00 01 00 19 00 02 00 1A 00 03 00 1B 00 04 00 1C 00 05 00 1D 00 06 00 1E 00 07 00 1F 00 F7";
 
-    private final String[] DAW_FADER_MODES = {
-            DAW_VOLUME_FADER,
-            DAW_PAN_FADER,
-            DAW_SEND_A_FADER,
-            DAW_SEND_B_FADER
-    };
 
-    private final String DAW_FADER_ON = "F0 00 20 29 02 0D 00 0D F7";
-    private final String DAW_FADER_OFF = "F0 00 20 29 02 0D 00 00 F7";
+    private String[] DAW_FADER_MODES;
+
+    private String DAW_FADER_ON = "F0 00 20 29 02 0%s 00 0D F7";
+    private String DAW_FADER_OFF = "F0 00 20 29 02 0%s 00 00 F7";
 
     // API Objects
     private Application mApplication;

@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.novation.launchpad_x;
+package com.bitwig.extensions.controllers.novation.launchpad_mk3;
 
 
 import com.bitwig.extension.api.Color;

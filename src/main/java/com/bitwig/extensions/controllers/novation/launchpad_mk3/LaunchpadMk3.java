@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.novation.launchpad_mini;
+package com.bitwig.extensions.controllers.novation.launchpad_mk3;
 
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.ControllerExtension;
@@ -11,23 +11,24 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.RelativePosition;
 
 
-public class LaunchpadMini extends ControllerExtension {
+public class LaunchpadMk3 extends ControllerExtension {
 
-    public LaunchpadMini(ControllerExtensionDefinition definition, ControllerHost host) {
+    public LaunchpadMk3(ControllerExtensionDefinition definition, ControllerHost host, String model) {
         super(definition, host);
+        modelName = model;
     }
 
     @Override
     public void init() {
         mHost = getHost();
         mApplication = mHost.createApplication();
-        mWorkflow = new Workflow(this);
+        mWorkflow = new Workflow(this, modelName);
         mHardwareSurface = mWorkflow.getHardwareSurface();
         mHardwareSurface.setPhysicalSize(300, 300);
         mMidiOut = mWorkflow.getMidiOut();
         initHardwareLayout();
 
-        mHost.showPopupNotification("Launchpad Pro Mk3 initialized...");
+        mHost.showPopupNotification("Launchpad " + modelName + " Mk3 initialized...");
     }
 
     private void initHardwareLayout() {
@@ -68,7 +69,7 @@ public class LaunchpadMini extends ControllerExtension {
     @Override
     public void exit() {
         mMidiOut.sendSysex(STANDALONE_MODE);
-        mHost.showPopupNotification("Launchpad Pro Mk3 exited...");
+        mHost.showPopupNotification("Launchpad " + modelName + " Mk3 exited...");
     }
 
     @Override
@@ -77,8 +78,11 @@ public class LaunchpadMini extends ControllerExtension {
         mWorkflow.midiCallback("flush");
     }
 
+    private String modelName;
+
     private Workflow mWorkflow;
     private final String STANDALONE_MODE = "F0 00 20 29 02 0D 10 00 F7";
+
 
     // API Objects
     private HardwareSurface mHardwareSurface;
