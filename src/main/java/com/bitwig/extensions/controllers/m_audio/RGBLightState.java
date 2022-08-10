@@ -8,6 +8,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 public class RGBLightState extends InternalHardwareLightState {
    public final static int BLINK = 64;
    public static final RGBLightState OFF = new RGBLightState(State.OFF);
+   //public static final RGBLightState ON = new RGBLightState(State.ON);
    public static final RGBLightState WHITE = new RGBLightState(State.WHITE);
    public static final RGBLightState CHARTREUSE = new RGBLightState(State.CHARTREUSE);
    public static final RGBLightState GREEN = new RGBLightState(State.GREEN);
@@ -75,8 +76,16 @@ public class RGBLightState extends InternalHardwareLightState {
          midi.sendMidi(0x90, cc, state);
    }
 
+   public static void send(final MidiOut midi, final int cc, final int state, final int channel) {
+      if (state != 0)
+         midi.sendMidi(0xb0+channel, cc, 127);
+      else 
+         midi.sendMidi(0xb0+channel, cc, state);
+   }
+
    private enum State {
       OFF(null, 0),
+      //ON(null, 127),
       CHARTREUSE(Color.fromRGB255(146, 208, 80), 14),
       GREEN(Color.fromRGB255(1, 176, 80), 12),
       GREEN_BLINK(Color.fromRGB255(1, 176, 80), 12 + BLINK),
