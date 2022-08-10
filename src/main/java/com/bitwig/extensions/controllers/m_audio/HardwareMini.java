@@ -77,7 +77,7 @@ public class HardwareMini {
         
 
         for (int i = 0; i < (BANK_SIZE * 2); i++) {
-            createRGBPadButton(i);
+            createRGBPadButton(i, CC_PAD_START);
             mMidiOut2.sendMidi(0x90, CC_PAD_START + i, OFF);
         }
         mSceneButtons[0] = createButton("sceneLaunch1", CC_ARROW_1);
@@ -155,24 +155,25 @@ public class HardwareMini {
         return button;
     }
 
-    private void createRGBPadButton(int index) {
+    private void createRGBPadButton(int index, int cc_start) {
         assert index >= 0 && index < 16;
+        
         int i = index < BANK_SIZE ? 0 : 1;
         int j = index < BANK_SIZE ? index : (index - BANK_SIZE);
         int x = index + (index < BANK_SIZE ? 0 : BANK_SIZE);
-        final HardwareButton button = createNoteButton("padButton" + index, CC_PAD_START + x);
+        final HardwareButton button = createNoteButton("padButton" + cc_start + index, cc_start + x);
         button.setLabel(String.valueOf(index + 1));
 
         mPadButtons[i][j] = button;
 
-        final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight("light" + index);
+        final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight("light" + cc_start + index);
 
         light.state().onUpdateHardware(new Consumer<RGBLightState>() {
 
             @Override
             public void accept(RGBLightState state) {
                 if (state != null)
-                    RGBLightState.send(mMidiOut2, CC_PAD_START + x, state.getMessage(), false);
+                    RGBLightState.send(mMidiOut2, cc_start + x, state.getMessage(), false);
             }
         });
 
@@ -219,8 +220,8 @@ public class HardwareMini {
     final static int CC_PAD_START = 40;
     final static int PAD_NOTE_OFFSET = 40;//36;
 
-    final static int CC_ARROW_1 = 0;
-    final static int CC_ARROW_2 = 0;
+    final static int CC_ARROW_1 = 107;
+    final static int CC_ARROW_2 = 108;
 
     final static int CC_LAYER_CHANNEL = 15;
     final static int CC_LAYER_VOLUME = 0x53; // Channel 15
@@ -238,8 +239,8 @@ public class HardwareMini {
     final static int CC_STOP = 117;
     final static int CC_RECORD = 119;
     final static int CC_LOOP = 114;
-    final static int CC_FORWARD = 115;
-    final static int CC_REWIND = 116;
+    final static int CC_FORWARD = 116;
+    final static int CC_REWIND = 115;
     final static int CC_BANK_PREV = 110;
     final static int CC_BANK_NEXT = 111;
     final static int CC_METRONOME = 0x70;

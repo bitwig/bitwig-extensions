@@ -14,97 +14,15 @@ public class WorkflowMini extends HardwareMini {
 
         mLayers = new Layers(driver);
 
-        final NoteInput keyboardInput = mMidiIn1.createNoteInput("Keys", "80????", "90????", "D?????");
-        keyboardInput.setShouldConsumeEvents(true);
-
         initNoteTable();
-        mPadInput = mMidiIn2.createNoteInput("Pads", "80????", "90????");
-        mPadInput.setShouldConsumeEvents(true);
-        mPadInput.setKeyTranslationTable(noteTable);
 
-        mTransport = mHost.createTransport();
-        mTransport.isPlaying().markInterested();
-        mTransport.isArrangerLoopEnabled().markInterested();
-        mTransport.isArrangerRecordEnabled().markInterested();
-        mTransport.isMetronomeEnabled().markInterested();
+        initAPIElements();
 
-        mMasterTrack = mHost.createMasterTrack(8);
-        mMasterTrack.volume().markInterested();
-
-        mTrackBank = mHost.createTrackBank(BANK_SIZE, BANK_SIZE, 2);
-        mTrackBank.canScrollBackwards().markInterested();
-        mTrackBank.canScrollForwards().markInterested();
-        mTrackBank.cursorIndex().markInterested();
-
-        mSceneBank = mTrackBank.sceneBank();
-        mSceneBank.canScrollBackwards().markInterested();
-        mSceneBank.canScrollForwards().markInterested();
-
-        for (int i = 0; i < 2; i++) {
-            final Scene scene = mSceneBank.getScene(i);
-            scene.exists().markInterested();
-
-            for (int j = 0; j < BANK_SIZE; j++) {
-                final int index = i;
-                final int jndex = j;
-                final Track track = mTrackBank.getItemAt(j);
-                track.isQueuedForStop().markInterested();
-                final ClipLauncherSlotBank clipBank = track.clipLauncherSlotBank();
-                clipBank.setIndication(false);
-
-                ClipLauncherSlot clip = clipBank.getItemAt(i);
-                clip.isPlaying().markInterested();
-                clip.isRecording().markInterested();
-                clip.isPlaybackQueued().markInterested();
-                clip.isRecordingQueued().markInterested();
-                clip.isStopQueued().markInterested();
-                clip.hasContent().markInterested();
-
-                mClipSlot[index][jndex] = clip;
-
-            }
-        }
-
-        mCursorTrack = mHost.createCursorTrack(BANK_SIZE, 0);
-        mCursorTrack.arm().markInterested();
-        mCursorTrack.volume().markInterested();
-        mCursorTrack.pan().markInterested();
-        mCursorTrack.volume().setIndication(true);
-        mCursorTrack.playingNotes().addValueObserver(notes -> {
-            mPlayingNotes = notes;
-        });
-        mCursorTrack.trackType().markInterested();
-        mCursorTrack.sendBank().exists().markInterested();
-        mCursorTrack.color().markInterested();
-        mCursorTrack.position().markInterested();
-
-        mTrackBank.followCursorTrack(mCursorTrack);
-
-        mCursorDeviceBank = mCursorTrack.createDeviceBank(1);
-
-        mCursorDevice = mCursorTrack.createCursorDevice("01", "track", 8,
-                CursorDeviceFollowMode.FIRST_INSTRUMENT_OR_DEVICE);
-
-
-        mCursorRemoteControls = mCursorDevice.createCursorRemoteControlsPage(8);
-        mCursorRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 8);
-        for (int i = 0; i < 8; i++)
-            mCursorRemoteControls.getParameter(i);
-
-        mCursorClip = mHost.createLauncherCursorClip(0, 0);
-
-        CursorDevice mInstrument = mCursorTrack.createCursorDevice("02", "track", 8,
-                CursorDeviceFollowMode.FIRST_INSTRUMENT);
-
-        mDrumPadBank = mInstrument.createDrumPadBank(BANK_SIZE * 2);
-        mDrumPadBank.exists().markInterested();
-        for (int i = 0; i < (BANK_SIZE * 2); i++) {
-            mDrumPadBank.getItemAt(i).color().markInterested();
-            mDrumPadBank.getItemAt(i).exists().markInterested();
-            mDrumPadBank.getItemAt(i).isMutedBySolo().markInterested();
-        }
+        initMarkInterested();
 
         initLayers();
+
+        setHardwareFunctions();
 
     }
 
@@ -151,12 +69,12 @@ public class WorkflowMini extends HardwareMini {
         mSendsLayer = new Layer(mLayers, "Sends");
         mClipLayer = new Layer(mLayers, "Clip");
 
-        initVolumeLayer();
-        initClipLayer();
-        initDeviceLayer();
-        initMainLayer();
-        initPanLayer();
-        initSendsLayer();
+        // initVolumeLayer();
+        // initClipLayer();
+        // initDeviceLayer();
+        // initMainLayer();
+        // initPanLayer();
+        // initSendsLayer();
     }
 
     private void initClipLayer() {
@@ -406,7 +324,8 @@ public class WorkflowMini extends HardwareMini {
         mMainLayer.bindPressed(mViewButton, () -> mApplication.previousPanelLayout());
         mMainLayer.bindPressed(mUndoButton, mApplication.undoAction());
 
-        mMainLayer.bind(mFader, mCursorTrack.volume());
+        if (modelName != "Mini")
+            mMainLayer.bind(mFader, mCursorTrack.volume());
 
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < BANK_SIZE; j++) {
@@ -447,9 +366,6 @@ public class WorkflowMini extends HardwareMini {
 
     private void switchPadFunction() {
         mPadInput.setKeyTranslationTable(mClipLayer.isActive() ? NoteInputUtils.NO_NOTES : noteTable);
-        for (int j = 0; j < 2; ++j) {
-            final Scene scene = mSceneBank.getScene(j);
-        }
         for (int i = 0; i < BANK_SIZE; i++) {
             final Track track = mTrackBank.getItemAt(i);
             final ClipLauncherSlotBank clipBank = track.clipLauncherSlotBank();
@@ -512,6 +428,254 @@ public class WorkflowMini extends HardwareMini {
         }
     }
 
+    private void initAPIElements() {
+        final NoteInput keyboardInput = mMidiIn1.createNoteInput("Keys", "80????", "90????", "D?????");
+        keyboardInput.setShouldConsumeEvents(true);
+
+        mPadInput = mMidiIn2.createNoteInput("Pads", "80????", "90????");
+        mPadInput.setShouldConsumeEvents(true);
+        mPadInput.setKeyTranslationTable(noteTable);
+        
+        mTransport = mHost.createTransport();
+
+        mMasterTrack = mHost.createMasterTrack(8);
+        
+        mCursorTrack = mHost.createCursorTrack(BANK_SIZE, 0);
+        mCursorTrack.volume().setIndication(true);
+        mCursorTrack.playingNotes().addValueObserver(notes -> {
+            mPlayingNotes = notes;
+        });
+        
+        mTrackBank = mHost.createTrackBank(BANK_SIZE, BANK_SIZE, 2);
+        mTrackBank.followCursorTrack(mCursorTrack);
+
+        mSceneBank = mTrackBank.sceneBank();
+
+        mCursorDeviceBank = mCursorTrack.createDeviceBank(1);
+        mCursorDevice = mCursorTrack.createCursorDevice("01", "track", 8,
+                CursorDeviceFollowMode.FIRST_INSTRUMENT_OR_DEVICE);
+        mCursorRemoteControls = mCursorDevice.createCursorRemoteControlsPage(8);
+        mCursorRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 8);
+        
+        mCursorClip = mHost.createLauncherCursorClip(0, 0);
+        
+        CursorDevice mInstrument = mCursorTrack.createCursorDevice("02", "track", 8,
+                CursorDeviceFollowMode.FIRST_INSTRUMENT);
+        mDrumPadBank = mInstrument.createDrumPadBank(BANK_SIZE * 2);
+
+    }
+
+    private void initMarkInterested() {
+        mTransport.isPlaying().markInterested();
+        mTransport.isArrangerLoopEnabled().markInterested();
+        mTransport.isArrangerRecordEnabled().markInterested();
+        mTransport.isMetronomeEnabled().markInterested();
+        
+        mMasterTrack.volume().markInterested();
+
+        mTrackBank.canScrollBackwards().markInterested();
+        mTrackBank.canScrollForwards().markInterested();
+        mTrackBank.cursorIndex().markInterested();
+
+        mSceneBank.canScrollBackwards().markInterested();
+        mSceneBank.canScrollForwards().markInterested();
+        mSceneBank.getScene(0).exists().markInterested();
+
+
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < BANK_SIZE; j++) {
+                final int index = i;
+                final int jndex = j;
+                final Track track = mTrackBank.getItemAt(j);
+                final ClipLauncherSlotBank clipBank = track.clipLauncherSlotBank();
+                final ClipLauncherSlot clip = clipBank.getItemAt(i);
+                
+                track.isQueuedForStop().markInterested();
+                //clipBank.setIndication(false);
+
+                clip.isPlaying().markInterested();
+                clip.isRecording().markInterested();
+                clip.isPlaybackQueued().markInterested();
+                clip.isRecordingQueued().markInterested();
+                clip.isStopQueued().markInterested();
+                clip.hasContent().markInterested();
+
+                mClipSlot[index][jndex] = clip;
+            }
+        }
+
+        mCursorTrack.arm().markInterested();
+        mCursorTrack.volume().markInterested();
+        mCursorTrack.pan().markInterested();
+        mCursorTrack.trackType().markInterested();
+        mCursorTrack.sendBank().exists().markInterested();
+        mCursorTrack.color().markInterested();
+        mCursorTrack.position().markInterested();
+
+        mDrumPadBank.exists().markInterested();
+        
+        for (int i = 0; i < (BANK_SIZE * 2); i++) {
+            mDrumPadBank.getItemAt(i).color().markInterested();
+            mDrumPadBank.getItemAt(i).exists().markInterested();
+            mDrumPadBank.getItemAt(i).isMutedBySolo().markInterested();
+        }
+    }
+
+    private void setHardwareFunctions() {
+        initFaders();
+        initFaderButtons();
+        initKnobs();
+        initButtonMatrix();
+        initNavigation();
+        initTransport();
+    }
+
+
+    private void initFaders() {
+        for (int i = 0; i < BANK_SIZE; i++) {
+            AbsoluteHardwareControl fader = mFaders[i];
+            Track track = mTrackBank.getItemAt(i);
+            Parameter parameter = track.volume();
+            
+            mVolumeLayer.bind(fader, parameter);
+
+            parameter = mCursorRemoteControls.getParameter(i+4);
+            mDeviceLayer.bind(fader, parameter);
+        }
+
+        if (modelName != "Mini")
+            mMainLayer.bind(mFader, mCursorTrack.volume());
+
+    }
+
+    private void initFaderButtons() {
+        for (int i = 0; i < BANK_SIZE; i++) {
+            HardwareButton button = mFaderButtons[i];
+            Track track = mTrackBank.getItemAt(i);
+            HardwareActionBindable parameter = track.arm().toggleAction();
+
+            mMainLayer.bindPressed(button, parameter);
+        }
+    }
+
+    private void initKnobs() {
+        for (int i = 0; i < BANK_SIZE; i++) {
+            AbsoluteHardwareControl knob = mKnobs[i];
+            Track track = mTrackBank.getItemAt(i);
+            Parameter parameter;
+
+            parameter = track.volume();
+            if (modelName == "25")
+                mVolumeLayer.bind(knob, parameter);
+
+            parameter = mCursorRemoteControls.getParameter(i);
+            mDeviceLayer.bind(knob, parameter);
+
+            parameter = track.pan();
+            mPanLayer.bind(knob, parameter);
+
+            parameter = track.sendBank().getItemAt(0);
+            mPanLayer.bind(knob, parameter);
+        }
+    }
+
+    private void initButtonMatrix() {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < BANK_SIZE; j++) {
+                int index = i;
+                int jndex = j;
+                
+                HardwareButton button = mPadButtons[i][j];
+                MultiStateHardwareLight light = mPadLights[i][j];
+                Track track = mTrackBank.getItemAt(j);
+                ClipLauncherSlot slot = mClipSlot[i][j];
+
+                mClipLayer.bindPressed(button, () -> {
+                    slot.launch();
+                });
+
+                mClipLayer.bindLightState(() -> {
+                    if (mClipSlot[index][jndex].isPlaying().getAsBoolean())
+                        return RGBLightState.GREEN;
+                    else if (mClipSlot[index][jndex].isPlaybackQueued().getAsBoolean())
+                        return RGBLightState.GREEN_BLINK;
+                    else if (mClipSlot[index][jndex].isRecording().getAsBoolean())
+                        return RGBLightState.RED;
+                    else if (mClipSlot[index][jndex].isRecordingQueued().getAsBoolean())
+                        return RGBLightState.RED_BLINK;
+                    else if (mClipSlot[index][jndex].isStopQueued().getAsBoolean())
+                        return RGBLightState.YELLOW_BLINK;
+                    else if (mClipSlot[index][jndex].hasContent().get())
+                        return RGBLightState.YELLOW;
+                    else
+                        return RGBLightState.OFF;
+                }, light);
+
+            }
+        }
+    }
+
+    private void initNavigation() {
+        mMainLayer.bindPressed(mEncoder, () -> {
+            if (mDeviceLayer.isActive()) {
+                mCursorDevice.selectPrevious();
+            } else if (mBackButton.isPressed().getAsBoolean()) {
+                mSceneBank.scrollBackwards();
+            } else {
+                mCursorTrack.selectPrevious();
+            }
+        });
+        mMainLayer.bindReleased(mEncoder, () -> {
+            if (mDeviceLayer.isActive()) {
+                mCursorDevice.selectNext();
+            } else if (mBackButton.isPressed().getAsBoolean()) {
+                mSceneBank.scrollForwards();
+            } else {
+                mCursorTrack.selectNext();
+            }
+        });
+
+        initLayerNavigation();
+    }
+
+    private void initLayerNavigation() {
+        mMainLayer.bindPressed(mVolumeLayerButton, switchLayer(mVolumeLayer));
+        mMainLayer.bindPressed(mPanLayerButton, switchLayer(mPanLayer));
+        mMainLayer.bindPressed(mDeviceLayerButton, switchLayer(mDeviceLayer));
+        mMainLayer.bindPressed(mSendsLayerButton, switchLayer(mSendsLayer));
+
+        mMainLayer.bindPressed(mEncoderButton, () -> {
+            if (mDeviceLayer.isActive())
+                switchLayer(mPanLayer); // TO DO rework last layer...
+            else 
+                switchLayer(mDeviceLayer);
+        });
+    }
+
+    private void initTransport() {
+        mMainLayer.bindPressed(mStopButton, mTransport.stopAction());
+        mMainLayer.bindPressed(mPlayButton, mTransport.playAction());
+        mMainLayer.bindPressed(mRecordButton, mTransport.recordAction());
+        mMainLayer.bindToggle(mLoopButton, mTransport.isArrangerLoopEnabled());
+        mMainLayer.bindPressed(mRewindButton, mTransport.rewindAction());
+        mMainLayer.bindPressed(mForwardButton, mTransport.fastForwardAction());
+        mMainLayer.bindToggle(mMetronomeButton, mTransport.isMetronomeEnabled());
+
+    }
+
+    private Runnable switchLayer(Layer layer) {
+        for (Layer l : mLayers.getLayers()) {
+            l.deactivate();
+        }
+        mClipLayer.activate();
+        mMainLayer.activate();
+        layer.activate();
+
+        if (modelName != "25" && !(modelName == "Mini" && mDeviceLayer.isActive()))
+            mVolumeLayer.activate();
+        
+        return null;
+    }
 
     private void save() {
         final Action saveAction = mApplication.getAction("Save");
