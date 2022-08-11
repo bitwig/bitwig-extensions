@@ -69,9 +69,12 @@ public class HardwareMini {
         for (int i = 0; i < BANK_SIZE; i++)
             createFader(i);
 
-        for (int i = 0; i < BANK_SIZE; i++) {
+        for (int i = 0; i < BANK_SIZE; i++) 
             createOnOffFaderButton(i, 0);
-        }
+        
+
+        for (int i = 0; i < 5; i++)
+            mFaderButtonsMode[i] = createButton("FaderButtonMode" + i, 57 + i, 15);
 
         for (int j = 0; j < 4; j++) {
             if (modelName == "Mini") {
@@ -332,5 +335,7 @@ public class HardwareMini {
     protected MultiStateHardwareLight[][] mPadLights = new MultiStateHardwareLight[2][8];
     protected HardwareButton[] mFaderButtons = new HardwareButton[32];
     protected MultiStateHardwareLight[] mFaderButtonLights = new MultiStateHardwareLight[32];
+
+    protected HardwareButton[] mFaderButtonsMode = new HardwareButton[5];
 
 }

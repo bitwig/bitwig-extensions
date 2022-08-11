@@ -34,9 +34,9 @@ public class OxygenPro extends ControllerExtension {
 
         mWorkflow = new WorkflowMini(this, modelName);
         mHardwareSurface = mWorkflow.getHardwareSurface();
-        mHost.scheduleTask(() -> {
-            mWorkflow.activateInitialLayers();
-        }, (long) 100.0);
+        // mHost.scheduleTask(() -> {
+        //     mWorkflow.activateInitialLayers();
+        // }, (long) 100.0);
 
         // initHardwareLayout();
 

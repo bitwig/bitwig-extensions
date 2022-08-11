@@ -10,8 +10,8 @@ public class WorkflowMini extends HardwareMini {
     protected WorkflowMini(ControllerExtension driver, String modelName) {
         super(driver, modelName);
         this.modelName = modelName;
-        MODE_MINI = MODE_MINI;
-        BANK_SIZE = MODE_MINI ? 4 : 8;
+        MODEL_MINI = modelName == "Mini";
+        BANK_SIZE = MODEL_MINI ? 4 : 8;
 
         mLayers = new Layers(driver);
 
@@ -25,6 +25,7 @@ public class WorkflowMini extends HardwareMini {
 
         setHardwareFunctions();
 
+        activateInitialLayers();
         switchPadFunction();
     }
 
@@ -32,11 +33,11 @@ public class WorkflowMini extends HardwareMini {
         for (int i = 0; i < 128; i++)
             noteTable[i] = i;
         noteBank = 0;
-        if (MODE_MINI) {
+        if (MODEL_MINI) {
             for (int i = 40; i < (40 + 16); i++) {
                 if (i < 44)
                     noteTable[i] = noteTable[i];
-                else if (i < 48)
+                else if (i < 52)
                     noteTable[i] = i - 3 * BANK_SIZE;
             }
         } 
@@ -47,7 +48,7 @@ public class WorkflowMini extends HardwareMini {
             return false;
         if (direction == 0 && noteBank == 0)
             return false;
-        if (MODE_MINI) {
+        if (MODEL_MINI) {
             for (int i = 0; i < (BANK_SIZE * 2); i++) {
                 int noteIndex = i + PAD_NOTE_OFFSET + (i < BANK_SIZE ? 0 : BANK_SIZE);
 
@@ -178,6 +179,8 @@ public class WorkflowMini extends HardwareMini {
 
                 track.isQueuedForStop().markInterested();
                 track.arm().markInterested();
+                track.mute().markInterested();
+                track.solo().markInterested();
                 // clipBank.setIndication(false);
 
                 clip.isPlaying().markInterested();
@@ -211,6 +214,7 @@ public class WorkflowMini extends HardwareMini {
     private void setHardwareFunctions() {
         initFaders();
         initFaderButtons();
+        initFaderButtonsMode();
         initKnobs();
         initButtonMatrix();
         initNavigation();
@@ -225,33 +229,75 @@ public class WorkflowMini extends HardwareMini {
 
             mVolumeLayer.bind(fader, parameter);
 
-            if (MODE_MINI) {
+            if (MODEL_MINI) {
                 parameter = mCursorRemoteControls.getParameter(i + 4);
                 mDeviceLayer.bind(fader, parameter);
             }
         }
 
-        if (modelName != "Mini")
+        if (!MODEL_MINI)
             mMainLayer.bind(mFader, mCursorTrack.volume());
 
     }
 
     private void initFaderButtons() {
         for (int i = 0; i < BANK_SIZE; i++) {
+            int index = i;
             HardwareButton button = mFaderButtons[i];
             MultiStateHardwareLight light = mFaderButtonLights[i];
             Track track = mTrackBank.getItemAt(i);
-            HardwareActionBindable parameter = track.arm().toggleAction();
+            //HardwareActionBindable parameter = track.arm().toggleAction();
 
-            mMainLayer.bindPressed(button, parameter);
-            mMainLayer.bindReleased(button, parameter);
+            mMainLayer.bindPressed(button, () -> switchFaderButtonModes(track, index));
+            mMainLayer.bindReleased(button, () -> switchFaderButtonModes(track, index));
 
-            mMainLayer.bindLightState(() -> track.arm().get() ? RGBLightState.RED : RGBLightState.OFF, light);
+            mMainLayer.bindLightState(() -> switchFaderButtonLightModes(track, index) ? RGBLightState.RED : RGBLightState.OFF, light);
+
+            //mMainLayer.bindLightState(() -> track.arm().get() ? RGBLightState.RED : RGBLightState.OFF, light);
         }
     }
 
-    private void switchFaderButtonModes() {
-        
+    private void initFaderButtonsMode() {
+        for (int i = 0; i < 5; i++) {
+            HardwareButton button = mFaderButtonsMode[i];
+            int mode = i;
+            mMainLayer.bindPressed(button, () -> faderButtonMode = mode);
+        }
+    }
+
+    private Runnable switchFaderButtonModes(Track track, int index) {
+        switch (faderButtonMode) {
+            case 1:
+                track.arm().toggle();
+                break;
+            case 2:
+                mTrackBank.cursorIndex().set(index);
+                break;
+            case 3:
+                track.mute().toggle();
+                break;
+            case 4:
+                track.solo().toggle();
+                break;
+            default:
+                break;
+        }
+        return null;
+    }
+
+    private Boolean switchFaderButtonLightModes(Track track, int index) {
+        switch (faderButtonMode) {
+            case 1:
+                return track.arm().get();
+            case 2:
+                return mTrackBank.cursorIndex().get() == index;
+            case 3:
+                return track.mute().get();
+            case 4:
+                return track.solo().get();
+            default:
+                return false;
+        }
     }
 
     private void initKnobs() {
@@ -271,7 +317,7 @@ public class WorkflowMini extends HardwareMini {
             mPanLayer.bind(knob, parameter);
 
             parameter = track.sendBank().getItemAt(0);
-            mPanLayer.bind(knob, parameter);
+            mSendsLayer.bind(knob, parameter);
         }
     }
 
@@ -314,7 +360,7 @@ public class WorkflowMini extends HardwareMini {
                     else
                         noteTabelIndex = 48 + jndex;
                     int drumBankIndex = jndex + ((1 - index) * BANK_SIZE);
-                    if (modelName != "Mini") {
+                    if (!MODEL_MINI) {
                         if (jndex < 4 && index == 1)
                             drumBankIndex = jndex; // + ((1 - index) * BANK_SIZE);
                         else if (jndex < 4 && index == 0)
@@ -327,9 +373,9 @@ public class WorkflowMini extends HardwareMini {
 
                     if (mPlayingNotes.length != 0) {
                         for (PlayingNote n : mPlayingNotes) {
-                            if (modelName != "Mini" && n.pitch() == noteTable[36 + drumBankIndex])
+                            if (!MODEL_MINI && n.pitch() == noteTable[36 + drumBankIndex])
                                  return RGBLightState.WHITE;
-                            if (MODE_MINI && n.pitch() == noteTable[noteTabelIndex])
+                            if (MODEL_MINI && n.pitch() == noteTable[noteTabelIndex])
                                 return RGBLightState.WHITE;
                         }
                     }
@@ -378,17 +424,16 @@ public class WorkflowMini extends HardwareMini {
     }
 
     private void initLayerNavigation() {
-        mMainLayer.bindPressed(mVolumeLayerButton, switchLayer(mVolumeLayer));
-        mMainLayer.bindPressed(mPanLayerButton, switchLayer(mPanLayer));
-        mMainLayer.bindPressed(mDeviceLayerButton, switchLayer(mDeviceLayer));
-        mMainLayer.bindPressed(mSendsLayerButton, switchLayer(mSendsLayer));
+        mMainLayer.bindPressed(mVolumeLayerButton, () -> switchLayer(mVolumeLayer));
+        mMainLayer.bindPressed(mPanLayerButton, () -> switchLayer(mPanLayer));
+        mMainLayer.bindPressed(mDeviceLayerButton, () -> switchLayer(mDeviceLayer));
+        mMainLayer.bindPressed(mSendsLayerButton, () -> switchLayer(mSendsLayer));
 
         mMainLayer.bindPressed(mEncoderButton, () -> {
             if (mDeviceLayer.isActive()) {
                 switchLayer(mPanLayer); // TO DO rework last layer...
             } else {
                 switchLayer(mDeviceLayer);
-
             }
         });
     }
@@ -425,7 +470,7 @@ public class WorkflowMini extends HardwareMini {
         if (!(mDeviceLayer.isActive() && mCursorTrack.trackType().get() == "Instrument"))
             mClipLayer.activate();
 
-        if (modelName != "25" && !(MODE_MINI && mDeviceLayer.isActive()))
+        if (modelName != "25" && !(MODEL_MINI && mDeviceLayer.isActive()))
             mVolumeLayer.activate();
 
         switchPadFunction();
@@ -460,12 +505,13 @@ public class WorkflowMini extends HardwareMini {
     private NoteInput mPadInput;
     protected final Integer[] noteTable = new Integer[128];
     protected int noteBank = 0;
+    protected int faderButtonMode = 1;
     private Transport mTransport;
 
     private MasterTrack mMasterTrack;
 
     private int BANK_SIZE = 8;
-    private Boolean MODE_MINI; 
+    private Boolean MODEL_MINI; 
 
     private TrackBank mTrackBank;
     private SceneBank mSceneBank;
