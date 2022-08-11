@@ -21,13 +21,11 @@ public class HardwareMini {
 
         mKnobs = new AbsoluteHardwareKnob[BANK_SIZE];
         mFaders = new AbsoluteHardwareControl[BANK_SIZE];
-        
+
         mPadButtons = new HardwareButton[2][BANK_SIZE];
         mPadLights = new MultiStateHardwareLight[2][BANK_SIZE];
         mFaderButtons = new HardwareButton[BANK_SIZE];
         mFaderButtonLights = new MultiStateHardwareLight[BANK_SIZE];
-    
-    
 
         initHardwareControls();
     }
@@ -74,12 +72,20 @@ public class HardwareMini {
         for (int i = 0; i < BANK_SIZE; i++) {
             createOnOffFaderButton(i, 0);
         }
-        
 
-        for (int i = 0; i < (BANK_SIZE * 2); i++) {
-            createRGBPadButton(i, CC_PAD_START);
-            mMidiOut2.sendMidi(0x90, CC_PAD_START + i, OFF);
+        for (int j = 0; j < 4; j++) {
+            if (modelName == "Mini") {
+                createRGBPadButton(0, j, CC_PAD_START);
+                createRGBPadButton(1, j, CC_PAD_START + 8);
+            } else {
+                createRGBPadButton(0, j, CC_PAD_START);
+                createRGBPadButton(0, j+4, CC_PAD_START+4);
+                createRGBPadButton(1, j, CC_PAD_START-4);
+                createRGBPadButton(1, j+4, CC_PAD_START);
+            }
+            // mMidiOut2.sendMidi(0x90, CC_PAD_START + j, OFF);
         }
+
         mSceneButtons[0] = createButton("sceneLaunch1", CC_ARROW_1);
         mSceneButtons[1] = createButton("sceneLaunch2", CC_ARROW_2);
 
@@ -155,9 +161,35 @@ public class HardwareMini {
         return button;
     }
 
+    private void createRGBPadButton(int i, int j, int cc_start) {
+        int index = i;
+        int jndex = j;
+        int cc = cc_start + jndex;
+        int label = cc * 10 + index;
+        final HardwareButton button = createNoteButton("padButton" + label, cc);
+        button.setLabel(String.valueOf(cc));
+
+        final MultiStateHardwareLight light = mHardwareSurface
+                .createMultiStateHardwareLight("light" + label);
+
+        light.state().onUpdateHardware(new Consumer<RGBLightState>() {
+            @Override
+            public void accept(RGBLightState state) {
+                if (state != null)
+                    RGBLightState.send(mMidiOut2, cc, state.getMessage(), false);
+            }
+        });
+
+        light.setColorToStateFunction(color -> new RGBLightState(color));
+        button.setBackgroundLight(light);
+
+        mPadButtons[index][jndex] = button;
+        mPadLights[index][jndex] = light;
+    }
+
     private void createRGBPadButton(int index, int cc_start) {
         assert index >= 0 && index < 16;
-        
+
         int i = index < BANK_SIZE ? 0 : 1;
         int j = index < BANK_SIZE ? index : (index - BANK_SIZE);
         int x = index + (index < BANK_SIZE ? 0 : BANK_SIZE);
@@ -166,7 +198,8 @@ public class HardwareMini {
 
         mPadButtons[i][j] = button;
 
-        final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight("light" + cc_start + index);
+        final MultiStateHardwareLight light = mHardwareSurface
+                .createMultiStateHardwareLight("light" + cc_start + index);
 
         light.state().onUpdateHardware(new Consumer<RGBLightState>() {
 
@@ -187,19 +220,20 @@ public class HardwareMini {
     private void createOnOffFaderButton(int i, int channel) {
         assert i >= 0 && i < 8;
 
-        final int index = i%8;
-        final HardwareButton button = createButton("faderButton" + i + "" + channel, CC_FADER_BUTTON_START + index, 0);
+        final int index = i % 8;
+        final HardwareButton button = createButton("faderButton" + i + "" + channel, CC_FADER_BUTTON_START + i, 0);
 
         mFaderButtons[i] = button;
 
-        final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight("fader_light" + i + "" + channel);
+        final MultiStateHardwareLight light = mHardwareSurface
+                .createMultiStateHardwareLight("fader_light" + i + "" + channel);
 
         light.state().onUpdateHardware(new Consumer<RGBLightState>() {
 
             @Override
             public void accept(RGBLightState state) {
                 if (state != null)
-                    RGBLightState.send(mMidiOut2, CC_FADER_BUTTON_START + index, state.getMessage(), 0);
+                    RGBLightState.send(mMidiOut2, CC_FADER_BUTTON_START + i, state.getMessage(), 0);
             }
         });
 
@@ -210,15 +244,13 @@ public class HardwareMini {
         mFaderButtonLights[i] = light;
     }
 
-
     protected String modelName;
     private int BANK_SIZE = 8;
-
 
     // final static int CC_VALUES
     final static int CC_PAD_CHANNEL = 0; // 0-3 Banks ~ Channels
     final static int CC_PAD_START = 40;
-    final static int PAD_NOTE_OFFSET = 40;//36;
+    final static int PAD_NOTE_OFFSET = 40;// 36;
 
     final static int CC_ARROW_1 = 107;
     final static int CC_ARROW_2 = 108;
@@ -278,7 +310,6 @@ public class HardwareMini {
     final static int ORANGE = 11;
     final static int YELLOW = 15;
 
-
     protected HardwareSurface mHardwareSurface;
     protected ControllerHost mHost;
     protected Application mApplication;
@@ -301,7 +332,5 @@ public class HardwareMini {
     protected MultiStateHardwareLight[][] mPadLights = new MultiStateHardwareLight[2][8];
     protected HardwareButton[] mFaderButtons = new HardwareButton[32];
     protected MultiStateHardwareLight[] mFaderButtonLights = new MultiStateHardwareLight[32];
-
-
 
 }
