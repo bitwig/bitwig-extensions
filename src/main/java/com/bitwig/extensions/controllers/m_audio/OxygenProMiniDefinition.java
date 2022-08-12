@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public class OxygenProMiniDefinition extends OxygenProDefinition {
 
-    private static final UUID DRIVER_ID = UUID.fromString("6e0c935f-cd38-4bba-8584-e368aa92444f");
+    private static final UUID DRIVER_ID = UUID.fromString("0e04e475-66e3-41c2-90bf-e32373c087db");
 
     @Override
     String getModel() {

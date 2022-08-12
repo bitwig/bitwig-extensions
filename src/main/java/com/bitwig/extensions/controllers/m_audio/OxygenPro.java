@@ -1,9 +1,5 @@
 package com.bitwig.extensions.controllers.m_audio;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.*;
@@ -18,83 +14,36 @@ public class OxygenPro extends ControllerExtension {
 
     @Override
     public void init() {
-        // TODO Auto-generated method stub
         mHost = getHost();
         mApplication = mHost.createApplication();
-        // mHardwareSurface = mHost.createHardwareSurface();
-        // mHardwareSurface.setPhysicalSize(300, 300);
 
         mMidiIn1 = mHost.getMidiInPort(0);
         mMidiIn2 = mHost.getMidiInPort(1);
         mMidiOut1 = mHost.getMidiOutPort(0);
         mMidiOut2 = mHost.getMidiOutPort(1);
 
-        // mHost.scheduleTask(() -> initAfterDelay(), (long) 50.0);
-        initAfterDelay();
+        initSysexMessages();
 
-        mWorkflow = new WorkflowMini(this, modelName);
+        mWorkflow = new Workflow(this, modelName);
+
         mHardwareSurface = mWorkflow.getHardwareSurface();
-        // mHost.scheduleTask(() -> {
-        //     mWorkflow.activateInitialLayers();
-        // }, (long) 100.0);
-
-        // initHardwareLayout();
+        //initHardwareLayout();
 
         mHost.showPopupNotification("Oxygen Pro " + modelName + " initialized...");
-
     }
 
-    private void initAfterDelay() {
-        // send Preset
-        // try {
-        // Thread.sleep(100);
-        // } catch (InterruptedException e) {
-        // // TODO Auto-generated catch block
-        // e.printStackTrace();
-        // }
-        // init
+    private void initSysexMessages() {
         mMidiOut2.sendSysex("F0 7E 7F 06 01 F7");
         mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6D 00 01 02 F7"); // Changing to the Bitwig DAW-Program
-                mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6E 00 01 02 F7");
-                mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6E 00 01 07 F7");
-                mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6B 00 01 01 F7");
-                mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6C 00 01 03 F7"); // activate Light Controll
-        mMidiIn2.setSysexCallback(s -> {
-            if (s.startsWith("f07e7f0602000105")) {
-                
-            }
-        });
-
-        // if (modelName == "Mini")
-        //     mMidiOut1.sendSysex("F0 00 01 05 7F 00 3B 6A 00 01 01 F7"); // init
-        // else
-        //     mMidiOut1.sendSysex("F0 00 01 05 7F 00 38 6A 00 01 01 F7"); // init
-        // try {
-        //     if (modelName == "Mini")
-        //         mMidiOut1.sendSysex(Files.readAllBytes(Paths.get(
-        //                 "/Users/Elias/Documents/GitHub/bitwig-extensions/src/main/java/com/bitwig/extensions/controllers/m_audio/sysexMini.syx"))); // Send
-        //                                                                                                                                             // DAW
-        //                                                                                                                                             // Preset
-        //                                                                                                                                             // //
-        //                                                                                                                                             // Preset
-        //     else
-        //         mMidiOut1.sendSysex(Files.readAllBytes(Paths.get(
-        //                 "/Users/Elias/Documents/GitHub/bitwig-extensions/src/main/java/com/bitwig/extensions/controllers/m_audio/sysex61.syx"))); // Send
-        //                                                                                                                                           // DAW
-        //                                                                                                                                           // Preset
-        //                                                                                                                                           // //
-        //                                                                                                                                           // Preset
-        // } catch (IOException e) {
-        //     getHost().println(String.valueOf(e));
-        // }
-        // mMidiOut2.sendSysex("F0 7E 7F 06 01 F7");
-        // mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6B 00 01 01 F7");
-        // mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6C 00 01 03 F7"); // activate Light Controll
-
+        mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6E 00 01 02 F7");
+        mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6E 00 01 07 F7");
+        mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6B 00 01 01 F7");
+        mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6C 00 01 03 F7"); // activate Light Controll
     }
 
     private void initHardwareLayout() {
         HardwareSurface surface = mHardwareSurface;
+        surface.setPhysicalSize(300, 300);
         surface.hardwareElementWithId("stop").setBounds(259.0, 39.25, 10.0, 10.0);
         surface.hardwareElementWithId("play").setBounds(271.0, 39.25, 10.0, 10.0);
         surface.hardwareElementWithId("record").setBounds(283.0, 39.25, 10.0, 10.0);
@@ -145,7 +94,6 @@ public class OxygenPro extends ControllerExtension {
 
     }
 
-
     @Override
     public void exit() {
         mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6C 00 01 00 F7");
@@ -168,6 +116,6 @@ public class OxygenPro extends ControllerExtension {
     private MidiOut mMidiOut1, mMidiOut2;
 
     private String modelName;
-    private WorkflowMini mWorkflow;
+    private Workflow mWorkflow;
 
 }

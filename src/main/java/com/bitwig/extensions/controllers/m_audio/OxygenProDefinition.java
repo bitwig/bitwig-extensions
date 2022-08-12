@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.m_audio;
 
-import java.util.UUID;
-
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtension;
