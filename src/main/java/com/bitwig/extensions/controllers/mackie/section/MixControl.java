@@ -1,10 +1,7 @@
 package com.bitwig.extensions.controllers.mackie.section;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.mackie.ButtonViewState;
-import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
-import com.bitwig.extensions.controllers.mackie.MixerMode;
-import com.bitwig.extensions.controllers.mackie.VPotMode;
+import com.bitwig.extensions.controllers.mackie.*;
 import com.bitwig.extensions.controllers.mackie.configurations.*;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
@@ -19,6 +16,7 @@ import com.bitwig.extensions.controllers.mackie.layer.*;
 import com.bitwig.extensions.controllers.mackie.seqencer.NoteSequenceLayer;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
+import com.bitwig.extensions.controllers.mackie.value.TrackColor;
 import com.bitwig.extensions.framework.Layer;
 
 public class MixControl implements LayerStateHandler {
@@ -30,6 +28,7 @@ public class MixControl implements LayerStateHandler {
    final DrumMixerLayerGroup drumGroup;
 
    protected final LayerState layerState;
+   private final MultiStateHardwareLight backgroundColoring;
    private NoteSequenceLayer noteSequenceLayer;
 
    protected LayerConfiguration currentConfiguration;
@@ -60,9 +59,21 @@ public class MixControl implements LayerStateHandler {
    private final NotePlayingButtonLayer scaleButtonLayer;
 
    public MixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
-                     final int sectionIndex, final SectionType type) {
+                     final int sectionIndex, final SectionType type, final boolean hasTrackColoring) {
       this.driver = driver;
       this.type = type;
+
+      backgroundColoring = driver.getSurface()
+         .createMultiStateHardwareLight(String.format("BACKGROUND_COLOR_" + "%d_%s", sectionIndex, type));
+
+      if (hasTrackColoring) {
+         backgroundColoring.state().onUpdateHardware(state -> {
+            if (state instanceof TrackColor) {
+               ((TrackColor) state).send(midiOut);
+            }
+         });
+      }
+
       hasBottomDisplay = driver.getControllerConfig().hasLowerDisplay();
       hwControls = new MixerSectionHardware(driver, midiIn, midiOut, sectionIndex, type);
       for (int i = 0; i < 8; i++) {
@@ -117,6 +128,10 @@ public class MixControl implements LayerStateHandler {
       if (type == SectionType.MAIN) {
          setUpModifierHandling(driver.getModifier());
       }
+   }
+
+   public MultiStateHardwareLight getBackgroundColoring() {
+      return backgroundColoring;
    }
 
    private void handleButtonViewChanged(final ButtonViewState oldState, final ButtonViewState newState) {
@@ -340,6 +355,7 @@ public class MixControl implements LayerStateHandler {
    }
 
    private void changeMixerMode(final MixerMode oldMode, final MixerMode newMode) {
+      DebugUtil.println(" CHANGE MODE %s", newMode);
       determineSendTrackConfig(activeVPotMode);
       if (oldMode == MixerMode.DRUM) {
          driver.getCursorTrack().selectChannel(driver.getCursorTrack()); // re-assert selection to main channel
@@ -351,6 +367,24 @@ public class MixControl implements LayerStateHandler {
          }
       } else {
          layerState.updateState(this, true);
+      }
+      switch (newMode) {
+         case MAIN:
+            drumGroup.setActive(false);
+            globalGroup.setActive(false);
+            mainGroup.setActive(true);
+            break;
+         case GLOBAL:
+            drumGroup.setActive(false);
+            mainGroup.setActive(false);
+            globalGroup.setActive(true);
+            break;
+         case DRUM:
+            globalGroup.setActive(false);
+            mainGroup.setActive(false);
+            drumGroup.setActive(true);
+            break;
+
       }
    }
 
@@ -453,7 +487,6 @@ public class MixControl implements LayerStateHandler {
       } else if (touchCount > 0) {
          touchCount--;
       }
-      driver.getHost().println("TCOUNT => " + touchCount);
       if (touchCount > 0 && !fadersTouched.get()) {
          fadersTouched.set(true);
       } else if (touchCount == 0 && fadersTouched.get()) {
@@ -511,6 +544,7 @@ public class MixControl implements LayerStateHandler {
       final ScaleNoteHandler scaleNoteHandler = new ScaleNoteHandler(noteInput, getDriver().getNotePlayingSetup(),
          cursorTrack);
       mainGroup.init(mixerTrackBank);
+      mainGroup.setActive(true);
       globalGroup.init(globalTrackBank);
       if (type == SectionType.MAIN) {
          mainGroup.initMainSlider(driver.getMasterTrack(), driver.getMasterSlider());

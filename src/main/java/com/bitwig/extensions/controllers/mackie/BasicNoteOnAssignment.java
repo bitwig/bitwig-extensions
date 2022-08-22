@@ -78,8 +78,8 @@ public enum BasicNoteOnAssignment implements NoteAssignment {
    GV_USER_LF8(69), //
    GV_USER_LF8_G2(51),
    REDO(71), //
-   STEP_SEQ(103), // is only overridden
-   CLIP_OVERDUB(104); // is only overidden
+   STEP_SEQ(115), // is only overridden
+   CLIP_OVERDUB(116); // is only overidden
 
 
    private final int notNr;

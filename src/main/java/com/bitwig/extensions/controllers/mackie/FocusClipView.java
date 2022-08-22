@@ -24,9 +24,9 @@ public class FocusClipView {
       singleTrackBank = host.createTrackBank(1, 0, 1);
       singleTrackBank.followCursorTrack(cursorTrack);
       singleSceneBank = singleTrackBank.sceneBank();
-      cursorTrack.name().addValueObserver(name -> host.println("Track name = " + name));
       final Track theTrack = singleTrackBank.getItemAt(0);
-      theTrack.name().addValueObserver(name -> host.println("BANK Track name = " + name));
+//      cursorTrack.name().addValueObserver(name -> host.println("Track name = " + name));
+//      theTrack.name().addValueObserver(name -> host.println("BANK Track name = " + name));
       final ClipLauncherSlotBank slotBank = theTrack.clipLauncherSlotBank();
       focussingClipSlot = slotBank.getItemAt(0);
       focussingClipSlot.setIndication(true);
