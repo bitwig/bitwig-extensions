@@ -24,7 +24,6 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extension.controller.api.*;
 
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -127,7 +126,7 @@ public class Workflow extends Hardware {
         mClipLayer.activate();
         mVolumeLayer.activate();
 
-        if (!MODEL_25) 
+        if (!MODEL_25)
             mPanLayer.activate();
     }
 
@@ -257,7 +256,10 @@ public class Workflow extends Hardware {
                 }
             }
         }
-        if (!MODEL_MINI)
+        if (!MODEL_MINI && !MODEL_25)
+            mMainLayer.bind(mFader, mMasterTrack.volume());
+
+        if (MODEL_25)
             mMainLayer.bind(mFader, mCursorTrack.volume());
 
     }
@@ -343,6 +345,8 @@ public class Workflow extends Hardware {
 
     private void initButtonMatrix() {
         for (int i = 0; i < 2; i++) {
+            mClipLayer.bindPressed(mSceneButtons[i], mSceneBank.getItemAt(i).launchAction());
+
             for (int j = 0; j < BANK_SIZE; j++) {
                 int index = i;
                 int jndex = j;
@@ -352,20 +356,33 @@ public class Workflow extends Hardware {
                 ClipLauncherSlot slot = mClipSlot[i][j];
 
                 mClipLayer.bindPressed(button, () -> {
-                    slot.launch();
+                    // slot.launch();
+                    // delay?
+                    STOP_DELAY = false;
+                    if (slot.isPlaying().get())
+                        mHost.scheduleTask(() -> STOP_DELAY = true, (long) 500.0);
+                    else
+                        slot.launch();
+                });
+
+                mClipLayer.bindReleased(button, () -> {
+                    if (STOP_DELAY)
+                        mTrackBank.getItemAt(jndex).stop();
+                    else
+                        slot.launch();
                 });
 
                 mClipLayer.bindLightState(() -> {
-                    if (mClipSlot[index][jndex].isPlaying().getAsBoolean())
-                        return RGBLightState.GREEN;
+                    if (mClipSlot[index][jndex].isStopQueued().getAsBoolean())
+                        return RGBLightState.YELLOW_BLINK;
                     else if (mClipSlot[index][jndex].isPlaybackQueued().getAsBoolean())
                         return RGBLightState.GREEN_BLINK;
+                    else if (mClipSlot[index][jndex].isPlaying().getAsBoolean())
+                        return RGBLightState.GREEN;
                     else if (mClipSlot[index][jndex].isRecording().getAsBoolean())
                         return RGBLightState.RED;
                     else if (mClipSlot[index][jndex].isRecordingQueued().getAsBoolean())
                         return RGBLightState.RED_BLINK;
-                    else if (mClipSlot[index][jndex].isStopQueued().getAsBoolean())
-                        return RGBLightState.YELLOW_BLINK;
                     else if (mClipSlot[index][jndex].hasContent().get())
                         return RGBLightState.YELLOW;
                     else
@@ -520,6 +537,7 @@ public class Workflow extends Hardware {
 
     private int BANK_SIZE = 8;
     private Boolean MODEL_MINI, MODEL_25;
+    private Boolean STOP_DELAY = false;
 
     private TrackBank mTrackBank;
     private SceneBank mSceneBank;

@@ -8,13 +8,11 @@ public class OxygenProMiniDefinition extends OxygenProDefinition {
 
     @Override
     String getModel() {
-        // TODO Auto-generated method stub
         return "Mini";
     }
 
     @Override
     public UUID getId() {
-        // TODO Auto-generated method stub
         return DRIVER_ID;
     }
 

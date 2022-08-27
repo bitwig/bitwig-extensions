@@ -12,7 +12,6 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
-import com.bitwig.extension.controller.api.*;
 
 
 public class Hardware {
@@ -264,7 +263,7 @@ public class Hardware {
     final static int CC_ENCODER_LEFT = 63; // value
     final static int CC_ENCODER_RIGHT = 65; // value
 
-    final static int CC_BACK_BUTTON = 104;
+    final static int CC_BACK_BUTTON = 104; //Back 104 channel 0 && Shift 105 channel 12
 
     final static int KNOB_CHANNEL = 0;
     final static int CC_KNOB_START = 22; // Channel 15

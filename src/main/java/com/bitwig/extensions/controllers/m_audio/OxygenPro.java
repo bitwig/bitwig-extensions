@@ -9,7 +9,6 @@ public class OxygenPro extends ControllerExtension {
     protected OxygenPro(ControllerExtensionDefinition definition, ControllerHost host, String model) {
         super(definition, host);
         modelName = model;
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -98,7 +97,7 @@ public class OxygenPro extends ControllerExtension {
     public void exit() {
         mMidiOut2.sendSysex("F0 00 01 05 7F 00 00 6C 00 01 00 F7");
 
-        getHost().showPopupNotification("M-Audio Oxygen Pro 25 Exited");
+        getHost().showPopupNotification("M-Audio Oxygen Pro "+ modelName +" Exited");
     }
 
     @Override

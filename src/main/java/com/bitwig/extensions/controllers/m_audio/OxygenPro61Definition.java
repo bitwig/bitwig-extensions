@@ -8,15 +8,19 @@ public class OxygenPro61Definition extends OxygenProDefinition {
 
     @Override
     String getModel() {
-        // TODO Auto-generated method stub
         return "61";
     }
 
     @Override
     public UUID getId() {
-        // TODO Auto-generated method stub
         return DRIVER_ID;
     }
 
-    
+    public static OxygenPro61Definition getInstance()
+    {
+       return mInstance;
+    }
+ 
+    private static OxygenPro61Definition mInstance = new OxygenPro61Definition();
+ 
 }
