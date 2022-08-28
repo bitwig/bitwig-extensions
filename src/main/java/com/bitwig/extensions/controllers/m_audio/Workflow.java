@@ -373,7 +373,7 @@ public class Workflow extends Hardware {
                 });
 
                 mClipLayer.bindLightState(() -> {
-                    if (mClipSlot[index][jndex].isStopQueued().getAsBoolean())
+                    if (mClipSlot[index][jndex].isStopQueued().getAsBoolean() || mTrackBank.getItemAt(jndex).isQueuedForStop().getAsBoolean())
                         return RGBLightState.YELLOW_BLINK;
                     else if (mClipSlot[index][jndex].isPlaybackQueued().getAsBoolean())
                         return RGBLightState.GREEN_BLINK;
