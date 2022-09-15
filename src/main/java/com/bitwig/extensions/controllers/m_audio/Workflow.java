@@ -140,7 +140,7 @@ public class Workflow extends Hardware {
     }
 
     private void initAPIElements() {
-        final NoteInput keyboardInput = mMidiIn1.createNoteInput("Keys", "80????", "90????", "D?????");
+        final NoteInput keyboardInput = mMidiIn1.createNoteInput("Keys", "80????", "90????", "D?????", "E0????", "B001??");
         keyboardInput.setShouldConsumeEvents(true);
 
         mPadInput = mMidiIn2.createNoteInput("Pads", "80????", "90????");
@@ -299,7 +299,7 @@ public class Workflow extends Hardware {
                 track.mute().toggle();
                 break;
             case 4:
-                track.solo().toggle();
+                track.solo().set(!track.solo().get()); 
                 break;
             default:
                 break;
@@ -373,7 +373,7 @@ public class Workflow extends Hardware {
                 });
 
                 mClipLayer.bindLightState(() -> {
-                    if (mClipSlot[index][jndex].isStopQueued().getAsBoolean() || mTrackBank.getItemAt(jndex).isQueuedForStop().getAsBoolean())
+                    if (mClipSlot[index][jndex].isStopQueued().getAsBoolean() || (mTrackBank.getItemAt(jndex).isQueuedForStop().getAsBoolean() && mClipSlot[index][jndex].isPlaying().getAsBoolean()))
                         return RGBLightState.YELLOW_BLINK;
                     else if (mClipSlot[index][jndex].isPlaybackQueued().getAsBoolean())
                         return RGBLightState.GREEN_BLINK;
