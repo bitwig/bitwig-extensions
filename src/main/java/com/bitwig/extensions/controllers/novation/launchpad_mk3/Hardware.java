@@ -2,7 +2,6 @@ package com.bitwig.extensions.controllers.novation.launchpad_mk3;
 
 import java.util.function.Consumer;
 
-import com.bitwig.extension.api.Host;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.*;
 

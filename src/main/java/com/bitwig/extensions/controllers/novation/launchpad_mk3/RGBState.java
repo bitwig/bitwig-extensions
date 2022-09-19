@@ -14,6 +14,7 @@ public class RGBState extends InternalHardwareLightState {
    public static final RGBState DARKRED = new RGBState(121);
    public static final RGBState BLUE = new RGBState(79);
    public static final RGBState YELLOW = new RGBState(13);
+   public static final RGBState YELLOW_BLINK = new RGBState(13, 1);
    public static final RGBState DARKYELLOW = new RGBState(15);
    public static final RGBState PURPLE = new RGBState(94);
    public static final RGBState ORANGE = new RGBState(9);
