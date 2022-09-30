@@ -27,6 +27,7 @@ import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PlayingNote;
+import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.Track;
@@ -132,6 +133,17 @@ public class LaunchpadProMK3 extends ControllerExtension {
         mTrackBank.cursorIndex().markInterested();
         mTrackBank.canScrollBackwards().markInterested();
         mTrackBank.canScrollForwards().markInterested();
+        mTrackBank.scrollPosition().markInterested();
+
+        mSessionOverviewTrackBank = mHost.createTrackBank(64, 64, 64);
+        mSessionOverviewTrackBank.followCursorTrack(mCursorTrack); // Keep?
+        mSessionOverviewTrackBank.cursorIndex().markInterested();
+        mSessionOverviewTrackBank.sceneBank().cursorIndex().markInterested();
+        mSessionOverviewTrackBank.sceneBank().scrollPosition().markInterested();
+
+        mSessionOverviewTrackBank.canScrollBackwards().markInterested();
+        mSessionOverviewTrackBank.canScrollForwards().markInterested();
+
 
         mDrumPadBank = mInstrument.createDrumPadBank(64);
         mDrumPadBank.exists().markInterested();
@@ -154,6 +166,8 @@ public class LaunchpadProMK3 extends ControllerExtension {
         initTransport();
         initFunctionButtons();
         initBottomButtons();
+
+        initSessionOverview();
 
         mSessionLayer.activate();
 
@@ -232,12 +246,13 @@ public class LaunchpadProMK3 extends ControllerExtension {
         mLastLayer = null;
     }
 
+    // Rework for Performance!!
     private void midiCallback(String s) {
         mHost.println(s);
-        if (isNoteModeActive) {
+        if (isNoteModeActive && mPlayingNotes != null) {
             for (int i = 0; i < 88; i++) {
                 mMidiOut.sendMidi(0x8f, i, 21);
-                if (mPlayingNotes.length != 0) {
+                if (mPlayingNotes.length != 0 && mPlayingNotes != null) {
                     mHost.println("PLayingNotes");
 
                     for (PlayingNote n : mPlayingNotes) {
@@ -252,7 +267,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
                     if (mDrumPadBank.getItemAt(i).exists().get()) {
                         mMidiOut.sendMidi(0x98, 36 + i,
                                 new RGBState(mDrumPadBank.getItemAt(i).color().get()).getMessage());
-                        if (mPlayingNotes.length != 0) {
+                        if (mPlayingNotes.length != 0 && mPlayingNotes != null) {
                             for (PlayingNote n : mPlayingNotes) {
                                 if (n.pitch() == 36 + i)
                                     mMidiOut.sendMidi(0x98, 36 + i, RGBState.WHITE.getMessage());
@@ -355,12 +370,17 @@ public class LaunchpadProMK3 extends ControllerExtension {
         mShiftButton = createCCButton("shift", 90);
         mShiftButton.isPressed().markInterested();
         mClearButton = createCCButton("clear", 60);
+        mClearButton.isPressed().markInterested();
         mDuplicateButton = createCCButton("duplicate", 50);
+        mDuplicateButton.isPressed().markInterested();
         mQuantizeButton = createCCButton("quantize", 40);
+        mQuantizeButton.isPressed().markInterested();
         mFixedLengthButton = createCCButton("fixed length", 30);
+        mFixedLengthButton.isPressed().markInterested();
 
         // SESSION BUTTON
         mSessionButton = createCCButton("Session", 93);
+        mSessionButton.isPressed().markInterested();
 
         // TRANSPORT BUTTONS
         mPlayButton = createCCButton("play", 20);
@@ -371,6 +391,10 @@ public class LaunchpadProMK3 extends ControllerExtension {
         mDownButton = createCCButton("down", 70);
         mLeftButton = createCCButton("left", 91);
         mRightButton = createCCButton("right", 92);
+        mUpButton.isPressed().markInterested();
+        mDownButton.isPressed().markInterested();
+        mLeftButton.isPressed().markInterested();
+        mRightButton.isPressed().markInterested();
 
         // SCENE BUTTONS
         for (int i = 0; i < 8; i++) {
@@ -456,7 +480,8 @@ public class LaunchpadProMK3 extends ControllerExtension {
                     }, mBottomLights[i][j]);
                     mStopLayer.bindLightState(() -> {
                         if (mTrackBank.getItemAt(jx).trackType().get() != "Master"
-                                && mTrackBank.getItemAt(jx).exists().get() && !mTrackBank.getItemAt(jx).isStopped().get())
+                                && mTrackBank.getItemAt(jx).exists().get()
+                                && !mTrackBank.getItemAt(jx).isStopped().get())
                             return RGBState.RED;
                         return RGBState.OFF;
                     }, mBottomLights[i][j]);
@@ -469,14 +494,14 @@ public class LaunchpadProMK3 extends ControllerExtension {
                     });
                     mArmRecLayer.bindPressed(mBottomButtons[i][j], mTrackBank.getItemAt(j).arm());
                     mMuteLayer.bindPressed(mBottomButtons[i][j], mTrackBank.getItemAt(j).mute().toggleAction());
+                    // WORK (GET PREFERECES)
                     mSoloLayer.bindPressed(mBottomButtons[i][j], () -> {
+                        Track t = mTrackBank.getItemAt(jx);
                         if (!mShiftButton.isPressed().getAsBoolean()) {
-                            for (int k = 0; k < 8; k++) {
-                                if (k == jx && !mTrackBank.getItemAt(jx).solo().get())
-                                    mTrackBank.getItemAt(jx).solo().set(true);
-                                else
-                                    mTrackBank.getItemAt(k).solo().set(false);
-                            }
+                            if (t.solo().get())
+                                t.solo().set(false);
+                            else
+                                t.solo().set(true);
                         } else
                             mTrackBank.getItemAt(jx).solo().toggle();
                     });
@@ -629,10 +654,33 @@ public class LaunchpadProMK3 extends ControllerExtension {
     private void initNavigation() {
         mSessionLayer.bindPressed(mSessionButton, () -> switchLayer(mSessionLayer));
 
-        mSessionLayer.bindPressed(mUpButton, mSceneBank.scrollBackwardsAction());
-        mSessionLayer.bindPressed(mDownButton, mSceneBank.scrollForwardsAction());
-        mSessionLayer.bindPressed(mLeftButton, mTrackBank.scrollBackwardsAction());
-        mSessionLayer.bindPressed(mRightButton, mTrackBank.scrollForwardsAction());
+        mSessionLayer.bindPressed(mUpButton, () -> {
+            if (mSessionButton.isPressed().get())
+                pressedAction(mUpButton, () -> mSessionOverviewTrackBank.sceneBank().scrollBackwards());
+            else
+                pressedAction(mUpButton, () -> mSceneBank.scrollBackwards());
+        });
+        mSessionLayer.bindPressed(mDownButton, () -> {
+            if (mSessionButton.isPressed().get())
+                pressedAction(mDownButton, () -> mSessionOverviewTrackBank.sceneBank().scrollForwards());
+            else
+                pressedAction(mDownButton, () -> mSceneBank.scrollForwards());
+        });
+        mSessionLayer.bindPressed(mLeftButton, () -> {
+            if (mSessionButton.isPressed().get())
+                pressedAction(mLeftButton, () -> mSessionOverviewTrackBank.scrollBackwards());
+            else
+                pressedAction(mLeftButton, () -> mTrackBank.scrollBackwards());
+        });
+        mSessionLayer.bindPressed(mRightButton, () -> {
+            if (mSessionButton.isPressed().get())
+                pressedAction(mRightButton, () -> mSessionOverviewTrackBank.scrollForwards());
+            else
+                pressedAction(mRightButton, () -> mTrackBank.scrollForwards());
+        });
+        //mSessionLayer.bindPressed(mDownButton, () -> pressedAction(mDownButton, () -> mSceneBank.scrollForwards()));
+        //mSessionLayer.bindPressed(mLeftButton, () -> pressedAction(mLeftButton, () -> mTrackBank.scrollBackwards()));
+        //mSessionLayer.bindPressed(mRightButton, () -> pressedAction(mRightButton, () -> mTrackBank.scrollForwards()));
 
         mSessionLayer.bindLightState(
                 () -> mTrackBank.canScrollBackwards().get() ? RGBState.WHITE : RGBState.DARKGREY, mLeftLight);
@@ -644,16 +692,49 @@ public class LaunchpadProMK3 extends ControllerExtension {
                 () -> mSceneBank.canScrollForwards().get() ? RGBState.WHITE : RGBState.DARKGREY, mLeftLights[6]);
     }
 
+    private void pressedAction(HardwareButton button, Runnable action) {
+        action.run();
+        longPressed(button, action);
+    }
+
+    private void longPressed(HardwareButton button, Runnable action) {
+        longPressed(button, action, (long) 300.0);
+    }
+
+    private void longPressed(HardwareButton button, Runnable action, long timeout) {
+        mHost.scheduleTask(() -> {
+            if (button.isPressed().get()) {
+                action.run();
+                longPressed(button, action, (long) 100.0);
+            }
+        }, timeout);
+    }
+
     private void initScenes() {
         mSceneBank = mTrackBank.sceneBank();
         mSceneBank.setIndication(true);
         mSceneBank.canScrollBackwards().markInterested();
         mSceneBank.canScrollForwards().markInterested();
+        mSceneBank.cursorIndex().markInterested();
+        mSceneBank.scrollPosition().markInterested();
 
         for (int i = 0; i < 8; i++) {
-            mSceneBank.getScene(7 - i).exists().markInterested();
-            mSceneBank.getScene(7 - i).color().markInterested();
-            mSessionLayer.bindPressed(mRightButtons[i], mSceneBank.getScene(7 - i).launchAction());
+            final int ix = i;
+            Scene s = mSceneBank.getScene(7 - i);
+            s.exists().markInterested();
+            s.color().markInterested();
+
+            mSessionLayer.bindPressed(mRightButtons[i], () -> {
+                if (mShiftButton.isPressed().get())
+                    s.launchWithOptions("none", "continue_immediately");
+                else
+                    s.launch();
+            });
+
+            mSessionLayer.bindReleased(mRightButtons[i], () -> {
+                if (mShiftButton.isPressed().get())
+                    s.launchLastClipWithOptions("none", "continue_immediately");
+            });
         }
 
         for (int i = 0; i < 8; i++) {
@@ -688,6 +769,8 @@ public class LaunchpadProMK3 extends ControllerExtension {
             final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
             slotBank.setIndication(true);
             for (int j = 0; j < 8; j++) {
+                final int ix = i;
+                final int jx = j;
                 final ClipLauncherSlot slot = slotBank.getItemAt(7 - j);
                 slot.isSelected().markInterested();
                 slot.isPlaybackQueued().markInterested();
@@ -698,10 +781,18 @@ public class LaunchpadProMK3 extends ControllerExtension {
                 slot.hasContent().markInterested();
                 slot.color().markInterested();
                 mSessionLayer.bindPressed(mButtons[i][j], () -> {
+                    if (mSessionButton.isPressed().get()) {
+                        mTrackBank.scrollPosition().set(ix*8);
+                        mSceneBank.scrollPosition().set((7 - jx)*8);
+                        mHost.println(String.valueOf((7 - jx)*8));
+                        return;
+                    }
+
                     if (mClearButton.isPressed().get())
                         slot.deleteObject();
                     else if (mDuplicateButton.isPressed().get() && mShiftButton.isPressed().get()) {
                         slot.select();
+                        mCursorClip.duplicateContent();
                         mCursorClip.getLoopLength().set(mCursorClip.getLoopLength().get() * 2);
                     } else if (mDuplicateButton.isPressed().get())
                         slot.duplicateClip();
@@ -711,19 +802,55 @@ public class LaunchpadProMK3 extends ControllerExtension {
                     } else if (mFixedLengthButton.isPressed().get()) {
                         mTransport.clipLauncherPostRecordingAction().set("play_recorded");
                         slot.launch();
-                    } else
-                        slot.launch();
+                    } else {
+                        if (mShiftButton.isPressed().get())
+                            slot.select();
+                        else
+                            slot.launch();
 
+                        // ALEX FEATURE
+                        // if (mShiftButton.isPressed().get())
+                        //     slot.launchWithOptions("none", "continue_immediately");
+                        // else
+                        //     slot.launch();
+                    }
                 });
 
+                // ALEX FEATURE
+                // mSessionLayer.bindReleased(mButtons[i][j], () -> {
+                //     if (mShiftButton.isPressed().get())
+                //         track.launchLastClipWithOptions("none", "continue_immediately");
+                // });
+
+
+                ClipTimeout[ix][jx] = true;
+
                 mSessionLayer.bindLightState(() -> {
+                    if (mSessionButton.isPressed().get()) {
+                        updateSessionOverview();
+                        if (mSessionOverview[ix][jx] == 3)
+                            return RGBState.BLUE;
+                        if (mSessionOverview[ix][jx] == 2)
+                            return RGBState.GREEN_PULS;
+                        if (mSessionOverview[ix][jx] == 1)
+                            return RGBState.WHITE;
+                        else 
+                            return RGBState.OFF;
+                    }
+                    
                     if (slot.isRecording().getAsBoolean())
                         return RGBState.RED_PULS;
-                    if (slot.isPlaying().getAsBoolean())
-                        return RGBState.GREEN_PULS;
-                    else if (slot.isPlaybackQueued().getAsBoolean())
+                    if (slot.isPlaybackQueued().getAsBoolean() && ClipTimeout[ix][jx]) {
+                        mHost.scheduleTask(() -> ClipTimeout[ix][jx] = false, 50);
+                        return new RGBState(slot.color().get());
+                    } else if (slot.isPlaybackQueued().getAsBoolean() && !slot.isPlaying().get())
                         return RGBState.GREEN_BLINK;
-                    else if (slot.isRecordingQueued().getAsBoolean())
+                    if (slot.isPlaybackQueued().getAsBoolean())
+                        return RGBState.GREEN_BLINK;
+                    if (slot.isPlaying().getAsBoolean()) {
+                        ClipTimeout[ix][jx] = true;
+                        return RGBState.GREEN_PULS;
+                    } else if (slot.isRecordingQueued().getAsBoolean())
                         return RGBState.RED_BLINK;
                     else if (slot.isStopQueued().getAsBoolean())
                         return RGBState.YELLOW;
@@ -873,6 +1000,48 @@ public class LaunchpadProMK3 extends ControllerExtension {
         }
     }
 
+
+    private void initSessionOverview() {
+        for (int i = 0; i < 64; i++) {
+            for (int j = 0; j < 64; j++){
+                ClipLauncherSlotBank slotBank = mSessionOverviewTrackBank.getItemAt(i).clipLauncherSlotBank();
+                ClipLauncherSlot s = slotBank.getItemAt(j);
+                s.hasContent().markInterested();
+                s.isPlaying().markInterested();
+            }
+        }
+        sessionOverview();
+    }
+
+    private void sessionOverview() {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                mSessionOverview[i][j] = 0;
+            }
+        }
+    }
+
+    private void updateSessionOverview() {
+        sessionOverview();
+        for (int i = 0; i < 64; i++) {
+            for (int j = 0; j < 64; j++){
+                ClipLauncherSlotBank slotBank = mSessionOverviewTrackBank.getItemAt(i).clipLauncherSlotBank();
+                ClipLauncherSlot s = slotBank.getItemAt(j);
+                if (s.isPlaying().get() && mSessionOverview[(i/8)%8][7-(j/8)%8] != 3)
+                    mSessionOverview[(i/8)%8][7-(j/8)%8] = 2;
+                else if (s.hasContent().get() && mSessionOverview[(i/8)%8][7-(j/8)%8] != 2)
+                    mSessionOverview[(i/8)%8][7-(j/8)%8] = 1;
+            }
+        }
+
+        mSessionOverview[(mTrackBank.scrollPosition().get()/8)%8][7-(mSceneBank.scrollPosition().get()/8)%8] = 3;
+        mSessionOverview[((mTrackBank.scrollPosition().get()+7)/8)%8][7-(mSceneBank.scrollPosition().get()/8)%8] = 3;
+        mSessionOverview[(mTrackBank.scrollPosition().get()/8)%8][7-((mSceneBank.scrollPosition().get()+7)/8)%8] = 3;
+        mSessionOverview[((mTrackBank.scrollPosition().get()+7)/8)%8][7-((mSceneBank.scrollPosition().get()+7)/8)%8] = 3;
+
+
+    }
+
     @Override
     public void exit() {
         mMidiOut.sendSysex(STANDALONE_MODE);
@@ -901,8 +1070,11 @@ public class LaunchpadProMK3 extends ControllerExtension {
     private DrumPadBank mDrumPadBank;
     private PlayingNote[] mPlayingNotes;
 
+
     private Transport mTransport;
     private TrackBank mTrackBank;
+    private TrackBank mSessionOverviewTrackBank;
+    private int mSessionOverview[][] = new int[8][8];
     private SceneBank mSceneBank;
     private AbsoluteHardwareControlBinding[] mActiveBindings = new AbsoluteHardwareControlBinding[8];
     private CursorTrack mCursorTrack;
@@ -912,6 +1084,8 @@ public class LaunchpadProMK3 extends ControllerExtension {
     private Clip mCursorClip;
     private Send[] mSend = new Send[8];
     private int mSendIndex = 0;
+    private Boolean ClipTimeout[][] = new Boolean[8][8];
+
 
     // Layers
     private Layers mLayers = new Layers(this);
