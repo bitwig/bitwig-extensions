@@ -111,12 +111,12 @@ public class Workflow extends Hardware {
         }
     }
 
-
-    // WORK
+    // WORK!!!
     private Boolean updateNoteTable(int direction) {
         mHost.println(String.valueOf(mDrumPadBank.scrollPosition().get()));
-        
-        if (mDrumPadBank.scrollPosition().get() == 0 && direction == 0 || mDrumPadBank.scrollPosition().get() == 36+28 && direction == 1)
+
+        if (mDrumPadBank.scrollPosition().get() <= 0 && direction == 0
+                || mDrumPadBank.scrollPosition().get() >= 64 && direction == 1)
             return false;
 
         globalOffset = mDrumPadBank.scrollPosition().get() - 36;
@@ -341,9 +341,9 @@ public class Workflow extends Hardware {
                         mHost.scheduleTask(() -> ClipTimeout[ix][jx] = false, 50);
                         return new RGBState(slot.color().get());
                     }
-                    if (slot.isPlaybackQueued().getAsBoolean() && !slot.isPlaying().get()) 
+                    if (slot.isPlaybackQueued().getAsBoolean() && !slot.isPlaying().get())
                         return RGBState.GREEN_BLINK;
-                    if ((slot.isStopQueued().get() || track.isQueuedForStop().get()) && slot.isPlaying().get()) 
+                    if ((slot.isStopQueued().get() || track.isQueuedForStop().get()) && slot.isPlaying().get())
                         return RGBState.YELLOW_BLINK;
                     if (slot.isRecording().getAsBoolean())
                         return new RGBState(120, 2);
@@ -351,7 +351,7 @@ public class Workflow extends Hardware {
                         ClipTimeout[ix][jx] = true;
                         return RGBState.GREEN_PULS;
                     }
-                    if (slot.hasContent().get()) 
+                    if (slot.hasContent().get())
                         return new RGBState(slot.color().get());
                     if (track.arm().getAsBoolean())
                         return RGBState.TRACK_ARM;
@@ -382,6 +382,7 @@ public class Workflow extends Hardware {
                 if (mMixerLayers[ix].isActive()) {
                     mMidiOut.sendSysex(DAW_FADER_OFF);
                     mMixerLayers[ix].deactivate();
+                    lastLayerIndex = 8;
                     return;
                 }
 
@@ -401,11 +402,29 @@ public class Workflow extends Hardware {
                 }
             });
             mMixerLayer.bindReleased(mRightButtons[7 - ix], () -> {
-                if (isTemporarySwitch) {
+                if (isTemporarySwitch && lastLayerIndex == 8) {
                     mMidiOut.sendSysex(DAW_FADER_OFF);
                     mMixerLayers[ix].deactivate();
                     isTemporarySwitch = false;
+
+                    return;
                 }
+                if (isTemporarySwitch) {
+                    switchLayer(mMixerLayers[lastLayerIndex]);
+                    if (!(lastLayerIndex < 4))
+                        mMidiOut.sendSysex(DAW_FADER_OFF);
+                    else {
+                        mMidiOut.sendSysex(DAW_FADER_MODES[lastLayerIndex]);
+                        mMidiOut.sendSysex(DAW_FADER_ON);
+                    }
+                    isTemporarySwitch = false;
+                } else {
+                    if (mMixerLayers[ix].isActive())
+                        lastLayerIndex = ix;
+                    else
+                        lastLayerIndex = 8;
+                }
+
             });
 
             mMixerLayer.bindLightState(() -> {
@@ -498,13 +517,30 @@ public class Workflow extends Hardware {
         for (int i = 0; i < 8; i++) {
             int ix = i;
             Track t = mTrackBank.getItemAt(ix);
+
+            /// DELETE
             HardwareActionBindable[] parameter = new HardwareActionBindable[4];
             parameter[0] = t.stopAction();
             parameter[1] = t.mute().toggleAction();
-            parameter[2] = t.solo().toggleAction();
+            // parameter[2] = t.solo().toggleAction();
             parameter[3] = t.arm().toggleAction();
+            ////
 
-            l.bindPressed(mButtons[ix][0], parameter[p]);
+            l.bindPressed(mButtons[ix][0], () -> {
+                switch (p) {
+                    case 0:
+                        t.stop();
+                    case 1:
+                        t.mute().toggle();
+                    case 2:
+                        if (t.solo().get())
+                            t.solo().set(false);
+                        else
+                            t.solo().set(true);
+                    case 3:
+                        t.arm().toggle();
+                }
+            });
             l.bindLightState(() -> {
                 if ((p == 0 && !t.isStopped().get() && t.exists().get())
                         || (p == 1 && t.mute().get())
@@ -525,7 +561,7 @@ public class Workflow extends Hardware {
     private void initNavigation() {
         mSessionLayer.bindPressed(mSessionButton, () -> {
             if (!mMixerLayer.isActive() && !isNoteIntputActive) {
-                //switchLayer(mMixerLayers[0]);
+                // switchLayer(mMixerLayers[0]);
                 switchLayer(mMixerLayer);
                 resetSsmIndex();
                 // mMixerLayer.activate();
@@ -568,7 +604,7 @@ public class Workflow extends Hardware {
                     if (updateNoteTable(1))
                         mDrumPadBank.scrollBy(4);
                 });
-            else 
+            else
                 pressedAction(mUpButton, () -> mSceneBank.scrollBackwards());
         });
         mSessionLayer.bindPressed(mDownButton, () -> {
@@ -577,27 +613,28 @@ public class Workflow extends Hardware {
                     if (updateNoteTable(0))
                         mDrumPadBank.scrollBy(-4);
                 });
-            else 
-                pressedAction(mUpButton, () -> mSceneBank.scrollForwards());
+            else
+                pressedAction(mDownButton, () -> mSceneBank.scrollForwards());
         });
-        //mSessionLayer.bindPressed(mDownButton, () -> pressedAction(mDownButton, () -> mSceneBank.scrollForwards()));
+        // mSessionLayer.bindPressed(mDownButton, () -> pressedAction(mDownButton, () ->
+        // mSceneBank.scrollForwards()));
 
         mSessionLayer.bindLightState(
                 () -> {
                     if (isNoteIntputActive && mDrumPadBank.exists().get())
                         return RGBState.OFF;
-                    if (mTrackBank.canScrollBackwards().get()) 
+                    if (mTrackBank.canScrollBackwards().get())
                         return RGBState.WHITE;
-                    else 
+                    else
                         return RGBState.DARKGREY;
                 }, mLeftLight);
         mSessionLayer.bindLightState(
                 () -> {
                     if (isNoteIntputActive && mDrumPadBank.exists().get())
                         return RGBState.OFF;
-                    if (mTrackBank.canScrollForwards().get()) 
+                    if (mTrackBank.canScrollForwards().get())
                         return RGBState.WHITE;
-                    else 
+                    else
                         return RGBState.DARKGREY;
                 }, mRightLight);
         mSessionLayer.bindLightState(
@@ -608,10 +645,10 @@ public class Workflow extends Hardware {
                         else
                             return RGBState.DARKGREY;
                     }
-                        
-                    if (mSceneBank.canScrollBackwards().get()) 
+
+                    if (mSceneBank.canScrollBackwards().get())
                         return RGBState.WHITE;
-                    else 
+                    else
                         return RGBState.DARKGREY;
                 }, mUpLight);
         mSessionLayer.bindLightState(
@@ -622,10 +659,10 @@ public class Workflow extends Hardware {
                         else
                             return RGBState.DARKGREY;
                     }
-                        
-                    if (mSceneBank.canScrollForwards().get()) 
+
+                    if (mSceneBank.canScrollForwards().get())
                         return RGBState.WHITE;
-                    else 
+                    else
                         return RGBState.DARKGREY;
                 }, mDownLight);
     }
@@ -695,6 +732,7 @@ public class Workflow extends Hardware {
 
     private Boolean isLayerSwitched = false;
     private Boolean isTemporarySwitch = false;
+    private int lastLayerIndex = 0;
     private Boolean ClipTimeout[][] = new Boolean[8][8];
     private int ssmIndex = 0;
     private String modelName;
