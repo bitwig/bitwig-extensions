@@ -532,6 +532,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       final MainUnitButton timeModeButton = new MainUnitButton(this, BasicNoteOnAssignment.DISPLAY_SMPTE,
          controllerConfig.getSimulationLayout());
+      timeModeButton.bindLight(mainLayer, () -> ledDisplay.getMode() == TimeCodeLed.Mode.BEATS);
+      timeModeButton.bindPressed(mainLayer, () -> ledDisplay.toggleMode());
    }
 
    private void initUndoRedo() {

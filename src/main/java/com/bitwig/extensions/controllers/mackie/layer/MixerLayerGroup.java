@@ -166,14 +166,14 @@ public class MixerLayerGroup {
    }
 
    public Optional<DisplayLayer> getModeDisplayLayer() {
-      if (editMode == EditorMode.SEQUENCE) {
+      if (editMode == EditorMode.SEQUENCE && sequenceLayer != null) {
          return Optional.of(sequenceLayer.getMenu().getDisplayLayer(0));
       }
       return Optional.empty();
    }
 
    public Optional<EncoderLayer> getModeEncoderLayer() {
-      if (editMode == EditorMode.SEQUENCE) {
+      if (editMode == EditorMode.SEQUENCE && sequenceLayer != null) {
          return Optional.of(sequenceLayer.getMenu().getEncoderLayer());
       }
       return Optional.empty();
