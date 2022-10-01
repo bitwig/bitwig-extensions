@@ -306,7 +306,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
       final ModeButton metroButton = new ModeButton(this, "METRO_BUTTON", CcAssignment.METRO);
       mainLayer.bindToggle(metroButton.getHwButton(), mTransport.isMetronomeEnabled());
       final ModeButton tapTempoButton = new ModeButton(this, "TAP_BUTTON", CcAssignment.TAPTEMPO);
-      mainLayer.bindPressed(tapTempoButton.getHwButton(), mTransport::tapTempoAction);
+      mainLayer.bindPressed(tapTempoButton.getHwButton(), mTransport::tapTempo);
       tapTempoButton.bindLightToPressed();
 
       final ModeButton undoButton = new ModeButton(this, "UNDO_BUTTON", CcAssignment.UNDO);
