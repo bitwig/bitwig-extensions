@@ -65,10 +65,10 @@ com.bitwig.extensions.controllers.novation.launch_control_xl.LaunchControlXlCont
 com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk2.LaunchkeyMk2ControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchpad_pro.LaunchpadProControllerExtensionDefinition
-#com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey25Mk3ExtensionDefinition
-#com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey37Mk3ExtensionDefinition
-#com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey49Mk3ExtensionDefinition
-#com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey61Mk3ExtensionDefinition
+com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey25Mk3ExtensionDefinition
+com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey37Mk3ExtensionDefinition
+com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey49Mk3ExtensionDefinition
+com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey61Mk3ExtensionDefinition
 
 
 com.bitwig.extensions.controllers.presonus.atom.PresonusAtomDefinition
