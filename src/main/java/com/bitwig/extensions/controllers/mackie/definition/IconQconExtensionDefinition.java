@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class IconQconExtensionDefinition extends MackieMcuProExtensionDefinition {
-   private static final String SOFTWARE_VERSION = "1.0";
+   private static final String SOFTWARE_VERSION = "1.0a";
 
    public abstract void initNoteOverrides();
 

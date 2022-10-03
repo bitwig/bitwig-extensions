@@ -31,7 +31,7 @@ public class IconQconProXExtensionDefinition extends IconQconExtensionDefinition
       // DAW Mode Button => Launcher
       override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.GLOBAL_VIEW);
       // DVR Button => Keyboard Mode
-      override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.CLICK);
+      override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.REPLACE);
       // STEP Sequencer
       overrideX(BasicNoteOnAssignment.STEP_SEQ, BasicNoteOnAssignment.SOLO);
 
