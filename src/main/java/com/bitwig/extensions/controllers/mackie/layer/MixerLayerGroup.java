@@ -44,6 +44,11 @@ public class MixerLayerGroup {
    private NoteSequenceLayer sequenceLayer;
    private final TrackSelectionHandler selectionHandler;
 
+   private final String name;
+   private boolean active;
+   private final TrackColor trackColor = new TrackColor();
+   protected final Layer colorLayer;
+
    public enum EditorMode {
       MIX,
       SEQUENCE
@@ -52,9 +57,13 @@ public class MixerLayerGroup {
    public MixerLayerGroup(final String name, final MixControl control, final TrackSelectionHandler selectionHandler) {
       final int sectionIndex = control.getHwControls().getSectionIndex();
       this.control = control;
+      this.name = name;
       final Layers layers = this.control.getDriver().getLayers();
 
       this.selectionHandler = selectionHandler;
+      colorLayer = new Layer(layers, name + "_COLORS_" + sectionIndex);
+      colorLayer.bindLightState(trackColor::getState, control.getBackgroundColoring());
+
       mixerButtonLayer = new ButtonLayer(name, control, BasicNoteOnAssignment.REC_BASE);
 
       volumeFaderLayer = new Layer(layers, name + "_VOLUME_FADER_LAYER_" + sectionIndex);
@@ -87,6 +96,11 @@ public class MixerLayerGroup {
          }
       });
       control.getDriver().getFlipped().addValueObserver(flipped -> this.flipped = flipped);
+   }
+
+   public void setActive(final boolean active) {
+      this.active = active;
+      colorLayer.setIsActive(active);
    }
 
    public SequencerLayer getSequenceLayer() {
@@ -152,14 +166,14 @@ public class MixerLayerGroup {
    }
 
    public Optional<DisplayLayer> getModeDisplayLayer() {
-      if (editMode == EditorMode.SEQUENCE) {
+      if (editMode == EditorMode.SEQUENCE && sequenceLayer != null) {
          return Optional.of(sequenceLayer.getMenu().getDisplayLayer(0));
       }
       return Optional.empty();
    }
 
    public Optional<EncoderLayer> getModeEncoderLayer() {
-      if (editMode == EditorMode.SEQUENCE) {
+      if (editMode == EditorMode.SEQUENCE && sequenceLayer != null) {
          return Optional.of(sequenceLayer.getMenu().getEncoderLayer());
       }
       return Optional.empty();
@@ -258,6 +272,9 @@ public class MixerLayerGroup {
             hwControls.sendVuUpdate(index, value);
          }
       });
+
+      channel.color().addValueObserver((r, g, b) -> trackColor.set(index, r, g, b));
+
       setControlLayer(index, channel.volume(), volumeFaderLayer, volumeEncoderLayer, RingDisplayType.FILL_LR_0);
       setControlLayer(index, channel.pan(), panFaderLayer, panEncoderLayer, RingDisplayType.PAN_FILL);
       final SendBank sendBank = channel.sendBank();

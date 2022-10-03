@@ -8,8 +8,8 @@ import com.bitwig.extensions.controllers.mackie.VPotMode;
 public class ExtenderMixControl extends MixControl {
 
    public ExtenderMixControl(final MackieMcuProExtension driver, final MidiIn midiIn, final MidiOut midiOut,
-                             final int sectionIndex) {
-      super(driver, midiIn, midiOut, sectionIndex, SectionType.XTENDER);
+                             final int sectionIndex, final boolean hasTrackColor) {
+      super(driver, midiIn, midiOut, sectionIndex, SectionType.XTENDER, hasTrackColor);
    }
 
    @Override

@@ -9,6 +9,7 @@ import com.bitwig.extensions.framework.Layers;
 
 public abstract class KompleteKontrolExtension extends ControllerExtension {
    static final int KOMPLETE_KONTROL_DEVICE_ID = 1315523403;
+   static final String KOMPLETE_KONTROL_VST3_ID = "5653544E694B4B6B6F6D706C65746520";
 
    final NhiaSysexValueCommand trackAvailableCommand = new NhiaSysexValueCommand(0x40);
    final NhiaSysexTextCommand selectTrackCommand = new NhiaSysexTextCommand(0x41);
@@ -22,8 +23,9 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
    final NhiaSyexLevelsCommand trackLevelMeterComand = new NhiaSyexLevelsCommand(0x49);
    final NhiaSysexValueCommand trackMutedBySoloCommand = new NhiaSysexValueCommand(0x4A);
 
-   protected SpecificPluginDevice kompleteKontrolPlugin;
-   protected Parameter kompleteKontrolInstId;
+   private SpecificPluginDevice kompleteKontrolPluginVst2;
+   private SpecificPluginDevice kompleteKontrolVst3Id;
+
    protected HardwareSurface surface;
    protected MidiOut midiOutDaw;
    protected TrackBank mixerTrackBank;
@@ -46,6 +48,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
    boolean dawModeConfirmed = false;
    protected KompleteLayer arrangeFocusLayer;
    protected KompleteLayer sessionFocusLayer;
+   private String lastReportedKKInstance = null;
 
    protected KompleteKontrolExtension(final ControllerExtensionDefinition definition, final ControllerHost host) {
       super(definition, host);
@@ -61,8 +64,6 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
    }
 
    protected void onMidi0(final ShortMidiMessage msg) {
-//		RemoteConsole.out.println("MIDI => {} {} {}", Integer.toHexString(msg.getStatusByte()),
-//				Integer.toHexString(msg.getData1()), Integer.toHexString(msg.getData2()));
       if (msg.getStatusByte() == 0xBF) {
          if (msg.getData1() == 1) {
             dawModeConfirmed = true;
@@ -82,7 +83,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
       midiOutDaw.sendMidi(0xBF, code, value);
    }
 
-   protected abstract void initNaviagtion();
+   protected abstract void initNavigation();
 
    protected void setUpChannelControl(final int index, final Track channel) {
       final IndexButton selectButton = new IndexButton(this, index, "SELECT_BUTTON", 0x42);
@@ -185,10 +186,8 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
 
    protected void bindMacroControl(final PinnableCursorDevice device, final MidiIn midiIn) {
       final CursorRemoteControlsPage remote = device.createCursorRemoteControlsPage(8);
-      final AbsoluteHardwareKnob[] macroKnobs = new AbsoluteHardwareKnob[8];
       for (int i = 0; i < 8; i++) {
          final AbsoluteHardwareKnob knob = surface.createAbsoluteHardwareKnob("MACRO_" + i);
-         macroKnobs[i] = knob;
          knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 14 + i));
          final RemoteControl parameter = remote.getParameter(i);
          parameter.setIndication(true);
@@ -197,16 +196,27 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
    }
 
    protected void createKompleteKontrolDeviceKompleteKontrol(final PinnableCursorDevice cursorDevice) {
-      kompleteKontrolPlugin = cursorDevice.createSpecificVst2Device(KOMPLETE_KONTROL_DEVICE_ID);
-      kompleteKontrolInstId = kompleteKontrolPlugin.createParameter(0);
-      kompleteKontrolInstId.markInterested();
-      kompleteKontrolInstId.name().markInterested();
-      kompleteKontrolInstId.exists().markInterested();
-      kompleteKontrolInstId.name().addValueObserver(name -> selectTrackCommand.send(midiOutDaw, name));
+      kompleteKontrolVst3Id = cursorDevice.createSpecificVst3Device(KOMPLETE_KONTROL_VST3_ID);
+      final Parameter kompleteKontrolVst3InstId = kompleteKontrolVst3Id.createParameter(0);
+      kompleteKontrolVst3InstId.name().addValueObserver(this::updateKompleteKontroInstance);
+
+      kompleteKontrolPluginVst2 = cursorDevice.createSpecificVst2Device(KOMPLETE_KONTROL_DEVICE_ID);
+      final Parameter kompleteKontrolVst2InstId = kompleteKontrolPluginVst2.createParameter(0);
+      kompleteKontrolVst2InstId.markInterested();
+      kompleteKontrolVst2InstId.name().markInterested();
+      kompleteKontrolVst2InstId.exists().markInterested();
+      kompleteKontrolVst2InstId.name().addValueObserver(this::updateKompleteKontroInstance);
+   }
+
+   private void updateKompleteKontroInstance(final String instanceParamName) {
+      if (lastReportedKKInstance == null || !lastReportedKKInstance.equals(instanceParamName)) {
+         selectTrackCommand.send(midiOutDaw, instanceParamName);
+         lastReportedKKInstance = instanceParamName;
+      }
    }
 
    protected void initTrackBank() {
-      initNaviagtion();
+      initNavigation();
 
       final PinnableCursorDevice cursorDevice = cursorTrack.createCursorDevice();
 
@@ -296,7 +306,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
       final ModeButton metroButton = new ModeButton(this, "METRO_BUTTON", CcAssignment.METRO);
       mainLayer.bindToggle(metroButton.getHwButton(), mTransport.isMetronomeEnabled());
       final ModeButton tapTempoButton = new ModeButton(this, "TAP_BUTTON", CcAssignment.TAPTEMPO);
-      mainLayer.bindPressed(tapTempoButton.getHwButton(), mTransport::tapTempoAction);
+      mainLayer.bindPressed(tapTempoButton.getHwButton(), mTransport::tapTempo);
       tapTempoButton.bindLightToPressed();
 
       final ModeButton undoButton = new ModeButton(this, "UNDO_BUTTON", CcAssignment.UNDO);
