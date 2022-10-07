@@ -10,10 +10,13 @@ import com.bitwig.extension.controller.api.MidiOut;
 public class RGBState extends InternalHardwareLightState {
    public static final RGBState OFF = new RGBState(0);
    public static final RGBState DARKGREY = new RGBState(1);
+   public static final RGBState DARKGREY_PULS = new RGBState(1, 2);
    public static final RGBState GREY = new RGBState(2);
    public static final RGBState WHITE = new RGBState(3);
    public static final RGBState DARKRED = new RGBState(121);
    public static final RGBState BLUE = new RGBState(79);
+   public static final RGBState BLUE_PULS = new RGBState(79, 2);
+
    public static final RGBState YELLOW = new RGBState(13);
    public static final RGBState PURPLE = new RGBState(94);
    public static final RGBState ORANGE = new RGBState(9);
