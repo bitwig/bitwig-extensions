@@ -27,7 +27,7 @@ public class Xjam extends ControllerExtension {
         mMidiIn = mHost.getMidiInPort(0);
 
         mNoteInput = mMidiIn.createNoteInput("pad", "90????", "D0??","91????", "D1??","92????", "D2??");
-        mNoteInput.setShouldConsumeEvents(true);
+        mNoteInput.setShouldConsumeEvents(false);
 
         mCursorTrack = mHost.createCursorTrack(0, 0);
         mCursorDevice = mCursorTrack.createCursorDevice();
