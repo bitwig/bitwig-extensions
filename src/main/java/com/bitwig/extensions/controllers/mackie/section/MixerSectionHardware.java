@@ -305,7 +305,12 @@ public class MixerSectionHardware {
 
    public RelativeHardwareControlToRangedValueBinding createEncoderToParamBinding(final int index,
                                                                                   final Parameter param) {
-      return new RelativeHardwareControlToRangedValueBinding(encoders[index], param);
+      final RelativeHardwareControlToRangedValueBinding binding = new RelativeHardwareControlToRangedValueBinding(
+         encoders[index], param);
+      if (driver.getControllerConfig().isHas2ClickResolution()) {
+         binding.setSensitivity(2.0);
+      }
+      return binding;
    }
 
    public RingDisplayParameterBinding createRingDisplayBinding(final int index, final Parameter param,

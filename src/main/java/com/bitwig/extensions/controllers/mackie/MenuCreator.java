@@ -94,7 +94,7 @@ public class MenuCreator {
          .add("two_bars", "2bar", 6)
          .add("four_bars", "4bar", 11));
       builder.bindBool("M.Tick", transport.isMetronomeTickPlaybackEnabled());
-      builder.bindValue("M.Vol", transport.metronomeVolume(), 0.05, 0.6);
+      builder.bindValue("M.Vol", transport.metronomeVolume(), 1.0, 0.6);
       builder.insertEmpty();
       builder.bindBool("T.Clck", transportClick);
       transportClick.addValueObserver(clickHandler);
