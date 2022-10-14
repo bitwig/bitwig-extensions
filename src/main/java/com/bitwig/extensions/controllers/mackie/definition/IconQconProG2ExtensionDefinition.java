@@ -85,7 +85,7 @@ public class IconQconProG2ExtensionDefinition extends IconQconExtensionDefinitio
    @Override
    public MackieMcuProExtension createInstance(final ControllerHost host) {
       final ControllerConfig controllerConfig = new ControllerConfig(noteOverrides, ManufacturerType.ICON, SubType.G2,
-         false) //
+         false, true) //
          .setHasDedicateVu(true) //
          .setFunctionSectionLayered(true) //
          .setUseClearDuplicateModifiers(true);

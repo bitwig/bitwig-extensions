@@ -17,10 +17,11 @@ public class ControllerConfig {
    private boolean useClearDuplicateModifiers = false;
    private boolean functionSectionLayered = false;
    private final SimulationLayout simulationLayout;
+   private final boolean has2ClickResolution;
 
    public ControllerConfig(final Map<BasicNoteOnAssignment, Integer> assignOverrides,
                            final ManufacturerType manufacturerType, final SubType subType,
-                           final boolean hasLowerDisplay) {
+                           final boolean hasLowerDisplay, final boolean has2ClickResolution) {
       this.assignOverrides = assignOverrides;
       this.hasLowerDisplay = hasLowerDisplay;
       this.manufacturerType = manufacturerType;
@@ -28,6 +29,7 @@ public class ControllerConfig {
       hasDedicateVu = false;
       hasMasterVu = false;
       simulationLayout = new SimulationLayout();
+      this.has2ClickResolution = has2ClickResolution; // if encoders needs 2 clicks to register step (iCon)
    }
 
    public ControllerConfig(final boolean hasLowerDisplay) {
@@ -38,6 +40,11 @@ public class ControllerConfig {
       hasMasterVu = false;
       subType = SubType.UNSPECIFIED;
       simulationLayout = new SimulationLayout();
+      has2ClickResolution = false;
+   }
+
+   public boolean isHas2ClickResolution() {
+      return has2ClickResolution;
    }
 
    public SimulationLayout getSimulationLayout() {
