@@ -130,6 +130,10 @@ public class MixControl implements LayerStateHandler {
       }
    }
 
+   public void init() {
+      layerState.init();
+   }
+
    public MultiStateHardwareLight getBackgroundColoring() {
       return backgroundColoring;
    }
