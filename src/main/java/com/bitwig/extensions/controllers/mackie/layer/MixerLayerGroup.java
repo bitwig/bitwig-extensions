@@ -98,10 +98,6 @@ public class MixerLayerGroup {
       control.getDriver().getFlipped().addValueObserver(flipped -> this.flipped = flipped);
    }
 
-   public void init() {
-
-   }
-
    public void setActive(final boolean active) {
       this.active = active;
       colorLayer.setIsActive(active);
