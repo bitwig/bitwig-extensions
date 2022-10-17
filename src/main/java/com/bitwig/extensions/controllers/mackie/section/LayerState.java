@@ -21,6 +21,9 @@ public class LayerState {
 
       displayLayer = layerStateHandler.getActiveDisplayLayer();
       bottomDisplayLayer = layerStateHandler.getBottomDisplayLayer();
+   }
+
+   public void init() {
       if (bottomDisplayLayer != null) {
          bottomDisplayLayer.focusOnBottom();
          bottomDisplayLayer.setIsActive(true);

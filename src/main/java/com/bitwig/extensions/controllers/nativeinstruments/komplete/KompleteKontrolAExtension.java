@@ -71,7 +71,6 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 
       arrangerClip.exists().markInterested();
       final Track rootTrack = project.getRootTrackGroup();
-      cursorClip.clipLauncherSlot().setIndication(true);
 
       final TrackBank singleTrackBank = getHost().createTrackBank(1, 0, 1);
       singleTrackBank.scrollPosition().markInterested();

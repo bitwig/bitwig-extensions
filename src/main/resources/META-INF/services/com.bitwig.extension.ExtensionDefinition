@@ -11,6 +11,10 @@ com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab88ControllerEx
 com.bitwig.extensions.controllers.arturia.keylab.essential.ArturiaKeylabEssential49ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.essential.ArturiaKeylabEssential61ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.microlab.ArturiaMicroLabControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.beatsteppro.BeatStepProExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keystep.KeyStepProExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keystep.KeyStepExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keystep.KeyStep37ExtensionDefinition
 
 com.bitwig.extensions.controllers.bajaao.EDrumControllerExtensionDefinition
 

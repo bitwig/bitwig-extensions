@@ -107,11 +107,10 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
    @Override
    protected void initNavigation() {
       final Clip cursorClip = getHost().createLauncherCursorClip(8, 128);
-      final Clip arangerClip = getHost().createArrangerCursorClip(8, 128);
+      final Clip arrangerClip = getHost().createArrangerCursorClip(8, 128);
 
-      arangerClip.exists().markInterested();
+      arrangerClip.exists().markInterested();
       final Track rootTrack = project.getRootTrackGroup();
-      cursorClip.clipLauncherSlot().setIndication(true);
 
       final TrackBank singleTrackBank = getHost().createTrackBank(1, 0, 1);
       singleTrackBank.scrollPosition().markInterested();
@@ -244,8 +243,8 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
       sessionFocusLayer.bind(() -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get(),
          quantizeButton.getLed());
 
-      arrangeFocusLayer.bindPressed(quantizeButton, () -> arangerClip.quantize(1.0));
-      arrangeFocusLayer.bind(() -> cursorTrack.canHoldNoteData().get() && arangerClip.exists().get(),
+      arrangeFocusLayer.bindPressed(quantizeButton, () -> arrangerClip.quantize(1.0));
+      arrangeFocusLayer.bind(() -> cursorTrack.canHoldNoteData().get() && arrangerClip.exists().get(),
          quantizeButton.getLed());
 
       cursorTrack.canHoldNoteData().markInterested();
@@ -256,8 +255,8 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
       sessionFocusLayer.bind(() -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get(),
          clearButton.getLed());
 
-      arrangeFocusLayer.bindPressed(clearButton, arangerClip::clearSteps);
-      arrangeFocusLayer.bind(() -> cursorTrack.canHoldNoteData().get() && arangerClip.exists().get(),
+      arrangeFocusLayer.bindPressed(clearButton, arrangerClip::clearSteps);
+      arrangeFocusLayer.bind(() -> cursorTrack.canHoldNoteData().get() && arrangerClip.exists().get(),
          clearButton.getLed());
 
       clearButton.getLed()
