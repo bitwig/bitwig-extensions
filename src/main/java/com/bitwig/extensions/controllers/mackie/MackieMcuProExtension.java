@@ -170,6 +170,7 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       setUpMidiSysExCommands();
       mainLayer.activate();
+      sections.forEach(MixControl::init);
       host.showPopupNotification(
          " Initialized " + getExtensionDefinition().getName() + " " + getExtensionDefinition().getVersion());
       sections.forEach(MixControl::resetFaders);
