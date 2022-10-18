@@ -121,9 +121,9 @@ public class MiniLab3Extension extends ControllerExtension {
         transport = host.createTransport();
         final String[] inputMasks = getInputMask(0x09,
                 new int[]{0x01, 0x09, 0x10, 0x11, 0x12, 0x13, 0x40, 0x47, 0x4a, 0x4c, 0x4d, 0x52, 0x53, 0x55, 0x5d, 0x70, 0x71, 0x72, 0x73});
-       NoteInput noteInput = midiIn.createNoteInput("MIDI", inputMasks); //
+        NoteInput noteInput = midiIn.createNoteInput("MIDI", inputMasks); //
 
-       noteInput.setShouldConsumeEvents(true);
+        noteInput.setShouldConsumeEvents(true);
         initCursors();
         setUpHardware();
 
@@ -312,8 +312,6 @@ public class MiniLab3Extension extends ControllerExtension {
         final SettableEnumValue clipStopTiming = preferences.getEnumSetting("Long press to stop clip", //
                 "Clip", new String[]{"Fast", "Medium", "Standard"}, "Medium");
         clipStopTiming.addValueObserver(clipLaunchingLayer::setClipStopTiming);
-        final SettableBooleanValue sysexToConsole = preferences.getBooleanSetting("SysEx to console", "Debug", false);
-        sysexToConsole.addValueObserver(active -> sysExHandler.setConsole(active));
     }
 
     private void handleShift(final boolean pressed) {
