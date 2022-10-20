@@ -72,6 +72,11 @@ public class BeatStepProExtensionDefinition extends ControllerExtensionDefinitio
                     new String[]{"BeatStepPro", "MIDIOUT2 (Arturia BeatStep Pro)"});
         }
     }
+   
+    @Override
+    public String getHelpFilePath() {
+        return "Controllers/Arturia/Arturia BeatStep Pro.pdf";
+    }
 
     @Override
     public BeatStepProExtension createInstance(final ControllerHost host) {
