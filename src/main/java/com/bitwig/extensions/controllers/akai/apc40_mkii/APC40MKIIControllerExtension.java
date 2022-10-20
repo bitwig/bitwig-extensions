@@ -215,15 +215,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mTrackBank = host.createTrackBank(8, 5, 5, false);
       mTrackBank.setSkipDisabledItems(true);
+      mTrackBank.setShouldShowClipLauncherFeedback(true);
 
       mSceneBank = mTrackBank.sceneBank();
+      mSceneBank.setIndication(true);
 
       mTrackBank.cursorIndex().markInterested();
 
       for (int j = 0; j < 5; ++j)
       {
          final Scene scene = mSceneBank.getScene(j);
-         scene.setIndication(true);
          scene.exists().markInterested();
          scene.color().markInterested();
       }
@@ -240,8 +241,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          sendBank.setSkipDisabledItems(true);
 
          final ClipLauncherSlotBank clipLauncher = track.clipLauncherSlotBank();
-         clipLauncher.setIndication(true);
-
          for (int j = 0; j < 5; ++j)
          {
             final ClipLauncherSlot slot = clipLauncher.getItemAt(j);
@@ -1570,7 +1569,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             /*
              * if (slot.isStopQueued().get()) { rgbLed.setBlinkType(RgbLed.BLINK_STOP_QUEUED);
              * rgbLed.setBlinkColor(RgbLed.COLOR_STOPPING); } else
-             */if (slot.isRecordingQueued().get())
+             */
+
+            if (slot.isRecordingQueued().get())
             {
                rgbLed.setBlinkType(RGBLedState.BLINK_RECORD_QUEUED);
                rgbLed.setBlinkColor(RGBLedState.COLOR_RECORDING);
@@ -1578,15 +1579,17 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             else if (slot.isPlaybackQueued().get())
             {
                rgbLed.setBlinkType(RGBLedState.BLINK_PLAY_QUEUED);
-               rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING);
+               rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING_QUEUED);
             }
             else if (slot.isRecording().get())
             {
+               rgbLed.setColor(RGBLedState.COLOR_NONE);
                rgbLed.setBlinkType(RGBLedState.BLINK_ACTIVE);
                rgbLed.setBlinkColor(RGBLedState.COLOR_RECORDING);
             }
             else if (slot.isPlaying().get())
             {
+               rgbLed.setColor(RGBLedState.COLOR_NONE);
                rgbLed.setBlinkType(RGBLedState.BLINK_ACTIVE);
                rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING);
             }
