@@ -32,7 +32,7 @@ public class MiniLab3ExtensionDefinition extends ControllerExtensionDefinition {
 
     @Override
     public String getVersion() {
-        return "0.8c";
+        return "1.0";
     }
 
     @Override
