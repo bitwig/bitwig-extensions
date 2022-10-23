@@ -441,16 +441,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          {
             final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
             final HardwareButton clipButton = mGridButtons[i + 8 * j];
-            mShiftLayer.bindPressed(clipButton, slot.launchWithOptionsAction("none", "continue_immediately"));
-            mShiftLayer.bindReleased(clipButton, track.launchLastClipWithOptionsAction("none", "continue_immediately"));
+            mShiftLayer.bindPressed(clipButton, () -> slot.launchAlt());
+            mShiftLayer.bindReleased(clipButton, () -> slot.launchReleaseAlt());
          }
       }
 
       for (int i = 0; i < 5; ++i)
       {
          final Scene scene = mSceneBank.getScene(i);
-         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchWithOptionsAction("none", "continue_immediately"));
-         mShiftLayer.bindReleased(mSceneButtons[i], scene.launchLastClipWithOptionsAction("none", "continue_immediately"));
+         mShiftLayer.bindPressed(mSceneButtons[i], () -> scene.launchAlt());
+         mShiftLayer.bindReleased(mSceneButtons[i], () -> scene.launchReleaseAlt());
       }
    }
 
@@ -566,8 +566,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          for (int y = 0; y < 5; ++y)
          {
             final int offset = 8 * y + x;
-            mMainLayer.bindPressed(mGridButtons[offset],
-               track.clipLauncherSlotBank().getItemAt(y).launchAction());
+            final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(y);
+            mMainLayer.bindPressed(mGridButtons[offset], slot.launchAction());
+            mMainLayer.bindReleased(mGridButtons[offset], () -> slot.launchRelease());
          }
          mMainLayer.bindPressed(mMuteButtons[x], track.mute());
          mMainLayer.bind(() -> track.exists().get() && !track.mute().get(), mMuteLeds[x]);
@@ -660,7 +661,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       });
 
       for (int y = 0; y < 5; ++y)
-         mMainLayer.bindPressed(mSceneButtons[y], mSceneBank.getItemAt(y).launchAction());
+      {
+         final Scene scene = mSceneBank.getItemAt(y);
+         mMainLayer.bindPressed(mSceneButtons[y], scene.launchAction());
+         mMainLayer.bindReleased(mSceneButtons[y], () -> scene.launchRelease());
+      }
 
       mMainLayer.bindPressed(mPanButton,
          getHost().createAction(

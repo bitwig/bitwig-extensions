@@ -39,7 +39,7 @@ public class APC40MKIIControllerExtensionDefinition extends ControllerExtensionD
    @Override
    public int getRequiredAPIVersion()
    {
-      return 17;
+      return 18;
    }
 
    @Override
