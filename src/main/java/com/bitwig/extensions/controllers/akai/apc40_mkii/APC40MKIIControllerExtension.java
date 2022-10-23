@@ -441,16 +441,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          {
             final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
             final HardwareButton clipButton = mGridButtons[i + 8 * j];
-            mShiftLayer.bindPressed(clipButton, () -> slot.launchAlt());
-            mShiftLayer.bindReleased(clipButton, () -> slot.launchReleaseAlt());
+            mShiftLayer.bindPressed(clipButton, slot.launchAltAction());
+            mShiftLayer.bindReleased(clipButton, slot.launchReleaseAltAction());
          }
       }
 
       for (int i = 0; i < 5; ++i)
       {
          final Scene scene = mSceneBank.getScene(i);
-         mShiftLayer.bindPressed(mSceneButtons[i], () -> scene.launchAlt());
-         mShiftLayer.bindReleased(mSceneButtons[i], () -> scene.launchReleaseAlt());
+         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchAltAction());
+         mShiftLayer.bindReleased(mSceneButtons[i], scene.launchReleaseAltAction());
       }
    }
 
@@ -568,7 +568,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             final int offset = 8 * y + x;
             final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(y);
             mMainLayer.bindPressed(mGridButtons[offset], slot.launchAction());
-            mMainLayer.bindReleased(mGridButtons[offset], () -> slot.launchRelease());
+            mMainLayer.bindReleased(mGridButtons[offset], slot.launchReleaseAction());
          }
          mMainLayer.bindPressed(mMuteButtons[x], track.mute());
          mMainLayer.bind(() -> track.exists().get() && !track.mute().get(), mMuteLeds[x]);
@@ -664,7 +664,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          final Scene scene = mSceneBank.getItemAt(y);
          mMainLayer.bindPressed(mSceneButtons[y], scene.launchAction());
-         mMainLayer.bindReleased(mSceneButtons[y], () -> scene.launchRelease());
+         mMainLayer.bindReleased(mSceneButtons[y], scene.launchReleaseAction());
       }
 
       mMainLayer.bindPressed(mPanButton,

@@ -29,9 +29,9 @@ final class SessionMode extends Mode
             final ClipLauncherSlot slot = slotBank.getItemAt(7 - y);
             final Button button = driver.getPadButton(x, y);
             bindPressed(button, slot.launchAction());
-            bindReleased(button, ()-> slot.launchRelease());
-            mShiftLayer.bindPressed(button, () -> slot.launchAlt());
-            mShiftLayer.bindReleased(button, () -> slot.launchReleaseAlt());
+            bindReleased(button, slot.launchReleaseAction());
+            mShiftLayer.bindPressed(button, slot.launchAltAction());
+            mShiftLayer.bindReleased(button, slot.launchReleaseAltAction());
             mDeleteLayer.bindPressed(button, slot::deleteObject);
             mQuantizeLayer.bindReleased(button, () -> {
                slot.select();
@@ -43,11 +43,11 @@ final class SessionMode extends Mode
          final Scene scene = sceneBank.getItemAt(7 - x);
          final Button sceneButton = driver.mSceneButtons[x];
          bindPressed(sceneButton, scene.launchAction());
-         bindReleased(sceneButton, () -> scene.launchRelease());
+         bindReleased(sceneButton, scene.launchReleaseAction());
          bindLightState(() -> computeSceneLedState(scene), sceneButton);
 
-         mShiftLayer.bindPressed(sceneButton, () -> scene.launchAlt());
-         mShiftLayer.bindReleased(sceneButton, () -> scene.launchReleaseAlt());
+         mShiftLayer.bindPressed(sceneButton, scene.launchAltAction());
+         mShiftLayer.bindReleased(sceneButton, scene.launchReleaseAltAction());
       }
 
       bindLayer(driver.mShiftButton, mShiftLayer);
