@@ -123,6 +123,8 @@ final class SessionMode extends Mode
    {
       final TrackBank trackBank = mDriver.mTrackBank;
       final SceneBank sceneBank = mDriver.mSceneBank;
+
+      trackBank.setShouldShowClipLauncherFeedback(true);
       sceneBank.setIndication(true);
 
       for (int i = 0; i < 8; ++i)
@@ -131,7 +133,6 @@ final class SessionMode extends Mode
          track.subscribe();
 
          final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
-         slotBank.setIndication(true);
 
          for (int j = 0; j < 8; ++j)
          {
@@ -164,6 +165,7 @@ final class SessionMode extends Mode
       final TrackBank trackBank = mDriver.mTrackBank;
       final SceneBank sceneBank = mDriver.mSceneBank;
       sceneBank.setIndication(false);
+      trackBank.setShouldShowClipLauncherFeedback(false);
 
       for (int i = 0; i < 8; ++i)
       {
@@ -171,7 +173,6 @@ final class SessionMode extends Mode
          channel.unsubscribe();
 
          final ClipLauncherSlotBank slotBank = channel.clipLauncherSlotBank();
-         slotBank.setIndication(false);
 
          for (int j = 0; j < 8; ++j)
          {

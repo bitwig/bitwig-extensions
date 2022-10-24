@@ -483,8 +483,6 @@ final class LaunchpadProControllerExtension extends ControllerExtension
          channel.isQueuedForStop().markInterested();
 
          final ClipLauncherSlotBank clipLauncherSlots = channel.clipLauncherSlotBank();
-         clipLauncherSlots.setIndication(false);
-
          final SendBank sendBank = channel.sendBank();
          sendBank.setSkipDisabledItems(true);
 
