@@ -3,11 +3,7 @@
 
 name: Java CI with Gradle
 
-on:
-  push:
-    #branches: [ api-13 ]
-  pull_request:
-    #branches: [ api-13 ]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
