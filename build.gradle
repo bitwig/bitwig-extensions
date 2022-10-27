@@ -17,14 +17,17 @@ else
     repositories {
         maven {
             url = uri('https://maven.bitwig.com')
+            metadataSources {
+                gradleMetadata()
+                mavenPom()
+                artifact()
+            }
         }
     }
 
-dependencies {
-    if (project.file('../is-building-bitwig.txt').exists())
-        implementation 'com.bitwig:base-extensions-api:LOCAL'
-    else
-        implementation 'com.bitwig:base-extensions-api:13'
+    dependencies {
+        implementation 'com.bitwig:base-extensions-api:17'
+    }
 }
 
 group = 'com.bitwig.extensions'
