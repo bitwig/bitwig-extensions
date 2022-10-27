@@ -16,12 +16,12 @@ else
 {
     repositories {
         maven {
-            url = uri('https://maven.bitwig.com')
+            url = uri('https://maven.bitwig.com/')
         }
     }
 
     dependencies {
-        implementation 'com.bitwig:base-extensions-api:LOCAL'
+        implementation 'com.bitwig:extension-api:17'
     }
 }
 

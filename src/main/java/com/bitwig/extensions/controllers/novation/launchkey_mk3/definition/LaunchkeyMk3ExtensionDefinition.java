@@ -24,7 +24,7 @@ public abstract class LaunchkeyMk3ExtensionDefinition extends ControllerExtensio
 
    @Override
    public String getVersion() {
-      return "0.2";
+      return "0.8";
    }
 
    @Override
@@ -35,6 +35,12 @@ public abstract class LaunchkeyMk3ExtensionDefinition extends ControllerExtensio
    @Override
    public int getRequiredAPIVersion() {
       return 15;
+   }
+
+   @Override
+   public String getHelpFilePath()
+   {
+      return "Controllers/Novation/LaunchKey Mk3.pdf";
    }
 
    @Override

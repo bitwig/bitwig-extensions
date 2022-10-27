@@ -1,0 +1,8 @@
+{
+        "recommendations": [
+                "richardwillis.vscode-gradle-extension-pack",
+                "vscjava.vscode-java-pack",
+                "eamodio.gitlens",
+                "yzhang.markdown-all-in-one"
+        ]
+}

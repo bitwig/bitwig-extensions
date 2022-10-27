@@ -26,8 +26,8 @@
 				<configuration>
 					<optimize>true</optimize>
 					<fork>true</fork>
-					<source>11</source>
-					<target>11</target>
+					<source>16</source>
+					<target>16</target>
 					<encoding>UTF-8</encoding>
 					<maxmem>1024m</maxmem>
 				</configuration>
@@ -81,7 +81,7 @@
 				<dependency>
 					<groupId>com.bitwig</groupId>
 					<artifactId>extension-api</artifactId>
-					<version>[15,)</version>
+					<version>[17,)</version>
 				</dependency>
 			</dependencies>
 		</profile>
