@@ -16,9 +16,8 @@ else
 {
     repositories {
         maven {
-            url = uri('https://maven.bitwig.com')
+            url = uri('https://maven.bitwig.com/')
             metadataSources {
-                gradleMetadata()
                 mavenPom()
                 artifact()
             }
@@ -26,7 +25,7 @@ else
     }
 
     dependencies {
-        implementation 'com.bitwig:base-extensions-api:17'
+        implementation 'com.bitwig:extension-api:17'
     }
 }
 
