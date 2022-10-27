@@ -24,7 +24,7 @@ public abstract class LaunchkeyMk3ExtensionDefinition extends ControllerExtensio
 
    @Override
    public String getVersion() {
-      return "0.2";
+      return "0.8";
    }
 
    @Override
