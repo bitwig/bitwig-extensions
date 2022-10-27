@@ -21,6 +21,8 @@ public enum CcAssignment {
 	DKNOB_DOWN(32), //
 	SCENE(85), //
 	PATTERN(86), //
+	EVENTS(87), //
+	VARIATION(88), //
 	DUPLICATE(89), //
 	SELECT(90), //
 	SOLO(91), //

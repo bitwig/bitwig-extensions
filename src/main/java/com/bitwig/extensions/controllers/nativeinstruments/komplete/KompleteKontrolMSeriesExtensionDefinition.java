@@ -25,7 +25,7 @@ public class KompleteKontrolMSeriesExtensionDefinition extends ControllerExtensi
 
 	@Override
 	public String getVersion() {
-		return "0.5";
+		return "1.1";
 	}
 
 	@Override
@@ -58,12 +58,18 @@ public class KompleteKontrolMSeriesExtensionDefinition extends ControllerExtensi
 		return 2;
 	}
 
+   @java.lang.Override
+   public java.lang.String getHelpFilePath()
+   {
+      return "Controllers/Native Instruments/Komplete Kontrol A_M-Series/Komplete Kontrol A_M-Series.pdf";
+   }
+
 	@Override
 	public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
 			final PlatformType platformType) {
 		if (platformType == PlatformType.WINDOWS) {
-			list.add(new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" },
-					new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" });
+			list.add(new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32 MIDI" },
+					new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32 MIDI" });
 		} else if (platformType == PlatformType.MAC) {
 			list.add(new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" },
 					new String[] { "Komplete Kontrol M DAW", "KOMPLETE KONTROL M32" });

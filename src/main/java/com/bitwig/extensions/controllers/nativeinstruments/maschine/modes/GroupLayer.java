@@ -20,6 +20,8 @@ public class GroupLayer extends MaschineLayer {
 	private final MaschineLayer duplicateLayer;
 	private final MaschineLayer muteLayer;
 	private final MaschineLayer soloLayer;
+	private final MaschineLayer colorChooseLayer;
+
 	int selectedTrackIndex = -1;
 	private ModifierState state = ModifierState.NONE;
 	int numberOfTracks = 0;
@@ -35,6 +37,7 @@ public class GroupLayer extends MaschineLayer {
 		muteLayer = new MaschineLayer(driver, "mute-" + name);
 		soloLayer = new MaschineLayer(driver, "solo-" + name);
 		shiftLayer = new MaschineLayer(driver, "shift-" + name);
+		colorChooseLayer = new MaschineLayer(driver, "variation-" + name);
 
 		final TrackBank trackBank = driver.getMixerTrackBank();
 		trackBank.channelCount().addValueObserver(v -> {
@@ -64,6 +67,7 @@ public class GroupLayer extends MaschineLayer {
 			duplicateLayer.bindPressed(button, () -> handleDuplicate(track));
 			soloLayer.bindPressed(button, () -> handleSolo(track));
 			muteLayer.bindPressed(button, () -> handleMute(track));
+			colorChooseLayer.bindPressed(button, () -> handleColorSelection(track));
 			bindLightState(() -> computeGridLedState(track, index), button);
 			track.addIsSelectedInEditorObserver(v -> {
 				notifySelectedInmixer(index, track, v);
@@ -114,6 +118,8 @@ public class GroupLayer extends MaschineLayer {
 			return soloLayer;
 		case MUTE:
 			return muteLayer;
+		case VARIATION:
+			return colorChooseLayer;
 		default:
 			return null;
 		}
@@ -166,6 +172,14 @@ public class GroupLayer extends MaschineLayer {
 
 	private void handleMute(final Track track) {
 		track.mute().toggle();
+	}
+
+	private void handleColorSelection(final Track track) {
+		if (track.exists().get()) {
+			getDriver().enterColorSelection(color -> {
+				color.set(track.color());
+			});
+		}
 	}
 
 	private InternalHardwareLightState computeGridLedState(final Track track, final int index) {

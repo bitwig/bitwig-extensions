@@ -23,6 +23,7 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 	private final MaschineLayer muteLayer;
 	private final MaschineLayer soloLayer;
 	private final MaschineLayer eraseLayer;
+	private final MaschineLayer colorChooseLayer;
 
 	public DrumPadMode(final MaschineExtension driver, final String name, final NoteFocusHandler noteFocusHandler,
 			final VeloctiyHandler velocityHandler, final DisplayLayer associatedDisplay) {
@@ -31,8 +32,10 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 		muteLayer = new MaschineLayer(driver, name + "-mute");
 		soloLayer = new MaschineLayer(driver, name + "-solo");
 		eraseLayer = new MaschineLayer(driver, name + "-erase");
+		colorChooseLayer = new MaschineLayer(driver, name + "-color");
 
 		drumPadBank = driver.getPrimaryDevice().createDrumPadBank(16);
+
 		drumPadBank.setIndication(true);
 
 		drumPadBank.scrollPosition().addValueObserver(scrollPos -> {
@@ -68,6 +71,7 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 			soloLayer.bindPressed(button, () -> soloPad(index));
 			soloLayer.bindLightState(() -> computeGridLedStateSolo(index, pad), button);
 			eraseLayer.bindPressed(button, () -> erasePadNotes(index));
+			colorChooseLayer.bindPressed(button, () -> chosseColor(index));
 		}
 	}
 
@@ -83,6 +87,8 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 			enableLayer(soloLayer, active);
 		} else if (modstate == ModifierState.ERASE) {
 			enableLayer(eraseLayer, active);
+		} else if (modstate == ModifierState.VARIATION) {
+			enableLayer(colorChooseLayer, active);
 		}
 	}
 
@@ -136,6 +142,15 @@ public class DrumPadMode extends BasicKeyPlayingMode implements JogWheelDestinat
 		if (altMode.getAssociatedDisplay() != null //
 				&& driver.getCurrentDisplayMode().isPadRelatedMode()) {
 			driver.setDisplayMode(altMode.getAssociatedDisplay());
+		}
+	}
+
+	private void chosseColor(final int index) {
+		final DrumPad pad = drumPadBank.getItemAt(index);
+		if (pad.exists().get()) {
+			getDriver().enterColorSelection(color -> {
+				color.set(pad.color());
+			});
 		}
 	}
 

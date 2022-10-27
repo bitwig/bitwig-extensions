@@ -44,7 +44,7 @@ import com.bitwig.extensions.framework.Layers;
 
 public class APC40MKIIControllerExtension extends ControllerExtension
 {
-   private static final boolean ENABLE_DEBUG_LAYER = true;
+   private static final boolean ENABLE_DEBUG_LAYER = false;
 
    private static final int CHANNEL_STRIP_NUM_PARAMS = 4;
 
@@ -215,8 +215,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mTrackBank = host.createTrackBank(8, 5, 5, false);
       mTrackBank.setSkipDisabledItems(true);
+      mTrackBank.setShouldShowClipLauncherFeedback(true);
 
       mSceneBank = mTrackBank.sceneBank();
+      mSceneBank.setIndication(true);
 
       mTrackBank.cursorIndex().markInterested();
 
@@ -239,8 +241,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          sendBank.setSkipDisabledItems(true);
 
          final ClipLauncherSlotBank clipLauncher = track.clipLauncherSlotBank();
-         clipLauncher.setIndication(true);
-
          for (int j = 0; j < 5; ++j)
          {
             final ClipLauncherSlot slot = clipLauncher.getItemAt(j);
@@ -440,8 +440,17 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          for (int j = 0; j < 5; ++j)
          {
             final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
-            mShiftLayer.bindPressed(mGridButtons[i + 8 * j], () -> slot.select());
+            final HardwareButton clipButton = mGridButtons[i + 8 * j];
+            mShiftLayer.bindPressed(clipButton, slot.launchWithOptionsAction("none", "continue_immediately"));
+            mShiftLayer.bindReleased(clipButton, track.launchLastClipWithOptionsAction("none", "continue_immediately"));
          }
+      }
+
+      for (int i = 0; i < 5; ++i)
+      {
+         final Scene scene = mSceneBank.getScene(i);
+         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchWithOptionsAction("none", "continue_immediately"));
+         mShiftLayer.bindReleased(mSceneButtons[i], scene.launchLastClipWithOptionsAction("none", "continue_immediately"));
       }
    }
 
@@ -519,7 +528,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          mUserLayers[userIndex] = new Layer(mLayers, "User-" + userIndex);
          for (int i = 0; i < 8; ++i)
-            mUserLayers[userIndex].bind(mTopControlKnobs[i], mUserControls.getControl(i + mUserIndex * 8));
+            mUserLayers[userIndex].bind(mTopControlKnobs[i], mUserControls.getControl(i + userIndex * 8));
       }
    }
 
@@ -1560,7 +1569,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             /*
              * if (slot.isStopQueued().get()) { rgbLed.setBlinkType(RgbLed.BLINK_STOP_QUEUED);
              * rgbLed.setBlinkColor(RgbLed.COLOR_STOPPING); } else
-             */if (slot.isRecordingQueued().get())
+             */
+
+            if (slot.isRecordingQueued().get())
             {
                rgbLed.setBlinkType(RGBLedState.BLINK_RECORD_QUEUED);
                rgbLed.setBlinkColor(RGBLedState.COLOR_RECORDING);
@@ -1568,15 +1579,17 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             else if (slot.isPlaybackQueued().get())
             {
                rgbLed.setBlinkType(RGBLedState.BLINK_PLAY_QUEUED);
-               rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING);
+               rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING_QUEUED);
             }
             else if (slot.isRecording().get())
             {
+               rgbLed.setColor(RGBLedState.COLOR_NONE);
                rgbLed.setBlinkType(RGBLedState.BLINK_ACTIVE);
                rgbLed.setBlinkColor(RGBLedState.COLOR_RECORDING);
             }
             else if (slot.isPlaying().get())
             {
+               rgbLed.setColor(RGBLedState.COLOR_NONE);
                rgbLed.setBlinkType(RGBLedState.BLINK_ACTIVE);
                rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING);
             }

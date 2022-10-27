@@ -23,19 +23,21 @@ class RGBLedState extends InternalHardwareLightState
 
    public static final int COLOR_PLAYING = COLOR_GREEN;
 
+   public static final int COLOR_PLAYING_QUEUED = COLOR_YELLOW;
+
    public static final int COLOR_STOPPING = COLOR_NONE;
 
    public static final int COLOR_SCENE = COLOR_YELLOW;
 
    public static final int BLINK_NONE = 0;
 
-   public static final int BLINK_PLAY_QUEUED = 12;
+   public static final int BLINK_PLAY_QUEUED = 14;
 
-   public static final int BLINK_ACTIVE = 9;
+   public static final int BLINK_ACTIVE = 10;
 
-   public static final int BLINK_RECORD_QUEUED = 12;
+   public static final int BLINK_RECORD_QUEUED = 13;
 
-   public static final int BLINK_STOP_QUEUED = 12;
+   public static final int BLINK_STOP_QUEUED = 13;
 
    private static final Map<Integer, Integer> RGB_TO_COLOR_VALUE_MAP = new HashMap<>();
 

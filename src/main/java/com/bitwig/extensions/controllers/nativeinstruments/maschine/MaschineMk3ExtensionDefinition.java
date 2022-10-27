@@ -45,7 +45,7 @@ public class MaschineMk3ExtensionDefinition extends ControllerExtensionDefinitio
 
 	@Override
 	public int getRequiredAPIVersion() {
-		return 12;
+		return 14;
 	}
 
 	@Override

@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschine.modes;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
-import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.CcAssignment;
@@ -19,6 +18,7 @@ public class SessionMode extends PadMode {
 	private final MaschineLayer selectLayer;
 	private final MaschineLayer eraseLayer;
 	private final MaschineLayer duplicateLayer;
+	private final MaschineLayer colorChooseLayer;
 
 	private ModifierState modstate = ModifierState.NONE;
 
@@ -35,6 +35,7 @@ public class SessionMode extends PadMode {
 		selectLayer = new MaschineLayer(driver, "select-" + name);
 		eraseLayer = new MaschineLayer(driver, "clear-" + name);
 		duplicateLayer = new MaschineLayer(driver, "duplicate-" + name);
+		colorChooseLayer = new MaschineLayer(driver, "colorpick-" + name);
 		trackBank = driver.getTrackBank();
 		currentSlotMapping = slotMappingVertical;
 		doGridBinding(driver);
@@ -89,6 +90,7 @@ public class SessionMode extends PadMode {
 				selectLayer.bindPressed(button, () -> handleSelect(buttonIndex));
 				eraseLayer.bindPressed(button, () -> handleErase(buttonIndex));
 				duplicateLayer.bindPressed(button, () -> handleDuplicate(buttonIndex));
+				colorChooseLayer.bindPressed(button, () -> handleColorPick(buttonIndex));
 				bindLightState(() -> computeGridLedState(buttonIndex), button);
 			}
 		}
@@ -110,7 +112,12 @@ public class SessionMode extends PadMode {
 	}
 
 	private void handleLaunch(final int buttonIndex) {
-		currentSlotMapping[buttonIndex].launch();
+		if (getDriver().isStopDown()) {
+			final int trackIndex = layout == LayoutType.ARRANGER ? 3 - buttonIndex / 4 : buttonIndex % 4;
+			trackBank.getItemAt(trackIndex).clipLauncherSlotBank().stop();
+		} else {
+			currentSlotMapping[buttonIndex].launch();
+		}
 	}
 
 	private void handleSelect(final int buttonIndex) {
@@ -119,6 +126,15 @@ public class SessionMode extends PadMode {
 
 	private void handleErase(final int buttonIndex) {
 		currentSlotMapping[buttonIndex].deleteObject();
+	}
+
+	private void handleColorPick(final int buttonIndex) {
+		final ClipLauncherSlot slot = currentSlotMapping[buttonIndex];
+		if (slot.hasContent().get()) {
+			getDriver().enterColorSelection(color -> {
+				color.set(slot.color());
+			});
+		}
 	}
 
 	private void handleDuplicate(final int buttonIndex) {
@@ -140,6 +156,8 @@ public class SessionMode extends PadMode {
 			return selectLayer;
 		case ERASE:
 			return eraseLayer;
+		case VARIATION:
+			return colorChooseLayer;
 		default:
 			return null;
 		}
@@ -198,62 +216,6 @@ public class SessionMode extends PadMode {
 			}
 		}
 		return new RgbLedState(color, offColor, pulse);
-	}
-
-	@Override
-	public void doActivate() {
-		super.doActivate();
-		final TrackBank trackBank = getDriver().getTrackBank();
-		final SceneBank sceneBank = getDriver().getTrackBank().sceneBank();
-		sceneBank.setIndication(true);
-
-		for (int i = 0; i < 4; ++i) {
-			final Track track = trackBank.getItemAt(i);
-			track.subscribe();
-
-			final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
-			slotBank.setIndication(true);
-
-			for (int j = 0; j < 4; ++j) {
-				final ClipLauncherSlot slot = slotBank.getItemAt(j);
-
-				slot.subscribe();
-				slot.color().subscribe();
-				slot.isSelected().subscribe();
-				slot.isPlaying().subscribe();
-				slot.isPlaybackQueued().subscribe();
-				slot.isRecording().subscribe();
-				slot.isRecordingQueued().subscribe();
-				slot.hasContent().subscribe();
-			}
-		}
-	}
-
-	@Override
-	public void doDeactivate() {
-		super.doDeactivate();
-		final TrackBank trackBank = getDriver().getTrackBank();
-
-		for (int i = 0; i < 4; ++i) {
-			final Track channel = trackBank.getItemAt(i);
-			channel.unsubscribe();
-
-			final ClipLauncherSlotBank slotBank = channel.clipLauncherSlotBank();
-
-			for (int j = 0; j < 4; ++j) {
-				final ClipLauncherSlot slot = slotBank.getItemAt(j);
-
-				slot.color().unsubscribe();
-				slot.isSelected().unsubscribe();
-				slot.isPlaying().unsubscribe();
-				slot.isPlaybackQueued().unsubscribe();
-				slot.isRecording().unsubscribe();
-				slot.isRecordingQueued().unsubscribe();
-				slot.hasContent().unsubscribe();
-				slot.unsubscribe();
-			}
-		}
-
 	}
 
 }
