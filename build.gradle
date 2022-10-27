@@ -17,10 +17,6 @@ else
     repositories {
         maven {
             url = uri('https://maven.bitwig.com/')
-            metadataSources {
-                mavenPom()
-                artifact()
-            }
         }
     }
 
