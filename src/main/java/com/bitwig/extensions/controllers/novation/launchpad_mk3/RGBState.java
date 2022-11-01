@@ -99,22 +99,18 @@ public class RGBState extends InternalHardwareLightState {
       if (getClass() != obj.getClass())
          return false;
       final RGBState other = (RGBState) obj;
-      return mNumber == other.mNumber;
+      return mNumber == other.mNumber && mType == other.mType;
    }
 
    public static void send(MidiOut m, int i, RGBState s) {
-         m.sendMidi(0xB0 + s.mType, i, s.mNumber);  
-         m.sendMidi(0x90 + s.mType, i, s.mNumber);   
+      m.sendMidi(0xB0 + 0, i, 0);  
+      m.sendMidi(0x90 + 0, i, 0);   
+      m.sendMidi(0xB0 + s.mType, i, s.mNumber);  
+      m.sendMidi(0x90 + s.mType, i, s.mNumber);   
    }  
 
    public static void sendSys(final MidiOut m, int i, RGBState s) {
       send(m, i, s);
-      // if (s.mType != 0)
-      //    send(m, i, s);
-      // else {
-      //    Color c = s.getColor();
-      //    m.sendSysex(SysexBuilder.fromHex("F0 00 20 29 02 0E 03").addByte(3).addByte(i).addByte((int)(127 * c.getRed())).addByte((int)(127 * c.getGreen())).addByte((int)(127 * c.getBlue())).terminate());
-      // }
    }
 
    private int mNumber;

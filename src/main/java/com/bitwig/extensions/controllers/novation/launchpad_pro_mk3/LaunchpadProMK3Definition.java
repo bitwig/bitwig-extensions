@@ -52,7 +52,7 @@ public class LaunchpadProMK3Definition extends ControllerExtensionDefinition {
 
     @Override
     public ControllerExtension createInstance(ControllerHost host) {
-        return new LaunchpadProMK3(this, host);
+        return new LaunchpadProMK3Workflow(this, host);
     }
 
     @Override

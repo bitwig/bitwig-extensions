@@ -84,6 +84,8 @@ public class LaunchpadProMK3 extends ControllerExtension {
     private int FIXED_LENGTH_VALUE = 1;
 
     private Boolean isTemporarySwitch = false;
+    private Boolean updateNoteTableIsInUse = false;
+    private Boolean longPressedIsInUse = false;
 
     public LaunchpadProMK3(ControllerExtensionDefinition definition, ControllerHost host) {
         super(definition, host);
@@ -96,7 +98,8 @@ public class LaunchpadProMK3 extends ControllerExtension {
         mApplication.recordQuantizeNoteLength().markInterested();
         mApplication.recordQuantizationGrid().markInterested();
         mApplication.recordQuantizationGrid().addValueObserver(g -> {
-            if (g != "OFF")
+            mHost.println(g);
+            if (g == "1/32" || g == "1/16" || g == "1/8" || g == "1/4")
                 QUANTIZATION_GRID_SIZE = g;
         });
 
@@ -104,6 +107,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
 
         mHardwareSurface.setPhysicalSize(300, 300);
 
+        initNoteTable();
         initMIDI();
 
         mNoteInput = mMidiIn1.createNoteInput("Note/Sequencer Ch. 1", "90????", "D0??", "80????");
@@ -111,6 +115,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
         mMidiIn1.createNoteInput("Sequencer Ch. 3", "92????", "D0??", "82????");
         mMidiIn1.createNoteInput("Sequencer Ch. 4", "93????", "D0??", "83????");
         mDrumInput = mMidiIn0.createNoteInput("Drum", "98????");
+        mDrumInput.setKeyTranslationTable(noteTable);
 
         mTransport = mHost.createTransport();
         mTransport.isArrangerRecordEnabled().markInterested();
@@ -124,11 +129,20 @@ public class LaunchpadProMK3 extends ControllerExtension {
         mTransport.getClipLauncherPostRecordingTimeOffset().addValueObserver(v -> {
             FIXED_LENGTH_VALUE = (int) v / mTransport.timeSignature().numerator().get();
         });
+        mTransport.playPositionInSeconds().markInterested();
 
         mCursorTrack = mHost.createCursorTrack(8, 8);
         mCursorClip = mHost.createLauncherCursorClip(192, 128);
         mCursorClip.getLoopLength().markInterested();
+        mCursorClip.clipLauncherSlot().isRecordingQueued().markInterested();
         mCursorTrack.canHoldNoteData().markInterested();
+        mCursorTrack.canHoldNoteData().addValueObserver(b -> {
+            if (b)
+                mMidiOut.sendSysex(PRINT_TO_CLIP_ON);
+            else
+                mMidiOut.sendSysex(PRINT_TO_CLIP_OFF);
+
+        });
         mCursorTrack.playingNotes().addValueObserver(notes -> mPlayingNotes = notes);
 
         mDeviceBank = mCursorTrack.createDeviceBank(8);
@@ -170,6 +184,19 @@ public class LaunchpadProMK3 extends ControllerExtension {
 
         mDrumPadBank = mInstrument.createDrumPadBank(64);
         mDrumPadBank.exists().markInterested();
+        mDrumPadBank.scrollPosition().markInterested();
+        mDrumPadBank.scrollPosition().addValueObserver(position -> {
+            if (updateNoteTableIsInUse)
+                return;
+            globalOffset = position - 36;
+            if (globalOffset == 0)
+                mDrumInput.setKeyTranslationTable(baseNoteTable);
+            else if (globalOffset >= -36 && globalOffset <= 28) {
+                for (int i = 36; i < 100; i++)
+                    noteTable[i] = i + globalOffset;
+                mDrumInput.setKeyTranslationTable(noteTable);
+            }
+        });
         for (int i = 0; i < 64; i++) {
             mDrumPadBank.getItemAt(i).color().markInterested();
             mDrumPadBank.getItemAt(i).exists().markInterested();
@@ -195,6 +222,52 @@ public class LaunchpadProMK3 extends ControllerExtension {
         mSessionLayer.activate();
 
         mHost.showPopupNotification("Launchpad Pro Mk3 initialized...");
+    }
+
+    // DRUM
+    private void initNoteTable() {
+        for (int i = 0; i < 128; i++) {
+            noteTable[i] = i;
+            baseNoteTable[i] = i;
+        }
+    }
+
+    // WORK!!!
+    private Boolean updateNoteTable(String s) {
+        if (updateNoteTableIsInUse)
+            return false;
+        updateNoteTableIsInUse = true;
+        int position = mDrumPadBank.scrollPosition().get();
+        mHost.println(String.valueOf(position));
+        if (s == "UP") {
+            if (position >= 0 && position <= 60)
+                mDrumPadBank.scrollBy(4);
+        }
+
+        if (s == "UP_PAGE") {
+            if (position >= 0 && position < 4)
+                mDrumPadBank.scrollPosition().set(4);
+            else if (position >= 4 && position <= 36)
+                mDrumPadBank.scrollBy(16);
+            else if (position > 36 && position < 64)
+                mDrumPadBank.scrollPosition().set(64);
+        }
+
+        if (s == "DOWN") {
+            if (position <= 64 && position >= 4)
+                mDrumPadBank.scrollBy(-4);
+        }
+
+        if (s == "DOWN_PAGE") {
+            if (position <= 64 && position > 52)
+                mDrumPadBank.scrollPosition().set(52);
+            else if (position <= 52 && position >= 20)
+                mDrumPadBank.scrollBy(-16);
+            else if (position < 20 && position > 0)
+                mDrumPadBank.scrollPosition().set(0);
+        }
+        updateNoteTableIsInUse = false;
+        return true;
     }
 
     private double absoluteBeatTime(byte[] b, int startindex, int length) {
@@ -271,38 +344,11 @@ public class LaunchpadProMK3 extends ControllerExtension {
 
     // Rework for Performance!!
     private void midiCallback(String s) {
-        mHost.println(s);
+        // mHost.println(s);
         if (isNoteModeActive && mPlayingNotes != null) {
-            for (int i = 0; i < 88; i++) {
-                mMidiOut.sendMidi(0x8f, i, 21);
-                if (mPlayingNotes.length != 0 && mPlayingNotes != null) {
-                    mHost.println("PLayingNotes");
-
-                    for (PlayingNote n : mPlayingNotes) {
-                        if (n.pitch() == i)
-                            mMidiOut.sendMidi(0x9f, n.pitch(), 21);
-                    }
-                }
-            }
-            if (mDrumPadBank.exists().get()) {
-                mMidiOut.sendSysex(DAW_DRUM);
-                for (int i = 0; i < 64; i++) {
-                    if (mDrumPadBank.getItemAt(i).exists().get()) {
-                        mMidiOut.sendMidi(0x98, 36 + i,
-                                new RGBState(mDrumPadBank.getItemAt(i).color().get()).getMessage());
-                        if (mPlayingNotes.length != 0 && mPlayingNotes != null) {
-                            for (PlayingNote n : mPlayingNotes) {
-                                if (n.pitch() == 36 + i)
-                                    mMidiOut.sendMidi(0x98, 36 + i, RGBState.WHITE.getMessage());
-                            }
-                        }
-                    } else
-                        mMidiOut.sendMidi(0x98, 36 + i, RGBState.OFF.getMessage());
-                }
-
-            } else
-                mMidiOut.sendSysex(DAW_NOTE);
+            sendNotesToDevice();
         }
+
         if (s.startsWith(SESSION_MODE_PREFIX) && (mLastLayer == null || mLastLayer == mSessionLayer)) {
             isNoteModeActive = false;
             List<Layer> l = mLayers.getLayers();
@@ -322,10 +368,6 @@ public class LaunchpadProMK3 extends ControllerExtension {
             mSessionLayer.activate();
 
         }
-        if (mCursorTrack.canHoldNoteData().get())
-            mMidiOut.sendSysex(PRINT_TO_CLIP_ON);
-        else
-            mMidiOut.sendSysex(PRINT_TO_CLIP_OFF);
 
         if (s.startsWith(PRINT_TO_CLIP_PREFIX)) {
             if (s.length() == 44)
@@ -334,36 +376,69 @@ public class LaunchpadProMK3 extends ControllerExtension {
                 sysexToNotes(s);
         }
 
-        if (mVolumeLayer.isActive() || mPanLayer.isActive() || mSendsLayer.isActive() || mDeviceLayer.isActive()) {
-            for (int i = 0; i < 32; i++) {
-                final Track track = mTrackBank.getItemAt(i % 8);
-                if (i < 16)
-                    mMidiOut.sendMidi(0xb5, i,
-                            track.exists().get() ? new RGBState(track.color().get()).getMessage() : 0);
-                else if (i < 24) {
-                    RGBState r = new RGBState(track.sendBank().getItemAt(mSendIndex).sendChannelColor().get());
-                    r = r.getMessage() == 0 ? RGBState.WHITE : r;
-                    mMidiOut.sendMidi(0xb5, i,
-                            track.exists().get() && track.trackType().get() != "Master" ? r.getMessage() : 0);
-                } else
-                    mMidiOut.sendMidi(0xb5, i, mCursorRemoteControlsPage.getParameter(i % 8).exists().get() ? 79 : 0);
-            }
+        if ((isTrackBankNavigated || mLastLayer != null) && (mVolumeLayer.isActive() || mPanLayer.isActive()
+                || mSendsLayer.isActive() || mDeviceLayer.isActive())) {
             for (int i = 0; i < 8; i++) {
                 final Track track = mTrackBank.getItemAt(i);
 
-                final Parameter volume = track.volume();
-                mMidiOut.sendMidi(0xb4, i, (int) (volume.get() * 127));
-
-                final Parameter pan = track.pan();
-                mMidiOut.sendMidi(0xb4, i + 8, (int) (pan.get() * 127));
-
-                final Parameter send = track.sendBank().getItemAt(mSendIndex);
-                mMidiOut.sendMidi(0xb4, i + 16, (int) (send.get() * 127));
-
-                final Parameter device = mCursorRemoteControlsPage.getParameter(i);
-                mMidiOut.sendMidi(0xb4, i + 24, (int) (device.get() * 127));
+                if (mVolumeLayer.isActive()) {
+                    mMidiOut.sendMidi(0xb5, i,
+                            track.exists().get() ? new RGBState(track.color().get()).getMessage() : 0);
+                    final Parameter volume = track.volume();
+                    mMidiOut.sendMidi(0xb4, i, (int) (volume.get() * 127));
+                }
+                if (mPanLayer.isActive()) {
+                    mMidiOut.sendMidi(0xb5, i + 8,
+                            track.exists().get() ? new RGBState(track.color().get()).getMessage() : 0);
+                    final Parameter pan = track.pan();
+                    mMidiOut.sendMidi(0xb4, i + 8, (int) (pan.get() * 127));
+                }
+                if (mSendsLayer.isActive()) {
+                    RGBState r = new RGBState(track.sendBank().getItemAt(mSendIndex).sendChannelColor().get());
+                    r = r.getMessage() == 0 ? RGBState.WHITE : r;
+                    mMidiOut.sendMidi(0xb5, i + 16,
+                            track.exists().get() && track.trackType().get() != "Master" ? r.getMessage() : 0);
+                    final Parameter send = track.sendBank().getItemAt(mSendIndex);
+                    mMidiOut.sendMidi(0xb4, i + 16, (int) (send.get() * 127));
+                }
+                if (mDeviceLayer.isActive()) {
+                    mMidiOut.sendMidi(0xb5, i, mCursorRemoteControlsPage.getParameter(i).exists().get() ? 79 : 0);
+                    final Parameter device = mCursorRemoteControlsPage.getParameter(i);
+                    mMidiOut.sendMidi(0xb4, i + 24, (int) (device.get() * 127));
+                }
             }
         }
+    }
+
+    private void sendNotesToDevice() {
+        if (!mDrumPadBank.exists().get()) {
+            for (int i = 0; i < 88; i++) {
+                mMidiOut.sendMidi(0x8f, i, 21);
+                if (mPlayingNotes.length != 0 && mPlayingNotes != null) {
+                    mHost.println("PLayingNotes");
+                    for (PlayingNote n : mPlayingNotes) {
+                        mMidiOut.sendMidi(0x9f, n.pitch(), 21);
+                    }
+                }
+            }
+        }
+        if (mDrumPadBank.exists().get()) {
+            mMidiOut.sendSysex(DAW_DRUM);
+            for (int i = 0; i < 64; i++) {
+                if (mDrumPadBank.getItemAt(i).exists().get()) {
+                    mMidiOut.sendMidi(0x98, 36 + i,
+                            new RGBState(mDrumPadBank.getItemAt(i).color().get()).getMessage());
+                } else
+                    mMidiOut.sendMidi(0x98, 36 + i, RGBState.OFF.getMessage());
+                if (mPlayingNotes.length != 0 && mPlayingNotes != null) {
+                    for (PlayingNote n : mPlayingNotes) {
+                        mMidiOut.sendMidi(0x98, n.pitch() - globalOffset, RGBState.WHITE.getMessage());
+                    }
+                }
+            }
+
+        } else
+            mMidiOut.sendSysex(DAW_NOTE);
     }
 
     private void initMIDI() {
@@ -598,7 +673,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
                     mTempLastLayer = mVolumeLayer;
                 }
             }, 300);
-            
+
             switchLayer(mVolumeLayer);
             if (mVolumeLayer.isActive())
                 mMidiOut.sendSysex(DAW_FADER_ON + DAW_VOLUME);
@@ -644,7 +719,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
                 }
             }
         });
-        
+
         mSessionLayer.bindPressed(mBottomButtons[0][6], () -> {
             mHost.scheduleTask(() -> {
                 if (mBottomButtons[0][6].isPressed().get()) {
@@ -660,7 +735,6 @@ public class LaunchpadProMK3 extends ControllerExtension {
             else
                 mMidiOut.sendSysex(DAW_FADER_OFF + DAW_VOLUME);
         });
-        
 
         mSessionLayer.bindPressed(mBottomButtons[0][7], () -> {
             mHost.scheduleTask(() -> {
@@ -745,6 +819,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
         });
 
         mSessionLayer.bindPressed(mQuantizeButton, () -> {
+            mHost.println(QUANTIZATION_GRID_SIZE);
             if (mShiftButton.isPressed().get() && mApplication.recordQuantizationGrid().get() == "OFF")
                 mApplication.recordQuantizationGrid().set(QUANTIZATION_GRID_SIZE);
             else if (mShiftButton.isPressed().get())
@@ -809,6 +884,8 @@ public class LaunchpadProMK3 extends ControllerExtension {
             return RGBState.DARKGREY;
         }, mLeftLights[1]);
         mSessionLayer.bindLightState(() -> {
+            if (mTransport.playPositionInSeconds().get() < 0.0)
+                return RGBState.RED_BLINK;
             if (mTransport.isClipLauncherOverdubEnabled().get()/* mTransport.isArrangerRecordEnabled().get() */)
                 return RGBState.RED;
             return RGBState.DARKGREY;
@@ -821,33 +898,43 @@ public class LaunchpadProMK3 extends ControllerExtension {
         mSessionLayer.bindPressed(mUpButton, () -> {
             if (mSessionButton.isPressed().get())
                 pressedAction(mUpButton, () -> mSessionOverviewTrackBank.sceneBank().scrollBackwards());
+            else if (isNoteModeActive)
+                pressedAction(mUpButton, () -> {
+                    updateNoteTable("UP_PAGE");
+                });
             else
                 pressedAction(mUpButton, () -> mSceneBank.scrollBackwards());
         });
         mSessionLayer.bindPressed(mDownButton, () -> {
             if (mSessionButton.isPressed().get())
                 pressedAction(mDownButton, () -> mSessionOverviewTrackBank.sceneBank().scrollForwards());
+            else if (isNoteModeActive)
+                pressedAction(mDownButton, () -> {
+                    updateNoteTable("DOWN_PAGE");
+                });
             else
                 pressedAction(mDownButton, () -> mSceneBank.scrollForwards());
         });
         mSessionLayer.bindPressed(mLeftButton, () -> {
             if (mSessionButton.isPressed().get())
                 pressedAction(mLeftButton, () -> mSessionOverviewTrackBank.scrollBackwards());
+            else if (isNoteModeActive)
+                pressedAction(mLeftButton, () -> {
+                    updateNoteTable("DOWN");
+                });
             else
                 pressedAction(mLeftButton, () -> mTrackBank.scrollBackwards());
         });
         mSessionLayer.bindPressed(mRightButton, () -> {
             if (mSessionButton.isPressed().get())
                 pressedAction(mRightButton, () -> mSessionOverviewTrackBank.scrollForwards());
+            else if (isNoteModeActive)
+                pressedAction(mRightButton, () -> {
+                    updateNoteTable("UP");
+                });
             else
                 pressedAction(mRightButton, () -> mTrackBank.scrollForwards());
         });
-        // mSessionLayer.bindPressed(mDownButton, () -> pressedAction(mDownButton, () ->
-        // mSceneBank.scrollForwards()));
-        // mSessionLayer.bindPressed(mLeftButton, () -> pressedAction(mLeftButton, () ->
-        // mTrackBank.scrollBackwards()));
-        // mSessionLayer.bindPressed(mRightButton, () -> pressedAction(mRightButton, ()
-        // -> mTrackBank.scrollForwards()));
 
         mSessionLayer.bindLightState(
                 () -> {
@@ -895,12 +982,21 @@ public class LaunchpadProMK3 extends ControllerExtension {
     }
 
     private void longPressed(HardwareButton button, Runnable action, long timeout) {
-        mHost.scheduleTask(() -> {
-            if (button.isPressed().get()) {
-                action.run();
-                longPressed(button, action, (long) 100.0);
-            }
-        }, timeout);
+        isTrackBankNavigated = true;
+        mHost.scheduleTask(() -> isTrackBankNavigated = false, (long) 100.0);
+
+        if (!longPressedIsInUse) {
+            longPressedIsInUse = true;
+            mHost.scheduleTask(() -> {
+                if (button.isPressed().get()) {
+                    action.run();
+                    longPressed(button, action, (long) 100.0);
+                } else {
+                    longPressedIsInUse = false;
+                }
+            }, timeout);
+        }
+        longPressedIsInUse = false;
     }
 
     private void initScenes() {
@@ -920,7 +1016,7 @@ public class LaunchpadProMK3 extends ControllerExtension {
             mSessionLayer.bindPressed(mRightButtons[i], () -> {
                 if (mShiftButton.isPressed().get())
                     s.launchWithOptions("none", "continue_immediately");
-                else
+                else if (!mSessionButton.isPressed().get())
                     s.launch();
             });
 
@@ -933,6 +1029,8 @@ public class LaunchpadProMK3 extends ControllerExtension {
         for (int i = 0; i < 8; i++) {
             int ix = i;
             mSessionLayer.bindLightState(() -> {
+                if (mSessionButton.isPressed().get())
+                    return RGBState.OFF;
                 if (mSceneBank.getScene(7 - ix).exists().get())
                     return RGBState.DARKGREY;
                 return RGBState.OFF;
@@ -1036,6 +1134,10 @@ public class LaunchpadProMK3 extends ControllerExtension {
                         return RGBState.GREEN_BLINK;
                     if (slot.isPlaybackQueued().getAsBoolean())
                         return RGBState.GREEN_BLINK;
+                    if (slot.isPlaying().getAsBoolean() && mTransport.isClipLauncherOverdubEnabled().get()) {
+                        ClipTimeout[ix][jx] = true;
+                        return RGBState.RED_PULS;
+                    }
                     if (slot.isPlaying().getAsBoolean()) {
                         ClipTimeout[ix][jx] = true;
                         return RGBState.GREEN_PULS;
@@ -1052,14 +1154,6 @@ public class LaunchpadProMK3 extends ControllerExtension {
                 }, mPadLights[i][j]);
             }
         }
-
-        // // DRUM/NOTE MODE
-        // if (mDrumPadBank.exists().get()) {
-        // for (PlayingNote n : mPlayingNotes) {
-        // mMidiOut.sendMidi(0x98, n.pitch(), RGBState.WHITE.getMessage());
-        // }
-        // }
-
     }
 
     private HardwareButton createCCButton(String name, int midi) {
@@ -1128,6 +1222,8 @@ public class LaunchpadProMK3 extends ControllerExtension {
             final Track track = mTrackBank.getItemAt(i);
             final Parameter parameter = track.volume();
             mVolumeLayer.bind(mFader[i], parameter);
+            mVolumeLayer.bindPressed(mRightButtons[7 - i], () -> {});
+            mVolumeLayer.bindLightState(() -> RGBState.OFF, mRightLights[7 - i]);
         }
     }
 
@@ -1137,6 +1233,8 @@ public class LaunchpadProMK3 extends ControllerExtension {
             final Track track = mTrackBank.getItemAt(ix);
             final Parameter parameter = track.pan();
             mPanLayer.bind(mFader[ix + 8], parameter);
+            mPanLayer.bindPressed(mRightButtons[7 - i], () -> {});
+            mPanLayer.bindLightState(() -> RGBState.OFF, mRightLights[7 - i]);
         }
     }
 
@@ -1246,8 +1344,13 @@ public class LaunchpadProMK3 extends ControllerExtension {
     }
 
     //
+    protected final Integer[] noteTable = new Integer[128];
+    protected final Integer[] baseNoteTable = new Integer[128];
+    private int globalOffset = 0;
+
     private double notes[][];
     private ArrayList<double[][]> notesList = new ArrayList<double[][]>();
+    private Boolean isTrackBankNavigated = false;
 
     // API Objects
     private HardwareSurface mHardwareSurface;

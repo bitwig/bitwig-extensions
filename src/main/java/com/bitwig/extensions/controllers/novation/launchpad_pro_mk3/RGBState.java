@@ -21,13 +21,13 @@ public class RGBState extends InternalHardwareLightState {
    public static final RGBState ORANGE = new RGBState(9);
    public static final RGBState RED = new RGBState(72);
    public static final RGBState RED_PULS = new RGBState(72, 2);
-   public static final RGBState RED_BLINK = new RGBState(5, 1); // 72 instead of 5
+   public static final RGBState RED_BLINK = new RGBState(72, 1); // 72 instead of 5
    public static final RGBState TRACK_ARM = new RGBState(121);
    public static final RGBState GREEN = new RGBState(122);
    public static final RGBState GREEN_PULS = new RGBState(21, 2);
    public static final RGBState GREEN_BLINK = new RGBState(21, 1);
 
-   // TO DO find problematic colors!
+   // TODO: find problematic colors!
 
    public RGBState(int n) {
       mNumber = n;
@@ -53,8 +53,8 @@ public class RGBState extends InternalHardwareLightState {
          }
       }
       mNumber = RGB_COLOR_TABLE[best][0];
-      //mColor = Color.fromHex(Integer.toHexString(RGB_COLOR_TABLE[best][1]));
-      mColor = c; // When sending via Sysex
+      mColor = Color.fromHex(Integer.toHexString(RGB_COLOR_TABLE[best][1]));
+      //mColor = c; // When sending via Sysex
    }
 
    public RGBState(Color c, int t) {
@@ -99,11 +99,12 @@ public class RGBState extends InternalHardwareLightState {
       if (getClass() != obj.getClass())
          return false;
       final RGBState other = (RGBState) obj;
-      return mNumber == other.mNumber;
+      return mNumber == other.mNumber && mType == other.mType;
    }
 
    public static void send(MidiOut m, int i, RGBState s) {
-         m.sendMidi(144 + s.mType, i, s.mNumber);     
+      m.sendMidi(144 + 0, i, 0); 
+      m.sendMidi(144 + s.mType, i, s.mNumber);     
    }  
 
    public static void sendSys(final MidiOut m, int i, RGBState s) {

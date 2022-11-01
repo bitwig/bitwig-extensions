@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.novation.launchpad_mk3;
 
+import java.time.LocalTime;
 import java.util.List;
 
-import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.framework.*;
@@ -100,6 +100,8 @@ public class Workflow extends Hardware {
         initNavigation();
         initTransport();
 
+        initValueObserverForMidiCallback();
+
         mSessionLayer.activate();
 
     }
@@ -169,7 +171,7 @@ public class Workflow extends Hardware {
             mSessionLayer.activate();
         }
 
-        if (mMixerLayer.isActive() && isLayerSwitched) {
+        if (mMixerLayer.isActive() && (isLayerSwitched || isTrackBankNavigated)) {
             sendFaderValuesToDevice();
             sendTrackControlsToDevice();
         }
@@ -226,17 +228,46 @@ public class Workflow extends Hardware {
         for (int i = 0; i < 8; i++) {
             final Track track = mTrackBank.getItemAt(i);
 
-            final Parameter volume = track.volume();
-            mMidiOut.sendMidi(0xb4, i, (int) (volume.get() * 127));
+            if (mMixerLayers[0].isActive()) {
+                final Parameter volume = track.volume();
+                mMidiOut.sendMidi(0xb4, i, (int) (volume.get() * 127));
+            }
+            if (mMixerLayers[1].isActive()) {
+                final Parameter pan = track.pan();
+                mMidiOut.sendMidi(0xb4, i + 8, (int) (pan.get() * 127));
+            }
+            if (mMixerLayers[2].isActive()) {
+                final Parameter sendA = track.sendBank().getItemAt(0);
+                mMidiOut.sendMidi(0xb4, i + 16, (int) (sendA.get() * 127));
+            }
+            if (mMixerLayers[3].isActive()) {
+                final Parameter sendB = track.sendBank().getItemAt(1);
+                mMidiOut.sendMidi(0xb4, i + 24, (int) (sendB.get() * 127));
+            }
+        }
+    }
 
-            final Parameter pan = track.pan();
-            mMidiOut.sendMidi(0xb4, i + 8, (int) (pan.get() * 127));
+    private void initValueObserverForMidiCallback() {
+        for (int i = 0; i < 8; i++) {
+            int ix = i;
+            final Track track = mTrackBank.getItemAt(i);
+            track.volume().value().addValueObserver(128, value -> {
+                if (mMixerLayers[0].isActive())
+                    mMidiOut.sendMidi(0xb4, ix, value);
+            });
+            track.pan().value().addValueObserver(128, value -> {
+                if (mMixerLayers[1].isActive())
+                    mMidiOut.sendMidi(0xb4, ix + 8, value);
+            });
+            track.sendBank().getItemAt(0).value().addValueObserver(128, value -> {
+                if (mMixerLayers[2].isActive())
+                    mMidiOut.sendMidi(0xb4, ix + 16, value);
+            });
+            track.sendBank().getItemAt(1).value().addValueObserver(128, value -> {
+                if (mMixerLayers[3].isActive())
+                    mMidiOut.sendMidi(0xb4, ix + 24, value);
+            });
 
-            final Parameter sendA = track.sendBank().getItemAt(0);
-            mMidiOut.sendMidi(0xb4, i + 16, (int) (sendA.get() * 127));
-
-            final Parameter sendB = track.sendBank().getItemAt(1);
-            mMidiOut.sendMidi(0xb4, i + 24, (int) (sendB.get() * 127));
         }
     }
 
@@ -317,8 +348,6 @@ public class Workflow extends Hardware {
             final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
             slotBank.setIndication(true);
             for (int j = 0; j < 8; j++) {
-                final int ix = i;
-                final int jx = j;
                 final ClipLauncherSlot slot = slotBank.getItemAt(7 - j);
                 slot.isSelected().markInterested();
                 slot.isPlaybackQueued().markInterested();
@@ -332,31 +361,24 @@ public class Workflow extends Hardware {
                     slot.launch();
                 });
 
-                ClipTimeout[ix][jx] = true;
                 // To Work On !!!
                 mSessionLayer.bindLightState(() -> {
-                    if (slot.isRecordingQueued().getAsBoolean())
+                    if (slot.isRecordingQueued().get())
                         return RGBState.RED_BLINK;
-                    if (slot.isPlaybackQueued().getAsBoolean() && ClipTimeout[ix][jx]) {
-                        mHost.scheduleTask(() -> ClipTimeout[ix][jx] = false, 50);
-                        return new RGBState(slot.color().get());
-                    }
-                    if (slot.isPlaybackQueued().getAsBoolean() && !slot.isPlaying().get())
+                    else if (slot.isRecording().get() && slot.isPlaybackQueued().get())
+                        return RGBState.RED_BLINK;
+                    else if (slot.isRecording().get())
+                        return RGBState.RED_PULS;
+                    else if (slot.isPlaybackQueued().get())
                         return RGBState.GREEN_BLINK;
-                    if ((slot.isStopQueued().get() || track.isQueuedForStop().get()) && slot.isPlaying().get())
-                        return RGBState.YELLOW_BLINK;
-                    if (slot.isRecording().getAsBoolean())
-                        return new RGBState(120, 2);
-                    if (slot.isPlaying().getAsBoolean()) {
-                        ClipTimeout[ix][jx] = true;
+                    else if (slot.isPlaying().get())
                         return RGBState.GREEN_PULS;
-                    }
-                    if (slot.hasContent().get())
+                    else if (slot.hasContent().get())
                         return new RGBState(slot.color().get());
-                    if (track.arm().getAsBoolean())
+                    else if (track.arm().get())
                         return RGBState.TRACK_ARM;
-                    else
-                        return RGBState.OFF;
+                    return RGBState.OFF;
+
                 }, mPadLights[i][j]);
             }
         }
@@ -518,27 +540,23 @@ public class Workflow extends Hardware {
             int ix = i;
             Track t = mTrackBank.getItemAt(ix);
 
-            /// DELETE
-            HardwareActionBindable[] parameter = new HardwareActionBindable[4];
-            parameter[0] = t.stopAction();
-            parameter[1] = t.mute().toggleAction();
-            // parameter[2] = t.solo().toggleAction();
-            parameter[3] = t.arm().toggleAction();
-            ////
-
             l.bindPressed(mButtons[ix][0], () -> {
                 switch (p) {
                     case 0:
                         t.stop();
+                        break;
                     case 1:
                         t.mute().toggle();
+                        break;
                     case 2:
                         if (t.solo().get())
                             t.solo().set(false);
                         else
                             t.solo().set(true);
+                        break;
                     case 3:
                         t.arm().toggle();
+                        break;
                 }
             });
             l.bindLightState(() -> {
@@ -561,13 +579,9 @@ public class Workflow extends Hardware {
     private void initNavigation() {
         mSessionLayer.bindPressed(mSessionButton, () -> {
             if (!mMixerLayer.isActive() && !isNoteIntputActive) {
-                // switchLayer(mMixerLayers[0]);
                 switchLayer(mMixerLayer);
                 resetSsmIndex();
-                // mMixerLayer.activate();
-                // mMixerLayers[0].activate();
                 mMidiOut.sendSysex(DAW_VOLUME_FADER);
-                // mMidiOut.sendSysex(DAW_FADER_ON);
                 mMidiOut.sendSysex(MIXER_MODE_LED);
             } else {
                 mMidiOut.sendSysex(DAW_FADER_OFF);
@@ -582,6 +596,7 @@ public class Workflow extends Hardware {
         mSessionLayer.bindPressed(mNoteButton, () -> {
             mMixerLayer.deactivate();
             isNoteIntputActive = true;
+            lastLayerIndex = 8;
             mMidiOut.sendSysex(SESSION_MODE_LED);
 
         });
@@ -592,32 +607,30 @@ public class Workflow extends Hardware {
 
         });
 
-        // mSessionLayer.bindPressed(mUpButton, mSceneBank.scrollBackwardsAction());
-        // mSessionLayer.bindPressed(mDownButton, mSceneBank.scrollForwardsAction());
-        // mSessionLayer.bindPressed(mLeftButton, mTrackBank.scrollBackwardsAction());
-        // mSessionLayer.bindPressed(mRightButton, mTrackBank.scrollForwardsAction());
-        mSessionLayer.bindPressed(mRightButton, () -> pressedAction(mRightButton, () -> mTrackBank.scrollForwards()));
-        mSessionLayer.bindPressed(mLeftButton, () -> pressedAction(mLeftButton, () -> mTrackBank.scrollBackwards()));
+        mSessionLayer.bindPressed(mRightButton, () -> pressedAction(() -> mTrackBank.scrollForwards()));
+        mSessionLayer.bindPressed(mLeftButton, () -> pressedAction(() -> mTrackBank.scrollBackwards()));
         mSessionLayer.bindPressed(mUpButton, () -> {
             if (isNoteIntputActive)
-                pressedAction(mUpButton, () -> {
+                pressedAction(() -> {
                     if (updateNoteTable(1))
                         mDrumPadBank.scrollBy(4);
                 });
             else
-                pressedAction(mUpButton, () -> mSceneBank.scrollBackwards());
+                pressedAction(() -> mSceneBank.scrollBackwards());
         });
         mSessionLayer.bindPressed(mDownButton, () -> {
             if (isNoteIntputActive)
-                pressedAction(mDownButton, () -> {
+                pressedAction(() -> {
                     if (updateNoteTable(0))
                         mDrumPadBank.scrollBy(-4);
                 });
             else
-                pressedAction(mDownButton, () -> mSceneBank.scrollForwards());
+                pressedAction(() -> mSceneBank.scrollForwards());
         });
-        // mSessionLayer.bindPressed(mDownButton, () -> pressedAction(mDownButton, () ->
-        // mSceneBank.scrollForwards()));
+        mSessionLayer.bindReleased(mUpButton, () -> releasedAction());
+        mSessionLayer.bindReleased(mDownButton, () -> releasedAction());
+        mSessionLayer.bindReleased(mLeftButton, () -> releasedAction());
+        mSessionLayer.bindReleased(mRightButton, () -> releasedAction());
 
         mSessionLayer.bindLightState(
                 () -> {
@@ -688,22 +701,32 @@ public class Workflow extends Hardware {
         mLastLayer = null;
     }
 
-    private void pressedAction(HardwareButton button, Runnable action) {
+    private void releasedAction() {
+        longPressTimeStamp = java.time.LocalTime.now();
+    }
+
+    private void pressedAction(Runnable action) {
+        longPressTimeStamp = java.time.LocalTime.now();
+        LocalTime tempTimeStamp = longPressTimeStamp;
         action.run();
-        longPressed(button, action);
+        longPressed(action, tempTimeStamp);
     }
 
-    private void longPressed(HardwareButton button, Runnable action) {
-        longPressed(button, action, (long) 300.0);
+    private void longPressed(Runnable action, LocalTime timeStamp) {
+        longPressed(action, (long) 300.0, timeStamp);
     }
 
-    private void longPressed(HardwareButton button, Runnable action, long timeout) {
-        mHost.scheduleTask(() -> {
-            if (button.isPressed().get()) {
-                action.run();
-                longPressed(button, action, (long) 100.0);
-            }
-        }, timeout);
+    private void longPressed(Runnable action, long timeout, LocalTime timeStamp) {
+        isTrackBankNavigated = true;
+        mHost.scheduleTask(() -> isTrackBankNavigated = false, (long) 100.0);
+        if (timeStamp == longPressTimeStamp) {
+            mHost.scheduleTask(() -> {
+                if (timeStamp == longPressTimeStamp) {
+                    action.run();
+                    longPressed(action, (long) 100.0, timeStamp);
+                }
+            }, timeout);
+        }
     }
 
     private void initTransport() {
@@ -733,9 +756,10 @@ public class Workflow extends Hardware {
     private Boolean isLayerSwitched = false;
     private Boolean isTemporarySwitch = false;
     private int lastLayerIndex = 0;
-    private Boolean ClipTimeout[][] = new Boolean[8][8];
     private int ssmIndex = 0;
     private String modelName;
+    private Boolean isTrackBankNavigated = false;
+    private LocalTime longPressTimeStamp;
 
     // MIDI
     private static final int NOTES_MIDI_CHANNEL = 0x9f;
