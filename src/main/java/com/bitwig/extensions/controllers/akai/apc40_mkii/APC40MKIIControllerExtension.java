@@ -570,7 +570,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mMainLayer.bindPressed(mGridButtons[offset], slot.launchAction());
             mMainLayer.bindReleased(mGridButtons[offset], slot.launchReleaseAction());
          }
-         mMainLayer.bindPressed(mMuteButtons[x], track.mute());
+         mMainLayer.bindToggle(mMuteButtons[x], track.mute());
          mMainLayer.bind(() -> track.exists().get() && !track.mute().get(), mMuteLeds[x]);
          mMainLayer.bindToggle(mSoloButtons[x], track.solo());
          mMainLayer.bindToggle(mArmButtons[x], track.arm());
