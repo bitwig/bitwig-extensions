@@ -7,8 +7,19 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyMk3Exte
 
 import java.util.UUID;
 
-public class Launchkey49Mk3ExtensionDefinition extends LaunchkeyMk3ExtensionDefinition {
-   private static final UUID DRIVER_ID = UUID.fromString("4840b76d-318e-40c8-bab0-0eb780061276");
+public class LaunchkeyMiniMk3ExtensionDefinition extends LaunchkeyMk3ExtensionDefinition {
+   private static final UUID DRIVER_ID = UUID.fromString("1a5ae0c1-68d3-4912-950f-cc19af519e08");
+
+
+   @Override
+   public String getName() {
+      return "Launchkey Mini Mk3";
+   }
+
+   @Override
+   public String getHardwareModel() {
+      return "Launchkey Mini Mk3";
+   }
 
    @Override
    public UUID getId() {
@@ -17,18 +28,18 @@ public class Launchkey49Mk3ExtensionDefinition extends LaunchkeyMk3ExtensionDefi
 
    @Override
    public int numberOfKeys() {
-      return 49;
+      return 25;
    }
 
    @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
       if (platformType == PlatformType.WINDOWS) {
-         list.add(new String[]{"MIDIIN2 (LKMK3 MIDI)", "LKMK3 MIDI"},
-            new String[]{"MIDIOUT2 (LKMK3 MIDI)", "LKMK3 MIDI"});
+         list.add(new String[]{"MIDIIN2 (Launchkey Mini MK3 MID", "Launchkey Mini MK3 MIDI"},
+            new String[]{"MIDIOUT2 (Launchkey Mini MK3 MI", "Launchkey Mini MK3 MIDI"});
       } else if (platformType == PlatformType.MAC) {
-         list.add(new String[]{"Launchkey MK3 49 LKMK3 DAW Out", "Launchkey MK3 49 LKMK3 MIDI Out"},
-            new String[]{"Launchkey MK3 49 LKMK3 DAW In", "Launchkey MK3 49 LKMK3 MIDI In"});
+         list.add(new String[]{"Launchkey Mini LKMK3 DAW Out", "Launchkey Mini MIDI Out"},
+            new String[]{"Launchkey Mini LKMK3 DAW In", "Launchkey Mini LKMK3 MIDI In"});
       } else if (platformType == PlatformType.LINUX) {
          list.add(new String[]{"MIDIIN2 (LKMK3 MIDI)", "LKMK3 MIDI"},
             new String[]{"MIDIOUT2 (LKMK3 MIDI)", "LKMK3 MIDI"});
@@ -37,7 +48,7 @@ public class Launchkey49Mk3ExtensionDefinition extends LaunchkeyMk3ExtensionDefi
 
    @Override
    public LaunchkeyMk3Extension createInstance(final ControllerHost host) {
-      return new LaunchkeyMk3Extension(this, host, true, false);
+      return new LaunchkeyMk3Extension(this, host, false, true);
    }
 
 }

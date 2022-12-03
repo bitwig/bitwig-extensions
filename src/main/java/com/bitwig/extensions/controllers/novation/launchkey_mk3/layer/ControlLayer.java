@@ -17,6 +17,7 @@ public class ControlLayer extends Layer {
    private ControlMode mode;
    private final Map<ControlMode, Layer> layerMap = new HashMap<>();
 
+
    public ControlLayer(final String id, final LaunchkeyMk3Extension driver, final AbsoluteHardwareControl[] controls,
                        final int modeButtonCc, final int paramIndex, final ControlMode initMode) {
       super(driver.getLayers(), id + "_CONTROL_LAYER");

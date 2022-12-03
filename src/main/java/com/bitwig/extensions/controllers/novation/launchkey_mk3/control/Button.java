@@ -8,15 +8,32 @@ import java.util.function.Consumer;
 
 public class Button {
    private final HardwareButton hwButton;
-   private final int ccNr;
+   private final OnOffHardwareLight hwLight;
 
-   public Button(final LaunchkeyMk3Extension driver, final String name, final int ccNr, final int channel) {
+   public Button(final LaunchkeyMk3Extension driver, final String name, final int ccNr, final int channel,
+                 final boolean withBackLight) {
       final HardwareSurface surface = driver.getSurface();
       hwButton = surface.createHardwareButton(name);
-      this.ccNr = ccNr;
       final MidiIn midiIn = driver.getMidiIn();
       hwButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(channel, ccNr, 127));
       hwButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(channel, ccNr, 0));
+      if (withBackLight) {
+         hwLight = surface.createOnOffHardwareLight("PAD_LIGHT_" + name);
+         hwButton.setBackgroundLight(hwLight);
+         hwLight.isOn().onUpdateHardware(isOn -> driver.sendCcNr(channel, ccNr, isOn ? 127 : 0));
+      } else {
+         hwLight = null;
+      }
+   }
+
+   public Button(final LaunchkeyMk3Extension driver, final String name, final int ccNr, final int channel) {
+      this(driver, name, ccNr, channel, false);
+   }
+
+   public void bindLight(final Layer layer, final BooleanValue value) {
+      if (hwLight != null) {
+         layer.bind(value, hwLight);
+      }
    }
 
    public void bindIsPressed(final Layer layer, final Consumer<Boolean> target) {

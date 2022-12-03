@@ -39,7 +39,7 @@ public class Launchkey37Mk3ExtensionDefinition extends LaunchkeyMk3ExtensionDefi
 
    @Override
    public LaunchkeyMk3Extension createInstance(final ControllerHost host) {
-      return new LaunchkeyMk3Extension(this, host, false);
+      return new LaunchkeyMk3Extension(this, host, false, false);
    }
 
 }

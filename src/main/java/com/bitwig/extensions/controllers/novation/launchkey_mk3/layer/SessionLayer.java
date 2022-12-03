@@ -19,6 +19,8 @@ public class SessionLayer extends Layer {
    private final Layer muteLayer;
    private final Layer soloLayer;
    private final Layer stopLayer;
+   private final Layer shiftLayer;
+
    private Layer currentModeLayer;
    private Mode mode = Mode.LAUNCH;
 
@@ -42,6 +44,7 @@ public class SessionLayer extends Layer {
       muteLayer = new Layer(driver.getLayers(), "MUTE_LAYER");
       soloLayer = new Layer(driver.getLayers(), "SOLO_LAYER");
       stopLayer = new Layer(driver.getLayers(), "STOP_LAYER");
+      shiftLayer = new Layer(driver.getLayers(), "LAUNCH_SHIFT_LAYER");
       currentModeLayer = launchLayer2;
 
       final RgbNoteButton[] buttons = driver.getHwControl().getSessionButtons();
@@ -81,16 +84,36 @@ public class SessionLayer extends Layer {
             }
          }, () -> getState(track, slot, trackIndex, sceneIndex));
 
+         final SettableBooleanValue soloExclusive = driver.getSoloExclusive();
+         soloExclusive.markInterested();
          if (sceneIndex == 1) {
             button.bindPressed(stopLayer, track::stop, () -> getStopState(trackIndex, track));
             button.bindPressed(muteLayer, () -> track.mute().toggle(), () -> getMuteState(trackIndex, track));
-            button.bindPressed(soloLayer, () -> track.solo().toggle(), () -> getSoloState(trackIndex, track));
+            button.bindPressed(soloLayer, () -> track.solo().toggle(soloExclusive.get()),
+               () -> getSoloState(trackIndex, track));
             slot.setIndication(true);
          }
       }
 
-      final RgbCcButton navUpButton = driver.getHwControl().getNavUpButton();
-      navUpButton.bindIsPressed(this, pressed -> {
+      final RgbCcButton sceneLaunchButton = driver.getHwControl().getSceneLaunchButton();
+      sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene),
+         () -> sceneLaunched && hasPlayQueued() ? RgbState.flash(22, 0) : RgbState.of(0));
+      if (driver.isMiniVersion()) {
+         driver.getShiftState().addValueObserver(shiftLayer::setIsActive);
+         bindUpDownButtons(driver, shiftLayer, trackBank, sceneLaunchButton, row2ModeButton);
+      } else {
+         final RgbCcButton navUpButton = driver.getHwControl().getNavUpButton();
+         final RgbCcButton navDownButton = driver.getHwControl().getNavDownButton();
+         bindUpDownButtons(driver, this, trackBank, navUpButton, navDownButton);
+      }
+
+      currentModeLayer.activate();
+   }
+
+
+   private void bindUpDownButtons(final LaunchkeyMk3Extension driver, final Layer layer, final TrackBank trackBank,
+                                  final RgbCcButton upButton, final RgbCcButton downButton) {
+      upButton.bindIsPressed(layer, pressed -> {
          if (pressed) {
             driver.startHold(() -> trackBank.sceneBank().scrollBackwards());
          } else {
@@ -103,8 +126,7 @@ public class SessionLayer extends Layer {
             return RgbState.OFF;
          }
       });
-      final RgbCcButton navDownButton = driver.getHwControl().getNavDownButton();
-      navDownButton.bindIsPressed(this, pressed -> {
+      downButton.bindIsPressed(layer, pressed -> {
          if (pressed) {
             driver.startHold(() -> trackBank.sceneBank().scrollForwards());
          } else {
@@ -117,10 +139,6 @@ public class SessionLayer extends Layer {
             return RgbState.OFF;
          }
       });
-      final RgbCcButton sceneLaunchButton = driver.getHwControl().getSceneLaunchButton();
-      sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene),
-         () -> sceneLaunched && hasPlayQueued() ? RgbState.flash(22, 0) : RgbState.of(0));
-      currentModeLayer.activate();
    }
 
    private void markTrack(final Track track) {
