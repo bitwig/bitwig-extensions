@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.novation.launch_control_xl;
 
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extensions.controllers.novation.common.SimpleLed;
@@ -125,8 +126,14 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          }
       }
 
+      createHardwareSurface();
+      createLayers();
+   }
+
+   private void createHardwareSurface()
+   {
       mHardwareSurface = mHost.createHardwareSurface();
-      final int knobOffsets[] = { 13, 29, 49};
+      final int knobOffsets[] = { 13, 29, 49 };
       for (int i = 0; i < 8; ++i)
       {
          for (int j = 0; j < 3; ++j)
@@ -139,7 +146,21 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          mHardwareSliders[i].setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(77 + i));
       }
 
-      createLayers();
+      mBtSendUp = mHardwareSurface.createHardwareButton("bt-send-up");
+      mBtSendUp.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(
+         "(status & 0xF0) == 0xB0 && data1 == 104 && data2 == 127"));
+
+      mBtSendDown = mHardwareSurface.createHardwareButton("bt-send-down");
+      mBtSendDown.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(
+         "(status & 0xF0) == 0xB0 && data1 == 105 && data2 == 127"));
+
+      mBtTrackLeft = mHardwareSurface.createHardwareButton("bt-track-left");
+      mBtTrackLeft.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(
+         "(status & 0xF0) == 0xB0 && data1 == 106 && data2 == 127"));
+
+      mBtTrackRight = mHardwareSurface.createHardwareButton("bt-track-right");
+      mBtTrackRight.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(
+         "(status & 0xF0) == 0xB0 && data1 == 107 && data2 == 127"));
    }
 
    private void createLayers()
@@ -151,6 +172,17 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       {
          mainLayer.bind(mHardwareSliders[i], mTrackBank.getItemAt(i).volume());
       }
+
+      mainLayer.bindPressed(mBtSendUp, () -> {
+         for (int i = 0; i < 8; ++i)
+            mTrackBank.getItemAt(i).sendBank().scrollBackwards();
+      });
+      mainLayer.bindPressed(mBtSendDown, () -> {
+         for (int i = 0; i < 8; ++i)
+            mTrackBank.getItemAt(i).sendBank().scrollForwards();
+      });
+      mainLayer.bindPressed(mBtTrackLeft, mTrackBank.scrollBackwardsAction());
+      mainLayer.bindPressed(mBtTrackRight, mTrackBank.scrollForwardsAction());
 
       mSend2FullDeviceLayer = new Layer(layers, "2 Sends Full Device");
       for (int i = 0; i < 8; ++i)
@@ -297,23 +329,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
       switch (msg)
       {
-         case 11: // CC
-            if (data1 == 104 && data2 == 127)
-            {
-               for (int i = 0; i < 8; ++i)
-                  mTrackBank.getItemAt(i).sendBank().scrollBackwards();
-            }
-            else if (data1 == 105 && data2 == 127)
-            {
-               for (int i = 0; i < 8; ++i)
-                  mTrackBank.getItemAt(i).sendBank().scrollForwards();
-            }
-            else if (data1 == 106 && data2 == 127)
-               mTrackBank.scrollBackwards();
-            else if (data1 == 107 && data2 == 127)
-               mTrackBank.scrollForwards();
-            break;
-
          case 9: // NOTE ON
             if (41 <= data1 && data1 <= 44)
                onButton(data1 - 41, 0);
@@ -384,7 +399,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    @Override
    public void exit()
    {
-
    }
 
    @Override
@@ -599,6 +613,10 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private HardwareSurface mHardwareSurface;
    private AbsoluteHardwareKnob[] mHardwareKnobs = new AbsoluteHardwareKnob[3 * 8];
    private HardwareSlider[] mHardwareSliders = new HardwareSlider[8];
+   private HardwareButton mBtSendUp;
+   private HardwareButton mBtSendDown;
+   private HardwareButton mBtTrackLeft;
+   private HardwareButton mBtTrackRight;
 
    private Layer mSend2Device1Layer;
    private Layer mSend2Pan1Layer;
