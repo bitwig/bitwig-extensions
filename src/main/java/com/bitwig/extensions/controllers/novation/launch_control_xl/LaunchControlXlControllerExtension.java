@@ -70,7 +70,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mMidiIn = mHost.getMidiInPort(0);
       mMidiOut = mHost.getMidiOutPort(0);
 
-      mMidiIn.setMidiCallback(this::onMidiIn);
       mMidiIn.setSysexCallback(this::onSysex);
 
       // Load the template Factory/1
@@ -368,124 +367,51 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    {
       mHost.println("Sysex IN1: " + sysex);
 
-      if (sysex.equals("f000202902117708f7"))
+      switch (sysex)
       {
-         mHost.showPopupNotification("Switched to 2 Sends and DEVICE Mode");
-         selectMode(Mode.Send2Device1);
-         updateIndications(2, false, false, 1);
+         case "f000202902117708f7" ->
+         {
+            mHost.showPopupNotification("Switched to 2 Sends and DEVICE Mode");
+            selectMode(Mode.Send2Device1);
+            updateIndications(2, false, false, 1);
+         }
+         case "f000202902117709f7" ->
+         {
+            mHost.showPopupNotification("Switched to 2 Sends and Pan Mode");
+            selectMode(Mode.Send2Pan1);
+            updateIndications(2, false, true, 0);
+         }
+         case "f00020290211770af7" ->
+         {
+            mHost.showPopupNotification("Switched to 3 Sends Mode");
+            selectMode(Mode.Send3);
+            updateIndications(3, false, false, 0);
+         }
+         case "f00020290211770bf7" ->
+         {
+            mHost.showPopupNotification("Switched to 1 Send and 2 Channel DEVICE Controls Mode");
+            selectMode(Mode.Send1Device2);
+            updateIndications(1, false, false, 2);
+         }
+         case "f00020290211770cf7" ->
+         {
+            mHost.showPopupNotification("Switched to Channel DEVICE Controls Mode");
+            selectMode(Mode.Device3);
+            updateIndications(0, false, false, 3);
+         }
+         case "f00020290211770df7" ->
+         {
+            mHost.showPopupNotification("Switched to 2 Sends and Selected DEVICE Controls Mode");
+            selectMode(Mode.Send2FullDevice);
+            updateIndications(2, true, false, 0);
+         }
+         default ->
+         {
+            mHost.showPopupNotification("Unsupported Template. We provide Modes for the Factory Template 1 to 5.");
+            selectMode(Mode.None);
+            updateIndications(0, false, false, 0);
+         }
       }
-      else if (sysex.equals("f000202902117709f7"))
-      {
-         mHost.showPopupNotification("Switched to 2 Sends and Pan Mode");
-         selectMode(Mode.Send2Pan1);
-         updateIndications(2, false, true, 0);
-      }
-      else if (sysex.equals("f00020290211770af7"))
-      {
-         mHost.showPopupNotification("Switched to 3 Sends Mode");
-         selectMode(Mode.Send3);
-         updateIndications(3, false, false, 0);
-      }
-      else if (sysex.equals("f00020290211770bf7"))
-      {
-         mHost.showPopupNotification("Switched to 1 Send and 2 Channel DEVICE Controls Mode");
-         selectMode(Mode.Send1Device2);
-         updateIndications(1, false, false, 2);
-      }
-      else if (sysex.equals("f00020290211770cf7"))
-      {
-         mHost.showPopupNotification("Switched to Channel DEVICE Controls Mode");
-         selectMode(Mode.Device3);
-         updateIndications(0, false, false, 3);
-      }
-      else if (sysex.equals("f00020290211770df7"))
-      {
-         mHost.showPopupNotification("Switched to 2 Sends and Selected DEVICE Controls Mode");
-         selectMode(Mode.Send2FullDevice);
-         updateIndications(2, true, false, 0);
-      }
-      else
-      {
-         mHost.showPopupNotification("Unsupported Template. We provide Modes for the Factory Template 1 to 5.");
-         selectMode(Mode.None);
-         updateIndications(0, false, false, 0);
-      }
-   }
-
-   private void onMidiIn(final int status, final int data1, final int data2)
-   {
-      final int channel = status & 0xF;
-      final int msg = status >> 4;
-
-      mHost.println("MIDI IN1, msg: " + msg + " channel: " + channel + ", data1: " + data1 + ", data2: " + data2);
-
-      switch (msg)
-      {
-         case 9: // NOTE ON
-            if (41 <= data1 && data1 <= 44)
-               onButton(data1 - 41, 0);
-            else if (57 <= data1 && data1 <= 60)
-               onButton(4 + data1 - 57, 0);
-            else if (73 <= data1 && data1 <= 76)
-               onButton(data1 - 73, 1);
-            else if (89 <= data1 && data1 <= 92)
-               onButton(4 + data1 - 89, 1);
-            else if (data1 == 105)
-               mIsDeviceOn = true;
-            else if (data1 == 106)
-               mTrackControl = TrackControl.Mute;
-            else if (data1 == 107)
-               mTrackControl = TrackControl.Solo;
-            else if (data1 == 108)
-               mTrackControl = TrackControl.RecordArm;
-            break;
-
-         case 8: // NOTE OFF
-            if (data1 == 105)
-               mIsDeviceOn = false;
-            break;
-      }
-   }
-
-   private void onButton(final int column, final int row)
-   {
-      if (row == 0)
-         selectChannel(column);
-      else
-      {
-         if (mIsDeviceOn)
-            selectRemoteControlPage(column);
-         else
-            trackControl(column);
-      }
-   }
-
-   private void selectRemoteControlPage(final int column)
-   {
-      mRemoteControls.selectedPageIndex().set(column);
-   }
-
-   private void trackControl(final int column)
-   {
-      switch (mTrackControl)
-      {
-         case Mute:
-            mTrackBank.getItemAt(column).mute().toggle();
-            break;
-
-         case Solo:
-            mTrackBank.getItemAt(column).solo().toggle();
-            break;
-
-         case RecordArm:
-            mTrackBank.getItemAt(column).arm().toggle();
-            break;
-      }
-   }
-
-   private void selectChannel(final int column)
-   {
-      mCursorTrack.selectChannel(mTrackBank.getItemAt(column));
    }
 
    @Override
@@ -553,17 +479,15 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          {
             switch (mTrackControl)
             {
-               case Mute:
-                  mBottomButtonsLed[8 + i].setColor(track.mute().get() ? SimpleLedColor.Green.value() : SimpleLedColor.GreenLow.value());
-                  break;
-
-               case Solo:
-                  mBottomButtonsLed[8 + i].setColor(track.solo().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.AmberLow.value());
-                  break;
-
-               case RecordArm:
-                  mBottomButtonsLed[8 + i].setColor(track.arm().get() ? SimpleLedColor.Red.value() : SimpleLedColor.RedLow.value());
-                  break;
+               case Mute -> mBottomButtonsLed[8 + i].setColor(track.mute().get()
+                  ? SimpleLedColor.Green.value()
+                  : SimpleLedColor.GreenLow.value());
+               case Solo -> mBottomButtonsLed[8 + i].setColor(track.solo().get()
+                  ? SimpleLedColor.Amber.value()
+                  : SimpleLedColor.AmberLow.value());
+               case RecordArm -> mBottomButtonsLed[8 + i].setColor(track.arm().get()
+                  ? SimpleLedColor.Red.value()
+                  : SimpleLedColor.RedLow.value());
             }
          }
          else
@@ -582,35 +506,66 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
          switch (mMode)
          {
-            case Send2Device1:
-               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? SimpleLedColor.Green.value() : SimpleLedColor.Off.value());
-               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? SimpleLedColor.Green.value() : SimpleLedColor.Off.value());
-               mKnobsLed[16 + i].setColor(mRemoteControls.getParameter(i).exists().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.Off.value());
-               break;
-
-            case Send2Pan1:
-               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? SimpleLedColor.Green.value() : SimpleLedColor.Off.value());
-               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? SimpleLedColor.Green.value() : SimpleLedColor.Off.value());
-               mKnobsLed[16 + i].setColor(track.exists().get() ? SimpleLedColor.Red.value() : SimpleLedColor.Off.value());
-               break;
-
-            case Send3:
-               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? SimpleLedColor.Green.value() : SimpleLedColor.Off.value());
-               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? SimpleLedColor.Green.value() : SimpleLedColor.Off.value());
-               mKnobsLed[16 + i].setColor(sendBank.getItemAt(2).exists().get() ? SimpleLedColor.Green.value() : SimpleLedColor.Off.value());
-               break;
-
-            case Send1Device2:
-               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? SimpleLedColor.Green.value() : SimpleLedColor.Off.value());
-               mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.Off.value());
-               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.Off.value());
-               break;
-
-            case Device3:
-               mKnobsLed[i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.Off.value());
-               mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.Off.value());
-               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(2).exists().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.Off.value());
-               break;
+            case Send2Device1 ->
+            {
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get()
+                  ? SimpleLedColor.Green.value()
+                  : SimpleLedColor.Off.value());
+               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get()
+                  ? SimpleLedColor.Green.value()
+                  : SimpleLedColor.Off.value());
+               mKnobsLed[16 + i].setColor(mRemoteControls.getParameter(i).exists().get()
+                  ? SimpleLedColor.Amber.value()
+                  : SimpleLedColor.Off.value());
+            }
+            case Send2Pan1 ->
+            {
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get()
+                  ? SimpleLedColor.Green.value()
+                  : SimpleLedColor.Off.value());
+               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get()
+                  ? SimpleLedColor.Green.value()
+                  : SimpleLedColor.Off.value());
+               mKnobsLed[16 + i].setColor(track.exists().get()
+                  ? SimpleLedColor.Red.value()
+                  : SimpleLedColor.Off.value());
+            }
+            case Send3 ->
+            {
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get()
+                  ? SimpleLedColor.Green.value()
+                  : SimpleLedColor.Off.value());
+               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get()
+                  ? SimpleLedColor.Green.value()
+                  : SimpleLedColor.Off.value());
+               mKnobsLed[16 + i].setColor(sendBank.getItemAt(2).exists().get()
+                  ? SimpleLedColor.Green.value()
+                  : SimpleLedColor.Off.value());
+            }
+            case Send1Device2 ->
+            {
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get()
+                  ? SimpleLedColor.Green.value()
+                  : SimpleLedColor.Off.value());
+               mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get()
+                  ? SimpleLedColor.Amber.value()
+                  : SimpleLedColor.Off.value());
+               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get()
+                  ? SimpleLedColor.Amber.value()
+                  : SimpleLedColor.Off.value());
+            }
+            case Device3 ->
+            {
+               mKnobsLed[i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get()
+                  ? SimpleLedColor.Amber.value()
+                  : SimpleLedColor.Off.value());
+               mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get()
+                  ? SimpleLedColor.Amber.value()
+                  : SimpleLedColor.Off.value());
+               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(2).exists().get()
+                  ? SimpleLedColor.Amber.value()
+                  : SimpleLedColor.Off.value());
+            }
          }
       }
    }
