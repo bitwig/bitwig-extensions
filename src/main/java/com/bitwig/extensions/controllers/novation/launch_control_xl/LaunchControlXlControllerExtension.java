@@ -18,16 +18,20 @@ import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
 
 public class LaunchControlXlControllerExtension extends ControllerExtension
 {
+   // Identify possible modes
    enum Mode
    {
       Send2Device1(8),
       Send2Pan1(9),
       Send3(10),
       Send1Device2(11),
-      ChannelDevice(12),
+      Device3(12),
+      Send2FullDevice(13),
       None(0);
 
       Mode(int channel)
@@ -134,6 +138,83 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          mHardwareSliders[i] = mHardwareSurface.createHardwareSlider("slider-" + i);
          mHardwareSliders[i].setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(77 + i));
       }
+
+      final Layers layers = new Layers(this);
+      final Layer mainLayer = new Layer(layers, "Main");
+
+      for (int i = 0; i < 8; ++i)
+      {
+         mainLayer.bind(mHardwareSliders[i], mTrackBank.getItemAt(i).volume());
+      }
+
+      mSend2FullDeviceLayer = new Layer(layers, "2 Sends Full Device");
+      for (int i = 0; i < 8; ++i)
+      {
+         final SendBank sendBank = mTrackBank.getItemAt(i).sendBank();
+         mSend2FullDeviceLayer.bind(mHardwareKnobs[i], sendBank.getItemAt(0));
+         mSend2FullDeviceLayer.bind(mHardwareKnobs[8 + i], sendBank.getItemAt(1));
+         mSend2FullDeviceLayer.bind(mHardwareKnobs[16 + i], mRemoteControls.getParameter(i));
+      }
+
+      mSend2Device1Layer = new Layer(layers, "2 Sends 1 Device");
+      for (int i = 0; i < 8; ++i)
+      {
+         final SendBank sendBank = mTrackBank.getItemAt(i).sendBank();
+         mSend2Device1Layer.bind(mHardwareKnobs[i], sendBank.getItemAt(0));
+         mSend2Device1Layer.bind(mHardwareKnobs[8 + i], sendBank.getItemAt(1));
+         mSend2Device1Layer.bind(mHardwareKnobs[16 + i], mTrackRemoteControls[i].getParameter(0));
+      }
+
+      mSend1Device2Layer = new Layer(layers, "1 Sends 2 Device");
+      for (int i = 0; i < 8; ++i)
+      {
+         final SendBank sendBank = mTrackBank.getItemAt(i).sendBank();
+         mSend1Device2Layer.bind(mHardwareKnobs[i], sendBank.getItemAt(0));
+         mSend1Device2Layer.bind(mHardwareKnobs[8 + i], mTrackRemoteControls[i].getParameter(0));
+         mSend1Device2Layer.bind(mHardwareKnobs[16 + i], mTrackRemoteControls[i].getParameter(1));
+      }
+
+      mDevice3Layer = new Layer(layers, "3 Device");
+      for (int i = 0; i < 8; ++i)
+      {
+         mDevice3Layer.bind(mHardwareKnobs[i], mTrackRemoteControls[i].getParameter(0));
+         mDevice3Layer.bind(mHardwareKnobs[8 + i], mTrackRemoteControls[i].getParameter(1));
+         mDevice3Layer.bind(mHardwareKnobs[16 + i], mTrackRemoteControls[i].getParameter(2));
+      }
+
+      mSend2Pan1Layer = new Layer(layers, "2 Sends 1 Pan");
+      for (int i = 0; i < 8; ++i)
+      {
+         final Track track = mTrackBank.getItemAt(i);
+         final SendBank sendBank = track.sendBank();
+         mSend2Pan1Layer.bind(mHardwareKnobs[i], sendBank.getItemAt(0));
+         mSend2Pan1Layer.bind(mHardwareKnobs[8 + i], sendBank.getItemAt(1));
+         mSend2Pan1Layer.bind(mHardwareKnobs[16 + i], track.pan());
+      }
+
+      mSend3Layer = new Layer(layers, "3 Sends");
+      for (int i = 0; i < 8; ++i)
+      {
+         final Track track = mTrackBank.getItemAt(i);
+         final SendBank sendBank = track.sendBank();
+         mSend3Layer.bind(mHardwareKnobs[i], sendBank.getItemAt(0));
+         mSend3Layer.bind(mHardwareKnobs[8 + i], sendBank.getItemAt(1));
+         mSend3Layer.bind(mHardwareKnobs[16 + i], sendBank.getItemAt(2));
+      }
+
+      mainLayer.activate();
+      selectMode(Mode.Send2Device1);
+   }
+
+   private void selectMode(final Mode mode)
+   {
+      mMode = mode;
+      mSend2Device1Layer.setIsActive(mode == Mode.Send2Device1);
+      mSend2Pan1Layer.setIsActive(mode == Mode.Send2Pan1);
+      mSend3Layer.setIsActive(mode == Mode.Send3);
+      mSend1Device2Layer.setIsActive(mode == Mode.Send1Device2);
+      mDevice3Layer.setIsActive(mode == Mode.Device3);
+      mSend2FullDeviceLayer.setIsActive(mode == Mode.Send2FullDevice);
    }
 
    private void updateIndications(final int numSends, final boolean hasRemoteControl, final boolean hasPan, final int numTrackRemoteControls)
@@ -161,37 +242,44 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       if (sysex.equals("f000202902117708f7"))
       {
          mHost.showPopupNotification("Switched to 2 Sends and DEVICE Mode");
-         mMode = Mode.Send2Device1;
-         updateIndications(2, true, false, 0);
+         selectMode(Mode.Send2Device1);
+         updateIndications(2, false, false, 1);
       }
       else if (sysex.equals("f000202902117709f7"))
       {
          mHost.showPopupNotification("Switched to 2 Sends and Pan Mode");
-         mMode = Mode.Send2Pan1;
+         selectMode(Mode.Send2Pan1);
          updateIndications(2, false, true, 0);
       }
       else if (sysex.equals("f00020290211770af7"))
       {
          mHost.showPopupNotification("Switched to 3 Sends Mode");
-         mMode = Mode.Send3;
+         selectMode(Mode.Send3);
          updateIndications(3, false, false, 0);
       }
       else if (sysex.equals("f00020290211770bf7"))
       {
          mHost.showPopupNotification("Switched to 1 Send and 2 Channel DEVICE Controls Mode");
-         mMode = Mode.Send1Device2;
+         selectMode(Mode.Send1Device2);
          updateIndications(1, false, false, 2);
       }
       else if (sysex.equals("f00020290211770cf7"))
       {
          mHost.showPopupNotification("Switched to Channel DEVICE Controls Mode");
-         mMode = Mode.ChannelDevice;
+         selectMode(Mode.Device3);
          updateIndications(0, false, false, 3);
+      }
+      else if (sysex.equals("f00020290211770df7"))
+      {
+         mHost.showPopupNotification("Switched to 2 Sends and Selected DEVICE Controls Mode");
+         selectMode(Mode.Send2FullDevice);
+         updateIndications(2, true, false, 0);
       }
       else
       {
          mHost.showPopupNotification("Unsupported Template. We provide Modes for the Factory Template 1 to 5.");
-         mMode = Mode.None;
+         selectMode(Mode.None);
+         updateIndications(0, false, false, 0);
       }
    }
 
@@ -205,15 +293,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       switch (msg)
       {
          case 11: // CC
-            if (13 <= data1 && data1 <= 20)
-               onKnob(channel, data1 - 13, 0, data2);
-            else if (29 <= data1 && data1 <= 36)
-               onKnob(channel, data1 - 29, 1, data2);
-            else if (49 <= data1 && data1 <= 56)
-               onKnob(channel, data1 - 49, 2, data2);
-            else if (77 <= data1 && data1 <= 84)
-               onFader(channel, data1 - 77, data2);
-            else if (data1 == 104 && data2 == 127)
+            if (data1 == 104 && data2 == 127)
             {
                for (int i = 0; i < 8; ++i)
                   mTrackBank.getItemAt(i).sendBank().scrollBackwards();
@@ -294,67 +374,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private void selectChannel(final int column)
    {
       mCursorTrack.selectChannel(mTrackBank.getItemAt(column));
-   }
-
-   private void onFader(final int channel, final int column, final int value)
-   {
-      setTrackVolume(column, value);
-   }
-
-   private void setTrackVolume(final int column, final int value)
-   {
-      mTrackBank.getItemAt(column).volume().set(value, 128);
-   }
-
-   private void onKnob(final int channel, final int column, final int row, final int value)
-   {
-      assert 0 <= row;
-      assert row < 3;
-
-      assert 0 <= column;
-      assert column < 8;
-
-      assert 0 <= value;
-      assert value < 128;
-
-      switch (channel)
-      {
-         case 8:
-            if (row == 0 || row == 1)
-               setSend(column, row, value);
-            else if (row == 2)
-            {
-               mRemoteControls.getParameter(column).set(value, 128);
-            }
-            break;
-
-         case 9:
-            if (row == 0 || row == 1)
-               setSend(column, row, value);
-            if (row == 2)
-               mTrackBank.getItemAt(column).pan().set(value, 128);
-            break;
-
-         case 10:
-            setSend(column, row, value);
-            break;
-
-         case 11:
-            if (row == 0)
-               setSend(column, row, value);
-            else
-               mTrackRemoteControls[column].getParameter(row - 1).set(value, 128);
-            break;
-
-         case 12:
-            mTrackRemoteControls[column].getParameter(row).set(value, 128);
-            break;
-      }
-   }
-
-   private void setSend(final int column, final int row, final int value)
-   {
-      mTrackBank.getItemAt(column).sendBank().getItemAt(row).set(value, 128);
    }
 
    @Override
@@ -476,7 +495,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
                mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.Off.value());
                break;
 
-            case ChannelDevice:
+            case Device3:
                mKnobsLed[i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.Off.value());
                mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.Off.value());
                mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(2).exists().get() ? SimpleLedColor.Amber.value() : SimpleLedColor.Off.value());
@@ -575,4 +594,11 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private HardwareSurface mHardwareSurface;
    private AbsoluteHardwareKnob[] mHardwareKnobs = new AbsoluteHardwareKnob[3 * 8];
    private HardwareSlider[] mHardwareSliders = new HardwareSlider[8];
+
+   private Layer mSend2Device1Layer;
+   private Layer mSend2Pan1Layer;
+   private Layer mSend3Layer;
+   private Layer mSend1Device2Layer;
+   private Layer mDevice3Layer;
+   private Layer mSend2FullDeviceLayer;
 }

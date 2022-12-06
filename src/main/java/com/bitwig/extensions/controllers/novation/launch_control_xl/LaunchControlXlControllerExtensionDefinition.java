@@ -80,7 +80,7 @@ public class LaunchControlXlControllerExtensionDefinition extends ControllerExte
    @Override
    public int getRequiredAPIVersion()
    {
-      return 11;
+      return 18;
    }
 
    @Override
