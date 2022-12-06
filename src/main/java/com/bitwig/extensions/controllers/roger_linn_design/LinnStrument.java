@@ -23,7 +23,7 @@ public class LinnStrument extends ControllerExtension
       final MidiIn midiIn = host.getMidiInPort(0);
       final NoteInput noteInput = midiIn.createNoteInput("", "??????");
       noteInput.setShouldConsumeEvents(true);
-      noteInput.setUseExpressiveMidi(true, 0, 24);
+      noteInput.setUseExpressiveMidi(true, 0, 48);
 
       final String[] yesNo = {"Yes", "No"};
       final SettableEnumValue shouldSendInit =
@@ -41,7 +41,7 @@ public class LinnStrument extends ControllerExtension
       });
 
       final SettableRangedValue bendRange =
-         host.getPreferences().getNumberSetting("Pitch Bend Range", "MPE", 1, 96, 1, "", 24);
+         host.getPreferences().getNumberSetting("Pitch Bend Range", "MPE", 1, 96, 1, "", 48);
 
       bendRange.addRawValueObserver(range ->
       {
@@ -105,5 +105,5 @@ public class LinnStrument extends ControllerExtension
 
    private boolean mShouldSendInit = false;
    private boolean mDidRunInitTask = false;
-   private int mPitchBendRange = 24;
+   private int mPitchBendRange = 48;
 }

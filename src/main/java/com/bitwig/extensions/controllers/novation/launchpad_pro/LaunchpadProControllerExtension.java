@@ -456,11 +456,13 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mTrackBank = getHost().createTrackBank(8, 8, 8, true);
       mTrackBank.followCursorTrack(mCursorTrack);
       mTrackBank.cursorIndex().markInterested();
+      mTrackBank.setSkipDisabledItems(true);
+      mTrackBank.canScrollChannelsDown().markInterested();
+      mTrackBank.canScrollChannelsUp().markInterested();
+
       mSceneBank = mTrackBank.sceneBank();
       mSceneBank.canScrollBackwards().markInterested();
       mSceneBank.canScrollForwards().markInterested();
-      mTrackBank.canScrollChannelsDown().markInterested();
-      mTrackBank.canScrollChannelsUp().markInterested();
       mSceneBank.itemCount().markInterested();
 
       for (int i = 0; i < 8; ++i)
@@ -481,9 +483,8 @@ final class LaunchpadProControllerExtension extends ControllerExtension
          channel.isQueuedForStop().markInterested();
 
          final ClipLauncherSlotBank clipLauncherSlots = channel.clipLauncherSlotBank();
-         clipLauncherSlots.setIndication(false);
-
          final SendBank sendBank = channel.sendBank();
+         sendBank.setSkipDisabledItems(true);
 
          for (int j = 0; j < 8; ++j)
          {

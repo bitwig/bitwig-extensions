@@ -55,12 +55,6 @@ public class EzCreatorPlus extends ControllerExtension
       mCursorDevice = mTrackCursor.createCursorDevice();
       mRemoteControls = mCursorDevice.createCursorRemoteControlsPage("EZ-Creator Plus", 8, "");
 
-      for (int i = 0; i < 8; ++i)
-      {
-         final RemoteControl parameter = mRemoteControls.getParameter(i);
-         parameter.setIndication(true);
-      }
-
       createHardwareControls();
       createLayers();
    }
@@ -87,9 +81,11 @@ public class EzCreatorPlus extends ControllerExtension
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("Knob-" + i);
          knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x0E + i));
+         knob.setIndexInGroup(i);
          mKnobs[i] = knob;
 
          final HardwareSlider slider = mHardwareSurface.createHardwareSlider("Slider-" + i);
+         slider.setIndexInGroup(i);
          slider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 0x03 + i));
          mSliders[i] = slider;
       }

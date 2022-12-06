@@ -25,12 +25,14 @@ abstract class AbstractSequencerMode extends Mode
          protected void onActivate()
          {
             mDriver.mCursorClip.getLoopLength().subscribe();
+            mDriver.updateKeyTranslationTable();
          }
 
          @Override
          protected void onDeactivate()
          {
             mDriver.mCursorClip.getLoopLength().unsubscribe();
+            mDriver.updateKeyTranslationTable();
          }
       };
       bindMainLayer();

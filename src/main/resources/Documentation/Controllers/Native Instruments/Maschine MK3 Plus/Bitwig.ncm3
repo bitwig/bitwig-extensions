@@ -1,0 +1,1327 @@
+<?xml version="1.0"?>
+<ni-controller-midi-map version="1">
+  <midi-map type="MaschineMK3" name="Bitwig" port="internal">
+    <handleGroupControls />
+    <handleKnobControls />
+    <velocitycurve>3</velocitycurve>
+    <handleTransport>0</handleTransport>
+    <wrapmode>0</wrapmode>
+    <controls>
+      <button version="1" id="Arranger">
+        <controller>36</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Auto">
+        <controller>42</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Browser">
+        <controller>38</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Channel">
+        <disabled />
+        <controller>34</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Chords">
+        <disabled />
+        <controller>84</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Duplicate">
+        <controller>89</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <wheel version="1" id="Encoder">
+        <controller mode="comp">7</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </wheel>
+      <button version="1" id="EncoderCap">
+        <controller>9</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior onIfDown="on">gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="EncoderDown">
+        <controller>32</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="EncoderDownIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>32</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="EncoderLeft">
+        <controller>33</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="EncoderLeftIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>33</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="EncoderPush">
+        <controller>8</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior onIfDown="on">gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="EncoderRight">
+        <controller>31</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="EncoderRightIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>31</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="EncoderUp">
+        <controller>30</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="EncoderUpIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>30</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="Erase">
+        <controller>54</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Events">
+        <disabled />
+        <controller>87</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <footswitch version="1" id="FSwRing">
+        <controller>65</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior onIfDown="on">gate</behavior>
+        <reaction>ondown</reaction>
+      </footswitch>
+      <footswitch version="1" id="FSwTip">
+        <controller>64</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior onIfDown="on">gate</behavior>
+        <reaction>ondown</reaction>
+      </footswitch>
+      <button version="1" id="File">
+        <controller>40</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="FixedVel">
+        <controller>81</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Follow">
+        <disabled />
+        <controller>56</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="GroupA">
+        <controller>100</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="GroupAIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>100</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="GroupB">
+        <controller>101</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="GroupBIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>101</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="GroupC">
+        <controller>102</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="GroupCIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>102</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="GroupD">
+        <controller>103</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="GroupDIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>103</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="GroupE">
+        <controller>104</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="GroupEIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>104</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="GroupF">
+        <controller>105</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="GroupFIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>105</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="GroupG">
+        <controller>106</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="GroupGIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>106</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="GroupH">
+        <controller>107</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="GroupHIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+        </display>
+        <controller>107</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="Keyboard">
+        <controller>82</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Left">
+        <controller>110</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Lock">
+        <disabled />
+        <controller>48</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Macro">
+        <disabled />
+        <controller>43</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Mixer">
+        <controller>37</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Mod">
+        <disabled />
+        <controller>50</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Mute">
+        <controller>92</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="NoteRep">
+        <controller>46</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Notes">
+        <disabled />
+        <controller>52</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="PadMode">
+        <controller>80</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Pattern">
+        <controller>86</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <pedal version="1" id="Pedal">
+        <controller>11</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </pedal>
+      <button version="1" id="Perform">
+        <disabled />
+        <controller>51</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Pitch">
+        <disabled />
+        <controller>49</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Play">
+        <controller>57</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Plugin">
+        <controller>35</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Rec">
+        <controller>58</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Restart">
+        <controller>53</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Right">
+        <controller>111</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Sampling">
+        <disabled />
+        <controller>39</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Scene">
+        <controller>85</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Select">
+        <controller>90</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Setting">
+        <disabled />
+        <controller>41</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Solo">
+        <controller>91</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Step">
+        <controller>83</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Stop">
+        <controller>59</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Swing">
+        <controller>45</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Tap">
+        <controller>60</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Tempo">
+        <controller>47</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <knob version="1" id="Touchstrip">
+        <controller>1</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+        <range>360</range>
+        <steps>20</steps>
+        <bipolar>off</bipolar>
+        <min>0</min>
+        <max>127</max>
+        <ledPattern>0</ledPattern>
+        <behavior>none</behavior>
+      </knob>
+      <button version="1" id="TouchstripCap">
+        <polyat>2</polyat>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior onIfDown="on">gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <led version="1" id="TouchstripIDX">
+        <display type="0">
+          <unit color-type="1" color-mode="0" color-on-index="12" color-off-index="1" />
+        </display>
+        <controller>1</controller>
+        <channel>0</channel>
+        <min>0</min>
+        <max>127</max>
+        <default>0</default>
+      </led>
+      <button version="1" id="Variation">
+        <disabled />
+        <controller>88</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+      <button version="1" id="Volume">
+        <controller>44</controller>
+        <channel>0</channel>
+        <off>0</off>
+        <on>127</on>
+        <behavior>gate</behavior>
+        <reaction>ondown</reaction>
+      </button>
+    </controls>
+    <pages>
+      <current_index>0</current_index>
+      <page name="Knob Page 1" colorColumn1-index="1" colorColumn1B-index="18" colorColumn2-index="1" colorColumn2B-index="18" colorColumn3-index="1" colorColumn3B-index="18" colorColumn4-index="1" colorColumn4B-index="18" colorColumn5-index="1" colorColumn5B-index="18" colorColumn6-index="1" colorColumn6B-index="18" colorColumn7-index="1" colorColumn7B-index="18" colorColumn8-index="1" colorColumn8B-index="18" explicitMCU="1">
+        <button version="1" id="Button1">
+          <name>.</name>
+          <controller>22</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="Button2">
+          <name>.</name>
+          <controller>23</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="Button3">
+          <name>.</name>
+          <controller>24</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="Button4">
+          <name>.</name>
+          <controller>25</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="Button5">
+          <name>.</name>
+          <controller>26</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="Button6">
+          <name>.</name>
+          <controller>27</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="Button7">
+          <name>X</name>
+          <disabled />
+          <controller>28</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="Button8">
+          <name>X</name>
+          <mcu-button>87</mcu-button>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <knob version="1" id="Knob1">
+          <name>one</name>
+          <controller mode="comp">70</controller>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <range>360</range>
+          <steps>100</steps>
+          <bipolar>off</bipolar>
+        </knob>
+        <knob version="1" id="Knob2">
+          <name>two</name>
+          <controller mode="comp">71</controller>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <range>360</range>
+          <steps>100</steps>
+          <bipolar>off</bipolar>
+        </knob>
+        <knob version="1" id="Knob3">
+          <name>three</name>
+          <controller mode="comp">72</controller>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <range>360</range>
+          <steps>100</steps>
+          <bipolar>off</bipolar>
+        </knob>
+        <knob version="1" id="Knob4">
+          <name>four</name>
+          <controller mode="comp">73</controller>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <range>360</range>
+          <steps>100</steps>
+          <bipolar>off</bipolar>
+        </knob>
+        <knob version="1" id="Knob5">
+          <name>five</name>
+          <controller mode="comp">74</controller>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <range>360</range>
+          <steps>100</steps>
+          <bipolar>off</bipolar>
+        </knob>
+        <knob version="1" id="Knob6">
+          <name>six</name>
+          <controller mode="comp">75</controller>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <range>360</range>
+          <steps>100</steps>
+          <bipolar>off</bipolar>
+        </knob>
+        <knob version="1" id="Knob7">
+          <name>seven</name>
+          <controller mode="comp">76</controller>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <range>360</range>
+          <steps>100</steps>
+          <bipolar>off</bipolar>
+        </knob>
+        <knob version="1" id="Knob8">
+          <name>eight</name>
+          <controller mode="comp">77</controller>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <range>360</range>
+          <steps>100</steps>
+          <bipolar>off</bipolar>
+        </knob>
+        <button version="1" id="KnobCap1">
+          <controller>10</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior onIfDown="on">gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="KnobCap2">
+          <controller>11</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior onIfDown="on">gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="KnobCap3">
+          <controller>12</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior onIfDown="on">gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="KnobCap4">
+          <controller>13</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior onIfDown="on">gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="KnobCap5">
+          <controller>14</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior onIfDown="on">gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="KnobCap6">
+          <controller>15</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior onIfDown="on">gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="KnobCap7">
+          <controller>16</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior onIfDown="on">gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+        <button version="1" id="KnobCap8">
+          <controller>17</controller>
+          <channel>0</channel>
+          <off>0</off>
+          <on>127</on>
+          <behavior onIfDown="on">gate</behavior>
+          <reaction>ondown</reaction>
+        </button>
+      </page>
+    </pages>
+    <groups>
+      <current_index>0</current_index>
+      <group name="Pad Page A" color-index="9">
+        <pad subtype="trigger" version="1" id="Pad1">
+          <note>60</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="trigger" version="1" id="Pad10">
+          <note>69</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad10IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>69</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad11">
+          <note>70</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad11IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>70</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad12">
+          <note>71</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad12IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>71</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad13">
+          <note>72</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad13IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>72</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad14">
+          <note>73</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad14IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>73</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad15">
+          <note>74</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad15IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>74</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad16">
+          <note>75</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad16IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>75</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <led version="1" id="Pad1IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>60</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad2">
+          <note>61</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad2IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>61</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad3">
+          <note>62</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad3IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>62</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad4">
+          <note>63</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad4IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>63</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad5">
+          <note>64</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad5IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>64</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad6">
+          <note>65</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad6IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>65</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad7">
+          <note>66</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad7IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>66</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad8">
+          <note>67</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad8IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>67</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="trigger" version="1" id="Pad9">
+          <note>68</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior>gate</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <led version="1" id="Pad9IDX">
+          <display type="0">
+            <unit color-type="1" color-mode="3" color-on-index="2" color-off-index="1" />
+          </display>
+          <note>68</note>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+        </led>
+        <pad subtype="pressure" version="1" id="Pressure1">
+          <polyat>60</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure10">
+          <polyat>69</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure11">
+          <polyat>70</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure12">
+          <polyat>71</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure13">
+          <polyat>72</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure14">
+          <polyat>73</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure15">
+          <polyat>74</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure16">
+          <polyat>75</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure2">
+          <polyat>61</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure3">
+          <polyat>62</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure4">
+          <polyat>63</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure5">
+          <polyat>64</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure6">
+          <polyat>65</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure7">
+          <polyat>66</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure8">
+          <polyat>67</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+        <pad subtype="pressure" version="1" id="Pressure9">
+          <polyat>68</polyat>
+          <channel>0</channel>
+          <min>0</min>
+          <max>127</max>
+          <default>0</default>
+          <behavior onIfDown="on">toggle</behavior>
+          <reaction>ondown</reaction>
+        </pad>
+      </group>
+    </groups>
+  </midi-map>
+</ni-controller-midi-map>

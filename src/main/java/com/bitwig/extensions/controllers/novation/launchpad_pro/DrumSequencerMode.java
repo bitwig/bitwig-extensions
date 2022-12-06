@@ -97,6 +97,11 @@ final class DrumSequencerMode extends AbstractSequencerMode
             mDrumPadsLayer.bindPressed(bt, () -> onDrumPadPressed(X, Y));
             mDrumPadsLayer.bindLightState(() -> computeDrumPadLedState(X, Y), bt);
 
+            mShiftLayer.bindPressed(bt, () -> {
+               if (mDataMode == DataMode.Main || mDataMode == DataMode.MainAlt)
+                  onDrumPadPressed(X, Y);
+            });
+
             final Button actionBt = driver.getPadButton(x + 4, y);
             mSceneAndPerfsLayer.bindLightState(() -> computePerfAndScenesLedState(X, Y), actionBt);
             if (y < 2)
@@ -258,7 +263,6 @@ final class DrumSequencerMode extends AbstractSequencerMode
    {
       mShiftLayer.deactivate();
       mDrumPadsLayer.deactivate();
-      mShiftLayer.deactivate();
       mMainActionsLayer.deactivate();
       mSceneAndPerfsLayer.deactivate();
       mSoundDataLayer.deactivate();
@@ -613,7 +617,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
          final DrumPad drumPad = drumPadBank.getItemAt(x + 4 * y);
          drumPad.solo().toggle();
       }
-      else if (isDrumPadSelectOn())
+      else if (isDrumPadSelectOn() || mDriver.isShiftOn())
       {
          final DrumPadBank drumPadBank = mDriver.mDrumPadBank;
          final DrumPad drumPad = drumPadBank.getItemAt(x + 4 * y);

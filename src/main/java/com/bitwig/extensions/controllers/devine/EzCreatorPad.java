@@ -55,7 +55,6 @@ public class EzCreatorPad extends ControllerExtension
       remoteControls.setHardwareLayout(HardwareControlType.SLIDER, 1);
       mParameter = remoteControls.getParameter(0);
       mParameter.markInterested();
-      mParameter.setIndication(true);
 
       createHardwareControls();
       createLayers();

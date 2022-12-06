@@ -22,7 +22,7 @@ import com.bitwig.extensions.framework.Layers;
 
 public class XControllerExtension extends ControllerExtension
 {
-   static final int REQUIRED_API_VERSION = 10;
+   static final int REQUIRED_API_VERSION = 11;
 
    public XControllerExtension(
       final ControllerExtensionDefinition definition,
@@ -57,17 +57,12 @@ public class XControllerExtension extends ControllerExtension
 
       mCursorTrack = host.createCursorTrack("X2mini-track-cursor", "X2mini", 0, 0, true);
 
-      if (mNumKnobs == 9)
-         mCursorTrack.volume().setIndication(true);
-
       mCursorDevice =
          mCursorTrack.createCursorDevice("X2mini-device-cursor", "X2mini", 0, CursorDeviceFollowMode.FIRST_INSTRUMENT);
 
       final int numRemoteControls = Math.min(mNumKnobs, 8);
       mRemoteControls = mCursorDevice.createCursorRemoteControlsPage(numRemoteControls);
       mRemoteControls.setHardwareLayout(HardwareControlType.KNOB, numRemoteControls);
-      for (int i = 0; i < numRemoteControls; ++i)
-         mRemoteControls.getParameter(i).setIndication(true);
 
       mTransport = host.createTransport();
 
@@ -157,6 +152,7 @@ public class XControllerExtension extends ControllerExtension
       for (int i = 0; i < 8; ++i)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + i);
+         bt.setIndexInGroup(i);
          bt.pressedAction().setActionMatcher(mMidiIn.createCCActionMatcher(0, 0x18 + i));
          mTrackSelectButtons[i] = bt;
       }
@@ -190,6 +186,7 @@ public class XControllerExtension extends ControllerExtension
       for (int i = 0; i < parameterCount; ++i)
       {
          final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("Knob-" + i);
+         knob.setIndexInGroup(i);
          knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(0, 0x10 + i));
          knob.setLabel("T" + (i + 1));
          knob.setBounds(10 + i * (20 + 25), 10, 20, 20);

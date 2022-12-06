@@ -14,7 +14,7 @@ final class MuteOverlay extends Overlay
       {
          final Track track = trackBank.getItemAt(x);
          final Button button = driver.getPadButton(x, 0);
-         bindPressed(button, track.mute().toggleAction());
+         bindToggle(button, track.mute());
          bindLightState(() -> {
             if (track.exists().get())
                return track.mute().get() ? LedState.MUTE : LedState.MUTE_LOW;

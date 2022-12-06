@@ -26,8 +26,8 @@
 				<configuration>
 					<optimize>true</optimize>
 					<fork>true</fork>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>16</source>
+					<target>16</target>
 					<encoding>UTF-8</encoding>
 					<maxmem>1024m</maxmem>
 				</configuration>
@@ -81,10 +81,9 @@
 				<dependency>
 					<groupId>com.bitwig</groupId>
 					<artifactId>extension-api</artifactId>
-					<version>[10,)</version>
+					<version>[18,)</version>
 				</dependency>
 			</dependencies>
 		</profile>
 	</profiles>
 </project>
-

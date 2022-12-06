@@ -86,6 +86,6 @@ public abstract class PresonusFaderPortDefinition extends ControllerExtensionDef
    @Override
    public int getRequiredAPIVersion()
    {
-      return 10;
+      return 11;
    }
 }

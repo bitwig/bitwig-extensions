@@ -44,7 +44,7 @@ import com.bitwig.extensions.framework.Layers;
 
 public class APC40MKIIControllerExtension extends ControllerExtension
 {
-   private static final boolean ENABLE_DEBUG_LAYER = true;
+   private static final boolean ENABLE_DEBUG_LAYER = false;
 
    private static final int CHANNEL_STRIP_NUM_PARAMS = 4;
 
@@ -174,7 +174,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mMasterTrack = host.createMasterTrack(5);
       mMasterTrack.isStopped().markInterested();
-      mMasterTrack.volume().setIndication(true);
 
       mTrackCursor = host.createCursorTrack(8, 0);
       mTrackCursor.exists().markInterested();
@@ -215,6 +214,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 4);
 
       mTrackBank = host.createTrackBank(8, 5, 5, false);
+      mTrackBank.setSkipDisabledItems(true);
+      mTrackBank.setShouldShowClipLauncherFeedback(true);
+
       mSceneBank = mTrackBank.sceneBank();
       mSceneBank.setIndication(true);
 
@@ -225,7 +227,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final Scene scene = mSceneBank.getScene(j);
          scene.exists().markInterested();
          scene.color().markInterested();
-
       }
 
       for (int i = 0; i < 8; ++i)
@@ -237,9 +238,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final Track track = mTrackBank.getItemAt(i);
          final SendBank sendBank = track.sendBank();
-         final ClipLauncherSlotBank clipLauncher = track.clipLauncherSlotBank();
-         clipLauncher.setIndication(true);
+         sendBank.setSkipDisabledItems(true);
 
+         final ClipLauncherSlotBank clipLauncher = track.clipLauncherSlotBank();
          for (int j = 0; j < 5; ++j)
          {
             final ClipLauncherSlot slot = clipLauncher.getItemAt(j);
@@ -266,13 +267,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          track.isStopped().markInterested();
          track.pan().markInterested();
          track.pan().exists().markInterested();
-         track.volume().setIndication(true);
 
          mIsTrackSelected[i] = mTrackCursor.createEqualsValue(track);
          mIsTrackSelected[i].markInterested();
 
          final RemoteControl parameter = mRemoteControls.getParameter(i);
-         parameter.setIndication(true);
          parameter.markInterested();
          parameter.exists().markInterested();
 
@@ -281,6 +280,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mSendTrackBank = host.createEffectTrackBank(5, 0);
+      mSendTrackBank.setSkipDisabledItems(true);
       for (int i = 0; i < 5; ++i)
       {
          final Track sendTrack = mSendTrackBank.getItemAt(i);
@@ -440,8 +440,17 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          for (int j = 0; j < 5; ++j)
          {
             final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
-            mShiftLayer.bindPressed(mGridButtons[i + 8 * j], () -> slot.select());
+            final HardwareButton clipButton = mGridButtons[i + 8 * j];
+            mShiftLayer.bindPressed(clipButton, slot.launchAltAction());
+            mShiftLayer.bindReleased(clipButton, slot.launchReleaseAltAction());
          }
+      }
+
+      for (int i = 0; i < 5; ++i)
+      {
+         final Scene scene = mSceneBank.getScene(i);
+         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchAltAction());
+         mShiftLayer.bindReleased(mSceneButtons[i], scene.launchReleaseAltAction());
       }
    }
 
@@ -519,7 +528,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          mUserLayers[userIndex] = new Layer(mLayers, "User-" + userIndex);
          for (int i = 0; i < 8; ++i)
-            mUserLayers[userIndex].bind(mTopControlKnobs[i], mUserControls.getControl(i + mUserIndex * 8));
+            mUserLayers[userIndex].bind(mTopControlKnobs[i], mUserControls.getControl(i + userIndex * 8));
       }
    }
 
@@ -557,10 +566,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          for (int y = 0; y < 5; ++y)
          {
             final int offset = 8 * y + x;
-            mMainLayer.bindPressed(mGridButtons[offset],
-               track.clipLauncherSlotBank().getItemAt(y).launchAction());
+            final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(y);
+            mMainLayer.bindPressed(mGridButtons[offset], slot.launchAction());
+            mMainLayer.bindReleased(mGridButtons[offset], slot.launchReleaseAction());
          }
-         mMainLayer.bindPressed(mMuteButtons[x], track.mute());
+         mMainLayer.bindToggle(mMuteButtons[x], track.mute());
          mMainLayer.bind(() -> track.exists().get() && !track.mute().get(), mMuteLeds[x]);
          mMainLayer.bindToggle(mSoloButtons[x], track.solo());
          mMainLayer.bindToggle(mArmButtons[x], track.arm());
@@ -651,7 +661,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       });
 
       for (int y = 0; y < 5; ++y)
-         mMainLayer.bindPressed(mSceneButtons[y], mSceneBank.getItemAt(y).launchAction());
+      {
+         final Scene scene = mSceneBank.getItemAt(y);
+         mMainLayer.bindPressed(mSceneButtons[y], scene.launchAction());
+         mMainLayer.bindReleased(mSceneButtons[y], scene.launchReleaseAction());
+      }
 
       mMainLayer.bindPressed(mPanButton,
          getHost().createAction(
@@ -927,6 +941,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackStop-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_STOP));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_STOP));
+         bt.setIndexInGroup(x);
          mTrackStopButtons[x] = bt;
 
          final int channel = x;
@@ -957,6 +972,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final HardwareButton bt = mHardwareSurface.createHardwareButton("TrackSelect-" + x);
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_SELECT));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_SELECT));
+         bt.setIndexInGroup(x);
          mTrackSelectButtons[x] = bt;
 
          final int channel = x;
@@ -1021,6 +1037,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          bt.setLabel("\u25CF");
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_ARM));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_ARM));
+         bt.setIndexInGroup(x);
          mArmButtons[x] = bt;
 
          final int channel = x;
@@ -1042,6 +1059,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_SOLO));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_SOLO));
          bt.setLabel("S");
+         bt.setIndexInGroup(x);
          mSoloButtons[x] = bt;
 
          final int channel = x;
@@ -1063,6 +1081,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_MUTE));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_MUTE));
          bt.setLabel(String.valueOf(x + 1));
+         bt.setIndexInGroup(x);
          mMuteButtons[x] = bt;
 
          final int channel = x;
@@ -1112,6 +1131,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          final HardwareSlider slider = mHardwareSurface.createHardwareSlider("TrackVolumeFader-" + i);
          slider.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(i, CC_TRACK_VOLUME));
+         slider.setIndexInGroup(i);
 
          mTrackVolumeSliders[i] = slider;
       }
@@ -1141,6 +1161,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          knob.isUpdatingTargetValue().markInterested();
          knob.hasTargetValue().addValueObserver(newValue -> updateTopControlRing(I));
          knob.targetValue().addValueObserver(newValue -> updateTopControlRing(I));
+         knob.setIndexInGroup(i);
          mTopControlKnobs[i] = knob;
       }
 
@@ -1206,6 +1227,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          knob.targetValue().addValueObserver(newValue -> updateDeviceControlRing(I));
          knob.setLabel(String.valueOf(i + 1));
          knob.setLabelPosition(RelativePosition.BELOW);
+         knob.setIndexInGroup(i);
 
          mDeviceControlKnobs[i] = knob;
       }
@@ -1457,48 +1479,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       if (topMode == TopMode.SENDS && mControlSendEffectSetting.get())
          mTrackCursor.selectChannel(mSendTrackBank.getItemAt(mSendIndex));
-
-      updateTopIndications();
-   }
-
-   private void updateTopIndications()
-   {
-      updatePanIndication(mTopMode == TopMode.PAN);
-      updateSendIndication(mTopMode == TopMode.SENDS ? mSendIndex : -1);
-      updateChannelStripIndication(mTopMode == TopMode.CHANNEL_STRIP);
-   }
-
-   private void updateChannelStripIndication(final boolean shouldIndicate)
-   {
-      for (int i = 0; i < CHANNEL_STRIP_NUM_PARAMS; ++i)
-         mChannelStripRemoteControls.getParameter(i).setIndication(shouldIndicate);
-
-      for (int i = 0; i < CHANNEL_STRIP_NUM_SENDS; ++i)
-         mTrackCursor.sendBank().getItemAt(i).setIndication(shouldIndicate);
-   }
-
-   private void updatePanIndication(final boolean shouldIndicate)
-   {
-      for (int i = 0; i < 8; ++i)
-      {
-         final Track track = mTrackBank.getItemAt(i);
-         track.pan().setIndication(track.exists().get() && shouldIndicate);
-      }
-   }
-
-   private void updateSendIndication(final int sendIndex)
-   {
-      for (int i = 0; i < 8; ++i)
-      {
-         final Track track = mTrackBank.getItemAt(i);
-         final SendBank sendBank = track.sendBank();
-         for (int j = 0; j < 5; ++j)
-         {
-            final Send send = sendBank.getItemAt(j);
-            final boolean shouldIndicate = sendIndex == j && send.exists().get();
-            send.setIndication(shouldIndicate);
-         }
-      }
    }
 
    private void onSysexIn(final String sysex)
@@ -1594,7 +1574,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             /*
              * if (slot.isStopQueued().get()) { rgbLed.setBlinkType(RgbLed.BLINK_STOP_QUEUED);
              * rgbLed.setBlinkColor(RgbLed.COLOR_STOPPING); } else
-             */if (slot.isRecordingQueued().get())
+             */
+
+            if (slot.isRecordingQueued().get())
             {
                rgbLed.setBlinkType(RGBLedState.BLINK_RECORD_QUEUED);
                rgbLed.setBlinkColor(RGBLedState.COLOR_RECORDING);
@@ -1602,15 +1584,17 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             else if (slot.isPlaybackQueued().get())
             {
                rgbLed.setBlinkType(RGBLedState.BLINK_PLAY_QUEUED);
-               rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING);
+               rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING_QUEUED);
             }
             else if (slot.isRecording().get())
             {
+               rgbLed.setColor(RGBLedState.COLOR_NONE);
                rgbLed.setBlinkType(RGBLedState.BLINK_ACTIVE);
                rgbLed.setBlinkColor(RGBLedState.COLOR_RECORDING);
             }
             else if (slot.isPlaying().get())
             {
+               rgbLed.setColor(RGBLedState.COLOR_NONE);
                rgbLed.setBlinkType(RGBLedState.BLINK_ACTIVE);
                rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING);
             }

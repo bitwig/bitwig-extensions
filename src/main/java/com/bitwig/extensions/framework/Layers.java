@@ -21,7 +21,7 @@ public class Layers
       return mControllerExtension;
    }
 
-   void addLayer(final Layer layer)
+   public void addLayer(final Layer layer)
    {
       mLayers.add(layer);
    }
