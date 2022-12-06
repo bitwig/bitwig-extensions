@@ -77,6 +77,8 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
       mCursorTrack = mHost.createCursorTrack("cursor-track", "Launch Control XL Track Cursor", 0, 0, false);
       mCursorDevice = mCursorTrack.createCursorDevice();
+      mCursorDevice.hasNext().markInterested();
+      mCursorDevice.hasPrevious().markInterested();
       mRemoteControls = mCursorDevice.createCursorRemoteControlsPage(8);
       mRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 8);
       mRemoteControls.selectedPageIndex().markInterested();
@@ -559,21 +561,29 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
    protected void paintRightButtons()
    {
-      mDeviceLed.setColor(mIsDeviceOn ? SimpleLedColor.Yellow.value() : SimpleLedColor.Off.value());
-      mMuteLed.setColor(mTrackControl == TrackControl.Mute ? SimpleLedColor.Yellow.value() :
-         SimpleLedColor.Off.value());
-      mSoloLed.setColor(mTrackControl == TrackControl.Solo ? SimpleLedColor.Yellow.value() :
-         SimpleLedColor.Off.value());
-      mRecordArmLed.setColor(mTrackControl == TrackControl.RecordArm ? SimpleLedColor.Yellow.value() :
-         SimpleLedColor.Off.value());
+      final int yellow = SimpleLedColor.Yellow.value();
+      final int off = SimpleLedColor.Off.value();
 
+      mDeviceLed.setColor(mIsDeviceOn ? yellow : off);
+      mMuteLed.setColor(mTrackControl == TrackControl.Mute ? yellow : off);
+      mSoloLed.setColor(mTrackControl == TrackControl.Solo ? yellow : off);
+      mRecordArmLed.setColor(mTrackControl == TrackControl.RecordArm ? yellow : off);
 
       final SendBank sendBank = mTrackBank.getItemAt(0).sendBank();
-      mUpButtonLed.setColor(sendBank.canScrollBackwards().get() ? SimpleLedColor.Yellow.value() : SimpleLedColor.Off.value());
-      mDownButtonLed.setColor(sendBank.canScrollForwards().get() ? SimpleLedColor.Yellow.value() : SimpleLedColor.Off.value());
+      mUpButtonLed.setColor(sendBank.canScrollBackwards().get() ? yellow : off);
+      mDownButtonLed.setColor(sendBank.canScrollForwards().get() ? yellow : off);
 
-      mLeftButtonLed.setColor(mTrackBank.canScrollBackwards().get() ? SimpleLedColor.Yellow.value() : SimpleLedColor.Off.value());
-      mRightButtonLed.setColor(mTrackBank.canScrollForwards().get() ? SimpleLedColor.Yellow.value() : SimpleLedColor.Off.value());
+      if (mIsDeviceOn)
+      {
+         mLeftButtonLed.setColor(mCursorDevice.hasPrevious().get() ? yellow : off);
+         mRightButtonLed.setColor(mCursorDevice.hasNext().get() ? yellow : off);
+      }
+      else
+      {
+         mLeftButtonLed.setColor(mTrackBank.canScrollBackwards().get() ? yellow : off);
+         mRightButtonLed.setColor(mTrackBank.canScrollForwards().get() ? yellow : off);
+      }
+
    }
 
    private ControllerHost mHost;
