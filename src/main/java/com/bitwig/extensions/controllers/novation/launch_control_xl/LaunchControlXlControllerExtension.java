@@ -131,7 +131,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       createLayers();
 
       mMainLayer.activate();
-      selectMode(Mode.Send2FullDevice);
+      selectMode(Mode.Send2Device1);
       setTrackControl(TrackControl.Mute);
       setDeviceOn(false);
    }
