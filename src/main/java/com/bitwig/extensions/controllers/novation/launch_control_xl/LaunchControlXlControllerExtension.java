@@ -139,6 +139,11 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          mHardwareSliders[i].setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(77 + i));
       }
 
+      createLayers();
+   }
+
+   private void createLayers()
+   {
       final Layers layers = new Layers(this);
       final Layer mainLayer = new Layer(layers, "Main");
 
