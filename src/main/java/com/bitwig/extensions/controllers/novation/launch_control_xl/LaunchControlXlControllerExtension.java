@@ -128,6 +128,10 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
       createHardwareSurface();
       createLayers();
+
+      mMainLayer.activate();
+      selectMode(Mode.Send2Device1);
+      setTrackControl(TrackControl.Mute);
    }
 
    private void createHardwareSurface()
@@ -179,6 +183,11 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mBtTrackControl[5] = createHardwareButtonWithNote("bt-track-control-5", 90);
       mBtTrackControl[6] = createHardwareButtonWithNote("bt-track-control-6", 91);
       mBtTrackControl[7] = createHardwareButtonWithNote("bt-track-control-7", 92);
+
+      mBtDevice = createHardwareButtonWithNote("bt-device", 105);
+      mBtMute = createHardwareButtonWithNote("bt-mute", 106);
+      mBtSolo = createHardwareButtonWithNote("bt-solo", 107);
+      mBtRecordArm = createHardwareButtonWithNote("bt-record-arm", 108);
    }
 
    private HardwareButton createHardwareButtonWithNote(final String id, int note)
@@ -187,30 +196,60 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       bt.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(
       "(status & 0xF0) == 0x90 && data1 == " + note
       ));
+      bt.releasedAction().setActionMatcher(mMidiIn.createActionMatcher(
+         "(status & 0xF0) == 0x80 && data1 == " + note
+      ));
       return bt;
    }
 
    private void createLayers()
    {
       final Layers layers = new Layers(this);
-      final Layer mainLayer = new Layer(layers, "Main");
+      mMainLayer = new Layer(layers, "Main");
 
       for (int i = 0; i < 8; ++i)
       {
-         mainLayer.bind(mHardwareSliders[i], mTrackBank.getItemAt(i).volume());
+         final Track track = mTrackBank.getItemAt(i);
+         mMainLayer.bind(mHardwareSliders[i], track.volume());
+         mMainLayer.bindPressed(mBtTrackFocus[i], () -> mCursorTrack.selectChannel(track));
       }
 
-      mainLayer.bindPressed(mBtSendUp, () -> {
+      mMainLayer.bindPressed(mBtSendUp, () -> {
          for (int i = 0; i < 8; ++i)
             mTrackBank.getItemAt(i).sendBank().scrollBackwards();
       });
-      mainLayer.bindPressed(mBtSendDown, () -> {
+      mMainLayer.bindPressed(mBtSendDown, () -> {
          for (int i = 0; i < 8; ++i)
             mTrackBank.getItemAt(i).sendBank().scrollForwards();
       });
-      mainLayer.bindPressed(mBtTrackLeft, mTrackBank.scrollBackwardsAction());
-      mainLayer.bindPressed(mBtTrackRight, mTrackBank.scrollForwardsAction());
+      mMainLayer.bindPressed(mBtTrackLeft, mTrackBank.scrollBackwardsAction());
+      mMainLayer.bindPressed(mBtTrackRight, mTrackBank.scrollForwardsAction());
+      mMainLayer.bindPressed(mBtDevice, () -> setDeviceOn(true));
+      mMainLayer.bindReleased(mBtDevice, () -> setDeviceOn(false));
+      mMainLayer.bindPressed(mBtMute, () -> setTrackControl(TrackControl.Mute));
+      mMainLayer.bindPressed(mBtSolo, () -> setTrackControl(TrackControl.Solo));
+      mMainLayer.bindPressed(mBtRecordArm, () -> setTrackControl(TrackControl.RecordArm));
 
+      createModeLayers(layers);
+      createTrackControlsLayers(layers);
+      createDeviceLayer(layers);
+   }
+
+   private void createDeviceLayer(final Layers layers)
+   {
+      mDeviceLayer = new Layer(layers, "Device");
+      mDeviceLayer.bindPressed(mBtTrackLeft, mCursorDevice.selectPreviousAction());
+      mDeviceLayer.bindPressed(mBtTrackRight, mCursorDevice.selectNextAction());
+
+      for (int i = 0; i < 8; ++i)
+      {
+         final int I = i;
+         mDeviceLayer.bindPressed(mBtTrackControl[i], () -> mRemoteControls.selectedPageIndex().set(I));
+      }
+   }
+
+   private void createModeLayers(final Layers layers)
+   {
       mSend2FullDeviceLayer = new Layer(layers, "2 Sends Full Device");
       for (int i = 0; i < 8; ++i)
       {
@@ -265,9 +304,35 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          mSend3Layer.bind(mHardwareKnobs[8 + i], sendBank.getItemAt(1));
          mSend3Layer.bind(mHardwareKnobs[16 + i], sendBank.getItemAt(2));
       }
+   }
 
-      mainLayer.activate();
-      selectMode(Mode.Send2Device1);
+   private void createTrackControlsLayers(final Layers layers)
+   {
+      mMuteLayer = new Layer(layers, "Mute");
+      for (int i = 0; i < 8; ++i)
+         mMuteLayer.bindToggle(mBtTrackControl[i], mTrackBank.getItemAt(i).mute());
+
+      mSoloLayer = new Layer(layers, "Solo");
+      for (int i = 0; i < 8; ++i)
+         mSoloLayer.bindToggle(mBtTrackControl[i], mTrackBank.getItemAt(i).solo());
+
+      mRecordArmLayer = new Layer(layers, "Record Arm");
+      for (int i = 0; i < 8; ++i)
+         mRecordArmLayer.bindToggle(mBtTrackControl[i], mTrackBank.getItemAt(i).arm());
+   }
+
+   private void setTrackControl(final TrackControl trackControl)
+   {
+      mTrackControl = trackControl;
+      mMuteLayer.setIsActive(trackControl == TrackControl.Mute);
+      mSoloLayer.setIsActive(trackControl == TrackControl.Solo);
+      mRecordArmLayer.setIsActive(trackControl == TrackControl.RecordArm);
+   }
+
+   private void setDeviceOn(final boolean isDeviceOn)
+   {
+      mIsDeviceOn = isDeviceOn;
+      mDeviceLayer.setIsActive(isDeviceOn);
    }
 
    private void selectMode(final Mode mode)
@@ -646,6 +711,10 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private HardwareButton mBtTrackRight;
    private HardwareButton[] mBtTrackFocus = new HardwareButton[8];
    private HardwareButton[] mBtTrackControl = new HardwareButton[8];
+   private HardwareButton mBtDevice;
+   private HardwareButton mBtMute;
+   private HardwareButton mBtSolo;
+   private HardwareButton mBtRecordArm;
 
    private Layer mSend2Device1Layer;
    private Layer mSend2Pan1Layer;
@@ -653,4 +722,9 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private Layer mSend1Device2Layer;
    private Layer mDevice3Layer;
    private Layer mSend2FullDeviceLayer;
+   private Layer mMuteLayer;
+   private Layer mSoloLayer;
+   private Layer mRecordArmLayer;
+   private Layer mMainLayer;
+   private Layer mDeviceLayer;
 }
