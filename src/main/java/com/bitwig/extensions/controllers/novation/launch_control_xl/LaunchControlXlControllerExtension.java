@@ -131,9 +131,11 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       createLayers();
 
       mMainLayer.activate();
-      selectMode(Mode.Send2Device1);
-      setTrackControl(TrackControl.Mute);
-      setDeviceOn(false);
+      mHost.scheduleTask(() -> {
+         selectMode(Mode.Send2Device1);
+         setTrackControl(TrackControl.Mute);
+         setDeviceOn(false);
+      }, 100);
    }
 
    private void createHardwareSurface()
