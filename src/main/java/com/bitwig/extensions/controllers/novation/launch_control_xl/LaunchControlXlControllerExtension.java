@@ -133,6 +133,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mMainLayer.activate();
       selectMode(Mode.Send2FullDevice);
       setTrackControl(TrackControl.Mute);
+      setDeviceOn(false);
    }
 
    private void createHardwareSurface()
@@ -583,7 +584,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          mLeftButtonLed.setColor(mTrackBank.canScrollBackwards().get() ? yellow : off);
          mRightButtonLed.setColor(mTrackBank.canScrollForwards().get() ? yellow : off);
       }
-
    }
 
    private ControllerHost mHost;
