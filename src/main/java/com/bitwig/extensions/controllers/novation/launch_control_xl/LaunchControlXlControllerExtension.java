@@ -35,7 +35,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       Send2FullDevice(13),
       None(0);
 
-      Mode(int channel)
+      Mode(final int channel)
       {
          mChannel = channel;
       }
@@ -189,7 +189,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mBtRecordArm = createHardwareButtonWithNote("bt-record-arm", 108);
    }
 
-   private HardwareButton createHardwareButtonWithNote(final String id, int note)
+   private HardwareButton createHardwareButtonWithNote(final String id, final int note)
    {
       final HardwareButton bt = mHardwareSurface.createHardwareButton(id);
       bt.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(
@@ -437,10 +437,10 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mLeftButtonLed.flush(sb);
       mRightButtonLed.flush(sb);
 
-      for (SimpleLed simpleLed : mKnobsLed)
+      for (final SimpleLed simpleLed : mKnobsLed)
          simpleLed.flush(sb);
 
-      for (SimpleLed simpleLed : mBottomButtonsLed)
+      for (final SimpleLed simpleLed : mBottomButtonsLed)
          simpleLed.flush(sb);
 
       if (!sb.toString().isEmpty())
@@ -597,7 +597,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private TrackControl mTrackControl = TrackControl.Mute;
    private Mode mMode = Mode.Send2Device1;
 
-   private SimpleLed[] mKnobsLed = new SimpleLed[] {
+   private final SimpleLed[] mKnobsLed = new SimpleLed[] {
       new SimpleLed(0x90, 0),
       new SimpleLed(0x90, 1),
       new SimpleLed(0x90, 2),
@@ -626,7 +626,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       new SimpleLed(0x90, 23),
    };
 
-   private SimpleLed[] mBottomButtonsLed = new SimpleLed[] {
+   private final SimpleLed[] mBottomButtonsLed = new SimpleLed[] {
       new SimpleLed(0x90, 24),
       new SimpleLed(0x90, 25),
       new SimpleLed(0x90, 26),
@@ -646,26 +646,26 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       new SimpleLed(0x90, 39),
    };
 
-   private SimpleLed mDeviceLed = new SimpleLed(0x90, 40);
-   private SimpleLed mMuteLed = new SimpleLed(0x90, 41);
-   private SimpleLed mSoloLed = new SimpleLed(0x90, 42);
-   private SimpleLed mRecordArmLed = new SimpleLed(0x90, 43);
-   private SimpleLed mUpButtonLed = new SimpleLed(0x90, 44);
-   private SimpleLed mDownButtonLed = new SimpleLed(0x90, 45);
-   private SimpleLed mLeftButtonLed = new SimpleLed(0x90, 46);
-   private SimpleLed mRightButtonLed = new SimpleLed(0x90, 47);
-   private CursorDevice[] mTrackDeviceCursors = new CursorDevice[8];
-   private CursorRemoteControlsPage[] mTrackRemoteControls = new CursorRemoteControlsPage[8];
+   private final SimpleLed mDeviceLed = new SimpleLed(0x90, 40);
+   private final SimpleLed mMuteLed = new SimpleLed(0x90, 41);
+   private final SimpleLed mSoloLed = new SimpleLed(0x90, 42);
+   private final SimpleLed mRecordArmLed = new SimpleLed(0x90, 43);
+   private final SimpleLed mUpButtonLed = new SimpleLed(0x90, 44);
+   private final SimpleLed mDownButtonLed = new SimpleLed(0x90, 45);
+   private final SimpleLed mLeftButtonLed = new SimpleLed(0x90, 46);
+   private final SimpleLed mRightButtonLed = new SimpleLed(0x90, 47);
+   private final CursorDevice[] mTrackDeviceCursors = new CursorDevice[8];
+   private final CursorRemoteControlsPage[] mTrackRemoteControls = new CursorRemoteControlsPage[8];
 
    private HardwareSurface mHardwareSurface;
-   private AbsoluteHardwareKnob[] mHardwareKnobs = new AbsoluteHardwareKnob[3 * 8];
-   private HardwareSlider[] mHardwareSliders = new HardwareSlider[8];
+   private final AbsoluteHardwareKnob[] mHardwareKnobs = new AbsoluteHardwareKnob[3 * 8];
+   private final HardwareSlider[] mHardwareSliders = new HardwareSlider[8];
    private HardwareButton mBtSendUp;
    private HardwareButton mBtSendDown;
    private HardwareButton mBtTrackLeft;
    private HardwareButton mBtTrackRight;
-   private HardwareButton[] mBtTrackFocus = new HardwareButton[8];
-   private HardwareButton[] mBtTrackControl = new HardwareButton[8];
+   private final HardwareButton[] mBtTrackFocus = new HardwareButton[8];
+   private final HardwareButton[] mBtTrackControl = new HardwareButton[8];
    private HardwareButton mBtDevice;
    private HardwareButton mBtMute;
    private HardwareButton mBtSolo;
