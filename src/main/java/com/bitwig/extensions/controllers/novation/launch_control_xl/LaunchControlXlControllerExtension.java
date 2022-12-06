@@ -136,7 +136,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private void createHardwareSurface()
    {
       mHardwareSurface = mHost.createHardwareSurface();
-      final int knobOffsets[] = { 13, 29, 49 };
+      final int[] knobOffsets = { 13, 29, 49 };
       for (int i = 0; i < 8; ++i)
       {
          for (int j = 0; j < 3; ++j)
@@ -504,67 +504,54 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          final Track track = mTrackBank.getItemAt(i);
          final SendBank sendBank = track.sendBank();
 
+         final int green = SimpleLedColor.Green.value();
+         final int off = SimpleLedColor.Off.value();
+         final int amber = SimpleLedColor.Amber.value();
+         final int red = SimpleLedColor.Red.value();
+
          switch (mMode)
          {
             case Send2Device1 ->
             {
-               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get()
-                  ? SimpleLedColor.Green.value()
-                  : SimpleLedColor.Off.value());
-               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get()
-                  ? SimpleLedColor.Green.value()
-                  : SimpleLedColor.Off.value());
-               mKnobsLed[16 + i].setColor(mRemoteControls.getParameter(i).exists().get()
-                  ? SimpleLedColor.Amber.value()
-                  : SimpleLedColor.Off.value());
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? green : off);
+               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? green : off);
+               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get() ? amber : off);
             }
             case Send2Pan1 ->
             {
-               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get()
-                  ? SimpleLedColor.Green.value()
-                  : SimpleLedColor.Off.value());
-               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get()
-                  ? SimpleLedColor.Green.value()
-                  : SimpleLedColor.Off.value());
-               mKnobsLed[16 + i].setColor(track.exists().get()
-                  ? SimpleLedColor.Red.value()
-                  : SimpleLedColor.Off.value());
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? green : off);
+               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? green : off);
+               mKnobsLed[16 + i].setColor(track.exists().get() ? red : off);
             }
             case Send3 ->
             {
-               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get()
-                  ? SimpleLedColor.Green.value()
-                  : SimpleLedColor.Off.value());
-               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get()
-                  ? SimpleLedColor.Green.value()
-                  : SimpleLedColor.Off.value());
-               mKnobsLed[16 + i].setColor(sendBank.getItemAt(2).exists().get()
-                  ? SimpleLedColor.Green.value()
-                  : SimpleLedColor.Off.value());
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? green : off);
+               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? green : off);
+               mKnobsLed[16 + i].setColor(sendBank.getItemAt(2).exists().get() ? green : off);
             }
             case Send1Device2 ->
             {
-               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get()
-                  ? SimpleLedColor.Green.value()
-                  : SimpleLedColor.Off.value());
-               mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get()
-                  ? SimpleLedColor.Amber.value()
-                  : SimpleLedColor.Off.value());
-               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get()
-                  ? SimpleLedColor.Amber.value()
-                  : SimpleLedColor.Off.value());
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? green : off);
+               mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get() ? amber : off);
+               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get() ? amber : off);
             }
             case Device3 ->
             {
-               mKnobsLed[i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get()
-                  ? SimpleLedColor.Amber.value()
-                  : SimpleLedColor.Off.value());
-               mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get()
-                  ? SimpleLedColor.Amber.value()
-                  : SimpleLedColor.Off.value());
-               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(2).exists().get()
-                  ? SimpleLedColor.Amber.value()
-                  : SimpleLedColor.Off.value());
+               mKnobsLed[i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get() ? amber : off);
+               mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get() ? amber : off);
+               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(2).exists().get() ? amber : off);
+            }
+            case Send2FullDevice ->
+            {
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? green : off);
+               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? green : off);
+               mKnobsLed[16 + i].setColor(mRemoteControls.getParameter(i).exists().get() ? amber : off);
+            }
+            case None ->
+            {
+               mKnobsLed[i].setColor(off);
+               mKnobsLed[8 + i].setColor(off);
+               mKnobsLed[16 + i].setColor(off);
             }
          }
       }
@@ -573,9 +560,12 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    protected void paintRightButtons()
    {
       mDeviceLed.setColor(mIsDeviceOn ? SimpleLedColor.Yellow.value() : SimpleLedColor.Off.value());
-      mMuteLed.setColor(mTrackControl == TrackControl.Mute ? SimpleLedColor.Yellow.value() : SimpleLedColor.Off.value());
-      mSoloLed.setColor(mTrackControl == TrackControl.Solo ? SimpleLedColor.Yellow.value() : SimpleLedColor.Off.value());
-      mRecordArmLed.setColor(mTrackControl == TrackControl.RecordArm ? SimpleLedColor.Yellow.value() : SimpleLedColor.Off.value());
+      mMuteLed.setColor(mTrackControl == TrackControl.Mute ? SimpleLedColor.Yellow.value() :
+         SimpleLedColor.Off.value());
+      mSoloLed.setColor(mTrackControl == TrackControl.Solo ? SimpleLedColor.Yellow.value() :
+         SimpleLedColor.Off.value());
+      mRecordArmLed.setColor(mTrackControl == TrackControl.RecordArm ? SimpleLedColor.Yellow.value() :
+         SimpleLedColor.Off.value());
 
 
       final SendBank sendBank = mTrackBank.getItemAt(0).sendBank();
