@@ -346,6 +346,45 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mSend1Device2Layer.setIsActive(mode == Mode.Send1Device2);
       mDevice3Layer.setIsActive(mode == Mode.Device3);
       mSend2FullDeviceLayer.setIsActive(mode == Mode.Send2FullDevice);
+
+      switch (mode)
+      {
+         case Send2Device1 ->
+         {
+            mHost.showPopupNotification("Switched to 2 Sends and 1 per Channel DEVICE Control Mode");
+            updateIndications(2, false, false, 1);
+         }
+         case Send2Pan1 ->
+         {
+            mHost.showPopupNotification("Switched to 2 Sends and Pan Mode");
+            updateIndications(2, false, true, 0);
+         }
+         case Send3 ->
+         {
+            mHost.showPopupNotification("Switched to 3 Sends Mode");
+            updateIndications(3, false, false, 0);
+         }
+         case Send1Device2 ->
+         {
+            mHost.showPopupNotification("Switched to 1 Send and 2 per Channel DEVICE Controls Mode");
+            updateIndications(1, false, false, 2);
+         }
+         case Device3 ->
+         {
+            mHost.showPopupNotification("Switched to per Channel DEVICE Controls Mode");
+            updateIndications(0, false, false, 3);
+         }
+         case Send2FullDevice ->
+         {
+            mHost.showPopupNotification("Switched to 2 Sends and Selected DEVICE Controls Mode");
+            updateIndications(2, true, false, 0);
+         }
+         case None ->
+         {
+            mHost.showPopupNotification("Unsupported Template. We provide Modes for the Factory Template 1 to 5.");
+            updateIndications(0, false, false, 0);
+         }
+      }
    }
 
    private void updateIndications(final int numSends, final boolean hasRemoteControl, final boolean hasPan, final int numTrackRemoteControls)
@@ -368,52 +407,17 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
    private void onSysex(final String sysex)
    {
-      mHost.println("Sysex IN1: " + sysex);
+      // mHost.println("Sysex IN1: " + sysex);
 
       switch (sysex)
       {
-         case "f000202902117708f7" ->
-         {
-            mHost.showPopupNotification("Switched to 2 Sends and Selected DEVICE Controls Mode");
-            selectMode(Mode.Send2FullDevice);
-            updateIndications(2, true, false, 0);
-         }
-         case "f000202902117709f7" ->
-         {
-            mHost.showPopupNotification("Switched to 2 Sends and 1 per Channel DEVICE Control Mode");
-            selectMode(Mode.Send2Device1);
-            updateIndications(2, false, false, 1);
-         }
-         case "f00020290211770af7" ->
-         {
-            mHost.showPopupNotification("Switched to 2 Sends and Pan Mode");
-            selectMode(Mode.Send2Pan1);
-            updateIndications(2, false, true, 0);
-         }
-         case "f00020290211770bf7" ->
-         {
-            mHost.showPopupNotification("Switched to 3 Sends Mode");
-            selectMode(Mode.Send3);
-            updateIndications(3, false, false, 0);
-         }
-         case "f00020290211770cf7" ->
-         {
-            mHost.showPopupNotification("Switched to 1 Send and 2 per Channel DEVICE Controls Mode");
-            selectMode(Mode.Send1Device2);
-            updateIndications(1, false, false, 2);
-         }
-         case "f00020290211770df7" ->
-         {
-            mHost.showPopupNotification("Switched to per Channel DEVICE Controls Mode");
-            selectMode(Mode.Device3);
-            updateIndications(0, false, false, 3);
-         }
-         default ->
-         {
-            mHost.showPopupNotification("Unsupported Template. We provide Modes for the Factory Template 1 to 5.");
-            selectMode(Mode.None);
-            updateIndications(0, false, false, 0);
-         }
+         case "f000202902117708f7" -> selectMode(Mode.Send2FullDevice);
+         case "f000202902117709f7" -> selectMode(Mode.Send2Device1);
+         case "f00020290211770af7" -> selectMode(Mode.Send2Pan1);
+         case "f00020290211770bf7" -> selectMode(Mode.Send3);
+         case "f00020290211770cf7" -> selectMode(Mode.Send1Device2);
+         case "f00020290211770df7" -> selectMode(Mode.Device3);
+         default -> selectMode(Mode.None);
       }
    }
 
