@@ -161,6 +161,33 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mBtTrackRight = mHardwareSurface.createHardwareButton("bt-track-right");
       mBtTrackRight.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(
          "(status & 0xF0) == 0xB0 && data1 == 107 && data2 == 127"));
+
+      mBtTrackFocus[0] = createHardwareButtonWithNote("bt-track-focus-0", 41);
+      mBtTrackFocus[1] = createHardwareButtonWithNote("bt-track-focus-1", 42);
+      mBtTrackFocus[2] = createHardwareButtonWithNote("bt-track-focus-2", 43);
+      mBtTrackFocus[3] = createHardwareButtonWithNote("bt-track-focus-3", 44);
+      mBtTrackFocus[4] = createHardwareButtonWithNote("bt-track-focus-4", 57);
+      mBtTrackFocus[5] = createHardwareButtonWithNote("bt-track-focus-5", 58);
+      mBtTrackFocus[6] = createHardwareButtonWithNote("bt-track-focus-6", 59);
+      mBtTrackFocus[7] = createHardwareButtonWithNote("bt-track-focus-7", 60);
+
+      mBtTrackControl[0] = createHardwareButtonWithNote("bt-track-control-0", 73);
+      mBtTrackControl[1] = createHardwareButtonWithNote("bt-track-control-1", 74);
+      mBtTrackControl[2] = createHardwareButtonWithNote("bt-track-control-2", 75);
+      mBtTrackControl[3] = createHardwareButtonWithNote("bt-track-control-3", 76);
+      mBtTrackControl[4] = createHardwareButtonWithNote("bt-track-control-4", 89);
+      mBtTrackControl[5] = createHardwareButtonWithNote("bt-track-control-5", 90);
+      mBtTrackControl[6] = createHardwareButtonWithNote("bt-track-control-6", 91);
+      mBtTrackControl[7] = createHardwareButtonWithNote("bt-track-control-7", 92);
+   }
+
+   private HardwareButton createHardwareButtonWithNote(final String id, int note)
+   {
+      final HardwareButton bt = mHardwareSurface.createHardwareButton(id);
+      bt.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(
+      "(status & 0xF0) == 0x90 && data1 == " + note
+      ));
+      return bt;
    }
 
    private void createLayers()
@@ -617,6 +644,8 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private HardwareButton mBtSendDown;
    private HardwareButton mBtTrackLeft;
    private HardwareButton mBtTrackRight;
+   private HardwareButton[] mBtTrackFocus = new HardwareButton[8];
+   private HardwareButton[] mBtTrackControl = new HardwareButton[8];
 
    private Layer mSend2Device1Layer;
    private Layer mSend2Pan1Layer;
