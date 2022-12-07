@@ -52,7 +52,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private enum TopMode
    {
-      PAN, SENDS, USER, CHANNEL_STRIP;
+      PAN, SENDS, USER, CHANNEL_STRIP
    }
 
    private static final int MSG_NOTE_ON = 9;
@@ -193,10 +193,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mIsMasterSelected = mTrackCursor.createEqualsValue(mMasterTrack);
 
-      mChannelStripDevice = mTrackCursor.createCursorDevice("channel-strip", "Channel Strip", 4,
-         CursorDeviceFollowMode.LAST_DEVICE);
-      mChannelStripDevice.exists().markInterested();
-      mChannelStripRemoteControls = mChannelStripDevice.createCursorRemoteControlsPage(8);
+      PinnableCursorDevice channelStripDevice =
+         mTrackCursor.createCursorDevice("channel-strip", "Channel Strip", 4, CursorDeviceFollowMode.LAST_DEVICE);
+      channelStripDevice.exists().markInterested();
+      mChannelStripRemoteControls = channelStripDevice.createCursorRemoteControlsPage(8);
       mChannelStripRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 8);
 
       mDeviceCursor = mTrackCursor.createCursorDevice("device-control", "Device Control", 0,
@@ -513,8 +513,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       if (ENABLE_DEBUG_LAYER)
       {
-         mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-         mDebugLayer.activate();
+         Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+         debugLayer.activate();
       }
    }
 
@@ -880,19 +880,19 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTapTempoButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_TAP_TEMPO));
       mTapTempoButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_TAP_TEMPO));
 
-      mNudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
-      mNudgePlusButton.setLabel("NUDGE +");
-      mNudgePlusButton.setLabelPosition(RelativePosition.ABOVE);
-      mNudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
-      mNudgePlusButton.releasedAction()
+      HardwareButton nudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
+      nudgePlusButton.setLabel("NUDGE +");
+      nudgePlusButton.setLabelPosition(RelativePosition.ABOVE);
+      nudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
+      nudgePlusButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_PLUS));
 
-      mNudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
-      mNudgeMinusButton.setLabel("NUDGE -");
-      mNudgeMinusButton.setLabelPosition(RelativePosition.ABOVE);
-      mNudgeMinusButton.pressedAction()
+      HardwareButton nudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
+      nudgeMinusButton.setLabel("NUDGE -");
+      nudgeMinusButton.setLabelPosition(RelativePosition.ABOVE);
+      nudgeMinusButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_MINUS));
-      mNudgeMinusButton.releasedAction()
+      nudgeMinusButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_MINUS));
 
       mTempoKnob = mHardwareSurface.createRelativeHardwareKnob("Tempo");
@@ -995,7 +995,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createArmButtons()
    {
       mArmButtons = new HardwareButton[8];
-      mArmLeds = new OnOffHardwareLight[8];
+      OnOffHardwareLight[] armLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Arm-" + x);
@@ -1010,14 +1010,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          led.setOnColor(Color.fromRGB(1, 0, 0));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_ARM, channel, led));
          bt.setBackgroundLight(led);
-         mArmLeds[x] = led;
+         armLeds[x] = led;
       }
    }
 
    private void createSoloButtons()
    {
       mSoloButtons = new HardwareButton[8];
-      mSoloLeds = new OnOffHardwareLight[8];
+      OnOffHardwareLight[] soloLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Solo-" + x);
@@ -1032,7 +1032,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          led.setOnColor(Color.fromRGB(0, 0, 1));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_SOLO, channel, led));
          bt.setBackgroundLight(led);
-         mSoloLeds[x] = led;
+         soloLeds[x] = led;
       }
    }
 
@@ -1296,12 +1296,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mShiftButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SHIFT));
       mShiftButton.isPressed().markInterested();
 
-      mBankButton = mHardwareSurface.createHardwareButton("Bank");
-      mBankButton.setLabel("BANK");
-      mBankButton.setLabelPosition(RelativePosition.BELOW);
-      mBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
-      mBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_BANK));
-      mBankButton.isPressed().addValueObserver((isPressed) -> {
+      HardwareButton bankButton = mHardwareSurface.createHardwareButton("Bank");
+      bankButton.setLabel("BANK");
+      bankButton.setLabelPosition(RelativePosition.BELOW);
+      bankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
+      bankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_BANK));
+      bankButton.isPressed().addValueObserver((isPressed) -> {
          mBankOn.stateChanged(isPressed);
          if (mBankOn.isOn())
          {
@@ -1316,7 +1316,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       });
       mBankLed = mHardwareSurface.createOnOffHardwareLight("BankLed");
       mBankLed.setOnColor(Color.fromRGB255(255,165,0));
-      mBankButton.setBackgroundLight(mBankLed);
+      bankButton.setBackgroundLight(mBankLed);
       mBankLed.onUpdateHardware(() -> sendLedUpdate(BT_BANK, mBankLed));
 
       mLauncherUpButton = mHardwareSurface.createHardwareButton("LauncherUp");
@@ -1639,7 +1639,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private TrackBank mTrackBank = null;
 
-   private BooleanValue[] mIsTrackSelected = new BooleanValue[8];
+   private final BooleanValue[] mIsTrackSelected = new BooleanValue[8];
 
    private TrackBank mSendTrackBank = null;
 
@@ -1648,8 +1648,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private CursorTrack mTrackCursor = null;
 
    private PinnableCursorDevice mDeviceCursor = null;
-
-   private PinnableCursorDevice mChannelStripDevice;
 
    private CursorRemoteControlsPage mRemoteControls = null;
 
@@ -1696,8 +1694,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private Layers mLayers;
 
    private Layer mMainLayer;
-
-   private Layer mDebugLayer;
 
    private Layer mPanLayer;
 
@@ -1761,10 +1757,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private HardwareButton mTapTempoButton;
 
-   private HardwareButton mNudgePlusButton;
-
-   private HardwareButton mNudgeMinusButton;
-
    private RelativeHardwareKnob mTempoKnob;
 
    private HardwareButton mPrevDeviceButton;
@@ -1784,8 +1776,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private HardwareButton mDetailViewButton;
 
    private HardwareButton mShiftButton;
-
-   private HardwareButton mBankButton;
 
    private HardwareButton mLauncherUpButton;
 
@@ -1836,10 +1826,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private OnOffHardwareLight mBankLed;
 
    private OnOffHardwareLight[] mMuteLeds;
-
-   private OnOffHardwareLight[] mSoloLeds;
-
-   private OnOffHardwareLight[] mArmLeds;
 
    private HardwareTextDisplay[] mABLeds;
 

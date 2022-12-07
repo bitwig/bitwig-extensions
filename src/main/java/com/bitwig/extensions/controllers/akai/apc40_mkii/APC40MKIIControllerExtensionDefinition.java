@@ -83,8 +83,8 @@ public class APC40MKIIControllerExtensionDefinition extends ControllerExtensionD
       final AutoDetectionMidiPortNamesList list,
       final PlatformType platformType)
    {
-      final String inputNames[] = new String[1];
-      final String outputNames[] = new String[1];
+      final String[] inputNames = new String[1];
+      final String[] outputNames = new String[1];
 
       switch (platformType)
       {
@@ -103,16 +103,10 @@ public class APC40MKIIControllerExtensionDefinition extends ControllerExtensionD
       list.add(inputNames, outputNames);
    }
 
-   @Override
-   public boolean shouldFailOnDeprecatedUse()
-   {
-      return true;
-   }
-
    public static APC40MKIIControllerExtensionDefinition getInstance()
    {
       return mInstance;
    }
 
-   private static APC40MKIIControllerExtensionDefinition mInstance = new APC40MKIIControllerExtensionDefinition();
+   private static final APC40MKIIControllerExtensionDefinition mInstance = new APC40MKIIControllerExtensionDefinition();
 }
