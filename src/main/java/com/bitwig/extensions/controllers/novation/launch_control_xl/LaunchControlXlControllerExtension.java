@@ -146,10 +146,12 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          {
             final AbsoluteHardwareKnob knob = mHardwareSurface.createAbsoluteHardwareKnob("knob-" + i + "-" + j);
             knob.setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(knobOffsets[j] + i));
+            knob.setIndexInGroup(i);
             mHardwareKnobs[8 * j + i] = knob;
          }
          mHardwareSliders[i] = mHardwareSurface.createHardwareSlider("slider-" + i);
          mHardwareSliders[i].setAdjustValueMatcher(mMidiIn.createAbsoluteCCValueMatcher(77 + i));
+         mHardwareSliders[i].setIndexInGroup(i);
       }
 
       mBtSendUp = mHardwareSurface.createHardwareButton("bt-send-up");
@@ -168,33 +170,34 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mBtTrackRight.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(
          "(status & 0xF0) == 0xB0 && data1 == 107 && data2 == 127"));
 
-      mBtTrackFocus[0] = createHardwareButtonWithNote("bt-track-focus-0", 41);
-      mBtTrackFocus[1] = createHardwareButtonWithNote("bt-track-focus-1", 42);
-      mBtTrackFocus[2] = createHardwareButtonWithNote("bt-track-focus-2", 43);
-      mBtTrackFocus[3] = createHardwareButtonWithNote("bt-track-focus-3", 44);
-      mBtTrackFocus[4] = createHardwareButtonWithNote("bt-track-focus-4", 57);
-      mBtTrackFocus[5] = createHardwareButtonWithNote("bt-track-focus-5", 58);
-      mBtTrackFocus[6] = createHardwareButtonWithNote("bt-track-focus-6", 59);
-      mBtTrackFocus[7] = createHardwareButtonWithNote("bt-track-focus-7", 60);
+      mBtTrackFocus[0] = createHardwareButtonWithNote("bt-track-focus-0", 41, 0);
+      mBtTrackFocus[1] = createHardwareButtonWithNote("bt-track-focus-1", 42, 1);
+      mBtTrackFocus[2] = createHardwareButtonWithNote("bt-track-focus-2", 43, 2);
+      mBtTrackFocus[3] = createHardwareButtonWithNote("bt-track-focus-3", 44, 3);
+      mBtTrackFocus[4] = createHardwareButtonWithNote("bt-track-focus-4", 57, 4);
+      mBtTrackFocus[5] = createHardwareButtonWithNote("bt-track-focus-5", 58, 5);
+      mBtTrackFocus[6] = createHardwareButtonWithNote("bt-track-focus-6", 59, 6);
+      mBtTrackFocus[7] = createHardwareButtonWithNote("bt-track-focus-7", 60, 7);
 
-      mBtTrackControl[0] = createHardwareButtonWithNote("bt-track-control-0", 73);
-      mBtTrackControl[1] = createHardwareButtonWithNote("bt-track-control-1", 74);
-      mBtTrackControl[2] = createHardwareButtonWithNote("bt-track-control-2", 75);
-      mBtTrackControl[3] = createHardwareButtonWithNote("bt-track-control-3", 76);
-      mBtTrackControl[4] = createHardwareButtonWithNote("bt-track-control-4", 89);
-      mBtTrackControl[5] = createHardwareButtonWithNote("bt-track-control-5", 90);
-      mBtTrackControl[6] = createHardwareButtonWithNote("bt-track-control-6", 91);
-      mBtTrackControl[7] = createHardwareButtonWithNote("bt-track-control-7", 92);
+      mBtTrackControl[0] = createHardwareButtonWithNote("bt-track-control-0", 73, 0);
+      mBtTrackControl[1] = createHardwareButtonWithNote("bt-track-control-1", 74, 1);
+      mBtTrackControl[2] = createHardwareButtonWithNote("bt-track-control-2", 75, 2);
+      mBtTrackControl[3] = createHardwareButtonWithNote("bt-track-control-3", 76, 3);
+      mBtTrackControl[4] = createHardwareButtonWithNote("bt-track-control-4", 89, 4);
+      mBtTrackControl[5] = createHardwareButtonWithNote("bt-track-control-5", 90, 5);
+      mBtTrackControl[6] = createHardwareButtonWithNote("bt-track-control-6", 91, 6);
+      mBtTrackControl[7] = createHardwareButtonWithNote("bt-track-control-7", 92, 7);
 
-      mBtDevice = createHardwareButtonWithNote("bt-device", 105);
-      mBtMute = createHardwareButtonWithNote("bt-mute", 106);
-      mBtSolo = createHardwareButtonWithNote("bt-solo", 107);
-      mBtRecordArm = createHardwareButtonWithNote("bt-record-arm", 108);
+      mBtDevice = createHardwareButtonWithNote("bt-device", 105, 0);
+      mBtMute = createHardwareButtonWithNote("bt-mute", 106, 0);
+      mBtSolo = createHardwareButtonWithNote("bt-solo", 107, 0);
+      mBtRecordArm = createHardwareButtonWithNote("bt-record-arm", 108, 0);
    }
 
-   private HardwareButton createHardwareButtonWithNote(final String id, final int note)
+   private HardwareButton createHardwareButtonWithNote(final String id, final int note, final int indexInGroup)
    {
       final HardwareButton bt = mHardwareSurface.createHardwareButton(id);
+      bt.setIndexInGroup(indexInGroup);
       bt.pressedAction().setActionMatcher(mMidiIn.createActionMatcher(
       "(status & 0xF0) == 0x90 && data1 == " + note
       ));
@@ -352,56 +355,31 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          case Send2Device1 ->
          {
             mHost.showPopupNotification("Switched to 2 Sends and 1 per Channel DEVICE Control Mode");
-            updateIndications(2, false, false, 1);
          }
          case Send2Pan1 ->
          {
             mHost.showPopupNotification("Switched to 2 Sends and Pan Mode");
-            updateIndications(2, false, true, 0);
          }
          case Send3 ->
          {
             mHost.showPopupNotification("Switched to 3 Sends Mode");
-            updateIndications(3, false, false, 0);
          }
          case Send1Device2 ->
          {
             mHost.showPopupNotification("Switched to 1 Send and 2 per Channel DEVICE Controls Mode");
-            updateIndications(1, false, false, 2);
          }
          case Device3 ->
          {
             mHost.showPopupNotification("Switched to per Channel DEVICE Controls Mode");
-            updateIndications(0, false, false, 3);
          }
          case Send2FullDevice ->
          {
             mHost.showPopupNotification("Switched to 2 Sends and Selected DEVICE Controls Mode");
-            updateIndications(2, true, false, 0);
          }
          case None ->
          {
             mHost.showPopupNotification("Unsupported Template. We provide Modes for the Factory Template 1 to 6.");
-            updateIndications(0, false, false, 0);
          }
-      }
-   }
-
-   private void updateIndications(final int numSends, final boolean hasRemoteControl, final boolean hasPan, final int numTrackRemoteControls)
-   {
-      for (int i = 0; i < 8; ++i)
-      {
-         final Track track = mTrackBank.getItemAt(i);
-         final SendBank sendBank = track.sendBank();
-         sendBank.setSizeOfBank(3);
-         for (int j = 0; j < 3; ++j)
-            sendBank.getItemAt(j).setIndication(j < numSends);
-         sendBank.setSizeOfBank(numSends);
-         mRemoteControls.getParameter(i).setIndication(hasRemoteControl);
-         track.pan().setIndication(hasPan);
-
-         for (int j = 0; j < 3; ++j)
-            mTrackRemoteControls[i].getParameter(j).setIndication(j < numTrackRemoteControls);
       }
    }
 
