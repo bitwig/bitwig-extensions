@@ -111,7 +111,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          track.arm().markInterested();
          track.mute().markInterested();
          track.volume().markInterested();
-         track.volume().setIndication(true);
          track.exists().markInterested();
 
          final SendBank sendBank = track.sendBank();
