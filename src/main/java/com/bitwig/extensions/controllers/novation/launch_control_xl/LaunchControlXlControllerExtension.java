@@ -27,12 +27,12 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    // Identify possible modes
    enum Mode
    {
-      Send2Device1(8),
-      Send2Pan1(9),
-      Send3(10),
-      Send1Device2(11),
-      Device3(12),
-      Send2FullDevice(13),
+      Send2FullDevice(8),
+      Send2Device1(9),
+      Send2Pan1(10),
+      Send3(11),
+      Send1Device2(12),
+      Device3(13),
       None(0);
 
       Mode(final int channel)
@@ -75,7 +75,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       // Load the template Factory/1
       mMidiOut.sendSysex("f000202902117708f7");
 
-      mCursorTrack = mHost.createCursorTrack("cursor-track", "Launch Control XL Track Cursor", 0, 0, false);
+      mCursorTrack = mHost.createCursorTrack("cursor-track", "Launch Control XL Track Cursor", 0, 0, true);
       mCursorDevice = mCursorTrack.createCursorDevice();
       mCursorDevice.hasNext().markInterested();
       mCursorDevice.hasPrevious().markInterested();
@@ -131,11 +131,9 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       createLayers();
 
       mMainLayer.activate();
-      mHost.scheduleTask(() -> {
-         selectMode(Mode.Send2Device1);
-         setTrackControl(TrackControl.Mute);
-         setDeviceOn(false);
-      }, 100);
+      selectMode(Mode.Send2FullDevice);
+      setTrackControl(TrackControl.Mute);
+      setDeviceOn(false);
    }
 
    private void createHardwareSurface()
