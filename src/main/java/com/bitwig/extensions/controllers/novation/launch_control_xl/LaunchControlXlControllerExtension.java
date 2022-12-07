@@ -27,17 +27,18 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    // Identify possible modes
    enum Mode
    {
-      Send2FullDevice(8),
-      Send2Device1(9),
-      Send2Pan1(10),
-      Send3(11),
-      Send1Device2(12),
-      Device3(13),
-      None(0);
+      Send2FullDevice(8, "Switched to 2 Sends and Selected DEVICE Controls Mode"),
+      Send2Device1(9, "Switched to 2 Sends and 1 per Channel DEVICE Control Mode"),
+      Send2Pan1(10, "Switched to 2 Sends and Pan Mode"),
+      Send3(11, "Switched to 3 Sends Mode"),
+      Send1Device2(12, "Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
+      Device3(13, "Switched to per Channel DEVICE Controls Mode"),
+      None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 6.");
 
-      Mode(final int channel)
+      Mode(final int channel, final String notification)
       {
          mChannel = channel;
+         mNotification = notification;
       }
 
       int getChannel()
@@ -45,7 +46,13 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          return mChannel;
       }
 
+      public String getNotification()
+      {
+         return mNotification;
+      }
+
       private final int mChannel;
+      private final String mNotification;
    }
 
    enum TrackControl
@@ -350,37 +357,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mDevice3Layer.setIsActive(mode == Mode.Device3);
       mSend2FullDeviceLayer.setIsActive(mode == Mode.Send2FullDevice);
 
-      switch (mode)
-      {
-         case Send2Device1 ->
-         {
-            mHost.showPopupNotification("Switched to 2 Sends and 1 per Channel DEVICE Control Mode");
-         }
-         case Send2Pan1 ->
-         {
-            mHost.showPopupNotification("Switched to 2 Sends and Pan Mode");
-         }
-         case Send3 ->
-         {
-            mHost.showPopupNotification("Switched to 3 Sends Mode");
-         }
-         case Send1Device2 ->
-         {
-            mHost.showPopupNotification("Switched to 1 Send and 2 per Channel DEVICE Controls Mode");
-         }
-         case Device3 ->
-         {
-            mHost.showPopupNotification("Switched to per Channel DEVICE Controls Mode");
-         }
-         case Send2FullDevice ->
-         {
-            mHost.showPopupNotification("Switched to 2 Sends and Selected DEVICE Controls Mode");
-         }
-         case None ->
-         {
-            mHost.showPopupNotification("Unsupported Template. We provide Modes for the Factory Template 1 to 6.");
-         }
-      }
+      mHost.showPopupNotification(mode.getNotification());
    }
 
    private void onSysex(final String sysex)
