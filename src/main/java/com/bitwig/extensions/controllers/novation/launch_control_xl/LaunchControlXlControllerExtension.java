@@ -381,7 +381,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          }
          case None ->
          {
-            mHost.showPopupNotification("Unsupported Template. We provide Modes for the Factory Template 1 to 5.");
+            mHost.showPopupNotification("Unsupported Template. We provide Modes for the Factory Template 1 to 6.");
             updateIndications(0, false, false, 0);
          }
       }
