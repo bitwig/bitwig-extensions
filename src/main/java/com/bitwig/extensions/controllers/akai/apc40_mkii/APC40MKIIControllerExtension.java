@@ -175,7 +175,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMasterTrack = host.createMasterTrack(5);
       mMasterTrack.isStopped().markInterested();
 
-      mTrackCursor = host.createCursorTrack(8, 0);
+      mTrackCursor = host.createCursorTrack("cursor-track", "Akai APC40 mkII", 8, 0, true);
       mTrackCursor.exists().markInterested();
       mTrackCursor.isGroup().markInterested();
       mTrackCursor.volume().markInterested();
@@ -430,9 +430,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 8; ++i)
       {
          final int x = i;
-         mShiftLayer.bindPressed(mTrackSelectButtons[x], getHost().createAction(() -> {
-            setLaunchQuantizationFromTrackSelect(x);
-         }, () -> "Configures the default launch quantization"));
+         mShiftLayer.bindPressed(mTrackSelectButtons[x], getHost().createAction(() -> setLaunchQuantizationFromTrackSelect(x), () -> "Configures the default launch quantization"));
          mShiftLayer.bind(() -> x == computeLaunchQuantizationIndex(), mTrackSelectLeds[x]);
 
          final Track track = mTrackBank.getItemAt(i);
@@ -456,46 +454,18 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void setLaunchQuantizationFromTrackSelect(final int x)
    {
-      final String quantization;
-
-      switch (x)
-      {
-      case 0:
-         quantization = "none";
-         break;
-
-      case 1:
-         quantization = "8";
-         break;
-
-      case 2:
-         quantization = "4";
-         break;
-
-      case 3:
-         quantization = "2";
-         break;
-
-      case 4:
-         quantization = "1";
-         break;
-
-      case 5:
-         quantization = "1/4";
-         break;
-
-      case 6:
-         quantization = "1/8";
-         break;
-
-      case 7:
-         quantization = "1/16";
-         break;
-
-      default:
-         quantization = "1";
-         break;
-      }
+      final String quantization = switch (x)
+         {
+            case 0 -> "none";
+            case 1 -> "8";
+            case 2 -> "4";
+            case 3 -> "2";
+            case 4 -> "1";
+            case 5 -> "1/4";
+            case 6 -> "1/8";
+            case 7 -> "1/16";
+            default -> "1";
+         };
 
       mTransport.defaultLaunchQuantization().set(quantization);
    }
@@ -1007,24 +977,19 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final HardwareTextDisplay led = mHardwareSurface.createHardwareTextDisplay("ABLed-" + x, 1);
-         led.onUpdateHardware(() -> {
-            sendLedUpdate(BT_TRACK_AB, channel, crossFadeToInt(led.line(0).text().currentValue()));
-         });
+         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_AB, channel, crossFadeToInt(led.line(0).text().currentValue())));
          mABLeds[x] = led;
       }
    }
 
    private static Color getABLedColor(final int i)
    {
-      switch (i)
-      {
-      case 1:
-         return Color.fromRGB(1.0, 0.5, 0);
-      case 2:
-         return Color.fromRGB(0, 0, 1.0);
-      default:
-         return Color.fromRGB(0, 0, 0);
-      }
+      return switch (i)
+         {
+            case 1 -> Color.fromRGB(1.0, 0.5, 0);
+            case 2 -> Color.fromRGB(0, 0, 1.0);
+            default -> Color.fromRGB(0, 0, 0);
+         };
    }
 
    private void createArmButtons()
@@ -1034,7 +999,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Arm-" + x);
-         bt.setLabel("\u25CF");
+         bt.setLabel("●");
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_ARM));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_ARM));
          bt.setIndexInGroup(x);
@@ -1233,7 +1198,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mPrevDeviceButton = mHardwareSurface.createHardwareButton("PrevDevice");
-      mPrevDeviceButton.setLabel("\u2190DEVICE");
+      mPrevDeviceButton.setLabel("←DEVICE");
       mPrevDeviceButton.setLabelPosition(RelativePosition.BELOW);
       mPrevDeviceButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_DEVICE));
@@ -1245,7 +1210,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_DEVICE, mPrevDeviceLed));
 
       mNextDeviceButton = mHardwareSurface.createHardwareButton("NextDevice");
-      mNextDeviceButton.setLabel("DEVICE\u2192");
+      mNextDeviceButton.setLabel("DEVICE→");
       mNextDeviceButton.setLabelPosition(RelativePosition.BELOW);
       mNextDeviceButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_DEVICE));
@@ -1257,7 +1222,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mNextDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_DEVICE, mNextDeviceLed));
 
       mPrevBankButton = mHardwareSurface.createHardwareButton("PrevBank");
-      mPrevBankButton.setLabel("\u2190BANK");
+      mPrevBankButton.setLabel("←BANK");
       mPrevBankButton.setLabelPosition(RelativePosition.BELOW);
       mPrevBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_BANK));
       mPrevBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_BANK));
@@ -1267,7 +1232,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevBankLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_BANK, mPrevBankLed));
 
       mNextBankButton = mHardwareSurface.createHardwareButton("NextBank");
-      mNextBankButton.setLabel("BANK\u2192");
+      mNextBankButton.setLabel("BANK→");
       mNextBankButton.setLabelPosition(RelativePosition.BELOW);
       mNextBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_BANK));
       mNextBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_BANK));
@@ -1355,28 +1320,28 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mBankLed.onUpdateHardware(() -> sendLedUpdate(BT_BANK, mBankLed));
 
       mLauncherUpButton = mHardwareSurface.createHardwareButton("LauncherUp");
-      mLauncherUpButton.setLabel("\u2191");
+      mLauncherUpButton.setLabel("↑");
       mLauncherUpButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_UP));
       mLauncherUpButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_UP));
 
       mLauncherDownButton = mHardwareSurface.createHardwareButton("LauncherDown");
-      mLauncherDownButton.setLabel("\u2193");
+      mLauncherDownButton.setLabel("↓");
       mLauncherDownButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_DOWN));
       mLauncherDownButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_DOWN));
 
       mLauncherLeftButton = mHardwareSurface.createHardwareButton("LauncherLeft");
-      mLauncherLeftButton.setLabel("\u2190");
+      mLauncherLeftButton.setLabel("←");
       mLauncherLeftButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_LEFT));
       mLauncherLeftButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_LEFT));
 
       mLauncherRightButton = mHardwareSurface.createHardwareButton("LauncherRight");
-      mLauncherRightButton.setLabel("\u2192");
+      mLauncherRightButton.setLabel("→");
       mLauncherRightButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_RIGHT));
       mLauncherRightButton.releasedAction()
@@ -1393,24 +1358,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       else
          knobLed.setDisplayedValue(value);
 
-      final int ring;
-      switch (mTopMode)
-      {
-      case PAN:
-         ring = KnobLed.RING_PAN;
-         break;
-      case SENDS:
-         ring = KnobLed.RING_VOLUME;
-         break;
-      case CHANNEL_STRIP:
-         ring = knobIndex < CHANNEL_STRIP_NUM_PARAMS ? KnobLed.RING_SINGLE : KnobLed.RING_VOLUME;
-         break;
-      case USER:
-         ring = KnobLed.RING_SINGLE;
-         break;
-      default:
-         throw new IllegalStateException();
-      }
+      final int ring = switch (mTopMode)
+         {
+            case PAN -> KnobLed.RING_PAN;
+            case SENDS -> KnobLed.RING_VOLUME;
+            case CHANNEL_STRIP -> knobIndex < CHANNEL_STRIP_NUM_PARAMS ? KnobLed.RING_SINGLE : KnobLed.RING_VOLUME;
+            case USER -> KnobLed.RING_SINGLE;
+            default -> throw new IllegalStateException();
+         };
 
       if (knobLed.wantsFlush())
          knobLed.setRing(knob.hasTargetValue().get() ? ring : KnobLed.RING_OFF);
@@ -1489,15 +1444,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private String intToCrossFade(final int index)
    {
-      switch (index)
-      {
-      case 1:
-         return "A";
-      case 2:
-         return "B";
-      default:
-         return "AB";
-      }
+      return switch (index)
+         {
+            case 1 -> "A";
+            case 2 -> "B";
+            default -> "AB";
+         };
    }
 
    private int crossFadeToInt(final String s)
@@ -1620,27 +1572,18 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private int computeLaunchQuantizationIndex()
    {
-      switch (mTransport.defaultLaunchQuantization().get())
-      {
-      case "none":
-         return 0;
-      case "8":
-         return 1;
-      case "4":
-         return 2;
-      case "2":
-         return 3;
-      case "1":
-         return 4;
-      case "1/4":
-         return 5;
-      case "1/8":
-         return 6;
-      case "1/16":
-         return 7;
-      default:
-         return -1;
-      }
+      return switch (mTransport.defaultLaunchQuantization().get())
+         {
+            case "none" -> 0;
+            case "8" -> 1;
+            case "4" -> 2;
+            case "2" -> 3;
+            case "1" -> 4;
+            case "1/4" -> 5;
+            case "1/8" -> 6;
+            case "1/16" -> 7;
+            default -> -1;
+         };
    }
 
    /**

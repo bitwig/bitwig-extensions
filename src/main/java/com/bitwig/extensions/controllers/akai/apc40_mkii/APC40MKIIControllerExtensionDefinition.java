@@ -88,16 +88,16 @@ public class APC40MKIIControllerExtensionDefinition extends ControllerExtensionD
 
       switch (platformType)
       {
-      case LINUX:
-         inputNames[0] = "APC40 mkII MIDI 1";
-         outputNames[0] = "APC40 mkII MIDI 1";
-         break;
-
-      case WINDOWS:
-      case MAC:
-         inputNames[0] = "APC40 mkII";
-         outputNames[0] = "APC40 mkII";
-         break;
+         case LINUX ->
+         {
+            inputNames[0] = "APC40 mkII MIDI 1";
+            outputNames[0] = "APC40 mkII MIDI 1";
+         }
+         case WINDOWS, MAC ->
+         {
+            inputNames[0] = "APC40 mkII";
+            outputNames[0] = "APC40 mkII";
+         }
       }
 
       list.add(inputNames, outputNames);
