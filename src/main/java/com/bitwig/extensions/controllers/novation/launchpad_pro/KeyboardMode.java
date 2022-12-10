@@ -49,18 +49,13 @@ final class KeyboardMode extends Mode
    @Override
    protected String getModeDescription()
    {
-      switch (mDriver.getKeyboardLayout())
-      {
-         case GUITAR:
-            return "Play: Guitar Layout";
-         case LINE_3:
-            return "Play: Line/3 Layout";
-         case LINE_7:
-            return "Play: Line/7 Layout";
-         case PIANO:
-            return "Play: Piano Layout";
-      }
-      return "Play ???";
+      return switch (mDriver.getKeyboardLayout())
+         {
+            case GUITAR -> "Play: Guitar Layout";
+            case LINE_3 -> "Play: Line/3 Layout";
+            case LINE_7 -> "Play: Line/7 Layout";
+            case PIANO -> "Play: Piano Layout";
+         };
    }
 
    @Override

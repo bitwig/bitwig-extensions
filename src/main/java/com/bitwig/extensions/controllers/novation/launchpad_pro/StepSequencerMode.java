@@ -3,10 +3,8 @@ package com.bitwig.extensions.controllers.novation.launchpad_pro;
 import java.util.List;
 
 import com.bitwig.extension.controller.api.Clip;
-import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.PinnableCursorClip;
-import com.bitwig.extension.controller.api.SettableColorValue;
 import com.bitwig.extension.controller.api.Track;
 
 final class StepSequencerMode extends AbstractSequencerMode
@@ -196,17 +194,13 @@ final class StepSequencerMode extends AbstractSequencerMode
          return LedState.STEP_PLAY_HEAD;
       if (mDriver.getPadButton(x, 7- y).getButtonState() == Button.State.HOLD)
          return LedState.STEP_HOLD;
-      switch (noteStep.state())
-      {
-         case NoteOn:
-            return LedState.STEP_ON;
-         case NoteSustain:
-            return LedState.STEP_SUSTAIN;
-         case Empty:
-            return LedState.STEP_OFF;
-         default:
-            throw new IllegalStateException();
-      }
+      return switch (noteStep.state())
+         {
+            case NoteOn -> LedState.STEP_ON;
+            case NoteSustain -> LedState.STEP_SUSTAIN;
+            case Empty -> LedState.STEP_OFF;
+            default -> throw new IllegalStateException();
+         };
    }
 
    private NoteStep computeVerticalStepState(final int absoluteStepIndex)
@@ -256,21 +250,10 @@ final class StepSequencerMode extends AbstractSequencerMode
 
             switch (y)
             {
-               case 0:
-                  noteStep.setVelocity(x / 7.0);
-                  break;
-
-               case 1:
-                  noteStep.setDuration(computeDuration(x));
-                  break;
-
-               case 2:
-                  noteStep.setPan((3 <= x && x <= 4) ? 0 : (x - 3.5) / 3.5);
-                  break;
-
-               case 3:
-                  noteStep.setGain(x / 7.0);
-                  break;
+               case 0 -> noteStep.setVelocity(x / 7.0);
+               case 1 -> noteStep.setDuration(computeDuration(x));
+               case 2 -> noteStep.setPan((3 <= x && x <= 4) ? 0 : (x - 3.5) / 3.5);
+               case 3 -> noteStep.setGain(x / 7.0);
             }
          }
       }
@@ -293,17 +276,9 @@ final class StepSequencerMode extends AbstractSequencerMode
 
             switch (y)
             {
-               case 0:
-                  noteStep.setTranspose(computeTranspoose(x));
-                  break;
-
-               case 1:
-                  noteStep.setTimbre((3 <= x && x <= 4) ? 0 : (x - 3.5) / 3.5);
-                  break;
-
-               case 2:
-                  noteStep.setPressure(x / 7.0);
-                  break;
+               case 0 -> noteStep.setTranspose(computeTranspose(x));
+               case 1 -> noteStep.setTimbre((3 <= x && x <= 4) ? 0 : (x - 3.5) / 3.5);
+               case 2 -> noteStep.setPressure(x / 7.0);
             }
          }
       }
@@ -354,18 +329,13 @@ final class StepSequencerMode extends AbstractSequencerMode
    @Override
    protected String getDataModeDescription(final DataMode dataMode)
    {
-      switch (dataMode)
-      {
-         case Main:
-         case MainAlt:
-            return "Step Sequencer: Keys";
-         case MixData:
-            return "Step Sequencer: Velocity, Note Length, Pan";
-         case SoundData:
-            return "Step Sequencer: Pich Offset, Timbre, Pressure";
-         default:
-            return "Error";
-      }
+      return switch (dataMode)
+         {
+            case Main, MainAlt -> "Step Sequencer: Keys";
+            case MixData -> "Step Sequencer: Velocity, Note Length, Pan";
+            case SoundData -> "Step Sequencer: Pich Offset, Timbre, Pressure";
+            default -> "Error";
+         };
    }
 
    @Override
@@ -383,16 +353,9 @@ final class StepSequencerMode extends AbstractSequencerMode
 
       switch (mDataMode)
       {
-         case Main:
-         case MainAlt:
-            mKeyboardLayer.activate();
-            break;
-         case MixData:
-            mMixDataLayer.activate();
-            break;
-         case SoundData:
-            mSoundDataLayer.activate();
-            break;
+         case Main, MainAlt -> mKeyboardLayer.activate();
+         case MixData -> mMixDataLayer.activate();
+         case SoundData -> mSoundDataLayer.activate();
       }
    }
 
