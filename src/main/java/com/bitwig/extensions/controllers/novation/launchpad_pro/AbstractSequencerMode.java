@@ -410,7 +410,8 @@ abstract class AbstractSequencerMode extends Mode
             case 5 -> 0.125;
             case 6 -> 0.25;
             case 7 -> 0.5;
-            case 3, 4, default -> 0;
+            case 3, 4 -> 0;
+            default -> 0;
          };
    }
 

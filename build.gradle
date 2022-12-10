@@ -29,7 +29,7 @@ group = 'com.bitwig.extensions'
 description = 'Bitwig Studio Extensions (Github)'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_16
+    sourceCompatibility = JavaVersion.VERSION_18
 
     jar {
         archiveFileName = 'BitwigControllers.bwextension'
