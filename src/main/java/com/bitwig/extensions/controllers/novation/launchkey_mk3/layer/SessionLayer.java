@@ -99,7 +99,11 @@ public class SessionLayer extends Layer {
       sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene),
          () -> sceneLaunched && hasPlayQueued() ? RgbState.flash(22, 0) : RgbState.of(0));
       if (driver.isMiniVersion()) {
-         driver.getShiftState().addValueObserver(shiftLayer::setIsActive);
+         driver.getShiftState().addValueObserver(shiftActive -> {
+            if(isActive()) {
+               shiftLayer.setIsActive(shiftActive);
+            }
+         });
          bindUpDownButtons(driver, shiftLayer, trackBank, sceneLaunchButton, row2ModeButton);
       } else {
          final RgbCcButton navUpButton = driver.getHwControl().getNavUpButton();

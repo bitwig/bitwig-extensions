@@ -38,8 +38,8 @@ public class LaunchkeyMiniMk3ExtensionDefinition extends LaunchkeyMk3ExtensionDe
          list.add(new String[]{"MIDIIN2 (Launchkey Mini MK3 MID", "Launchkey Mini MK3 MIDI"},
             new String[]{"MIDIOUT2 (Launchkey Mini MK3 MI", "Launchkey Mini MK3 MIDI"});
       } else if (platformType == PlatformType.MAC) {
-         list.add(new String[]{"Launchkey Mini LKMK3 DAW Out", "Launchkey Mini MIDI Out"},
-            new String[]{"Launchkey Mini LKMK3 DAW In", "Launchkey Mini LKMK3 MIDI In"});
+         list.add(new String[]{"Launchkey Mini MK3 DAW Port", "Launchkey Mini MK3 MIDI Port"},
+            new String[]{"Launchkey Mini MK3 DAW Port", "Launchkey Mini MK3 MIDI Port"});
       } else if (platformType == PlatformType.LINUX) {
          list.add(new String[]{"MIDIIN2 (LKMK3 MIDI)", "LKMK3 MIDI"},
             new String[]{"MIDIOUT2 (LKMK3 MIDI)", "LKMK3 MIDI"});
