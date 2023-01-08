@@ -99,7 +99,11 @@ public class SessionLayer extends Layer {
       sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene),
          () -> sceneLaunched && hasPlayQueued() ? RgbState.flash(22, 0) : RgbState.of(0));
       if (driver.isMiniVersion()) {
-         driver.getShiftState().addValueObserver(shiftLayer::setIsActive);
+         driver.getShiftState().addValueObserver(shiftActive -> {
+            if(isActive()) {
+               shiftLayer.setIsActive(shiftActive);
+            }
+         });
          bindUpDownButtons(driver, shiftLayer, trackBank, sceneLaunchButton, row2ModeButton);
       } else {
          final RgbCcButton navUpButton = driver.getHwControl().getNavUpButton();
@@ -211,33 +215,6 @@ public class SessionLayer extends Layer {
       slot.isPlaybackQueued().markInterested();
       slot.color().addValueObserver((r, g, b) -> {
          colorIndex[index] = ColorLookup.toColor(r, g, b);
-//         final int rv = (int) Math.floor(r * 255);
-//         final int gv = (int) Math.floor(g * 255);
-//         final int bv = (int) Math.floor(b * 255);
-//         if (rv < 10 && gv < 10 && bv < 10) {
-//            colorIndex[index] = 0; // black
-//         } else if (rv > 230 && gv > 230 && bv > 230) {
-//            colorIndex[index] = 3; // whit
-//         } else if (rv == gv && bv == gv) {
-//            final int bright = rv >> 4;
-//            host.println(" B=" + bright);
-//            if (bright > 7) {
-//               colorIndex[index] = 2; // gray
-//            } else {
-//               colorIndex[index] = 1;
-//            }
-//         } else {
-//            final ColorLookup.Hsb hsb = ColorLookup.rgbToHsb(rv, gv, bv);
-//            int hueInd = hsb.hue > 6 ? hsb.hue - 1 : hsb.hue;
-//            hueInd = hueInd > 13 ? 13 : hueInd;
-//            colorIndex[index] = 5 + hueInd * 4 + 1;
-//            if (hsb.sat < 8) {
-//               colorIndex[index] -= 2;
-//            } else if (hsb.bright <= 8) {
-//               colorIndex[index] += 2;
-//            }
-//         }
-//         host.println(String.format("[%02d] %d,%d,%d> => %s .. %d", index, rv, gv, bv, hsb, colorIndex[index]));
       });
    }
 

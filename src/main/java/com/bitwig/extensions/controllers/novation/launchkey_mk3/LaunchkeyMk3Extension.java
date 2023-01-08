@@ -57,6 +57,7 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
    private Application application;
    private MasterTrack masterTrack;
    private CursorTrack cursorTrack;
+   private Clip cursorClip;
    private CursorRemoteControlsPage remoteControlBank;
    private DeviceSelectionLayer deviceSelectionLayer;
 
@@ -102,8 +103,12 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       cursorTrack = host.createCursorTrack(2, 2);
       cursorDevice = cursorTrack.createCursorDevice();
       deviceBank = cursorTrack.createDeviceBank(8);
+      cursorClip = host.createLauncherCursorClip(1,8);
       remoteControlBank = cursorDevice.createCursorRemoteControlsPage(8);
+
+
       trackBank.followCursorTrack(cursorTrack);
+
       primaryDevice = cursorTrack.createCursorDevice("DrumDetection", "Pad Device", 2,
          CursorDeviceFollowMode.FIRST_INSTRUMENT);
 
@@ -137,6 +142,10 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
          host.showPopupNotification(String.format("Launchkey %d Mk3 Initialized", extensionDefinition.numberOfKeys()));
       }
       host.scheduleTask(this::handlePing, 50);
+      final Action[] actions = application.getActions();
+      for (Action action: actions ) {
+         host.println(" id =<" + action.getId() + "> name=<" + action.getName() + "> {" + action.getMenuItemText() + "} " + action.getCategory());
+      }
    }
 
    private void setUpPreferences() {
@@ -159,6 +168,11 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
             drumPadLayer.setIsActive(false);
             break;
       }
+   }
+
+   public void launchDirect() {
+      final Action action = application.getAction("launch_from_playback_start_time");
+      action.invoke();
    }
 
    public void initDeviceHandlingButton() {
@@ -197,8 +211,11 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       startButton.bind(mainLayer, transport.playAction());
       startButton.bindLight(mainLayer, transport.isPlaying());
       if (miniVersion) {
-         startButton.bindToggle(shiftLayer, transport.isMetronomeEnabled());
-         startButton.bindLight(shiftLayer, transport.isMetronomeEnabled());
+         //startButton.bindToggle(shiftLayer, transport.isMetronomeEnabled());
+         //startButton.bindLight(shiftLayer, transport.isMetronomeEnabled());
+         //startButton.bindToggle(shiftLayer, transport.isMetronomeEnabled());
+         startButton.bindPressed(shiftLayer, () -> transport.stop());
+         //startButton.bindLight(shiftLayer, transport.isMetronomeEnabled());
       } else {
          startButton.bind(shiftLayer, transport.restartAction());
       }
@@ -289,6 +306,10 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
 
    public void stopHold() {
       repeatWhileHoldTask = null;
+   }
+
+   public Clip getCursorClip() {
+      return cursorClip;
    }
 
    public void setTransientText(final String row1, final String row2) {
@@ -391,6 +412,9 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       if (sysEx.startsWith(LaunchkeyConstants.SYS_EX_DEVICE_INQUIRY_HEAD)) {
          final String deviceId = LaunchkeyConstants.getDeviceId(sysEx);
          final String appId = LaunchkeyConstants.getAppId(sysEx);
+         // Make sure DAW mode if off before actually turning it on.
+         setDawMode(false);
+         pause(20);
          println("Connect device=%s app=%s", deviceId, appId);
          setDawMode(true);
          changePadMode(PadMode.SESSION);
@@ -409,17 +433,21 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       final CompletableFuture<Boolean> shutdown = new CompletableFuture<>();
       Executors.newSingleThreadExecutor().execute(() -> {
          setDawMode(false);
-         try {
-            TimeUnit.MILLISECONDS.sleep(100);
-         } catch (final InterruptedException e) {
-            // Noting to do here
-         }
+         pause(100);
          shutdown.complete(true);
       });
       try {
          shutdown.get();
       } catch (final InterruptedException | ExecutionException e) {
          host.println(" >> Exit Daw MOde");
+      }
+   }
+
+   private void pause(long timeMs) {
+      try {
+         TimeUnit.MILLISECONDS.sleep(100);
+      } catch (final InterruptedException e) {
+         Thread.currentThread().interrupt();
       }
    }
 
@@ -432,4 +460,6 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
    public void sendCcNr(final int channel, final int ccNr, final int value) {
       midiOut.sendMidi(Midi.CC | channel, ccNr, value);
    }
+
+
 }

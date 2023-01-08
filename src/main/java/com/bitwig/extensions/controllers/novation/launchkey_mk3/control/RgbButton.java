@@ -65,6 +65,10 @@ public class RgbButton {
       }, hwLight);
    }
 
+   public void bindLight(final Layer layer, final Supplier<RgbState> lightSource) {
+      layer.bindLightState(lightSource::get, hwLight);
+   }
+
    public void bindIsPressed(final Layer layer, final Consumer<Boolean> target,
                              final Function<Boolean, RgbState> colorProvider) {
       layer.bind(hwButton, hwButton.pressedAction(), () -> target.accept(true));
