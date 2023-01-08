@@ -151,7 +151,7 @@ public class MackieMcuProExtension extends ControllerExtension {
       final PopupBrowser browser = host.createPopupBrowser();
       cursorTrack = getHost().createCursorTrack(8, 4);
       followClip = new FocusClipView(host, cursorTrack);
-
+      DebugUtil.println(" >>>>>>>>>>>>>>>>>>>>> ");
       initJogWheel();
       initMasterSection();
       initChannelSections();
