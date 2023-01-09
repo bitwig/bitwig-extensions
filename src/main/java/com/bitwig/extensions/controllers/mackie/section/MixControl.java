@@ -1,7 +1,10 @@
 package com.bitwig.extensions.controllers.mackie.section;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.mackie.*;
+import com.bitwig.extensions.controllers.mackie.ButtonViewState;
+import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
+import com.bitwig.extensions.controllers.mackie.MixerMode;
+import com.bitwig.extensions.controllers.mackie.VPotMode;
 import com.bitwig.extensions.controllers.mackie.configurations.*;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
@@ -359,7 +362,6 @@ public class MixControl implements LayerStateHandler {
    }
 
    private void changeMixerMode(final MixerMode oldMode, final MixerMode newMode) {
-      DebugUtil.println(" CHANGE MODE %s", newMode);
       determineSendTrackConfig(activeVPotMode);
       if (oldMode == MixerMode.DRUM) {
          driver.getCursorTrack().selectChannel(driver.getCursorTrack()); // re-assert selection to main channel

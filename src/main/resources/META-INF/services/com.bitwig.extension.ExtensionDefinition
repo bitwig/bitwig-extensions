@@ -65,6 +65,7 @@ com.bitwig.extensions.controllers.mackie.definition.IconQconProXExtensionDefinit
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt1ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt2ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt3ExtensionDefinition
+com.bitwig.extensions.controllers.mackie.definition.IconPlatformMExtensionDefinition
 
 com.bitwig.extensions.controllers.novation.launch_control_xl.LaunchControlXlControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControllerExtensionDefinition
