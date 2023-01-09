@@ -38,6 +38,12 @@ public abstract class LaunchkeyMk3ExtensionDefinition extends ControllerExtensio
    }
 
    @Override
+   public String getHelpFilePath()
+   {
+      return "Controllers/Novation/LaunchKey Mk3.pdf";
+   }
+
+   @Override
    public int getNumMidiInPorts() {
       return 2;
    }

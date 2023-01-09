@@ -8,8 +8,10 @@ com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab49ControllerEx
 com.bitwig.extensions.controllers.arturia.keylab.mk2.ArturiaKeylab61MkIIControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab61ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab88ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.mk2.ArturiaKeylab88MkIIControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.essential.ArturiaKeylabEssential49ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.essential.ArturiaKeylabEssential61ControllerExtensionDefinition
+com.bitwig.extensions.controllers.arturia.keylab.essential.ArturiaKeylabEssential88ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.microlab.ArturiaMicroLabControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.minilab3.MiniLab3ExtensionDefinition
 com.bitwig.extensions.controllers.arturia.beatsteppro.BeatStepProExtensionDefinition
@@ -67,16 +69,26 @@ com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt2ExtensionDefi
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt3ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconPlatformMExtensionDefinition
 
+com.bitwig.extensions.controllers.m_audio.OxygenPro25Definition   
+com.bitwig.extensions.controllers.m_audio.OxygenPro49Definition 
+com.bitwig.extensions.controllers.m_audio.OxygenPro61Definition   
+com.bitwig.extensions.controllers.m_audio.OxygenProMiniDefinition                                  
+
 com.bitwig.extensions.controllers.novation.launch_control_xl.LaunchControlXlControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk2.LaunchkeyMk2ControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchpad_pro.LaunchpadProControllerExtensionDefinition
+
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey25Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey37Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey49Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey61Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey88Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.LaunchkeyMiniMk3ExtensionDefinition
+
+com.bitwig.extensions.controllers.novation.launchpad_pro_mk3.LaunchpadProMK3Definition 
+com.bitwig.extensions.controllers.novation.launchpad_mk3.LaunchpadMiniMk3Definition         
+com.bitwig.extensions.controllers.novation.launchpad_mk3.LaunchpadXMk3Definition                     
 
 com.bitwig.extensions.controllers.presonus.atom.PresonusAtomDefinition
 com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort8Definition
