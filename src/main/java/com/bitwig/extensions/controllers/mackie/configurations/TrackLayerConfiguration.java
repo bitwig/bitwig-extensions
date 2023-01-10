@@ -258,7 +258,9 @@ public class TrackLayerConfiguration extends LayerConfiguration {
 
       faderLayer.addBinding(hwControls.createMotorFaderBinding(index, parameter));
       faderLayer.addBinding(hwControls.createFaderParamBinding(index, parameter));
-      faderLayer.addBinding(hwControls.createFaderTouchBinding(index, () -> {
+      faderLayer.addBinding(hwControls.createFaderTouchPressedBinding(index, () -> parameter.touch(true)));
+      faderLayer.addBinding(hwControls.createFaderTouchReleaseBinding(index, () -> {
+         parameter.touch(false);
          if (mixControl.getModifier().isShift()) {
             parameter.reset();
          }

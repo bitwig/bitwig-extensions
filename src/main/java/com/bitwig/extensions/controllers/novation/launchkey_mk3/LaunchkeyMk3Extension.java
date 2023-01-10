@@ -70,7 +70,6 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
    private PinnableCursorDevice primaryDevice;
    private final BooleanValueObject pinnedState = new BooleanValueObject(false);
    private final BooleanValueObject shiftState = new BooleanValueObject(false);
-   private SettableBooleanValue soloExclusive;
    private ControlLayer knobLayer;
 
    public LaunchkeyMk3Extension(final LaunchkeyMk3ExtensionDefinition definition, final ControllerHost host,
@@ -113,7 +112,6 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
          CursorDeviceFollowMode.FIRST_INSTRUMENT);
 
       hwControl = new HwControls(this);
-      setUpPreferences();
       initTransport();
       initDeviceHandlingButton();
 
@@ -146,11 +144,6 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       for (Action action: actions ) {
          host.println(" id =<" + action.getId() + "> name=<" + action.getName() + "> {" + action.getMenuItemText() + "} " + action.getCategory());
       }
-   }
-
-   private void setUpPreferences() {
-      final Preferences preferences = getHost().getPreferences(); // THIS
-      soloExclusive = preferences.getBooleanSetting("Exclusive Solo", "Solo", false);
    }
 
    private void changePadMode(final PadMode padMode) {
@@ -289,10 +282,6 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
 
    public BooleanValueObject getShiftState() {
       return shiftState;
-   }
-
-   public SettableBooleanValue getSoloExclusive() {
-      return soloExclusive;
    }
 
    public void startHold(final int initTime, final int repeatTime, final Runnable action) {

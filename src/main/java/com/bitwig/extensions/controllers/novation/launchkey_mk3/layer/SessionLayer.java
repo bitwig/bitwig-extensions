@@ -8,6 +8,8 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcBut
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbNoteButton;
 import com.bitwig.extensions.framework.Layer;
 
+import java.util.HashSet;
+
 public class SessionLayer extends Layer {
 
    private final ControllerHost host;
@@ -19,16 +21,19 @@ public class SessionLayer extends Layer {
    private final Layer muteLayer;
    private final Layer soloLayer;
    private final Layer stopLayer;
+   private final Layer controlLayer;
    private final Layer shiftLayer;
 
    private Layer currentModeLayer;
    private Mode mode = Mode.LAUNCH;
+   private final HashSet<Integer> heldSoloKeys = new HashSet<>();
 
    private enum Mode {
       LAUNCH,
       STOP,
       SOLO,
-      MUTE
+      MUTE,
+      CONTROL
    }
 
    public SessionLayer(final LaunchkeyMk3Extension driver) {
@@ -45,6 +50,7 @@ public class SessionLayer extends Layer {
       soloLayer = new Layer(driver.getLayers(), "SOLO_LAYER");
       stopLayer = new Layer(driver.getLayers(), "STOP_LAYER");
       shiftLayer = new Layer(driver.getLayers(), "LAUNCH_SHIFT_LAYER");
+      controlLayer = new Layer(driver.getLayers(), "CONTROL_LAYER");
       currentModeLayer = launchLayer2;
 
       final RgbNoteButton[] buttons = driver.getHwControl().getSessionButtons();
@@ -68,6 +74,7 @@ public class SessionLayer extends Layer {
          final Layer triggerLayer = sceneIndex == 0 ? this : launchLayer2;
          final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
          prepareSlot(slot, i);
+         slot.setIndication(true);
          if (sceneIndex == 0) {
             slot.isPlaybackQueued().addValueObserver(queued -> {
                sceneQueuePlayback[trackIndex] = queued;
@@ -83,13 +90,14 @@ public class SessionLayer extends Layer {
             }
          }, () -> getState(track, slot, trackIndex, sceneIndex));
 
-         final SettableBooleanValue soloExclusive = driver.getSoloExclusive();
-         soloExclusive.markInterested();
          if (sceneIndex == 1) {
             button.bindPressed(stopLayer, track::stop, () -> getStopState(trackIndex, track));
             button.bindPressed(muteLayer, () -> track.mute().toggle(), () -> getMuteState(trackIndex, track));
-            button.bindPressed(soloLayer, () -> track.solo().toggle(soloExclusive.get()),
+            button.bindIsPressed(soloLayer, pressed -> handleSoloAction(pressed, trackIndex, track),
                () -> getSoloState(trackIndex, track));
+            button.bindIsPressed(controlLayer, pressed -> {
+            }, () -> RgbState.BLUE_LO);
+            slot.setIndication(true);
          }
       }
 
@@ -98,7 +106,7 @@ public class SessionLayer extends Layer {
          () -> sceneLaunched && hasPlayQueued() ? RgbState.flash(22, 0) : RgbState.of(0));
       if (driver.isMiniVersion()) {
          driver.getShiftState().addValueObserver(shiftActive -> {
-            if(isActive()) {
+            if (isActive()) {
                shiftLayer.setIsActive(shiftActive);
             }
          });
@@ -110,6 +118,16 @@ public class SessionLayer extends Layer {
       }
 
       currentModeLayer.activate();
+   }
+
+   private void handleSoloAction(final boolean pressed, final int trackIndex, final Track track) {
+      if (pressed) {
+         heldSoloKeys.add(trackIndex);
+         host.println(" SOLO " + trackIndex + " > " + heldSoloKeys.size());
+         track.solo().toggle(heldSoloKeys.size() < 2);
+      } else {
+         heldSoloKeys.remove(trackIndex);
+      }
    }
 
 
@@ -170,7 +188,16 @@ public class SessionLayer extends Layer {
             mode = Mode.LAUNCH;
             currentModeLayer = launchLayer2;
             break;
+//         case MUTE:
+//            mode = Mode.CONTROL;
+//            currentModeLayer = controlLayer;
+//            break;
+//         case CONTROL:
+//            mode = Mode.LAUNCH;
+//            currentModeLayer = launchLayer2;
+//            break;
       }
+      heldSoloKeys.clear();
       currentModeLayer.setIsActive(true);
    }
 
@@ -184,6 +211,8 @@ public class SessionLayer extends Layer {
             return RgbState.ORANGE;
          case SOLO:
             return RgbState.YELLOW;
+         case CONTROL:
+            return RgbState.BLUE;
       }
       return RgbState.OFF;
    }

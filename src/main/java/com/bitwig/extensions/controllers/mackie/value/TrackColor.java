@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.mackie.value;
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.mackie.DebugUtil;
 
 public class TrackColor extends InternalHardwareLightState {
 
@@ -49,7 +48,6 @@ public class TrackColor extends InternalHardwareLightState {
          sysEx.append(String.format("%02x %02x %02x ", red, green, blue));
       }
       sysEx.append("F7");
-      DebugUtil.println(" SEND Coloring %s", sysEx);
       midiOut.sendSysex(sysEx.toString());
    }
 

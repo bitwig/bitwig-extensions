@@ -312,11 +312,13 @@ public class MixerLayerGroup {
       final MixerSectionHardware hwControls = control.getHwControls();
       faderLayer.addBinding(hwControls.createMotorFaderBinding(index, parameter));
       faderLayer.addBinding(hwControls.createFaderParamBinding(index, parameter));
-      faderLayer.addBinding(hwControls.createFaderTouchBinding(index, () -> {
+      faderLayer.addBinding(hwControls.createFaderTouchReleaseBinding(index, () -> {
+         parameter.touch(false);
          if (control.getModifier().isShift()) {
             parameter.reset();
          }
       }));
+      faderLayer.addBinding(hwControls.createFaderTouchPressedBinding(index, () -> parameter.touch(true)));
       encoderLayer.addBinding(hwControls.createEncoderPressBinding(index, parameter));
       encoderLayer.addBinding(hwControls.createEncoderToParamBinding(index, parameter));
       encoderLayer.addBinding(hwControls.createRingDisplayBinding(index, parameter, type));
