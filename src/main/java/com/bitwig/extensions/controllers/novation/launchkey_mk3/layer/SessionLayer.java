@@ -68,7 +68,6 @@ public class SessionLayer extends Layer {
          final Layer triggerLayer = sceneIndex == 0 ? this : launchLayer2;
          final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
          prepareSlot(slot, i);
-         slot.setIndication(true);
          if (sceneIndex == 0) {
             slot.isPlaybackQueued().addValueObserver(queued -> {
                sceneQueuePlayback[trackIndex] = queued;
@@ -91,7 +90,6 @@ public class SessionLayer extends Layer {
             button.bindPressed(muteLayer, () -> track.mute().toggle(), () -> getMuteState(trackIndex, track));
             button.bindPressed(soloLayer, () -> track.solo().toggle(soloExclusive.get()),
                () -> getSoloState(trackIndex, track));
-            slot.setIndication(true);
          }
       }
 
@@ -213,9 +211,7 @@ public class SessionLayer extends Layer {
       slot.isRecordingQueued().markInterested();
       slot.isRecording().markInterested();
       slot.isPlaybackQueued().markInterested();
-      slot.color().addValueObserver((r, g, b) -> {
-         colorIndex[index] = ColorLookup.toColor(r, g, b);
-      });
+      slot.color().addValueObserver((r, g, b) -> colorIndex[index] = ColorLookup.toColor(r, g, b));
    }
 
    private void handleSlot(final Track track, final ClipLauncherSlot slot, final int trackIndex, final int sceneIndex) {
