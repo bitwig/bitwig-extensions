@@ -29,6 +29,9 @@ public class DrumPadLayer extends Layer {
 
    private boolean focusOnDrums = true;
 
+   private final Layer shiftLayer;
+
+
    public static class PadSlot {
       private final DrumPad pad;
       private final int index;
@@ -60,6 +63,8 @@ public class DrumPadLayer extends Layer {
       super(driver.getLayers(), "DRUM_LAYER");
       Arrays.fill(noteTable, -1);
       Arrays.fill(hangingNotes, -1);
+      shiftLayer = new Layer(driver.getLayers(), "DRUM_PAD_SHIFT_LAYER");
+
       final HwControls hwControl = driver.getHwControl();
       final CursorTrack cursorTrack = driver.getCursorTrack();
       noteInput = driver.getMidiIn().createNoteInput("MIDI", "89????", "99????", "A9????");
@@ -96,8 +101,68 @@ public class DrumPadLayer extends Layer {
          }, () -> getColor(index, pad));
       }
 
+      final RgbCcButton sceneLaunchButton = hwControl.getSceneLaunchButton();
+      final RgbCcButton row2ModeButton = hwControl.getModeRow2Button();
+
+      if(driver.isMiniVersion()) {
+         initLaunchkeyMiniNavigation(driver, sceneLaunchButton, row2ModeButton);
+      } else {
+         initStandardNavigation(driver, hwControl, sceneLaunchButton, row2ModeButton);
+      }
+
+
+      cursorTrack.playingNotes().addValueObserver(this::handleNotes);
+      cursorTrack.color().addValueObserver((r, g, b) -> trackColor = ColorLookup.toColor(r, g, b));
+   }
+
+   private void initLaunchkeyMiniNavigation(
+      final LaunchkeyMk3Extension driver,
+      final RgbCcButton sceneLaunchButton,
+      final RgbCcButton row2ModeButton) {
+      final Clip cursorClip = driver.getCursorClip();
+      final ClipLauncherSlot slot = cursorClip.clipLauncherSlot();
+      slot.exists().markInterested();
+
+      driver.getShiftState().addValueObserver(shiftActive -> {
+         if(isActive()) {
+            shiftLayer.setIsActive(shiftActive);
+         }
+      });
+      initNavigation(driver, shiftLayer, sceneLaunchButton, row2ModeButton);
+      sceneLaunchButton.bindIsPressed(this, pressed -> driver.launchDirect(),  pressed -> pressed ? RgbState.RED_LO : RgbState.OFF);
+//      sceneLaunchButton.bindIsPressed(this, pressed -> {
+//         cursorClip.launch();
+//      }, () -> getColor(slot));
+      //sceneLaunchButton.bindLight(this, () -> RgbState.OFF);
+      row2ModeButton.bindLight(this, () -> RgbState.OFF);
+   }
+
+   private RgbState getColor(ClipLauncherSlot slot){
+      if(slot.exists().get()) {
+         return RgbState.ORANGE_LO;
+      }
+      return RgbState.RED_LO;
+   }
+
+   private void initStandardNavigation(
+      final LaunchkeyMk3Extension driver,
+      final HwControls hwControl,
+      final RgbCcButton sceneLaunchButton,
+      final RgbCcButton row2ModeButton) {
       final RgbCcButton navUpButton = hwControl.getNavUpButton();
-      navUpButton.bindIsPressed(this, pressed -> {
+      final RgbCcButton navDownButton = hwControl.getNavDownButton();
+      initNavigation(driver, this, navUpButton, navDownButton);
+
+      sceneLaunchButton.bindIsPressed(this, pressed -> selectModeActive = pressed,
+         pressed -> pressed ? RgbState.WHITE : RgbState.OFF);
+      row2ModeButton.bindIsPressed(this, pressed -> {
+
+      }, pressed -> pressed ? RgbState.ORANGE_LO : RgbState.OFF);
+   }
+
+   private void initNavigation(final LaunchkeyMk3Extension driver, Layer layer, final RgbCcButton navUpButton,
+      RgbCcButton navDownButton) {
+      navUpButton.bindIsPressed(layer, pressed -> {
          if (pressed) {
             driver.startHold(() -> scrollPadBank(1));
          } else {
@@ -105,23 +170,13 @@ public class DrumPadLayer extends Layer {
          }
       }, this::canScrollUp, RgbState.YELLOW, RgbState.YELLOW_LO);
 
-      final RgbCcButton navDownButton = hwControl.getNavDownButton();
-      navDownButton.bindIsPressed(this, pressed -> {
+      navDownButton.bindIsPressed(layer, pressed -> {
          if (pressed) {
             driver.startHold(() -> scrollPadBank(-1));
          } else {
             driver.stopHold();
          }
       }, this::canScrollDown, RgbState.YELLOW, RgbState.YELLOW_LO);
-      final RgbCcButton sceneLaunchButton = hwControl.getSceneLaunchButton();
-      sceneLaunchButton.bindIsPressed(this, pressed -> selectModeActive = pressed,
-         pressed -> pressed ? RgbState.WHITE : RgbState.OFF);
-      final RgbCcButton row2ModeButton = hwControl.getModeRow2Button();
-      row2ModeButton.bindIsPressed(this, pressed -> {
-
-      }, pressed -> pressed ? RgbState.ORANGE_LO : RgbState.OFF);
-      cursorTrack.playingNotes().addValueObserver(this::handleNotes);
-      cursorTrack.color().addValueObserver((r, g, b) -> trackColor = ColorLookup.toColor(r, g, b));
    }
 
    private boolean canScrollUp() {
@@ -231,6 +286,7 @@ public class DrumPadLayer extends Layer {
    @Override
    protected void onDeactivate() {
       super.onDeactivate();
+      shiftLayer.setIsActive(false);
       resetNotes();
    }
 
