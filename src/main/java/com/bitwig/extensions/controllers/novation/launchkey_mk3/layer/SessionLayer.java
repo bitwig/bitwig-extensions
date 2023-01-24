@@ -8,6 +8,8 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcBut
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbNoteButton;
 import com.bitwig.extensions.framework.Layer;
 
+import java.util.HashSet;
+
 public class SessionLayer extends Layer {
 
    private final ControllerHost host;
@@ -19,14 +21,19 @@ public class SessionLayer extends Layer {
    private final Layer muteLayer;
    private final Layer soloLayer;
    private final Layer stopLayer;
+   private final Layer controlLayer;
+   private final Layer shiftLayer;
+
    private Layer currentModeLayer;
    private Mode mode = Mode.LAUNCH;
+   private final HashSet<Integer> heldSoloKeys = new HashSet<>();
 
    private enum Mode {
       LAUNCH,
       STOP,
       SOLO,
-      MUTE
+      MUTE,
+      CONTROL
    }
 
    public SessionLayer(final LaunchkeyMk3Extension driver) {
@@ -42,6 +49,8 @@ public class SessionLayer extends Layer {
       muteLayer = new Layer(driver.getLayers(), "MUTE_LAYER");
       soloLayer = new Layer(driver.getLayers(), "SOLO_LAYER");
       stopLayer = new Layer(driver.getLayers(), "STOP_LAYER");
+      shiftLayer = new Layer(driver.getLayers(), "LAUNCH_SHIFT_LAYER");
+      controlLayer = new Layer(driver.getLayers(), "CONTROL_LAYER");
       currentModeLayer = launchLayer2;
 
       final RgbNoteButton[] buttons = driver.getHwControl().getSessionButtons();
@@ -84,13 +93,47 @@ public class SessionLayer extends Layer {
          if (sceneIndex == 1) {
             button.bindPressed(stopLayer, track::stop, () -> getStopState(trackIndex, track));
             button.bindPressed(muteLayer, () -> track.mute().toggle(), () -> getMuteState(trackIndex, track));
-            button.bindPressed(soloLayer, () -> track.solo().toggle(), () -> getSoloState(trackIndex, track));
+            button.bindIsPressed(soloLayer, pressed -> handleSoloAction(pressed, trackIndex, track),
+               () -> getSoloState(trackIndex, track));
+            button.bindIsPressed(controlLayer, pressed -> {
+            }, () -> RgbState.BLUE_LO);
             slot.setIndication(true);
          }
       }
 
-      final RgbCcButton navUpButton = driver.getHwControl().getNavUpButton();
-      navUpButton.bindIsPressed(this, pressed -> {
+      final RgbCcButton sceneLaunchButton = driver.getHwControl().getSceneLaunchButton();
+      sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene),
+         () -> sceneLaunched && hasPlayQueued() ? RgbState.flash(22, 0) : RgbState.of(0));
+      if (driver.isMiniVersion()) {
+         driver.getShiftState().addValueObserver(shiftActive -> {
+            if (isActive()) {
+               shiftLayer.setIsActive(shiftActive);
+            }
+         });
+         bindUpDownButtons(driver, shiftLayer, trackBank, sceneLaunchButton, row2ModeButton);
+      } else {
+         final RgbCcButton navUpButton = driver.getHwControl().getNavUpButton();
+         final RgbCcButton navDownButton = driver.getHwControl().getNavDownButton();
+         bindUpDownButtons(driver, this, trackBank, navUpButton, navDownButton);
+      }
+
+      currentModeLayer.activate();
+   }
+
+   private void handleSoloAction(final boolean pressed, final int trackIndex, final Track track) {
+      if (pressed) {
+         heldSoloKeys.add(trackIndex);
+         host.println(" SOLO " + trackIndex + " > " + heldSoloKeys.size());
+         track.solo().toggle(heldSoloKeys.size() < 2);
+      } else {
+         heldSoloKeys.remove(trackIndex);
+      }
+   }
+
+
+   private void bindUpDownButtons(final LaunchkeyMk3Extension driver, final Layer layer, final TrackBank trackBank,
+                                  final RgbCcButton upButton, final RgbCcButton downButton) {
+      upButton.bindIsPressed(layer, pressed -> {
          if (pressed) {
             driver.startHold(() -> trackBank.sceneBank().scrollBackwards());
          } else {
@@ -103,8 +146,7 @@ public class SessionLayer extends Layer {
             return RgbState.OFF;
          }
       });
-      final RgbCcButton navDownButton = driver.getHwControl().getNavDownButton();
-      navDownButton.bindIsPressed(this, pressed -> {
+      downButton.bindIsPressed(layer, pressed -> {
          if (pressed) {
             driver.startHold(() -> trackBank.sceneBank().scrollForwards());
          } else {
@@ -117,10 +159,6 @@ public class SessionLayer extends Layer {
             return RgbState.OFF;
          }
       });
-      final RgbCcButton sceneLaunchButton = driver.getHwControl().getSceneLaunchButton();
-      sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene),
-         () -> sceneLaunched && hasPlayQueued() ? RgbState.flash(22, 0) : RgbState.of(0));
-      currentModeLayer.activate();
    }
 
    private void markTrack(final Track track) {
@@ -150,7 +188,16 @@ public class SessionLayer extends Layer {
             mode = Mode.LAUNCH;
             currentModeLayer = launchLayer2;
             break;
+//         case MUTE:
+//            mode = Mode.CONTROL;
+//            currentModeLayer = controlLayer;
+//            break;
+//         case CONTROL:
+//            mode = Mode.LAUNCH;
+//            currentModeLayer = launchLayer2;
+//            break;
       }
+      heldSoloKeys.clear();
       currentModeLayer.setIsActive(true);
    }
 
@@ -164,6 +211,8 @@ public class SessionLayer extends Layer {
             return RgbState.ORANGE;
          case SOLO:
             return RgbState.YELLOW;
+         case CONTROL:
+            return RgbState.BLUE;
       }
       return RgbState.OFF;
    }
@@ -191,36 +240,7 @@ public class SessionLayer extends Layer {
       slot.isRecordingQueued().markInterested();
       slot.isRecording().markInterested();
       slot.isPlaybackQueued().markInterested();
-      slot.color().addValueObserver((r, g, b) -> {
-         colorIndex[index] = ColorLookup.toColor(r, g, b);
-//         final int rv = (int) Math.floor(r * 255);
-//         final int gv = (int) Math.floor(g * 255);
-//         final int bv = (int) Math.floor(b * 255);
-//         if (rv < 10 && gv < 10 && bv < 10) {
-//            colorIndex[index] = 0; // black
-//         } else if (rv > 230 && gv > 230 && bv > 230) {
-//            colorIndex[index] = 3; // whit
-//         } else if (rv == gv && bv == gv) {
-//            final int bright = rv >> 4;
-//            host.println(" B=" + bright);
-//            if (bright > 7) {
-//               colorIndex[index] = 2; // gray
-//            } else {
-//               colorIndex[index] = 1;
-//            }
-//         } else {
-//            final ColorLookup.Hsb hsb = ColorLookup.rgbToHsb(rv, gv, bv);
-//            int hueInd = hsb.hue > 6 ? hsb.hue - 1 : hsb.hue;
-//            hueInd = hueInd > 13 ? 13 : hueInd;
-//            colorIndex[index] = 5 + hueInd * 4 + 1;
-//            if (hsb.sat < 8) {
-//               colorIndex[index] -= 2;
-//            } else if (hsb.bright <= 8) {
-//               colorIndex[index] += 2;
-//            }
-//         }
-//         host.println(String.format("[%02d] %d,%d,%d> => %s .. %d", index, rv, gv, bv, hsb, colorIndex[index]));
-      });
+      slot.color().addValueObserver((r, g, b) -> colorIndex[index] = ColorLookup.toColor(r, g, b));
    }
 
    private void handleSlot(final Track track, final ClipLauncherSlot slot, final int trackIndex, final int sceneIndex) {

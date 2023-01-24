@@ -28,7 +28,7 @@ public class Xjam extends ControllerExtension {
 
         mNoteInput = mMidiIn.createNoteInput("pad", "9?????", "D?????", "A0????");
         mNoteInput.setShouldConsumeEvents(false);
-
+        
         mCursorTrack = mHost.createCursorTrack(0, 0);
         mCursorDevice = mCursorTrack.createCursorDevice();
         mCursorRemoteControls = mCursorDevice.createCursorRemoteControlsPage(6);

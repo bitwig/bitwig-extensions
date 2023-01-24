@@ -8,7 +8,6 @@ import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.NoteAssignment;
 import com.bitwig.extensions.controllers.mackie.bindings.ButtonBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderBinding;
-import com.bitwig.extensions.controllers.mackie.bindings.TouchFaderBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayBoolBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayExistsBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ring.RingDisplayFixedBinding;
@@ -291,8 +290,12 @@ public class MixerSectionHardware {
       return new AbsoluteHardwareControlBinding(volumeKnobs[index], parameter);
    }
 
-   public TouchFaderBinding createFaderTouchBinding(final int index, final Runnable execAction) {
-      return new TouchFaderBinding(faderTouch[index], createAction(execAction));
+   public ButtonBinding createFaderTouchReleaseBinding(final int index, final Runnable releaseAction) {
+      return new ButtonBinding(faderTouch[index], faderTouch[index].releasedAction(), createAction(releaseAction));
+   }
+
+   public ButtonBinding createFaderTouchPressedBinding(final int index, final Runnable pressAction) {
+      return new ButtonBinding(faderTouch[index], faderTouch[index].pressedAction(), createAction(pressAction));
    }
 
    public FaderBinding createMotorFaderBinding(final int index, final Parameter param) {

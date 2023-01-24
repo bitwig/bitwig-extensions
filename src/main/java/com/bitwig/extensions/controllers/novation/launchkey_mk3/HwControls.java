@@ -13,6 +13,7 @@ public class HwControls {
    private static final int FADER_CC_BASE = 53;
    private static final int TRACK_BUTTON_CC_BASE = 37;
    private static final int MASTER_SLIDER_CC = 61;
+   public static final int SHIFT_BUTTON_CC = 108;
 
    private static final int NAV_UP_CC = 106;
    private static final int NAV_DOWN_CC = 107;
@@ -42,6 +43,7 @@ public class HwControls {
    private final Button trackRightButton;
    private final Button deviceSelectButton;
    private final RgbCcButton armSelectButton;
+   private final Button shiftButton;
 
    public HwControls(final LaunchkeyMk3Extension driver) {
       final HardwareSurface surface = driver.getSurface();
@@ -73,6 +75,11 @@ public class HwControls {
       armSelectButton = new RgbCcButton(driver, "ARM_SELECT", 6, BASE_CC_CHANNEL, ARM_SELECT_CC);
       deviceLockButton = new RgbCcButton(driver, "DEV_LOCK", 5, BASE_CC_CHANNEL, DEVICE_LOCK_CC);
       deviceSelectButton = new Button(driver, "DEVICE_SELECT", DEVICE_SELECT_CC, BASE_CC_CHANNEL);
+      shiftButton = new Button(driver, "SHIFT", SHIFT_BUTTON_CC, 0);
+   }
+
+   public Button getShiftButton() {
+      return shiftButton;
    }
 
    public RgbNoteButton[] getDrumButtons() {
