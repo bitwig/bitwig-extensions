@@ -65,7 +65,6 @@ com.bitwig.extensions.controllers.mackie.definition.IconQconProXExtensionDefinit
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt1ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt2ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt3ExtensionDefinition
-com.bitwig.extensions.controllers.mackie.definition.IconPlatformMExtensionDefinition
 
 com.bitwig.extensions.controllers.novation.launch_control_xl.LaunchControlXlControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControllerExtensionDefinition
@@ -76,7 +75,6 @@ com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey37M
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey49Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey61Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey88Mk3ExtensionDefinition
-com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.LaunchkeyMiniMk3ExtensionDefinition
 
 com.bitwig.extensions.controllers.presonus.atom.PresonusAtomDefinition
 com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort8Definition
