@@ -14,7 +14,7 @@ final class StopClipOverlay extends Overlay
       {
          final Track track = trackBank.getItemAt(x);
          final Button button = driver.getPadButton(x, 0);
-         bindPressed(button, track.stopAction());
+         bindPressed(button, () -> track.stop(driver.isShiftOn()));
          bindLightState(() -> {
             if (track.exists().get())
                return !track.isStopped().get() ? LedState.STOP_CLIP_ON : LedState.STOP_CLIP_OFF;
