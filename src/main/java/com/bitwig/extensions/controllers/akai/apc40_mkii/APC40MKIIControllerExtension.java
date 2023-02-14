@@ -442,6 +442,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             mShiftLayer.bindPressed(clipButton, slot.launchAltAction());
             mShiftLayer.bindReleased(clipButton, slot.launchReleaseAltAction());
          }
+         mShiftLayer.bindPressed(mTrackStopButtons[x], track.stopAltAction());
       }
 
       for (int i = 0; i < 5; ++i)
@@ -554,14 +555,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mMainLayer.bindPressed(mTrackSelectButtons[x],
             getHost().createAction(() -> mTrackCursor.selectChannel(track), () -> "Selects the track"));
          mMainLayer.bind(mIsTrackSelected[x], mTrackSelectLeds[x]);
-         mMainLayer.bindPressed(mTrackStopButtons[x], new Runnable()
-         {
-            @Override
-            public void run()
-            {
-               track.stop(mShiftButton.isPressed().get());
-            }
-         });
+         mMainLayer.bindPressed(mTrackStopButtons[x], track.stopAction());
          mMainLayer.bind(() -> track.exists().get() && !track.isStopped().get(), mTrackStopLeds[x]);
       }
 
