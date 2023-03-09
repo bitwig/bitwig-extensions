@@ -121,6 +121,7 @@ public class PresonusAtom extends ControllerExtension
       mArpeggiator.rate().markInterested();
       mArpeggiator.shuffle().markInterested();
       mArpeggiator.usePressureToVelocity().set(true);
+      mArpeggiator.octaves().set(0);
 
       mMidiOut = host.getMidiOutPort(0);
       mMidiIn = host.getMidiInPort(0);
