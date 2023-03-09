@@ -120,8 +120,8 @@ public class PresonusAtom extends ControllerExtension
       mArpeggiator.isEnabled().markInterested();
       mArpeggiator.rate().markInterested();
       mArpeggiator.shuffle().markInterested();
-      mArpeggiator.usePressureToVelocity().set(true);
-      mArpeggiator.octaves().set(0);
+      mArpeggiator.usePressureToVelocity().markInterested();
+      mArpeggiator.octaves().markInterested();
 
       mMidiOut = host.getMidiOutPort(0);
       mMidiIn = host.getMidiInPort(0);
@@ -411,6 +411,7 @@ public class PresonusAtom extends ControllerExtension
       mBaseLayer.bindReleased(mNoteRepeatButton, () -> {
          mArpeggiator.mode().set("all");
          mArpeggiator.usePressureToVelocity().set(true);
+         mArpeggiator.octaves().set(0);
 
          mNoteRepeatLayer.toggleIsActive();
 
