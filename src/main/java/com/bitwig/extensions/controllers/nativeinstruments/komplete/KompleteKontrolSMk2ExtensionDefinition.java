@@ -25,7 +25,7 @@ public class KompleteKontrolSMk2ExtensionDefinition extends ControllerExtensionD
 
 	@Override
 	public String getVersion() {
-		return "1.1";
+		return "1.1a";
 	}
 
 	@Override
