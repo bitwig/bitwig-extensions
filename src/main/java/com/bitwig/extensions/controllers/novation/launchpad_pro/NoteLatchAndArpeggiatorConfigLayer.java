@@ -151,7 +151,7 @@ final class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
             table[10 * (y + 7) + x + 1] = -1;
    }
 
-   private void setArpeggiatorMode(int modeIndex)
+   private void setArpeggiatorMode(final int modeIndex)
    {
       final SettableEnumValue mode = mDriver.mArpeggiator.mode();
       final EnumDefinition enumDefinition = mode.enumDefinition();
@@ -165,7 +165,7 @@ final class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       mDriver.mArpModeSetting.set(arpMode);
    }
 
-   private void setArpOctaves(int value)
+   private void setArpOctaves(final int value)
    {
       mArpOctave = Math.min(Math.max(value, 0), 4);
       mDriver.mArpeggiator.octaves().set(mArpOctave);
@@ -173,7 +173,7 @@ final class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       mDriver.mArpOctaveSetting.setRaw(value);
    }
 
-   private void setArpGateLen(int index)
+   private void setArpGateLen(final int index)
    {
       final SettableDoubleValue gateLength = mDriver.mArpeggiator.gateLength();
       mArpGateLengthIndex = Math.max(Math.min(index, GATE_LENGTHS.length - 1), 0);
@@ -182,7 +182,7 @@ final class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       mDriver.getHost().showPopupNotification("Arpeggiator Gate Length: " + length);
    }
 
-   private void setArpRate(int index)
+   private void setArpRate(final int index)
    {
       final SettableDoubleValue rate = mDriver.mArpeggiator.rate();
       mArpRateIndex = Math.max(Math.min(index, ARP_RATE.length - 1), 0);
@@ -191,8 +191,8 @@ final class NoteLatchAndArpeggiatorConfigLayer extends LaunchpadLayer
       mDriver.getHost().showPopupNotification("Arpeggiator Rate: " + value);
    }
 
-   private static final double GATE_LENGTHS[] = new double[]{ 0.125, 0.25, 0.5, 0.75, 1 };
-   private static final double ARP_RATE[] = new double[]{ 1./32., 1./16., 1./8., 1./4., 1./2., 1., 2, 4, 8 };
+   private static final double[] GATE_LENGTHS = new double[]{ 0.125, 0.25, 0.5, 0.75, 1 };
+   private static final double[] ARP_RATE = new double[]{ 1./32., 1./16., 1./8., 1./4., 1./2., 1., 2, 4, 8 };
 
    int mArpOctave = 0;
    int mArpModeIndex = 1;

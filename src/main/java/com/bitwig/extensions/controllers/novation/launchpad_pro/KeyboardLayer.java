@@ -74,22 +74,14 @@ final class KeyboardLayer extends LaunchpadLayer
    {
       final Color trackColor = mTrackColorSupplier.get();
 
-      switch (mDriver.getKeyboardLayout())
-      {
-         case GUITAR:
-            return computeGuitarLedState(x, y, trackColor);
+      return switch (mDriver.getKeyboardLayout())
+         {
+            case GUITAR -> computeGuitarLedState(x, y, trackColor);
+            case LINE_3 -> computeLineLedState(3, x, y, trackColor);
+            case LINE_7 -> computeLineLedState(7, x, y, trackColor);
+            case PIANO -> computePianoLedState(x, y, trackColor);
+         };
 
-         case LINE_3:
-            return computeLineLedState(3, x, y, trackColor);
-
-         case LINE_7:
-            return computeLineLedState(7, x, y, trackColor);
-
-         case PIANO:
-            return computePianoLedState(x, y, trackColor);
-      }
-
-      throw new IllegalStateException();
    }
 
    @Override
@@ -216,19 +208,14 @@ final class KeyboardLayer extends LaunchpadLayer
       if (x < mX0 || mX0 + mWidth <= x || y < mY0 || mY0 + mHeight <= y)
          return -1;
 
-      switch (mDriver.getKeyboardLayout())
-      {
-         case GUITAR:
-            return calculateGuitarKey(x, y);
-         case LINE_3:
-            return calculateLineXKey(3, x, y);
-         case LINE_7:
-            return calculateLineXKey(7, x, y);
-         case PIANO:
-            return calculateKeyboardKey(x, y);
-         default:
-            return -1;
-      }
+      return switch (mDriver.getKeyboardLayout())
+         {
+            case GUITAR -> calculateGuitarKey(x, y);
+            case LINE_3 -> calculateLineXKey(3, x, y);
+            case LINE_7 -> calculateLineXKey(7, x, y);
+            case PIANO -> calculateKeyboardKey(x, y);
+            default -> -1;
+         };
    }
 
    private int calculateKeyboardKey(final int x, final int y)

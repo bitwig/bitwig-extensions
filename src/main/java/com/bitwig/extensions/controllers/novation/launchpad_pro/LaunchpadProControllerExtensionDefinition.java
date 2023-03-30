@@ -49,7 +49,7 @@ public final class LaunchpadProControllerExtensionDefinition extends ControllerE
    @Override
    public int getRequiredAPIVersion()
    {
-      return 16;
+      return 18;
    }
 
    @Override

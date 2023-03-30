@@ -84,10 +84,6 @@ com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey49M
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey61Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey88Mk3ExtensionDefinition
 
-com.bitwig.extensions.controllers.novation.launchpad_pro_mk3.LaunchpadProMK3Definition 
-com.bitwig.extensions.controllers.novation.launchpad_mk3.LaunchpadMiniMk3Definition         
-com.bitwig.extensions.controllers.novation.launchpad_mk3.LaunchpadXMk3Definition                     
-
 com.bitwig.extensions.controllers.presonus.atom.PresonusAtomDefinition
 com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort8Definition
 com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort16Definition

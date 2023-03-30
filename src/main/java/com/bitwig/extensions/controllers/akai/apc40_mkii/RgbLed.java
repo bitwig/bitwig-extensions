@@ -20,9 +20,9 @@ class RgbLed
       mMessage = message;
       mData1 = data1;
 
-      mHardwareLight = surface.createMultiStateHardwareLight(button.getId() + "-light");
-      mHardwareLight.state().setValueSupplier(this::getState);
-      button.setBackgroundLight(mHardwareLight);
+      MultiStateHardwareLight hardwareLight = surface.createMultiStateHardwareLight(button.getId() + "-light");
+      hardwareLight.state().setValueSupplier(this::getState);
+      button.setBackgroundLight(hardwareLight);
    }
 
    public void paint(final MidiOut midiOut)
@@ -84,8 +84,6 @@ class RgbLed
    }
 
    private final int mMessage, mData1;
-
-   private final MultiStateHardwareLight mHardwareLight;
 
    private int mColor = RGBLedState.COLOR_NONE;
 
