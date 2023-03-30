@@ -14,7 +14,7 @@ final class SoloOverlay extends Overlay
       {
          final Track track = trackBank.getItemAt(x);
          final Button button = driver.getPadButton(x, 0);
-         bindPressed(button, track.solo().toggleAction());
+         bindToggle(button, track.solo());
          bindLightState(() -> {
             if (track.exists().get())
                return track.solo().get() ? LedState.SOLO : LedState.SOLO_LOW;

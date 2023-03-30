@@ -11,7 +11,6 @@ import com.bitwig.extension.controller.api.ObjectHardwareProperty;
 
 final class Button
 {
-
    static final int NO_PULSE = 0;
    static final int PULSE_PLAYING = 88;
    static final int PULSE_RECORDING = 72;

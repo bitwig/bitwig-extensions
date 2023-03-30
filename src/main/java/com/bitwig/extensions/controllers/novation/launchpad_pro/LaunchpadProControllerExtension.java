@@ -483,8 +483,6 @@ final class LaunchpadProControllerExtension extends ControllerExtension
          channel.isQueuedForStop().markInterested();
 
          final ClipLauncherSlotBank clipLauncherSlots = channel.clipLauncherSlotBank();
-         clipLauncherSlots.setIndication(false);
-
          final SendBank sendBank = channel.sendBank();
          sendBank.setSkipDisabledItems(true);
 
@@ -566,7 +564,7 @@ final class LaunchpadProControllerExtension extends ControllerExtension
    {
       button.appendLedUpdate(mLedClearSysexBuffer, mLedColorUpdateSysexBuffer, mLedPulseUpdateSysexBuffer);
 
-      // Lets not send sysex that are too big
+      // Let's not send sysex that are too big
       if (mLedColorUpdateSysexBuffer.length() >= 4 * 3 * 48)
       {
          sendLedUpdateSysex(mLedColorUpdateSysexBuffer.toString());

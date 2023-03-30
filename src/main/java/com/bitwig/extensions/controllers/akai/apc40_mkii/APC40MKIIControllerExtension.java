@@ -52,7 +52,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private enum TopMode
    {
-      PAN, SENDS, USER, CHANNEL_STRIP;
+      PAN, SENDS, USER, CHANNEL_STRIP
    }
 
    private static final int MSG_NOTE_ON = 9;
@@ -175,7 +175,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMasterTrack = host.createMasterTrack(5);
       mMasterTrack.isStopped().markInterested();
 
-      mTrackCursor = host.createCursorTrack(8, 0);
+      mTrackCursor = host.createCursorTrack("cursor-track", "Akai APC40 mkII", 8, 0, true);
       mTrackCursor.exists().markInterested();
       mTrackCursor.isGroup().markInterested();
       mTrackCursor.volume().markInterested();
@@ -193,10 +193,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mIsMasterSelected = mTrackCursor.createEqualsValue(mMasterTrack);
 
-      mChannelStripDevice = mTrackCursor.createCursorDevice("channel-strip", "Channel Strip", 4,
-         CursorDeviceFollowMode.LAST_DEVICE);
-      mChannelStripDevice.exists().markInterested();
-      mChannelStripRemoteControls = mChannelStripDevice.createCursorRemoteControlsPage(8);
+      PinnableCursorDevice channelStripDevice =
+         mTrackCursor.createCursorDevice("channel-strip", "Channel Strip", 4, CursorDeviceFollowMode.LAST_DEVICE);
+      channelStripDevice.exists().markInterested();
+      mChannelStripRemoteControls = channelStripDevice.createCursorRemoteControlsPage(8);
       mChannelStripRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 8);
 
       mDeviceCursor = mTrackCursor.createCursorDevice("device-control", "Device Control", 0,
@@ -430,9 +430,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 8; ++i)
       {
          final int x = i;
-         mShiftLayer.bindPressed(mTrackSelectButtons[x], getHost().createAction(() -> {
-            setLaunchQuantizationFromTrackSelect(x);
-         }, () -> "Configures the default launch quantization"));
+         mShiftLayer.bindPressed(mTrackSelectButtons[x], getHost().createAction(() -> setLaunchQuantizationFromTrackSelect(x), () -> "Configures the default launch quantization"));
          mShiftLayer.bind(() -> x == computeLaunchQuantizationIndex(), mTrackSelectLeds[x]);
 
          final Track track = mTrackBank.getItemAt(i);
@@ -441,61 +439,34 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          {
             final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
             final HardwareButton clipButton = mGridButtons[i + 8 * j];
-            mShiftLayer.bindPressed(clipButton, slot.launchWithOptionsAction("none", "continue_immediately"));
-            mShiftLayer.bindReleased(clipButton, track.launchLastClipWithOptionsAction("none", "continue_immediately"));
+            mShiftLayer.bindPressed(clipButton, slot.launchAltAction());
+            mShiftLayer.bindReleased(clipButton, slot.launchReleaseAltAction());
          }
+         mShiftLayer.bindPressed(mTrackStopButtons[x], track.stopAltAction());
       }
 
       for (int i = 0; i < 5; ++i)
       {
          final Scene scene = mSceneBank.getScene(i);
-         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchWithOptionsAction("none", "continue_immediately"));
-         mShiftLayer.bindReleased(mSceneButtons[i], scene.launchLastClipWithOptionsAction("none", "continue_immediately"));
+         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchAltAction());
+         mShiftLayer.bindReleased(mSceneButtons[i], scene.launchReleaseAltAction());
       }
    }
 
    private void setLaunchQuantizationFromTrackSelect(final int x)
    {
-      final String quantization;
-
-      switch (x)
-      {
-      case 0:
-         quantization = "none";
-         break;
-
-      case 1:
-         quantization = "8";
-         break;
-
-      case 2:
-         quantization = "4";
-         break;
-
-      case 3:
-         quantization = "2";
-         break;
-
-      case 4:
-         quantization = "1";
-         break;
-
-      case 5:
-         quantization = "1/4";
-         break;
-
-      case 6:
-         quantization = "1/8";
-         break;
-
-      case 7:
-         quantization = "1/16";
-         break;
-
-      default:
-         quantization = "1";
-         break;
-      }
+      final String quantization = switch (x)
+         {
+            case 0 -> "none";
+            case 1 -> "8";
+            case 2 -> "4";
+            case 3 -> "2";
+            case 4 -> "1";
+            case 5 -> "1/4";
+            case 6 -> "1/8";
+            case 7 -> "1/16";
+            default -> "1";
+         };
 
       mTransport.defaultLaunchQuantization().set(quantization);
    }
@@ -543,8 +514,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       if (ENABLE_DEBUG_LAYER)
       {
-         mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-         mDebugLayer.activate();
+         Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+         debugLayer.activate();
       }
    }
 
@@ -566,10 +537,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          for (int y = 0; y < 5; ++y)
          {
             final int offset = 8 * y + x;
-            mMainLayer.bindPressed(mGridButtons[offset],
-               track.clipLauncherSlotBank().getItemAt(y).launchAction());
+            final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(y);
+            mMainLayer.bindPressed(mGridButtons[offset], slot.launchAction());
+            mMainLayer.bindReleased(mGridButtons[offset], slot.launchReleaseAction());
          }
-         mMainLayer.bindPressed(mMuteButtons[x], track.mute());
+         mMainLayer.bindToggle(mMuteButtons[x], track.mute());
          mMainLayer.bind(() -> track.exists().get() && !track.mute().get(), mMuteLeds[x]);
          mMainLayer.bindToggle(mSoloButtons[x], track.solo());
          mMainLayer.bindToggle(mArmButtons[x], track.arm());
@@ -660,7 +632,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       });
 
       for (int y = 0; y < 5; ++y)
-         mMainLayer.bindPressed(mSceneButtons[y], mSceneBank.getItemAt(y).launchAction());
+      {
+         final Scene scene = mSceneBank.getItemAt(y);
+         mMainLayer.bindPressed(mSceneButtons[y], scene.launchAction());
+         mMainLayer.bindReleased(mSceneButtons[y], scene.launchReleaseAction());
+      }
 
       mMainLayer.bindPressed(mPanButton,
          getHost().createAction(
@@ -905,19 +881,19 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTapTempoButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_TAP_TEMPO));
       mTapTempoButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_TAP_TEMPO));
 
-      mNudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
-      mNudgePlusButton.setLabel("NUDGE +");
-      mNudgePlusButton.setLabelPosition(RelativePosition.ABOVE);
-      mNudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
-      mNudgePlusButton.releasedAction()
+      HardwareButton nudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
+      nudgePlusButton.setLabel("NUDGE +");
+      nudgePlusButton.setLabelPosition(RelativePosition.ABOVE);
+      nudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
+      nudgePlusButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_PLUS));
 
-      mNudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
-      mNudgeMinusButton.setLabel("NUDGE -");
-      mNudgeMinusButton.setLabelPosition(RelativePosition.ABOVE);
-      mNudgeMinusButton.pressedAction()
+      HardwareButton nudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
+      nudgeMinusButton.setLabel("NUDGE -");
+      nudgeMinusButton.setLabelPosition(RelativePosition.ABOVE);
+      nudgeMinusButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_MINUS));
-      mNudgeMinusButton.releasedAction()
+      nudgeMinusButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_MINUS));
 
       mTempoKnob = mHardwareSurface.createRelativeHardwareKnob("Tempo");
@@ -1002,34 +978,29 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final HardwareTextDisplay led = mHardwareSurface.createHardwareTextDisplay("ABLed-" + x, 1);
-         led.onUpdateHardware(() -> {
-            sendLedUpdate(BT_TRACK_AB, channel, crossFadeToInt(led.line(0).text().currentValue()));
-         });
+         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_AB, channel, crossFadeToInt(led.line(0).text().currentValue())));
          mABLeds[x] = led;
       }
    }
 
    private static Color getABLedColor(final int i)
    {
-      switch (i)
-      {
-      case 1:
-         return Color.fromRGB(1.0, 0.5, 0);
-      case 2:
-         return Color.fromRGB(0, 0, 1.0);
-      default:
-         return Color.fromRGB(0, 0, 0);
-      }
+      return switch (i)
+         {
+            case 1 -> Color.fromRGB(1.0, 0.5, 0);
+            case 2 -> Color.fromRGB(0, 0, 1.0);
+            default -> Color.fromRGB(0, 0, 0);
+         };
    }
 
    private void createArmButtons()
    {
       mArmButtons = new HardwareButton[8];
-      mArmLeds = new OnOffHardwareLight[8];
+      OnOffHardwareLight[] armLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Arm-" + x);
-         bt.setLabel("\u25CF");
+         bt.setLabel("●");
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_ARM));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_ARM));
          bt.setIndexInGroup(x);
@@ -1040,14 +1011,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          led.setOnColor(Color.fromRGB(1, 0, 0));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_ARM, channel, led));
          bt.setBackgroundLight(led);
-         mArmLeds[x] = led;
+         armLeds[x] = led;
       }
    }
 
    private void createSoloButtons()
    {
       mSoloButtons = new HardwareButton[8];
-      mSoloLeds = new OnOffHardwareLight[8];
+      OnOffHardwareLight[] soloLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Solo-" + x);
@@ -1062,7 +1033,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          led.setOnColor(Color.fromRGB(0, 0, 1));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_SOLO, channel, led));
          bt.setBackgroundLight(led);
-         mSoloLeds[x] = led;
+         soloLeds[x] = led;
       }
    }
 
@@ -1228,7 +1199,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mPrevDeviceButton = mHardwareSurface.createHardwareButton("PrevDevice");
-      mPrevDeviceButton.setLabel("\u2190DEVICE");
+      mPrevDeviceButton.setLabel("←DEVICE");
       mPrevDeviceButton.setLabelPosition(RelativePosition.BELOW);
       mPrevDeviceButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_DEVICE));
@@ -1240,7 +1211,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_DEVICE, mPrevDeviceLed));
 
       mNextDeviceButton = mHardwareSurface.createHardwareButton("NextDevice");
-      mNextDeviceButton.setLabel("DEVICE\u2192");
+      mNextDeviceButton.setLabel("DEVICE→");
       mNextDeviceButton.setLabelPosition(RelativePosition.BELOW);
       mNextDeviceButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_DEVICE));
@@ -1252,7 +1223,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mNextDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_DEVICE, mNextDeviceLed));
 
       mPrevBankButton = mHardwareSurface.createHardwareButton("PrevBank");
-      mPrevBankButton.setLabel("\u2190BANK");
+      mPrevBankButton.setLabel("←BANK");
       mPrevBankButton.setLabelPosition(RelativePosition.BELOW);
       mPrevBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_BANK));
       mPrevBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_BANK));
@@ -1262,7 +1233,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevBankLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_BANK, mPrevBankLed));
 
       mNextBankButton = mHardwareSurface.createHardwareButton("NextBank");
-      mNextBankButton.setLabel("BANK\u2192");
+      mNextBankButton.setLabel("BANK→");
       mNextBankButton.setLabelPosition(RelativePosition.BELOW);
       mNextBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_BANK));
       mNextBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_BANK));
@@ -1326,12 +1297,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mShiftButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SHIFT));
       mShiftButton.isPressed().markInterested();
 
-      mBankButton = mHardwareSurface.createHardwareButton("Bank");
-      mBankButton.setLabel("BANK");
-      mBankButton.setLabelPosition(RelativePosition.BELOW);
-      mBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
-      mBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_BANK));
-      mBankButton.isPressed().addValueObserver((isPressed) -> {
+      HardwareButton bankButton = mHardwareSurface.createHardwareButton("Bank");
+      bankButton.setLabel("BANK");
+      bankButton.setLabelPosition(RelativePosition.BELOW);
+      bankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
+      bankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_BANK));
+      bankButton.isPressed().addValueObserver((isPressed) -> {
          mBankOn.stateChanged(isPressed);
          if (mBankOn.isOn())
          {
@@ -1346,32 +1317,32 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       });
       mBankLed = mHardwareSurface.createOnOffHardwareLight("BankLed");
       mBankLed.setOnColor(Color.fromRGB255(255,165,0));
-      mBankButton.setBackgroundLight(mBankLed);
+      bankButton.setBackgroundLight(mBankLed);
       mBankLed.onUpdateHardware(() -> sendLedUpdate(BT_BANK, mBankLed));
 
       mLauncherUpButton = mHardwareSurface.createHardwareButton("LauncherUp");
-      mLauncherUpButton.setLabel("\u2191");
+      mLauncherUpButton.setLabel("↑");
       mLauncherUpButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_UP));
       mLauncherUpButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_UP));
 
       mLauncherDownButton = mHardwareSurface.createHardwareButton("LauncherDown");
-      mLauncherDownButton.setLabel("\u2193");
+      mLauncherDownButton.setLabel("↓");
       mLauncherDownButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_DOWN));
       mLauncherDownButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_DOWN));
 
       mLauncherLeftButton = mHardwareSurface.createHardwareButton("LauncherLeft");
-      mLauncherLeftButton.setLabel("\u2190");
+      mLauncherLeftButton.setLabel("←");
       mLauncherLeftButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_LEFT));
       mLauncherLeftButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_LEFT));
 
       mLauncherRightButton = mHardwareSurface.createHardwareButton("LauncherRight");
-      mLauncherRightButton.setLabel("\u2192");
+      mLauncherRightButton.setLabel("→");
       mLauncherRightButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_RIGHT));
       mLauncherRightButton.releasedAction()
@@ -1388,24 +1359,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       else
          knobLed.setDisplayedValue(value);
 
-      final int ring;
-      switch (mTopMode)
-      {
-      case PAN:
-         ring = KnobLed.RING_PAN;
-         break;
-      case SENDS:
-         ring = KnobLed.RING_VOLUME;
-         break;
-      case CHANNEL_STRIP:
-         ring = knobIndex < CHANNEL_STRIP_NUM_PARAMS ? KnobLed.RING_SINGLE : KnobLed.RING_VOLUME;
-         break;
-      case USER:
-         ring = KnobLed.RING_SINGLE;
-         break;
-      default:
-         throw new IllegalStateException();
-      }
+      final int ring = switch (mTopMode)
+         {
+            case PAN -> KnobLed.RING_PAN;
+            case SENDS -> KnobLed.RING_VOLUME;
+            case CHANNEL_STRIP -> knobIndex < CHANNEL_STRIP_NUM_PARAMS ? KnobLed.RING_SINGLE : KnobLed.RING_VOLUME;
+            case USER -> KnobLed.RING_SINGLE;
+            default -> throw new IllegalStateException();
+         };
 
       if (knobLed.wantsFlush())
          knobLed.setRing(knob.hasTargetValue().get() ? ring : KnobLed.RING_OFF);
@@ -1484,15 +1445,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private String intToCrossFade(final int index)
    {
-      switch (index)
-      {
-      case 1:
-         return "A";
-      case 2:
-         return "B";
-      default:
-         return "AB";
-      }
+      return switch (index)
+         {
+            case 1 -> "A";
+            case 2 -> "B";
+            default -> "AB";
+         };
    }
 
    private int crossFadeToInt(final String s)
@@ -1615,27 +1573,18 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private int computeLaunchQuantizationIndex()
    {
-      switch (mTransport.defaultLaunchQuantization().get())
-      {
-      case "none":
-         return 0;
-      case "8":
-         return 1;
-      case "4":
-         return 2;
-      case "2":
-         return 3;
-      case "1":
-         return 4;
-      case "1/4":
-         return 5;
-      case "1/8":
-         return 6;
-      case "1/16":
-         return 7;
-      default:
-         return -1;
-      }
+      return switch (mTransport.defaultLaunchQuantization().get())
+         {
+            case "none" -> 0;
+            case "8" -> 1;
+            case "4" -> 2;
+            case "2" -> 3;
+            case "1" -> 4;
+            case "1/4" -> 5;
+            case "1/8" -> 6;
+            case "1/16" -> 7;
+            default -> -1;
+         };
    }
 
    /**
@@ -1691,7 +1640,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private TrackBank mTrackBank = null;
 
-   private BooleanValue[] mIsTrackSelected = new BooleanValue[8];
+   private final BooleanValue[] mIsTrackSelected = new BooleanValue[8];
 
    private TrackBank mSendTrackBank = null;
 
@@ -1700,8 +1649,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private CursorTrack mTrackCursor = null;
 
    private PinnableCursorDevice mDeviceCursor = null;
-
-   private PinnableCursorDevice mChannelStripDevice;
 
    private CursorRemoteControlsPage mRemoteControls = null;
 
@@ -1748,8 +1695,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private Layers mLayers;
 
    private Layer mMainLayer;
-
-   private Layer mDebugLayer;
 
    private Layer mPanLayer;
 
@@ -1813,10 +1758,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private HardwareButton mTapTempoButton;
 
-   private HardwareButton mNudgePlusButton;
-
-   private HardwareButton mNudgeMinusButton;
-
    private RelativeHardwareKnob mTempoKnob;
 
    private HardwareButton mPrevDeviceButton;
@@ -1836,8 +1777,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private HardwareButton mDetailViewButton;
 
    private HardwareButton mShiftButton;
-
-   private HardwareButton mBankButton;
 
    private HardwareButton mLauncherUpButton;
 
@@ -1888,10 +1827,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private OnOffHardwareLight mBankLed;
 
    private OnOffHardwareLight[] mMuteLeds;
-
-   private OnOffHardwareLight[] mSoloLeds;
-
-   private OnOffHardwareLight[] mArmLeds;
 
    private HardwareTextDisplay[] mABLeds;
 

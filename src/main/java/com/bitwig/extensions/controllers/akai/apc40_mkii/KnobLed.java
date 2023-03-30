@@ -45,12 +45,7 @@ public class KnobLed
       assert value >= 0;
       assert value < 128;
 
-      if (value > 127)
-         mValue = 127;
-      else if (value < 0)
-         mValue = 0;
-      else
-         mValue = value;
+      mValue = Math.min(127, Math.max(0, value));
    }
 
    public void setDisplayedValue(final int value)

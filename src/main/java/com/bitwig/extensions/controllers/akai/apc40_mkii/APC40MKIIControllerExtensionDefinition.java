@@ -39,7 +39,7 @@ public class APC40MKIIControllerExtensionDefinition extends ControllerExtensionD
    @Override
    public int getRequiredAPIVersion()
    {
-      return 17;
+      return 18;
    }
 
    @Override
@@ -83,30 +83,24 @@ public class APC40MKIIControllerExtensionDefinition extends ControllerExtensionD
       final AutoDetectionMidiPortNamesList list,
       final PlatformType platformType)
    {
-      final String inputNames[] = new String[1];
-      final String outputNames[] = new String[1];
+      final String[] inputNames = new String[1];
+      final String[] outputNames = new String[1];
 
       switch (platformType)
       {
-      case LINUX:
-         inputNames[0] = "APC40 mkII MIDI 1";
-         outputNames[0] = "APC40 mkII MIDI 1";
-         break;
-
-      case WINDOWS:
-      case MAC:
-         inputNames[0] = "APC40 mkII";
-         outputNames[0] = "APC40 mkII";
-         break;
+         case LINUX ->
+         {
+            inputNames[0] = "APC40 mkII MIDI 1";
+            outputNames[0] = "APC40 mkII MIDI 1";
+         }
+         case WINDOWS, MAC ->
+         {
+            inputNames[0] = "APC40 mkII";
+            outputNames[0] = "APC40 mkII";
+         }
       }
 
       list.add(inputNames, outputNames);
-   }
-
-   @Override
-   public boolean shouldFailOnDeprecatedUse()
-   {
-      return true;
    }
 
    public static APC40MKIIControllerExtensionDefinition getInstance()
@@ -114,5 +108,5 @@ public class APC40MKIIControllerExtensionDefinition extends ControllerExtensionD
       return mInstance;
    }
 
-   private static APC40MKIIControllerExtensionDefinition mInstance = new APC40MKIIControllerExtensionDefinition();
+   private static final APC40MKIIControllerExtensionDefinition mInstance = new APC40MKIIControllerExtensionDefinition();
 }

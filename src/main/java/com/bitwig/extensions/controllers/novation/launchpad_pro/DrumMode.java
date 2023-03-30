@@ -52,14 +52,22 @@ final class DrumMode extends Mode
 
       switch (x / 4 + 2 * (y / 4))
       {
-         case 0:
+         case 0 ->
+         {
             return DRUM1_LED;
-         case 1:
+         }
+         case 1 ->
+         {
             return DRUM2_LED;
-         case 2:
+         }
+         case 2 ->
+         {
             return DRUM3_LED;
-         case 3:
+         }
+         case 3 ->
+         {
             return DRUM4_LED;
+         }
       }
 
       throw new IllegalStateException();

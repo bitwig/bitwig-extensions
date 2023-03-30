@@ -6,7 +6,6 @@ import java.util.List;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
-import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.Arpeggiator;
@@ -81,7 +80,7 @@ final class DrumSequencerMode extends AbstractSequencerMode
       }
 
       final SettableIntegerValue drumPosition = driver.mDrumPadBank.scrollPosition();
-      mShiftLayer.bindPressed(driver.mUpButton, this::drumpPadsUp);
+      mShiftLayer.bindPressed(driver.mUpButton, this::drumPadsUp);
       mShiftLayer.bindPressed(driver.mDownButton, this::drumpPadsDown);
       mShiftLayer.bindLightState(() -> drumPosition.get() < 116 ? LedState.PITCH : LedState.PITCH_LOW, driver.mUpButton);
       mShiftLayer.bindLightState(() -> drumPosition.get() > 0 ? LedState.PITCH : LedState.PITCH_LOW, driver.mDownButton);
@@ -278,24 +277,22 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
       switch (mDataMode)
       {
-         case Main:
+         case Main ->
+         {
             mDrumPadsLayer.activate();
             mMainActionsLayer.activate();
-            break;
-         case MixData:
-            mMixDataLayer.activate();
-            break;
-         case SoundData:
-            mSoundDataLayer.activate();
-            break;
-         case MainAlt:
+         }
+         case MixData -> mMixDataLayer.activate();
+         case SoundData -> mSoundDataLayer.activate();
+         case MainAlt ->
+         {
             mDrumPadsLayer.activate();
             mSceneAndPerfsLayer.activate();
-            break;
+         }
       }
    }
 
-   void drumpPadsUp()
+   void drumPadsUp()
    {
       final DrumPadBank drumPads = mDriver.mDrumPadBank;
       final SettableIntegerValue position = drumPads.scrollPosition();
@@ -363,17 +360,9 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
          switch (y)
          {
-            case 0:
-               noteStep.setVelocity(x / 7.0);
-               break;
-
-            case 1:
-               noteStep.setDuration(computeDuration(x));
-               break;
-
-            case 2:
-               noteStep.setPan((3 <= x && x <= 4) ? 0 : (x - 3.5) / 3.5);
-               break;
+            case 0 -> noteStep.setVelocity(x / 7.0);
+            case 1 -> noteStep.setDuration(computeDuration(x));
+            case 2 -> noteStep.setPan((3 <= x && x <= 4) ? 0 : (x - 3.5) / 3.5);
          }
       }
    }
@@ -390,17 +379,9 @@ final class DrumSequencerMode extends AbstractSequencerMode
 
          switch (y)
          {
-            case 0:
-               noteStep.setTranspose(computeTranspoose(x));
-               break;
-
-            case 1:
-               noteStep.setTimbre((3 <= x && x <= 4) ? 0 : (x - 3.5) / 3.5);
-               break;
-
-            case 2:
-               noteStep.setPressure(x / 7.0);
-               break;
+            case 0 -> noteStep.setTranspose(computeTranspose(x));
+            case 1 -> noteStep.setTimbre((3 <= x && x <= 4) ? 0 : (x - 3.5) / 3.5);
+            case 2 -> noteStep.setPressure(x / 7.0);
          }
       }
    }
@@ -689,17 +670,13 @@ final class DrumSequencerMode extends AbstractSequencerMode
          return new LedState(noteStep.state() == NoteStep.State.NoteOn ? Color.STEP_PLAY : Color.STEP_PLAY_HEAD);
       if (mDriver.getPadButton(x, 7- y).getButtonState() == Button.State.HOLD)
          return new LedState(Color.STEP_HOLD);
-      switch (noteStep.state())
-      {
-         case NoteOn:
-            return new LedState(Color.STEP_ON);
-         case NoteSustain:
-            return new LedState(Color.STEP_SUSTAIN);
-         case Empty:
-            return new LedState(Color.STEP_OFF);
-      }
+      return switch (noteStep.state())
+         {
+            case NoteOn -> new LedState(Color.STEP_ON);
+            case NoteSustain -> new LedState(Color.STEP_SUSTAIN);
+            case Empty -> new LedState(Color.STEP_OFF);
+         };
 
-      throw new IllegalStateException();
    }
 
    private LedState computeDrumPadLedState(final int x, final int y)
@@ -735,19 +712,14 @@ final class DrumSequencerMode extends AbstractSequencerMode
    @Override
    protected String getDataModeDescription(final DataMode dataMode)
    {
-      switch (dataMode)
-      {
-         case Main:
-            return "Drum Sequencer: Note Repeat, Solo, Mute";
-         case MainAlt:
-            return "Drum Sequencer: Perfs, Scenes";
-         case MixData:
-            return "Drum Sequencer: Velocity, Note Length, Pan";
-         case SoundData:
-            return "Drum Sequencer: Pich Offset, Timbre, Pressure";
-         default:
-            return "Error";
-      }
+      return switch (dataMode)
+         {
+            case Main -> "Drum Sequencer: Note Repeat, Solo, Mute";
+            case MainAlt -> "Drum Sequencer: Perfs, Scenes";
+            case MixData -> "Drum Sequencer: Velocity, Note Length, Pan";
+            case SoundData -> "Drum Sequencer: Pich Offset, Timbre, Pressure";
+            default -> "Error";
+         };
    }
 
    private void invalidateDrumPosition(final int newPosition)
