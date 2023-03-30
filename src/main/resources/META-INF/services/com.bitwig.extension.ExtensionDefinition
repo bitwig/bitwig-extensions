@@ -1,6 +1,7 @@
 com.bitwig.extensions.controllers.akai.advance.AdvanceControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.apc40_mkii.APC40MKIIControllerExtensionDefinition
-com.bitwig.extensions.controllers.akai.mpk_mini_mk3.MpkMiniMk3ControllerExtensionDefinition
+com.bitwig.extensions.controllers.akai.apcmk2.AkaiApcKeys25Definition
+com.bitwig.extensions.controllers.akai.apcmk2.AkaiApcMiniDefinition
 
 com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab25ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.mk2.ArturiaKeylab49MkIIControllerExtensionDefinition
@@ -83,6 +84,10 @@ com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey37M
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey49Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey61Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey88Mk3ExtensionDefinition
+
+com.bitwig.extensions.controllers.novation.launchpadpromk3.LaunchPadProMk3ExtensionDefinition
+com.bitwig.extensions.controllers.novation.launchpadmini3.LaunchPadMiniMk3ExtensionDefinition
+com.bitwig.extensions.controllers.novation.launchpadmini3.LaunchPadXExtensionDefinition
 
 com.bitwig.extensions.controllers.presonus.atom.PresonusAtomDefinition
 com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort8Definition
