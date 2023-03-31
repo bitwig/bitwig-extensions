@@ -1,5 +1,6 @@
 com.bitwig.extensions.controllers.akai.advance.AdvanceControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.apc40_mkii.APC40MKIIControllerExtensionDefinition
+com.bitwig.extensions.controllers.akai.mpk_mini_mk3.MpkMiniMk3ControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.apcmk2.AkaiApcKeys25Definition
 com.bitwig.extensions.controllers.akai.apcmk2.AkaiApcMiniDefinition
 
