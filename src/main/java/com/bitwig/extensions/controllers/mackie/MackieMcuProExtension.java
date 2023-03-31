@@ -24,7 +24,6 @@ import com.bitwig.extensions.controllers.mackie.section.*;
 import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.remoteconsole.RemoteConsole;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -116,7 +115,6 @@ public class MackieMcuProExtension extends ControllerExtension {
    public void init() {
       host = getHost();
       DebugUtil.host = host;
-      RemoteConsole.init(host);
       surface = host.createHardwareSurface();
       transport = host.createTransport();
       application = host.createApplication();
