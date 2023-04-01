@@ -38,7 +38,7 @@ public class DrumPadLayer extends Layer {
                     final HardwareElementsApc hwElements) {
 
       noteInput = midiProcessor.getMidiIn().createNoteInput("MIDI", "8?????", "9?????");
-      noteInput.setShouldConsumeEvents(false);
+      noteInput.setShouldConsumeEvents(true);
       final CursorTrack cursorTrack = viewCursorControl.getCursorTrack();
       cursorTrack.color()
          .addValueObserver(
@@ -52,6 +52,7 @@ public class DrumPadLayer extends Layer {
       drumBank.setDeviceMatcher(drumMatcher);
       drumPadBank = primaryDevice.createDrumPadBank(64);
       drumPadBank.scrollPosition().addValueObserver(index -> {
+         DebugApc.println(" xOFFSET = %d", index);
          padsNoteOffset = index;
          if (isActive()) {
             applyNotes(padsNoteOffset);
@@ -61,7 +62,7 @@ public class DrumPadLayer extends Layer {
       for (int row = 0; row < 8; row++) {
          for (int col = 0; col < 8; col++) {
             final RgbButton button = hwElements.getDrumButton(row, col);
-            final int index = (7 - row) * 8 + col;
+            final int index = (7 - row) * 4 + col / 4 * 32 + col % 4;
             final DrumPad pad = drumPadBank.getItemAt(index);
             pad.exists().markInterested();
             pad.color().addValueObserver((r, g, b) -> padColors[index] = ColorLookup.toColor(r, g, b));
@@ -74,7 +75,12 @@ public class DrumPadLayer extends Layer {
    public void applyNotes(final int noteOffset) {
       Arrays.fill(noteTable, -1);
       for (int note = 0; note < 64; note++) {
-         final int value = noteOffset + note;
+         int col = note % 4;
+         int row = note / 8;
+         int seg = (note % 8) / 4;
+         int tableNote = row * 4 + col + seg * 32;
+         final int value = noteOffset + tableNote;
+         DebugApc.println(" %d => tn=%d seg=%d ", note, tableNote, seg);
          noteTable[0x40 + note] = value < 128 ? value : -1;
       }
       noteInput.setKeyTranslationTable(noteTable);
@@ -101,7 +107,7 @@ public class DrumPadLayer extends Layer {
          }
          return RgbLightState.of(padColors[index]);
       }
-      return playing ? RgbLightState.WHITE_DIM : RgbLightState.OFF;
+      return playing ? RgbLightState.WHITE : RgbLightState.WHITE_DIM;
    }
 
    public boolean isPlaying(final int index) {
