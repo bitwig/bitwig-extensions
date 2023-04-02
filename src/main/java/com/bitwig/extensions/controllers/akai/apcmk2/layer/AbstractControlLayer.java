@@ -5,6 +5,7 @@ import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.akai.apcmk2.ControlMode;
+import com.bitwig.extensions.controllers.akai.apcmk2.DebugApc;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
@@ -32,6 +33,7 @@ public abstract class AbstractControlLayer {
     }
 
     public void setMode(final ControlMode mode) {
+        DebugApc.println(" MODE = " + mode);
         if (mode != this.mode) {
             layerMap.get(this.mode).setIsActive(false);
             layerMap.get(mode).setIsActive(true);

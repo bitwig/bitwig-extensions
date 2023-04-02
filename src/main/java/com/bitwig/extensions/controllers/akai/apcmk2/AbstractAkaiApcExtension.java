@@ -10,6 +10,7 @@ import com.bitwig.extensions.controllers.akai.apcmk2.layer.SessionLayer;
 import com.bitwig.extensions.controllers.akai.apcmk2.layer.TrackControlLayer;
 import com.bitwig.extensions.controllers.akai.apcmk2.layer.TrackMode;
 import com.bitwig.extensions.controllers.akai.apcmk2.led.SingleLedState;
+import com.bitwig.extensions.controllers.akai.apcmk2.midi.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 
@@ -52,6 +53,8 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
         diContext.activate();
     }
 
+    protected abstract MidiProcessor createMidiProcessor(MidiIn midiIn, MidiOut midiOut);
+
     protected abstract void init(Context diContext);
 
     protected void initMidi(final Context diContext) {
@@ -60,7 +63,7 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
         final MidiIn midiIn2 = host.getMidiInPort(1);
 
         MidiOut midiOut = host.getMidiOutPort(0);
-        final MidiProcessor midiProcessor = new MidiProcessor(host, midiIn, midiOut);
+        final MidiProcessor midiProcessor = createMidiProcessor(midiIn, midiOut);
         diContext.registerService(MidiProcessor.class, midiProcessor);
         final NoteInput noteInput = midiIn2.createNoteInput("MIDI", "8?????", "9?????", "A?????", "D?????", "B?????");
         noteInput.setShouldConsumeEvents(true);
@@ -104,7 +107,7 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
         final SingleLedButton button = hwElements.getSceneButton(buttonIndex);
         button.bindPressed(shiftLayer, () -> trackControlLayer.setMode(mode));
         button.bindLight(shiftLayer,
-           () -> trackControlLayer.getMode() == mode ? SingleLedState.ON : SingleLedState.OFF);
+                () -> trackControlLayer.getMode() == mode ? SingleLedState.ON : SingleLedState.OFF);
     }
 
     private void assignNavButtons(Context diContext, int navOffset) {
