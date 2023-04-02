@@ -80,6 +80,7 @@ com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControlle
 com.bitwig.extensions.controllers.novation.launchkey_mk2.LaunchkeyMk2ControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchpad_pro.LaunchpadProControllerExtensionDefinition
 
+com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.LaunchkeyMiniMk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey25Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey37Mk3ExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mk3.definition.Launchkey49Mk3ExtensionDefinition
