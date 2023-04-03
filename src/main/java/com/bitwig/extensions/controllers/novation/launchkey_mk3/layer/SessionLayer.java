@@ -44,6 +44,7 @@ public class SessionLayer extends Layer {
       final SceneBank sceneBank = trackBank.sceneBank();
       final Scene targetScene = trackBank.sceneBank().getScene(0);
       targetScene.clipCount().markInterested();
+      trackBank.setShouldShowClipLauncherFeedback(true);
 
       launchLayer2 = new Layer(driver.getLayers(), "LAUNCH_LAYER2");
       muteLayer = new Layer(driver.getLayers(), "MUTE_LAYER");
@@ -74,7 +75,6 @@ public class SessionLayer extends Layer {
          final Layer triggerLayer = sceneIndex == 0 ? this : launchLayer2;
          final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
          prepareSlot(slot, i);
-         slot.setIndication(true);
          if (sceneIndex == 0) {
             slot.isPlaybackQueued().addValueObserver(queued -> {
                sceneQueuePlayback[trackIndex] = queued;
@@ -97,7 +97,6 @@ public class SessionLayer extends Layer {
                () -> getSoloState(trackIndex, track));
             button.bindIsPressed(controlLayer, pressed -> {
             }, () -> RgbState.BLUE_LO);
-            slot.setIndication(true);
          }
       }
 
