@@ -499,13 +499,13 @@ public class SessionLayer extends AbstractLpSessionLayer {
       sceneTrackControlLayer.setIsActive(lpMode == LpMode.MIXER);
       sceneControlLayer.setIsActive(lpMode == LpMode.SESSION);
       final AbstractSliderLayer currentSliderMode = controlSliderLayers.get(controlMode.getRefMode());
-      applyTrackMode();
       if (currentSliderMode != null) {
          currentSliderMode.setIsActive(lpMode != LpMode.SESSION);
       }
       if (currentBottomRowLayer != null) {
          currentBottomRowLayer.setIsActive(lpMode == LpMode.MIXER);
       }
+      applyTrackMode();
    }
 
    private void changeModeMini() { // change to sequence
