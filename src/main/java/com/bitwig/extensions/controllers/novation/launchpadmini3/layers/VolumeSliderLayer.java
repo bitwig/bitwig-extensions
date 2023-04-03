@@ -7,23 +7,9 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.novation.commonsmk3.MidiProcessor;
 import com.bitwig.extensions.controllers.novation.commonsmk3.SliderBinding;
 import com.bitwig.extensions.controllers.novation.launchpadmini3.ViewCursorControl;
-import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.framework.values.BooleanValueObject;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class VolumeSliderLayer extends TrackSliderLayer {
-
-   private final int volumeMode = 0;
-   private final int[] vuLevels = new int[8];
-   private final boolean[] masterExists = new boolean[8];
-   private final List<SliderBinding> masterBindings = new ArrayList<>();
-   private final Map<Integer, Layer> modeLayers = new HashMap<>();
-   private final BooleanValueObject touchActive = new BooleanValueObject();
 
    public VolumeSliderLayer(final ViewCursorControl viewCursorControl, final HardwareSurface controlSurface,
                             final Layers layers, final MidiProcessor midiProcessor, final ControllerHost host) {

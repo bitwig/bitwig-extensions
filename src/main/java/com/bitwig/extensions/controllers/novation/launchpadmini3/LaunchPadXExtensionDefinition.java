@@ -58,13 +58,7 @@ public class LaunchPadXExtensionDefinition extends ControllerExtensionDefinition
    public int getNumMidiOutPorts() {
       return 1;
    }
-
-
-//    Added MIDI IN: LPX MIDI
-//    Added MIDI IN: MIDIIN2 (LPX MIDI)
-//    Added MIDI OUT: LPX MIDI
-//    Added MIDI OUT: MIDIOUT2 (LPX MIDI)
-
+   
    @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {

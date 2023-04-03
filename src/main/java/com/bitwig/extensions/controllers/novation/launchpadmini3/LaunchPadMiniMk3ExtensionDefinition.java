@@ -58,13 +58,7 @@ public class LaunchPadMiniMk3ExtensionDefinition extends ControllerExtensionDefi
    public int getNumMidiOutPorts() {
       return 1;
    }
-
-
-//    Added MIDI IN: LPMiniMK3 MIDI
-//    Added MIDI IN: MIDIIN2 (LPMiniMK3 MIDI)
-//    Added MIDI OUT: LPMiniMK3 MIDI
-//    Added MIDI OUT: MIDIOUT2 (LPMiniMK3 MIDI)
-
+   
    @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {

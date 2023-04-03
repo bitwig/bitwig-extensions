@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk3.layer;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.novation.launchkey_mk3.ColorLookup;
+import com.bitwig.extensions.controllers.novation.commonsmk3.ColorLookup;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyMk3Extension;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.RgbState;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcButton;

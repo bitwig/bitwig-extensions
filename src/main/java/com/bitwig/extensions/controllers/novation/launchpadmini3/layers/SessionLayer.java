@@ -555,10 +555,8 @@ public class SessionLayer extends AbstractLpSessionLayer {
    private void handleSlot(final boolean pressed, final Track track, final ClipLauncherSlot slot) {
       if (pressed) {
          if (shiftHeld) {
-            track.selectInMixer();
-            slot.select();
+            slot.launchAlt();
          } else {
-            slot.select();
             slot.launch();
          }
       } else {
