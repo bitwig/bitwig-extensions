@@ -102,7 +102,7 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
       cursorTrack = host.createCursorTrack(2, 2);
       cursorDevice = cursorTrack.createCursorDevice();
       deviceBank = cursorTrack.createDeviceBank(8);
-      cursorClip = host.createLauncherCursorClip(1,8);
+      cursorClip = host.createLauncherCursorClip(1, 8);
       remoteControlBank = cursorDevice.createCursorRemoteControlsPage(8);
 
 
@@ -140,10 +140,6 @@ public class LaunchkeyMk3Extension extends ControllerExtension {
          host.showPopupNotification(String.format("Launchkey %d Mk3 Initialized", extensionDefinition.numberOfKeys()));
       }
       host.scheduleTask(this::handlePing, 50);
-      final Action[] actions = application.getActions();
-      for (Action action: actions ) {
-         host.println(" id =<" + action.getId() + "> name=<" + action.getName() + "> {" + action.getMenuItemText() + "} " + action.getCategory());
-      }
    }
 
    private void changePadMode(final PadMode padMode) {
