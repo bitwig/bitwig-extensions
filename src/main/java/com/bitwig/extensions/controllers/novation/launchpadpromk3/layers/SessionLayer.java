@@ -38,7 +38,13 @@ public class SessionLayer extends AbstractLpSessionLayer {
         initNavigation(hwElements, trackBank, sceneBank);
     }
 
-    private void initNavigation(final HwElements hwElements, final TrackBank trackBank, final SceneBank sceneBank) {
+   @Override
+   public void setLayout(final PanelLayout layout)
+   {
+
+   }
+
+   private void initNavigation(final HwElements hwElements, final TrackBank trackBank, final SceneBank sceneBank) {
         final LabeledButton upButton = hwElements.getLabeledButton(LabelCcAssignments.UP);
         final LabeledButton downButton = hwElements.getLabeledButton(LabelCcAssignments.DOWN);
         final LabeledButton leftButton = hwElements.getLabeledButton(LabelCcAssignments.LEFT);
