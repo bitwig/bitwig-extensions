@@ -43,3 +43,7 @@ The *second* and *third* rows of knobs controls the two first **remote controls*
 ## Factory template 5: Three channel device controls mode
 
 The *first*, *second* and *third* rows of knobs controls the three first **remote controls** of each track's *selected device*.
+
+## Factory template 6: Three track remote controls mode
+
+The *first*, *second* and *third* rows of knobs controls the three first **remote controls** of each track.
