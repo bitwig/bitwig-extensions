@@ -2,7 +2,9 @@ package com.bitwig.extensions.controllers.novation.launchpadpromk3.layers;
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LabeledButton;
+import com.bitwig.extensions.controllers.novation.commonsmk3.PanelLayout;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
+import com.bitwig.extensions.controllers.novation.launchpadpromk3.DebugOutLp;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.HwElements;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.LppPreferences;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.ModifierStates;
@@ -11,6 +13,7 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Inject;
 import com.bitwig.extensions.framework.di.PostConstruct;
+import com.bitwig.extensions.framework.values.ValueObject;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,15 +32,23 @@ public class TrackControlLayer extends Layer {
     @Inject
     private LppPreferences preferences;
 
-    private TrackModeLayer trackModes;
     private SettableBeatTimeValue postRecordingTimeOffset;
-
+    
+    private final Layer verticalLayer;
+    private final Layer horizontalLayer;
+    private final Layer fixedLengthLayer;
+    private PanelLayout panelLayout;
+    private TrackModeButtonMode trackMode;
+    
     public TrackControlLayer(final Layers layers) {
         super(layers, "TRACK_CONTROL_LAYER");
+        verticalLayer = new Layer(layers, "TRACK_VERTICAL");
+        horizontalLayer = new Layer(layers, "TRACK_HORIZONTAL");
+        fixedLengthLayer = new Layer(layers, "FIXED_LENGTH");
     }
 
     @PostConstruct
-    public void init(final HwElements hwElements, final ViewCursorControl viewCursorControl) {
+    public void init(final HwElements hwElements, final ViewCursorControl viewCursorControl, Application application) {
 
         final TrackBank trackBank = viewCursorControl.getTrackBank();
         final List<LabeledButton> trackButtons = hwElements.getTrackSelectButtons();
@@ -45,19 +56,57 @@ public class TrackControlLayer extends Layer {
             final int trackIndex = i;
             final Track track = trackBank.getItemAt(trackIndex);
             final LabeledButton button = trackButtons.get(i);
+            final LabeledButton sceneButton = hwElements.getSceneLaunchButtons().get(i);
             prepareTrack(track);
             track.addIsSelectedInMixerObserver(selectedInMixer -> selectionField[trackIndex] = selectedInMixer);
-
-            button.bindLight(this, () -> getTrackColor(trackIndex, track));
-            button.bindPressed(this, pressed -> handleTrack(pressed, trackIndex, track));
+    
+            button.bindLight(verticalLayer, () -> getTrackColor(trackIndex, track));
+            button.bindPressed(verticalLayer, pressed -> handleTrack(pressed, trackIndex, track));
+            
+            button.bindLight(fixedLengthLayer, () -> getFixedLengthColor(trackIndex));
+            button.bindPressed(fixedLengthLayer, pressed -> handleFixedLength(pressed, trackIndex + 1));
+            
+            sceneButton.bindLight(horizontalLayer, () -> getTrackColor(trackIndex, track));
+            sceneButton.bindPressed(horizontalLayer, pressed -> handleTrack(pressed, trackIndex, track));
+        }
+        application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
+    }
+    
+    private void handlePanelLayoutChanged(final String panelLayout) {
+        if (panelLayout.equals("MIX")) {
+            setLayout(PanelLayout.VERTICAL);
+        } else {
+            setLayout(PanelLayout.HORIZONTAL);
         }
     }
-
+    
+    public void setLayout(final PanelLayout layout) {
+        panelLayout = layout;
+        selectLayers();
+    }
+    
     @Inject
     public void setTrackModes(final TrackModeLayer trackModes) {
-        this.trackModes = trackModes;
+        final ValueObject<TrackModeButtonMode> trackButtonMode = trackModes.getButtonsMode();
+        trackMode = trackButtonMode.get();
+        trackButtonMode.addValueObserver( ((oldValue, newValue) -> {
+            trackMode = newValue;
+            selectLayers();
+        }));
     }
-
+    
+    private void selectLayers() {
+        if(trackMode == TrackModeButtonMode.FIXED_LENGTH) {
+            fixedLengthLayer.setIsActive(true);
+            horizontalLayer.setIsActive(false);
+            verticalLayer.setIsActive(false);
+        } else  {
+            fixedLengthLayer.setIsActive(false);
+            horizontalLayer.setIsActive(panelLayout == PanelLayout.HORIZONTAL);
+            verticalLayer.setIsActive(panelLayout == PanelLayout.VERTICAL);
+        }
+    }
+    
     @Inject
     public void setTransport(final Transport transport) {
         postRecordingTimeOffset = transport.getClipLauncherPostRecordingTimeOffset();
@@ -81,7 +130,7 @@ public class TrackControlLayer extends Layer {
         } else {
             heldTracksButtons.remove(index);
         }
-        switch (trackModes.getButtonsMode()) {
+        switch (trackMode) {
             case SELECT:
                 handleTrackSelected(pressed, index, track);
                 break;
@@ -102,7 +151,8 @@ public class TrackControlLayer extends Layer {
                 break;
         }
     }
-
+    
+    
     private void handleTrackSelected(final boolean pressed, final int index, final Track track) {
         if (!pressed) {
             return;
@@ -162,19 +212,23 @@ public class TrackControlLayer extends Layer {
             track.stop();
         }
     }
+    
+    private RgbState getFixedLengthColor(final int index) {
+        final double len = postRecordingTimeOffset.get() / 4;
+        if (index < len) {
+            return RgbState.ORANGE_PULSE;
+        }
+        return RgbState.OFF;
+    }
 
     private RgbState getTrackColor(final int index, final Track track) {
-        if (trackModes.getButtonsMode() == TrackModeButtonMode.FIXED_LENGTH) {
-            final double len = postRecordingTimeOffset.get() / 4;
-            if (index < len) {
-                return RgbState.ORANGE_PULSE;
-            }
-            return RgbState.OFF;
+        if (trackMode == TrackModeButtonMode.FIXED_LENGTH) {
+            return getFixedLengthColor(index);
         }
         if (!track.exists().get()) {
             return RgbState.OFF;
         }
-        switch (trackModes.getButtonsMode()) {
+        switch (trackMode) {
             case SELECT:
                 return getTrackColorSelect(index, track);
             case ARM:
@@ -205,5 +259,17 @@ public class TrackControlLayer extends Layer {
         }
         return RgbState.OFF;
     }
-
+    
+    @Override
+    protected void onActivate() {
+        super.onActivate();
+        selectLayers();
+    }
+    
+    @Override
+    protected void onDeactivate() {
+        fixedLengthLayer.setIsActive(false);
+        horizontalLayer.setIsActive(false);
+        verticalLayer.setIsActive(false);
+    }
 }

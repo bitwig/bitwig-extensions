@@ -3,12 +3,14 @@ package com.bitwig.extensions.controllers.novation.launchpadpromk3.layers;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.novation.commonsmk3.*;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.*;
+import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Inject;
 import com.bitwig.extensions.framework.di.PostConstruct;
 
 public class SessionLayer extends AbstractLpSessionLayer {
     public static final double MAX_LENGTH_FOR_DUPLICATE = 512 * 4.0;
+    
     private Clip cursorClip;
     @Inject
     private ModifierStates modifiers;
@@ -16,35 +18,51 @@ public class SessionLayer extends AbstractLpSessionLayer {
     private ViewCursorControl viewCursorControl;
     @Inject
     private LppPreferences preferences;
-
+    private final Layer verticalLayer;
+    private final Layer horizontalLayer;
+    private PanelLayout panelLayout = PanelLayout.VERTICAL;
+    
     public SessionLayer(final Layers layers) {
         super(layers);
+        verticalLayer = new Layer(layers, "VERTICAL_LAUNCHING");
+        horizontalLayer = new Layer(layers, "HORIZONTAL_LAUNCHING");
     }
-
+    
     @PostConstruct
-    protected void init(final Transport transport, final HwElements hwElements) {
+    protected void init(final Transport transport, final HwElements hwElements, Application application) {
         clipLauncherOverdub = transport.isClipLauncherOverdubEnabled();
         clipLauncherOverdub.markInterested();
         cursorClip = viewCursorControl.getCursorClip();
         cursorClip.getLoopLength().markInterested();
-
+        
         final TrackBank trackBank = viewCursorControl.getTrackBank();
         trackBank.setShouldShowClipLauncherFeedback(true);
-
+        
         final SceneBank sceneBank = trackBank.sceneBank();
         final Scene targetScene = trackBank.sceneBank().getScene(0);
         targetScene.clipCount().markInterested();
         initClipControl(hwElements, trackBank);
         initNavigation(hwElements, trackBank, sceneBank);
+        application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
     }
-
-   @Override
-   public void setLayout(final PanelLayout layout)
-   {
-
-   }
-
-   private void initNavigation(final HwElements hwElements, final TrackBank trackBank, final SceneBank sceneBank) {
+    
+    private void handlePanelLayoutChanged(final String panelLayout) {
+        DebugOutLp.println(" Panel Layout = %s", panelLayout);
+        if (panelLayout.equals("MIX")) {
+            setLayout(PanelLayout.VERTICAL);
+        } else {
+            setLayout(PanelLayout.HORIZONTAL);
+        }
+    }
+    
+    @Override
+    public void setLayout(final PanelLayout layout) {
+        panelLayout = layout;
+        horizontalLayer.setIsActive(panelLayout == PanelLayout.HORIZONTAL);
+        verticalLayer.setIsActive(panelLayout == PanelLayout.VERTICAL);
+    }
+    
+    private void initNavigation(final HwElements hwElements, final TrackBank trackBank, final SceneBank sceneBank) {
         final LabeledButton upButton = hwElements.getLabeledButton(LabelCcAssignments.UP);
         final LabeledButton downButton = hwElements.getLabeledButton(LabelCcAssignments.DOWN);
         final LabeledButton leftButton = hwElements.getLabeledButton(LabelCcAssignments.LEFT);
@@ -55,21 +73,35 @@ public class SessionLayer extends AbstractLpSessionLayer {
         trackBank.canScrollBackwards().markInterested();
         final RgbState baseColor = RgbState.of(1);
         final RgbState pressedColor = RgbState.of(3);
-
+        
         // TODO Shift function needed
-        downButton.bindRepeatHold(this, () -> sceneBank.scrollBy(1));
-        downButton.bindHighlightButton(this, sceneBank.canScrollForwards(), baseColor, pressedColor);
-
-        upButton.bindRepeatHold(this, () -> sceneBank.scrollBy(-1));
-        upButton.bindHighlightButton(this, sceneBank.canScrollBackwards(), baseColor, pressedColor);
-
-        leftButton.bindRepeatHold(this, () -> trackBank.scrollBy(-1));
-        leftButton.bindHighlightButton(this, trackBank.canScrollBackwards(), baseColor, pressedColor);
-
-        rightButton.bindRepeatHold(this, () -> trackBank.scrollBy(1));
-        rightButton.bindHighlightButton(this, trackBank.canScrollForwards(), baseColor, pressedColor);
+        downButton.bindRepeatHold(verticalLayer, () -> sceneBank.scrollBy(1));
+        downButton.bindHighlightButton(verticalLayer, sceneBank.canScrollForwards(), baseColor, pressedColor);
+        
+        upButton.bindRepeatHold(verticalLayer, () -> sceneBank.scrollBy(-1));
+        upButton.bindHighlightButton(verticalLayer, sceneBank.canScrollBackwards(), baseColor, pressedColor);
+        
+        leftButton.bindRepeatHold(verticalLayer, () -> trackBank.scrollBy(-1));
+        leftButton.bindHighlightButton(verticalLayer, trackBank.canScrollBackwards(), baseColor, pressedColor);
+        
+        rightButton.bindRepeatHold(verticalLayer, () -> trackBank.scrollBy(1));
+        rightButton.bindHighlightButton(verticalLayer, trackBank.canScrollForwards(), baseColor, pressedColor);
+        
+        // horizonal
+        rightButton.bindRepeatHold(horizontalLayer, () -> sceneBank.scrollBy(1));
+        rightButton.bindHighlightButton(horizontalLayer, sceneBank.canScrollForwards(), baseColor, pressedColor);
+        
+        leftButton.bindRepeatHold(horizontalLayer, () -> sceneBank.scrollBy(-1));
+        leftButton.bindHighlightButton(horizontalLayer, sceneBank.canScrollBackwards(), baseColor, pressedColor);
+        
+        upButton.bindRepeatHold(horizontalLayer, () -> trackBank.scrollBy(-1));
+        upButton.bindHighlightButton(horizontalLayer, trackBank.canScrollBackwards(), baseColor, pressedColor);
+        
+        downButton.bindRepeatHold(horizontalLayer, () -> trackBank.scrollBy(1));
+        downButton.bindHighlightButton(horizontalLayer, trackBank.canScrollForwards(), baseColor, pressedColor);
+        
     }
-
+    
     private void initClipControl(final HwElements hwElements, final TrackBank trackBank) {
         for (int i = 0; i < 8; i++) {
             final int trackIndex = i;
@@ -81,24 +113,35 @@ public class SessionLayer extends AbstractLpSessionLayer {
                 final int sceneIndex = j;
                 final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
                 slot.isSelected()
-                   .addValueObserver(
-                      selected -> handleSlotSelection(selected, track, sceneIndex, slot, equalsToCursorTrack));
+                    .addValueObserver(selected -> handleSlotSelection(selected,
+                        track,
+                        sceneIndex,
+                        slot,
+                        equalsToCursorTrack));
                 prepareSlot(slot, sceneIndex, trackIndex);
-
+                
                 final GridButton button = hwElements.getGridButton(sceneIndex, trackIndex);
-                button.bindPressed(this, pressed -> handleSlot(pressed, track, slot, trackIndex));
-                button.bindLight(this, () -> getState(track, slot, trackIndex, sceneIndex));
+                button.bindPressed(verticalLayer, pressed -> handleSlot(pressed, track, slot, trackIndex));
+                button.bindLight(verticalLayer, () -> getState(track, slot, trackIndex, sceneIndex));
+                
+                final GridButton buttonHorizontal = hwElements.getGridButton(trackIndex, sceneIndex);
+                buttonHorizontal.bindPressed(horizontalLayer, pressed -> handleSlot(pressed, track, slot, trackIndex));
+                buttonHorizontal.bindLight(horizontalLayer, () -> getState(track, slot, trackIndex, sceneIndex));
             }
         }
     }
-
-    private void handleSlotSelection(final boolean wasSelected, final Track track, final int sceneIndex,
-                                     final ClipLauncherSlot slot, BooleanValue equalsToCursorTrack) {
+    
+    private void handleSlotSelection(
+        final boolean wasSelected,
+        final Track track,
+        final int sceneIndex,
+        final ClipLauncherSlot slot,
+        BooleanValue equalsToCursorTrack) {
         if (wasSelected) {
             viewCursorControl.focusSlot(new FocusSlot(track, slot, sceneIndex, equalsToCursorTrack));
         }
     }
-
+    
     private void markTrack(final Track track) {
         track.isStopped().markInterested();
         track.mute().markInterested();
@@ -106,7 +149,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
         track.isQueuedForStop().markInterested();
         track.arm().markInterested();
     }
-
+    
     private void prepareSlot(final ClipLauncherSlot slot, final int sceneIndex, final int trackIndex) {
         slot.hasContent().markInterested();
         slot.isPlaying().markInterested();
@@ -116,9 +159,9 @@ public class SessionLayer extends AbstractLpSessionLayer {
         slot.isPlaybackQueued().markInterested();
         slot.color().addValueObserver((r, g, b) -> colorIndex[sceneIndex][trackIndex] = ColorLookup.toColor(r, g, b));
     }
-
-    private void handleSlot(final boolean pressed, final Track track, final ClipLauncherSlot slot,
-                            final int trackIndex) {
+    
+    private void handleSlot(
+        final boolean pressed, final Track track, final ClipLauncherSlot slot, final int trackIndex) {
         if (pressed) {
             if (modifiers.isShift()) {
                 if (modifiers.isQuantize()) {
@@ -156,7 +199,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
             }
         }
     }
-
+    
     private void handleSlotPressNoShift(final ClipLauncherSlot slot) {
         if (modifiers.isQuantize()) {
             doQuantize(slot);
@@ -169,7 +212,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
             slot.select();
         }
     }
-
+    
     private void doQuantize(final ClipLauncherSlot slot) {
         if (slot.hasContent().get()) {
             selectClip(slot);
@@ -177,20 +220,23 @@ public class SessionLayer extends AbstractLpSessionLayer {
             slot.showInEditor();
         }
     }
-
+    
     private void selectClip(final ClipLauncherSlot slot) {
         slot.select();
     }
-
+    
     @Override
     protected void onActivate() {
         super.onActivate();
+        horizontalLayer.setIsActive(panelLayout == PanelLayout.HORIZONTAL);
+        verticalLayer.setIsActive(panelLayout == PanelLayout.VERTICAL);
     }
-
+    
     @Override
     protected void onDeactivate() {
         super.onDeactivate();
+        horizontalLayer.setIsActive(false);
+        verticalLayer.setIsActive(false);
     }
-
-
+    
 }

@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.novation.launchpadpromk3.layers;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.novation.commonsmk3.ColorLookup;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LabeledButton;
+import com.bitwig.extensions.controllers.novation.commonsmk3.PanelLayout;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.HwElements;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.LppPreferences;
@@ -23,11 +24,16 @@ public class SceneLaunchLayer extends Layer {
     private Action sceneCreateAction;
     private final int[] colorIndex = new int[8];
     private int sceneOffset;
-
-
+    private final Layer verticalLayer;
+    private final Layer horizontalLayer;
+    private PanelLayout panelLayout;
+    
     public SceneLaunchLayer(final Layers layers, final ViewCursorControl viewCursorControl,
                             final HwElements hwElements) {
         super(layers, "SCENE_LAYER");
+        verticalLayer = new Layer(layers, "SCENE_VERTICAL");
+        horizontalLayer = new Layer(layers, "SCENE_HORIZONTAL");
+    
         final TrackBank trackBank = viewCursorControl.getTrackBank();
         trackBank.setShouldShowClipLauncherFeedback(true);
         final SceneBank sceneBank = trackBank.sceneBank();
@@ -44,16 +50,34 @@ public class SceneLaunchLayer extends Layer {
             final LabeledButton sceneButton = hwElements.getSceneLaunchButtons().get(index);
             scene.clipCount().markInterested();
             scene.color().addValueObserver((r, g, b) -> colorIndex[index] = ColorLookup.toColor(r, g, b));
-            sceneButton.bindPressed(this, pressed -> handleScene(pressed, scene, index));
-            sceneButton.bindLight(this, () -> getSceneColor(index, scene));
+            sceneButton.bindPressed(verticalLayer, pressed -> handleScene(pressed, scene, index));
+            sceneButton.bindLight(verticalLayer, () -> getSceneColor(index, scene));
+            final LabeledButton trackButton = hwElements.getTrackSelectButtons().get(index);
+            trackButton.bindPressed(horizontalLayer, pressed -> handleScene(pressed, scene, index));
+            trackButton.bindLight(horizontalLayer, () -> getSceneColor(index, scene));
         }
     }
 
     @Inject
     public void setApplication(final Application application) {
         sceneCreateAction = application.getAction("Create Scene From Playing Launcher Clips");
+        application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
     }
-
+    
+    private void handlePanelLayoutChanged(final String panelLayout) {
+        if (panelLayout.equals("MIX")) {
+            setLayout(PanelLayout.VERTICAL);
+        } else {
+            setLayout(PanelLayout.HORIZONTAL);
+        }
+    }
+    
+    public void setLayout(final PanelLayout layout) {
+        panelLayout = layout;
+        horizontalLayer.setIsActive(panelLayout == PanelLayout.HORIZONTAL);
+        verticalLayer.setIsActive(panelLayout == PanelLayout.VERTICAL);
+    }
+    
     private void handleScene(final boolean pressed, final Scene scene, final int sceneIndex) {
         if (pressed) {
             if (modifiers.isClear()) {
@@ -95,6 +119,17 @@ public class SceneLaunchLayer extends Layer {
         }
         return RgbState.OFF;
     }
-
-
+    
+    @Override
+    protected void onActivate() {
+        super.onActivate();
+        horizontalLayer.setIsActive(panelLayout == PanelLayout.HORIZONTAL);
+        verticalLayer.setIsActive(panelLayout == PanelLayout.VERTICAL);
+    }
+    
+    @Override
+    protected void onDeactivate() {
+        horizontalLayer.setIsActive(panelLayout == PanelLayout.HORIZONTAL);
+        verticalLayer.setIsActive(panelLayout == PanelLayout.VERTICAL);
+    }
 }

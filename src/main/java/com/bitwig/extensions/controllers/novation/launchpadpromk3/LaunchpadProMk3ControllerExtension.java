@@ -8,6 +8,7 @@ import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LabeledButton;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LaunchpadDeviceConfig;
 import com.bitwig.extensions.controllers.novation.commonsmk3.MidiProcessor;
+import com.bitwig.extensions.controllers.novation.commonsmk3.PanelLayout;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.layers.*;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.sliderlayers.*;
@@ -116,7 +117,7 @@ public class LaunchpadProMk3ControllerExtension extends ControllerExtension impl
         controlMaps.put(ControlMode.DEVICE, diContext.create(DeviceSliderLayer.class));
     }
 
-    private void initViewControlListeners() {
+   private void initViewControlListeners() {
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         cursorTrack.canHoldNoteData()
                 .addValueObserver(canHoldNoteData -> sysExHandler.enableClipPrint(canHoldNoteData));
