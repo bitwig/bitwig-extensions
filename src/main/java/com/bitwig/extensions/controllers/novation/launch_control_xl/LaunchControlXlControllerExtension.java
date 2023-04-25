@@ -324,9 +324,9 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       for (int i = 0; i < 8; ++i)
       {
          final CursorRemoteControlsPage remoteControlPage = mTrackRemoteControls[i];
-         mSend3Layer.bind(mHardwareKnobs[i], remoteControlPage.getParameter(0));
-         mSend3Layer.bind(mHardwareKnobs[8 + i], remoteControlPage.getParameter(1));
-         mSend3Layer.bind(mHardwareKnobs[16 + i], remoteControlPage.getParameter(2));
+         mTrack3layer.bind(mHardwareKnobs[i], remoteControlPage.getParameter(0));
+         mTrack3layer.bind(mHardwareKnobs[8 + i], remoteControlPage.getParameter(1));
+         mTrack3layer.bind(mHardwareKnobs[16 + i], remoteControlPage.getParameter(2));
       }
    }
 
