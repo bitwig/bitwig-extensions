@@ -37,7 +37,6 @@ import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extension.controller.api.UserControlBank;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -46,13 +45,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 {
    private static final boolean ENABLE_DEBUG_LAYER = false;
 
-   private static final int CHANNEL_STRIP_NUM_PARAMS = 4;
-
-   private static final int CHANNEL_STRIP_NUM_SENDS = 4;
-
    private enum TopMode
    {
-      PAN, SENDS, USER, CHANNEL_STRIP
+      PAN, SENDS, TRACK_CONTROLS, PROJECT_CONTROLS
    }
 
    private static final int MSG_NOTE_ON = 9;
@@ -164,13 +159,18 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mApplication = host.createApplication();
       mProject = host.getProject();
       mRootTrackGroup = mProject.getRootTrackGroup();
+      mProjectRemoteControls = mRootTrackGroup.createCursorRemoteControlsPage("project-remotes", 8, null);
+      mProjectRemoteControls.selectedPageIndex().markInterested();
+      mProjectRemoteControls.pageCount().markInterested();
+      for (int i = 0; i < 8; ++i)
+      {
+         final RemoteControl parameter = mProjectRemoteControls.getParameter(i);
+         parameter.markInterested();
+         parameter.exists().markInterested();
+      }
 
       createSettingsObjects(host);
       createTransportObject(host);
-
-      mUserControls = host.createUserControls(8 * 5);
-      for (int i = 0; i < 8 * 5; ++i)
-         mUserControls.getControl(i).markInterested();
 
       mMasterTrack = host.createMasterTrack(5);
       mMasterTrack.isStopped().markInterested();
@@ -198,6 +198,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       channelStripDevice.exists().markInterested();
       mChannelStripRemoteControls = channelStripDevice.createCursorRemoteControlsPage(8);
       mChannelStripRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 8);
+
+      mTrackRemoteControls = mTrackCursor.createCursorRemoteControlsPage("track-remotes", 8, null);
 
       mDeviceCursor = mTrackCursor.createCursorDevice("device-control", "Device Control", 0,
          CursorDeviceFollowMode.FOLLOW_SELECTION);
@@ -235,6 +237,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             .getParameter(i);
          channelStripRemoteControlsParameter.markInterested();
          channelStripRemoteControlsParameter.exists().markInterested();
+
+         final RemoteControl trackRemote = mTrackRemoteControls.getParameter(i);
+         trackRemote.markInterested();
+         trackRemote.exists().markInterested();
 
          final Track track = mTrackBank.getItemAt(i);
          final SendBank sendBank = track.sendBank();
@@ -319,11 +325,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createSettingsObjects(final ControllerHost host)
    {
       final Preferences preferences = host.getPreferences();
-      mPanAsChannelStripSetting = preferences.getBooleanSetting("Replace PAN by Channel Strip",
-         "Channel Strip", false);
-      mPanAsChannelStripSetting.markInterested();
-      if (mPanAsChannelStripSetting.get())
-         mTopMode = TopMode.CHANNEL_STRIP;
+      mPanAsTrackRemoteSetting = preferences.getBooleanSetting("Replace PAN by Track Remotes",
+         "Controls", false);
+      mPanAsTrackRemoteSetting.markInterested();
+      if (mPanAsTrackRemoteSetting.get())
+         mTopMode = TopMode.TRACK_CONTROLS;
 
       mHorizontalScrollByPageSetting = preferences.getBooleanSetting("Scroll by page (Horizontal)",
          "Clip Launcher", false);
@@ -339,8 +345,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void postInit()
    {
-      if (mPanAsChannelStripSetting.get())
-         activateTopMode(TopMode.CHANNEL_STRIP);
+      if (mPanAsTrackRemoteSetting.get())
+         activateTopMode(TopMode.TRACK_CONTROLS);
       else
          activateTopMode(TopMode.PAN);
    }
@@ -350,31 +356,33 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       // We create all the layers here because the main layer might bind actions to activate other layers.
       mLayers = new Layers(this);
       mMainLayer = new Layer(mLayers, "Main");
-      mChannelStripLayer = new Layer(mLayers, "ChannelStrip");
+      mTrackRemoteControlsLayer = new Layer(mLayers, "TrackRemoteControls");
+      mProjectRemoteControlsLayer = new Layer(mLayers, "ProjectRemoteControls");
       mShiftLayer = new Layer(mLayers, "Shift");
       mBankLayer = new Layer(mLayers, "Bank");
-      mSendSelectLayer = new Layer(mLayers, "SendSelect");
-      mUserSelectLayer = new Layer(mLayers, "UserSelect");
+      mSendSelectLayer = new Layer(mLayers, "SelectSend");
+      mProjectSelectLayer = new Layer(mLayers, "SelectProjectRemoteControls");
 
       createMainLayer();
       createPanLayer();
-      createUserLayers();
       createDebugLayer();
       createSendLayers();
-      createChannelStripLayer();
+      createTrackRemotesControlLayer();
+      createProjectRemotesControlsLayer();
       createShiftLayer();
       createBankLayer();
       createSendSelectLayer();
-      createUserSelectLayer();
+      createProjectRemoteSelectLayer();
    }
 
-   private void createUserSelectLayer()
+   private void createProjectRemoteSelectLayer()
    {
       for (int i = 0; i < 5; ++i)
       {
          final int I = i;
-         mUserSelectLayer.bindPressed(mSceneButtons[i], () -> {
-            mUserIndex = I;
+         mProjectSelectLayer.bindPressed(mSceneButtons[i], () -> {
+            if (I < mProjectRemoteControls.pageCount().get())
+               mProjectRemoteControls.selectedPageIndex().set(I);
             activateTopMode(mTopMode);
          });
       }
@@ -471,12 +479,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTransport.defaultLaunchQuantization().set(quantization);
    }
 
-   private void createChannelStripLayer()
+   private void createTrackRemotesControlLayer()
    {
       for (int i = 0; i < 8; ++i)
-         mChannelStripLayer.bind(mTopControlKnobs[i],
-            i < CHANNEL_STRIP_NUM_PARAMS ? mChannelStripRemoteControls.getParameter(i)
-               : mTrackCursor.sendBank().getItemAt(i - CHANNEL_STRIP_NUM_PARAMS));
+         mTrackRemoteControlsLayer.bind(mTopControlKnobs[i], mTrackRemoteControls.getParameter(i));
+   }
+
+   private void createProjectRemotesControlsLayer()
+   {
+      for (int i = 0; i < 8; ++i)
+         mProjectRemoteControlsLayer.bind(mTopControlKnobs[i], mProjectRemoteControls.getParameter(i));
    }
 
    private void createSendLayers()
@@ -489,17 +501,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             layer.bind(mTopControlKnobs[i], mTrackBank.getItemAt(i).sendBank().getItemAt(sendIndex));
 
          mSendLayers[sendIndex] = layer;
-      }
-   }
-
-   private void createUserLayers()
-   {
-      mUserLayers = new Layer[5];
-      for (int userIndex = 0; userIndex < 5; ++userIndex)
-      {
-         mUserLayers[userIndex] = new Layer(mLayers, "User-" + userIndex);
-         for (int i = 0; i < 8; ++i)
-            mUserLayers[userIndex].bind(mTopControlKnobs[i], mUserControls.getControl(i + userIndex * 8));
       }
    }
 
@@ -640,12 +641,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mMainLayer.bindPressed(mPanButton,
          getHost().createAction(
-            () -> activateTopMode(mPanAsChannelStripSetting.get() ? TopMode.CHANNEL_STRIP : TopMode.PAN),
-            () -> "Activate Pan mode or ChannelStrip mode"));
+            () -> activateTopMode(mPanAsTrackRemoteSetting.get() ? TopMode.TRACK_CONTROLS : TopMode.PAN),
+            () -> "Activate Pan mode or Track Remote Controls mode"));
       mMainLayer.bindPressed(mSendsButton,
          getHost().createAction(() -> activateTopMode(TopMode.SENDS), () -> "Activate Sends mode"));
       mMainLayer.bindPressed(mUserButton,
-         getHost().createAction(() -> activateTopMode(TopMode.USER), () -> "Activate User mode"));
+         getHost().createAction(() -> activateTopMode(TopMode.PROJECT_CONTROLS), () -> "Activate Project Remote Controls mode"));
 
       mMainLayer.bindPressed(mShiftButton, mShiftLayer.getActivateAction());
       mMainLayer.bindReleased(mShiftButton, mShiftLayer.getDeactivateAction());
@@ -1166,9 +1167,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mUserButton.isPressed().addValueObserver(isPressed -> {
          mUserOn.stateChanged(isPressed);
          if (mUserOn.isOn())
-            mUserSelectLayer.activate();
+            mProjectSelectLayer.activate();
          else
-            mUserSelectLayer.deactivate();
+            mProjectSelectLayer.deactivate();
       });
       mUserLed = mHardwareSurface.createOnOffHardwareLight("UserLed");
       mUserLed.setOnColor(Color.fromRGB255(255,165,0));
@@ -1363,8 +1364,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          {
             case PAN -> KnobLed.RING_PAN;
             case SENDS -> KnobLed.RING_VOLUME;
-            case CHANNEL_STRIP -> knobIndex < CHANNEL_STRIP_NUM_PARAMS ? KnobLed.RING_SINGLE : KnobLed.RING_VOLUME;
-            case USER -> KnobLed.RING_SINGLE;
+            case TRACK_CONTROLS, PROJECT_CONTROLS -> KnobLed.RING_SINGLE;
             default -> throw new IllegalStateException();
          };
 
@@ -1407,31 +1407,15 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTopMode = topMode;
 
       for (int i = 0; i < 5; ++i)
-      {
-         if (topMode == TopMode.SENDS && mSendIndex == i)
-            mSendLayers[i].activate();
-         else
-            mSendLayers[i].deactivate();
+         mSendLayers[i].setIsActive(topMode == TopMode.SENDS && mSendIndex == i);
 
-         if (topMode == TopMode.USER && mUserIndex == i)
-            mUserLayers[i].activate();
-         else
-            mUserLayers[i].deactivate();
-      }
+      mPanLayer.setIsActive(topMode == TopMode.PAN);
+      mTrackRemoteControlsLayer.setIsActive(topMode == TopMode.TRACK_CONTROLS);
+      mProjectRemoteControlsLayer.setIsActive(topMode == TopMode.PROJECT_CONTROLS);
 
-      if (topMode == TopMode.PAN)
-         mPanLayer.activate();
-      else
-         mPanLayer.deactivate();
-
-      if (topMode == TopMode.CHANNEL_STRIP)
-         mChannelStripLayer.activate();
-      else
-         mChannelStripLayer.deactivate();
-
-      mPanLed.isOn().setValue(topMode == TopMode.PAN || topMode == TopMode.CHANNEL_STRIP);
+      mPanLed.isOn().setValue(topMode == TopMode.PAN || topMode == TopMode.TRACK_CONTROLS);
       mSendsLed.isOn().setValue(topMode == TopMode.SENDS);
-      mUserLed.isOn().setValue(topMode == TopMode.USER);
+      mUserLed.isOn().setValue(topMode == TopMode.PROJECT_CONTROLS);
 
       if (topMode == TopMode.SENDS && mControlSendEffectSetting.get())
          mTrackCursor.selectChannel(mSendTrackBank.getItemAt(mSendIndex));
@@ -1483,13 +1467,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final RgbLed rgbLed = mSceneLeds[i];
          if (mSendsOn.isOn())
          {
-            rgbLed.setColor(mSendIndex == i ? RGBLedState.COLOR_PLAYING : RGBLedState.COLOR_STOPPING);
+            final boolean isSelected = mSendIndex == i;
+            rgbLed.setColor(isSelected ? RGBLedState.COLOR_SELECTED : RGBLedState.COLOR_SELECTABLE);
             rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
             rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
          }
          else if (mUserOn.isOn())
          {
-            rgbLed.setColor(mUserIndex == i ? RGBLedState.COLOR_PLAYING : RGBLedState.COLOR_STOPPING);
+            final boolean exists = i < mProjectRemoteControls.pageCount().get();
+            final boolean isSelected = exists && mProjectRemoteControls.selectedPageIndex().get() == i;
+            rgbLed.setColor(isSelected ? RGBLedState.COLOR_SELECTED : (exists ? RGBLedState.COLOR_SELECTABLE : RGBLedState.COLOR_NONE));
             rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
             rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
          }
@@ -1653,8 +1640,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private CursorRemoteControlsPage mRemoteControls = null;
 
    private CursorRemoteControlsPage mChannelStripRemoteControls;
-
-   private UserControlBank mUserControls = null;
+   private CursorRemoteControlsPage mTrackRemoteControls;
+   private CursorRemoteControlsPage mProjectRemoteControls;
 
    private MidiIn mMidiIn = null;
 
@@ -1664,7 +1651,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    // Settings //
    //////////////
 
-   private SettableBooleanValue mPanAsChannelStripSetting;
+   private SettableBooleanValue mPanAsTrackRemoteSetting;
 
    private SettableBooleanValue mHorizontalScrollByPageSetting;
 
@@ -1686,8 +1673,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private int mSendIndex = 0; // 0..4
 
-   private int mUserIndex = 0; // 0..4
-
    ////////////
    // Layers //
    ////////////
@@ -1698,11 +1683,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private Layer mPanLayer;
 
-   private Layer[] mUserLayers;
-
    private Layer[] mSendLayers;
 
-   private Layer mChannelStripLayer;
+   private Layer mTrackRemoteControlsLayer;
+   private Layer mProjectRemoteControlsLayer;
 
    private Layer mShiftLayer;
 
@@ -1710,7 +1694,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private Layer mSendSelectLayer;
 
-   private Layer mUserSelectLayer;
+   private Layer mProjectSelectLayer;
 
    ///////////////////////
    // Hardware Controls //
