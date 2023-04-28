@@ -7,6 +7,7 @@ import com.bitwig.extensions.framework.di.Component;
 public class ViewControl {
 
    private final TrackBank trackBank;
+   private final TrackBank trackBankHorizontal;
    private final TrackBank maxTrackBank;
    private final CursorTrack cursorTrack;
    private final Track rootTrack;
@@ -20,6 +21,11 @@ public class ViewControl {
       rootTrack = host.getProject().getRootTrackGroup();
 
       trackBank = host.createTrackBank(8, 1, configuration.getSceneRows(), true);
+      if (configuration.getSceneRows() < 8) {
+         trackBankHorizontal = host.createTrackBank(configuration.getSceneRows(), 1, 8, true);
+      } else {
+         trackBankHorizontal = trackBank;
+      }
       maxTrackBank = host.createTrackBank(64, 1, 1, true);
 
       cursorTrack = host.createCursorTrack(8, 8);
@@ -71,6 +77,10 @@ public class ViewControl {
 
    public TrackBank getTrackBank() {
       return trackBank;
+   }
+
+   public TrackBank getTrackBankHorizontal() {
+      return trackBankHorizontal;
    }
 
    public CursorTrack getCursorTrack() {
