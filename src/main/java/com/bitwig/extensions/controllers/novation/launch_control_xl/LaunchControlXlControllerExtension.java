@@ -33,6 +33,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       Send3(11, "Switched to 3 Sends Mode"),
       Send1Device2(12, "Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
       Device3(13, "Switched to per Channel DEVICE Controls Mode"),
+      Track3(13, "Switched to per Channel TRACK Controls Mode"),
       None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 6.");
 
       Mode(final int channel, final String notification)
@@ -92,11 +93,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mRemoteControls.pageCount().markInterested();
 
       for (int i = 0; i < 8; ++i)
-      {
-         final RemoteControl parameter = mRemoteControls.getParameter(i);
-         parameter.markInterested();
-         parameter.exists().markInterested();
-      }
+         markParameterInterested(mRemoteControls.getParameter(i));
 
       mTrackBank = mHost.createMainTrackBank(8, 3, 0);
       mTrackBank.followCursorTrack(mCursorTrack);
@@ -122,14 +119,15 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          }
 
          mTrackDeviceCursors[i] = track.createCursorDevice();
-         mTrackRemoteControls[i] = mTrackDeviceCursors[i].createCursorRemoteControlsPage(3);
-         mTrackRemoteControls[i].setHardwareLayout(HardwareControlType.KNOB, 1);
+         mTrackCursorDeviceRemoteControls[i] = mTrackDeviceCursors[i].createCursorRemoteControlsPage(3);
+         mTrackCursorDeviceRemoteControls[i].setHardwareLayout(HardwareControlType.KNOB, 1);
+
+         mTrackRemoteControls[i] = track.createCursorRemoteControlsPage(3);
 
          for (int j = 0; j < 3; ++j)
          {
-            final RemoteControl parameter = mTrackRemoteControls[i].getParameter(j);
-            parameter.markInterested();
-            parameter.exists().markInterested();
+            markParameterInterested(mTrackCursorDeviceRemoteControls[i].getParameter(j));
+            markParameterInterested(mTrackRemoteControls[i].getParameter(j));
          }
       }
 
@@ -140,6 +138,12 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       selectMode(Mode.Send2FullDevice);
       setTrackControl(TrackControl.Mute);
       setDeviceOn(false);
+   }
+
+   private static void markParameterInterested(final RemoteControl parameter)
+   {
+      parameter.markInterested();
+      parameter.exists().markInterested();
    }
 
    private void createHardwareSurface()
@@ -276,7 +280,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          final SendBank sendBank = mTrackBank.getItemAt(i).sendBank();
          mSend2Device1Layer.bind(mHardwareKnobs[i], sendBank.getItemAt(0));
          mSend2Device1Layer.bind(mHardwareKnobs[8 + i], sendBank.getItemAt(1));
-         mSend2Device1Layer.bind(mHardwareKnobs[16 + i], mTrackRemoteControls[i].getParameter(0));
+         mSend2Device1Layer.bind(mHardwareKnobs[16 + i], mTrackCursorDeviceRemoteControls[i].getParameter(0));
       }
 
       mSend1Device2Layer = new Layer(layers, "1 Sends 2 Device");
@@ -284,16 +288,16 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       {
          final SendBank sendBank = mTrackBank.getItemAt(i).sendBank();
          mSend1Device2Layer.bind(mHardwareKnobs[i], sendBank.getItemAt(0));
-         mSend1Device2Layer.bind(mHardwareKnobs[8 + i], mTrackRemoteControls[i].getParameter(0));
-         mSend1Device2Layer.bind(mHardwareKnobs[16 + i], mTrackRemoteControls[i].getParameter(1));
+         mSend1Device2Layer.bind(mHardwareKnobs[8 + i], mTrackCursorDeviceRemoteControls[i].getParameter(0));
+         mSend1Device2Layer.bind(mHardwareKnobs[16 + i], mTrackCursorDeviceRemoteControls[i].getParameter(1));
       }
 
       mDevice3Layer = new Layer(layers, "3 Device");
       for (int i = 0; i < 8; ++i)
       {
-         mDevice3Layer.bind(mHardwareKnobs[i], mTrackRemoteControls[i].getParameter(0));
-         mDevice3Layer.bind(mHardwareKnobs[8 + i], mTrackRemoteControls[i].getParameter(1));
-         mDevice3Layer.bind(mHardwareKnobs[16 + i], mTrackRemoteControls[i].getParameter(2));
+         mDevice3Layer.bind(mHardwareKnobs[i], mTrackCursorDeviceRemoteControls[i].getParameter(0));
+         mDevice3Layer.bind(mHardwareKnobs[8 + i], mTrackCursorDeviceRemoteControls[i].getParameter(1));
+         mDevice3Layer.bind(mHardwareKnobs[16 + i], mTrackCursorDeviceRemoteControls[i].getParameter(2));
       }
 
       mSend2Pan1Layer = new Layer(layers, "2 Sends 1 Pan");
@@ -314,6 +318,15 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          mSend3Layer.bind(mHardwareKnobs[i], sendBank.getItemAt(0));
          mSend3Layer.bind(mHardwareKnobs[8 + i], sendBank.getItemAt(1));
          mSend3Layer.bind(mHardwareKnobs[16 + i], sendBank.getItemAt(2));
+      }
+
+      mTrack3layer = new Layer(layers, "3 Track Remotes");
+      for (int i = 0; i < 8; ++i)
+      {
+         final CursorRemoteControlsPage remoteControlPage = mTrackRemoteControls[i];
+         mTrack3layer.bind(mHardwareKnobs[i], remoteControlPage.getParameter(0));
+         mTrack3layer.bind(mHardwareKnobs[8 + i], remoteControlPage.getParameter(1));
+         mTrack3layer.bind(mHardwareKnobs[16 + i], remoteControlPage.getParameter(2));
       }
    }
 
@@ -354,6 +367,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mSend3Layer.setIsActive(mode == Mode.Send3);
       mSend1Device2Layer.setIsActive(mode == Mode.Send1Device2);
       mDevice3Layer.setIsActive(mode == Mode.Device3);
+      mTrack3layer.setIsActive(mode == Mode.Track3);
       mSend2FullDeviceLayer.setIsActive(mode == Mode.Send2FullDevice);
 
       mHost.showPopupNotification(mode.getNotification());
@@ -371,6 +385,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          case "f00020290211770bf7" -> selectMode(Mode.Send3);
          case "f00020290211770cf7" -> selectMode(Mode.Send1Device2);
          case "f00020290211770df7" -> selectMode(Mode.Device3);
+         case "f00020290211770ef7" -> selectMode(Mode.Track3);
          default -> selectMode(Mode.None);
       }
    }
@@ -476,7 +491,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
             {
                mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? green : off);
                mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? green : off);
-               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get() ? amber : off);
+               mKnobsLed[16 + i].setColor(mTrackCursorDeviceRemoteControls[i].getParameter(0).exists().get() ? amber : off);
             }
             case Send2Pan1 ->
             {
@@ -493,10 +508,16 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
             case Send1Device2 ->
             {
                mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? green : off);
-               mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get() ? amber : off);
-               mKnobsLed[16 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get() ? amber : off);
+               mKnobsLed[8 + i].setColor(mTrackCursorDeviceRemoteControls[i].getParameter(0).exists().get() ? amber : off);
+               mKnobsLed[16 + i].setColor(mTrackCursorDeviceRemoteControls[i].getParameter(1).exists().get() ? amber : off);
             }
             case Device3 ->
+            {
+               mKnobsLed[i].setColor(mTrackCursorDeviceRemoteControls[i].getParameter(0).exists().get() ? amber : off);
+               mKnobsLed[8 + i].setColor(mTrackCursorDeviceRemoteControls[i].getParameter(1).exists().get() ? amber : off);
+               mKnobsLed[16 + i].setColor(mTrackCursorDeviceRemoteControls[i].getParameter(2).exists().get() ? amber : off);
+            }
+            case Track3 ->
             {
                mKnobsLed[i].setColor(mTrackRemoteControls[i].getParameter(0).exists().get() ? amber : off);
                mKnobsLed[8 + i].setColor(mTrackRemoteControls[i].getParameter(1).exists().get() ? amber : off);
@@ -613,6 +634,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private final SimpleLed mLeftButtonLed = new SimpleLed(0x90, 46);
    private final SimpleLed mRightButtonLed = new SimpleLed(0x90, 47);
    private final CursorDevice[] mTrackDeviceCursors = new CursorDevice[8];
+   private final CursorRemoteControlsPage[] mTrackCursorDeviceRemoteControls = new CursorRemoteControlsPage[8];
    private final CursorRemoteControlsPage[] mTrackRemoteControls = new CursorRemoteControlsPage[8];
 
    private HardwareSurface mHardwareSurface;
@@ -634,6 +656,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private Layer mSend3Layer;
    private Layer mSend1Device2Layer;
    private Layer mDevice3Layer;
+   private Layer mTrack3layer;
    private Layer mSend2FullDeviceLayer;
    private Layer mMuteLayer;
    private Layer mSoloLayer;
