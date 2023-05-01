@@ -1,20 +1,25 @@
 package com.bitwig.extensions.controllers.novation.launchpadmini3.layers;
 
-import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.novation.commonsmk3.MidiProcessor;
+import com.bitwig.extensions.controllers.novation.commonsmk3.PanelLayout;
 import com.bitwig.extensions.controllers.novation.commonsmk3.SliderBinding;
+import com.bitwig.extensions.controllers.novation.launchpadmini3.LaunchPadPreferences;
 import com.bitwig.extensions.controllers.novation.launchpadmini3.ViewCursorControl;
 import com.bitwig.extensions.framework.Layers;
 
 public class VolumeSliderLayer extends TrackSliderLayer {
 
    public VolumeSliderLayer(final ViewCursorControl viewCursorControl, final HardwareSurface controlSurface,
-                            final Layers layers, final MidiProcessor midiProcessor, final ControllerHost host) {
+                            final Layers layers, final MidiProcessor midiProcessor, LaunchPadPreferences preferences) {
       super("VOL", controlSurface, layers, midiProcessor, 20, 9);
       bind(viewCursorControl.getTrackBank());
+      preferences.getPanelLayout().addValueObserver(((oldValue, newValue) -> {
+         layout = newValue;
+         updateFaderState();
+      }));
    }
 
    @Override
@@ -31,7 +36,7 @@ public class VolumeSliderLayer extends TrackSliderLayer {
    protected void updateFaderState() {
       if (isActive()) {
          refreshTrackColors();
-         midiProcessor.setFaderBank(0, tracksExistsColors, true, baseCcNr);
+         midiProcessor.setFaderBank(layout == PanelLayout.VERTICAL ? 0 : 1, tracksExistsColors, true, baseCcNr);
          valueBindings.forEach(SliderBinding::update);
       }
    }

@@ -26,7 +26,7 @@ public class LaunchPadMiniMk3ExtensionDefinition extends ControllerExtensionDefi
 
    @Override
    public String getVersion() {
-      return "1.0";
+      return "1.01";
    }
 
    @Override
@@ -58,7 +58,7 @@ public class LaunchPadMiniMk3ExtensionDefinition extends ControllerExtensionDefi
    public int getNumMidiOutPorts() {
       return 1;
    }
-   
+
    @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {

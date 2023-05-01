@@ -2,14 +2,12 @@ package com.bitwig.extensions.controllers.novation.launchpadmini3;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
-import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LaunchpadDeviceConfig;
 import com.bitwig.extensions.controllers.novation.commonsmk3.MidiProcessor;
-import com.bitwig.extensions.controllers.novation.commonsmk3.PanelLayout;
 import com.bitwig.extensions.controllers.novation.launchpadmini3.layers.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
@@ -49,22 +47,12 @@ public abstract class AbstractLaunchpadMk3Extension extends ControllerExtension 
       sessionLayer = diContext.create(SessionLayer.class);
       overviewLayer = diContext.create(OverviewLayer.class);
       hwElements = diContext.getService(HwElements.class);
-      final Application application = diContext.getService(Application.class);
-      application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
+      final LaunchPadPreferences preferences = diContext.getService(LaunchPadPreferences.class);
+      preferences.getPanelLayout().addValueObserver(((oldValue, newValue) -> sessionLayer.setLayout(newValue)));
       diContext.create(NotePlayingLayer.class);
       createControlLayers(diContext);
       setUpTracking(diContext);
       return diContext;
-   }
-
-   private void handlePanelLayoutChanged(final String panelLayout)
-   {
-      DebugMini.println(" Panel Layout = %s",panelLayout);
-      if(panelLayout.equals("MIX")) {
-         sessionLayer.setLayout(PanelLayout.VERTICAL);
-      } else {
-         sessionLayer.setLayout(PanelLayout.HORIZONTAL);
-      }
    }
 
    private void setUpTracking(final Context diContext) {

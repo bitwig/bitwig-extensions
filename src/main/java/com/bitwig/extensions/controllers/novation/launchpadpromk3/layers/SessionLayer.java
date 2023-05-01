@@ -29,7 +29,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
    }
 
    @PostConstruct
-   protected void init(final Transport transport, final HwElements hwElements, Application application) {
+   protected void init(final Transport transport, final HwElements hwElements, LppPreferences preferences) {
       clipLauncherOverdub = transport.isClipLauncherOverdubEnabled();
       clipLauncherOverdub.markInterested();
       cursorClip = viewCursorControl.getCursorClip();
@@ -43,15 +43,8 @@ public class SessionLayer extends AbstractLpSessionLayer {
       targetScene.clipCount().markInterested();
       initClipControl(hwElements, trackBank);
       initNavigation(hwElements, trackBank, sceneBank);
-      application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
-   }
-
-   private void handlePanelLayoutChanged(final String panelLayout) {
-      if (panelLayout.equals("MIX")) {
-         setLayout(PanelLayout.VERTICAL);
-      } else {
-         setLayout(PanelLayout.HORIZONTAL);
-      }
+      preferences.getPanelLayout().addValueObserver(((oldValue, newValue) -> setLayout(newValue)));
+      panelLayout = preferences.getPanelLayout().get();
    }
 
    @Override

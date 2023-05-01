@@ -1,23 +1,22 @@
-package com.bitwig.extensions.controllers.novation.launchpadpromk3;
+package com.bitwig.extensions.controllers.novation.launchpadmini3;
 
-import com.bitwig.extension.controller.api.*;
+import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.Preferences;
+import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extensions.controllers.novation.commonsmk3.OrientationFollowType;
 import com.bitwig.extensions.controllers.novation.commonsmk3.PanelLayout;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.values.ValueObject;
 
 @Component
-public class LppPreferences {
-
-   private final SettableBooleanValue altModeWithShift;
+public class LaunchPadPreferences {
    private final ValueObject<OrientationFollowType> orientationFollow;
-   private final ValueObject<PanelLayout> panelLayout = new ValueObject<>(PanelLayout.VERTICAL);
-   private PanelLayout bitwigPanelLayout = PanelLayout.VERTICAL;
+   private PanelLayout bitwigPanelLayout;
+   private ValueObject<PanelLayout> panelLayout = new ValueObject<>(PanelLayout.VERTICAL);
 
-   public LppPreferences(final ControllerHost host, Application application) {
+   public LaunchPadPreferences(final ControllerHost host, Application application) {
       final Preferences preferences = host.getPreferences(); // THIS
-      altModeWithShift = preferences.getBooleanSetting("Use as ALT trigger modifier", "Shift Button", true);
-      altModeWithShift.markInterested();
       orientationFollow = new ValueObject<>(OrientationFollowType.AUTOMATIC);
       SettableEnumValue gridLayout = preferences.getEnumSetting("Launchpad orientation determined by", "Grid Layout", //
          new String[]{OrientationFollowType.AUTOMATIC.getLabel(), //
@@ -26,10 +25,7 @@ public class LppPreferences {
          OrientationFollowType.FIXED_VERTICAL.getLabel());
       gridLayout.addValueObserver(newValue -> orientationFollow.set(OrientationFollowType.toType(newValue)));
       application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
-      orientationFollow.addValueObserver(((oldValue, newValue) -> {
-         DebugOutLp.println("Current Layout => %s orlast=%s", bitwigPanelLayout, newValue);
-         determinePanelLayout(orientationFollow.get());
-      }));
+      orientationFollow.addValueObserver(((oldValue, newValue) -> determinePanelLayout(orientationFollow.get())));
    }
 
    private void handlePanelLayoutChanged(String layout) {
@@ -51,10 +47,6 @@ public class LppPreferences {
       } else {
          panelLayout.set(bitwigPanelLayout);
       }
-   }
-
-   public SettableBooleanValue getAltModeWithShift() {
-      return altModeWithShift;
    }
 
    public ValueObject<PanelLayout> getPanelLayout() {
