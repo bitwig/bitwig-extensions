@@ -37,7 +37,7 @@ class LaunchpadLayer extends Layer
       bindPressed(bt.mButton, bindable);
    }
 
-   private void bindReleased(final Button bt, final HardwareActionBindable bindable)
+   void bindReleased(final Button bt, final HardwareActionBindable bindable)
    {
       bindReleased(bt.mButton, bindable);
    }

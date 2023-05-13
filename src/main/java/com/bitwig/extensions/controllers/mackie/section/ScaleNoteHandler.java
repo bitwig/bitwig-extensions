@@ -1,165 +1,158 @@
 package com.bitwig.extensions.controllers.mackie.section;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PlayingNote;
+import com.bitwig.extensions.controllers.mackie.NotePlayingSetup;
 import com.bitwig.extensions.controllers.mackie.value.ValueObject;
 
+import java.util.*;
+
 public class ScaleNoteHandler {
-	private static final int PLAYING_BUTTONS = 32;
+   private static final int PLAYING_BUTTONS = 32;
 
-	private final NoteInput noteInput;
-	private final Integer[] notesTable = new Integer[128];
-	private final Map<Integer, List<Integer>> notesToButtonsTable = new HashMap<>();
+   private final NoteInput noteInput;
+   private final Integer[] notesTable = new Integer[128];
+   protected final Integer[] velTable = new Integer[128];
+   private final Map<Integer, List<Integer>> notesToButtonsTable = new HashMap<>();
 
-	private final List<ValueObject<NoteState>> playing = new ArrayList<>(PLAYING_BUTTONS);
-	private final boolean[] isBaseNote = new boolean[PLAYING_BUTTONS];
-	private final boolean tracker[] = new boolean[PLAYING_BUTTONS];
+   private final List<ValueObject<NoteState>> playing = new ArrayList<>(PLAYING_BUTTONS);
+   private final boolean[] isBaseNote = new boolean[PLAYING_BUTTONS];
+   private final boolean[] tracker = new boolean[PLAYING_BUTTONS];
 
-	private boolean active;
+   private boolean active;
 
-	private Scale scale = Scale.MINOR;
-	private int baseNote = 0;
-	private int octaveOffset = 3;
-	private final int layoutOffset = 3; // 4ths
+   private final NotePlayingSetup notePlaying;
 
-	public ScaleNoteHandler(final NoteInput noteInput, final CursorTrack cursorTrack) {
-		this.noteInput = noteInput;
-		for (int i = 0; i < notesTable.length; i++) {
-			notesTable[i] = Integer.valueOf(-1);
-			notesToButtonsTable.clear();
-		}
-		noteInput.setKeyTranslationTable(notesTable);
-		for (int i = 0; i < PLAYING_BUTTONS; i++) {
-			playing.add(new ValueObject<>(NoteState.OFF));
-		}
-		cursorTrack.playingNotes().addValueObserver(this::handleNotes);
-	}
+   public ScaleNoteHandler(final NoteInput noteInput, final NotePlayingSetup notePlaying,
+                           final CursorTrack cursorTrack) {
+      this.noteInput = noteInput;
+      this.notePlaying = notePlaying;
+      Arrays.fill(notesTable, -1);
+      notesToButtonsTable.clear();
+      noteInput.setKeyTranslationTable(notesTable);
+      for (int i = 0; i < PLAYING_BUTTONS; i++) {
+         playing.add(new ValueObject<>(NoteState.OFF));
+      }
+      cursorTrack.playingNotes().addValueObserver(this::handleNotes);
+      notePlaying.getOctaveOffset().addValueObserver(val -> applyScale());
+      notePlaying.getBaseNote().addValueObserver(val -> applyScale());
+      notePlaying.getScale().addValueObserver((oldValue, newValue) -> applyScale());
+      notePlaying.getLayoutOffset().addValueObserver(val -> applyScale());
+      notePlaying.getVelocity().addValueObserver(val -> applyVelTable());
+      for (int i = 0; i < velTable.length; i++) {
+         velTable[i] = notePlaying.getVelocity().get();
+      }
+   }
 
-	public void setScale(final Scale scale) {
-		this.scale = scale;
-	}
+   private void handleNotes(final PlayingNote[] notes) {
+      if (!active) {
+         return;
+      }
+      for (int i = 0; i < PLAYING_BUTTONS; i++) {
+         tracker[i] = false;
+      }
+      for (final PlayingNote playingNote : notes) {
+         final List<Integer> pads = notesToButtonsTable.get(playingNote.pitch());
+         if (pads != null) {
+            pads.forEach(index -> {
+               playing.get(index).set(NoteState.PLAYING);
+               tracker[index] = true;
+            });
+         }
+      }
+      for (int i = 0; i < PLAYING_BUTTONS; i++) {
+         if (!tracker[i]) {
+            if (isBaseNote[i]) {
+               playing.get(i).set(NoteState.BASENOTE);
+            } else {
+               playing.get(i).set(NoteState.OFF);
+            }
+         }
+      }
+      noteInput.setVelocityTranslationTable(velTable);
+   }
 
-	public void setBaseNote(final int baseNote) {
-		this.baseNote = baseNote;
-	}
+   private void applyVelTable() {
+      for (int i = 0; i < velTable.length; i++) {
+         velTable[i] = notePlaying.getVelocity().get();
+      }
+      if (active) {
+         noteInput.setVelocityTranslationTable(velTable);
+      }
+   }
 
-	public Scale getScale() {
-		return scale;
-	}
+   public void navigateHorizontal(final int direction, final boolean pressed) {
+      if (!pressed) {
+         return;
+      }
+      if (direction > 0) {
+      } else {
+      }
+   }
 
-	public int getBaseNote() {
-		return baseNote;
-	}
+   public void activate() {
+      active = true;
+      applyScale();
+   }
 
-	private void handleNotes(final PlayingNote[] notes) {
-		if (!active) {
-			return;
-		}
-		for (int i = 0; i < PLAYING_BUTTONS; i++) {
-			tracker[i] = false;
-		}
-		for (final PlayingNote playingNote : notes) {
-			final List<Integer> pads = notesToButtonsTable.get(playingNote.pitch());
-			if (pads != null) {
-				pads.forEach(index -> {
-					playing.get(index).set(NoteState.PLAYING);
-					tracker[index] = true;
-				});
-			}
-		}
-		for (int i = 0; i < PLAYING_BUTTONS; i++) {
-			if (!tracker[i]) {
-				if (isBaseNote[i]) {
-					playing.get(i).set(NoteState.BASENOTE);
-				} else {
-					playing.get(i).set(NoteState.OFF);
-				}
-			}
-		}
-	}
+   void applyScale() {
+      if (!active) {
+         return;
+      }
+      notesToButtonsTable.clear();
 
-	public void navigateHorizontal(final int direction, final boolean pressed) {
-		if (!pressed) {
-			return;
-		}
-		if (direction > 0) {
-		} else {
-		}
-	}
+      final int[] notes = notePlaying.getScale().get().getNotes();
+      final int layoutOffset = notePlaying.getLayoutOffset().get();
+      final int octaveOffset = notePlaying.getOctaveOffset().get();
+      final int baseNote = notePlaying.getBaseNote().get();
 
-	public void navigateVertical(final int direction, final boolean pressed) {
-		if (!pressed) {
-			return;
-		}
-		if (direction > 0) {
-			if (octaveOffset < 6) {
-				octaveOffset++;
-			}
-			applyScale();
-		} else {
-			if (octaveOffset > 0) {
-				octaveOffset--;
-			}
-			applyScale();
-		}
-	}
+      for (int padMidiNoteNr = 0; padMidiNoteNr < PLAYING_BUTTONS; padMidiNoteNr++) {
+         final int row = 3 - padMidiNoteNr / 8;
+         final int col = padMidiNoteNr % 8;
 
-	public void activate() {
-		active = true;
-		applyScale();
-	}
+         final int rowOffset = col + row * layoutOffset;
+         final int oct = rowOffset / notes.length + octaveOffset;
+         final int noteIndex = rowOffset % notes.length;
+         final int note = notes[noteIndex];
+         isBaseNote[padMidiNoteNr] = noteIndex == 0;
+         // Chromatic
+         // final int noteToPadIndex = baseNote + octaveOffset * 12 + rowOffset;
+         final int noteToPadIndex = baseNote + oct * 12 + note;
 
-	void applyScale() {
-		if (!active) {
-			return;
-		}
-		notesToButtonsTable.clear();
+         if (noteToPadIndex < 128) {
+            notesTable[padMidiNoteNr] = noteToPadIndex;
+            List<Integer> l = notesToButtonsTable.get(noteToPadIndex);
+            if (l == null) {
+               l = new ArrayList<>();
+               notesToButtonsTable.put(noteToPadIndex, l);
+            }
+            l.add(padMidiNoteNr);
+         }
+      }
+      for (int i = 0; i < PLAYING_BUTTONS; i++) {
+         if (isBaseNote[i]) {
+            playing.get(i).set(NoteState.BASENOTE);
+         } else {
+            playing.get(i).set(NoteState.OFF);
+         }
+      }
 
-		final int[] notes = scale.getNotes();
-		for (int padMidiNoteNr = 0; padMidiNoteNr < PLAYING_BUTTONS; padMidiNoteNr++) {
-			final int row = 3 - padMidiNoteNr / 8;
-			final int col = padMidiNoteNr % 8;
+      noteInput.setKeyTranslationTable(notesTable);
+   }
 
-			final int rowOffset = col + row * layoutOffset;
-			final int oct = rowOffset / notes.length + octaveOffset;
-			final int noteIndex = rowOffset % notes.length;
-			final int note = notes[noteIndex];
-			isBaseNote[padMidiNoteNr] = noteIndex == 0;
-			// Chromatic
-			// final int noteToPadIndex = baseNote + octaveOffset * 12 + rowOffset;
-			final int noteToPadIndex = baseNote + oct * 12 + note;
+   public void deactivate() {
+      if (!active) {
+         return;
+      }
+      for (int i = 0; i < PLAYING_BUTTONS; i++) {
+         notesTable[i] = -1;
+      }
+      noteInput.setKeyTranslationTable(notesTable);
+   }
 
-			if (noteToPadIndex < 128) {
-				notesTable[padMidiNoteNr] = noteToPadIndex;
-				List<Integer> l = notesToButtonsTable.get(noteToPadIndex);
-				if (l == null) {
-					l = new ArrayList<>();
-					notesToButtonsTable.put(noteToPadIndex, l);
-				}
-				l.add(padMidiNoteNr);
-			}
-		}
-		noteInput.setKeyTranslationTable(notesTable);
-	}
-
-	public void deactivate() {
-		if (!active) {
-			return;
-		}
-		for (int i = 0; i < PLAYING_BUTTONS; i++) {
-			notesTable[i] = -1;
-		}
-		noteInput.setKeyTranslationTable(notesTable);
-	}
-
-	public ValueObject<NoteState> isPlaying(final int index) {
-		return playing.get(index);
-	}
+   public ValueObject<NoteState> isPlaying(final int index) {
+      return playing.get(index);
+   }
 
 }
