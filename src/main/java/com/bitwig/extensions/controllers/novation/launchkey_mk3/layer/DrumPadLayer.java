@@ -1,7 +1,11 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk3.layer;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.novation.launchkey_mk3.*;
+import com.bitwig.extensions.controllers.novation.commonsmk3.ColorLookup;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.HwControls;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyConstants;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.LaunchkeyMk3Extension;
+import com.bitwig.extensions.controllers.novation.launchkey_mk3.RgbState;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbCcButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk3.control.RgbNoteButton;
 import com.bitwig.extensions.framework.Layer;
@@ -104,7 +108,7 @@ public class DrumPadLayer extends Layer {
       final RgbCcButton sceneLaunchButton = hwControl.getSceneLaunchButton();
       final RgbCcButton row2ModeButton = hwControl.getModeRow2Button();
 
-      if(driver.isMiniVersion()) {
+      if (driver.isMiniVersion()) {
          initLaunchkeyMiniNavigation(driver, sceneLaunchButton, row2ModeButton);
       } else {
          initStandardNavigation(driver, hwControl, sceneLaunchButton, row2ModeButton);
@@ -115,21 +119,20 @@ public class DrumPadLayer extends Layer {
       cursorTrack.color().addValueObserver((r, g, b) -> trackColor = ColorLookup.toColor(r, g, b));
    }
 
-   private void initLaunchkeyMiniNavigation(
-      final LaunchkeyMk3Extension driver,
-      final RgbCcButton sceneLaunchButton,
-      final RgbCcButton row2ModeButton) {
+   private void initLaunchkeyMiniNavigation(final LaunchkeyMk3Extension driver, final RgbCcButton sceneLaunchButton,
+                                            final RgbCcButton row2ModeButton) {
       final Clip cursorClip = driver.getCursorClip();
       final ClipLauncherSlot slot = cursorClip.clipLauncherSlot();
       slot.exists().markInterested();
 
       driver.getShiftState().addValueObserver(shiftActive -> {
-         if(isActive()) {
+         if (isActive()) {
             shiftLayer.setIsActive(shiftActive);
          }
       });
       initNavigation(driver, shiftLayer, sceneLaunchButton, row2ModeButton);
-      sceneLaunchButton.bindIsPressed(this, pressed -> driver.launchDirect(),  pressed -> pressed ? RgbState.RED_LO : RgbState.OFF);
+      sceneLaunchButton.bindIsPressed(this, pressed -> driver.launchDirect(),
+         pressed -> pressed ? RgbState.RED_LO : RgbState.OFF);
 //      sceneLaunchButton.bindIsPressed(this, pressed -> {
 //         cursorClip.launch();
 //      }, () -> getColor(slot));
@@ -137,18 +140,15 @@ public class DrumPadLayer extends Layer {
       row2ModeButton.bindLight(this, () -> RgbState.OFF);
    }
 
-   private RgbState getColor(ClipLauncherSlot slot){
-      if(slot.exists().get()) {
+   private RgbState getColor(ClipLauncherSlot slot) {
+      if (slot.exists().get()) {
          return RgbState.ORANGE_LO;
       }
       return RgbState.RED_LO;
    }
 
-   private void initStandardNavigation(
-      final LaunchkeyMk3Extension driver,
-      final HwControls hwControl,
-      final RgbCcButton sceneLaunchButton,
-      final RgbCcButton row2ModeButton) {
+   private void initStandardNavigation(final LaunchkeyMk3Extension driver, final HwControls hwControl,
+                                       final RgbCcButton sceneLaunchButton, final RgbCcButton row2ModeButton) {
       final RgbCcButton navUpButton = hwControl.getNavUpButton();
       final RgbCcButton navDownButton = hwControl.getNavDownButton();
       initNavigation(driver, this, navUpButton, navDownButton);
@@ -161,7 +161,7 @@ public class DrumPadLayer extends Layer {
    }
 
    private void initNavigation(final LaunchkeyMk3Extension driver, Layer layer, final RgbCcButton navUpButton,
-      RgbCcButton navDownButton) {
+                               RgbCcButton navDownButton) {
       navUpButton.bindIsPressed(layer, pressed -> {
          if (pressed) {
             driver.startHold(() -> scrollPadBank(1));

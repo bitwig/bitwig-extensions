@@ -37,7 +37,6 @@ import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extension.controller.api.UserControlBank;
 import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -46,13 +45,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 {
    private static final boolean ENABLE_DEBUG_LAYER = false;
 
-   private static final int CHANNEL_STRIP_NUM_PARAMS = 4;
-
-   private static final int CHANNEL_STRIP_NUM_SENDS = 4;
-
    private enum TopMode
    {
-      PAN, SENDS, USER, CHANNEL_STRIP;
+      PAN, SENDS, TRACK_CONTROLS, PROJECT_CONTROLS
    }
 
    private static final int MSG_NOTE_ON = 9;
@@ -164,18 +159,23 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mApplication = host.createApplication();
       mProject = host.getProject();
       mRootTrackGroup = mProject.getRootTrackGroup();
+      mProjectRemoteControls = mRootTrackGroup.createCursorRemoteControlsPage("project-remotes", 8, null);
+      mProjectRemoteControls.selectedPageIndex().markInterested();
+      mProjectRemoteControls.pageCount().markInterested();
+      for (int i = 0; i < 8; ++i)
+      {
+         final RemoteControl parameter = mProjectRemoteControls.getParameter(i);
+         parameter.markInterested();
+         parameter.exists().markInterested();
+      }
 
       createSettingsObjects(host);
       createTransportObject(host);
 
-      mUserControls = host.createUserControls(8 * 5);
-      for (int i = 0; i < 8 * 5; ++i)
-         mUserControls.getControl(i).markInterested();
-
       mMasterTrack = host.createMasterTrack(5);
       mMasterTrack.isStopped().markInterested();
 
-      mTrackCursor = host.createCursorTrack(8, 0);
+      mTrackCursor = host.createCursorTrack("cursor-track", "Akai APC40 mkII", 8, 0, true);
       mTrackCursor.exists().markInterested();
       mTrackCursor.isGroup().markInterested();
       mTrackCursor.volume().markInterested();
@@ -193,11 +193,13 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mIsMasterSelected = mTrackCursor.createEqualsValue(mMasterTrack);
 
-      mChannelStripDevice = mTrackCursor.createCursorDevice("channel-strip", "Channel Strip", 4,
-         CursorDeviceFollowMode.LAST_DEVICE);
-      mChannelStripDevice.exists().markInterested();
-      mChannelStripRemoteControls = mChannelStripDevice.createCursorRemoteControlsPage(8);
+      PinnableCursorDevice channelStripDevice =
+         mTrackCursor.createCursorDevice("channel-strip", "Channel Strip", 4, CursorDeviceFollowMode.LAST_DEVICE);
+      channelStripDevice.exists().markInterested();
+      mChannelStripRemoteControls = channelStripDevice.createCursorRemoteControlsPage(8);
       mChannelStripRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 8);
+
+      mTrackRemoteControls = mTrackCursor.createCursorRemoteControlsPage("track-remotes", 8, null);
 
       mDeviceCursor = mTrackCursor.createCursorDevice("device-control", "Device Control", 0,
          CursorDeviceFollowMode.FOLLOW_SELECTION);
@@ -235,6 +237,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             .getParameter(i);
          channelStripRemoteControlsParameter.markInterested();
          channelStripRemoteControlsParameter.exists().markInterested();
+
+         final RemoteControl trackRemote = mTrackRemoteControls.getParameter(i);
+         trackRemote.markInterested();
+         trackRemote.exists().markInterested();
 
          final Track track = mTrackBank.getItemAt(i);
          final SendBank sendBank = track.sendBank();
@@ -319,11 +325,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createSettingsObjects(final ControllerHost host)
    {
       final Preferences preferences = host.getPreferences();
-      mPanAsChannelStripSetting = preferences.getBooleanSetting("Replace PAN by Channel Strip",
-         "Channel Strip", false);
-      mPanAsChannelStripSetting.markInterested();
-      if (mPanAsChannelStripSetting.get())
-         mTopMode = TopMode.CHANNEL_STRIP;
+      mPanAsTrackRemoteSetting = preferences.getBooleanSetting("Replace PAN by Track Remotes",
+         "Controls", false);
+      mPanAsTrackRemoteSetting.markInterested();
+      if (mPanAsTrackRemoteSetting.get())
+         mTopMode = TopMode.TRACK_CONTROLS;
 
       mHorizontalScrollByPageSetting = preferences.getBooleanSetting("Scroll by page (Horizontal)",
          "Clip Launcher", false);
@@ -339,8 +345,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private void postInit()
    {
-      if (mPanAsChannelStripSetting.get())
-         activateTopMode(TopMode.CHANNEL_STRIP);
+      if (mPanAsTrackRemoteSetting.get())
+         activateTopMode(TopMode.TRACK_CONTROLS);
       else
          activateTopMode(TopMode.PAN);
    }
@@ -350,31 +356,33 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       // We create all the layers here because the main layer might bind actions to activate other layers.
       mLayers = new Layers(this);
       mMainLayer = new Layer(mLayers, "Main");
-      mChannelStripLayer = new Layer(mLayers, "ChannelStrip");
+      mTrackRemoteControlsLayer = new Layer(mLayers, "TrackRemoteControls");
+      mProjectRemoteControlsLayer = new Layer(mLayers, "ProjectRemoteControls");
       mShiftLayer = new Layer(mLayers, "Shift");
       mBankLayer = new Layer(mLayers, "Bank");
-      mSendSelectLayer = new Layer(mLayers, "SendSelect");
-      mUserSelectLayer = new Layer(mLayers, "UserSelect");
+      mSendSelectLayer = new Layer(mLayers, "SelectSend");
+      mProjectSelectLayer = new Layer(mLayers, "SelectProjectRemoteControls");
 
       createMainLayer();
       createPanLayer();
-      createUserLayers();
       createDebugLayer();
       createSendLayers();
-      createChannelStripLayer();
+      createTrackRemotesControlLayer();
+      createProjectRemotesControlsLayer();
       createShiftLayer();
       createBankLayer();
       createSendSelectLayer();
-      createUserSelectLayer();
+      createProjectRemoteSelectLayer();
    }
 
-   private void createUserSelectLayer()
+   private void createProjectRemoteSelectLayer()
    {
       for (int i = 0; i < 5; ++i)
       {
          final int I = i;
-         mUserSelectLayer.bindPressed(mSceneButtons[i], () -> {
-            mUserIndex = I;
+         mProjectSelectLayer.bindPressed(mSceneButtons[i], () -> {
+            if (I < mProjectRemoteControls.pageCount().get())
+               mProjectRemoteControls.selectedPageIndex().set(I);
             activateTopMode(mTopMode);
          });
       }
@@ -430,9 +438,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 8; ++i)
       {
          final int x = i;
-         mShiftLayer.bindPressed(mTrackSelectButtons[x], getHost().createAction(() -> {
-            setLaunchQuantizationFromTrackSelect(x);
-         }, () -> "Configures the default launch quantization"));
+         mShiftLayer.bindPressed(mTrackSelectButtons[x], getHost().createAction(() -> setLaunchQuantizationFromTrackSelect(x), () -> "Configures the default launch quantization"));
          mShiftLayer.bind(() -> x == computeLaunchQuantizationIndex(), mTrackSelectLeds[x]);
 
          final Track track = mTrackBank.getItemAt(i);
@@ -441,71 +447,48 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          {
             final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
             final HardwareButton clipButton = mGridButtons[i + 8 * j];
-            mShiftLayer.bindPressed(clipButton, slot.launchWithOptionsAction("none", "continue_immediately"));
-            mShiftLayer.bindReleased(clipButton, track.launchLastClipWithOptionsAction("none", "continue_immediately"));
+            mShiftLayer.bindPressed(clipButton, slot.launchAltAction());
+            mShiftLayer.bindReleased(clipButton, slot.launchReleaseAltAction());
          }
+         mShiftLayer.bindPressed(mTrackStopButtons[x], track.stopAltAction());
       }
 
       for (int i = 0; i < 5; ++i)
       {
          final Scene scene = mSceneBank.getScene(i);
-         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchWithOptionsAction("none", "continue_immediately"));
-         mShiftLayer.bindReleased(mSceneButtons[i], scene.launchLastClipWithOptionsAction("none", "continue_immediately"));
+         mShiftLayer.bindPressed(mSceneButtons[i], scene.launchAltAction());
+         mShiftLayer.bindReleased(mSceneButtons[i], scene.launchReleaseAltAction());
       }
    }
 
    private void setLaunchQuantizationFromTrackSelect(final int x)
    {
-      final String quantization;
-
-      switch (x)
-      {
-      case 0:
-         quantization = "none";
-         break;
-
-      case 1:
-         quantization = "8";
-         break;
-
-      case 2:
-         quantization = "4";
-         break;
-
-      case 3:
-         quantization = "2";
-         break;
-
-      case 4:
-         quantization = "1";
-         break;
-
-      case 5:
-         quantization = "1/4";
-         break;
-
-      case 6:
-         quantization = "1/8";
-         break;
-
-      case 7:
-         quantization = "1/16";
-         break;
-
-      default:
-         quantization = "1";
-         break;
-      }
+      final String quantization = switch (x)
+         {
+            case 0 -> "none";
+            case 1 -> "8";
+            case 2 -> "4";
+            case 3 -> "2";
+            case 4 -> "1";
+            case 5 -> "1/4";
+            case 6 -> "1/8";
+            case 7 -> "1/16";
+            default -> "1";
+         };
 
       mTransport.defaultLaunchQuantization().set(quantization);
    }
 
-   private void createChannelStripLayer()
+   private void createTrackRemotesControlLayer()
    {
       for (int i = 0; i < 8; ++i)
-         mChannelStripLayer.bind(mTopControlKnobs[i],
-            i < CHANNEL_STRIP_NUM_PARAMS ? mChannelStripRemoteControls.getParameter(i)
-               : mTrackCursor.sendBank().getItemAt(i - CHANNEL_STRIP_NUM_PARAMS));
+         mTrackRemoteControlsLayer.bind(mTopControlKnobs[i], mTrackRemoteControls.getParameter(i));
+   }
+
+   private void createProjectRemotesControlsLayer()
+   {
+      for (int i = 0; i < 8; ++i)
+         mProjectRemoteControlsLayer.bind(mTopControlKnobs[i], mProjectRemoteControls.getParameter(i));
    }
 
    private void createSendLayers()
@@ -521,17 +504,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
    }
 
-   private void createUserLayers()
-   {
-      mUserLayers = new Layer[5];
-      for (int userIndex = 0; userIndex < 5; ++userIndex)
-      {
-         mUserLayers[userIndex] = new Layer(mLayers, "User-" + userIndex);
-         for (int i = 0; i < 8; ++i)
-            mUserLayers[userIndex].bind(mTopControlKnobs[i], mUserControls.getControl(i + userIndex * 8));
-      }
-   }
-
    private void createPanLayer()
    {
       mPanLayer = new Layer(mLayers, "Pan");
@@ -543,8 +515,8 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       if (ENABLE_DEBUG_LAYER)
       {
-         mDebugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
-         mDebugLayer.activate();
+         Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+         debugLayer.activate();
       }
    }
 
@@ -566,10 +538,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          for (int y = 0; y < 5; ++y)
          {
             final int offset = 8 * y + x;
-            mMainLayer.bindPressed(mGridButtons[offset],
-               track.clipLauncherSlotBank().getItemAt(y).launchAction());
+            final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(y);
+            mMainLayer.bindPressed(mGridButtons[offset], slot.launchAction());
+            mMainLayer.bindReleased(mGridButtons[offset], slot.launchReleaseAction());
          }
-         mMainLayer.bindPressed(mMuteButtons[x], track.mute());
+         mMainLayer.bindToggle(mMuteButtons[x], track.mute());
          mMainLayer.bind(() -> track.exists().get() && !track.mute().get(), mMuteLeds[x]);
          mMainLayer.bindToggle(mSoloButtons[x], track.solo());
          mMainLayer.bindToggle(mArmButtons[x], track.arm());
@@ -660,16 +633,20 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       });
 
       for (int y = 0; y < 5; ++y)
-         mMainLayer.bindPressed(mSceneButtons[y], mSceneBank.getItemAt(y).launchAction());
+      {
+         final Scene scene = mSceneBank.getItemAt(y);
+         mMainLayer.bindPressed(mSceneButtons[y], scene.launchAction());
+         mMainLayer.bindReleased(mSceneButtons[y], scene.launchReleaseAction());
+      }
 
       mMainLayer.bindPressed(mPanButton,
          getHost().createAction(
-            () -> activateTopMode(mPanAsChannelStripSetting.get() ? TopMode.CHANNEL_STRIP : TopMode.PAN),
-            () -> "Activate Pan mode or ChannelStrip mode"));
+            () -> activateTopMode(mPanAsTrackRemoteSetting.get() ? TopMode.TRACK_CONTROLS : TopMode.PAN),
+            () -> "Activate Pan mode or Track Remote Controls mode"));
       mMainLayer.bindPressed(mSendsButton,
          getHost().createAction(() -> activateTopMode(TopMode.SENDS), () -> "Activate Sends mode"));
       mMainLayer.bindPressed(mUserButton,
-         getHost().createAction(() -> activateTopMode(TopMode.USER), () -> "Activate User mode"));
+         getHost().createAction(() -> activateTopMode(TopMode.PROJECT_CONTROLS), () -> "Activate Project Remote Controls mode"));
 
       mMainLayer.bindPressed(mShiftButton, mShiftLayer.getActivateAction());
       mMainLayer.bindReleased(mShiftButton, mShiftLayer.getDeactivateAction());
@@ -905,19 +882,19 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTapTempoButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_TAP_TEMPO));
       mTapTempoButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_TAP_TEMPO));
 
-      mNudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
-      mNudgePlusButton.setLabel("NUDGE +");
-      mNudgePlusButton.setLabelPosition(RelativePosition.ABOVE);
-      mNudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
-      mNudgePlusButton.releasedAction()
+      HardwareButton nudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
+      nudgePlusButton.setLabel("NUDGE +");
+      nudgePlusButton.setLabelPosition(RelativePosition.ABOVE);
+      nudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
+      nudgePlusButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_PLUS));
 
-      mNudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
-      mNudgeMinusButton.setLabel("NUDGE -");
-      mNudgeMinusButton.setLabelPosition(RelativePosition.ABOVE);
-      mNudgeMinusButton.pressedAction()
+      HardwareButton nudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
+      nudgeMinusButton.setLabel("NUDGE -");
+      nudgeMinusButton.setLabelPosition(RelativePosition.ABOVE);
+      nudgeMinusButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_MINUS));
-      mNudgeMinusButton.releasedAction()
+      nudgeMinusButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_MINUS));
 
       mTempoKnob = mHardwareSurface.createRelativeHardwareKnob("Tempo");
@@ -1002,34 +979,29 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final HardwareTextDisplay led = mHardwareSurface.createHardwareTextDisplay("ABLed-" + x, 1);
-         led.onUpdateHardware(() -> {
-            sendLedUpdate(BT_TRACK_AB, channel, crossFadeToInt(led.line(0).text().currentValue()));
-         });
+         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_AB, channel, crossFadeToInt(led.line(0).text().currentValue())));
          mABLeds[x] = led;
       }
    }
 
    private static Color getABLedColor(final int i)
    {
-      switch (i)
-      {
-      case 1:
-         return Color.fromRGB(1.0, 0.5, 0);
-      case 2:
-         return Color.fromRGB(0, 0, 1.0);
-      default:
-         return Color.fromRGB(0, 0, 0);
-      }
+      return switch (i)
+         {
+            case 1 -> Color.fromRGB(1.0, 0.5, 0);
+            case 2 -> Color.fromRGB(0, 0, 1.0);
+            default -> Color.fromRGB(0, 0, 0);
+         };
    }
 
    private void createArmButtons()
    {
       mArmButtons = new HardwareButton[8];
-      mArmLeds = new OnOffHardwareLight[8];
+      OnOffHardwareLight[] armLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Arm-" + x);
-         bt.setLabel("\u25CF");
+         bt.setLabel("●");
          bt.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(x, BT_TRACK_ARM));
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(x, BT_TRACK_ARM));
          bt.setIndexInGroup(x);
@@ -1040,14 +1012,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          led.setOnColor(Color.fromRGB(1, 0, 0));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_ARM, channel, led));
          bt.setBackgroundLight(led);
-         mArmLeds[x] = led;
+         armLeds[x] = led;
       }
    }
 
    private void createSoloButtons()
    {
       mSoloButtons = new HardwareButton[8];
-      mSoloLeds = new OnOffHardwareLight[8];
+      OnOffHardwareLight[] soloLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Solo-" + x);
@@ -1062,7 +1034,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          led.setOnColor(Color.fromRGB(0, 0, 1));
          led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_SOLO, channel, led));
          bt.setBackgroundLight(led);
-         mSoloLeds[x] = led;
+         soloLeds[x] = led;
       }
    }
 
@@ -1195,9 +1167,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mUserButton.isPressed().addValueObserver(isPressed -> {
          mUserOn.stateChanged(isPressed);
          if (mUserOn.isOn())
-            mUserSelectLayer.activate();
+            mProjectSelectLayer.activate();
          else
-            mUserSelectLayer.deactivate();
+            mProjectSelectLayer.deactivate();
       });
       mUserLed = mHardwareSurface.createOnOffHardwareLight("UserLed");
       mUserLed.setOnColor(Color.fromRGB255(255,165,0));
@@ -1228,7 +1200,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       }
 
       mPrevDeviceButton = mHardwareSurface.createHardwareButton("PrevDevice");
-      mPrevDeviceButton.setLabel("\u2190DEVICE");
+      mPrevDeviceButton.setLabel("←DEVICE");
       mPrevDeviceButton.setLabelPosition(RelativePosition.BELOW);
       mPrevDeviceButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_DEVICE));
@@ -1240,7 +1212,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_DEVICE, mPrevDeviceLed));
 
       mNextDeviceButton = mHardwareSurface.createHardwareButton("NextDevice");
-      mNextDeviceButton.setLabel("DEVICE\u2192");
+      mNextDeviceButton.setLabel("DEVICE→");
       mNextDeviceButton.setLabelPosition(RelativePosition.BELOW);
       mNextDeviceButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_DEVICE));
@@ -1252,7 +1224,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mNextDeviceLed.onUpdateHardware(() -> sendLedUpdate(BT_NEXT_DEVICE, mNextDeviceLed));
 
       mPrevBankButton = mHardwareSurface.createHardwareButton("PrevBank");
-      mPrevBankButton.setLabel("\u2190BANK");
+      mPrevBankButton.setLabel("←BANK");
       mPrevBankButton.setLabelPosition(RelativePosition.BELOW);
       mPrevBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_BANK));
       mPrevBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_BANK));
@@ -1262,7 +1234,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mPrevBankLed.onUpdateHardware(() -> sendLedUpdate(BT_PREV_BANK, mPrevBankLed));
 
       mNextBankButton = mHardwareSurface.createHardwareButton("NextBank");
-      mNextBankButton.setLabel("BANK\u2192");
+      mNextBankButton.setLabel("BANK→");
       mNextBankButton.setLabelPosition(RelativePosition.BELOW);
       mNextBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_BANK));
       mNextBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_BANK));
@@ -1326,12 +1298,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mShiftButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SHIFT));
       mShiftButton.isPressed().markInterested();
 
-      mBankButton = mHardwareSurface.createHardwareButton("Bank");
-      mBankButton.setLabel("BANK");
-      mBankButton.setLabelPosition(RelativePosition.BELOW);
-      mBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
-      mBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_BANK));
-      mBankButton.isPressed().addValueObserver((isPressed) -> {
+      HardwareButton bankButton = mHardwareSurface.createHardwareButton("Bank");
+      bankButton.setLabel("BANK");
+      bankButton.setLabelPosition(RelativePosition.BELOW);
+      bankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
+      bankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_BANK));
+      bankButton.isPressed().addValueObserver((isPressed) -> {
          mBankOn.stateChanged(isPressed);
          if (mBankOn.isOn())
          {
@@ -1346,32 +1318,32 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       });
       mBankLed = mHardwareSurface.createOnOffHardwareLight("BankLed");
       mBankLed.setOnColor(Color.fromRGB255(255,165,0));
-      mBankButton.setBackgroundLight(mBankLed);
+      bankButton.setBackgroundLight(mBankLed);
       mBankLed.onUpdateHardware(() -> sendLedUpdate(BT_BANK, mBankLed));
 
       mLauncherUpButton = mHardwareSurface.createHardwareButton("LauncherUp");
-      mLauncherUpButton.setLabel("\u2191");
+      mLauncherUpButton.setLabel("↑");
       mLauncherUpButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_UP));
       mLauncherUpButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_UP));
 
       mLauncherDownButton = mHardwareSurface.createHardwareButton("LauncherDown");
-      mLauncherDownButton.setLabel("\u2193");
+      mLauncherDownButton.setLabel("↓");
       mLauncherDownButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_DOWN));
       mLauncherDownButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_DOWN));
 
       mLauncherLeftButton = mHardwareSurface.createHardwareButton("LauncherLeft");
-      mLauncherLeftButton.setLabel("\u2190");
+      mLauncherLeftButton.setLabel("←");
       mLauncherLeftButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_LEFT));
       mLauncherLeftButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_LAUNCHER_LEFT));
 
       mLauncherRightButton = mHardwareSurface.createHardwareButton("LauncherRight");
-      mLauncherRightButton.setLabel("\u2192");
+      mLauncherRightButton.setLabel("→");
       mLauncherRightButton.pressedAction()
          .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_LAUNCHER_RIGHT));
       mLauncherRightButton.releasedAction()
@@ -1388,24 +1360,13 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       else
          knobLed.setDisplayedValue(value);
 
-      final int ring;
-      switch (mTopMode)
-      {
-      case PAN:
-         ring = KnobLed.RING_PAN;
-         break;
-      case SENDS:
-         ring = KnobLed.RING_VOLUME;
-         break;
-      case CHANNEL_STRIP:
-         ring = knobIndex < CHANNEL_STRIP_NUM_PARAMS ? KnobLed.RING_SINGLE : KnobLed.RING_VOLUME;
-         break;
-      case USER:
-         ring = KnobLed.RING_SINGLE;
-         break;
-      default:
-         throw new IllegalStateException();
-      }
+      final int ring = switch (mTopMode)
+         {
+            case PAN -> KnobLed.RING_PAN;
+            case SENDS -> KnobLed.RING_VOLUME;
+            case TRACK_CONTROLS, PROJECT_CONTROLS -> KnobLed.RING_SINGLE;
+            default -> throw new IllegalStateException();
+         };
 
       if (knobLed.wantsFlush())
          knobLed.setRing(knob.hasTargetValue().get() ? ring : KnobLed.RING_OFF);
@@ -1446,31 +1407,15 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTopMode = topMode;
 
       for (int i = 0; i < 5; ++i)
-      {
-         if (topMode == TopMode.SENDS && mSendIndex == i)
-            mSendLayers[i].activate();
-         else
-            mSendLayers[i].deactivate();
+         mSendLayers[i].setIsActive(topMode == TopMode.SENDS && mSendIndex == i);
 
-         if (topMode == TopMode.USER && mUserIndex == i)
-            mUserLayers[i].activate();
-         else
-            mUserLayers[i].deactivate();
-      }
+      mPanLayer.setIsActive(topMode == TopMode.PAN);
+      mTrackRemoteControlsLayer.setIsActive(topMode == TopMode.TRACK_CONTROLS);
+      mProjectRemoteControlsLayer.setIsActive(topMode == TopMode.PROJECT_CONTROLS);
 
-      if (topMode == TopMode.PAN)
-         mPanLayer.activate();
-      else
-         mPanLayer.deactivate();
-
-      if (topMode == TopMode.CHANNEL_STRIP)
-         mChannelStripLayer.activate();
-      else
-         mChannelStripLayer.deactivate();
-
-      mPanLed.isOn().setValue(topMode == TopMode.PAN || topMode == TopMode.CHANNEL_STRIP);
+      mPanLed.isOn().setValue(topMode == TopMode.PAN || topMode == TopMode.TRACK_CONTROLS);
       mSendsLed.isOn().setValue(topMode == TopMode.SENDS);
-      mUserLed.isOn().setValue(topMode == TopMode.USER);
+      mUserLed.isOn().setValue(topMode == TopMode.PROJECT_CONTROLS);
 
       if (topMode == TopMode.SENDS && mControlSendEffectSetting.get())
          mTrackCursor.selectChannel(mSendTrackBank.getItemAt(mSendIndex));
@@ -1484,15 +1429,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private String intToCrossFade(final int index)
    {
-      switch (index)
-      {
-      case 1:
-         return "A";
-      case 2:
-         return "B";
-      default:
-         return "AB";
-      }
+      return switch (index)
+         {
+            case 1 -> "A";
+            case 2 -> "B";
+            default -> "AB";
+         };
    }
 
    private int crossFadeToInt(final String s)
@@ -1525,13 +1467,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          final RgbLed rgbLed = mSceneLeds[i];
          if (mSendsOn.isOn())
          {
-            rgbLed.setColor(mSendIndex == i ? RGBLedState.COLOR_PLAYING : RGBLedState.COLOR_STOPPING);
+            final boolean isSelected = mSendIndex == i;
+            rgbLed.setColor(isSelected ? RGBLedState.COLOR_SELECTED : RGBLedState.COLOR_SELECTABLE);
             rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
             rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
          }
          else if (mUserOn.isOn())
          {
-            rgbLed.setColor(mUserIndex == i ? RGBLedState.COLOR_PLAYING : RGBLedState.COLOR_STOPPING);
+            final boolean exists = i < mProjectRemoteControls.pageCount().get();
+            final boolean isSelected = exists && mProjectRemoteControls.selectedPageIndex().get() == i;
+            rgbLed.setColor(isSelected ? RGBLedState.COLOR_SELECTED : (exists ? RGBLedState.COLOR_SELECTABLE : RGBLedState.COLOR_NONE));
             rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
             rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
          }
@@ -1615,27 +1560,18 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private int computeLaunchQuantizationIndex()
    {
-      switch (mTransport.defaultLaunchQuantization().get())
-      {
-      case "none":
-         return 0;
-      case "8":
-         return 1;
-      case "4":
-         return 2;
-      case "2":
-         return 3;
-      case "1":
-         return 4;
-      case "1/4":
-         return 5;
-      case "1/8":
-         return 6;
-      case "1/16":
-         return 7;
-      default:
-         return -1;
-      }
+      return switch (mTransport.defaultLaunchQuantization().get())
+         {
+            case "none" -> 0;
+            case "8" -> 1;
+            case "4" -> 2;
+            case "2" -> 3;
+            case "1" -> 4;
+            case "1/4" -> 5;
+            case "1/8" -> 6;
+            case "1/16" -> 7;
+            default -> -1;
+         };
    }
 
    /**
@@ -1691,7 +1627,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private TrackBank mTrackBank = null;
 
-   private BooleanValue[] mIsTrackSelected = new BooleanValue[8];
+   private final BooleanValue[] mIsTrackSelected = new BooleanValue[8];
 
    private TrackBank mSendTrackBank = null;
 
@@ -1701,13 +1637,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private PinnableCursorDevice mDeviceCursor = null;
 
-   private PinnableCursorDevice mChannelStripDevice;
-
    private CursorRemoteControlsPage mRemoteControls = null;
 
    private CursorRemoteControlsPage mChannelStripRemoteControls;
-
-   private UserControlBank mUserControls = null;
+   private CursorRemoteControlsPage mTrackRemoteControls;
+   private CursorRemoteControlsPage mProjectRemoteControls;
 
    private MidiIn mMidiIn = null;
 
@@ -1717,7 +1651,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    // Settings //
    //////////////
 
-   private SettableBooleanValue mPanAsChannelStripSetting;
+   private SettableBooleanValue mPanAsTrackRemoteSetting;
 
    private SettableBooleanValue mHorizontalScrollByPageSetting;
 
@@ -1739,8 +1673,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private int mSendIndex = 0; // 0..4
 
-   private int mUserIndex = 0; // 0..4
-
    ////////////
    // Layers //
    ////////////
@@ -1749,15 +1681,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private Layer mMainLayer;
 
-   private Layer mDebugLayer;
-
    private Layer mPanLayer;
-
-   private Layer[] mUserLayers;
 
    private Layer[] mSendLayers;
 
-   private Layer mChannelStripLayer;
+   private Layer mTrackRemoteControlsLayer;
+   private Layer mProjectRemoteControlsLayer;
 
    private Layer mShiftLayer;
 
@@ -1765,7 +1694,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private Layer mSendSelectLayer;
 
-   private Layer mUserSelectLayer;
+   private Layer mProjectSelectLayer;
 
    ///////////////////////
    // Hardware Controls //
@@ -1813,10 +1742,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private HardwareButton mTapTempoButton;
 
-   private HardwareButton mNudgePlusButton;
-
-   private HardwareButton mNudgeMinusButton;
-
    private RelativeHardwareKnob mTempoKnob;
 
    private HardwareButton mPrevDeviceButton;
@@ -1836,8 +1761,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private HardwareButton mDetailViewButton;
 
    private HardwareButton mShiftButton;
-
-   private HardwareButton mBankButton;
 
    private HardwareButton mLauncherUpButton;
 
@@ -1888,10 +1811,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private OnOffHardwareLight mBankLed;
 
    private OnOffHardwareLight[] mMuteLeds;
-
-   private OnOffHardwareLight[] mSoloLeds;
-
-   private OnOffHardwareLight[] mArmLeds;
 
    private HardwareTextDisplay[] mABLeds;
 

@@ -173,14 +173,14 @@ abstract class AbstractSequencerMode extends Mode
 
       if (pads.isEmpty())
       {
-         switch (y)
-         {
-            case 0: return LedState.VOLUME_MODE_LOW;
-            case 1: return LedState.PAN_MODE_LOW;
-            case 2: return new LedState(Color.CYAN_LOW);
-            case 3: return new LedState(Color.WHITE_LOW);
-            default: throw new IllegalStateException();
-         }
+         return switch (y)
+            {
+               case 0 -> LedState.VOLUME_MODE_LOW;
+               case 1 -> LedState.PAN_MODE_LOW;
+               case 2 -> new LedState(Color.CYAN_LOW);
+               case 3 -> new LedState(Color.WHITE_LOW);
+               default -> throw new IllegalStateException();
+            };
       }
 
       final Button pad = pads.get(0);
@@ -194,19 +194,26 @@ abstract class AbstractSequencerMode extends Mode
 
       switch (y)
       {
-         case 0:
+         case 0 ->
+         {
             return new LedState(x <= gain * 7 ? Color.VOLUME_MODE : Color.VOLUME_MODE_LOW);
-         case 1:
+         }
+         case 1 ->
+         {
             final double ipan = (x - 3.5) / 3.5;
             if ((pan > 0 && ipan > 0 && ipan <= pan) || (pan < 0 && ipan < 0 && pan <= ipan))
                return LedState.PAN_MODE;
             return LedState.PAN_MODE_LOW;
-         case 2:
+         }
+         case 2 ->
+         {
             return new LedState(computeDuration(x) <= duration ? Color.CYAN : Color.CYAN_LOW);
-         case 3:
+         }
+         case 3 ->
+         {
             return new LedState(x <= velocity * 7 ? Color.WHITE : Color.WHITE_LOW);
-         default:
-            throw new IllegalStateException();
+         }
+         default -> throw new IllegalStateException();
       }
    }
 
@@ -216,14 +223,14 @@ abstract class AbstractSequencerMode extends Mode
 
       if (pads.isEmpty())
       {
-         switch (y)
-         {
-            case 0: return LedState.OFF;
-            case 1: return new LedState(Color.BLUE_LOW);
-            case 2: return new LedState(Color.YELLOW_LOW);
-            case 3: return new LedState(Color.WHITE_LOW);
-            default: throw new IllegalStateException();
-         }
+         return switch (y)
+            {
+               case 0 -> LedState.OFF;
+               case 1 -> new LedState(Color.BLUE_LOW);
+               case 2 -> new LedState(Color.YELLOW_LOW);
+               case 3 -> new LedState(Color.WHITE_LOW);
+               default -> throw new IllegalStateException();
+            };
       }
 
       final Button pad = pads.get(0);
@@ -236,22 +243,30 @@ abstract class AbstractSequencerMode extends Mode
 
       switch (y)
       {
-         case 0:
+         case 0 ->
+         {
             return LedState.OFF;
-         case 1:
+         }
+         case 1 ->
+         {
             return new LedState(x <= pressure * 7 ? Color.BLUE : Color.BLUE_LOW);
-         case 2:
+         }
+         case 2 ->
+         {
             final double itimbre = (x - 3.5) / 3.5;
             if ((timbre > 0 && itimbre > 0 && itimbre <= timbre) || (timbre < 0 && itimbre < 0 && timbre <= itimbre))
                return new LedState(Color.YELLOW);
             return new LedState(Color.YELLOW_LOW);
-         case 3:
-            final double itranspose = computeTranspoose(x);
-            if ((transpose > 0 && itranspose > 0 && itranspose <= transpose) || (transpose < 0 && itranspose < 0 && transpose <= itranspose))
+         }
+         case 3 ->
+         {
+            final double itranspose = computeTranspose(x);
+            if ((transpose > 0 && itranspose > 0 && itranspose <= transpose) || (transpose < 0 && itranspose < 0
+               && transpose <= itranspose))
                return new LedState(Color.WHITE);
             return new LedState(Color.WHITE_LOW);
-         default:
-            throw new IllegalStateException();
+         }
+         default -> throw new IllegalStateException();
       }
    }
 
@@ -261,14 +276,24 @@ abstract class AbstractSequencerMode extends Mode
    {
       switch (y)
       {
-         case 0:
+         case 0 ->
+         {
             return new LedState(mDataMode == DataMode.SoundData ? Color.YELLOW : Color.YELLOW_LOW);
-         case 1:
+         }
+         case 1 ->
+         {
             return new LedState(mDataMode == DataMode.MixData ? Color.YELLOW : Color.YELLOW_LOW);
-         case 2:
-            return new LedState(hasMainAltMode() ? mDataMode == DataMode.MainAlt ? Color.YELLOW : Color.YELLOW_LOW : Color.OFF);
-         case 3:
+         }
+         case 2 ->
+         {
+            return new LedState(hasMainAltMode()
+               ? mDataMode == DataMode.MainAlt ? Color.YELLOW : Color.YELLOW_LOW
+               : Color.OFF);
+         }
+         case 3 ->
+         {
             return new LedState(mDataMode == DataMode.Main ? Color.YELLOW : Color.YELLOW_LOW);
+         }
       }
       throw new IllegalStateException();
    }
@@ -312,22 +337,14 @@ abstract class AbstractSequencerMode extends Mode
       assert 0 <= Y && Y <= 3;
       switch (Y)
       {
-         case 0:
-            setDataMode(DataMode.SoundData);
-            break;
-
-         case 1:
-            setDataMode(DataMode.MixData);
-            break;
-
-         case 2:
+         case 0 -> setDataMode(DataMode.SoundData);
+         case 1 -> setDataMode(DataMode.MixData);
+         case 2 ->
+         {
             if (hasMainAltMode())
                setDataMode(DataMode.MainAlt);
-            break;
-
-         case 3:
-            setDataMode(DataMode.Main);
-            break;
+         }
+         case 3 -> setDataMode(DataMode.Main);
       }
    }
 
@@ -383,27 +400,19 @@ abstract class AbstractSequencerMode extends Mode
       return list;
    }
 
-   protected double computeTranspoose(final int x)
+   protected double computeTranspose(final int x)
    {
-      switch (x)
-      {
-         case 0:
-            return -0.5;
-         case 1:
-            return -0.25;
-         case 2:
-            return -0.125;
-         case 5:
-            return 0.125;
-         case 6:
-            return 0.25;
-         case 7:
-            return 0.5;
-         case 3:
-         case 4:
-         default:
-            return 0;
-      }
+      return switch (x)
+         {
+            case 0 -> -0.5;
+            case 1 -> -0.25;
+            case 2 -> -0.125;
+            case 5 -> 0.125;
+            case 6 -> 0.25;
+            case 7 -> 0.5;
+            case 3, 4 -> 0;
+            default -> 0;
+         };
    }
 
    protected double computeDuration(final int x)

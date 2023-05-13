@@ -29,8 +29,9 @@ final class SessionMode extends Mode
             final ClipLauncherSlot slot = slotBank.getItemAt(7 - y);
             final Button button = driver.getPadButton(x, y);
             bindPressed(button, slot.launchAction());
-            mShiftLayer.bindPressed(button, slot.launchWithOptionsAction("none", "continue_immediately"));
-            mShiftLayer.bindReleased(button, track.launchLastClipWithOptionsAction("none", "continue_immediately"));
+            bindReleased(button, slot.launchReleaseAction());
+            mShiftLayer.bindPressed(button, slot.launchAltAction());
+            mShiftLayer.bindReleased(button, slot.launchReleaseAltAction());
             mDeleteLayer.bindPressed(button, slot::deleteObject);
             mQuantizeLayer.bindReleased(button, () -> {
                slot.select();
@@ -42,10 +43,11 @@ final class SessionMode extends Mode
          final Scene scene = sceneBank.getItemAt(7 - x);
          final Button sceneButton = driver.mSceneButtons[x];
          bindPressed(sceneButton, scene.launchAction());
+         bindReleased(sceneButton, scene.launchReleaseAction());
          bindLightState(() -> computeSceneLedState(scene), sceneButton);
 
-         mShiftLayer.bindPressed(sceneButton, scene.launchWithOptionsAction("none", "continue_immediately"));
-         mShiftLayer.bindReleased(sceneButton, scene.launchLastClipWithOptionsAction("none", "continue_immediately"));
+         mShiftLayer.bindPressed(sceneButton, scene.launchAltAction());
+         mShiftLayer.bindReleased(sceneButton, scene.launchReleaseAltAction());
       }
 
       bindLayer(driver.mShiftButton, mShiftLayer);
@@ -121,6 +123,8 @@ final class SessionMode extends Mode
    {
       final TrackBank trackBank = mDriver.mTrackBank;
       final SceneBank sceneBank = mDriver.mSceneBank;
+
+      trackBank.setShouldShowClipLauncherFeedback(true);
       sceneBank.setIndication(true);
 
       for (int i = 0; i < 8; ++i)
@@ -129,7 +133,6 @@ final class SessionMode extends Mode
          track.subscribe();
 
          final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
-         slotBank.setIndication(true);
 
          for (int j = 0; j < 8; ++j)
          {
@@ -162,6 +165,7 @@ final class SessionMode extends Mode
       final TrackBank trackBank = mDriver.mTrackBank;
       final SceneBank sceneBank = mDriver.mSceneBank;
       sceneBank.setIndication(false);
+      trackBank.setShouldShowClipLauncherFeedback(false);
 
       for (int i = 0; i < 8; ++i)
       {
@@ -169,7 +173,6 @@ final class SessionMode extends Mode
          channel.unsubscribe();
 
          final ClipLauncherSlotBank slotBank = channel.clipLauncherSlotBank();
-         slotBank.setIndication(false);
 
          for (int j = 0; j < 8; ++j)
          {

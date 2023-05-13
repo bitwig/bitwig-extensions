@@ -29,6 +29,10 @@ class RGBLedState extends InternalHardwareLightState
 
    public static final int COLOR_SCENE = COLOR_YELLOW;
 
+   public static final int COLOR_SELECTED = COLOR_YELLOW;
+
+   public static final int COLOR_SELECTABLE = 1;
+
    public static final int BLINK_NONE = 0;
 
    public static final int BLINK_PLAY_QUEUED = 14;

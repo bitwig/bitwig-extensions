@@ -6,41 +6,27 @@ enum KeyboardLayout
 
    static KeyboardLayout fromString(final String name)
    {
-      switch (name)
-      {
-         case "Guitar":
-            return GUITAR;
-
-         case "Piano":
-            return PIANO;
-
-         case "Line 3":
-            return LINE_3;
-
-         case "Line 7":
-            return LINE_7;
-
-         default:
-            throw new IllegalStateException();
-      }
+      return switch (name)
+         {
+            case "Guitar" -> GUITAR;
+            case "Piano" -> PIANO;
+            case "Line 3" -> LINE_3;
+            case "Line 7" -> LINE_7;
+            default -> throw new IllegalStateException();
+         };
    }
 
    @Override
    public String toString()
    {
-      switch (this)
-      {
-         case GUITAR:
-            return "Guitar";
-         case LINE_3:
-            return "Line 3";
-         case LINE_7:
-            return "Line 7";
-         case PIANO:
-            return "Piano";
-         default:
-            throw new IllegalStateException();
-      }
+      return switch (this)
+         {
+            case GUITAR -> "Guitar";
+            case LINE_3 -> "Line 3";
+            case LINE_7 -> "Line 7";
+            case PIANO -> "Piano";
+            default -> throw new IllegalStateException();
+         };
    }
 
    static final String[] OPTIONS = new String[]{"Guitar", "Piano", "Line 3", "Line 7"};
