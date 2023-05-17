@@ -4,6 +4,46 @@
     // Для получения дополнительной информации посетите: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        {
+            "name": "PowerShell Launch Script",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "enter path or command to execute e.g.: ${workspaceFolder}/src/foo.ps1 or Invoke-Pester",
+            "cwd": "${cwd}"
+        },
+        {
+            "name": "Attach to Process",
+            "type": "java8+",
+            "request": "attach",
+            "processId": "${command:java.attachDebugger.pickProcess}"
+        },
+        {
+            "type": "java8+",
+            "request": "launch",
+            "name": "Launch Java 8+ App"
+        },
+        {
+            "name": "Attach Camel Debugger",
+            "type": "apache.camel",
+            "request": "attach"
+        },
+        {
+            "type": "java8+",
+            "request": "launch",
+            "name": "Launch Java 8+ App"
+        },
+        {
+            "type": "java8+",
+            "request": "launch",
+            "name": "Launch Java 8+ App"
+        },
+        {
+            "name": "PowerShell Launch Script",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "enter path or command to execute e.g.: ${workspaceFolder}/src/foo.ps1 or Invoke-Pester",
+            "cwd": "${cwd}"
+        },
         
         {
             "name": "PowerShell Launch Script",
