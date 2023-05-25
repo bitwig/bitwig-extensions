@@ -34,7 +34,7 @@ public class TrackControlLayer {
    @PostConstruct
    public void init(HardwareElementsApc hwElements, ViewControl viewControl, ControllerHost host,
                     Application application) {
-      application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
+      //application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
 
       final TrackBank trackBank = viewControl.getTrackBank();
       project = host.getProject();
@@ -79,7 +79,8 @@ public class TrackControlLayer {
       }
    }
 
-   private void setLayout(PanelLayout horizontal) {
+   private void setLayout(PanelLayout layout) {
+      panelLayout = layout;
    }
 
    private SingleLedState trackRunningState(Track track) {

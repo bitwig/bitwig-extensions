@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.novation.commonsmk3;
+package com.bitwig.extensions.controllers.akai.apcmk2;
 
 import java.util.Arrays;
 

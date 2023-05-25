@@ -43,7 +43,7 @@ public class SessionLayer extends Layer {
 
    @PostConstruct
    void init(ApcConfiguration configuration, HardwareElementsApc hwElements, Application application) {
-      application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
+      //application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
       initClipControl(configuration.getSceneRows(), hwElements);
    }
 

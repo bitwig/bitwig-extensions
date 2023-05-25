@@ -27,7 +27,6 @@ public class LppPreferences {
       gridLayout.addValueObserver(newValue -> orientationFollow.set(OrientationFollowType.toType(newValue)));
       application.panelLayout().addValueObserver(this::handlePanelLayoutChanged);
       orientationFollow.addValueObserver(((oldValue, newValue) -> {
-         DebugOutLp.println("Current Layout => %s orlast=%s", bitwigPanelLayout, newValue);
          determinePanelLayout(orientationFollow.get());
       }));
    }
