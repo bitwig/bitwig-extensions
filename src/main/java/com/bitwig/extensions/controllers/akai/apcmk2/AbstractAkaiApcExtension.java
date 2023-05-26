@@ -120,14 +120,14 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
 
       int navigationButtonIndex = navOffset;
 
-      createNavButton(navigationButtonIndex++, sceneBank.canScrollBackwards(), () -> sceneBank.scrollBy(-1));
-      createNavButton(navigationButtonIndex++, sceneBank.canScrollForwards(), () -> sceneBank.scrollBy(1));
+      bindNavigationButton(navigationButtonIndex++, sceneBank.canScrollBackwards(), () -> sceneBank.scrollBy(-1));
+      bindNavigationButton(navigationButtonIndex++, sceneBank.canScrollForwards(), () -> sceneBank.scrollBy(1));
 
-      createNavButton(navigationButtonIndex++, trackBank.canScrollBackwards(), () -> trackBank.scrollBy(-1));
-      createNavButton(navigationButtonIndex, trackBank.canScrollForwards(), () -> trackBank.scrollBy(1));
+      bindNavigationButton(navigationButtonIndex++, trackBank.canScrollBackwards(), () -> trackBank.scrollBy(-1));
+      bindNavigationButton(navigationButtonIndex, trackBank.canScrollForwards(), () -> trackBank.scrollBy(1));
    }
 
-   private void createNavButton(int buttonIndex, BooleanValue value, Runnable action) {
+   private void bindNavigationButton(int buttonIndex, BooleanValue value, Runnable action) {
       final SingleLedButton button = hwElements.getTrackButton(buttonIndex);
       button.bindLight(shiftLayer, () -> value.get() ? SingleLedState.ON : SingleLedState.OFF);
       button.bindRepeatHold(shiftLayer, action);
@@ -140,7 +140,6 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
 
    @Override
    public void exit() {
-
    }
 
 }

@@ -108,13 +108,12 @@ public class MiniLab3Extension extends ControllerExtension {
       bindKnobValue(2, mainLayer, cursorTrack.sendBank().getItemAt(0), sliders[1], cursorTrack.name(),
          cursorTrack.sendBank().getItemAt(0).name(), "Fader");
       bindKnobValue(3, mainLayer, cursorTrack.sendBank().getItemAt(1), sliders[2], cursorTrack.name(),
-         cursorTrack.sendBank().getItemAt(0).name(), "Fader");
+         cursorTrack.sendBank().getItemAt(1).name(), "Fader");
 
       shiftButton.isPressed().addValueObserver(this::handleShift);
 
       for (int i = 0; i < NUM_PADS_TRACK; i++) {
          final RemoteControl parameter = parameterBank.getParameter(i);
-         mainLayer.bind(knobs[i], parameter);
          bindKnobValue(i + 1, mainLayer, parameter, knobs[i], cursorDevice.name(), parameter.name(), "Knob");
       }
 

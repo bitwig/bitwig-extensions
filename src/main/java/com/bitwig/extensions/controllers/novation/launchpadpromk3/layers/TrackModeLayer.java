@@ -11,17 +11,19 @@ import com.bitwig.extensions.controllers.novation.launchpadpromk3.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Inject;
+import com.bitwig.extensions.framework.values.ValueObject;
 
 public class TrackModeLayer extends Layer {
     public static final int MOMENTARY_TIME = 500;
 
-    private TrackModeButtonMode buttonsMode = TrackModeButtonMode.SELECT;
+     // TODO this need to be Event Driven
     private TrackModeButtonMode returnToMode = null;
 
     private final SettableEnumValue postRecordingAction;
     private ControlMode controlMode = ControlMode.NONE;
     private TrackModeButtonMode stashedButtonMode = TrackModeButtonMode.SELECT;
     private ControlMode stashedControlMode = ControlMode.NONE;
+    private ValueObject<TrackModeButtonMode> buttonsMode = new ValueObject<>(TrackModeButtonMode.SELECT);
 
     @Inject
     private ModeHandler modeHandler;
@@ -42,7 +44,7 @@ public class TrackModeLayer extends Layer {
         final LabeledButton armButton = hwElements.getLabeledButton(LabelCcAssignments.RECORD_ARM_UNDO);
         armButton.bindPressReleaseAfter(this, () -> setButtonMode(TrackModeButtonMode.ARM), this::returnToPreviousMode,
                 MOMENTARY_TIME);
-        armButton.bindLight(this, () -> buttonsMode == TrackModeButtonMode.ARM ? RgbState.RED : RgbState.DIM_WHITE);
+        armButton.bindLight(this, () -> buttonsMode.get() == TrackModeButtonMode.ARM ? RgbState.RED : RgbState.DIM_WHITE);
         armButton.bind(shiftLayer, application::undo,
                 () -> application.canUndo().get() ? RgbState.WHITE : RgbState.OFF);
 
@@ -50,7 +52,7 @@ public class TrackModeLayer extends Layer {
         muteButton.bindPressReleaseAfter(this, () -> setButtonMode(TrackModeButtonMode.MUTE),
                 this::returnToPreviousMode, MOMENTARY_TIME);
         muteButton.bindLight(this,
-                () -> buttonsMode == TrackModeButtonMode.MUTE ? NovationColor.AMBER.getMainColor() : RgbState.DIM_WHITE);
+                () -> buttonsMode.get() == TrackModeButtonMode.MUTE ? NovationColor.AMBER.getMainColor() : RgbState.DIM_WHITE);
 
         muteButton.bind(shiftLayer, application::redo,
                 () -> application.canRedo().get() ? RgbState.WHITE : RgbState.OFF);
@@ -59,7 +61,7 @@ public class TrackModeLayer extends Layer {
         soloButton.bindPressReleaseAfter(this, () -> setButtonMode(TrackModeButtonMode.SOLO),
                 this::returnToPreviousMode, MOMENTARY_TIME);
         soloButton.bindLight(this,
-                () -> buttonsMode == TrackModeButtonMode.SOLO ? NovationColor.YELLOW.getMainColor() : RgbState.DIM_WHITE);
+                () -> buttonsMode.get() == TrackModeButtonMode.SOLO ? NovationColor.YELLOW.getMainColor() : RgbState.DIM_WHITE);
         soloButton.bind(shiftLayer, () -> transport.isMetronomeEnabled().toggle(),
                 () -> transport.isMetronomeEnabled().get() ? RgbState.TURQUOISE : RgbState.RED_LO);
 
@@ -71,7 +73,7 @@ public class TrackModeLayer extends Layer {
         final LabeledButton stopButton = hwElements.getLabeledButton(LabelCcAssignments.STOP_CLIP_SWING);
         stopButton.bindPressReleaseAfter(this, () -> setButtonMode(TrackModeButtonMode.STOP),
                 this::returnToPreviousMode, MOMENTARY_TIME);
-        stopButton.bindLight(this, () -> buttonsMode == TrackModeButtonMode.STOP ? RgbState.of(5) : RgbState.DIM_WHITE);
+        stopButton.bindLight(this, () -> buttonsMode.get() == TrackModeButtonMode.STOP ? RgbState.of(5) : RgbState.DIM_WHITE);
         stopButton.bindPressed(shiftLayer, () -> viewControl.getRootTrack().stop());
         stopButton.bindLightPressed(shiftLayer, RgbState.SHIFT_INACTIVE, RgbState.SHIFT_ACTIVE);
 
@@ -109,34 +111,34 @@ public class TrackModeLayer extends Layer {
 
     private void returnToPreviousMode(final boolean longPress) {
         if (longPress) {
-            final TrackModeButtonMode previousMode = buttonsMode;
-            buttonsMode = stashedButtonMode;
+            final TrackModeButtonMode previousMode = buttonsMode.get();
+            buttonsMode.set(stashedButtonMode);
             modeHandler.toFaderMode(stashedControlMode, controlMode);
-            setButtonsMode(stashedButtonMode, previousMode);
+            buttonsMode.set(stashedButtonMode);
         } else {
-            stashedButtonMode = buttonsMode;
+            stashedButtonMode = buttonsMode.get();
             stashedControlMode = controlMode;
         }
     }
 
     private void toggleControlMode(final ControlMode controlMode) {
         stashedControlMode = this.controlMode;
-        stashedButtonMode = buttonsMode;
+        stashedButtonMode = buttonsMode.get();
         final ControlMode oldMode = this.controlMode;
         if (oldMode == controlMode) {
             this.controlMode = ControlMode.NONE;
         } else {
             this.controlMode = controlMode;
         }
-        if (this.controlMode != ControlMode.NONE && buttonsMode != TrackModeButtonMode.SELECT) {
+        if (this.controlMode != ControlMode.NONE && buttonsMode.get() != TrackModeButtonMode.SELECT) {
             setButtonMode(TrackModeButtonMode.SELECT);
-            toggleButtonMode(TrackModeButtonMode.SELECT, buttonsMode);
+            toggleButtonMode(TrackModeButtonMode.SELECT, buttonsMode.get());
         }
         modeHandler.toFaderMode(this.controlMode, stashedControlMode);
     }
 
     private void enterFixedSetMode() {
-        returnToMode = buttonsMode;
+        returnToMode = buttonsMode.get();
         setButtonMode(TrackModeButtonMode.FIXED_LENGTH);
         postRecordingAction.set("play_recorded");
     }
@@ -160,25 +162,21 @@ public class TrackModeLayer extends Layer {
     }
 
     void setButtonMode(final TrackModeButtonMode mode) {
-        stashedButtonMode = buttonsMode;
+        stashedButtonMode = buttonsMode.get();
         toggleButtonMode(mode, stashedButtonMode);
-        if (buttonsMode != TrackModeButtonMode.SELECT) {
+        if (buttonsMode.get() != TrackModeButtonMode.SELECT) {
             toStandardMode();
         }
     }
 
     private void toggleButtonMode(final TrackModeButtonMode mode, final TrackModeButtonMode previousMode) {
-        if (buttonsMode == mode) {
-            if (buttonsMode != TrackModeButtonMode.SELECT) {
-                setButtonsMode(TrackModeButtonMode.SELECT, previousMode);
+        if (buttonsMode.get() == mode) {
+            if (buttonsMode.get() != TrackModeButtonMode.SELECT) {
+                buttonsMode.set(TrackModeButtonMode.SELECT);
             }
         } else {
-            setButtonsMode(mode, previousMode);
+            buttonsMode.set(mode);
         }
-    }
-
-    private void setButtonsMode(final TrackModeButtonMode mode, final TrackModeButtonMode previousMode) {
-        buttonsMode = mode;
     }
 
     private void toStandardMode() {
@@ -190,9 +188,8 @@ public class TrackModeLayer extends Layer {
         modeHandler.toFaderMode(controlMode, stashedControlMode);
     }
 
-    public TrackModeButtonMode getButtonsMode() {
+    public ValueObject<TrackModeButtonMode> getButtonsMode() {
         return buttonsMode;
     }
-
-
+    
 }

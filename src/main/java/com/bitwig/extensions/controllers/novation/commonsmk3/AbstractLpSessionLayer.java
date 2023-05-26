@@ -6,13 +6,15 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
-public class AbstractLpSessionLayer extends Layer {
+public abstract class AbstractLpSessionLayer extends Layer {
     protected final int[][] colorIndex = new int[8][8];
     protected SettableBooleanValue clipLauncherOverdub;
 
     public AbstractLpSessionLayer(final Layers layers) {
         super(layers, "SESSION_LAYER");
     }
+
+    public abstract void setLayout(final PanelLayout layout);
 
     protected RgbState getState(final Track track, final ClipLauncherSlot slot, final int trackIndex,
                                 final int sceneIndex) {
