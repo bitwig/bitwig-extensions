@@ -45,6 +45,11 @@ public class LaunchControlXlControllerExtensionDefinition extends ControllerExte
       list.add(
          new String[]{"Launch Control XL MIDI 1"},
          new String[]{"Launch Control XL MIDI 1"});
+
+      // Weird, but it happened on Linux...
+      list.add(
+         new String[]{"Launch Control XL Launch Contro"},
+         new String[]{"Launch Control XL Launch Contro"});
    }
 
    @Override
