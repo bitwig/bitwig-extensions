@@ -34,7 +34,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       Send1Device2(12, "Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
       Device3(13, "Switched to per Channel DEVICE Controls Mode"),
       Track3(13, "Switched to per Channel TRACK Controls Mode"),
-      None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 6.");
+      None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 7.");
 
       Mode(final int channel, final String notification)
       {
