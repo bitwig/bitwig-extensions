@@ -33,8 +33,9 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       Send3(11, "Switched to 3 Sends Mode"),
       Send1Device2(12, "Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
       Device3(13, "Switched to per Channel DEVICE Controls Mode"),
-      Track3(14, "Switched to per Channel TRACK Controls Mode"),
-      None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 7.");
+      // Unfortunately the channel 7 is broken with irregular CC numbers
+      Track3(15, "Switched to per Channel TRACK Controls Mode"),
+      None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 8 except 7.");
 
       Mode(final int channel, final String notification)
       {
@@ -385,7 +386,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          case "f00020290211770bf7" -> selectMode(Mode.Send3);
          case "f00020290211770cf7" -> selectMode(Mode.Send1Device2);
          case "f00020290211770df7" -> selectMode(Mode.Device3);
-         case "f00020290211770ef7" -> selectMode(Mode.Track3);
+         case "f00020290211770ff7" -> selectMode(Mode.Track3);
          default -> selectMode(Mode.None);
       }
    }
