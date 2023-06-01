@@ -36,7 +36,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       Device3("Switched to per Channel DEVICE Controls Mode"),
       Track3("Switched to per Channel TRACK Controls Mode"),
       Send2Project("Switched to 2 Sends and PROJECT Controls Mode"),
-      None("Unsupported Template. We provide Modes for the Factory Template 1 to 7.");
+      None("Unsupported Template. We provide Modes for the Factory Template 1 to 8.");
 
       Mode(final String notification)
       {
