@@ -15,9 +15,11 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
    private final MaschineLayer duplicateLayer;
    private final MaschineLayer colorChooseLayer;
 
+
    private final SceneBank sceneBank;
 
    private final boolean[] isSelected = new boolean[16];
+   private final int[] color = new int[16];
 
    public SceneLaunchMode(final MaschineExtension driver, final String name) {
       super(driver, name, true);
@@ -39,8 +41,8 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
          final int index = i;
          final PadButton button = buttons[i];
          final Scene scene = sceneBank.getItemAt(i);
+         scene.color().addValueObserver((r, g, b) -> color[index] = NIColorUtil.convertColorX(r, g, b));
          scene.subscribe();
-         scene.color().markInterested();
          scene.exists().markInterested();
 
          scene.addIsSelectedInEditorObserver(selected -> {
@@ -53,7 +55,7 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
          eraseLayer.bindPressed(button, () -> handleErase(scene));
          duplicateLayer.bindPressed(button, () -> handleDuplicate(scene));
          colorChooseLayer.bindPressed(button, () -> handleColorSelection(scene));
-         bindLightState(() -> computeGridLedState(scene, index), button);
+         bindLightState(() -> computeGridLedState(index), button);
       }
 
    }
@@ -104,11 +106,8 @@ public class SceneLaunchMode extends PadMode implements JogWheelDestination {
       }
    }
 
-   private InternalHardwareLightState computeGridLedState(final Scene scene, final int index) {
-      assert scene.isSubscribed();
-      final int color = NIColorUtil.convertColor(scene.color()) + (isSelected[index] ? 2 : 0);
-
-      return RgbLedState.colorOf(color);
+   private InternalHardwareLightState computeGridLedState(final int index) {
+      return RgbLed.of(color[index] + (isSelected[index] ? 2 : 0));
    }
 
    @Override

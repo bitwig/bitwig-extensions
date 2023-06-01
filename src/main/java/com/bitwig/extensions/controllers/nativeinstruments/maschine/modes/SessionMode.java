@@ -14,8 +14,11 @@ public class SessionMode extends PadMode {
 
    private final ClipLauncherSlot[] slotMappingVertical = new ClipLauncherSlot[16];
    private final ClipLauncherSlot[] slotMappingHorizontal = new ClipLauncherSlot[16];
+   private final int[] colorVertical = new int[16];
+   private final int[] colorHorizontal = new int[16];
 
    private ClipLauncherSlot[] currentSlotMapping;
+   private int[] gridColors = new int[16];
 
    private LayoutType layout = LayoutType.LAUNCHER;
    private final TrackBank trackBank;
@@ -28,36 +31,49 @@ public class SessionMode extends PadMode {
       colorChooseLayer = new MaschineLayer(driver, "colorpick-" + name);
       trackBank = driver.getTrackBank();
       currentSlotMapping = slotMappingVertical;
+      gridColors = colorVertical;
       doGridBinding(driver);
 
-      trackBank.canScrollChannelsDown().addValueObserver(newValue -> {
-         if (layout == LayoutType.LAUNCHER) {
-            driver.sendLedUpdate(CcAssignment.DKNOB_RIGHT, newValue ? 127 : 0);
-         } else {
-            driver.sendLedUpdate(CcAssignment.DKNOB_DOWN, newValue ? 127 : 0);
-         }
-      });
-      trackBank.canScrollChannelsUp().addValueObserver(newValue -> {
-         if (layout == LayoutType.LAUNCHER) {
-            driver.sendLedUpdate(CcAssignment.DKNOB_LEFT, newValue ? 127 : 0);
-         } else {
-            driver.sendLedUpdate(CcAssignment.DKNOB_UP, newValue ? 127 : 0);
-         }
-      });
-      trackBank.sceneBank().canScrollForwards().addValueObserver(newValue -> {
-         if (layout == LayoutType.LAUNCHER) {
-            driver.sendLedUpdate(CcAssignment.DKNOB_DOWN, newValue ? 127 : 0);
-         } else {
-            driver.sendLedUpdate(CcAssignment.DKNOB_RIGHT, newValue ? 127 : 0);
-         }
-      });
-      trackBank.sceneBank().canScrollBackwards().addValueObserver(newValue -> {
-         if (layout == LayoutType.LAUNCHER) {
-            driver.sendLedUpdate(CcAssignment.DKNOB_UP, newValue ? 127 : 0);
-         } else {
-            driver.sendLedUpdate(CcAssignment.DKNOB_LEFT, newValue ? 127 : 0);
-         }
-      });
+      trackBank.canScrollChannelsDown().addValueObserver(newValue -> dKnobLedUpdateChannelDown(driver, newValue));
+      trackBank.canScrollChannelsUp().addValueObserver(newValue -> dKnobLedUpdateChannelUp(driver, newValue));
+      trackBank.sceneBank()
+         .canScrollForwards()
+         .addValueObserver(newValue -> dKnobLedUpdateSceneForward(driver, newValue));
+      trackBank.sceneBank()
+         .canScrollBackwards()
+         .addValueObserver(newValue -> dKnobLedUpdateSceneBackwards(driver, newValue));
+   }
+
+   private void dKnobLedUpdateSceneBackwards(MaschineExtension driver, boolean newValue) {
+      if (layout == LayoutType.LAUNCHER) {
+         driver.sendLedUpdate(CcAssignment.DKNOB_UP, newValue ? 127 : 0);
+      } else {
+         driver.sendLedUpdate(CcAssignment.DKNOB_LEFT, newValue ? 127 : 0);
+      }
+   }
+
+   private void dKnobLedUpdateSceneForward(MaschineExtension driver, boolean newValue) {
+      if (layout == LayoutType.LAUNCHER) {
+         driver.sendLedUpdate(CcAssignment.DKNOB_DOWN, newValue ? 127 : 0);
+      } else {
+         driver.sendLedUpdate(CcAssignment.DKNOB_RIGHT, newValue ? 127 : 0);
+      }
+   }
+
+   private void dKnobLedUpdateChannelUp(MaschineExtension driver, boolean newValue) {
+      if (layout == LayoutType.LAUNCHER) {
+         driver.sendLedUpdate(CcAssignment.DKNOB_LEFT, newValue ? 127 : 0);
+      } else {
+         driver.sendLedUpdate(CcAssignment.DKNOB_UP, newValue ? 127 : 0);
+      }
+   }
+
+   private void dKnobLedUpdateChannelDown(MaschineExtension driver, boolean newValue) {
+      if (layout == LayoutType.LAUNCHER) {
+         driver.sendLedUpdate(CcAssignment.DKNOB_RIGHT, newValue ? 127 : 0);
+      } else {
+         driver.sendLedUpdate(CcAssignment.DKNOB_DOWN, newValue ? 127 : 0);
+      }
    }
 
    private void doGridBinding(final MaschineExtension driver) {
@@ -66,14 +82,22 @@ public class SessionMode extends PadMode {
       trackBank.setShouldShowClipLauncherFeedback(true);
 
       for (int trackIndex = 0; trackIndex < trackBank.getSizeOfBank(); trackIndex++) {
+         int ti = trackIndex;
          final Track track = trackBank.getItemAt(trackIndex);
          final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
 
          for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
+            final int si = slotIndex;
             final int buttonIndex = slotIndex * 4 + trackIndex;
+            final int buttonIndexHorizontal = (3 - trackIndex) * 4 + slotIndex;
             slotMappingVertical[buttonIndex] = slotBank.getItemAt(3 - slotIndex);
-            slotMappingHorizontal[(3 - trackIndex) * 4 + slotIndex] = slotBank.getItemAt(slotIndex);
-
+            slotMappingHorizontal[buttonIndexHorizontal] = slotBank.getItemAt(slotIndex);
+            int indexHorizontal = (3 - trackIndex) * 4 + (3 - slotIndex);
+            slotMappingVertical[buttonIndex].color().addValueObserver((r, g, b) -> {
+               colorVertical[buttonIndex] = NIColorUtil.convertColorX(r, g, b);
+               colorHorizontal[indexHorizontal] = colorVertical[buttonIndex];
+               //DebugOutMs.println("Color %d %d  => %d", ti, si, colorVertical[buttonIndex]);
+            });
             final PadButton button = buttons[buttonIndex];
             bindPressed(button, () -> handleLaunch(buttonIndex));
             bindReleased(button, () -> handleLaunchRelease(buttonIndex));
@@ -82,7 +106,7 @@ public class SessionMode extends PadMode {
             eraseLayer.bindPressed(button, () -> handleErase(buttonIndex));
             duplicateLayer.bindPressed(button, () -> handleDuplicate(buttonIndex));
             colorChooseLayer.bindPressed(button, () -> handleColorPick(buttonIndex));
-            bindLightState(() -> computeGridLedState(buttonIndex), button);
+            bindLightState(() -> computeGridLedState(buttonIndex, ti, si), button);
          }
       }
    }
@@ -92,8 +116,10 @@ public class SessionMode extends PadMode {
          this.layout = layout;
          if (layout == LayoutType.ARRANGER) {
             currentSlotMapping = slotMappingHorizontal;
+            gridColors = colorHorizontal;
          } else {
             currentSlotMapping = slotMappingVertical;
+            gridColors = colorVertical;
          }
          final PadButton[] buttons = getDriver().getPadButtons();
          for (final PadButton padButton : buttons) {
@@ -188,37 +214,54 @@ public class SessionMode extends PadMode {
       return "Clip Launcher";
    }
 
-   private InternalHardwareLightState computeGridLedState(final int buttonIndex) {
+   private InternalHardwareLightState computeGridLedState(final int buttonIndex, int trackIndex, int slotIndex) {
       final ClipLauncherSlot slot = currentSlotMapping[buttonIndex];
-      assert slot.isSubscribed();
-      int color = NIColorUtil.convertColor(slot.color());
-      int pulse = 0;
-      int offColor = color;
+      int color = gridColors[buttonIndex];
+      Track track = trackBank.getItemAt(layout == LayoutType.LAUNCHER ? trackIndex : 3 - slotIndex);
 
-      if (modstate == ModifierState.SELECT) {
-         if (slot.isSelected().get()) {
-            if (color == 0) {
-               color = 70;
-            } else {
-               color += 2;
-            }
-         }
-      } else {
+      if (modstate == ModifierState.SELECT && slot.isSelected().get()) {
+         return RgbLed.of(70);
+      } else if (slot.hasContent().get()) {
          if (slot.isRecordingQueued().get()) {
-            pulse = 1;
-            offColor = 5;
+            return blinkSlow(color, 3);
          } else if (slot.isRecording().get()) {
-            pulse = 1;
-            color += 2;
-            offColor = 5;
+            return blinkSlow(5, 4);
          } else if (slot.isPlaybackQueued().get()) {
-            pulse = 1;
-            offColor = color + 2;
+            return blinkMid(30, color);
+         } else if (slot.isStopQueued().get()) {
+            return blinkFast(28, 30); //RgbState.flash(color, 1);
+         } else if (slot.isPlaying().get() /*&& track.isQueuedForStop().get()*/) {
+            return blinkSlow(30, 28);
          } else if (slot.isPlaying().get()) {
-            color += 2;
+//            if (clipLauncherOverdub.get() && track.arm().get()) {
+//               return RgbState.pulse(5);
+//            } else {
+//               return RgbState.pulse(22);
+//            }
          }
+         return RgbLed.of(color + 1);
       }
-      return new RgbLedState(color, offColor, pulse);
+      if (slot.isRecordingQueued().get()) {
+         return RgbLed.of(5); // Possibly Track Color
+      } else if (track.arm().get()) {
+         return RgbLed.of(7);
+      }
+      return RgbLed.OFF;
+   }
+
+   RgbLed blinkSlow(int onColor, int offColor) {
+      int phase = getDriver().getBlinkState() / 4;
+      return RgbLed.of(phase == 0 ? onColor : offColor);
+   }
+
+   RgbLed blinkMid(int onColor, int offColor) {
+      int phase = getDriver().getBlinkState() % 4;
+      return RgbLed.of(phase < 2 ? onColor : offColor);
+   }
+
+   RgbLed blinkFast(int onColor, int offColor) {
+      int phase = getDriver().getBlinkState() % 8;
+      return RgbLed.of(phase == 0 ? onColor : offColor);
    }
 
 }

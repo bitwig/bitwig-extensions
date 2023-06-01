@@ -84,6 +84,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
    private BrowserLayer browserLayer;
    private Project project;
    private BooleanValueObject launchModifierSet = new BooleanValueObject();
+   private SessionMode sessionMode;
 
    protected MaschineExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
                                final MaschineMode mode) {
@@ -152,7 +153,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
       mainKnobControl.activate();
 
       host.showPopupNotification(maschineMode.getDescriptor() + " Initialized");
-      host.scheduleTask(this::handlBlink, 100);
+      host.scheduleTask(this::handleBlink, 100);
       host.scheduleTask(this::handleTempDisplay, 200);
    }
 
@@ -308,31 +309,13 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
       globalShiftLayer.bindLightState(browserButton, browser.exists());
    }
 
-   void handlBlink() {
+   public int getBlinkState() {
+      return blinkState;
+   }
+
+   void handleBlink() {
       blinkState = (blinkState + 1) % 8;
-      for (int i = 0; i < padButtons.length; i++) {
-         final PadButton button = padButtons[i];
-         final RgbLed state = (RgbLed) button.getLight().state().currentValue();
-         if (state != null && state.isBlinking()) {
-            if (blinkState % 2 == 0) {
-               midiOut.sendMidi(button.getMidiStatus(), button.getMidiDataNr(), state.getColor());
-            } else {
-               midiOut.sendMidi(button.getMidiStatus(), button.getMidiDataNr(), state.getOffColor());
-            }
-         }
-      }
-      for (int i = 0; i < groupButtons.length; i++) {
-         final GroupButton button = groupButtons[i];
-         final RgbLed state = (RgbLed) button.getLight().state().currentValue();
-         if (state != null && state.isBlinking()) {
-            if (blinkState % 2 == 0) {
-               midiOut.sendMidi(button.getMidiStatus(), button.getMidiDataNr(), state.getColor());
-            } else {
-               midiOut.sendMidi(button.getMidiStatus(), button.getMidiDataNr(), state.getOffColor());
-            }
-         }
-      }
-      host.scheduleTask(this::handlBlink, 100);
+      host.scheduleTask(this::handleBlink, 100);
    }
 
    public void backToPreviousDisplayMode() {
@@ -540,7 +523,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
       groupLayer = new GroupLayer(this, "group-layer");
 
       focusClip = new FocusClip(this);
-      final SessionMode sessionMode = new SessionMode(this, "session-mode");
+      sessionMode = new SessionMode(this, "session-mode");
       final SceneLaunchMode sceneMode = new SceneLaunchMode(this, "scene-mode");
 
       final MixerLayer mixerDisplayMode = new MixerLayer(this, "mixer-display-mode");
@@ -650,7 +633,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
    }
 
    private void setStepAndPlayingLayers() {
-      final VeloctiyHandler velocityHandler = new VeloctiyHandler();
+      final VeloctiyHandler velocityHandler = new VeloctiyHandler(noteInput);
       final ScaleLayer scaleDisplayMode = new ScaleLayer(this, "scale-display-mode", velocityHandler);
       final PadModeDisplayLayer padDisplayLayer = new PadModeDisplayLayer(this, "pad-display-mode", velocityHandler);
       final StepEditDisplayLayer stepDisplayLayer = new StepEditDisplayLayer(this, "step-display-mode");
@@ -672,7 +655,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 
       final ModeButton fixedVelButton = new ModeButton(this, "FIXED_VELOCITY", CcAssignment.FIXEDVEL);
 
-      mainLayer.bindPressed(fixedVelButton, () -> velocityHandler.toggleFixedValue(noteInput));
+      mainLayer.bindPressed(fixedVelButton, () -> velocityHandler.toggleFixedValue());
       mainLayer.bindLightState(fixedVelButton, velocityHandler.getFixed());
 
       mainLayer.bindMode(padModeButton, drumPadMode);
@@ -791,7 +774,6 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 
    private void initCursorTrack() {
       cursorTrack = getHost().createCursorTrack(8, 32);
-      cursorTrack.color().markInterested();
       cursorTrack.hasPrevious().markInterested();
       cursorTrack.hasNext().markInterested();
       cursorTrack.playingNotes().markInterested();
@@ -802,7 +784,6 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
       cursorTrack.arm().markInterested();
       cursorTrack.volume().value().markInterested();
       cursorTrack.pan().value().markInterested();
-      cursorTrack.color().markInterested();
       cursorTrack.isStopped().markInterested();
       cursorTrack.isQueuedForStop().markInterested();
       cursorTrack.isActivated().markInterested();
