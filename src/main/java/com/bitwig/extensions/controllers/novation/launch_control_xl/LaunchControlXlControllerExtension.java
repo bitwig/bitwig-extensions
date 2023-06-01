@@ -27,25 +27,18 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    // Identify possible modes
    enum Mode
    {
-      Send2FullDevice(8, "Switched to 2 Sends and Selected DEVICE Controls Mode"),
-      Send2Device1(9, "Switched to 2 Sends and 1 per Channel DEVICE Control Mode"),
-      Send2Pan1(10, "Switched to 2 Sends and Pan Mode"),
-      Send3(11, "Switched to 3 Sends Mode"),
-      Send1Device2(12, "Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
-      Device3(13, "Switched to per Channel DEVICE Controls Mode"),
-      // Unfortunately the channel 7 is broken with irregular CC numbers
-      Track3(15, "Switched to per Channel TRACK Controls Mode"),
-      None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 8 except 7.");
+      Send2FullDevice("Switched to 2 Sends and Selected DEVICE Controls Mode"),
+      Send2Device1("Switched to 2 Sends and 1 per Channel DEVICE Control Mode"),
+      Send2Pan1("Switched to 2 Sends and Pan Mode"),
+      Send3("Switched to 3 Sends Mode"),
+      Send1Device2("Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
+      Device3("Switched to per Channel DEVICE Controls Mode"),
+      Track3("Switched to per Channel TRACK Controls Mode"),
+      None("Unsupported Template. We provide Modes for the Factory Template 1 to 7.");
 
-      Mode(final int channel, final String notification)
+      Mode(final String notification)
       {
-         mChannel = channel;
          mNotification = notification;
-      }
-
-      int getChannel()
-      {
-         return mChannel;
       }
 
       public String getNotification()
@@ -53,7 +46,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          return mNotification;
       }
 
-      private final int mChannel;
       private final String mNotification;
    }
 
@@ -81,8 +73,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
       mMidiIn.setSysexCallback(this::onSysex);
 
-      // Load the template Factory/1
-      mMidiOut.sendSysex("f000202902117708f7");
+      loadFactory1Template();
 
       mCursorTrack = mHost.createCursorTrack("cursor-track", "Launch Control XL Track Cursor", 0, 0, true);
       mCursorDevice = mCursorTrack.createCursorDevice();
@@ -139,6 +130,13 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       selectMode(Mode.Send2FullDevice);
       setTrackControl(TrackControl.Mute);
       setDeviceOn(false);
+   }
+
+   private void loadFactory1Template()
+   {
+      // Load the template Factory/1
+      mMidiOut.sendSysex("f000202902117708f7");
+      mIgnoreNextSysex = true;
    }
 
    private static void markParameterInterested(final RemoteControl parameter)
@@ -376,6 +374,12 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
    private void onSysex(final String sysex)
    {
+      if (mIgnoreNextSysex)
+      {
+         mIgnoreNextSysex = false;
+         return;
+      }
+
       // mHost.println("Sysex IN1: " + sysex);
 
       switch (sysex)
@@ -386,9 +390,11 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          case "f00020290211770bf7" -> selectMode(Mode.Send3);
          case "f00020290211770cf7" -> selectMode(Mode.Send1Device2);
          case "f00020290211770df7" -> selectMode(Mode.Device3);
-         case "f00020290211770ff7" -> selectMode(Mode.Track3);
+         case "f00020290211770ef7" -> selectMode(Mode.Track3);
          default -> selectMode(Mode.None);
       }
+
+      loadFactory1Template();
    }
 
    @Override
@@ -421,10 +427,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          simpleLed.flush(sb);
 
       if (!sb.toString().isEmpty())
-      {
-         final String sysex = "F0 00 20 29 02 11 78 0" + Integer.toHexString(mMode.getChannel()) + sb + " F7";
-         mMidiOut.sendSysex(sysex);
-      }
+         mMidiOut.sendSysex("F0 00 20 29 02 11 78 08 F7");
    }
 
    protected void paintBottomButtons()
@@ -664,4 +667,5 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private Layer mRecordArmLayer;
    private Layer mMainLayer;
    private Layer mDeviceLayer;
+   private boolean mIgnoreNextSysex = false;
 }
