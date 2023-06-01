@@ -4,6 +4,7 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extensions.controllers.novation.common.SimpleLed;
 import com.bitwig.extensions.controllers.novation.common.SimpleLedColor;
 import com.bitwig.extension.controller.ControllerExtension;
@@ -34,6 +35,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       Send1Device2("Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
       Device3("Switched to per Channel DEVICE Controls Mode"),
       Track3("Switched to per Channel TRACK Controls Mode"),
+      Send2Project("Switched to 2 Sends and PROJECT Controls Mode"),
       None("Unsupported Template. We provide Modes for the Factory Template 1 to 7.");
 
       Mode(final String notification)
@@ -84,8 +86,15 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mRemoteControls.selectedPageIndex().markInterested();
       mRemoteControls.pageCount().markInterested();
 
+      final Project project = mHost.getProject();
+      final Track rootTrackGroup = project.getRootTrackGroup();
+      mProjectRemoteControlsCursor = rootTrackGroup.createCursorRemoteControlsPage("project-remotes", 8, null);
+
       for (int i = 0; i < 8; ++i)
+      {
          markParameterInterested(mRemoteControls.getParameter(i));
+         markParameterInterested(mProjectRemoteControlsCursor.getParameter(i));
+      }
 
       mTrackBank = mHost.createMainTrackBank(8, 3, 0);
       mTrackBank.followCursorTrack(mCursorTrack);
@@ -273,6 +282,15 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          mSend2FullDeviceLayer.bind(mHardwareKnobs[16 + i], mRemoteControls.getParameter(i));
       }
 
+      mSend2ProjectLayer = new Layer(layers, "2 Sends and Project Remotes");
+      for (int i = 0; i < 8; ++i)
+      {
+         final SendBank sendBank = mTrackBank.getItemAt(i).sendBank();
+         mSend2ProjectLayer.bind(mHardwareKnobs[i], sendBank.getItemAt(0));
+         mSend2ProjectLayer.bind(mHardwareKnobs[8 + i], sendBank.getItemAt(1));
+         mSend2ProjectLayer.bind(mHardwareKnobs[16 + i], mProjectRemoteControlsCursor.getParameter(i));
+      }
+
       mSend2Device1Layer = new Layer(layers, "2 Sends 1 Device");
       for (int i = 0; i < 8; ++i)
       {
@@ -368,6 +386,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mDevice3Layer.setIsActive(mode == Mode.Device3);
       mTrack3layer.setIsActive(mode == Mode.Track3);
       mSend2FullDeviceLayer.setIsActive(mode == Mode.Send2FullDevice);
+      mSend2ProjectLayer.setIsActive(mode == Mode.Send2Project);
 
       mHost.showPopupNotification(mode.getNotification());
    }
@@ -391,6 +410,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          case "f00020290211770cf7" -> selectMode(Mode.Send1Device2);
          case "f00020290211770df7" -> selectMode(Mode.Device3);
          case "f00020290211770ef7" -> selectMode(Mode.Track3);
+         case "f00020290211770ff7" -> selectMode(Mode.Send2Project);
          default -> selectMode(Mode.None);
       }
 
@@ -533,6 +553,12 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
                mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? green : off);
                mKnobsLed[16 + i].setColor(mRemoteControls.getParameter(i).exists().get() ? amber : off);
             }
+            case Send2Project ->
+            {
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? green : off);
+               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? green : off);
+               mKnobsLed[16 + i].setColor(mProjectRemoteControlsCursor.getParameter(i).exists().get() ? amber : off);
+            }
             case None ->
             {
                mKnobsLed[i].setColor(off);
@@ -668,4 +694,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private Layer mMainLayer;
    private Layer mDeviceLayer;
    private boolean mIgnoreNextSysex = false;
+   private CursorRemoteControlsPage mProjectRemoteControlsCursor;
+   private Layer mSend2ProjectLayer;
 }
