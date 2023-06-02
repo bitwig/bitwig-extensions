@@ -602,7 +602,13 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private CursorTrack mCursorTrack;
    private PinnableCursorDevice mCursorDevice;
    private CursorRemoteControlsPage mRemoteControls;
+   private final CursorDevice[] mTrackDeviceCursors = new CursorDevice[8];
+   private final CursorRemoteControlsPage[] mTrackCursorDeviceRemoteControls = new CursorRemoteControlsPage[8];
+   private final CursorRemoteControlsPage[] mTrackRemoteControls = new CursorRemoteControlsPage[8];
+   private CursorRemoteControlsPage mProjectRemoteControlsCursor;
+   
    private boolean mIsDeviceOn = false;
+   private boolean mIgnoreNextSysex = false;
    private TrackControl mTrackControl = TrackControl.Mute;
    private Mode mMode = Mode.Send2Device1;
 
@@ -663,9 +669,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private final SimpleLed mDownButtonLed = new SimpleLed(0x90, 45);
    private final SimpleLed mLeftButtonLed = new SimpleLed(0x90, 46);
    private final SimpleLed mRightButtonLed = new SimpleLed(0x90, 47);
-   private final CursorDevice[] mTrackDeviceCursors = new CursorDevice[8];
-   private final CursorRemoteControlsPage[] mTrackCursorDeviceRemoteControls = new CursorRemoteControlsPage[8];
-   private final CursorRemoteControlsPage[] mTrackRemoteControls = new CursorRemoteControlsPage[8];
 
    private HardwareSurface mHardwareSurface;
    private final AbsoluteHardwareKnob[] mHardwareKnobs = new AbsoluteHardwareKnob[3 * 8];
@@ -693,7 +696,5 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private Layer mRecordArmLayer;
    private Layer mMainLayer;
    private Layer mDeviceLayer;
-   private boolean mIgnoreNextSysex = false;
-   private CursorRemoteControlsPage mProjectRemoteControlsCursor;
    private Layer mSend2ProjectLayer;
 }
