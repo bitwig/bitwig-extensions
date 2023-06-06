@@ -11,7 +11,8 @@ public class KeyLabEssential3ExtensionDefinition extends ControllerExtensionDefi
    private static final UUID DRIVER_ID = UUID.fromString("0b9962d9-5c32-4d5a-942c-594dbe0c64ca");
 
    private static final String MIDI_NAME_FORMAT_WINDOWS = "KL Essential %d mk3 MIDI";
-   private static final String MIDI_NAME_FORMAT_MAC = "KL Essential %d mk3 MIDI";
+   private static final String MIDI_NAME_FORMAT_MAC = "KeyLab Essential %d mk3 MIDI";
+
    private static final int[] KEY_VARS = {49, 61, 88};
 
    public KeyLabEssential3ExtensionDefinition() {
@@ -67,8 +68,10 @@ public class KeyLabEssential3ExtensionDefinition extends ControllerExtensionDefi
                                               final PlatformType platformType) {
       if (platformType == PlatformType.WINDOWS) {
          addPorts(list, MIDI_NAME_FORMAT_WINDOWS, KEY_VARS);
+         addPorts(list, MIDI_NAME_FORMAT_WINDOWS, KEY_VARS);
       } else if (platformType == PlatformType.MAC) {
          addPorts(list, MIDI_NAME_FORMAT_MAC, KEY_VARS);
+         addPorts(list, MIDI_NAME_FORMAT_WINDOWS, KEY_VARS);
       } else if (platformType == PlatformType.LINUX) {
          addPorts(list, MIDI_NAME_FORMAT_MAC, KEY_VARS);
       }
