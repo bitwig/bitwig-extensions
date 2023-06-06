@@ -73,9 +73,9 @@ public class LaunchPadXExtensionDefinition extends ControllerExtensionDefinition
             outputNames[0] = "LPX MIDI";
             break;
          case MAC:
-            inputNames[0] = "Launchpad X MK3 LPX DAW Out";
-            inputNames[1] = "Launchpad X MK3 LPX MIDI Out";
-            outputNames[0] = "Launchpad X MK3 LPX DAW In";
+            inputNames[0] = "Launchpad X LPX DAW Out";
+            inputNames[1] = "Launchpad X LPX MIDI Out";
+            outputNames[0] = "Launchpad X LPX DAW In";
             break;
       }
 
