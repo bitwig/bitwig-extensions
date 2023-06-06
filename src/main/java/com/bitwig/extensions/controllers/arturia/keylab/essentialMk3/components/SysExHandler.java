@@ -78,13 +78,12 @@ public class SysExHandler {
    }
 
    public void processMidi() {
-      // TODO Need deal with concurrent mode exceptions
       if (processingReady && !sysExTask.isEmpty()) {
          while (!sysExTask.isEmpty()) {
             sysExTask.poll().run();
-            if (!sysExTask.isEmpty()) {
-               pause(3);
-            }
+//            if (!sysExTask.isEmpty()) {
+//               pause(1);
+//            }
          }
       }
       if (!timedEvents.isEmpty()) {
@@ -109,7 +108,7 @@ public class SysExHandler {
          }
       }
       tickListeners.forEach(Runnable::run);
-      host.scheduleTask(this::processMidi, 20);
+      host.scheduleTask(this::processMidi, 10);
    }
 
    public void registerTickTask(Runnable task) {
@@ -181,15 +180,6 @@ public class SysExHandler {
 
    public void addPadModeEventListener(final Consumer<PadMode> listener) {
       padModeEventListener.add(listener);
-   }
-
-   void refreshButtons() {
-      midiOut.sendSysex(ARTURIA_SYSEX_HEADER + "02 09 40 5e 01 F7");
-      pause(10);
-      for (final RgbButton button : buttons) {
-         button.refresh();
-         pause(2);
-      }
    }
 
    public void deviceInquiry() {

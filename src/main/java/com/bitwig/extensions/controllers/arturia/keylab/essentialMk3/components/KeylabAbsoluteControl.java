@@ -58,7 +58,7 @@ public class KeylabAbsoluteControl {
       if (!active) {
          midiOut.sendSysex(String.format(SYS_FORCE_VALUE, this.ccNr));
       } else {
-         //midiOut.sendSysex(String.format("F0 00 20 6B 7F 42 04 01 60 20 03 %02X 00 F7", this.ccNr));
+         midiOut.sendSysex(String.format("F0 00 20 6B 7F 42 04 01 60 20 03 %02X 00 F7", this.ccNr));
       }
    }
 }

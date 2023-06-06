@@ -133,9 +133,9 @@ public class BrowserLayer extends Layer {
    }
 
    private void handleBrowserOpened(boolean exists) {
-      if (browsingInitiated.get()) {
-         browser.shouldAudition().set(false);
-      }
+//      if (browsingInitiated.get()) {
+//         browser.shouldAudition().set(false);
+//      }
       // driver.browserDisplayMode(exists);
       if (!exists) {
          browsingInitiated.set(false);
@@ -145,7 +145,7 @@ public class BrowserLayer extends Layer {
 
    private void mainEncoderAction(int increment) {
       //driver.getOled().enableValues(DisplayMode.BROWSER);
-      browser.shouldAudition().set(false);
+      //browser.shouldAudition().set(false);
       if (increment > 0) {
          resultCursorItem.selectNext();
       } else {

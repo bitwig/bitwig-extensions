@@ -25,8 +25,10 @@ public class KeyLabEncoderBinding extends Binding<AbsoluteHardwareControl, Param
       getSource().value().addValueObserver(val -> handleControlValueChanged(mode, val));
 
       target.exists().addValueObserver(exists -> {
-         control.forceValue(exists);
          targetExists = exists;
+         if (isActive()) {
+            control.forceValue(exists);
+         }
       });
 
       target.value().addValueObserver(128, v -> {
@@ -45,11 +47,6 @@ public class KeyLabEncoderBinding extends Binding<AbsoluteHardwareControl, Param
       }
       int index = control.getIndex() + 1;
       display.enableValues(index, mode);
-//        if (!targetExists) {
-//            int intValue = (int) (value * 127);
-//            display.sendValueText(index, control.getValueType(), mode,
-//                    control.getValueType().getDisplayValue() + " " + index, String.valueOf(intValue), intValue);
-//        }
    }
 
 
@@ -58,6 +55,7 @@ public class KeyLabEncoderBinding extends Binding<AbsoluteHardwareControl, Param
       assert hwBinding == null;
       hwBinding = getHardwareBinding();
       control.updateValue(currentValue);
+      control.forceValue(targetExists);
    }
 
    @Override
