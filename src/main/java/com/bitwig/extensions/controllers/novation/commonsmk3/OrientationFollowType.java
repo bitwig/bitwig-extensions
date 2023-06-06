@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 public enum OrientationFollowType {
    AUTOMATIC("Automatic"), //
-   FIXED_VERTICAL("Clip Launcher"), //
-   FIXED_HORIZONTAL("Arranger");
+   FIXED_VERTICAL("Mix Panel Layout"), //
+   FIXED_HORIZONTAL("Arrange Panel Layout");
 
    private final String label;
 

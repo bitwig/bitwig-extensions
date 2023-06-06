@@ -110,7 +110,7 @@ public class LaunchpadXControllerExtension extends AbstractLaunchpadMk3Extension
    private void toggleMode() {
       if (mode == LpMode.SESSION) {
          changeMode(LpMode.MIXER);
-         midiProcessor.setButtonLed(0x14, 0x24);
+         midiProcessor.setButtonLed(0x14, 0x3E);
 
       } else {
          changeMode(LpMode.SESSION);

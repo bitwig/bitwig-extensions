@@ -143,7 +143,6 @@ public class MiniLab3Extension extends ControllerExtension {
 
       for (int i = 0; i < NUM_PADS_TRACK; i++) {
          final RemoteControl parameter = parameterBank.getParameter(i);
-         mainLayer.bind(knobs[i], parameter);
          bindKnobValue(i + 1, mainLayer, parameter, knobs[i], cursorDevice.name(), parameter.name(), "Knob");
       }
 

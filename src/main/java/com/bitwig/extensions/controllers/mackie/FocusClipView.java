@@ -29,7 +29,6 @@ public class FocusClipView {
 //      theTrack.name().addValueObserver(name -> host.println("BANK Track name = " + name));
       final ClipLauncherSlotBank slotBank = theTrack.clipLauncherSlotBank();
       focussingClipSlot = slotBank.getItemAt(0);
-      focussingClipSlot.setIndication(true);
       focussingClipSlot.hasContent().markInterested();
 
       final Track track = focusClip.getTrack();

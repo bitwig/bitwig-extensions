@@ -24,10 +24,18 @@ public class SlotHandler {
             slot.duplicateClip();
          }
       } else if (modifier.isShift()) {
-         slot.select();
+         slot.launchAlt();
       } else {
          slot.launch();
       }
    }
 
+   public void handleSlotRelease(Track track, ClipLauncherSlot slot, Clip mainCursorClip,
+                                 ModifierValueObject modifier) {
+      if (modifier.isShift()) {
+         slot.launchReleaseAlt();
+      } else if (modifier.notSet()) {
+         slot.launchRelease();
+      }
+   }
 }

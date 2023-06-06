@@ -12,7 +12,7 @@ import java.util.*;
 public class MackieMcuProExtensionDefinition extends ControllerExtensionDefinition {
    private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-81ad-1de77ffa2dab");
 
-   protected static final int MCU_API_VERSION = 16;
+   protected static final int MCU_API_VERSION = 18;
    protected static final String SOFTWARE_VERSION = "1.1";
    private static final String DEVICE_NAME = "Mackie Control";
 

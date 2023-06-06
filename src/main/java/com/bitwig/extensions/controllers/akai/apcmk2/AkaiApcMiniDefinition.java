@@ -25,7 +25,7 @@ public class AkaiApcMiniDefinition extends ControllerExtensionDefinition {
 
    @Override
    public String getVersion() {
-      return "0.9";
+      return "0.91";
    }
 
    @Override
