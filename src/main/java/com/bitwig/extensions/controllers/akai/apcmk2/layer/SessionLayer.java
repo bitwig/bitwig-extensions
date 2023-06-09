@@ -1,10 +1,7 @@
 package com.bitwig.extensions.controllers.akai.apcmk2.layer;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.akai.apcmk2.ApcConfiguration;
-import com.bitwig.extensions.controllers.akai.apcmk2.ModifierStates;
-import com.bitwig.extensions.controllers.akai.apcmk2.PanelLayout;
-import com.bitwig.extensions.controllers.akai.apcmk2.ViewControl;
+import com.bitwig.extensions.controllers.akai.apcmk2.*;
 import com.bitwig.extensions.controllers.akai.apcmk2.control.HardwareElementsApc;
 import com.bitwig.extensions.controllers.akai.apcmk2.control.RgbButton;
 import com.bitwig.extensions.controllers.akai.apcmk2.control.SingleLedButton;
@@ -25,20 +22,23 @@ public class SessionLayer extends Layer {
    private Transport transport;
    @Inject
    private ModifierStates modifiers;
+
    private SettableBooleanValue clipLauncherOverdub;
    private int sceneOffset;
    private PanelLayout panelLayout = PanelLayout.VERTICAL;
-   private Layer verticalLayer;
-   private Layer horizontalLayer;
+   private final Layer verticalLayer;
+   private final Layer horizontalLayer;
    private TrackBank trackBankVertical;
    private TrackBank trackBankHorizontal;
+   private final SettableBooleanValue useAlt;
 
    protected final int[][] colorIndex = new int[8][8];
 
-   public SessionLayer(final Layers layers) {
+   public SessionLayer(final Layers layers, ApcPreferences preferences) {
       super(layers, "SESSION_LAYER");
       this.horizontalLayer = new Layer(layers, "HORIZONTAL_LAYER");
       this.verticalLayer = new Layer(layers, "VERTICAL_LAYER");
+      this.useAlt = preferences.getRecordButtonAsAlt();
    }
 
    @PostConstruct
@@ -69,7 +69,7 @@ public class SessionLayer extends Layer {
          final Scene scene = sceneBank.getScene(index);
          scene.clipCount().markInterested();
          sceneButton.bindPressed(this, () -> handleScenePressed(scene, index));
-         sceneButton.bindPressed(this, () -> handleSceneReleased(scene, index));
+         sceneButton.bindPressed(this, () -> handleSceneReleased(scene));
          sceneButton.bindLight(this, () -> getSceneColor(index, scene));
       }
    }
@@ -85,8 +85,8 @@ public class SessionLayer extends Layer {
             prepareSlot(slot, sceneIndex, trackIndex);
 
             final RgbButton button = hwElements.getGridButton(sceneIndex, trackIndex);
-            button.bindPressed(verticalLayer, () -> handleSlotPressed(track, slot));
-            button.bindRelease(verticalLayer, () -> handleSlotReleased(track, slot));
+            button.bindPressed(verticalLayer, () -> handleSlotPressed(slot));
+            button.bindRelease(verticalLayer, () -> handleSlotReleased(slot));
             button.bindLight(verticalLayer, () -> getState(track, slot, trackIndex, sceneIndex));
          }
       }
@@ -103,8 +103,8 @@ public class SessionLayer extends Layer {
             prepareSlot(slot, sceneIndex, trackIndex);
 
             final RgbButton button = hwElements.getGridButton(trackIndex, sceneIndex);
-            button.bindPressed(horizontalLayer, () -> handleSlotPressed(track, slot));
-            button.bindRelease(horizontalLayer, () -> handleSlotReleased(track, slot));
+            button.bindPressed(horizontalLayer, () -> handleSlotPressed(slot));
+            button.bindRelease(horizontalLayer, () -> handleSlotReleased(slot));
             button.bindLight(horizontalLayer, () -> getState(track, slot, trackIndex, sceneIndex));
          }
       }
@@ -131,15 +131,21 @@ public class SessionLayer extends Layer {
    private void handleScenePressed(final Scene scene, final int index) {
       viewControl.focusScene(index + sceneOffset);
       if (modifiers.isShift()) {
-         scene.launchAlt();
+         if (useAlt.get()) {
+            scene.launchAlt();
+         } else {
+            scene.selectInEditor();
+         }
       } else {
          scene.launch();
       }
    }
 
-   private void handleSceneReleased(final Scene scene, final int index) {
+   private void handleSceneReleased(final Scene scene) {
       if (modifiers.isShift()) {
-         scene.launchReleaseAlt();
+         if (useAlt.get()) {
+            scene.launchReleaseAlt();
+         }
       } else {
          scene.launchRelease();
       }
@@ -155,17 +161,23 @@ public class SessionLayer extends Layer {
       return SingleLedState.OFF;
    }
 
-   private void handleSlotPressed(final Track track, final ClipLauncherSlot slot) {
+   private void handleSlotPressed(final ClipLauncherSlot slot) {
       if (modifiers.isShift()) {
-         slot.launchAlt();
+         if (useAlt.get()) {
+            slot.launchAlt();
+         } else {
+            slot.select();
+         }
       } else {
          slot.launch();
       }
    }
 
-   private void handleSlotReleased(final Track track, final ClipLauncherSlot slot) {
+   private void handleSlotReleased(final ClipLauncherSlot slot) {
       if (modifiers.isShift()) {
-         slot.launchReleaseAlt();
+         if (useAlt.get()) {
+            slot.launchReleaseAlt();
+         }
       } else {
          slot.launchRelease();
       }

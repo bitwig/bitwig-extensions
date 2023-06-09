@@ -16,11 +16,14 @@ import com.bitwig.extensions.framework.values.ValueObject;
 public class SliderEncoderControl extends Layer {
    private final ViewControl viewControl;
    private final Layer deviceControlLayer;
+   private final Layer deviceControlLayer2;
    private final Layer partModifierLayer;
    private final LcdDisplay lcdDisplay;
    private CursorRemoteControlsPage parameterBank1;
    private String[] devicePageNames = new String[0];
    private TrackBank mixerTrackBank;
+   private boolean deviceScrollingOccurred = false;
+   private boolean parameterSteppingOccurred = false;
 
    public enum State {
       MIXER,
@@ -34,6 +37,7 @@ public class SliderEncoderControl extends Layer {
       super(layers, "SLIDER_ENCODER_LAYER");
       this.viewControl = viewControl;
       deviceControlLayer = new Layer(layers, "DEVICE_CONTROL");
+      deviceControlLayer2 = new Layer(layers, "DEVICE_CONTROL2");
       // TODO figure out how to give this highest Priority
       partModifierLayer = new Layer(layers, "PART_MODIFIER");
       this.lcdDisplay = lcdDisplay;
@@ -48,26 +52,33 @@ public class SliderEncoderControl extends Layer {
 
    private void assignMixLayer(final HwElements hwElements) {
       final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
-      cursorDevice.name().addValueObserver(name -> DebugOut.println(" Device is : %s", name));
-      parameterBank1 = cursorDevice.createCursorRemoteControlsPage(8);
-      parameterBank1.pageNames().addValueObserver(pageNames -> devicePageNames = pageNames);
-      final CursorRemoteControlsPage parameterBank2 = cursorDevice.createCursorRemoteControlsPage("sliders", 8, "");
-      parameterBank2.selectedPageIndex().markInterested();
-      parameterBank1.selectedPageIndex().markInterested();
-      parameterBank1.selectedPageIndex().addValueObserver(index -> {
-         parameterBank2.selectedPageIndex().set(index + 1);
-         if (index >= 0 && index < devicePageNames.length) {
-            lcdDisplay.sendPopup(getParameterPageLabeling(index), //
-               "Parameter Page " + (index + 1), KeylabIcon.SFX_SMALL);
+      cursorDevice.name().addValueObserver(name -> {
+         if (deviceScrollingOccurred) {
+            lcdDisplay.sendPopup("Device Selected", //
+               name, KeylabIcon.SFX_SMALL);
          }
       });
+      //CursorRemoteControlsPage trackRemotes = cursorDevice.createCursorRemoteControlsPage("track-remotes", 8, null);
+
+      parameterBank1 = cursorDevice.createCursorRemoteControlsPage(8);
+      cursorDevice.hasPrevious().markInterested();
+
+      parameterBank1.pageNames().addValueObserver(pageNames -> devicePageNames = pageNames);
+      final CursorRemoteControlsPage parameterBank2 = cursorDevice.createCursorRemoteControlsPage("sliders", 8, null);
+      parameterBank2.selectedPageIndex().markInterested();
+      parameterBank1.pageCount().addValueObserver(pages -> {
+         if (deviceControlLayer.isActive()) {
+            deviceControlLayer2.setIsActive(pages < 2);
+         }
+      });
+      parameterBank1.selectedPageIndex()
+         .addValueObserver(index -> mainParameterBankIndexChanged(parameterBank2, index));
 
       mixerTrackBank = viewControl.getMixerTrackBank();
       mixerTrackBank.itemCount().markInterested();
-      mixerTrackBank.scrollPosition().addValueObserver(scrollPosition -> {
+      mixerTrackBank.scrollPosition().addValueObserver(scrollPosition ->  //
          lcdDisplay.sendPopup("Tracks", String.format("%d - %d", scrollPosition + 1,
-            Math.min(scrollPosition + 8, mixerTrackBank.itemCount().get())), KeylabIcon.NONE);
-      });
+            Math.min(scrollPosition + 8, mixerTrackBank.itemCount().get())), KeylabIcon.NONE));
 
       cursorDevice.name().markInterested();
 
@@ -91,11 +102,23 @@ public class SliderEncoderControl extends Layer {
          deviceControlLayer.addBinding(
             new KeyLabEncoderBinding(knobs[i], parameter4Knob, parameter4Knob.name(), LcdDisplayMode.DEVICE1,
                lcdDisplay));
+         deviceControlLayer2.addBinding(
+            new KeyLabEncoderBinding(sliders[i], parameter4Knob, parameter4Knob.name(), LcdDisplayMode.DEVICE2,
+               lcdDisplay));
 
          final RemoteControl parameter4Slider = parameterBank2.getParameter(i);
          deviceControlLayer.addBinding(
             new KeyLabEncoderBinding(sliders[i], parameter4Slider, parameter4Slider.name(), LcdDisplayMode.DEVICE2,
                lcdDisplay));
+      }
+   }
+
+   private void mainParameterBankIndexChanged(CursorRemoteControlsPage parameterBank2, int index) {
+      parameterBank2.selectedPageIndex().set(index + 1);
+      if (parameterSteppingOccurred && !deviceScrollingOccurred) {
+         lcdDisplay.sendPopup(getParameterPageLabeling(index), //
+            "Parameter Page " + (index + 1), KeylabIcon.SFX_SMALL);
+         parameterSteppingOccurred = false;
       }
    }
 
@@ -138,36 +161,49 @@ public class SliderEncoderControl extends Layer {
 
    private void handlePartEncoder(int increment) {
       if (deviceControlLayer.isActive()) {
-
+         PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
+         if (increment > 0) {
+            cursorDevice.selectNext();
+         } else {
+            cursorDevice.selectPrevious();
+         }
+         deviceScrollingOccurred = true;
       } else {
          mixerTrackBank.scrollBy(increment);
       }
    }
 
    public void handlePartDown() {
+      deviceScrollingOccurred = false;
+      parameterSteppingOccurred = false;
       partModifierLayer.setIsActive(true);
-      if (currentState.get() == State.DEVICE) {
-         parameterBank1.selectNextPage(true);
-      } else {
-         if (mixerTrackBank.scrollPosition().get() > 0) {
-            mixerTrackBank.scrollPosition().set(0);
-         } else {
-            mixerTrackBank.scrollPosition().set(8);
-         }
-      }
    }
 
    public void handlePartRelease(RgbButton button) {
       partModifierLayer.setIsActive(false);
+      if (!deviceScrollingOccurred) {
+         parameterSteppingOccurred = true;
+         if (currentState.get() == State.DEVICE) {
+            parameterBank1.selectNextPage(true);
+         } else {
+            if (mixerTrackBank.scrollPosition().get() > 0) {
+               mixerTrackBank.scrollPosition().set(0);
+            } else {
+               mixerTrackBank.scrollPosition().set(8);
+            }
+         }
+      }
       button.forceDelayedRefresh();
    }
 
    public void toggleMode() {
       if (!deviceControlLayer.isActive()) {
          deviceControlLayer.setIsActive(true);
+         deviceControlLayer2.setIsActive(parameterBank1.pageCount().get() < 2);
          currentState.set(State.DEVICE);
       } else {
          deviceControlLayer.setIsActive(false);
+         deviceControlLayer2.setIsActive(false);
          currentState.set(State.MIXER);
       }
    }

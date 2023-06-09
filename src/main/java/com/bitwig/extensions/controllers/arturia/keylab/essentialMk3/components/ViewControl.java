@@ -13,7 +13,6 @@ public class ViewControl {
 
    private final TrackBank viewTrackBank;
    private final PinnableCursorDevice primaryDevice;
-   private final MasterTrack masterTrack;
    private final CursorTrack cursorTrack;
    private final TrackBank mixerTrackBank;
    private final Scene sceneTrackItem;
@@ -21,7 +20,6 @@ public class ViewControl {
    private final Clip cursorClip;
 
    public ViewControl(final ControllerHost host, final LcdDisplay lcdDisplay) {
-      masterTrack = host.createMasterTrack(2);
       mixerTrackBank = host.createTrackBank(8, 2, 2);
       cursorTrack = host.createCursorTrack(2, 2);
 
@@ -36,6 +34,7 @@ public class ViewControl {
          CursorDeviceFollowMode.FIRST_INSTRUMENT);
       cursorDevice = cursorTrack.createCursorDevice("device-control", "Device Control", 0,
          CursorDeviceFollowMode.FOLLOW_SELECTION);
+      //cursorDevice = cursorTrack.createCursorDevice();
       setUpFollowArturiaDevice(host);
    }
 
@@ -93,10 +92,6 @@ public class ViewControl {
 
    public TrackBank getMixerTrackBank() {
       return mixerTrackBank;
-   }
-
-   public MasterTrack getMasterTrack() {
-      return masterTrack;
    }
 
    public void invokeQuantize() {

@@ -13,6 +13,7 @@ import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.display.Mai
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 import com.bitwig.extensions.framework.time.TimedEvent;
+import com.bitwig.extensions.framework.values.FocusMode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,10 +63,10 @@ public class KeylabEssential3Extension extends ControllerExtension {
          getInputMask(0x0A, new int[]{0x1, 0x40, 0x72, 0x73, 0x1E, 0x1F, 0x56, 0x57, 0x49, 0x4B, 0x4F, 0x48, //
             0x50, 0x51, 0x52, 0x53, 0x55, 0x5A, 0x4A, 0x47, 0x4C, 0x4D, 0x5D, 0x12, 0x13, 0x10, 0x11}));
       noteInput.setShouldConsumeEvents(true);
-      Application application = diContext.getService(Application.class);
-      application.panelLayout().addValueObserver(layout -> {
-         DebugOut.println("LAYOUT = %s", layout);
-      });
+//      Application application = diContext.getService(Application.class);
+//      application.panelLayout().addValueObserver(layout -> {
+//         DebugOut.println("LAYOUT = %s", layout);
+//      });
 
       mainLayer = diContext.createLayer("MAIN");
       clipLaunchingLayer = diContext.create(ClipLaunchingLayer.class);
@@ -86,7 +87,7 @@ public class KeylabEssential3Extension extends ControllerExtension {
       mainLayer.activate();
       clipLaunchingLayer.activate();
       drumPadLayer.activate();
-      host.showPopupNotification("Start KeyLab Essential Mk3");
+
       setUpPreferences();
       diContext.activate();
       host.scheduleTask(this::handlePing, 100);
@@ -112,9 +113,7 @@ public class KeylabEssential3Extension extends ControllerExtension {
          case INIT:
             lcdDisplay.logoText("Bitwig", "connected", KeylabIcon.BITWIG);
             sysExHandler.requestPadBank();
-            sysExHandler.queueTimedEvent(new TimedEvent(() -> {
-               mainScreenSection.updatePage();
-            }, 2000));
+            sysExHandler.queueTimedEvent(new TimedEvent(() -> mainScreenSection.updatePage(), 2000));
             break;
       }
    }
@@ -149,7 +148,7 @@ public class KeylabEssential3Extension extends ControllerExtension {
 
    private void setUpPreferences() {
       final Preferences preferences = getHost().getPreferences(); // THIS
-      final SettableEnumValue recordButtonAssignment = preferences.getEnumSetting("Recording Button assignment", //
+      final SettableEnumValue recordButtonAssignment = preferences.getEnumSetting("Record Button assignment", //
          "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
          recordFocusMode.getDescriptor());
       recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));

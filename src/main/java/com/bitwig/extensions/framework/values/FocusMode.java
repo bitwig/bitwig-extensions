@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.arturia.keylab.essentialMk3;
+package com.bitwig.extensions.framework.values;
 
 import com.bitwig.extension.controller.api.Transport;
 

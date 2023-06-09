@@ -13,6 +13,7 @@ import com.bitwig.extensions.controllers.akai.apcmk2.led.SingleLedState;
 import com.bitwig.extensions.controllers.akai.apcmk2.midi.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
+import com.bitwig.extensions.framework.values.FocusMode;
 
 public abstract class AbstractAkaiApcExtension extends ControllerExtension {
    protected Layer mainLayer;
@@ -23,6 +24,7 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
    protected AbstractControlLayer controlLayer;
    protected final ApcConfiguration configuration;
    protected Class<? extends AbstractControlLayer> controlLayerClass;
+   protected ApcPreferences preferences;
 
    protected AbstractAkaiApcExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
                                       ApcConfiguration configuration) {
@@ -35,6 +37,8 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
       DebugApc.registerHost(getHost());
       final Context diContext = new Context(this);
       surface = diContext.getService(HardwareSurface.class);
+      preferences = new ApcPreferences(getHost(), configuration.isHasEncoders());
+      diContext.registerService(ApcPreferences.class, preferences);
       diContext.registerService(ApcConfiguration.class, configuration);
       initMidi(diContext);
       hwElements = diContext.create(HardwareElementsApc.class);
@@ -131,6 +135,22 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
       final SingleLedButton button = hwElements.getTrackButton(buttonIndex);
       button.bindLight(shiftLayer, () -> value.get() ? SingleLedState.ON : SingleLedState.OFF);
       button.bindRepeatHold(shiftLayer, action);
+   }
+
+   protected SingleLedState getRecordLedState(Transport transport) {
+      if (preferences.getRecordFocusMode() == FocusMode.LAUNCHER) {
+         return transport.isClipLauncherOverdubEnabled().get() ? SingleLedState.ON : SingleLedState.OFF;
+      } else {
+         return transport.isArrangerOverdubEnabled().get() ? SingleLedState.ON : SingleLedState.OFF;
+      }
+   }
+
+   protected void handleRecordPressed(Transport transport) {
+      if (preferences.getRecordFocusMode() == FocusMode.LAUNCHER) {
+         transport.isClipLauncherOverdubEnabled().toggle();
+      } else {
+         transport.isArrangerOverdubEnabled().toggle();
+      }
    }
 
    @Override
