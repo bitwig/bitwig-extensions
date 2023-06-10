@@ -141,7 +141,7 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
       if (preferences.getRecordFocusMode() == FocusMode.LAUNCHER) {
          return transport.isClipLauncherOverdubEnabled().get() ? SingleLedState.ON : SingleLedState.OFF;
       } else {
-         return transport.isArrangerOverdubEnabled().get() ? SingleLedState.ON : SingleLedState.OFF;
+         return transport.isArrangerRecordEnabled().get() ? SingleLedState.ON : SingleLedState.OFF;
       }
    }
 
@@ -149,7 +149,7 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
       if (preferences.getRecordFocusMode() == FocusMode.LAUNCHER) {
          transport.isClipLauncherOverdubEnabled().toggle();
       } else {
-         transport.isArrangerOverdubEnabled().toggle();
+         transport.isArrangerRecordEnabled().toggle();
       }
    }
 

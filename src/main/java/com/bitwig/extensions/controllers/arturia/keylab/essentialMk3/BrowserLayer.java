@@ -23,7 +23,6 @@ public class BrowserLayer extends Layer {
    private final PopupBrowser browser;
    private final CursorBrowserResultItem resultCursorItem;
    private String[] contentTypeNames = new String[0];
-   private String currentContentType = "";
    private final CursorBrowserFilterItem categoryItem;
 
    private final BooleanValueObject browsingInitiated = new BooleanValueObject();
@@ -45,7 +44,7 @@ public class BrowserLayer extends Layer {
       //resultCursorItem.exists().addValueObserver(this::handleResultItemCursorExists);
       browser.selectedContentTypeIndex().addValueObserver(selected -> {
          if (selected < contentTypeNames.length) {
-            currentContentType = contentTypeNames[selected];
+            //currentContentType = contentTypeNames[selected];
             if (enforceDeviceContent) {
                enforceDeviceContent = false;
                forceDeviceContent();
@@ -144,13 +143,12 @@ public class BrowserLayer extends Layer {
    }
 
    private void mainEncoderAction(int increment) {
-      //driver.getOled().enableValues(DisplayMode.BROWSER);
-      //browser.shouldAudition().set(false);
       if (increment > 0) {
          resultCursorItem.selectNext();
       } else {
          resultCursorItem.selectPrevious();
       }
+      encoderClickCount = 0;
    }
 
    private void openBrowser() {

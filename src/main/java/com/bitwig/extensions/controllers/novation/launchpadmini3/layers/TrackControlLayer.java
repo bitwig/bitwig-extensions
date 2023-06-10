@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TrackControlLayer {
-
    private final Layer muteLayer;
    private final Layer soloLayer;
    private final Layer armLayer;
@@ -22,7 +21,7 @@ public class TrackControlLayer {
    private final Layer controlLayer;
    private final Map<TrackMode, Layer> trackModeLayerMap = new HashMap<>();
    private final PanelLayout layoutType;
-   private Project project;
+   private final Project project;
    private final Transport transport;
    private final SessionLayer sessionLayer;
    private Layer currentControlGridLayer;
@@ -55,8 +54,7 @@ public class TrackControlLayer {
    void initClipControl(final HwElements hwElements, final TrackBank trackBank) {
       for (int i = 0; i < 8; i++) {
          final Track track = trackBank.getItemAt(i);
-         final GridButton button = layoutType == PanelLayout.VERTICAL ? hwElements.getGridButton(7,
-            i) : hwElements.getGridButton(i, 7);
+         final GridButton button = getButton(hwElements, i);
          button.bindPressed(stopLayer, track::stop);
          button.bindLight(stopLayer, () -> getStopState(track));
          button.bindPressed(muteLayer, () -> track.mute().toggle());
@@ -72,27 +70,34 @@ public class TrackControlLayer {
 
    void initControlLayer(final HwElements hwElements, ViewCursorControl viewCursorControl) {
       int index = 0;
-      final GridButton playButton = hwElements.getGridButton(7, index++);
+      final GridButton playButton = getButton(hwElements, index++);
       playButton.bindPressed(controlLayer, this::togglePlay);
       playButton.bindLight(controlLayer, () -> transport.isPlaying().get() ? RgbState.of(21) : RgbState.of(23));
-      final GridButton overButton = hwElements.getGridButton(7, index++);
+      final GridButton overButton = getButton(hwElements, index++);
 
       overButton.bindPressed(controlLayer, () -> viewCursorControl.globalRecordAction(transport));
       overButton.bindLight(controlLayer, sessionLayer::getRecordButtonColorRegular);
 
-      final GridButton metroButton = hwElements.getGridButton(7, index++);
+      final GridButton metroButton = getButton(hwElements, index++);
       metroButton.bindPressed(controlLayer, () -> transport.isMetronomeEnabled().toggle());
       metroButton.bindLight(controlLayer,
          () -> transport.isMetronomeEnabled().get() ? RgbState.of(37) : RgbState.of(39));
       for (int i = 0; i < 4; i++) {
-         final GridButton emptyButton = hwElements.getGridButton(7, index++);
+         final GridButton emptyButton = getButton(hwElements, index++);
          emptyButton.bindPressed(controlLayer, () -> {
          });
          emptyButton.bindLight(controlLayer, () -> RgbState.OFF);
       }
-      final GridButton shiftButton = hwElements.getGridButton(7, index);
-      shiftButton.bindPressed(controlLayer, pressed -> sessionLayer.setShiftHeld(pressed));
-      shiftButton.bindLightPressed(controlLayer, RgbState.of(1), RgbState.of(3));
+      final GridButton shiftButton = getButton(hwElements, index);
+      shiftButton.bindPressed(controlLayer, sessionLayer::setShiftHeld);
+      shiftButton.bindLightPressed(controlLayer, RgbState.pulse(2), RgbState.of(3));
+   }
+
+   private GridButton getButton(final HwElements hwElements, int index) {
+      if (layoutType == PanelLayout.VERTICAL) {
+         return hwElements.getGridButton(7, index);
+      }
+      return hwElements.getGridButton(index, 7);
    }
 
    public void applyMode(TrackMode trackMode) {

@@ -28,7 +28,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
    private final TrackControlLayer verticalTrackControlLayer;
    private final TrackControlLayer horizontalTrackControlLayer;
    private final SceneControl sceneControlVertical;
-   private SceneControl sceneControlHorizontal;
+   private final SceneControl sceneControlHorizontal;
    private TrackControlLayer currentTrackControlLayer;
    private SceneControl currentSceneControl;
 
@@ -50,8 +50,6 @@ public class SessionLayer extends AbstractLpSessionLayer {
    private final Layer horizontalLayer;
 
    private SendsSliderLayer sendsSliderLayer;
-
-   private Clip cursorClip;
 
    @Inject
    private ViewCursorControl viewCursorControl;
@@ -90,7 +88,6 @@ public class SessionLayer extends AbstractLpSessionLayer {
    protected void init(final ControllerHost host, final Transport transport, final HwElements hwElements) {
       clipLauncherOverdub = transport.isClipLauncherOverdubEnabled();
       clipLauncherOverdub.markInterested();
-      cursorClip = viewCursorControl.getCursorClip();
 
       final Clip cursorClip = viewCursorControl.getCursorClip();
       cursorClip.getLoopLength().markInterested();
@@ -162,7 +159,10 @@ public class SessionLayer extends AbstractLpSessionLayer {
       verticalLayer.setIsActive(panelLayout == PanelLayout.VERTICAL);
 
       currentTrackControlLayer.reset();
+      currentTrackControlLayer.deactivateLayer();
       currentTrackControlLayer = panelLayout == PanelLayout.VERTICAL ? verticalTrackControlLayer : horizontalTrackControlLayer;
+      currentTrackControlLayer.applyMode(trackMode);
+      currentTrackControlLayer.activateControlLayer(true);
 
       currentSceneControl.setActive(false);
       applyPanelModeToSceneControl();
@@ -263,10 +263,10 @@ public class SessionLayer extends AbstractLpSessionLayer {
             final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
             prepareSlot(slot, sceneIndex, trackIndex);
             final GridButton button = hwElements.getGridButton(sceneIndex, trackIndex);
-            button.bindPressed(verticalLayer, pressed -> handleSlot(pressed, track, slot));
+            button.bindPressed(verticalLayer, pressed -> handleSlot(pressed, slot));
             button.bindLight(verticalLayer, () -> getState(track, slot, trackIndex, sceneIndex));
             final GridButton buttonHorizontal = hwElements.getGridButton(trackIndex, sceneIndex);
-            buttonHorizontal.bindPressed(horizontalLayer, pressed -> handleSlot(pressed, track, slot));
+            buttonHorizontal.bindPressed(horizontalLayer, pressed -> handleSlot(pressed, slot));
             buttonHorizontal.bindLight(horizontalLayer, () -> getState(track, slot, trackIndex, sceneIndex));
          }
       }
@@ -525,8 +525,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
    }
 
    private void changeModeMini() { // change to sequence
-      final TrackMode nextMode = getNextMode(miniModeSequenceXtra);
-      trackMode = nextMode;
+      trackMode = getNextMode(miniModeSequenceXtra);
       currentTrackControlLayer.applyMode(trackMode);
    }
 
@@ -557,7 +556,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
       slot.color().addValueObserver((r, g, b) -> colorIndex[sceneIndex][trackIndex] = ColorLookup.toColor(r, g, b));
    }
 
-   private void handleSlot(final boolean pressed, final Track track, final ClipLauncherSlot slot) {
+   private void handleSlot(final boolean pressed, final ClipLauncherSlot slot) {
       if (pressed) {
          if (shiftHeld) {
             slot.launchAlt();

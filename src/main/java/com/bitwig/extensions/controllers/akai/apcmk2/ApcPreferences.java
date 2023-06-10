@@ -18,7 +18,7 @@ public class ApcPreferences {
             recordFocusMode.getDescriptor());
          recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));
       }
-      recordButtonAsAlt = preferences.getBooleanSetting("Use as ALT trigger modifier", "Record Button", false);
+      recordButtonAsAlt = preferences.getBooleanSetting("Use as ALT trigger modifier", "Shift Button", false);
       recordButtonAsAlt.markInterested();
    }
 
