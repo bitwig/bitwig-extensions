@@ -13,7 +13,6 @@ import com.bitwig.extensions.controllers.akai.apcmk2.led.SingleLedState;
 import com.bitwig.extensions.controllers.akai.apcmk2.midi.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
-import com.bitwig.extensions.framework.values.FocusMode;
 
 public abstract class AbstractAkaiApcExtension extends ControllerExtension {
    protected Layer mainLayer;
@@ -135,22 +134,6 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
       final SingleLedButton button = hwElements.getTrackButton(buttonIndex);
       button.bindLight(shiftLayer, () -> value.get() ? SingleLedState.ON : SingleLedState.OFF);
       button.bindRepeatHold(shiftLayer, action);
-   }
-
-   protected SingleLedState getRecordLedState(Transport transport) {
-      if (preferences.getRecordFocusMode() == FocusMode.LAUNCHER) {
-         return transport.isClipLauncherOverdubEnabled().get() ? SingleLedState.ON : SingleLedState.OFF;
-      } else {
-         return transport.isArrangerRecordEnabled().get() ? SingleLedState.ON : SingleLedState.OFF;
-      }
-   }
-
-   protected void handleRecordPressed(Transport transport) {
-      if (preferences.getRecordFocusMode() == FocusMode.LAUNCHER) {
-         transport.isClipLauncherOverdubEnabled().toggle();
-      } else {
-         transport.isArrangerRecordEnabled().toggle();
-      }
    }
 
    @Override
