@@ -64,6 +64,11 @@ public class KeyLabEssential3ExtensionDefinition extends ControllerExtensionDefi
    }
 
    @Override
+   public String getHelpFilePath() {
+      return "Controllers/Arturia/Arturia KeyLab Essential Mk3.pdf";
+   }
+
+   @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
       if (platformType == PlatformType.WINDOWS) {
