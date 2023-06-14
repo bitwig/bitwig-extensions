@@ -6,7 +6,6 @@ import com.bitwig.extensions.controllers.novation.commonsmk3.LabeledButton;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LaunchpadDeviceConfig;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
 import com.bitwig.extensions.controllers.novation.launchpadmini3.layers.DrumLayer;
-import com.bitwig.extensions.controllers.novation.launchpadpromk3.FocusSlot;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 
@@ -82,12 +81,13 @@ public class LaunchpadXControllerExtension extends AbstractLaunchpadMk3Extension
       recButton.bindPressed(layer, () -> viewControl.globalRecordAction(transport));
       recButton.bindLight(layer, sessionLayer::getRecordButtonColorRegular);
 
-      recButton.bindPressed(altModeLayer, pressed -> {
-         sessionLayer.setShiftHeld(pressed);
-      }, RgbState.WHITE, RgbState.DIM_WHITE);
+      recButton.bindPressed(altModeLayer, pressed -> sessionLayer.setShiftHeld(pressed), RgbState.WHITE,
+         RgbState.pulse(2));
 
       final MultiStateHardwareLight novationLight = hwElements.getNovationLight();
       layer.bindLightState(() -> RgbState.DIM_WHITE, novationLight);
+      getHost().scheduleTask(recButton::refresh, 50);
+
    }
 
    private void initViewControlListeners() {
@@ -110,7 +110,7 @@ public class LaunchpadXControllerExtension extends AbstractLaunchpadMk3Extension
    private void toggleMode() {
       if (mode == LpMode.SESSION) {
          changeMode(LpMode.MIXER);
-         midiProcessor.setButtonLed(0x14, 0x24);
+         midiProcessor.setButtonLed(0x14, 0x3E);
 
       } else {
          changeMode(LpMode.SESSION);
@@ -134,25 +134,6 @@ public class LaunchpadXControllerExtension extends AbstractLaunchpadMk3Extension
       sessionLayer.setMode(mode);
       this.mode = mode;
    }
-
-   private RgbState getRecordButtonColorRegular() {
-      final FocusSlot focusSlot = viewControl.getFocusSlot();
-      if (focusSlot != null) {
-         final ClipLauncherSlot slot = focusSlot.getSlot();
-         if (slot.isRecordingQueued().get()) {
-            return RgbState.flash(5, 0);
-         }
-         if (slot.isRecording().get() || slot.isRecordingQueued().get()) {
-            return RgbState.pulse(5);
-         }
-      }
-      if (transport.isClipLauncherOverdubEnabled().get()) {
-         return RgbState.RED;
-      } else {
-         return RgbState.of(7);
-      }
-   }
-
 
    @Override
    public void handleSysEx(final String sysExString) {

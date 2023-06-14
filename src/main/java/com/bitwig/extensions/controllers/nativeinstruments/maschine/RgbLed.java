@@ -1,58 +1,68 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschine;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class RgbLed extends InternalHardwareLightState {
 
-	private static final Map<Integer, RgbLed> cache = new HashMap<Integer, RgbLed>();
+   private static final Map<Integer, RgbLed> cache = new HashMap<>();
+   public static final RgbLed TRACK_ON = new RgbLed(Colors.LIGHT_ORANGE, ColorBrightness.DARKENED);
+   public static final RgbLed TRACK_OFF = new RgbLed(Colors.LIGHT_ORANGE, ColorBrightness.BRIGHT);
+   public static final RgbLed OFF = RgbLed.of(0);
+   public static final RgbLed BRIGHT_WHITE = RgbLed.of(70);
+   public static final RgbLed SOLO_ON = new RgbLed(Colors.YELLOW, ColorBrightness.BRIGHT);
+   public static final RgbLed SOLO_OFF = new RgbLed(Colors.YELLOW, ColorBrightness.DARKENED);
+   public static final RgbLed ARM_ON = new RgbLed(Colors.RED, ColorBrightness.BRIGHT);
+   public static final RgbLed ARM_OFF = new RgbLed(Colors.RED, ColorBrightness.DARKENED);
+   public static final RgbLed GROUP_TRACK_ACTIVE = new RgbLed(Colors.WHITE, ColorBrightness.BRIGHT);
+   public static final RgbLed GROUP_TRACK_EXISTS = new RgbLed(Colors.WHITE, ColorBrightness.DARKENED);
+   public static final RgbLed CREATE_TRACK = new RgbLed(Colors.WHITE, ColorBrightness.DIMMED);
+   public static final RgbLed WHITE_BRIGHT = new RgbLed(Colors.WHITE, ColorBrightness.BRIGHT);
 
-	protected int color = 0;
+   protected int color = 0;
 
-	RgbLed(final int color) {
-		super();
-		this.color = color;
-	}
+   protected RgbLed(final int color) {
+      this.color = color;
+   }
 
-	public static RgbLed colorOf(final int colorCode) {
-		RgbLed cachedColor = cache.get(colorCode);
-		if (cachedColor == null) {
-			cachedColor = new RgbLed(colorCode);
-			cache.put(colorCode, cachedColor);
-		}
-		return cachedColor;
-	}
+   private RgbLed(Colors color, ColorBrightness brightness) {
+      this.color = color.getIndexValue(brightness);
+   }
 
-	@Override
-	public HardwareLightVisualState getVisualState() {
-		return null;
-	}
+   public static RgbLed of(final int colorCode) {
+      return cache.computeIfAbsent(colorCode, code -> new RgbLed(code));
+   }
 
-	@Override
-	public boolean equals(final Object obj) {
-		return obj instanceof RgbLed && equals((RgbLed) obj);
-	}
+   @Override
+   public HardwareLightVisualState getVisualState() {
+      return null;
+   }
 
-	public boolean equals(final RgbLed obj) {
-		if (obj == this) {
-			return true;
-		}
-		return color == obj.color;
-	}
+   @Override
+   public boolean equals(final Object obj) {
+      return obj instanceof RgbLed && equals((RgbLed) obj);
+   }
 
-	public int getColor() {
-		return color;
-	}
+   public boolean equals(final RgbLed obj) {
+      if (obj == this) {
+         return true;
+      }
+      return color == obj.color;
+   }
 
-	public int getOffColor() {
-		return color;
-	}
+   public int getColor() {
+      return color;
+   }
 
-	public boolean isBlinking() {
-		return false;
-	}
+   public int getOffColor() {
+      return color;
+   }
+
+   public boolean isBlinking() {
+      return false;
+   }
 
 }

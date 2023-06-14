@@ -15,7 +15,7 @@ public class AkaiApcKeys25Definition extends ControllerExtensionDefinition {
 
    @Override
    public String getName() {
-      return "Akai APC Keys25 mk2";
+      return "Akai APC Key25 mk2";
    }
 
    @Override
@@ -25,7 +25,7 @@ public class AkaiApcKeys25Definition extends ControllerExtensionDefinition {
 
    @Override
    public String getVersion() {
-      return "0.91";
+      return "0.92";
    }
 
    @Override
@@ -40,7 +40,7 @@ public class AkaiApcKeys25Definition extends ControllerExtensionDefinition {
 
    @Override
    public String getHardwareModel() {
-      return "APC Keys25 mk2";
+      return "APC Key25 mk2";
    }
 
    @Override

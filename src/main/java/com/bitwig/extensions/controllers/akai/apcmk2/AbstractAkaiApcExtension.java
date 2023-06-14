@@ -23,6 +23,7 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
    protected AbstractControlLayer controlLayer;
    protected final ApcConfiguration configuration;
    protected Class<? extends AbstractControlLayer> controlLayerClass;
+   protected ApcPreferences preferences;
 
    protected AbstractAkaiApcExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
                                       ApcConfiguration configuration) {
@@ -35,6 +36,8 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
       DebugApc.registerHost(getHost());
       final Context diContext = new Context(this);
       surface = diContext.getService(HardwareSurface.class);
+      preferences = new ApcPreferences(getHost(), configuration.isHasEncoders());
+      diContext.registerService(ApcPreferences.class, preferences);
       diContext.registerService(ApcConfiguration.class, configuration);
       initMidi(diContext);
       hwElements = diContext.create(HardwareElementsApc.class);

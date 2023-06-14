@@ -40,7 +40,6 @@ public class ClipLaunchButtonLayer extends Layer {
          final int trackIndex = index + trackOffset;
          final Track track = trackBank.getItemAt(trackIndex);
          final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
-         slotBank.setIndication(false);
 
          for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
             final ClipLauncherSlot slot = slotBank.getItemAt(slotIndex);
@@ -53,6 +52,7 @@ public class ClipLaunchButtonLayer extends Layer {
             //if (slotIndex < 4) {
             final HardwareButton verticalButton = hwControls.getButton(slotIndex, index);
             launcherLayer.bindPressed(verticalButton, () -> handleSlotPressed(track, slot));
+            launcherLayer.bindReleased(verticalButton, () -> handleSlotReleased(track, slot));
             launcherLayer.bind(() -> lightState(slot), (OnOffHardwareLight) verticalButton.backgroundLight());
             //}
             if (index < 4) {
@@ -62,6 +62,10 @@ public class ClipLaunchButtonLayer extends Layer {
             }
          }
       }
+   }
+
+   private void handleSlotReleased(Track track, ClipLauncherSlot slot) {
+      slotHandler.handleSlotRelease(track, slot, mainCursorClip, driver.getModifier());
    }
 
    public void handleSlotPressed(final Track track, final ClipLauncherSlot slot) {
@@ -138,29 +142,14 @@ public class ClipLaunchButtonLayer extends Layer {
          arrangerLayer.deactivate();
          launcherLayer.activate();
       }
-      setIndication(true);
+      trackBank.setShouldShowClipLauncherFeedback(true);
    }
 
    @Override
    protected void onDeactivate() {
-      setIndication(false);
+      trackBank.setShouldShowClipLauncherFeedback(false);
       launcherLayer.deactivate();
       arrangerLayer.deactivate();
-   }
-
-   private void setIndication(final boolean enabled) {
-      for (int index = 0; index < 8; index++) {
-         final Track track = trackBank.getItemAt(index + trackOffset);
-         final ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
-         slotBank.setIndication(enabled);
-         for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
-            if (layoutType == LayoutType.LAUNCHER) {
-               slotBank.getItemAt(slotIndex).setIndication(enabled);
-            } else {
-               slotBank.getItemAt(slotIndex).setIndication(index < 4 && enabled);
-            }
-         }
-      }
    }
 
 }
