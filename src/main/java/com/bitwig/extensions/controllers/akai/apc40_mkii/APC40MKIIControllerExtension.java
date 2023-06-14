@@ -1367,9 +1367,10 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             case TRACK_CONTROLS, PROJECT_CONTROLS -> KnobLed.RING_SINGLE;
             default -> throw new IllegalStateException();
          };
+      knobLed.setRing(knob.hasTargetValue().get() ? ring : KnobLed.RING_OFF);
 
       if (knobLed.wantsFlush())
-         knobLed.setRing(knob.hasTargetValue().get() ? ring : KnobLed.RING_OFF);
+         getHost().requestFlush();
    }
 
    private void updateDeviceControlRing(final int knobIndex)
