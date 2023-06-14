@@ -59,6 +59,11 @@ public class AkaiApcMiniDefinition extends ControllerExtensionDefinition {
    }
 
    @Override
+   public String getHelpFilePath() {
+      return "Controllers/Akai/APC Mini Mk2.pdf";
+   }
+
+   @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
       if (platformType == PlatformType.WINDOWS) {

@@ -59,6 +59,11 @@ public class AkaiApcKeys25Definition extends ControllerExtensionDefinition {
    }
 
    @Override
+   public String getHelpFilePath() {
+      return "Controllers/Akai/APC Key25 Mk2.pdf";
+   }
+
+   @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
       if (platformType == PlatformType.WINDOWS) {
