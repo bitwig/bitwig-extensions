@@ -15,7 +15,7 @@ public class AkaiApcKeys25Definition extends ControllerExtensionDefinition {
 
    @Override
    public String getName() {
-      return "Akai APC Key25 mk2";
+      return "APC Key25 mk2";
    }
 
    @Override

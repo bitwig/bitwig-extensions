@@ -15,7 +15,7 @@ public class AkaiApcMiniDefinition extends ControllerExtensionDefinition {
 
    @Override
    public String getName() {
-      return "Akai APC Mini mk2";
+      return "APC Mini mk2";
    }
 
    @Override
