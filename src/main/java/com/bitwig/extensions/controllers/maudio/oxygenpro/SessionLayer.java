@@ -16,10 +16,11 @@ import java.util.List;
 @Component
 public class SessionLayer {
 
-   private Layer mainLayer;
+   private final Layer mainLayer;
 
-   private RgbColor[] slotColors = new RgbColor[16];
+   private final RgbColor[] slotColors = new RgbColor[16];
    private RgbColor trackColor = RgbColor.OFF;
+   private final int numberOfTracks;
 
    public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl) {
       Arrays.fill(slotColors, RgbColor.OFF);
@@ -27,14 +28,15 @@ public class SessionLayer {
       TrackBank trackBank = viewControl.getMixerTrackBank();
       List<PadButton> gridButtons = hwElements.getPadButtons();
       trackBank.setShouldShowClipLauncherFeedback(true);
-      for (int tInd = 0; tInd < trackBank.getSizeOfBank(); tInd++) {
+      this.numberOfTracks = trackBank.getSizeOfBank();
+      for (int tInd = 0; tInd < numberOfTracks; tInd++) {
          final int trackIndex = tInd;
          Track track = trackBank.getItemAt(tInd);
          prepareTrack(track);
          for (int sInd = 0; sInd < 2; sInd++) {
             final int sceneIndex = sInd;
             final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sInd);
-            int buttonIndex = sceneIndex * 8 + trackIndex;
+            int buttonIndex = sceneIndex * numberOfTracks + trackIndex;
             prepareSlot(slot, buttonIndex);
             PadButton button = gridButtons.get(buttonIndex);
             button.bindLight(mainLayer, () -> this.getRgbState(track, slot, trackIndex, sceneIndex));
@@ -55,7 +57,7 @@ public class SessionLayer {
 
    private InternalHardwareLightState getRgbState(Track track, ClipLauncherSlot slot, int trackIndex, int sceneIndex) {
       if (slot.hasContent().get()) {
-         int buttonIndex = sceneIndex * 8 + trackIndex;
+         int buttonIndex = sceneIndex * numberOfTracks + trackIndex;
          RgbColor color = slotColors[buttonIndex];
          if (slot.isRecordingQueued().get()) {
             return RgbColor.RED.getBlink();

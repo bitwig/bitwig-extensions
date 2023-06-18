@@ -50,12 +50,13 @@ public class HwElements {
          masterSlider = null;
       }
 
-      for (int i = 0; i < 8; i++) {
+      for (int i = 0; i < config.getNumberOfControls(); i++) {
          CcButton button = new CcButton(OxygenCcAssignments.TRACK_1.getCcNr() + i, 0, "TRACK_BUTTON_" + i, surface,
             midiProcessor, true);
          trackButtons.add(button);
       }
-      for (int i = 0; i < PAD_NOTE_NR.length; i++) {
+
+      for (int i = 0; i < config.getNumberOfControls() * 2; i++) {
          PadButton button = new PadButton(PAD_NOTE_NR[i], "PAD_" + i, surface, midiProcessor);
          padButtons.add(button);
       }

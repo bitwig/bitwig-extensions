@@ -75,6 +75,7 @@ public class TrackControl {
          mainLayer.bind(hwElements.getSlider(trackIndex), track.volume());
          knobLayers.get(KnobMode.PAN).bind(hwElements.getKnob(trackIndex), track.pan());
          knobLayers.get(KnobMode.SENDS).bind(hwElements.getKnob(trackIndex), track.sendBank().getItemAt(0));
+
          CcButton button = hwElements.getTrackButtons().get(trackIndex);
          button.bind(trackLayers.get(TrackButtonMode.REC), () -> this.handleRecPressed(track));
          button.bindLight(trackLayers.get(TrackButtonMode.REC), track.arm());
@@ -137,8 +138,8 @@ public class TrackControl {
 
    private void selectKnobMode(KnobMode mode) {
       currentKnobControlLayer.setIsActive(false);
-      currentTrackControlLayer = knobLayers.get(mode);
-      currentTrackControlLayer.setIsActive(true);
+      currentKnobControlLayer = knobLayers.get(mode);
+      currentKnobControlLayer.setIsActive(true);
       // TODO check how Ableton handles sends
    }
 
