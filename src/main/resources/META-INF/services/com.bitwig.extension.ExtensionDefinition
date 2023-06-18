@@ -75,7 +75,13 @@ com.bitwig.extensions.controllers.mackie.definition.IconPlatformMExtensionDefini
 com.bitwig.extensions.controllers.m_audio.OxygenPro25Definition   
 com.bitwig.extensions.controllers.m_audio.OxygenPro49Definition 
 com.bitwig.extensions.controllers.m_audio.OxygenPro61Definition   
-com.bitwig.extensions.controllers.m_audio.OxygenProMiniDefinition                                  
+com.bitwig.extensions.controllers.m_audio.OxygenProMiniDefinition
+
+com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenProMiniExtensionDefinition
+com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro25ExtensionDefinition
+com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro49ExtensionDefinition
+com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro61ExtensionDefinition
+com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro88ExtensionDefinition
 
 com.bitwig.extensions.controllers.novation.launch_control_xl.LaunchControlXlControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControllerExtensionDefinition
