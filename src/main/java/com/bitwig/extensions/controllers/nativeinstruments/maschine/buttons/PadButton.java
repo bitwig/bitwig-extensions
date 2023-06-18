@@ -5,9 +5,9 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineExtension;
-import com.bitwig.extensions.controllers.nativeinstruments.maschine.Midi;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLed;
+import com.bitwig.extensions.framework.values.Midi;
 
 public class PadButton implements RgbButton {
 

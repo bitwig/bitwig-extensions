@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschine.modes;
 
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.ModifierState;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
 

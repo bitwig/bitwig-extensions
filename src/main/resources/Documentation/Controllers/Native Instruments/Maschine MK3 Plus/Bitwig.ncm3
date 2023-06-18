@@ -161,7 +161,6 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Events">
-        <disabled />
         <controller>87</controller>
         <channel>0</channel>
         <off>0</off>
@@ -626,7 +625,6 @@
         <default>0</default>
       </led>
       <button version="1" id="Variation">
-        <disabled />
         <controller>88</controller>
         <channel>0</channel>
         <off>0</off>
