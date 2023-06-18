@@ -1,17 +1,17 @@
 package com.bitwig.extensions.controllers.maudio.oxygenpro;
 
-import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
-import com.bitwig.extension.controller.api.HardwareSlider;
-import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.CcButton;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.PadButton;
+import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntConsumer;
 
 @Component
 public class HwElements {
@@ -23,6 +23,7 @@ public class HwElements {
    private static final int SLIDER_CC = 0xC;
    private static final int KNOB_CC = 0x16;
    private static final int MASTER_CC = 0x29;
+   private final ControllerHost host;
 
    private Map<OxygenCcAssignments, CcButton> buttonMap = new HashMap<>();
    private List<CcButton> trackButtons = new ArrayList<>();
@@ -30,9 +31,13 @@ public class HwElements {
    private final HardwareSlider[] sliders = new HardwareSlider[9];
    private final HardwareSlider masterSlider;
    private final AbsoluteHardwareKnob[] knobs = new AbsoluteHardwareKnob[8];
+   private final RelativeHardwareKnob mainEncoder;
 
-   public HwElements(HardwareSurface surface, MidiProcessor midiProcessor, OxyConfig config) {
-      DebugOutOxy.println(" INIT HW");
+   private final BooleanValueObject shiftActive = new BooleanValueObject();
+   private final BooleanValueObject backActive = new BooleanValueObject();
+
+   public HwElements(HardwareSurface surface, MidiProcessor midiProcessor, ControllerHost host, OxyConfig config) {
+      this.host = host;
       MidiIn midiIn = midiProcessor.getMidiIn();
 
       for (int i = 0; i < config.getNumberOfControls(); i++) {
@@ -70,6 +75,7 @@ public class HwElements {
       addButton(OxygenCcAssignments.DEVICE_MODE, surface, midiProcessor, 0xf);
       addButton(OxygenCcAssignments.SENDS_MODE, surface, midiProcessor, 0xf);
 
+      addButton(OxygenCcAssignments.RECORD, surface, midiProcessor);
       addButton(OxygenCcAssignments.LOOP, surface, midiProcessor);
       addButton(OxygenCcAssignments.STOP, surface, midiProcessor);
       addButton(OxygenCcAssignments.PLAY, surface, midiProcessor);
@@ -77,10 +83,22 @@ public class HwElements {
       addButton(OxygenCcAssignments.BANK_LEFT, surface, midiProcessor);
       addButton(OxygenCcAssignments.BANK_RIGHT, surface, midiProcessor);
       addButton(OxygenCcAssignments.SHIFT, surface, midiProcessor);
+      addButton(OxygenCcAssignments.PRESET, surface, midiProcessor);
       addButton(OxygenCcAssignments.ENCODER_PUSH, surface, midiProcessor);
       addButton(OxygenCcAssignments.BACK, surface, midiProcessor);
       addButton(OxygenCcAssignments.FAST_RWD, surface, midiProcessor);
       addButton(OxygenCcAssignments.FAST_FWD, surface, midiProcessor);
+      addButton(OxygenCcAssignments.SCENE_LAUNCH1, surface, midiProcessor);
+      addButton(OxygenCcAssignments.SCENE_LAUNCH2, surface, midiProcessor);
+      mainEncoder = createMainEncoder(OxygenCcAssignments.ENCODER.getCcNr(), surface, midiIn);
+   }
+
+   public BooleanValueObject getShiftActive() {
+      return shiftActive;
+   }
+
+   public BooleanValueObject getBackActive() {
+      return backActive;
    }
 
    public HardwareSlider getMasterSlider() {
@@ -91,12 +109,17 @@ public class HwElements {
       return knobs[index];
    }
 
+   public RelativeHardwareKnob getMainEncoder() {
+      return mainEncoder;
+   }
+
    public HardwareSlider getSlider(int index) {
       return sliders[Math.min(sliders.length - 1, index)];
    }
 
    private void addButton(OxygenCcAssignments ccAssignment, HardwareSurface surface, MidiProcessor midiProcessor) {
-      CcButton button = new CcButton(ccAssignment.getCcNr(), 0, ccAssignment.toString(), surface, midiProcessor);
+      CcButton button = new CcButton(ccAssignment.getCcNr(), ccAssignment.getChannel(), ccAssignment.toString(),
+         surface, midiProcessor);
       buttonMap.put(ccAssignment, button);
    }
 
@@ -117,4 +140,25 @@ public class HwElements {
    public List<PadButton> getPadButtons() {
       return padButtons;
    }
+
+   private RelativeHardwareKnob createMainEncoder(final int ccNr, final HardwareSurface surface, final MidiIn midiIn) {
+      final RelativeHardwareKnob mainEncoder = surface.createRelativeHardwareKnob("MAIN_ENCODER+_" + ccNr);
+      final RelativeHardwareValueMatcher stepUpMatcher = midiIn.createRelativeValueMatcher(
+         "(status == 176 && data1 == " + ccNr + " && data2>64)", 1);
+      final RelativeHardwareValueMatcher stepDownMatcher = midiIn.createRelativeValueMatcher(
+         "(status == 176 && data1 == " + ccNr + " && data2<64)", -1);
+
+      final RelativeHardwareValueMatcher matcher = host.createOrRelativeHardwareValueMatcher(stepDownMatcher,
+         stepUpMatcher);
+      mainEncoder.setAdjustValueMatcher(matcher);
+      mainEncoder.setStepSize(1);
+      return mainEncoder;
+   }
+
+   public void bindEncoder(final Layer layer, final RelativeHardwareKnob encoder, final IntConsumer action) {
+      final HardwareActionBindable incAction = host.createAction(() -> action.accept(1), () -> "+");
+      final HardwareActionBindable decAction = host.createAction(() -> action.accept(-1), () -> "-");
+      layer.bind(encoder, host.createRelativeHardwareControlStepTarget(incAction, decAction));
+   }
+
 }

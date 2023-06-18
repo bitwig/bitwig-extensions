@@ -1,14 +1,12 @@
 package com.bitwig.extensions.controllers.maudio.oxygenpro;
 
-import com.bitwig.extension.controller.api.ClipLauncherSlot;
-import com.bitwig.extension.controller.api.InternalHardwareLightState;
-import com.bitwig.extension.controller.api.Track;
-import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.PadButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 import java.util.Arrays;
 import java.util.List;
@@ -19,11 +17,16 @@ public class SessionLayer {
    private final Layer mainLayer;
 
    private final RgbColor[] slotColors = new RgbColor[16];
+   private final BooleanValueObject shiftActive;
+   private final SceneBank sceneBank;
+   private boolean overdubEnabled;
    private RgbColor trackColor = RgbColor.OFF;
    private final int numberOfTracks;
 
-   public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl) {
+   public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl, Transport transport) {
       Arrays.fill(slotColors, RgbColor.OFF);
+
+      transport.isClipLauncherOverdubEnabled().addValueObserver(overdubEnabled -> this.overdubEnabled = overdubEnabled);
       this.mainLayer = new Layer(layers, "SESSION_LAYER");
       TrackBank trackBank = viewControl.getMixerTrackBank();
       List<PadButton> gridButtons = hwElements.getPadButtons();
@@ -42,6 +45,21 @@ public class SessionLayer {
             button.bindLight(mainLayer, () -> this.getRgbState(track, slot, trackIndex, sceneIndex));
             button.bindPressed(mainLayer, () -> this.handlePress(track, slot, trackIndex, sceneIndex));
          }
+      }
+      sceneBank = trackBank.sceneBank();
+      this.shiftActive = hwElements.getShiftActive();
+      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH1).bind(mainLayer, () -> sceneBank.getScene(0).launch());
+      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH2).bind(mainLayer, () -> sceneBank.getScene(1).launch());
+      hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindRepeatHold(mainLayer, () -> trackBank.scrollBackwards());
+      hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindRepeatHold(mainLayer, () -> trackBank.scrollForwards());
+      hwElements.bindEncoder(mainLayer, hwElements.getMainEncoder(), this::handleEncoder);
+   }
+
+   private void handleEncoder(int dir) {
+      if (dir < 0) {
+         sceneBank.scrollBackwards();
+      } else {
+         sceneBank.scrollForwards();
       }
    }
 
@@ -62,7 +80,7 @@ public class SessionLayer {
          if (slot.isRecordingQueued().get()) {
             return RgbColor.RED.getBlink();
          } else if (slot.isRecording().get()) {
-            return RgbColor.RED;
+            return RgbColor.RED.getBlink();
          } else if (slot.isPlaybackQueued().get()) {
             return color.getBlink();
          } else if (slot.isStopQueued().get()) {
@@ -70,7 +88,10 @@ public class SessionLayer {
          } else if (slot.isPlaying().get() && track.isQueuedForStop().get()) {
             return RgbColor.GREEN.getBlink();
          } else if (slot.isPlaying().get()) {
-            return RgbColor.GREEN.getBlink();
+            if (track.arm().get() && overdubEnabled) {
+               return RgbColor.RED.getBlink();
+            }
+            return RgbColor.GREEN;
          }
          return color;
       }

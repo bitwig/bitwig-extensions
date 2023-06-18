@@ -6,11 +6,17 @@ import com.bitwig.extensions.controllers.maudio.oxygenpro.control.CcButton;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenProExtensionDefinition;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
+import com.bitwig.extensions.framework.values.FocusMode;
 
 public class OxygenProExtension extends ControllerExtension {
 
-   private static final String OXYGEN_SYSEX = "F0 00 01 05 7F 00 00 %02X 00 01 %02X F7";
+   /**
+    * TODO List
+    *   - shift action
+    *    - drum mode ?
+    */
 
+   private FocusMode recordFocusMode = FocusMode.LAUNCHER;
    private Layer mainLayer;
    private ControllerHost host;
    private HardwareSurface surface;
@@ -28,6 +34,7 @@ public class OxygenProExtension extends ControllerExtension {
    public void init() {
       host = getHost();
       DebugOutOxy.registerHost(host);
+      initPreferences(host);
       final Context diContext = new Context(this);
       diContext.registerService(OxyConfig.class, config);
       surface = diContext.getService(HardwareSurface.class);
@@ -42,44 +49,58 @@ public class OxygenProExtension extends ControllerExtension {
       midiInKey.createNoteInput("MIDI", "8?????", "9?????", "A?????", "D?????");
 
       mainLayer = diContext.createLayer("MAIN");
-      initSysexMessages();
-      host.showPopupNotification("Oxygen Pro ");
-      DebugOutOxy.println(" >> OXY");
+      midiProcessor.initSysexMessages();
+      //host.showPopupNotification("Oxygen Pro started");
       initTransport(diContext);
       mainLayer.setIsActive(true);
+      midiProcessor.start();
       diContext.activate();
-   }
-
-   private void initSysexMessages() {
-      midiOut.sendSysex("F0 7E 7F 06 01 F7");
-//      midiOut.sendSysex("F0 00 01 05 7F 00 00 6D 00 01 02 F7"); // Changing to the Bitwig DAW-Program
-//      midiOut.sendSysex("F0 00 01 05 7F 00 00 6E 00 01 02 F7");
-//      midiOut.sendSysex("F0 00 01 05 7F 00 00 6E 00 01 07 F7");
-//      midiOut.sendSysex("F0 00 01 05 7F 00 00 6B 00 01 01 F7");
-//      midiOut.sendSysex("F0 00 01 05 7F 00 00 6C 00 01 03 F7"); // activate Light Control
-      sendOxyCommand(0x6D, 2);
-      sendOxyCommand(0x6E, 2);
-      sendOxyCommand(0x6E, 7);
-      sendOxyCommand(0x6B, 1);
-      sendOxyCommand(0x6C, 3);
-   }
-
-   private void sendOxyCommand(int commandId, int arg) {
-      String message = String.format(OXYGEN_SYSEX, commandId, arg);
-      midiOut.sendSysex(message);
    }
 
    void initTransport(Context diContext) {
       Transport transport = diContext.getService(Transport.class);
+      HwElements sessionLayer = diContext.getService(HwElements.class);
+      transport.isArrangerRecordEnabled().markInterested();
+      transport.isClipLauncherOverdubEnabled().markInterested();
       HwElements hwElements = diContext.getService(HwElements.class);
+      CcButton rewindButton = hwElements.getButton(OxygenCcAssignments.FAST_RWD);
+      rewindButton.bindRepeatHold(mainLayer, () -> transport.rewind());
+      CcButton forwardButton = hwElements.getButton(OxygenCcAssignments.FAST_FWD);
+      forwardButton.bindRepeatHold(mainLayer, () -> transport.fastForward());
 
       CcButton playButton = hwElements.getButton(OxygenCcAssignments.PLAY);
-      playButton.bindPressed(mainLayer, () -> {
-         transport.play();
+      playButton.bindPressed(mainLayer, transport.playAction());
+
+      CcButton stopButton = hwElements.getButton(OxygenCcAssignments.STOP);
+      stopButton.bindPressed(mainLayer, transport.stopAction());
+
+      CcButton loopButton = hwElements.getButton(OxygenCcAssignments.LOOP);
+      loopButton.bindPressed(mainLayer, transport.isArrangerLoopEnabled().toggleAction());
+
+      CcButton recButton = hwElements.getButton(OxygenCcAssignments.RECORD);
+      recButton.bindPressed(mainLayer, () -> {
+         if (recordFocusMode == FocusMode.LAUNCHER) {
+            transport.isClipLauncherOverdubEnabled().toggle();
+         } else {
+            transport.isArrangerRecordEnabled().toggle();
+         }
       });
 
+      CcButton shiftButton = hwElements.getButton(OxygenCcAssignments.SHIFT);
+      shiftButton.bindPressed(mainLayer, () -> hwElements.getShiftActive().set(true));
+      shiftButton.bindRelease(mainLayer, () -> hwElements.getShiftActive().set(false));
+      CcButton backButton = hwElements.getButton(OxygenCcAssignments.BACK);
+      backButton.bindPressed(mainLayer, () -> hwElements.getBackActive().set(true));
+      backButton.bindRelease(mainLayer, () -> hwElements.getBackActive().set(false));
    }
 
+   void initPreferences(final ControllerHost host) {
+      final Preferences preferences = host.getPreferences(); // THIS
+      final SettableEnumValue recordButtonAssignment = preferences.getEnumSetting("Record Button assignment", //
+         "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
+         recordFocusMode.getDescriptor());
+      recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));
+   }
 
    @Override
    public void exit() {

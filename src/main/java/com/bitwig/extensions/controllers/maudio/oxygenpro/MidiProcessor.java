@@ -11,6 +11,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MidiProcessor {
+   private static final String OXYGEN_SYSEX = "F0 00 01 05 7F 00 00 %02X 00 01 %02X F7";
+
    protected final MidiIn midiIn;
    protected final MidiOut midiOut;
    protected final Queue<TimedEvent> timedEvents = new ConcurrentLinkedQueue<>();
@@ -30,8 +32,7 @@ public class MidiProcessor {
    }
 
    public void start() {
-      //midiOut.sendSysex(DEVICE_INQUIRY);
-      //host.scheduleTask(this::handlePing, 50);
+      host.scheduleTask(this::handlePing, 50);
    }
 
    public void queueEvent(final TimedEvent event) {
@@ -60,6 +61,21 @@ public class MidiProcessor {
 
    public void sendMidi(final int status, final int val1, final int val2) {
       midiOut.sendMidi(status, val1, val2);
+   }
+
+
+   public void initSysexMessages() {
+      midiOut.sendSysex("F0 7E 7F 06 01 F7");
+      sendOxyCommand(0x6D, 2); // Bitwig
+      sendOxyCommand(0x6E, 2);
+      sendOxyCommand(0x6E, 7);
+      sendOxyCommand(0x6B, 1);
+      sendOxyCommand(0x6C, 3);
+   }
+
+   private void sendOxyCommand(int commandId, int arg) {
+      String message = String.format(OXYGEN_SYSEX, commandId, arg);
+      midiOut.sendSysex(message);
    }
 
 
