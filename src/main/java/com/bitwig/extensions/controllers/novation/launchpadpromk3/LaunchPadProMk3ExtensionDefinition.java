@@ -82,6 +82,11 @@ public class LaunchPadProMk3ExtensionDefinition extends ControllerExtensionDefin
    }
 
    @Override
+   public String getHelpFilePath() {
+      return "Controllers/Novation/Launchpad Pro Mk3.pdf";
+   }
+
+   @Override
    public LaunchpadProMk3ControllerExtension createInstance(final ControllerHost host) {
       return new LaunchpadProMk3ControllerExtension(this, host);
    }
