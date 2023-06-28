@@ -6,28 +6,24 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
-import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 import java.util.Arrays;
 import java.util.List;
 
 @Component
-public class SessionLayer {
-
-   private final Layer mainLayer;
+public class SessionLayer extends Layer {
 
    private final RgbColor[] slotColors = new RgbColor[16];
-   private final BooleanValueObject shiftActive;
    private final SceneBank sceneBank;
    private boolean overdubEnabled;
    private RgbColor trackColor = RgbColor.OFF;
    private final int numberOfTracks;
 
    public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl, Transport transport) {
+      super(layers, "SESSION_LAYER");
       Arrays.fill(slotColors, RgbColor.OFF);
 
       transport.isClipLauncherOverdubEnabled().addValueObserver(overdubEnabled -> this.overdubEnabled = overdubEnabled);
-      this.mainLayer = new Layer(layers, "SESSION_LAYER");
       TrackBank trackBank = viewControl.getMixerTrackBank();
       List<PadButton> gridButtons = hwElements.getPadButtons();
       trackBank.setShouldShowClipLauncherFeedback(true);
@@ -42,17 +38,22 @@ public class SessionLayer {
             int buttonIndex = sceneIndex * numberOfTracks + trackIndex;
             prepareSlot(slot, buttonIndex);
             PadButton button = gridButtons.get(buttonIndex);
-            button.bindLight(mainLayer, () -> this.getRgbState(track, slot, trackIndex, sceneIndex));
-            button.bindPressed(mainLayer, () -> this.handlePress(track, slot, trackIndex, sceneIndex));
+            button.bindLight(this, () -> this.getRgbState(track, slot, trackIndex, sceneIndex));
+            button.bindPressed(this, () -> this.handlePress(track, slot, trackIndex, sceneIndex));
          }
       }
       sceneBank = trackBank.sceneBank();
-      this.shiftActive = hwElements.getShiftActive();
-      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH1).bind(mainLayer, () -> sceneBank.getScene(0).launch());
-      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH2).bind(mainLayer, () -> sceneBank.getScene(1).launch());
-      hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindRepeatHold(mainLayer, () -> trackBank.scrollBackwards());
-      hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindRepeatHold(mainLayer, () -> trackBank.scrollForwards());
-      hwElements.bindEncoder(mainLayer, hwElements.getMainEncoder(), this::handleEncoder);
+      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH1).bind(this, () -> sceneBank.getScene(0).launch());
+      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH2).bind(this, () -> sceneBank.getScene(1).launch());
+      hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindRepeatHold(this, () -> trackBank.scrollBackwards());
+      hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindRepeatHold(this, () -> trackBank.scrollForwards());
+      hwElements.bindEncoder(this, hwElements.getMainEncoder(), this::handleEncoder);
+      hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindPressed(this, () -> {
+         DebugOutOxy.println(" ENC Pressed");
+      });
+      hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindRelease(this, () -> {
+         DebugOutOxy.println(" ENC Release");
+      });
    }
 
    private void handleEncoder(int dir) {
@@ -108,9 +109,8 @@ public class SessionLayer {
    }
 
    @Activate
-   public void onActivate() {
-      DebugOutOxy.println("ACTIVATE SESSION LAYER");
-      mainLayer.setIsActive(true);
+   public void doActivate() {
+      this.setIsActive(true);
    }
 
    private void prepareSlot(final ClipLauncherSlot slot, final int buttonIndex) {

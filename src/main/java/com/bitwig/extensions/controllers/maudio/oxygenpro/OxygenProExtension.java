@@ -90,8 +90,10 @@ public class OxygenProExtension extends ControllerExtension {
       shiftButton.bindPressed(mainLayer, () -> hwElements.getShiftActive().set(true));
       shiftButton.bindRelease(mainLayer, () -> hwElements.getShiftActive().set(false));
       CcButton backButton = hwElements.getButton(OxygenCcAssignments.BACK);
-      backButton.bindPressed(mainLayer, () -> hwElements.getBackActive().set(true));
-      backButton.bindRelease(mainLayer, () -> hwElements.getBackActive().set(false));
+
+      ModeLayer modeLayer = diContext.getService(ModeLayer.class);
+      backButton.bindPressed(mainLayer, () -> modeLayer.setIsActive(true));
+      backButton.bindRelease(mainLayer, () -> modeLayer.setIsActive(false));
    }
 
    void initPreferences(final ControllerHost host) {

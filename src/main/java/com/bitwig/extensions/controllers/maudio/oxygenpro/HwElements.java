@@ -15,7 +15,7 @@ import java.util.function.IntConsumer;
 
 @Component
 public class HwElements {
-   private static final int[] PAD_NOTE_NR = { //
+   public static final int[] PAD_NOTE_NR = { //
       0x28, 0x29, 0x2A, 0x2B, 0x30, 0x31, 0x32, 0x33,  //top Row
       0x24, 0x25, 0x26, 0x27, 0x2C, 0x2D, 0x2E, 0x2F //bottom row
    };
@@ -34,7 +34,6 @@ public class HwElements {
    private final RelativeHardwareKnob mainEncoder;
 
    private final BooleanValueObject shiftActive = new BooleanValueObject();
-   private final BooleanValueObject backActive = new BooleanValueObject();
 
    public HwElements(HardwareSurface surface, MidiProcessor midiProcessor, ControllerHost host, OxyConfig config) {
       this.host = host;
@@ -95,10 +94,6 @@ public class HwElements {
 
    public BooleanValueObject getShiftActive() {
       return shiftActive;
-   }
-
-   public BooleanValueObject getBackActive() {
-      return backActive;
    }
 
    public HardwareSlider getMasterSlider() {
