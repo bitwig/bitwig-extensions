@@ -447,7 +447,10 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          simpleLed.flush(sb);
 
       if (!sb.toString().isEmpty())
-         mMidiOut.sendSysex("F0 00 20 29 02 11 78 08 F7");
+      {
+         final String sysex = "F0 00 20 29 02 11 78 08" + sb + " F7";
+         mMidiOut.sendSysex(sysex);
+      }
    }
 
    protected void paintBottomButtons()
@@ -606,7 +609,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private final CursorRemoteControlsPage[] mTrackCursorDeviceRemoteControls = new CursorRemoteControlsPage[8];
    private final CursorRemoteControlsPage[] mTrackRemoteControls = new CursorRemoteControlsPage[8];
    private CursorRemoteControlsPage mProjectRemoteControlsCursor;
-   
+
    private boolean mIsDeviceOn = false;
    private boolean mIgnoreNextSysex = false;
    private TrackControl mTrackControl = TrackControl.Mute;
