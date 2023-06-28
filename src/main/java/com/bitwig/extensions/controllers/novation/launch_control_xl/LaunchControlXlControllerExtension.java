@@ -388,7 +388,24 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mSend2FullDeviceLayer.setIsActive(mode == Mode.Send2FullDevice);
       mSend2ProjectLayer.setIsActive(mode == Mode.Send2Project);
 
+      switch (mode)
+      {
+         case Send2FullDevice, Send2Project, Send2Device1, Send2Pan1 -> setSizeOfSendBank(2);
+         case Send3 -> setSizeOfSendBank(3);
+         case Send1Device2 -> setSizeOfSendBank(1);
+      }
+
       mHost.showPopupNotification(mode.getNotification());
+   }
+
+   private void setSizeOfSendBank(final int size)
+   {
+      for (int i = 0; i < 8; ++i)
+      {
+         final Track track = mTrackBank.getItemAt(i);
+         final SendBank sendBank = track.sendBank();
+         sendBank.setSizeOfBank(size);
+      }
    }
 
    private void onSysex(final String sysex)
