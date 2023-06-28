@@ -5,11 +5,13 @@ import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
 import com.bitwig.extensions.framework.time.TimedEvent;
 import com.bitwig.extensions.framework.values.Midi;
 
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -19,6 +21,7 @@ public class MidiProcessor {
    protected final MidiOut midiOut;
    protected final Queue<TimedEvent> timedEvents = new ConcurrentLinkedQueue<>();
    protected final ControllerHost host;
+   private final NoteInput noteInput;
    private int blinkState = 0;
 
 
@@ -26,8 +29,17 @@ public class MidiProcessor {
       this.host = host;
       this.midiIn = midiIn;
       this.midiOut = midiOut;
+      noteInput = midiIn.createNoteInput("MIDI", "80????", "90????", "A0????");
+      setupNoteInput();
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi0);
       midiIn.setSysexCallback(this::handleSysEx);
+   }
+
+   private void setupNoteInput() {
+      noteInput.setShouldConsumeEvents(false);
+      Integer[] noAssignTable = new Integer[128];
+      Arrays.fill(noAssignTable, Integer.valueOf(-1));
+      noteInput.setKeyTranslationTable(noAssignTable);
    }
 
    private void onMidi0(final ShortMidiMessage msg) {
@@ -36,7 +48,12 @@ public class MidiProcessor {
    }
 
    protected void handleSysEx(final String sysExString) {
-      DebugOutMk.println("SYSEX = %s", sysExString);
+      if (sysExString.equals("f000210917004d5000014601f7")) {
+         DebugOutMk.println(" HANDLE Return from Maschine");
+         // TODO Refresh all => MK3
+      } else {
+         DebugOutMk.println("SYSEX = %s", sysExString);
+      }
    }
 
    public void start() {
@@ -107,4 +124,7 @@ public class MidiProcessor {
       return RgbColor.of(blinkState % 8 == 0 ? onColor : offColor);
    }
 
+   public NoteInput getNoteInput() {
+      return noteInput;
+   }
 }

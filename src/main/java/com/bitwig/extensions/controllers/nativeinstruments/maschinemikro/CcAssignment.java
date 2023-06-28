@@ -9,7 +9,7 @@ public enum CcAssignment {
    RECORD(58), //
    RESTART(53), //
    ERASE(54), //
-   MACRO(43), //
+   TAP(55), //
    FOLLOW(56), //
 
    GROUP(34), //

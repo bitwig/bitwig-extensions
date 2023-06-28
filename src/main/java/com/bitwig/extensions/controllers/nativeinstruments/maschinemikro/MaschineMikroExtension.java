@@ -13,6 +13,7 @@ public class MaschineMikroExtension extends ControllerExtension {
    private final ControllerHost host;
    private HardwareSurface surface;
    private Layer mainLayer;
+   private Layer shiftLayer;
    private FocusMode recordFocusMode = FocusMode.LAUNCHER;
 
    protected MaschineMikroExtension(final ControllerExtensionDefinition definition, final ControllerHost host) {
@@ -34,6 +35,7 @@ public class MaschineMikroExtension extends ControllerExtension {
       diContext.registerService(MidiProcessor.class, midiProcessor);
       mainLayer = diContext.createLayer("MAIN");
       diContext.getService(ModifierLayer.class).init(mainLayer, diContext.getService(HwElements.class));
+      shiftLayer = diContext.createLayer("SHIFT");
       initTransport(diContext);
       mainLayer.setIsActive(true);
       DebugOutMk.println(" INIT MIKRO MK3");
@@ -45,9 +47,14 @@ public class MaschineMikroExtension extends ControllerExtension {
    private void initTransport(Context diContext) {
       Transport transport = diContext.getService(Transport.class);
       HwElements hwElements = diContext.getService(HwElements.class);
+      ModifierLayer modifierLayer = diContext.getService(ModifierLayer.class);
       transport.isPlaying().markInterested();
       transport.isArrangerRecordEnabled().markInterested();
       transport.isClipLauncherOverdubEnabled().markInterested();
+      transport.isMetronomeEnabled().markInterested();
+      transport.isArrangerLoopEnabled().markInterested();
+
+      modifierLayer.getShiftHeld().addValueObserver(shift -> shiftLayer.setIsActive(shift));
 
       hwElements.getButton(CcAssignment.PLAY).bindPressed(mainLayer, transport.playAction());
       hwElements.getButton(CcAssignment.PLAY).bindLight(mainLayer, transport.isPlaying());
@@ -55,6 +62,15 @@ public class MaschineMikroExtension extends ControllerExtension {
       hwElements.getButton(CcAssignment.RECORD).bindLight(mainLayer, () -> recordActive(transport));
       hwElements.getButton(CcAssignment.STOP).bindPressed(mainLayer, transport.stopAction());
       hwElements.getButton(CcAssignment.STOP).bindLightHeld(mainLayer);
+
+      hwElements.getButton(CcAssignment.TAP).bindPressed(mainLayer, transport.tapTempoAction());
+      hwElements.getButton(CcAssignment.TAP).bindLightHeld(mainLayer);
+      hwElements.getButton(CcAssignment.TAP).bindPressed(shiftLayer, transport.isMetronomeEnabled().toggleAction());
+      hwElements.getButton(CcAssignment.TAP).bindLight(shiftLayer, transport.isMetronomeEnabled());
+      hwElements.getButton(CcAssignment.RESTART)
+         .bindPressed(shiftLayer, transport.isArrangerLoopEnabled().toggleAction());
+      hwElements.getButton(CcAssignment.RESTART).bindLight(shiftLayer, transport.isArrangerLoopEnabled());
+
    }
 
    private void handleRecordButton(Transport transport) {
