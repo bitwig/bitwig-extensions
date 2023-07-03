@@ -36,4 +36,6 @@ public class RgbButton extends GateButton {
    public void bindLight(Layer layer, final Supplier<InternalHardwareLightState> supplier) {
       layer.bindLightState(supplier, this.light);
    }
+
+
 }

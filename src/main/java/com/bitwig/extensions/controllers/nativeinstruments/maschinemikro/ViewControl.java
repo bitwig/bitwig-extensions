@@ -14,12 +14,13 @@ public class ViewControl {
    private final PinnableCursorDevice cursorDevice;
    private final Clip cursorClip;
    private final MasterTrack masterTrack;
+   private final TrackBank groupTrackBank;
 
    public ViewControl(final ControllerHost host) {
       mixerTrackBank = host.createTrackBank(4, 1, 4);
+      groupTrackBank = host.createTrackBank(8, 2, 1);
       cursorTrack = host.createCursorTrack(1, 4);
-      masterTrack = host.createMasterTrack(4);
-
+      masterTrack = host.createMasterTrack(16);
 
       mixerTrackBank.followCursorTrack(cursorTrack);
       cursorClip = host.createLauncherCursorClip(16, 127);
@@ -33,6 +34,10 @@ public class ViewControl {
    void init() {
       cursorTrack.hasNext().markInterested();
       cursorTrack.hasPrevious().markInterested();
+   }
+
+   public TrackBank getGroupTrackBank() {
+      return groupTrackBank;
    }
 
    public MasterTrack getMasterTrack() {

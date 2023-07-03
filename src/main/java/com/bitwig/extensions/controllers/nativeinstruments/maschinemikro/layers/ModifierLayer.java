@@ -6,7 +6,7 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
 
-@Component
+@Component(priority = 2)
 public class ModifierLayer {
 
    private final BooleanValueObject shiftHeld = new BooleanValueObject();

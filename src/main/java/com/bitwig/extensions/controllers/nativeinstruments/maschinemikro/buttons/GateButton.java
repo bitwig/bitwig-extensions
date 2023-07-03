@@ -4,6 +4,7 @@ import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers.TrackLayer;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.time.TimeRepeatEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
@@ -11,6 +12,8 @@ import com.bitwig.extensions.framework.time.TimedEvent;
 public class GateButton {
    public static final int STD_REPEAT_DELAY = 400;
    public static final int STD_REPEAT_FREQUENCY = 50;
+   private static final Runnable DO_NOTHING = () -> {
+   };
 
    protected final MidiProcessor midiProcessor;
    protected HardwareButton hwButton;
@@ -21,6 +24,11 @@ public class GateButton {
    protected GateButton(int midiId, MidiProcessor midiProcessor) {
       this.midiId = midiId;
       this.midiProcessor = midiProcessor;
+   }
+
+   public void bindEmptyAction(TrackLayer layer) {
+      layer.bind(hwButton, hwButton.pressedAction(), DO_NOTHING);
+      layer.bind(hwButton, hwButton.releasedAction(), DO_NOTHING);
    }
 
    public void bind(final Layer layer, final Runnable action) {

@@ -48,18 +48,36 @@ public class MaschineMikroExtension extends ControllerExtension {
       Transport transport = diContext.getService(Transport.class);
       HwElements hwElements = diContext.getService(HwElements.class);
       ModifierLayer modifierLayer = diContext.getService(ModifierLayer.class);
+      FocusClip focusClip = diContext.getService(FocusClip.class);
+
       transport.isPlaying().markInterested();
       transport.isArrangerRecordEnabled().markInterested();
       transport.isClipLauncherOverdubEnabled().markInterested();
       transport.isMetronomeEnabled().markInterested();
       transport.isArrangerLoopEnabled().markInterested();
+      transport.isClipLauncherAutomationWriteEnabled().markInterested();
+      transport.isArrangerAutomationWriteEnabled().markInterested();
 
       modifierLayer.getShiftHeld().addValueObserver(shift -> shiftLayer.setIsActive(shift));
 
       hwElements.getButton(CcAssignment.PLAY).bindPressed(mainLayer, transport.playAction());
       hwElements.getButton(CcAssignment.PLAY).bindLight(mainLayer, transport.isPlaying());
-      hwElements.getButton(CcAssignment.RECORD).bindPressed(mainLayer, () -> handleRecordButton(transport));
+
+      hwElements.getButton(CcAssignment.RECORD).bindPressed(mainLayer, () -> handleRecordButton(transport, focusClip));
       hwElements.getButton(CcAssignment.RECORD).bindLight(mainLayer, () -> recordActive(transport));
+      hwElements.getButton(CcAssignment.RECORD).bindPressed(shiftLayer, () -> handleRecordButton(transport));
+      hwElements.getButton(CcAssignment.RECORD).bindLight(shiftLayer, () -> recordActive(transport));
+
+      hwElements.getButton(CcAssignment.AUTO)
+         .bindPressed(mainLayer, () -> transport.isClipLauncherAutomationWriteEnabled().toggle());
+      hwElements.getButton(CcAssignment.AUTO)
+         .bindLight(mainLayer, () -> transport.isClipLauncherAutomationWriteEnabled().get());
+
+      hwElements.getButton(CcAssignment.AUTO)
+         .bindPressed(shiftLayer, () -> transport.isArrangerAutomationWriteEnabled().toggle());
+      hwElements.getButton(CcAssignment.AUTO)
+         .bindLight(shiftLayer, () -> transport.isArrangerAutomationWriteEnabled().get());
+
       hwElements.getButton(CcAssignment.STOP).bindPressed(mainLayer, transport.stopAction());
       hwElements.getButton(CcAssignment.STOP).bindLightHeld(mainLayer);
 
@@ -73,11 +91,15 @@ public class MaschineMikroExtension extends ControllerExtension {
 
    }
 
+   private void handleRecordButton(Transport transport, FocusClip focusClip) {
+      focusClip.invokeRecord();
+   }
+
    private void handleRecordButton(Transport transport) {
       if (recordFocusMode == FocusMode.LAUNCHER) {
          transport.isClipLauncherOverdubEnabled().toggle();
       } else {
-         transport.isArrangerRecordEnabled().toggle();
+         transport.isClipLauncherOverdubEnabled().toggle();
       }
    }
 
