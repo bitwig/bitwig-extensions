@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.maudio.oxygenpro.control;
 
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.time.TimeRepeatEvent;
@@ -29,6 +30,11 @@ public abstract class OxygenButton {
    public void bind(final Layer layer, final Runnable action) {
       layer.bind(hwButton, hwButton.pressedAction(), action);
       layer.bind(hwButton, hwButton.releasedAction(), action);
+   }
+
+   public void bind(final Layer layer, final SettableBooleanValue value) {
+      layer.bind(hwButton, hwButton.pressedAction(), () -> value.set(true));
+      layer.bind(hwButton, hwButton.releasedAction(), () -> value.set(false));
    }
 
    public void bindPressed(final Layer layer, final Runnable action) {

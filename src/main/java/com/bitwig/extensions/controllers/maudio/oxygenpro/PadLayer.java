@@ -1,19 +1,21 @@
 package com.bitwig.extensions.controllers.maudio.oxygenpro;
 
-import com.bitwig.extension.controller.api.DrumPad;
-import com.bitwig.extension.controller.api.DrumPadBank;
-import com.bitwig.extension.controller.api.NoteInput;
-import com.bitwig.extension.controller.api.PlayingNote;
+import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.PadButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.values.BooleanValueObject;
+import com.bitwig.extensions.framework.values.PadScaleHandler;
+import com.bitwig.extensions.framework.values.Scale;
 
 import java.util.Arrays;
 import java.util.List;
 
 @Component
 public class PadLayer extends Layer {
+   private final int nrOfPads;
+   private final PadScaleHandler scaleHandler;
    private boolean hasDrumPads = true;
    private final RgbColor[] slotColors = new RgbColor[16];
    private final NoteInput noteInput;
@@ -21,25 +23,31 @@ public class PadLayer extends Layer {
    private RgbColor cursorTrackColor;
    private int padOffset = 36;
    protected final int[] noteToPad = new int[128];
-   private final boolean[] isSelected = new boolean[16];
-   protected final Integer[] deactivationTable = new Integer[128];
-   protected final boolean[] playing = new boolean[16];
-   protected final Integer[] noteTable = new Integer[128];
+   private final Integer[] noteTable = new Integer[128];
 
-   public PadLayer(Layers layers, HwElements hwElements, ViewControl viewControl, MidiProcessor midiProcessor) {
+   private final boolean[] isSelected = new boolean[16];
+   private final boolean[] isBaseNote = new boolean[16];
+   private final boolean[] playing = new boolean[16];
+   private final boolean[] assigned = new boolean[16];
+
+   private BooleanValueObject encoderPressed = new BooleanValueObject();
+
+   public PadLayer(Layers layers, HwElements hwElements, ViewControl viewControl, MidiProcessor midiProcessor,
+                   OxyConfig config, ControllerHost host) {
       super(layers, "PAD_LAYER");
+      nrOfPads = config.getNumberOfControls() * 2;
+      scaleHandler = new PadScaleHandler(host,
+         List.of(Scale.CHROMATIC, Scale.MAJOR, Scale.MINOR, Scale.PENTATONIC, Scale.PENTATONIC_MINOR), nrOfPads, true);
+      scaleHandler.addStateChangedListener(this::handleScaleChange);
       Arrays.fill(slotColors, RgbColor.OFF);
-      Arrays.fill(deactivationTable, Integer.valueOf(-1));
       Arrays.fill(noteTable, Integer.valueOf(-1));
       Arrays.fill(noteToPad, Integer.valueOf(-1));
-      Arrays.fill(playing, false);
       this.noteInput = midiProcessor.getMidiIn().createNoteInput("PAD CONTROL");
       this.noteInput.setKeyTranslationTable(noteTable);
-      drumPadBank = viewControl.getPrimaryDevice().createDrumPadBank(16);
+      drumPadBank = viewControl.getPrimaryDevice().createDrumPadBank(nrOfPads);
       viewControl.getCursorTrack().color().addValueObserver((r, g, b) -> cursorTrackColor = RgbColor.toColor(r, g, b));
-      DebugOutOxy.println(" Activate PADS FOR OXY");
       drumPadBank.setIndication(true);
-      viewControl.getPrimaryDevice().hasDrumPads().addValueObserver(hasPads -> this.hasDrumPads = hasPads);
+      viewControl.getPrimaryDevice().hasDrumPads().addValueObserver(this::handleHasDrumPadsChanged);
 
       drumPadBank.scrollPosition().addValueObserver(scrollPos -> {
          padOffset = scrollPos;
@@ -47,7 +55,7 @@ public class PadLayer extends Layer {
          applyScale();
       });
       List<PadButton> padButtons = hwElements.getPadButtons();
-      for (int i = 0; i < 16; i++) {
+      for (int i = 0; i < nrOfPads; i++) {
          PadButton button = padButtons.get(i);
          final int drumPadIndex = toLayout(i); //  (1 - (i / 8)) * 8 + i % 8;
          final DrumPad pad = drumPadBank.getItemAt(drumPadIndex);
@@ -55,12 +63,53 @@ public class PadLayer extends Layer {
          button.bindLight(this, () -> computeGridLedState(drumPadIndex, pad));
       }
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
+      hwElements.bindEncoder(this, hwElements.getMainEncoder(), this::handleEncoder);
+      hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bind(this, encoderPressed);
+   }
+
+   private void handleHasDrumPadsChanged(boolean hasDrumPads) {
+      this.hasDrumPads = hasDrumPads;
+      if (isActive()) {
+         applyScale();
+      }
+   }
+
+   private void handleScaleChange() {
+      if (isActive() && !hasDrumPads) {
+         applyScale();
+      }
+   }
+
+   private void handleEncoder(int dir) {
+      if (hasDrumPads) {
+         drumPadBank.scrollBy(-4 * dir);
+      } else {
+         if (encoderPressed.get()) {
+            scaleHandler.incScaleSelection(dir);
+         } else {
+            scaleHandler.incrementNoteOffset(dir);
+         }
+      }
    }
 
    private int toLayout(int padIndex) {
-      final int col = padIndex % 8 / 4;
-      final int row = (1 - (padIndex / 8));
-      return row * 4 + padIndex % 4 + col * 8;
+      if (nrOfPads > 8) {
+         final int col = padIndex % 8 / 4;
+         final int row = (1 - (padIndex / 8));
+         return row * 4 + padIndex % 4 + col * 8;
+      } else {
+         return (1 - (padIndex / 4)) * 4 + padIndex % 4;
+      }
+   }
+
+   private int toNoteLayout(int padIndex) {
+      if (nrOfPads > 8) {
+         final int col = padIndex % 8;
+         final int row = (1 - (padIndex / 8));
+         return row * 8 + col;
+      } else {
+         return (1 - (padIndex / 4)) * 4 + padIndex % 4;
+      }
    }
 
    private void setUpPad(int index, DrumPad pad) {
@@ -87,18 +136,24 @@ public class PadLayer extends Layer {
          if (playing[index]) {
             return RgbColor.WHITE;
          }
-//         if (isSelected[index]) {
-//            return color;
-//         }
-         return color; // TO this need to be done with lookup table
+         return color;
       } else {
-         return RgbColor.OFF;
+         if (playing[index]) {
+            return RgbColor.WHITE;
+         }
+         if (isBaseNote[index]) {
+            return RgbColor.GREEN;
+         }
+         if (!assigned[index]) {
+            return RgbColor.OFF;
+         }
+         return cursorTrackColor;
       }
    }
 
    private void handleNotePlaying(PlayingNote[] notes) {
       if (isActive()) {
-         for (int i = 0; i < 16; i++) {
+         for (int i = 0; i < nrOfPads; i++) {
             playing[i] = false;
          }
          for (final PlayingNote playingNote : notes) {
@@ -117,7 +172,7 @@ public class PadLayer extends Layer {
    }
 
    private int getSelectedIndex() {
-      for (int i = 0; i < 16; i++) {
+      for (int i = 0; i < nrOfPads; i++) {
          if (isSelected[i]) {
             return i;
          }
@@ -130,10 +185,33 @@ public class PadLayer extends Layer {
          return;
       }
       Arrays.fill(noteToPad, -1);
-      for (int i = 0; i < 16; i++) {
-         final int drumPadIndex = toLayout(i);
-         noteTable[HwElements.PAD_NOTE_NR[i]] = padOffset + drumPadIndex;
-         noteToPad[padOffset + drumPadIndex] = drumPadIndex;
+      if (hasDrumPads) {
+         for (int i = 0; i < nrOfPads; i++) {
+            final int drumPadIndex = toLayout(i);
+            noteTable[HwElements.PAD_NOTE_NR[i]] = padOffset + drumPadIndex;
+            noteToPad[padOffset + drumPadIndex] = drumPadIndex;
+            assigned[i] = true;
+         }
+      } else {
+         final int startNote = scaleHandler.getStartNote(); //baseNote;
+         final int[] intervals = scaleHandler.getCurrentScale().getIntervals();
+         for (int i = 0; i < nrOfPads; i++) {
+            final int drumPadIndex = toNoteLayout(i);
+            final int index = drumPadIndex % intervals.length;
+            final int oct = drumPadIndex / intervals.length;
+            int note = startNote + intervals[index] + 12 * oct;
+            note = note < 0 || note > 127 ? -1 : note;
+            if (note < 0 || note > 127) {
+               noteTable[HwElements.PAD_NOTE_NR[i]] = -1;
+               isBaseNote[drumPadIndex] = false;
+               assigned[drumPadIndex] = false;
+            } else {
+               noteTable[HwElements.PAD_NOTE_NR[i]] = note;
+               noteToPad[note] = toLayout(i);
+               isBaseNote[drumPadIndex] = note % 12 == scaleHandler.getBaseNote();
+               assigned[drumPadIndex] = true;
+            }
+         }
       }
       noteInput.setKeyTranslationTable(noteTable);
    }

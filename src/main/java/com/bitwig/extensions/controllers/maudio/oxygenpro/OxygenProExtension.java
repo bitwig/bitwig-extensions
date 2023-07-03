@@ -46,7 +46,7 @@ public class OxygenProExtension extends ControllerExtension {
       MidiProcessor midiProcessor = new MidiProcessor(host, midiIn, midiOut);
       diContext.registerService(MidiProcessor.class, midiProcessor);
 
-      midiInKey.createNoteInput("MIDI", "8?????", "9?????", "A?????", "D?????");
+      midiInKey.createNoteInput("MIDI", "8?????", "9?????", "A?????", "D?????", "B?????", "E?????");
 
       mainLayer = diContext.createLayer("MAIN");
       midiProcessor.initSysexMessages();
