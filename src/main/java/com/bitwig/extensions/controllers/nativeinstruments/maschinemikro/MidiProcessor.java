@@ -29,7 +29,7 @@ public class MidiProcessor {
       this.host = host;
       this.midiIn = midiIn;
       this.midiOut = midiOut;
-      noteInput = midiIn.createNoteInput("MIDI", "80????", "90????", "A0????");
+      noteInput = midiIn.createNoteInput("MIDI", "80????", "90????", "A?????");
       setupNoteInput();
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi0);
       midiIn.setSysexCallback(this::handleSysEx);

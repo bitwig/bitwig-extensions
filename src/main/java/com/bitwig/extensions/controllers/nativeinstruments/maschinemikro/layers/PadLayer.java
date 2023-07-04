@@ -3,10 +3,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbColor;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -22,6 +19,7 @@ import java.util.List;
 public class PadLayer extends Layer {
    private final DrumPadBank drumPadBank;
    private final PadScaleHandler scaleHandler;
+   private final Arpeggiator arp;
    private boolean hasDrumPads = true;
    private BooleanValueObject inDrumMode = new BooleanValueObject();
    private final NoteInput noteInput;
@@ -30,7 +28,9 @@ public class PadLayer extends Layer {
    private final Layer soloLayer;
    private final Layer eraseLayer;
    private int padOffset = 36;
+   private int currentArpRate = 2;
 
+   private final double[] arpRateTable = {0.0625, 0.125, 0.25, 0.5, 1.0, 2.0, 4.0};
    protected final int[] noteToPad = new int[128];
    protected final Integer[] deactivationTable = new Integer[128];
    private final Integer[] noteTable = new Integer[128];
@@ -47,8 +47,10 @@ public class PadLayer extends Layer {
       this.noteInput = midiProcessor.getNoteInput();
       scaleHandler = new PadScaleHandler(host,
          List.of(Scale.CHROMATIC, Scale.MAJOR, Scale.MINOR, Scale.PENTATONIC, Scale.PENTATONIC_MINOR, Scale.DORIAN,
-            Scale.MIXOLYDIAN, Scale.LOCRIAN, Scale.LOCRIAN), 16, true);
+            Scale.MIXOLYDIAN, Scale.LOCRIAN, Scale.LYDIAN, Scale.PHRYGIAN), 16, true);
       scaleHandler.addStateChangedListener(this::handleScaleChange);
+      arp = noteInput.arpeggiator();
+      initArp();
 
       muteLayer = new Layer(layers, "Drum-mute");
       soloLayer = new Layer(layers, "Drum-solo");
@@ -80,6 +82,21 @@ public class PadLayer extends Layer {
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
    }
 
+   private void initArp() {
+      arp.usePressureToVelocity().markInterested();
+      arp.usePressureToVelocity().set(true);
+      arp.octaves().markInterested();
+      arp.rate().markInterested();
+      arp.mode().markInterested();
+      arp.rate().set(arpRateTable[currentArpRate]);
+
+      final EnumDefinition modes = arp.mode().enumDefinition();
+      for (int i = 0; i < modes.getValueCount(); i++) {
+         final EnumValueDefinition valDef = modes.valueDefinitionAt(i);
+         DebugOutMk.println("ARP MODES=%s", valDef.getId());
+      }
+   }
+
    public BooleanValueObject getInDrumMode() {
       return inDrumMode;
    }
@@ -89,6 +106,26 @@ public class PadLayer extends Layer {
       selectPad(getSelectedIndex());
       if (isActive()) {
          applyScale();
+      }
+   }
+
+   public void enableNoteRepeat(boolean noteRepeatActive) {
+      if (noteRepeatActive) { // arp.mode()
+         if (inDrumMode.get()) {
+            arp.mode().set("all"); // that's the note repeat way
+            arp.octaves().set(0);
+            arp.humanize().set(0);
+            arp.isFreeRunning().set(false);
+         } else {
+            arp.octaves().set(0);
+            arp.humanize().set(0);
+            arp.isFreeRunning().set(false);
+            arp.mode().set("up");
+         }
+         arp.rate().set(arpRateTable[currentArpRate]);
+         arp.isEnabled().set(true);
+      } else {
+         arp.isEnabled().set(false);
       }
    }
 

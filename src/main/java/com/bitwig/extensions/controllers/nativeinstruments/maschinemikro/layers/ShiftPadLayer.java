@@ -32,7 +32,6 @@ public class ShiftPadLayer extends Layer {
    }
 
    private void doShiftDownAction(int index) {
-      DebugOutMk.println(" SHIFT " + index);
       switch (index) {
          case 0, 2:
             application.undo();

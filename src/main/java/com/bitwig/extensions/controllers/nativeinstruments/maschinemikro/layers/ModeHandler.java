@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers;
 
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.DebugOutMk;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -16,6 +17,7 @@ public class ModeHandler extends Layer {
    private final PadLayer drumPadLayer;
    private final ShiftPadLayer shiftPadLayer;
    private final TrackLayer trackLayer;
+   private EncoderLayer encoderLayer;
    private Layer activeLayer;
 
    private enum Mode {
@@ -23,7 +25,8 @@ public class ModeHandler extends Layer {
       SCENE,
       PADS(true),
       GROUP,
-      KEYS(true);
+      KEYS(true),
+      NOTE_REPEAT(true);
       private boolean keyMode;
 
       private Mode(boolean keyMode) {
@@ -41,6 +44,7 @@ public class ModeHandler extends Layer {
 
    private Mode currentMode = Mode.LAUNCHER;
    private Mode stashedMode = currentMode;
+   private EncoderMode encoderMode = EncoderMode.NONE;
 
    public ModeHandler(Layers layers, HwElements hwElements, SessionLayer sessionLayer, PadLayer drumPadLayer,
                       ShiftPadLayer shiftPadLayer, TrackLayer trackLayer, ModifierLayer modifierLayer) {
@@ -51,13 +55,29 @@ public class ModeHandler extends Layer {
       this.trackLayer = trackLayer;
       bindModeButton(hwElements, CcAssignment.PATTERN, Mode.LAUNCHER);
       bindModeButton(hwElements, CcAssignment.SCENE, Mode.SCENE);
-      bindKeyModeButton(hwElements, CcAssignment.KEYBOARD, Mode.KEYS,
-         () -> currentMode == Mode.PADS && !drumPadLayer.getInDrumMode().get());
-      bindKeyModeButton(hwElements, CcAssignment.PAD_MODE, Mode.PADS,
-         () -> currentMode == Mode.PADS && drumPadLayer.getInDrumMode().get());
+      bindKeyModeButton(hwElements, CcAssignment.KEYBOARD, Mode.KEYS, () -> keyboardModeActive(drumPadLayer));
+      bindKeyModeButton(hwElements, CcAssignment.PAD_MODE, Mode.PADS, () -> padModeActive(drumPadLayer));
+      bindMomentaryModeButton(hwElements, CcAssignment.NOTE_REPEAT, Mode.NOTE_REPEAT);
       bindMomentaryModeButton(hwElements, CcAssignment.GROUP, Mode.GROUP);
+
+      bindEncoderMode(hwElements, CcAssignment.VOLUME, EncoderMode.VOLUME);
+      bindEncoderMode(hwElements, CcAssignment.SWING, EncoderMode.SWING);
+      bindEncoderMode(hwElements, CcAssignment.TEMPO, EncoderMode.TEMPO);
       modifierLayer.getShiftHeld().addValueObserver(this::handleShiftPressed);
       activeLayer = sessionLayer;
+   }
+
+   public void setEncoderLayer(EncoderLayer encoderLayer) {
+      DebugOutMk.println(" Setting Encoder Layer");
+      this.encoderLayer = encoderLayer;
+   }
+
+   private boolean keyboardModeActive(PadLayer drumPadLayer) {
+      return (currentMode == Mode.PADS || currentMode == Mode.NOTE_REPEAT) && !drumPadLayer.getInDrumMode().get();
+   }
+
+   private boolean padModeActive(PadLayer drumPadLayer) {
+      return (currentMode == Mode.PADS || currentMode == Mode.NOTE_REPEAT) && drumPadLayer.getInDrumMode().get();
    }
 
    private void handleShiftPressed(boolean shiftActive) {
@@ -77,6 +97,28 @@ public class ModeHandler extends Layer {
       hwElements.getButton(assignment).bindPressed(this, () -> pressModeMomentary(mode));
       hwElements.getButton(assignment).bindRelease(this, () -> releaseModeMomentary(mode));
       hwElements.getButton(assignment).bindLight(this, () -> currentMode == mode);
+   }
+
+   private void bindEncoderMode(HwElements hwElements, CcAssignment assignment, EncoderMode mode) {
+      hwElements.getButton(assignment).bindPressed(this, () -> pressEncoderMode(mode));
+      hwElements.getButton(assignment).bindRelease(this, () -> releaseEncoderMode(mode));
+      hwElements.getButton(assignment).bindLight(this, () -> encoderMode == mode);
+   }
+
+   private void releaseEncoderMode(EncoderMode mode) {
+   }
+
+   private void pressEncoderMode(EncoderMode mode) {
+      if (encoderMode == EncoderMode.NONE) {
+         encoderMode = mode;
+      } else {
+         if (mode == encoderMode) {
+            encoderMode = EncoderMode.NONE;
+         } else {
+            encoderMode = mode;
+         }
+      }
+      encoderLayer.setMode(encoderMode);
    }
 
    private void pressModeMomentary(Mode mode) {
@@ -114,8 +156,9 @@ public class ModeHandler extends Layer {
    private void pressMode(Mode newMode) {
       if (newMode != currentMode) {
          activeLayer.setIsActive(false);
-         if (newMode == Mode.PADS || newMode == Mode.KEYS) {
+         if (newMode == Mode.PADS || newMode == Mode.KEYS || newMode == Mode.NOTE_REPEAT) {
             activeLayer = drumPadLayer;
+            drumPadLayer.enableNoteRepeat(newMode == Mode.NOTE_REPEAT);
          } else if (newMode == Mode.LAUNCHER) {
             activeLayer = sessionLayer;
          } else if (newMode == Mode.GROUP) {

@@ -3,6 +3,8 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers.EncoderLayer;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers.ModeHandler;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers.ModifierLayer;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
@@ -37,6 +39,7 @@ public class MaschineMikroExtension extends ControllerExtension {
       diContext.getService(ModifierLayer.class).init(mainLayer, diContext.getService(HwElements.class));
       shiftLayer = diContext.createLayer("SHIFT");
       initTransport(diContext);
+      diContext.getService(ModeHandler.class).setEncoderLayer(diContext.getService(EncoderLayer.class));
       mainLayer.setIsActive(true);
       DebugOutMk.println(" INIT MIKRO MK3");
 

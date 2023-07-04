@@ -104,6 +104,7 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Mod">
+        <disabled />
         <controller>50</controller>
         <channel>0</channel>
         <off>0</off>
@@ -151,6 +152,7 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Notes">
+        <disabled />
         <controller>52</controller>
         <channel>0</channel>
         <off>0</off>
@@ -175,6 +177,7 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Perform">
+        <disabled />
         <controller>51</controller>
         <channel>0</channel>
         <off>0</off>
@@ -183,6 +186,7 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Pitch">
+        <disabled />
         <controller>49</controller>
         <channel>0</channel>
         <off>0</off>
