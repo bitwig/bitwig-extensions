@@ -6,7 +6,6 @@ import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.framework.values.Midi;
 
 import java.util.function.BooleanSupplier;
 
@@ -26,7 +25,7 @@ public class CcButton extends GateButton {
       hwButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(channel, midiId, 0));
       light = surface.createOnOffHardwareLight(name + "_LIGHT_" + midiId);
       hwButton.isPressed().markInterested();
-      light.onUpdateHardware(() -> midiProcessor.sendMidi(Midi.CC, midiId, light.isOn().currentValue() ? 127 : 0));
+      light.onUpdateHardware(() -> midiProcessor.sendMidiCC(midiId, light.isOn().currentValue() ? 127 : 0));
    }
 
    public void bindLight(Layer layer, BooleanSupplier state) {

@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
@@ -18,6 +19,11 @@ import java.util.List;
 
 @Component
 public class PadLayer extends Layer {
+
+   private static final RgbColor MUTE_COLOR = RgbColor.of(Colors.ORANGE);
+   private static final RgbColor SOLO_COLOR = RgbColor.of(Colors.YELLOW);
+   private static final RgbColor SOLO_PLAY_COLOR = RgbColor.of(Colors.WARM_YELLOW);
+
    private final DrumPadBank drumPadBank;
    private final PadScaleHandler scaleHandler;
    private final Arpeggiator arp;
@@ -27,12 +33,11 @@ public class PadLayer extends Layer {
    private RgbColor cursorTrackColor;
    private final Layer muteLayer;
    private final Layer soloLayer;
-   private final Layer eraseLayer;
    private int padOffset = 36;
    private int currentArpRate = 2;
 
    private final double[] arpRateTable = {0.0625, 0.125, 0.25, 0.5, 1.0, 2.0, 4.0};
-   private final String[] rateDisplayValues = { "1/64", "1/32", "1/16", "1/8", "1/4", "1/2", "1/1" };
+   private final String[] rateDisplayValues = {"1/64", "1/32", "1/16", "1/8", "1/4", "1/2", "1/1"};
    private SettableEnumValue arpRate;
    private boolean noteRepeatActive;
    private SettableEnumValue arpMode;
@@ -45,9 +50,10 @@ public class PadLayer extends Layer {
    private final boolean[] playing = new boolean[16];
    private final boolean[] assigned = new boolean[16];
    private final RgbColor[] padColors = new RgbColor[16];
+   private MuteSoloMode muteSoloMode = MuteSoloMode.NONE;
 
    public PadLayer(Layers layers, HwElements hwElements, ViewControl viewControl, ModifierLayer modifierLayer,
-                   MidiProcessor midiProcessor, ControllerHost host) {
+                   MidiProcessor midiProcessor, ControllerHost host, FocusClip focusClip) {
       super(layers, "PAD_LAYER");
       this.noteInput = midiProcessor.getNoteInput();
       scaleHandler = new PadScaleHandler(host,
@@ -59,19 +65,17 @@ public class PadLayer extends Layer {
 
       muteLayer = new Layer(layers, "Drum-mute");
       soloLayer = new Layer(layers, "Drum-solo");
-      eraseLayer = new Layer(layers, "Drum-erase");
 
       Arrays.fill(padColors, RgbColor.OFF);
-      Arrays.fill(deactivationTable, Integer.valueOf(-1));
-      Arrays.fill(noteTable, Integer.valueOf(-1));
-      Arrays.fill(noteToPad, Integer.valueOf(-1));
+      Arrays.fill(deactivationTable, -1);
+      Arrays.fill(noteTable, -1);
+      Arrays.fill(noteToPad, -1);
 
       drumPadBank = viewControl.getPrimaryDevice().createDrumPadBank(16);
       viewControl.getCursorTrack().color().addValueObserver((r, g, b) -> cursorTrackColor = RgbColor.toColor(r, g, b));
       viewControl.getPrimaryDevice().hasDrumPads().addValueObserver(this::handleHasDrumPadsChanged);
 
       drumPadBank.setIndication(true);
-
       drumPadBank.scrollPosition().addValueObserver(this::handlePadBankScrolling);
 
       List<RgbButton> padButtons = hwElements.getPadButtons();
@@ -81,18 +85,48 @@ public class PadLayer extends Layer {
          final DrumPad pad = drumPadBank.getItemAt(drumPadIndex);
          setUpPad(drumPadIndex, pad);
          button.bindLight(this, () -> computeGridLedState(drumPadIndex, pad));
+
+         button.bindPressed(muteLayer, () -> handleMute(drumPadIndex, pad));
+         button.bindLight(muteLayer, () -> muteModeLedState(drumPadIndex, pad));
+
+         button.bindPressed(soloLayer, () -> handleSolo(drumPadIndex, pad));
+         button.bindLight(soloLayer, () -> soloLedState(drumPadIndex, pad));
+
       }
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(dir));
       hwElements.getButton(CcAssignment.ENCODER_PRESS).bindPressed(this, () -> handleEncoderPress(true));
       hwElements.getButton(CcAssignment.ENCODER_PRESS).bindRelease(this, () -> handleEncoderPress(false));
-   
+
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
    }
-   
+
+   public void setMutSoloMode(MuteSoloMode muteSoloMode) {
+      this.muteSoloMode = muteSoloMode;
+      if (isActive() && inDrumMode.get()) {
+         if (this.muteSoloMode == MuteSoloMode.NONE) {
+            muteLayer.setIsActive(false);
+            soloLayer.setIsActive(false);
+            setNotesActive(true);
+         } else {
+            setNotesActive(false);
+            muteLayer.setIsActive(muteSoloMode == MuteSoloMode.MUTE);
+            soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO);
+         }
+      }
+   }
+
+   private void handleMute(int drumPadIndex, DrumPad pad) {
+      pad.mute().toggle();
+   }
+
+   private void handleSolo(int drumPadIndex, DrumPad pad) {
+      pad.solo().toggle(true);
+   }
+
    private void handleEncoderPress(final boolean press) {
       // TODO Arp Type
    }
-   
+
    private void initArp(ControllerHost host) {
       arp.usePressureToVelocity().markInterested();
       arp.usePressureToVelocity().set(true);
@@ -105,39 +139,39 @@ public class PadLayer extends Layer {
       final EnumDefinition modes = arp.mode().enumDefinition();
       for (int i = 0; i < modes.getValueCount(); i++) {
          final EnumValueDefinition valDef = modes.valueDefinitionAt(i);
-         arpModes.add(valDef.getId().replace("_","-"));
+         arpModes.add(valDef.getId().replace("_", "-"));
       }
       DocumentState documentState = host.getDocumentState();
-   
+
       arpRate = documentState.getEnumSetting("Arp/Note Repeat Rate", //
-          "Arp/Note Repeat", rateDisplayValues, rateDisplayValues[currentArpRate]);
+         "Arp/Note Repeat", rateDisplayValues, rateDisplayValues[currentArpRate]);
       arpRate.addValueObserver(this::handleArpRateChanged);
       arpMode = documentState.getEnumSetting("Arp/Note Repeat Mode", //
-          "Arp/Note Repeat", arpModes.stream().toArray(String[]::new), arpModes.get(1));
-      arpMode.addValueObserver(mode ->this.handleArpModeChanged(mode, arpModes));
+         "Arp/Note Repeat", arpModes.stream().toArray(String[]::new), arpModes.get(1));
+      arpMode.addValueObserver(mode -> this.handleArpModeChanged(mode, arpModes));
    }
-   
+
    private void handleArpModeChanged(final String mode, List<String> arpModes) {
       int index = arpModes.indexOf(mode);
-      if(index != -1) {
+      if (index != -1) {
          arp.mode().set(arpModes.get(index));
       }
    }
-   
+
    private void handleArpRateChanged(final String rate) {
       int index = -1;
-      for(int i=0;i<rateDisplayValues.length;i++) {
-         if(rateDisplayValues[i].equals(rate)) {
+      for (int i = 0; i < rateDisplayValues.length; i++) {
+         if (rateDisplayValues[i].equals(rate)) {
             index = i;
             break;
          }
       }
-      if(index != -1) {
+      if (index != -1) {
          currentArpRate = index;
          arp.rate().set(arpRateTable[currentArpRate]);
       }
    }
-   
+
    public BooleanValueObject getInDrumMode() {
       return inDrumMode;
    }
@@ -172,9 +206,9 @@ public class PadLayer extends Layer {
    }
 
    private void handleEncoder(int dir) {
-      if(noteRepeatActive) {
+      if (noteRepeatActive) {
          int newRate = currentArpRate - dir;
-         if(newRate >= 0 && newRate < arpRateTable.length) {
+         if (newRate >= 0 && newRate < arpRateTable.length) {
             currentArpRate = newRate;
             arpRate.set(rateDisplayValues[currentArpRate]);
          }
@@ -193,7 +227,7 @@ public class PadLayer extends Layer {
       this.hasDrumPads = hasDrumPads;
       inDrumMode.set(hasDrumPads);
       if (isActive()) {
-         applyScale();
+         applyMode();
       }
    }
 
@@ -231,6 +265,44 @@ public class PadLayer extends Layer {
             }
          }
       }
+   }
+
+   private RgbColor soloLedState(int index, final DrumPad pad) {
+      if (!pad.exists().get()) {
+         if (playing[index]) {
+            return RgbColor.WHITE.brightness(ColorBrightness.DIMMED);
+         }
+         return RgbColor.OFF;
+      }
+      if (pad.solo().get()) {
+         if (playing[index]) {
+            return SOLO_COLOR.brightness(ColorBrightness.SUPERBRIGHT);
+         }
+         return SOLO_COLOR.brightness(ColorBrightness.BRIGHT);
+      }
+      if (playing[index]) {
+         return SOLO_PLAY_COLOR.brightness(ColorBrightness.BRIGHT);
+      }
+      return SOLO_PLAY_COLOR;
+   }
+
+   private RgbColor muteModeLedState(int index, final DrumPad pad) {
+      if (!pad.exists().get()) {
+         if (playing[index]) {
+            return RgbColor.WHITE.brightness(ColorBrightness.DIMMED);
+         }
+         return RgbColor.OFF;
+      }
+      if (pad.mute().get()) {
+         if (playing[index]) {
+            return MUTE_COLOR.brightness(ColorBrightness.SUPERBRIGHT);
+         }
+         return MUTE_COLOR.brightness(ColorBrightness.BRIGHT);
+      }
+      if (playing[index]) {
+         return MUTE_COLOR.brightness(ColorBrightness.BRIGHT);
+      }
+      return MUTE_COLOR.brightness(ColorBrightness.DARKENED);
    }
 
    private RgbColor computeGridLedState(final int index, final DrumPad pad) {
@@ -323,14 +395,26 @@ public class PadLayer extends Layer {
    public void forceModeSwitch() {
       inDrumMode.toggle();
       if (isActive()) {
-         applyScale();
+         applyMode();
       }
    }
 
    @Override
    protected void onActivate() {
       super.onActivate();
-      applyScale();
+      applyMode();
+   }
+
+   private void applyMode() {
+      if (inDrumMode.get() && muteSoloMode != MuteSoloMode.NONE) {
+         setNotesActive(false);
+         muteLayer.setIsActive(muteSoloMode == MuteSoloMode.MUTE);
+         soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO);
+      } else {
+         muteLayer.setIsActive(false);
+         soloLayer.setIsActive(false);
+         applyScale();
+      }
    }
 
    @Override

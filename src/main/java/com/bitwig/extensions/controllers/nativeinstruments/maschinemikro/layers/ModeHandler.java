@@ -17,6 +17,7 @@ public class ModeHandler extends Layer {
    private final PadLayer drumPadLayer;
    private final ShiftPadLayer shiftPadLayer;
    private final TrackLayer trackLayer;
+   private final SceneLayer sceneLayer;
    private EncoderLayer encoderLayer;
    private Layer activeLayer;
 
@@ -29,11 +30,11 @@ public class ModeHandler extends Layer {
       NOTE_REPEAT(true);
       private boolean keyMode;
 
-      private Mode(boolean keyMode) {
+      Mode(boolean keyMode) {
          this.keyMode = keyMode;
       }
 
-      private Mode() {
+      Mode() {
          this.keyMode = false;
       }
 
@@ -45,20 +46,31 @@ public class ModeHandler extends Layer {
    private Mode currentMode = Mode.LAUNCHER;
    private Mode stashedMode = currentMode;
    private EncoderMode encoderMode = EncoderMode.NONE;
+   private MuteSoloMode muteSoloMode = MuteSoloMode.NONE;
 
    public ModeHandler(Layers layers, HwElements hwElements, SessionLayer sessionLayer, PadLayer drumPadLayer,
-                      ShiftPadLayer shiftPadLayer, TrackLayer trackLayer, ModifierLayer modifierLayer) {
+                      ShiftPadLayer shiftPadLayer, TrackLayer trackLayer, SceneLayer sceneLayer,
+                      ModifierLayer modifierLayer) {
       super(layers, "SESSION_LAYER");
       this.sessionLayer = sessionLayer;
       this.drumPadLayer = drumPadLayer;
       this.shiftPadLayer = shiftPadLayer;
       this.trackLayer = trackLayer;
+      this.sceneLayer = sceneLayer;
       bindModeButton(hwElements, CcAssignment.PATTERN, Mode.LAUNCHER);
       bindModeButton(hwElements, CcAssignment.SCENE, Mode.SCENE);
       bindKeyModeButton(hwElements, CcAssignment.KEYBOARD, Mode.KEYS, () -> keyboardModeActive(drumPadLayer));
       bindKeyModeButton(hwElements, CcAssignment.PAD_MODE, Mode.PADS, () -> padModeActive(drumPadLayer));
       bindMomentaryModeButton(hwElements, CcAssignment.NOTE_REPEAT, Mode.NOTE_REPEAT);
       bindMomentaryModeButton(hwElements, CcAssignment.GROUP, Mode.GROUP);
+
+      hwElements.getButton(CcAssignment.MUTE).bindPressed(this, () -> handleMutePress(true));
+      hwElements.getButton(CcAssignment.MUTE).bindRelease(this, () -> handleMutePress(false));
+      hwElements.getButton(CcAssignment.MUTE).bindLight(this, () -> muteSoloMode == MuteSoloMode.MUTE);
+
+      hwElements.getButton(CcAssignment.SOLO).bindPressed(this, () -> handleSoloPress(true));
+      hwElements.getButton(CcAssignment.SOLO).bindRelease(this, () -> handleSoloPress(false));
+      hwElements.getButton(CcAssignment.SOLO).bindLight(this, () -> muteSoloMode == MuteSoloMode.SOLO);
 
       bindEncoderMode(hwElements, CcAssignment.VOLUME, EncoderMode.VOLUME);
       bindEncoderMode(hwElements, CcAssignment.SWING, EncoderMode.SWING);
@@ -67,13 +79,37 @@ public class ModeHandler extends Layer {
       activeLayer = sessionLayer;
    }
 
+   private void handleMutePress(boolean press) {
+      if (press) {
+         if (muteSoloMode == MuteSoloMode.MUTE) {
+            muteSoloMode = MuteSoloMode.NONE;
+         } else {
+            muteSoloMode = MuteSoloMode.MUTE;
+         }
+         drumPadLayer.setMutSoloMode(muteSoloMode);
+         trackLayer.setMutSoloMode(muteSoloMode);
+      }
+   }
+
+   private void handleSoloPress(boolean press) {
+      if (press) {
+         if (muteSoloMode == MuteSoloMode.SOLO) {
+            muteSoloMode = MuteSoloMode.NONE;
+         } else {
+            muteSoloMode = MuteSoloMode.SOLO;
+         }
+         drumPadLayer.setMutSoloMode(muteSoloMode);
+         trackLayer.setMutSoloMode(muteSoloMode);
+      }
+   }
+
    public void setEncoderLayer(EncoderLayer encoderLayer) {
       DebugOutMk.println(" Setting Encoder Layer");
       this.encoderLayer = encoderLayer;
    }
 
    private boolean keyboardModeActive(PadLayer drumPadLayer) {
-      return (currentMode == Mode.PADS || currentMode == Mode.NOTE_REPEAT) && !drumPadLayer.getInDrumMode().get();
+      return (currentMode == Mode.KEYS || currentMode == Mode.NOTE_REPEAT) && !drumPadLayer.getInDrumMode().get();
    }
 
    private boolean padModeActive(PadLayer drumPadLayer) {
@@ -163,6 +199,8 @@ public class ModeHandler extends Layer {
             activeLayer = sessionLayer;
          } else if (newMode == Mode.GROUP) {
             activeLayer = trackLayer;
+         } else if (newMode == Mode.SCENE) {
+            activeLayer = sceneLayer;
          }
          currentMode = newMode;
          activeLayer.setIsActive(true);

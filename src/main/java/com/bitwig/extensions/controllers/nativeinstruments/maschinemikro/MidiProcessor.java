@@ -24,6 +24,8 @@ public class MidiProcessor {
    private final NoteInput noteInput;
    private int blinkState = 0;
 
+   private int[] noteStatus = new int[128];
+   private int[] ccStatus = new int[128];
 
    public MidiProcessor(final ControllerHost host, final MidiIn midiIn, final MidiOut midiOut) {
       this.host = host;
@@ -31,6 +33,8 @@ public class MidiProcessor {
       this.midiOut = midiOut;
       noteInput = midiIn.createNoteInput("MIDI", "80????", "90????", "A?????");
       setupNoteInput();
+      Arrays.fill(noteStatus, -1);
+      Arrays.fill(ccStatus, -1);
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi0);
       midiIn.setSysexCallback(this::handleSysEx);
    }
@@ -50,7 +54,16 @@ public class MidiProcessor {
    protected void handleSysEx(final String sysExString) {
       if (sysExString.equals("f000210917004d5000014601f7")) {
          DebugOutMk.println(" HANDLE Return from Maschine");
-         // TODO Refresh all => MK3
+         for (int i = 0; i < noteStatus.length; i++) {
+            if (noteStatus[i] != -1) {
+               midiOut.sendMidi(Midi.NOTE_ON, i, noteStatus[i]);
+            }
+         }
+         for (int i = 0; i < ccStatus.length; i++) {
+            if (ccStatus[i] != -1) {
+               midiOut.sendMidi(Midi.CC, i, ccStatus[i]);
+            }
+         }
       } else {
          DebugOutMk.println("SYSEX = %s", sysExString);
       }
@@ -81,13 +94,14 @@ public class MidiProcessor {
       host.scheduleTask(this::handlePing, 100);
    }
 
-   public void sendMidi(final int status, final int val1, final int val2) {
-      midiOut.sendMidi(status, val1, val2);
+   public void sendMidiCC(final int val1, final int val2) {
+      midiOut.sendMidi(Midi.CC, val1, val2);
+      ccStatus[val1] = val2;
    }
-
 
    public void updateColorPad(int midiId, RgbColor rgbState) {
       midiOut.sendMidi(Midi.NOTE_ON, midiId, rgbState.getColorIndex());
+      noteStatus[midiId] = rgbState.getColorIndex();
    }
 
    public RgbColor blinkSlow(int onColor, int offColor) {
