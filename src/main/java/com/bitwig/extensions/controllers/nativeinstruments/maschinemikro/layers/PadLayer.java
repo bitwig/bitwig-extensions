@@ -12,6 +12,7 @@ import com.bitwig.extensions.framework.values.BooleanValueObject;
 import com.bitwig.extensions.framework.values.PadScaleHandler;
 import com.bitwig.extensions.framework.values.Scale;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,6 +32,10 @@ public class PadLayer extends Layer {
    private int currentArpRate = 2;
 
    private final double[] arpRateTable = {0.0625, 0.125, 0.25, 0.5, 1.0, 2.0, 4.0};
+   private final String[] rateDisplayValues = { "1/64", "1/32", "1/16", "1/8", "1/4", "1/2", "1/1" };
+   private SettableEnumValue arpRate;
+   private boolean noteRepeatActive;
+   private SettableEnumValue arpMode;
    protected final int[] noteToPad = new int[128];
    protected final Integer[] deactivationTable = new Integer[128];
    private final Integer[] noteTable = new Integer[128];
@@ -50,7 +55,7 @@ public class PadLayer extends Layer {
             Scale.MIXOLYDIAN, Scale.LOCRIAN, Scale.LYDIAN, Scale.PHRYGIAN), 16, true);
       scaleHandler.addStateChangedListener(this::handleScaleChange);
       arp = noteInput.arpeggiator();
-      initArp();
+      initArp(host);
 
       muteLayer = new Layer(layers, "Drum-mute");
       soloLayer = new Layer(layers, "Drum-solo");
@@ -78,11 +83,17 @@ public class PadLayer extends Layer {
          button.bindLight(this, () -> computeGridLedState(drumPadIndex, pad));
       }
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(dir));
-
+      hwElements.getButton(CcAssignment.ENCODER_PRESS).bindPressed(this, () -> handleEncoderPress(true));
+      hwElements.getButton(CcAssignment.ENCODER_PRESS).bindRelease(this, () -> handleEncoderPress(false));
+   
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
    }
-
-   private void initArp() {
+   
+   private void handleEncoderPress(final boolean press) {
+      // TODO Arp Type
+   }
+   
+   private void initArp(ControllerHost host) {
       arp.usePressureToVelocity().markInterested();
       arp.usePressureToVelocity().set(true);
       arp.octaves().markInterested();
@@ -90,13 +101,43 @@ public class PadLayer extends Layer {
       arp.mode().markInterested();
       arp.rate().set(arpRateTable[currentArpRate]);
 
+      List<String> arpModes = new ArrayList<>();
       final EnumDefinition modes = arp.mode().enumDefinition();
       for (int i = 0; i < modes.getValueCount(); i++) {
          final EnumValueDefinition valDef = modes.valueDefinitionAt(i);
-         DebugOutMk.println("ARP MODES=%s", valDef.getId());
+         arpModes.add(valDef.getId().replace("_","-"));
+      }
+      DocumentState documentState = host.getDocumentState();
+   
+      arpRate = documentState.getEnumSetting("Arp/Note Repeat Rate", //
+          "Arp/Note Repeat", rateDisplayValues, rateDisplayValues[currentArpRate]);
+      arpRate.addValueObserver(this::handleArpRateChanged);
+      arpMode = documentState.getEnumSetting("Arp/Note Repeat Mode", //
+          "Arp/Note Repeat", arpModes.stream().toArray(String[]::new), arpModes.get(1));
+      arpMode.addValueObserver(mode ->this.handleArpModeChanged(mode, arpModes));
+   }
+   
+   private void handleArpModeChanged(final String mode, List<String> arpModes) {
+      int index = arpModes.indexOf(mode);
+      if(index != -1) {
+         arp.mode().set(arpModes.get(index));
       }
    }
-
+   
+   private void handleArpRateChanged(final String rate) {
+      int index = -1;
+      for(int i=0;i<rateDisplayValues.length;i++) {
+         if(rateDisplayValues[i].equals(rate)) {
+            index = i;
+            break;
+         }
+      }
+      if(index != -1) {
+         currentArpRate = index;
+         arp.rate().set(arpRateTable[currentArpRate]);
+      }
+   }
+   
    public BooleanValueObject getInDrumMode() {
       return inDrumMode;
    }
@@ -127,10 +168,17 @@ public class PadLayer extends Layer {
       } else {
          arp.isEnabled().set(false);
       }
+      this.noteRepeatActive = noteRepeatActive;
    }
 
    private void handleEncoder(int dir) {
-      if (inDrumMode.get()) {
+      if(noteRepeatActive) {
+         int newRate = currentArpRate - dir;
+         if(newRate >= 0 && newRate < arpRateTable.length) {
+            currentArpRate = newRate;
+            arpRate.set(rateDisplayValues[currentArpRate]);
+         }
+      } else if (inDrumMode.get()) {
          drumPadBank.scrollBy(4 * dir);
       } else {
          scaleHandler.incrementNoteOffset(dir);

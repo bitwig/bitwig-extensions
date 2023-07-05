@@ -73,6 +73,8 @@ public class SessionLayer extends Layer {
    private void handlePress(Track track, ClipLauncherSlot slot, int trackIndex, int sceneIndex) {
       if (modifierLayer.getEraseHeld().get()) {
          slot.deleteObject();
+      } else if (modifierLayer.getDuplicateHeld().get() && modifierLayer.getShiftHeld().get()) {
+         // Double content
       } else if (modifierLayer.getDuplicateHeld().get()) {
          slot.duplicateClip();
       } else if (modifierLayer.getVariationHeld().get()) {

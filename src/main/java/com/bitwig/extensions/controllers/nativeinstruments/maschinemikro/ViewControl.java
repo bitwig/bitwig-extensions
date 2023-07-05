@@ -19,7 +19,7 @@ public class ViewControl {
    public ViewControl(final ControllerHost host) {
       mixerTrackBank = host.createTrackBank(4, 1, 4);
       groupTrackBank = host.createTrackBank(8, 2, 1);
-      cursorTrack = host.createCursorTrack(1, 4);
+      cursorTrack = host.createCursorTrack(1, 8);
       masterTrack = host.createMasterTrack(16);
 
       mixerTrackBank.followCursorTrack(cursorTrack);
