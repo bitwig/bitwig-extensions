@@ -1,10 +1,9 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers;
 
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Groove;
-import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.DebugOutMk;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
 import com.bitwig.extensions.framework.Layer;
@@ -22,16 +21,15 @@ public class EncoderLayer extends Layer {
    public EncoderLayer(Layers layers, HwElements hwElements, ViewControl viewControl, ModifierLayer modifierLayer,
                        Transport transport, ControllerHost host) {
       super(layers, "ENCODER_LAYER");
-      DebugOutMk.println("Created Encoder ");
       this.shiftHeld = modifierLayer.getShiftHeld();
       this.transport = transport;
       this.groove = host.createGroove();
       this.groove.getEnabled().markInterested();
-      MasterTrack masterTrack = viewControl.getMasterTrack();
-      hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(masterTrack, dir));
+      CursorTrack cursorTrack = viewControl.getCursorTrack();
+      hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(cursorTrack, dir));
    }
 
-   private void handleEncoder(MasterTrack masterTrack, int diff) {
+   private void handleEncoder(CursorTrack masterTrack, int diff) {
       switch (encoderMode) {
          case VOLUME -> {
             if (shiftHeld.get()) {

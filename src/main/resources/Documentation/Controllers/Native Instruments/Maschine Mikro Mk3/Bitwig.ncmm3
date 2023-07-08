@@ -104,7 +104,6 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Mod">
-        <disabled />
         <controller>50</controller>
         <channel>0</channel>
         <off>0</off>
@@ -152,7 +151,6 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Notes">
-        <disabled />
         <controller>52</controller>
         <channel>0</channel>
         <off>0</off>
@@ -186,7 +184,6 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Pitch">
-        <disabled />
         <controller>49</controller>
         <channel>0</channel>
         <off>0</off>
@@ -318,7 +315,7 @@
         <min>0</min>
         <max>127</max>
         <ledPattern>0</ledPattern>
-        <behavior onIfDown="on">none</behavior>
+        <behavior>none</behavior>
       </knob>
       <button version="1" id="TouchstripCap">
         <controller>2</controller>
@@ -330,7 +327,7 @@
       </button>
       <led version="1" id="TouchstripIDX">
         <display type="0">
-          <unit color-type="1" color-mode="0" color-on-index="2" color-off-index="1" />
+          <unit color-type="1" color-mode="0" color-on-index="8" color-off-index="1" />
         </display>
         <controller>1</controller>
         <channel>0</channel>

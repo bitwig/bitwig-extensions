@@ -48,7 +48,6 @@ public class MidiProcessor {
 
    private void onMidi0(final ShortMidiMessage msg) {
       final int sb = msg.getStatusByte();
-      //DebugOutMk.println("MIDI %02X %02X %02x ", sb, msg.getData1(), msg.getData2());
    }
 
    protected void handleSysEx(final String sysExString) {
@@ -140,5 +139,22 @@ public class MidiProcessor {
 
    public NoteInput getNoteInput() {
       return noteInput;
+   }
+
+   public void sendCcToNoteInput(int ccNr, int value) {
+      noteInput.sendRawMidiEvent(Midi.CC, ccNr, value);
+   }
+
+   public void sendPitchBendToNoteInput(int channel, double value) {
+      int msb = (int) Math.min(127, Math.round((value + 1.0) * 64));
+      noteInput.sendRawMidiEvent(Midi.PITCH_BEND | channel, 0, msb);
+   }
+
+   public void playNote(int channel, int noteNr, int velocity) {
+      noteInput.sendRawMidiEvent(Midi.NOTE_ON | channel, noteNr, velocity);
+   }
+
+   public void releaseNote(int channel, int noteNr) {
+      noteInput.sendRawMidiEvent(Midi.NOTE_OFF | channel, noteNr, 0);
    }
 }

@@ -21,13 +21,16 @@ public class SceneLayer extends Layer {
    private final BooleanValueObject altHeld;
    private final BooleanValueObject deleteHeld;
    private final BooleanValueObject duplicateHeld;
+   private final Application application;
 
    public SceneLayer(Layers layers, HwElements hwElements, ControllerHost host, ViewControl viewControl,
-                     Transport transport, MidiProcessor midiProcessor, ModifierLayer modifierLayer) {
+                     Transport transport, MidiProcessor midiProcessor, ModifierLayer modifierLayer,
+                     Application application) {
       super(layers, "SCENE");
       this.altHeld = modifierLayer.getVariationHeld();
       this.deleteHeld = modifierLayer.getEraseHeld();
       this.duplicateHeld = modifierLayer.getDuplicateHeld();
+      this.application = application;
       sceneBank = host.createSceneBank(16);
       List<RgbButton> padButtons = hwElements.getPadButtons();
       sceneBank.setIndication(true);
@@ -57,7 +60,7 @@ public class SceneLayer extends Layer {
       if (deleteHeld.get()) {
          scene.deleteObject();
       } else if (duplicateHeld.get()) {
-         //
+         scene.replaceInsertionPoint().copySlotsOrScenes(scene);
       } else if (altHeld.get()) {
          scene.launchAlt();
       } else {

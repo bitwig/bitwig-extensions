@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.CcButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.TouchStrip;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Component;
 
@@ -21,6 +22,7 @@ public class HwElements {
    private final Map<CcAssignment, CcButton> buttonMap = new HashMap<>();
    private final RelativeHardwareKnob mainEncoder;
    private final List<RgbButton> padButtons = new ArrayList<>();
+   private final TouchStrip touchStrip;
 
    public HwElements(HardwareSurface surface, ControllerHost host, MidiProcessor midiProcessor) {
       this.host = host;
@@ -31,6 +33,7 @@ public class HwElements {
          RgbButton button = new RgbButton(PAD_MAP[i], "PAD_" + i, surface, midiProcessor);
          padButtons.add(button);
       }
+      touchStrip = new TouchStrip(surface, midiProcessor, buttonMap.get(CcAssignment.STRIP_TOUCH));
    }
 
    public List<RgbButton> getPadButtons() {
@@ -43,6 +46,10 @@ public class HwElements {
 
    public RelativeHardwareKnob getMainEncoder() {
       return mainEncoder;
+   }
+
+   public TouchStrip getTouchStrip() {
+      return touchStrip;
    }
 
    public void bindEncoder(final Layer layer, final RelativeHardwareKnob encoder, final IntConsumer action) {

@@ -19,9 +19,14 @@ public class ViewControl {
    public ViewControl(final ControllerHost host) {
       mixerTrackBank = host.createTrackBank(4, 1, 4);
       groupTrackBank = host.createTrackBank(8, 2, 1);
-      cursorTrack = host.createCursorTrack(1, 8);
+      cursorTrack = host.createCursorTrack(2, 8);
       masterTrack = host.createMasterTrack(16);
 
+      for (int i = 0; i < cursorTrack.sendBank().getSizeOfBank(); i++) {
+         Send send = cursorTrack.sendBank().getItemAt(i);
+         send.exists().markInterested();
+         send.sendChannelColor().markInterested();
+      }
       mixerTrackBank.followCursorTrack(cursorTrack);
       cursorClip = host.createLauncherCursorClip(16, 127);
       primaryDevice = cursorTrack.createCursorDevice("DrumDetection", "Pad Device", NUM_PADS_TRACK,

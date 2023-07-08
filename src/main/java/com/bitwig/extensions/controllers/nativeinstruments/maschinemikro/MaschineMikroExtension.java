@@ -3,9 +3,11 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.TouchStrip;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers.EncoderLayer;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers.ModeHandler;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers.ModifierLayer;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers.StripMode;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 import com.bitwig.extensions.framework.values.FocusMode;
@@ -17,6 +19,7 @@ public class MaschineMikroExtension extends ControllerExtension {
    private Layer mainLayer;
    private Layer shiftLayer;
    private FocusMode recordFocusMode = FocusMode.LAUNCHER;
+   private StripMode stripMode = StripMode.NONE;
 
    protected MaschineMikroExtension(final ControllerExtensionDefinition definition, final ControllerHost host) {
       super(definition, host);
@@ -28,6 +31,7 @@ public class MaschineMikroExtension extends ControllerExtension {
       DebugOutMk.registerHost(host);
       initPreferences(host);
       final Context diContext = new Context(this);
+      Layer progressLayer = diContext.createLayer("Progress_layer");
       surface = diContext.getService(HardwareSurface.class);
       MidiIn midiIn = host.getMidiInPort(0);
       MidiOut midiOut = host.getMidiOutPort(0);
@@ -39,9 +43,9 @@ public class MaschineMikroExtension extends ControllerExtension {
       diContext.getService(ModifierLayer.class).init(mainLayer, diContext.getService(HwElements.class));
       shiftLayer = diContext.createLayer("SHIFT");
       initTransport(diContext);
+      intStripHandling(diContext, progressLayer);
       diContext.getService(ModeHandler.class).setEncoderLayer(diContext.getService(EncoderLayer.class));
       mainLayer.setIsActive(true);
-      DebugOutMk.println(" INIT MIKRO MK3");
 
       midiProcessor.start();
       diContext.activate();
@@ -91,7 +95,18 @@ public class MaschineMikroExtension extends ControllerExtension {
       hwElements.getButton(CcAssignment.RESTART)
          .bindPressed(shiftLayer, transport.isArrangerLoopEnabled().toggleAction());
       hwElements.getButton(CcAssignment.RESTART).bindLight(shiftLayer, transport.isArrangerLoopEnabled());
+   }
 
+   private void intStripHandling(Context diContext, Layer progressLayer) {
+      HwElements hwElements = diContext.getService(HwElements.class);
+      FocusClip focusClip = diContext.getService(FocusClip.class);
+      MidiProcessor midiProcessor = diContext.getService(MidiProcessor.class);
+      Layer stripModLayer = diContext.createLayer("STRIP_MOD_LAYER");
+      Layer pitchBendLayer = diContext.createLayer("PITCH_BEND_LAYER");
+
+      TouchStrip touchStrip = hwElements.getTouchStrip();
+      touchStrip.bindStripLight(progressLayer, () -> focusClip.getPlayPosition());
+      progressLayer.setIsActive(true);
    }
 
    private void handleRecordButton(Transport transport, FocusClip focusClip) {

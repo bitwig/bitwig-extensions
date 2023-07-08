@@ -12,6 +12,7 @@ public class PadScaleHandler {
    private final List<Scale> scales;
    private final List<String> baseNotes = List.of("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B");
    private final int padCount;
+   private final SettableEnumValue baseNotesAssignment;
 
    private int currentScale = 0;
    private int baseNote = 0;
@@ -30,11 +31,12 @@ public class PadScaleHandler {
             "Pads", scales.stream().map(Scale::getName).toArray(String[]::new), scales.get(0).getName());
          scaleAssignment.addValueObserver(this::handleScaleChanged);
 
-         SettableEnumValue baseNotesAssignment = documentState.getEnumSetting("Base Note", //
+         baseNotesAssignment = documentState.getEnumSetting("Base Note", //
             "Pads", baseNotes.stream().toArray(String[]::new), baseNotes.get(0));
          baseNotesAssignment.addValueObserver(this::handleBaseNoteChanged);
       } else {
          scaleAssignment = null;
+         baseNotesAssignment = null;
       }
    }
 
@@ -101,5 +103,15 @@ public class PadScaleHandler {
       }
       int octave = noteOffset / 12;
       return octave * 12 + baseNote;
+   }
+
+   public void incBaseNote(int dir) {
+      int newBaseNote = baseNote + dir;
+      if (newBaseNote >= 0 && newBaseNote < 12) {
+         baseNote = newBaseNote;
+         if (baseNotesAssignment != null) {
+            baseNotesAssignment.set(baseNotes.get(baseNote));
+         }
+      }
    }
 }

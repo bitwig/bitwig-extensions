@@ -6,9 +6,11 @@ import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.TouchStrip;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.di.Inject;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
 import com.bitwig.extensions.framework.values.PadScaleHandler;
 import com.bitwig.extensions.framework.values.Scale;
@@ -31,8 +33,12 @@ public class PadLayer extends Layer {
    private BooleanValueObject inDrumMode = new BooleanValueObject();
    private final NoteInput noteInput;
    private RgbColor cursorTrackColor;
+   private boolean encoderDown = false;
+
+   private final Layer eraseLayer;
    private final Layer muteLayer;
    private final Layer soloLayer;
+
    private int padOffset = 36;
    private int currentArpRate = 2;
 
@@ -42,18 +48,30 @@ public class PadLayer extends Layer {
    private boolean noteRepeatActive;
    private SettableEnumValue arpMode;
    protected final int[] noteToPad = new int[128];
+   protected final int[] padToNote = new int[16];
    protected final Integer[] deactivationTable = new Integer[128];
    private final Integer[] noteTable = new Integer[128];
+   private final Integer[] velocityTable = new Integer[128];
+
+   private final Layer fixedLayer;
+   private boolean fixedVelocityActive = false;
+   private boolean fixedVelocityHeld = false;
+   private boolean fixedVelocityModified = false;
+   private int fixedVelocity = 120;
 
    private final boolean[] isSelected = new boolean[16];
    private final boolean[] isBaseNote = new boolean[16];
    private final boolean[] playing = new boolean[16];
-   private final boolean[] assigned = new boolean[16];
    private final RgbColor[] padColors = new RgbColor[16];
    private MuteSoloMode muteSoloMode = MuteSoloMode.NONE;
 
+   @Inject
+   private FocusClip focusClip;
+   @Inject
+   private ModifierLayer modifierLayer;
+
    public PadLayer(Layers layers, HwElements hwElements, ViewControl viewControl, ModifierLayer modifierLayer,
-                   MidiProcessor midiProcessor, ControllerHost host, FocusClip focusClip) {
+                   MidiProcessor midiProcessor, ControllerHost host) {
       super(layers, "PAD_LAYER");
       this.noteInput = midiProcessor.getNoteInput();
       scaleHandler = new PadScaleHandler(host,
@@ -63,13 +81,21 @@ public class PadLayer extends Layer {
       arp = noteInput.arpeggiator();
       initArp(host);
 
+      modifierLayer.getEraseHeld().addValueObserver(this::handleEraseActive);
+
       muteLayer = new Layer(layers, "Drum-mute");
       soloLayer = new Layer(layers, "Drum-solo");
+      eraseLayer = new Layer(layers, "Drum-solo");
+      fixedLayer = new Layer(layers, "Fixed_Layer");
 
       Arrays.fill(padColors, RgbColor.OFF);
       Arrays.fill(deactivationTable, -1);
       Arrays.fill(noteTable, -1);
       Arrays.fill(noteToPad, -1);
+      Arrays.fill(padToNote, -1);
+      for (int i = 0; i < 128; i++) {
+         velocityTable[i] = i;
+      }
 
       drumPadBank = viewControl.getPrimaryDevice().createDrumPadBank(16);
       viewControl.getCursorTrack().color().addValueObserver((r, g, b) -> cursorTrackColor = RgbColor.toColor(r, g, b));
@@ -91,13 +117,68 @@ public class PadLayer extends Layer {
 
          button.bindPressed(soloLayer, () -> handleSolo(drumPadIndex, pad));
          button.bindLight(soloLayer, () -> soloLedState(drumPadIndex, pad));
-
+         button.bindPressed(eraseLayer, () -> handleErase(drumPadIndex));
       }
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(dir));
       hwElements.getButton(CcAssignment.ENCODER_PRESS).bindPressed(this, () -> handleEncoderPress(true));
       hwElements.getButton(CcAssignment.ENCODER_PRESS).bindRelease(this, () -> handleEncoderPress(false));
+      hwElements.getButton(CcAssignment.FIXED_VEL).bindPressed(this, () -> handleFixedVelocityPressed());
+      hwElements.getButton(CcAssignment.FIXED_VEL).bindRelease(this, () -> handleFixedVelocityReleased());
+      hwElements.getButton(CcAssignment.FIXED_VEL).bindLight(this, () -> fixedVelocityActive);
 
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
+
+      TouchStrip touchStrip = hwElements.getTouchStrip();
+      touchStrip.bindStripLight(fixedLayer, () -> fixedVelocity);
+      touchStrip.bindValue(fixedLayer, value -> updateFixedVelocity(value));
+      touchStrip.bindTouched(fixedLayer, touched -> {
+      });
+
+   }
+
+   private void handleEraseActive(boolean pressed) {
+      if (isActive() && !soloLayer.isActive() && !muteLayer.isActive()) {
+         if (pressed) {
+            setNotesActive(false);
+            eraseLayer.setIsActive(true);
+         } else {
+            eraseLayer.setIsActive(false);
+            setNotesActive(true);
+         }
+      }
+   }
+
+   private void handleFixedVelocityPressed() {
+      fixedVelocityHeld = true;
+      fixedLayer.setIsActive(true);
+   }
+
+   private void handleFixedVelocityReleased() {
+      fixedVelocityHeld = false;
+      if (!fixedVelocityModified) {
+         fixedVelocityActive = !fixedVelocityActive;
+         updateFixedVelocity();
+         noteInput.setVelocityTranslationTable(velocityTable);
+      }
+      fixedLayer.setIsActive(false);
+   }
+
+   private void updateFixedVelocity(int value) {
+      if (value > 0 && value != fixedVelocity) {
+         fixedVelocity = value;
+         fixedVelocityModified = true;
+         updateFixedVelocity();
+      }
+   }
+
+   private void updateFixedVelocity() {
+      if (fixedVelocityActive) {
+         Arrays.fill(velocityTable, fixedVelocity);
+      } else {
+         for (int i = 0; i < 128; i++) {
+            velocityTable[i] = i;
+         }
+      }
    }
 
    public void setMutSoloMode(MuteSoloMode muteSoloMode) {
@@ -123,8 +204,14 @@ public class PadLayer extends Layer {
       pad.solo().toggle(true);
    }
 
+   private void handleErase(int drumPadIndex) {
+      if (padToNote[drumPadIndex] != -1) {
+         focusClip.clearNotes(padToNote[drumPadIndex]);
+      }
+   }
+
    private void handleEncoderPress(final boolean press) {
-      // TODO Arp Type
+      encoderDown = press;
    }
 
    private void initArp(ControllerHost host) {
@@ -215,12 +302,23 @@ public class PadLayer extends Layer {
       } else if (inDrumMode.get()) {
          drumPadBank.scrollBy(4 * dir);
       } else {
-         scaleHandler.incrementNoteOffset(dir);
-//         if (encoderPressed.get()) {
-//            scaleHandler.incScaleSelection(dir);
-//         } else {
-//         }
+         if (encoderDown) {
+            scaleHandler.incScaleSelection(dir);
+         } else if (modifierLayer.getShiftHeld().get()) {
+            scaleHandler.incBaseNote(dir);
+         } else {
+            scaleHandler.incrementNoteOffset(dir);
+         }
       }
+   }
+
+   public int getFixedVelocity() {
+      return fixedVelocity;
+   }
+
+   public int filterToView(int noteValue) {
+      int res = noteValue >> 3;
+      return padToNote[res];
    }
 
    private void handleHasDrumPadsChanged(boolean hasDrumPads) {
@@ -228,6 +326,8 @@ public class PadLayer extends Layer {
       inDrumMode.set(hasDrumPads);
       if (isActive()) {
          applyMode();
+      } else {
+         applyScale();
       }
    }
 
@@ -317,7 +417,7 @@ public class PadLayer extends Layer {
             return color.brightness(ColorBrightness.DIMMED);
          }
       } else {
-         if (!assigned[index]) {
+         if (padToNote[index] == -1) {
             return RgbColor.OFF;
          }
          RgbColor color = isBaseNote[index] ? RgbColor.GREEN : cursorTrackColor;
@@ -364,6 +464,7 @@ public class PadLayer extends Layer {
          for (int i = 0; i < 16; i++) {
             noteTable[i + PadButton.PAD_NOTE_OFFSET] = padOffset + i;
             noteToPad[padOffset + i] = i;
+            padToNote[i] = padOffset + i;
          }
       } else {
          final int startNote = scaleHandler.getStartNote(); //baseNote;
@@ -377,12 +478,12 @@ public class PadLayer extends Layer {
             if (note < 0 || note > 127) {
                noteTable[i + PadButton.PAD_NOTE_OFFSET] = -1;
                isBaseNote[drumPadIndex] = false;
-               assigned[drumPadIndex] = false;
+               padToNote[drumPadIndex] = -1;
             } else {
                noteTable[i + PadButton.PAD_NOTE_OFFSET] = note;
                noteToPad[note] = drumPadIndex;
                isBaseNote[drumPadIndex] = note % 12 == scaleHandler.getBaseNote();
-               assigned[drumPadIndex] = true;
+               padToNote[drumPadIndex] = note;
             }
          }
 
@@ -422,15 +523,18 @@ public class PadLayer extends Layer {
       super.onDeactivate();
       Arrays.fill(noteTable, -1);
       noteInput.setKeyTranslationTable(noteTable);
+      eraseLayer.setIsActive(false);
    }
 
    public void setNotesActive(boolean notesActive) {
       if (notesActive) {
          applyScale();
          noteInput.setKeyTranslationTable(noteTable);
+         noteInput.setVelocityTranslationTable(velocityTable);
       } else {
          Arrays.fill(noteTable, -1);
          noteInput.setKeyTranslationTable(noteTable);
+         noteInput.setVelocityTranslationTable(velocityTable);
       }
    }
 

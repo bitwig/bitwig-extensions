@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro;
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.di.Inject;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +23,10 @@ public class FocusClip {
 
    private final Map<String, Integer> indexMemory = new HashMap<>();
    private final ClipLauncherSlotBank slotBank;
+   private int playHeadPosition = 0;
+
+   @Inject
+   private MidiProcessor midiProcessor;
 
    public FocusClip(ControllerHost host, Application application, Transport transport, ViewControl viewControl) {
       this.cursorTrack = viewControl.getCursorTrack();
@@ -62,11 +67,22 @@ public class FocusClip {
       mainCursoClip.getLoopLength().addValueObserver(v -> {
          playHeadLength = v * 8;
       });
+      mainCursoClip.playingStep().addValueObserver(v -> {
+         if (playHeadLength > 0) {
+            if (v == -1) {
+               playHeadPosition = 0;
+            } else {
+               playHeadPosition = Math.min((int) (v / playHeadLength * 127), 127);
+            }
+         }
+      });
+   }
 
+   public int getPlayPosition() {
+      return playHeadPosition;
    }
 
    public void invokeRecord() {
-      DebugOutMk.println(" SLIT %d", selectedSlotIndex);
       if (selectedSlotIndex != -1) {
          final ClipLauncherSlot slot = slotBank.getItemAt(selectedSlotIndex);
          if (slot.isRecording().get()) {
@@ -138,5 +154,6 @@ public class FocusClip {
       mainCursoClip.scrollToKey(noteToClear);
       mainCursoClip.clearStepsAtY(0, 0);
    }
+
 
 }

@@ -3,15 +3,13 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbColor;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.di.Inject;
 
 import java.util.Arrays;
 import java.util.List;
@@ -20,17 +18,21 @@ import java.util.List;
 public class SessionLayer extends Layer {
    private final RgbColor[] slotColors = new RgbColor[16];
    private final MidiProcessor midiProcessor;
-   private final ModifierLayer modifierLayer;
    private SceneBank sceneBank;
    private boolean overdubEnabled;
    private RgbColor trackColor = RgbColor.OFF;
+   private ClipLauncherSlot[] slotLookup = new ClipLauncherSlot[16];
+
+   @Inject
+   private FocusClip focusClip;
+   @Inject
+   private ModifierLayer modifierLayer;
 
    public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl, Transport transport,
-                       MidiProcessor midiProcessor, ModifierLayer modifierLayer) {
+                       MidiProcessor midiProcessor) {
       super(layers, "SESSION_LAYER");
       Arrays.fill(slotColors, RgbColor.OFF);
       this.midiProcessor = midiProcessor;
-      this.modifierLayer = modifierLayer;
       transport.isClipLauncherOverdubEnabled().addValueObserver(overdubEnabled -> this.overdubEnabled = overdubEnabled);
       TrackBank trackBank = viewControl.getMixerTrackBank();
       sceneBank = trackBank.sceneBank();
@@ -45,6 +47,7 @@ public class SessionLayer extends Layer {
             final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
             int buttonIndex = sceneIndex * 4 + trackIndex;
             prepareSlot(slot, buttonIndex);
+            slotLookup[buttonIndex] = slot;
             RgbButton button = gridButtons.get(buttonIndex);
             button.bindLight(this, () -> this.getRgbState(track, slot, trackIndex, sceneIndex));
             button.bindPressed(this, () -> this.handlePress(track, slot, trackIndex, sceneIndex));
@@ -70,11 +73,19 @@ public class SessionLayer extends Layer {
       }
    }
 
+   public void invokeDuplicate(int index) {
+      ClipLauncherSlot slot = slotLookup[(3 - index / 4) * 4 + index % 4];
+      if (isActive() && slot.hasContent().get()) {
+         slot.select();
+         focusClip.duplicateContent();
+      }
+   }
+
    private void handlePress(Track track, ClipLauncherSlot slot, int trackIndex, int sceneIndex) {
       if (modifierLayer.getEraseHeld().get()) {
          slot.deleteObject();
-      } else if (modifierLayer.getDuplicateHeld().get() && modifierLayer.getShiftHeld().get()) {
-         // Double content
+      } else if (modifierLayer.getSelectHeld().get()) {
+         slot.select();
       } else if (modifierLayer.getDuplicateHeld().get()) {
          slot.duplicateClip();
       } else if (modifierLayer.getVariationHeld().get()) {
@@ -144,9 +155,11 @@ public class SessionLayer extends Layer {
       slot.isRecordingQueued().markInterested();
       slot.isRecording().markInterested();
       slot.isPlaybackQueued().markInterested();
+      slot.name().markInterested();
       slot.color().addValueObserver((r, g, b) -> {
          slotColors[buttonIndex] = RgbColor.toColor(r, g, b);
       });
    }
+
 
 }

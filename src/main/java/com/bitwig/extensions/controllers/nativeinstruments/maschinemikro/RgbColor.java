@@ -32,6 +32,8 @@ public class RgbColor extends InternalHardwareLightState {
    public static final RgbColor GREEN = RgbColor.of(Colors.GREEN);
    public static final RgbColor RED = RgbColor.of(Colors.RED);
    public static final RgbColor WHITE = RgbColor.of(Colors.WHITE);
+   public static final RgbColor ORANGE = RgbColor.of(Colors.ORANGE);
+   public static final RgbColor BLUE = RgbColor.of(Colors.BLUE);
 
    private final int colorIndex;
 
@@ -42,6 +44,11 @@ public class RgbColor extends InternalHardwareLightState {
    public RgbColor brightness(ColorBrightness brightness) {
       return of(this.getColorIndex() + brightness.getAdjust());
    }
+
+   public RgbColor ofIndex(int index) {
+      return of(index);
+   }
+
 
    public int getColorIndex() {
       return colorIndex;

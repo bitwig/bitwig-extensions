@@ -13,8 +13,11 @@ public class ModifierLayer {
    private final BooleanValueObject eraseHeld = new BooleanValueObject();
    private final BooleanValueObject duplicateHeld = new BooleanValueObject();
    private final BooleanValueObject variationHeld = new BooleanValueObject();
+   private final BooleanValueObject selectHeld = new BooleanValueObject();
 
    public void init(Layer baseLayer, HwElements hwElements) {
+      hwElements.getButton(CcAssignment.SELECT).bind(baseLayer, selectHeld);
+      hwElements.getButton(CcAssignment.SELECT).bindLightHeld(baseLayer);
       hwElements.getButton(CcAssignment.VARIATION).bind(baseLayer, variationHeld);
       hwElements.getButton(CcAssignment.VARIATION).bindLightHeld(baseLayer);
       hwElements.getButton(CcAssignment.ERASE).bind(baseLayer, eraseHeld);
@@ -35,6 +38,10 @@ public class ModifierLayer {
 
    public BooleanValueObject getShiftHeld() {
       return shiftHeld;
+   }
+
+   public BooleanValueObject getSelectHeld() {
+      return selectHeld;
    }
 
    public BooleanValueObject getVariationHeld() {

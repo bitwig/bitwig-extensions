@@ -9,6 +9,8 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.time.TimeRepeatEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
+import java.util.function.BiConsumer;
+
 public class GateButton {
    public static final int STD_REPEAT_DELAY = 400;
    public static final int STD_REPEAT_FREQUENCY = 50;
@@ -29,6 +31,16 @@ public class GateButton {
    public void bindEmptyAction(TrackLayer layer) {
       layer.bind(hwButton, hwButton.pressedAction(), DO_NOTHING);
       layer.bind(hwButton, hwButton.releasedAction(), DO_NOTHING);
+   }
+
+   public void bindIsPressedTimed(final Layer layer, BiConsumer<Boolean, Long> handler) {
+      layer.bind(hwButton, hwButton.pressedAction(), () -> {
+         recordedDownTime = System.currentTimeMillis();
+         handler.accept(true, 0L);
+      });
+      layer.bind(hwButton, hwButton.releasedAction(), () -> {
+         handler.accept(false, System.currentTimeMillis() - recordedDownTime);
+      });
    }
 
    public void bind(final Layer layer, final Runnable action) {

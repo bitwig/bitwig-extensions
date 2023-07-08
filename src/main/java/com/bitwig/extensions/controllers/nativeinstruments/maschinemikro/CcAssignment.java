@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro;
 public enum CcAssignment {
    ENCODER_PRESS(0x8), //
    ENCODER_TOUCH(0x9), //
+   STRIP_TOUCH(0x2),
 
    PLAY(57), //
    STOP(59), //
