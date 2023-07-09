@@ -24,6 +24,8 @@ public class ModeHandler extends Layer {
    @Inject
    private EncoderLayer encoderLayer;
    @Inject
+   private BrowserLayer browserLayer;
+   @Inject
    private DeviceEncoderLayer deviceEncoderLayer;
 
    private final PadLayer drumPadLayer;
@@ -81,7 +83,18 @@ public class ModeHandler extends Layer {
       bindEncoderMode(hwElements, CcAssignment.VOLUME, EncoderMode.VOLUME);
       bindEncoderMode(hwElements, CcAssignment.SWING, EncoderMode.SWING);
       bindEncoderMode(hwElements, CcAssignment.TEMPO, EncoderMode.TEMPO);
+      hwElements.getButton(CcAssignment.SEARCH).bindPressed(this, this::pressBrowser);
+      hwElements.getButton(CcAssignment.SEARCH).bindLight(this, this::browsingActive);
+
       modifierLayer.getShiftHeld().addValueObserver(this::handleShiftPressed);
+   }
+
+   private boolean browsingActive() {
+      return browserLayer.isActive();
+   }
+
+   private void pressBrowser() {
+      browserLayer.handleBrowserActivation();
    }
 
    @Activate

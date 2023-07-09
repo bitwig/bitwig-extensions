@@ -10,6 +10,7 @@ import com.bitwig.extensions.framework.time.TimeRepeatEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class GateButton {
    public static final int STD_REPEAT_DELAY = 400;
@@ -41,6 +42,11 @@ public class GateButton {
       layer.bind(hwButton, hwButton.releasedAction(), () -> {
          handler.accept(false, System.currentTimeMillis() - recordedDownTime);
       });
+   }
+
+   public void bindIsPressed(final Layer layer, Consumer<Boolean> handler) {
+      layer.bind(hwButton, hwButton.pressedAction(), () -> handler.accept(true));
+      layer.bind(hwButton, hwButton.releasedAction(), () -> handler.accept(false));
    }
 
    public void bind(final Layer layer, final Runnable action) {

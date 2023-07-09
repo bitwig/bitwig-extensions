@@ -15,6 +15,7 @@ import com.bitwig.extensions.framework.values.BooleanValueObject;
 public class EncoderLayer extends Layer {
    private final BooleanValueObject shiftHeld;
    private final Transport transport;
+   private final CursorTrack cursorTrack;
    private EncoderMode encoderMode = EncoderMode.NONE;
    private final Groove groove;
 
@@ -25,17 +26,19 @@ public class EncoderLayer extends Layer {
       this.transport = transport;
       this.groove = host.createGroove();
       this.groove.getEnabled().markInterested();
-      CursorTrack cursorTrack = viewControl.getCursorTrack();
+      cursorTrack = viewControl.getCursorTrack();
+
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(cursorTrack, dir));
    }
 
-   private void handleEncoder(CursorTrack masterTrack, int diff) {
+
+   private void handleEncoder(CursorTrack cursorTrack, int diff) {
       switch (encoderMode) {
          case VOLUME -> {
             if (shiftHeld.get()) {
-               masterTrack.volume().value().inc(diff, 128);
+               cursorTrack.volume().value().inc(diff, 128);
             } else {
-               masterTrack.volume().value().inc(diff * 4, 128);
+               cursorTrack.volume().value().inc(diff * 4, 128);
             }
          }
          case TEMPO -> {

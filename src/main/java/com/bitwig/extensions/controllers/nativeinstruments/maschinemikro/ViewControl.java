@@ -15,12 +15,16 @@ public class ViewControl {
    private final Clip cursorClip;
    private final MasterTrack masterTrack;
    private final TrackBank groupTrackBank;
+   private final TrackBank maxTrackBank;
+   private int queuedForPlaying = 0;
+   private int focusSceneIndex;
 
    public ViewControl(final ControllerHost host) {
       mixerTrackBank = host.createTrackBank(4, 1, 4);
       groupTrackBank = host.createTrackBank(8, 2, 1);
       cursorTrack = host.createCursorTrack(2, 8);
       masterTrack = host.createMasterTrack(16);
+      maxTrackBank = host.createTrackBank(64, 1, 1);
 
       for (int i = 0; i < cursorTrack.sendBank().getSizeOfBank(); i++) {
          Send send = cursorTrack.sendBank().getItemAt(i);
@@ -33,12 +37,42 @@ public class ViewControl {
          CursorDeviceFollowMode.FIRST_INSTRUMENT);
       cursorDevice = cursorTrack.createCursorDevice("device-control", "Device Control", 0,
          CursorDeviceFollowMode.FOLLOW_SELECTION);
+      setUpFocusScene();
    }
 
    @PostConstruct
    void init() {
       cursorTrack.hasNext().markInterested();
       cursorTrack.hasPrevious().markInterested();
+   }
+
+   private void setUpFocusScene() {
+      maxTrackBank.sceneBank().scrollPosition().addValueObserver(scrollPos -> this.focusSceneIndex = scrollPos);
+      for (int i = 0; i < maxTrackBank.getSizeOfBank(); i++) {
+         Track track = maxTrackBank.getItemAt(i);
+         final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(0);
+         slot.isPlaybackQueued().addValueObserver(this::trackPlaybackQueuedForScene);
+      }
+   }
+
+   private void trackPlaybackQueuedForScene(boolean queued) {
+      if (queued) {
+         queuedForPlaying++;
+      } else if (queuedForPlaying > 0) {
+         queuedForPlaying--;
+      }
+   }
+
+   public void focusScene(final int sceneIndex) {
+      maxTrackBank.sceneBank().scrollPosition().set(sceneIndex);
+   }
+
+   public boolean hasQueuedForPlaying() {
+      return queuedForPlaying > 0;
+   }
+
+   public int getFocusSceneIndex() {
+      return focusSceneIndex;
    }
 
    public TrackBank getGroupTrackBank() {
