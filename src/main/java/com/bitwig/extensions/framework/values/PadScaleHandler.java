@@ -114,4 +114,8 @@ public class PadScaleHandler {
          }
       }
    }
+
+   public boolean isBaseNote(int note) {
+      return (note + 12 - baseNote) % 12 == 0;
+   }
 }

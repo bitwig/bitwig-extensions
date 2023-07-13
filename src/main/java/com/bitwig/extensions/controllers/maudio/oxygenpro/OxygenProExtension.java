@@ -10,12 +10,6 @@ import com.bitwig.extensions.framework.values.FocusMode;
 
 public class OxygenProExtension extends ControllerExtension {
 
-   /**
-    * TODO List
-    *   - shift action
-    *    - drum mode ?
-    */
-
    private FocusMode recordFocusMode = FocusMode.LAUNCHER;
    private Layer mainLayer;
    private ControllerHost host;
@@ -77,6 +71,9 @@ public class OxygenProExtension extends ControllerExtension {
       CcButton loopButton = hwElements.getButton(OxygenCcAssignments.LOOP);
       loopButton.bindPressed(mainLayer, transport.isArrangerLoopEnabled().toggleAction());
 
+      hwElements.getButton(OxygenCcAssignments.METRO)
+         .bindPressed(mainLayer, transport.isMetronomeEnabled().toggleAction());
+
       CcButton recButton = hwElements.getButton(OxygenCcAssignments.RECORD);
       recButton.bindPressed(mainLayer, () -> {
          if (recordFocusMode == FocusMode.LAUNCHER) {
@@ -89,11 +86,11 @@ public class OxygenProExtension extends ControllerExtension {
       CcButton shiftButton = hwElements.getButton(OxygenCcAssignments.SHIFT);
       shiftButton.bindPressed(mainLayer, () -> hwElements.getShiftActive().set(true));
       shiftButton.bindRelease(mainLayer, () -> hwElements.getShiftActive().set(false));
-      CcButton backButton = hwElements.getButton(OxygenCcAssignments.BACK);
 
-      ModeLayer modeLayer = diContext.getService(ModeLayer.class);
-      backButton.bindPressed(mainLayer, () -> modeLayer.setIsActive(true));
-      backButton.bindRelease(mainLayer, () -> modeLayer.setIsActive(false));
+//      CcButton backButton = hwElements.getButton(OxygenCcAssignments.BACK);
+//      ModeLayer modeLayer = diContext.getService(ModeLayer.class);
+//      backButton.bindPressed(mainLayer, () -> modeLayer.setIsActive(true));
+//      backButton.bindRelease(mainLayer, () -> modeLayer.setIsActive(false));
    }
 
    void initPreferences(final ControllerHost host) {

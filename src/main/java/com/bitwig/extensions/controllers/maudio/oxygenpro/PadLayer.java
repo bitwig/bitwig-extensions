@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.maudio.oxygenpro;
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.PadButton;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.definition.BasicMode;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
@@ -31,6 +32,7 @@ public class PadLayer extends Layer {
    private final boolean[] assigned = new boolean[16];
 
    private BooleanValueObject encoderPressed = new BooleanValueObject();
+   private ModeHandler modeHandler;
 
    public PadLayer(Layers layers, HwElements hwElements, ViewControl viewControl, MidiProcessor midiProcessor,
                    OxyConfig config, ControllerHost host) {
@@ -62,9 +64,27 @@ public class PadLayer extends Layer {
          setUpPad(drumPadIndex, pad);
          button.bindLight(this, () -> computeGridLedState(drumPadIndex, pad));
       }
+      CursorRemoteControlsPage parameterBank = viewControl.getParameterBank();
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), this::handleEncoder);
       hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bind(this, encoderPressed);
+      hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindPressed(this, () -> handleBankLeft(parameterBank));
+      hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindPressed(this, () -> handleBankRight(parameterBank));
+      hwElements.getButton(OxygenCcAssignments.BACK).bind(this, this::handleBackButton);
+   }
+
+   private void handleBackButton() {
+      if (modeHandler != null) {
+         modeHandler.changeMode(BasicMode.CLIP_LAUNCH);
+      }
+   }
+
+   private void handleBankLeft(CursorRemoteControlsPage parameterBank) {
+      parameterBank.selectPrevious();
+   }
+
+   private void handleBankRight(CursorRemoteControlsPage parameterBank) {
+      parameterBank.selectNext();
    }
 
    private void handleHasDrumPadsChanged(boolean hasDrumPads) {
@@ -79,6 +99,11 @@ public class PadLayer extends Layer {
          applyScale();
       }
    }
+
+   public void registerModeHandler(ModeHandler modeHandler) {
+      this.modeHandler = modeHandler;
+   }
+
 
    private void handleEncoder(int dir) {
       if (hasDrumPads) {
@@ -195,10 +220,13 @@ public class PadLayer extends Layer {
       } else {
          final int startNote = scaleHandler.getStartNote(); //baseNote;
          final int[] intervals = scaleHandler.getCurrentScale().getIntervals();
+
          for (int i = 0; i < nrOfPads; i++) {
-            final int drumPadIndex = toNoteLayout(i);
-            final int index = drumPadIndex % intervals.length;
-            final int oct = drumPadIndex / intervals.length;
+            //final int drumPadIndex = toNoteLayout(i);
+            final int noteIndex = toNoteLayout(i);
+            final int drumPadIndex = toLayout(i);
+            final int index = noteIndex % intervals.length;
+            final int oct = noteIndex / intervals.length;
             int note = startNote + intervals[index] + 12 * oct;
             note = note < 0 || note > 127 ? -1 : note;
             if (note < 0 || note > 127) {
@@ -207,8 +235,8 @@ public class PadLayer extends Layer {
                assigned[drumPadIndex] = false;
             } else {
                noteTable[HwElements.PAD_NOTE_NR[i]] = note;
-               noteToPad[note] = toLayout(i);
-               isBaseNote[drumPadIndex] = note % 12 == scaleHandler.getBaseNote();
+               noteToPad[note] = drumPadIndex;
+               isBaseNote[drumPadIndex] = scaleHandler.isBaseNote(note);
                assigned[drumPadIndex] = true;
             }
          }

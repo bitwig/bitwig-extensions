@@ -14,6 +14,7 @@ public class ViewControl {
    private final PinnableCursorDevice cursorDevice;
    private final Clip cursorClip;
    private final MasterTrack masterTrack;
+   private final CursorRemoteControlsPage parameterBank;
 
    public ViewControl(final ControllerHost host, OxyConfig config) {
       mixerTrackBank = host.createTrackBank(config.getNumberOfControls(), 1, 2);
@@ -28,12 +29,17 @@ public class ViewControl {
          CursorDeviceFollowMode.FIRST_INSTRUMENT);
       cursorDevice = cursorTrack.createCursorDevice("device-control", "Device Control", 0,
          CursorDeviceFollowMode.FOLLOW_SELECTION);
+      parameterBank = cursorDevice.createCursorRemoteControlsPage(config.getNumberOfControls());
    }
 
    @PostConstruct
    void init() {
       cursorTrack.hasNext().markInterested();
       cursorTrack.hasPrevious().markInterested();
+   }
+
+   public CursorRemoteControlsPage getParameterBank() {
+      return parameterBank;
    }
 
    public MasterTrack getMasterTrack() {

@@ -6,6 +6,7 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.di.Inject;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,7 +24,11 @@ public class TrackControl {
    private int armHeldCount = 0;
    final boolean[] trackSelectionState = new boolean[8];
 
+   @Inject
+   private MidiProcessor midiProcessor;
+
    private enum KnobMode {
+      VOLUME(OxygenCcAssignments.VOLUME_MODE),
       PAN(OxygenCcAssignments.PAN_MODE),
       DEVICE(OxygenCcAssignments.DEVICE_MODE),
       SENDS(OxygenCcAssignments.SENDS_MODE);
@@ -73,6 +78,7 @@ public class TrackControl {
          SendBank sendBank = track.sendBank();
 
          mainLayer.bind(hwElements.getSlider(trackIndex), track.volume());
+         knobLayers.get(KnobMode.VOLUME).bind(hwElements.getKnob(trackIndex), track.volume());
          knobLayers.get(KnobMode.PAN).bind(hwElements.getKnob(trackIndex), track.pan());
          knobLayers.get(KnobMode.SENDS).bind(hwElements.getKnob(trackIndex), track.sendBank().getItemAt(0));
 
@@ -87,15 +93,14 @@ public class TrackControl {
          button.bindLight(trackLayers.get(TrackButtonMode.MUTE), track.mute());
       }
 
-      final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
-      CursorRemoteControlsPage parameterBank = cursorDevice.createCursorRemoteControlsPage(numberOfControls);
+      CursorRemoteControlsPage parameterBank = viewControl.getParameterBank();
       for (int i = 0; i < numberOfControls; i++) {
          AbsoluteHardwareKnob knob = hwElements.getKnob(i);
          knobLayers.get(KnobMode.DEVICE).bind(knob, parameterBank.getParameter(i));
       }
       HardwareSlider masterSlider = hwElements.getMasterSlider();
       if (masterSlider != null) {
-         mainLayer.bind(masterSlider, viewControl.getMasterTrack().volume());
+         mainLayer.bind(masterSlider, viewControl.getCursorTrack().volume());
       }
    }
 

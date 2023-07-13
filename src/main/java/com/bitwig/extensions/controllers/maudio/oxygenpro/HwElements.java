@@ -70,10 +70,12 @@ public class HwElements {
       addButton(OxygenCcAssignments.REC_MODE, surface, midiProcessor, 0xf);
       addButton(OxygenCcAssignments.OXY_MODE, surface, midiProcessor, 0xf);
 
+      addButton(OxygenCcAssignments.VOLUME_MODE, surface, midiProcessor, 0xf);
       addButton(OxygenCcAssignments.PAN_MODE, surface, midiProcessor, 0xf);
       addButton(OxygenCcAssignments.DEVICE_MODE, surface, midiProcessor, 0xf);
       addButton(OxygenCcAssignments.SENDS_MODE, surface, midiProcessor, 0xf);
 
+      addButton(OxygenCcAssignments.METRO, surface, midiProcessor);
       addButton(OxygenCcAssignments.RECORD, surface, midiProcessor);
       addButton(OxygenCcAssignments.LOOP, surface, midiProcessor);
       addButton(OxygenCcAssignments.STOP, surface, midiProcessor);

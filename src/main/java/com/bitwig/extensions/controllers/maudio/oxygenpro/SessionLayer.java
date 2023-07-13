@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.maudio.oxygenpro;
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.PadButton;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.definition.BasicMode;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
@@ -15,9 +16,12 @@ public class SessionLayer extends Layer {
 
    private final RgbColor[] slotColors = new RgbColor[16];
    private final SceneBank sceneBank;
+   private final CursorTrack cursorTrack;
    private boolean overdubEnabled;
    private RgbColor trackColor = RgbColor.OFF;
    private final int numberOfTracks;
+   private ModeHandler modeHandler;
+   private boolean backButtonDown = false;
 
    public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl, Transport transport) {
       super(layers, "SESSION_LAYER");
@@ -28,6 +32,7 @@ public class SessionLayer extends Layer {
       List<PadButton> gridButtons = hwElements.getPadButtons();
       trackBank.setShouldShowClipLauncherFeedback(true);
       this.numberOfTracks = trackBank.getSizeOfBank();
+      this.cursorTrack = viewControl.getCursorTrack();
       for (int tInd = 0; tInd < numberOfTracks; tInd++) {
          final int trackIndex = tInd;
          Track track = trackBank.getItemAt(tInd);
@@ -48,19 +53,49 @@ public class SessionLayer extends Layer {
       hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindRepeatHold(this, () -> trackBank.scrollBackwards());
       hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindRepeatHold(this, () -> trackBank.scrollForwards());
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), this::handleEncoder);
-      hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindPressed(this, () -> {
-         DebugOutOxy.println(" ENC Pressed");
-      });
-      hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindRelease(this, () -> {
-         DebugOutOxy.println(" ENC Release");
-      });
+      hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindPressed(this, this::handleEncoderDown);
+      hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindRelease(this, this::handleEncoderUp);
+      hwElements.getButton(OxygenCcAssignments.BACK).bindPressed(this, this::handleBackButtonDown);
+      hwElements.getButton(OxygenCcAssignments.BACK).bindRelease(this, this::handleBackButtonUp);
+
+   }
+
+   private void handleBackButtonDown() {
+      backButtonDown = true;
+   }
+
+   private void handleBackButtonUp() {
+      backButtonDown = false;
+   }
+
+   public void registerModeHandler(ModeHandler modeHandler) {
+      this.modeHandler = modeHandler;
+   }
+
+   private void handleEncoderDown() {
+      if (this.modeHandler != null) {
+         modeHandler.changeMode(BasicMode.NOTES);
+      }
+   }
+
+   private void handleEncoderUp() {
    }
 
    private void handleEncoder(int dir) {
-      if (dir < 0) {
-         sceneBank.scrollBackwards();
+      if (backButtonDown) {
+         if (dir < 0) {
+            sceneBank.scrollBackwards();
+         } else {
+            sceneBank.scrollForwards();
+         }
       } else {
-         sceneBank.scrollForwards();
+         if (dir < 0) {
+            //sceneBank.scrollBackwards();
+            cursorTrack.selectPrevious();
+         } else {
+            //sceneBank.scrollForwards();
+            cursorTrack.selectNext();
+         }
       }
    }
 
@@ -124,5 +159,6 @@ public class SessionLayer extends Layer {
          slotColors[buttonIndex] = RgbColor.toColor(r, g, b);
       });
    }
+
 
 }

@@ -25,6 +25,7 @@ public enum OxygenCcAssignments {
    STOP(0x75),
    PLAY(0x76),
    RECORD(0x77),
+   VOLUME_MODE(0x53),
    PAN_MODE(0x55),
    DEVICE_MODE(0x56),
    SENDS_MODE(0x57),
