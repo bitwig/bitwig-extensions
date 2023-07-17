@@ -1,6 +1,10 @@
-package com.bitwig.extensions.controllers.maudio.oxygenpro;
+package com.bitwig.extensions.controllers.maudio.oxygenpro.modes;
 
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.HwElements;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.OxygenCcAssignments;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.RgbColor;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.ViewControl;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.PadButton;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.definition.BasicMode;
 import com.bitwig.extensions.framework.Layer;
@@ -21,7 +25,7 @@ public class SessionLayer extends Layer {
    private RgbColor trackColor = RgbColor.OFF;
    private final int numberOfTracks;
    private ModeHandler modeHandler;
-   private boolean backButtonDown = false;
+   private boolean backButtonHeld = false;
 
    public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl, Transport transport) {
       super(layers, "SESSION_LAYER");
@@ -44,28 +48,27 @@ public class SessionLayer extends Layer {
             prepareSlot(slot, buttonIndex);
             PadButton button = gridButtons.get(buttonIndex);
             button.bindLight(this, () -> this.getRgbState(track, slot, trackIndex, sceneIndex));
-            button.bindPressed(this, () -> this.handlePress(track, slot, trackIndex, sceneIndex));
+            button.bindPressed(this, () -> this.handlePress(slot));
+            button.bindRelease(this, () -> this.handleRelease(slot));
          }
       }
       sceneBank = trackBank.sceneBank();
-      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH1).bind(this, () -> sceneBank.getScene(0).launch());
-      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH2).bind(this, () -> sceneBank.getScene(1).launch());
-      hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindRepeatHold(this, () -> trackBank.scrollBackwards());
-      hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindRepeatHold(this, () -> trackBank.scrollForwards());
+      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH1)
+         .bindPressed(this, () -> launchScene(sceneBank.getScene(0)));
+      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH1)
+         .bindRelease(this, () -> releaseScene(sceneBank.getScene(0)));
+      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH2)
+         .bindPressed(this, () -> launchScene(sceneBank.getScene(1)));
+      hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH2)
+         .bindRelease(this, () -> releaseScene(sceneBank.getScene(1)));
+      hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindRepeatHold(this, this::handleBankLeft);
+      hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindRepeatHold(this, this::handleBankRight);
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), this::handleEncoder);
       hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindPressed(this, this::handleEncoderDown);
-      hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindRelease(this, this::handleEncoderUp);
-      hwElements.getButton(OxygenCcAssignments.BACK).bindPressed(this, this::handleBackButtonDown);
-      hwElements.getButton(OxygenCcAssignments.BACK).bindRelease(this, this::handleBackButtonUp);
-
    }
 
-   private void handleBackButtonDown() {
-      backButtonDown = true;
-   }
-
-   private void handleBackButtonUp() {
-      backButtonDown = false;
+   public void setBackButtonHeld(boolean isPressed) {
+      backButtonHeld = isPressed;
    }
 
    public void registerModeHandler(ModeHandler modeHandler) {
@@ -73,16 +76,33 @@ public class SessionLayer extends Layer {
    }
 
    private void handleEncoderDown() {
-      if (this.modeHandler != null) {
+      if (this.modeHandler != null && isActive()) {
          modeHandler.changeMode(BasicMode.NOTES);
       }
    }
 
-   private void handleEncoderUp() {
+   private void handleBankLeft() {
+      if (backButtonHeld) {
+      } else {
+      }
+   }
+
+   private void handleBankRight() {
+      if (backButtonHeld) {
+      } else {
+      }
+   }
+
+   private void launchScene(Scene scene) {
+      scene.launch();
+   }
+
+   private void releaseScene(Scene scene) {
+      scene.launchRelease();
    }
 
    private void handleEncoder(int dir) {
-      if (backButtonDown) {
+      if (backButtonHeld) {
          if (dir < 0) {
             sceneBank.scrollBackwards();
          } else {
@@ -105,8 +125,20 @@ public class SessionLayer extends Layer {
       track.color().addValueObserver((r, g, b) -> trackColor = RgbColor.toColor(r, g, b));
    }
 
-   private void handlePress(Track track, ClipLauncherSlot slot, int trackIndex, int sceneIndex) {
-      slot.launch();
+   private void handlePress(ClipLauncherSlot slot) {
+      if (backButtonHeld) {
+         slot.launchAlt();
+      } else {
+         slot.launch();
+      }
+   }
+
+   private void handleRelease(ClipLauncherSlot slot) {
+      if (backButtonHeld) {
+         slot.launchReleaseAlt();
+      } else {
+         slot.launchRelease();
+      }
    }
 
    private InternalHardwareLightState getRgbState(Track track, ClipLauncherSlot slot, int trackIndex, int sceneIndex) {

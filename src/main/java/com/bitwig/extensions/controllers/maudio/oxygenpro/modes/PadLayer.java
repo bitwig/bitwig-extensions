@@ -1,12 +1,12 @@
-package com.bitwig.extensions.controllers.maudio.oxygenpro;
+package com.bitwig.extensions.controllers.maudio.oxygenpro.modes;
 
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.*;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.PadButton;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.definition.BasicMode;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
-import com.bitwig.extensions.framework.values.BooleanValueObject;
 import com.bitwig.extensions.framework.values.PadScaleHandler;
 import com.bitwig.extensions.framework.values.Scale;
 
@@ -17,6 +17,7 @@ import java.util.List;
 public class PadLayer extends Layer {
    private final int nrOfPads;
    private final PadScaleHandler scaleHandler;
+   private final PinnableCursorDevice cursorDevice;
    private boolean hasDrumPads = true;
    private final RgbColor[] slotColors = new RgbColor[16];
    private final NoteInput noteInput;
@@ -31,8 +32,9 @@ public class PadLayer extends Layer {
    private final boolean[] playing = new boolean[16];
    private final boolean[] assigned = new boolean[16];
 
-   private BooleanValueObject encoderPressed = new BooleanValueObject();
+   private boolean backButtonHeld = false;
    private ModeHandler modeHandler;
+
 
    public PadLayer(Layers layers, HwElements hwElements, ViewControl viewControl, MidiProcessor midiProcessor,
                    OxyConfig config, ControllerHost host) {
@@ -50,6 +52,7 @@ public class PadLayer extends Layer {
       viewControl.getCursorTrack().color().addValueObserver((r, g, b) -> cursorTrackColor = RgbColor.toColor(r, g, b));
       drumPadBank.setIndication(true);
       viewControl.getPrimaryDevice().hasDrumPads().addValueObserver(this::handleHasDrumPadsChanged);
+      this.cursorDevice = viewControl.getCursorDevice();
 
       drumPadBank.scrollPosition().addValueObserver(scrollPos -> {
          padOffset = scrollPos;
@@ -67,24 +70,35 @@ public class PadLayer extends Layer {
       CursorRemoteControlsPage parameterBank = viewControl.getParameterBank();
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), this::handleEncoder);
-      hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bind(this, encoderPressed);
+      hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindIsPressed(this, this::handleEncoderPressed);
       hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindPressed(this, () -> handleBankLeft(parameterBank));
       hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindPressed(this, () -> handleBankRight(parameterBank));
-      hwElements.getButton(OxygenCcAssignments.BACK).bind(this, this::handleBackButton);
    }
 
-   private void handleBackButton() {
-      if (modeHandler != null) {
+   private void handleEncoderPressed(boolean pressed) {
+      if (modeHandler != null && pressed && isActive()) {
          modeHandler.changeMode(BasicMode.CLIP_LAUNCH);
       }
    }
 
+   public void setBackButtonHeld(boolean isHeld) {
+      this.backButtonHeld = isHeld;
+   }
+
    private void handleBankLeft(CursorRemoteControlsPage parameterBank) {
-      parameterBank.selectPrevious();
+      if (backButtonHeld) {
+         cursorDevice.selectPrevious();
+      } else {
+         parameterBank.selectPrevious();
+      }
    }
 
    private void handleBankRight(CursorRemoteControlsPage parameterBank) {
-      parameterBank.selectNext();
+      if (backButtonHeld) {
+         cursorDevice.selectNext();
+      } else {
+         parameterBank.selectNext();
+      }
    }
 
    private void handleHasDrumPadsChanged(boolean hasDrumPads) {
@@ -109,7 +123,7 @@ public class PadLayer extends Layer {
       if (hasDrumPads) {
          drumPadBank.scrollBy(-4 * dir);
       } else {
-         if (encoderPressed.get()) {
+         if (backButtonHeld) {
             scaleHandler.incScaleSelection(dir);
          } else {
             scaleHandler.incrementNoteOffset(dir);
@@ -193,7 +207,6 @@ public class PadLayer extends Layer {
    void selectPad(final int index) {
       final DrumPad pad = drumPadBank.getItemAt(index);
       pad.selectInEditor();
-      // TODO noteFocusHandler.notifyDrumPadSelected(pad, padOffset, index);
    }
 
    private int getSelectedIndex() {

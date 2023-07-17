@@ -94,8 +94,8 @@ public class OxygenProExtension extends ControllerExtension {
    }
 
    void initPreferences(final ControllerHost host) {
-      final Preferences preferences = host.getPreferences(); // THIS
-      final SettableEnumValue recordButtonAssignment = preferences.getEnumSetting("Record Button assignment", //
+      DocumentState documentState = host.getDocumentState();
+      final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Record Button assignment", //
          "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
          recordFocusMode.getDescriptor());
       recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));

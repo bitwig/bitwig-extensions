@@ -1,6 +1,7 @@
-package com.bitwig.extensions.controllers.maudio.oxygenpro;
+package com.bitwig.extensions.controllers.maudio.oxygenpro.modes;
 
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.*;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.CcButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -100,7 +101,11 @@ public class TrackControl {
       }
       HardwareSlider masterSlider = hwElements.getMasterSlider();
       if (masterSlider != null) {
-         mainLayer.bind(masterSlider, viewControl.getCursorTrack().volume());
+         if (config.hasSingleMasterSlider()) {
+            mainLayer.bind(masterSlider, viewControl.getCursorTrack().volume());
+         } else {
+            mainLayer.bind(masterSlider, viewControl.getMasterTrack().volume());
+         }
       }
    }
 
@@ -145,7 +150,6 @@ public class TrackControl {
       currentKnobControlLayer.setIsActive(false);
       currentKnobControlLayer = knobLayers.get(mode);
       currentKnobControlLayer.setIsActive(true);
-      // TODO check how Ableton handles sends
    }
 
    private void setToTrackMode(TrackButtonMode mode) {

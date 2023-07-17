@@ -8,6 +8,8 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.time.TimeRepeatEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
+import java.util.function.Consumer;
+
 public abstract class OxygenButton {
    public static final int STD_REPEAT_DELAY = 400;
    public static final int STD_REPEAT_FREQUENCY = 50;
@@ -35,6 +37,11 @@ public abstract class OxygenButton {
    public void bind(final Layer layer, final SettableBooleanValue value) {
       layer.bind(hwButton, hwButton.pressedAction(), () -> value.set(true));
       layer.bind(hwButton, hwButton.releasedAction(), () -> value.set(false));
+   }
+
+   public void bindIsPressed(final Layer layer, final Consumer<Boolean> consumer) {
+      layer.bind(hwButton, hwButton.pressedAction(), () -> consumer.accept(true));
+      layer.bind(hwButton, hwButton.releasedAction(), () -> consumer.accept(false));
    }
 
    public void bindPressed(final Layer layer, final Runnable action) {

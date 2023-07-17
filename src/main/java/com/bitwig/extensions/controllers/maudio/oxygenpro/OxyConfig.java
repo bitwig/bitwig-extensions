@@ -5,9 +5,9 @@ public class OxyConfig {
    private int numberOfControls;
    private boolean hasSlider;
 
-   public OxyConfig(int numberOfControls, boolean hasSlider, boolean hasMasterSlider) {
+   public OxyConfig(int numberOfControls, boolean hasSliders, boolean hasMasterSlider) {
       this.numberOfControls = numberOfControls;
-      this.hasSlider = hasSlider;
+      this.hasSlider = hasSliders;
       this.hasMasterSlider = hasMasterSlider;
    }
 
@@ -19,7 +19,11 @@ public class OxyConfig {
       return hasMasterSlider;
    }
 
-   public boolean hasSlider() {
+   public boolean hasSliders() {
       return hasSlider;
+   }
+
+   public boolean hasSingleMasterSlider() {
+      return !hasSlider && hasMasterSlider;
    }
 }
