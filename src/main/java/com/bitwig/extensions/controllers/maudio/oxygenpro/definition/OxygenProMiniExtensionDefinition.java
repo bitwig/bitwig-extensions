@@ -21,6 +21,6 @@ public class OxygenProMiniExtensionDefinition extends OxygenProExtensionDefiniti
 
    @Override
    public OxygenProExtension createInstance(final ControllerHost host) {
-      return new OxygenProExtension(this, host, new OxyConfig(4, true, false));
+      return new OxygenProExtension(this, host, new OxyConfig(4, true, false, false));
    }
 }

@@ -28,13 +28,32 @@ public class ModeHandler extends Layer {
       padLayer.registerModeHandler(this);
       currentLayer = sessionLayer;
       hwElements.getButton(OxygenCcAssignments.BACK).bindIsPressed(this, this::handleBackButton);
+      hwElements.bindEncoder(this, hwElements.getMainEncoder(), this::handleEncoder);
+      hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindPressed(this, () -> handleBankLeft());
+      hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindPressed(this, () -> handleBankRight());
    }
-
-   @Activate
+   
+    @Activate
    public void onActivation() {
       this.setIsActive(true);
    }
-
+   
+   private void handleBankRight() {
+      if (currentLayer == padLayer) {
+         padLayer.handleBankRight();
+      } else {
+         sessionLayer.handleBankRight();
+      }
+   }
+   
+   private void handleBankLeft() {
+      if (currentLayer == padLayer) {
+         padLayer.handleBankLeft();
+      } else {
+         sessionLayer.handleBankLeft();
+      }
+   }
+   
    private void handleBackButton(boolean isPressed) {
       if (currentLayer == padLayer) {
          padLayer.setBackButtonHeld(isPressed);
@@ -44,7 +63,16 @@ public class ModeHandler extends Layer {
          sessionLayer.setBackButtonHeld(isPressed);
       }
    }
-
+   
+   
+   private void handleEncoder(final int dir) {
+      if (currentLayer == padLayer) {
+         padLayer.handleEncoder(dir);
+      } else {
+         sessionLayer.handleEncoder(dir);
+      }
+   }
+   
    public void changeMode(BasicMode mode) {
       if (mode == BasicMode.NOTES) {
          if (!padLayer.isActive()) {

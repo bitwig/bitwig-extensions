@@ -86,6 +86,6 @@ public abstract class OxygenProExtensionDefinition extends ControllerExtensionDe
 
    @Override
    public OxygenProExtension createInstance(final ControllerHost host) {
-      return new OxygenProExtension(this, host, new OxyConfig(8, true, true));
+      return new OxygenProExtension(this, host, new OxyConfig(8, true, true, true));
    }
 }

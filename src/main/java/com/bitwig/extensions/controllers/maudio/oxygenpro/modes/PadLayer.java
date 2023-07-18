@@ -24,6 +24,7 @@ public class PadLayer extends Layer {
    private final DrumPadBank drumPadBank;
    private RgbColor cursorTrackColor;
    private int padOffset = 36;
+   private final CursorRemoteControlsPage parameterBank;
    protected final int[] noteToPad = new int[128];
    private final Integer[] noteTable = new Integer[128];
 
@@ -67,12 +68,9 @@ public class PadLayer extends Layer {
          setUpPad(drumPadIndex, pad);
          button.bindLight(this, () -> computeGridLedState(drumPadIndex, pad));
       }
-      CursorRemoteControlsPage parameterBank = viewControl.getParameterBank();
+      parameterBank = viewControl.getParameterBank();
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
-      hwElements.bindEncoder(this, hwElements.getMainEncoder(), this::handleEncoder);
       hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindIsPressed(this, this::handleEncoderPressed);
-      hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindPressed(this, () -> handleBankLeft(parameterBank));
-      hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindPressed(this, () -> handleBankRight(parameterBank));
    }
 
    private void handleEncoderPressed(boolean pressed) {
@@ -84,8 +82,8 @@ public class PadLayer extends Layer {
    public void setBackButtonHeld(boolean isHeld) {
       this.backButtonHeld = isHeld;
    }
-
-   private void handleBankLeft(CursorRemoteControlsPage parameterBank) {
+   
+   public void handleBankLeft() {
       if (backButtonHeld) {
          cursorDevice.selectPrevious();
       } else {
@@ -93,7 +91,7 @@ public class PadLayer extends Layer {
       }
    }
 
-   private void handleBankRight(CursorRemoteControlsPage parameterBank) {
+   public void handleBankRight() {
       if (backButtonHeld) {
          cursorDevice.selectNext();
       } else {
@@ -119,7 +117,7 @@ public class PadLayer extends Layer {
    }
 
 
-   private void handleEncoder(int dir) {
+   public void handleEncoder(int dir) {
       if (hasDrumPads) {
          drumPadBank.scrollBy(-4 * dir);
       } else {
@@ -269,4 +267,5 @@ public class PadLayer extends Layer {
       Arrays.fill(noteTable, -1);
       noteInput.setKeyTranslationTable(noteTable);
    }
+   
 }

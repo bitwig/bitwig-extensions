@@ -1,7 +1,9 @@
 package com.bitwig.extensions.controllers.maudio.oxygenpro.modes;
 
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.DebugOutOxy;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.HwElements;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.OxyConfig;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.OxygenCcAssignments;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.RgbColor;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.ViewControl;
@@ -26,11 +28,13 @@ public class SessionLayer extends Layer {
    private final int numberOfTracks;
    private ModeHandler modeHandler;
    private boolean backButtonHeld = false;
+   private final boolean hasSceneLaunchButtons;
 
-   public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl, Transport transport) {
+   public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl, Transport transport, OxyConfig config) {
       super(layers, "SESSION_LAYER");
       Arrays.fill(slotColors, RgbColor.OFF);
 
+      this.hasSceneLaunchButtons = config.hasSceneLaunchButtons();
       transport.isClipLauncherOverdubEnabled().addValueObserver(overdubEnabled -> this.overdubEnabled = overdubEnabled);
       TrackBank trackBank = viewControl.getMixerTrackBank();
       List<PadButton> gridButtons = hwElements.getPadButtons();
@@ -61,9 +65,6 @@ public class SessionLayer extends Layer {
          .bindPressed(this, () -> launchScene(sceneBank.getScene(1)));
       hwElements.getButton(OxygenCcAssignments.SCENE_LAUNCH2)
          .bindRelease(this, () -> releaseScene(sceneBank.getScene(1)));
-      hwElements.getButton(OxygenCcAssignments.BANK_LEFT).bindRepeatHold(this, this::handleBankLeft);
-      hwElements.getButton(OxygenCcAssignments.BANK_RIGHT).bindRepeatHold(this, this::handleBankRight);
-      hwElements.bindEncoder(this, hwElements.getMainEncoder(), this::handleEncoder);
       hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindPressed(this, this::handleEncoderDown);
    }
 
@@ -80,16 +81,16 @@ public class SessionLayer extends Layer {
          modeHandler.changeMode(BasicMode.NOTES);
       }
    }
-
-   private void handleBankLeft() {
-      if (backButtonHeld) {
-      } else {
+   public void handleBankRight() {
+      if(!hasSceneLaunchButtons) {
+         launchScene(sceneBank.getScene(0));
+         
       }
    }
-
-   private void handleBankRight() {
-      if (backButtonHeld) {
-      } else {
+   
+   public void handleBankLeft() {
+      if(!hasSceneLaunchButtons) {
+         launchScene(sceneBank.getScene(1));
       }
    }
 
@@ -101,7 +102,7 @@ public class SessionLayer extends Layer {
       scene.launchRelease();
    }
 
-   private void handleEncoder(int dir) {
+   public void handleEncoder(int dir) {
       if (backButtonHeld) {
          if (dir < 0) {
             sceneBank.scrollBackwards();
