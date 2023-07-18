@@ -225,6 +225,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
       mixerTrackBank.setSkipDisabledItems(true);
       mixerTrackBank.canScrollChannelsDown().markInterested();
       mixerTrackBank.canScrollChannelsUp().markInterested();
+      mixerTrackBank.followCursorTrack(cursorTrack);
 
       final HardwareButton trackNavLeftButton = surface.createHardwareButton("TRACK_LEFT_NAV_BUTTON");
       trackNavLeftButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x31, 127));

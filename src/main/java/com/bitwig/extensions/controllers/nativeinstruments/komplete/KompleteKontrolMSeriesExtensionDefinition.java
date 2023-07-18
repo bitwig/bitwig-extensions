@@ -25,7 +25,7 @@ public class KompleteKontrolMSeriesExtensionDefinition extends ControllerExtensi
 
 	@Override
 	public String getVersion() {
-		return "1.1";
+		return "1.2";
 	}
 
 	@Override
@@ -45,7 +45,7 @@ public class KompleteKontrolMSeriesExtensionDefinition extends ControllerExtensi
 
 	@Override
 	public int getRequiredAPIVersion() {
-		return 12;
+		return 18;
 	}
 
 	@Override

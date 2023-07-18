@@ -119,7 +119,7 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
 
       final Track theTrack = singleTrackBank.getItemAt(0);
       final ClipLauncherSlotBank slotBank = theTrack.clipLauncherSlotBank();
-      slotBank.setIndication(true);
+      singleTrackBank.setShouldShowClipLauncherFeedback(true);
       final ClipLauncherSlot theClip = slotBank.getItemAt(0);
 
       final PinnableCursorDevice cursorDevice = cursorTrack.createCursorDevice();
@@ -130,7 +130,7 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
       sceneBank.canScrollBackwards().markInterested();
       sceneBank.canScrollForwards().markInterested();
 
-      sceneBank.getScene(0).setIndication(false);
+      sceneBank.setIndication(false);
 
       application.panelLayout().addValueObserver(v -> {
          currentLayoutType = LayoutType.toType(v);
@@ -162,8 +162,9 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
                theTrack.selectInMixer();
                if (sceneNavMode) {
                   sceneNavMode = false;
-                  sceneBank.getScene(0).setIndication(false);
-                  theClip.setIndication(true);
+                  
+                  sceneBank.setIndication(false);
+                  singleTrackBank.setShouldShowClipLauncherFeedback(true);
                }
                break;
             case ARRANGER:
@@ -179,8 +180,8 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
             case LAUNCHER:
                if (singleTrackBank.scrollPosition().get() == 0) {
                   sceneNavMode = true;
-                  sceneBank.getScene(0).setIndication(true);
-                  theClip.setIndication(false);
+                  sceneBank.setIndication(true);
+                  singleTrackBank.setShouldShowClipLauncherFeedback(false);
                } else {
                   singleTrackBank.scrollBy(-1);
                   theClip.select();
@@ -204,8 +205,8 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
             case ARRANGER:
                if (singleTrackBank.scrollPosition().get() == 0) {
                   sceneNavMode = true;
-                  sceneBank.getScene(0).setIndication(true);
-                  theClip.setIndication(false);
+                  sceneBank.setIndication(true);
+                  singleTrackBank.setShouldShowClipLauncherFeedback(false);
                } else {
                   singleTrackBank.scrollBy(-1);
                   theClip.select();
@@ -228,8 +229,8 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
                theTrack.selectInMixer();
                if (sceneNavMode) {
                   sceneNavMode = false;
-                  sceneBank.getScene(0).setIndication(false);
-                  theClip.setIndication(true);
+                  sceneBank.setIndication(false);
+                  singleTrackBank.setShouldShowClipLauncherFeedback(true);
                }
                break;
             default:

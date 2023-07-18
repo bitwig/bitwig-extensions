@@ -74,15 +74,15 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 
       final TrackBank singleTrackBank = getHost().createTrackBank(1, 0, 1);
       singleTrackBank.scrollPosition().markInterested();
+      singleTrackBank.setShouldShowClipLauncherFeedback(true);
 
       cursorTrack = getHost().createCursorTrack(1, 1);
       singleTrackBank.followCursorTrack(cursorTrack);
 
       final Track theTrack = singleTrackBank.getItemAt(0);
       final ClipLauncherSlotBank slotBank = theTrack.clipLauncherSlotBank();
-      slotBank.setIndication(true);
       final ClipLauncherSlot theClip = slotBank.getItemAt(0);
-
+ 
       final PinnableCursorDevice cursorDevice = cursorTrack.createCursorDevice();
       createKompleteKontrolDeviceKompleteKontrol(cursorDevice);
       final SceneBank sceneBank = singleTrackBank.sceneBank();
@@ -91,7 +91,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
       sceneBank.canScrollBackwards().markInterested();
       sceneBank.canScrollForwards().markInterested();
 
-      sceneBank.getScene(0).setIndication(false);
+      sceneBank.setIndication(false);
 
       application.panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
 
@@ -111,8 +111,8 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
                theTrack.selectInMixer();
                if (sceneNavMode) {
                   sceneNavMode = false;
-                  sceneBank.getScene(0).setIndication(false);
-                  theClip.setIndication(true);
+                  sceneBank.setIndication(false);
+                  singleTrackBank.setShouldShowClipLauncherFeedback(true);
                }
                break;
             case ARRANGER:
@@ -128,8 +128,8 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
             case LAUNCHER:
                if (singleTrackBank.scrollPosition().get() == 0) {
                   sceneNavMode = true;
-                  sceneBank.getScene(0).setIndication(true);
-                  theClip.setIndication(false);
+                  sceneBank.setIndication(true);
+                  singleTrackBank.setShouldShowClipLauncherFeedback(false);
                } else {
                   singleTrackBank.scrollBy(-1);
                   theClip.select();
@@ -153,8 +153,8 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
             case ARRANGER:
                if (singleTrackBank.scrollPosition().get() == 0) {
                   sceneNavMode = true;
-                  sceneBank.getScene(0).setIndication(true);
-                  theClip.setIndication(false);
+                  sceneBank.setIndication(true);
+                  singleTrackBank.setShouldShowClipLauncherFeedback(false);
                } else {
                   singleTrackBank.scrollBy(-1);
                   theClip.select();
@@ -177,8 +177,8 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
                theTrack.selectInMixer();
                if (sceneNavMode) {
                   sceneNavMode = false;
-                  sceneBank.getScene(0).setIndication(false);
-                  theClip.setIndication(true);
+                  sceneBank.setIndication(false);
+                  singleTrackBank.setShouldShowClipLauncherFeedback(true);
                }
                break;
             default:
