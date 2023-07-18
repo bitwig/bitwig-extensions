@@ -8,7 +8,6 @@ import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.DoubleValueChangedCallback;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
-import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arranger;
 import com.bitwig.extension.controller.api.BooleanValue;
@@ -156,6 +155,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
       mMidiOut = host.getMidiOutPort(0);
 
       mCursorTrack = host.createCursorTrack(0, 0);
+      mCursorTrack.position().markInterested();
 
       mTrackBank = host.createTrackBank(mChannelCount, 1, 0, false);
       mTrackBank.followCursorTrack(mCursorTrack);
@@ -285,7 +285,7 @@ public abstract class PresonusFaderPort extends ControllerExtension
          @Override
          public void accept(final RGBLightState state)
          {
-            int[] byteValuesToSend = {0, 0, 0, 0};
+            final int[] byteValuesToSend = {0, 0, 0, 0};
             boolean shouldSend = false;
 
             for (int i = 0; i < 4; i++)
@@ -622,8 +622,8 @@ public abstract class PresonusFaderPort extends ControllerExtension
             {
                if (cueMarker.exists().get())
                {
-                  String beatTimeString = cueMarker.position().getFormatted();
-                  String[] beatTimeParts = beatTimeString.split(":");
+                  final String beatTimeString = cueMarker.position().getFormatted();
+                  final String[] beatTimeParts = beatTimeString.split(":");
 
                   if (line == 0 && cueMarker.exists().get())
                   {
