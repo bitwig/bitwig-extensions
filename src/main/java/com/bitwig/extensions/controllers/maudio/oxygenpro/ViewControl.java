@@ -29,7 +29,10 @@ public class ViewControl {
          CursorDeviceFollowMode.FIRST_INSTRUMENT);
       cursorDevice = cursorTrack.createCursorDevice("device-control", "Device Control", 0,
          CursorDeviceFollowMode.FOLLOW_SELECTION);
-      parameterBank = cursorDevice.createCursorRemoteControlsPage(config.getNumberOfControls());
+      // Should use config.getNumberOfControls(), but there is a problem with less than 8 parameters (or more as well)
+      // because CursorRemoteControlsPage is pretty much attached to the layout in Bitwig, i.e. 8 Parameters
+      // no way to set an offset
+      parameterBank = cursorDevice.createCursorRemoteControlsPage(8);
    }
 
    @PostConstruct

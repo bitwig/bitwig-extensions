@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.nativeinstruments.komplete;
+package com.bitwig.extensions.controllers.nativeinstruments.komplete.midi;
 
 import com.bitwig.extension.controller.api.MidiOut;
 

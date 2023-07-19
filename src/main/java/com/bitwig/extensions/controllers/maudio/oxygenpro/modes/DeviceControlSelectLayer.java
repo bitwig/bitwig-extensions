@@ -1,14 +1,12 @@
 package com.bitwig.extensions.controllers.maudio.oxygenpro.modes;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.HwElements;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.OxyConfig;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.RgbColor;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.ViewControl;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.*;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.PadButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.di.Inject;
 
 import java.util.List;
 import java.util.Map;
@@ -16,8 +14,8 @@ import java.util.Map;
 @Component
 public class DeviceControlSelectLayer extends Layer {
 
-   private static Map<String, RgbColor> DEVICE_TYPE_TO_COLOR = Map.of("note-effect", RgbColor.MAGENTA, //
-      "instrument", RgbColor.GREEN, "audio_to_audio", RgbColor.BLUE);
+   private static Map<String, RgbColor> DEVICE_TYPE_TO_COLOR = Map.of("note-effect", RgbColor.BLUE, //
+      "instrument", RgbColor.YELLOW, "audio_to_audio", RgbColor.ORANGE);
 
    private final DeviceBank deviceBank;
    private final RgbColor[] deviceColors = new RgbColor[8];
@@ -25,6 +23,9 @@ public class DeviceControlSelectLayer extends Layer {
    private final PinnableCursorDevice cursorDevice;
    private int selectedPageIndex;
    private int selectedDeviceIndex;
+
+   @Inject
+   private TrackControl trackControl;
 
    public DeviceControlSelectLayer(Layers layers, HwElements hwElements, ViewControl viewControl, OxyConfig config) {
       super(layers, "DEVICE_CONTROL_LAYER");
@@ -58,7 +59,7 @@ public class DeviceControlSelectLayer extends Layer {
    }
 
    private void handleParameterPageSelect(int index) {
-      parameterBank.selectedPageIndex().set(index);
+      trackControl.selectParameterPage(index);
    }
 
    private InternalHardwareLightState getParameterPageState(int index) {
@@ -78,6 +79,7 @@ public class DeviceControlSelectLayer extends Layer {
    }
 
    private void handleDeviceType(int index, String deviceType) {
+      DebugOutOxy.println(" DEVICE type=%s", deviceType);
       deviceColors[index] = DEVICE_TYPE_TO_COLOR.getOrDefault(deviceType, RgbColor.MAGENTA);
    }
 

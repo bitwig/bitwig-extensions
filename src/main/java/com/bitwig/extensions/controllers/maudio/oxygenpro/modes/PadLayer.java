@@ -7,6 +7,7 @@ import com.bitwig.extensions.controllers.maudio.oxygenpro.definition.BasicMode;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.di.Inject;
 import com.bitwig.extensions.framework.values.PadScaleHandler;
 import com.bitwig.extensions.framework.values.Scale;
 
@@ -24,7 +25,6 @@ public class PadLayer extends Layer {
    private final DrumPadBank drumPadBank;
    private RgbColor cursorTrackColor;
    private int padOffset = 36;
-   private final CursorRemoteControlsPage parameterBank;
    protected final int[] noteToPad = new int[128];
    private final Integer[] noteTable = new Integer[128];
 
@@ -36,6 +36,8 @@ public class PadLayer extends Layer {
    private boolean backButtonHeld = false;
    private ModeHandler modeHandler;
 
+   @Inject
+   private TrackControl trackControl;
 
    public PadLayer(Layers layers, HwElements hwElements, ViewControl viewControl, MidiProcessor midiProcessor,
                    OxyConfig config, ControllerHost host) {
@@ -68,7 +70,6 @@ public class PadLayer extends Layer {
          setUpPad(drumPadIndex, pad);
          button.bindLight(this, () -> computeGridLedState(drumPadIndex, pad));
       }
-      parameterBank = viewControl.getParameterBank();
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
       hwElements.getButton(OxygenCcAssignments.ENCODER_PUSH).bindIsPressed(this, this::handleEncoderPressed);
    }
@@ -82,12 +83,12 @@ public class PadLayer extends Layer {
    public void setBackButtonHeld(boolean isHeld) {
       this.backButtonHeld = isHeld;
    }
-   
+
    public void handleBankLeft() {
       if (backButtonHeld) {
          cursorDevice.selectPrevious();
       } else {
-         parameterBank.selectPrevious();
+         trackControl.selectPreviousParameter();
       }
    }
 
@@ -95,7 +96,7 @@ public class PadLayer extends Layer {
       if (backButtonHeld) {
          cursorDevice.selectNext();
       } else {
-         parameterBank.selectNext();
+         trackControl.selectNextParameter();
       }
    }
 
@@ -267,5 +268,5 @@ public class PadLayer extends Layer {
       Arrays.fill(noteTable, -1);
       noteInput.setKeyTranslationTable(noteTable);
    }
-   
+
 }

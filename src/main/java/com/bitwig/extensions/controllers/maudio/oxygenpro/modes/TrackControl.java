@@ -15,9 +15,12 @@ import java.util.Map;
 
 @Component
 public class TrackControl {
+   private final CursorRemoteControlsPage parameterBank;
+   private final int nrOfControls;
    private Layer mainLayer;
    private Layer currentTrackControlLayer;
    private Layer currentKnobControlLayer;
+   private KnobMode currentKnobMode;
 
    private RgbColor[] slotColors = new RgbColor[16];
    private RgbColor trackColor = RgbColor.OFF;
@@ -32,6 +35,7 @@ public class TrackControl {
       VOLUME(OxygenCcAssignments.VOLUME_MODE),
       PAN(OxygenCcAssignments.PAN_MODE),
       DEVICE(OxygenCcAssignments.DEVICE_MODE),
+      DEVICE_2(null), // Only needed for Mini with 4 knobs
       SENDS(OxygenCcAssignments.SENDS_MODE);
       private OxygenCcAssignments assignment;
 
@@ -64,11 +68,13 @@ public class TrackControl {
       Arrays.stream(TrackButtonMode.values()).forEach(mode -> addTrackMode(layers, hwElements, mode));
       Arrays.stream(KnobMode.values()).forEach(mode -> addKnobMode(layers, hwElements, mode));
 
-      currentTrackControlLayer = trackLayers.get(TrackButtonMode.REC);
-      currentKnobControlLayer = knobLayers.get(KnobMode.DEVICE);
+      this.nrOfControls = config.getNumberOfControls();
 
-      int numberOfControls = config.getNumberOfControls();
-      for (int ti = 0; ti < numberOfControls; ti++) {
+      currentTrackControlLayer = trackLayers.get(TrackButtonMode.REC);
+      currentKnobMode = KnobMode.DEVICE;
+      currentKnobControlLayer = knobLayers.get(currentKnobMode);
+
+      for (int ti = 0; ti < nrOfControls; ti++) {
          final int trackIndex = ti;
          Track track = trackBank.getItemAt(trackIndex);
          track.arm().markInterested();
@@ -94,10 +100,16 @@ public class TrackControl {
          button.bindLight(trackLayers.get(TrackButtonMode.MUTE), track.mute());
       }
 
-      CursorRemoteControlsPage parameterBank = viewControl.getParameterBank();
-      for (int i = 0; i < numberOfControls; i++) {
+      parameterBank = viewControl.getParameterBank();
+      parameterBank.hasPrevious().markInterested();
+      parameterBank.hasNext().markInterested();
+
+      for (int i = 0; i < nrOfControls; i++) {
          AbsoluteHardwareKnob knob = hwElements.getKnob(i);
          knobLayers.get(KnobMode.DEVICE).bind(knob, parameterBank.getParameter(i));
+         if (this.nrOfControls == 4) {
+            knobLayers.get(KnobMode.DEVICE_2).bind(knob, parameterBank.getParameter(i + 4));
+         }
       }
       HardwareSlider masterSlider = hwElements.getMasterSlider();
       if (masterSlider != null) {
@@ -105,6 +117,50 @@ public class TrackControl {
             mainLayer.bind(masterSlider, viewControl.getCursorTrack().volume());
          } else {
             mainLayer.bind(masterSlider, viewControl.getMasterTrack().volume());
+         }
+      }
+   }
+
+   public void selectParameterPage(int index) {
+      if (nrOfControls == 8) {
+         parameterBank.selectedPageIndex().set(index);
+      } else if (currentKnobMode == KnobMode.DEVICE) {
+         if (index == parameterBank.selectedPageIndex().get()) {
+            selectKnobMode(KnobMode.DEVICE_2);
+         } else {
+            parameterBank.selectedPageIndex().set(index);
+         }
+      } else if (currentKnobMode == KnobMode.DEVICE_2) {
+         if (index == parameterBank.selectedPageIndex().get()) {
+            selectKnobMode(KnobMode.DEVICE);
+         } else {
+            parameterBank.selectedPageIndex().set(index);
+         }
+      }
+   }
+
+   public void selectPreviousParameter() {
+      if (nrOfControls == 8) {
+         parameterBank.selectPrevious();
+      } else if (currentKnobMode == KnobMode.DEVICE) {
+         if (parameterBank.hasPrevious().get()) {
+            selectKnobMode(KnobMode.DEVICE_2);
+            parameterBank.selectPrevious();
+         }
+      } else if (currentKnobMode == KnobMode.DEVICE_2) {
+         selectKnobMode(KnobMode.DEVICE);
+      }
+   }
+
+   public void selectNextParameter() {
+      if (nrOfControls == 8) {
+         parameterBank.selectNext();
+      } else if (currentKnobMode == KnobMode.DEVICE) {
+         selectKnobMode(KnobMode.DEVICE_2);
+      } else if (currentKnobMode == KnobMode.DEVICE_2) {
+         if (parameterBank.hasNext().get()) {
+            selectKnobMode(KnobMode.DEVICE);
+            parameterBank.selectNext();
          }
       }
    }
@@ -142,13 +198,16 @@ public class TrackControl {
    private void addKnobMode(Layers layers, HwElements hwElements, KnobMode mode) {
       Layer layer = new Layer(layers, mode.toString() + "_MODE");
       knobLayers.put(mode, layer);
-      CcButton button = hwElements.getButton(mode.assignment);
-      button.bindPressed(mainLayer, () -> selectKnobMode(mode));
+      if (mode.assignment != null) {
+         CcButton button = hwElements.getButton(mode.assignment);
+         button.bindPressed(mainLayer, () -> selectKnobMode(mode));
+      }
    }
 
    private void selectKnobMode(KnobMode mode) {
       currentKnobControlLayer.setIsActive(false);
       currentKnobControlLayer = knobLayers.get(mode);
+      currentKnobMode = mode;
       currentKnobControlLayer.setIsActive(true);
    }
 
