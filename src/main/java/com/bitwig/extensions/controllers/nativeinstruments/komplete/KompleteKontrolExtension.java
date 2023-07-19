@@ -6,15 +6,16 @@ import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.TextCommand;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.ValueCommand;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.DebugOutMk;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.framework.values.FocusMode;
+
+import java.time.format.DateTimeFormatter;
 
 public abstract class KompleteKontrolExtension extends ControllerExtension {
    static final int KOMPLETE_KONTROL_DEVICE_ID = 1315523403;
    static final String KOMPLETE_KONTROL_VST3_ID = "5653544E694B4B6B6F6D706C65746520";
 
-   private SpecificPluginDevice kompleteKontrolPluginVst2;
-   private SpecificPluginDevice kompleteKontrolVst3Id;
+   private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
 
    protected HardwareSurface surface;
    protected TrackBank mixerTrackBank;
@@ -47,10 +48,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
       final ControllerHost host = getHost();
       application = host.createApplication();
       surface = host.createHardwareSurface();
-      MidiOut midiOutDaw = host.getMidiOutPort(0);
-      MidiIn midiIn = host.getMidiInPort(0);
-      midiProcessor = new MidiProcessor(midiIn, midiOutDaw, surface);
-      DebugOutMk.registerHost(host);
+      midiProcessor = new MidiProcessor(host, surface);
    }
 
    protected abstract void initNavigation();
@@ -166,11 +164,12 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
    }
 
    protected void createKompleteKontrolDeviceKompleteKontrol(final PinnableCursorDevice cursorDevice) {
-      kompleteKontrolVst3Id = cursorDevice.createSpecificVst3Device(KOMPLETE_KONTROL_VST3_ID);
+      SpecificPluginDevice kompleteKontrolVst3Id = cursorDevice.createSpecificVst3Device(KOMPLETE_KONTROL_VST3_ID);
       final Parameter kompleteKontrolVst3InstId = kompleteKontrolVst3Id.createParameter(0);
       kompleteKontrolVst3InstId.name().addValueObserver(midiProcessor::updateKompleteKontrolInstance);
 
-      kompleteKontrolPluginVst2 = cursorDevice.createSpecificVst2Device(KOMPLETE_KONTROL_DEVICE_ID);
+      SpecificPluginDevice kompleteKontrolPluginVst2 = cursorDevice.createSpecificVst2Device(
+         KOMPLETE_KONTROL_DEVICE_ID);
       final Parameter kompleteKontrolVst2InstId = kompleteKontrolPluginVst2.createParameter(0);
       kompleteKontrolVst2InstId.markInterested();
       kompleteKontrolVst2InstId.name().markInterested();
@@ -282,6 +281,97 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
       final ModeButton redoButton = new ModeButton(midiProcessor, "REDO_BUTTON", CcAssignment.REDO);
       mainLayer.bindPressed(redoButton.getHwButton(), () -> application.redo());
       redoButton.getLed().isOn().setValue(true);
+   }
+
+   protected void doNavigateDown(TrackBank singleTrackBank, Track theTrack, ClipLauncherSlot theClip,
+                                 SceneBank sceneBank) {
+      switch (currentLayoutType) {
+         case LAUNCHER -> {
+            sceneBank.scrollForwards();
+            theClip.select();
+         }
+         case ARRANGER -> {
+            singleTrackBank.scrollBy(1);
+            theClip.select();
+            theTrack.selectInMixer();
+            if (sceneNavMode) {
+               sceneNavMode = false;
+               sceneBank.setIndication(false);
+               singleTrackBank.setShouldShowClipLauncherFeedback(true);
+            }
+         }
+         default -> {
+         }
+      }
+   }
+
+   protected void doNavigateUp(TrackBank singleTrackBank, Track theTrack, ClipLauncherSlot theClip,
+                               SceneBank sceneBank) {
+      switch (currentLayoutType) {
+         case LAUNCHER -> {
+            sceneBank.scrollBackwards();
+            theClip.select();
+         }
+         case ARRANGER -> {
+            if (singleTrackBank.scrollPosition().get() == 0) {
+               sceneNavMode = true;
+               sceneBank.setIndication(true);
+               singleTrackBank.setShouldShowClipLauncherFeedback(false);
+            } else {
+               singleTrackBank.scrollBy(-1);
+               theClip.select();
+               theTrack.selectInMixer();
+            }
+         }
+         default -> {
+         }
+      }
+   }
+
+   protected void doNavigateRight(TrackBank singleTrackBank, Track theTrack, ClipLauncherSlot theClip,
+                                  SceneBank sceneBank) {
+      switch (currentLayoutType) {
+         case LAUNCHER -> {
+            if (singleTrackBank.scrollPosition().get() == 0) {
+               sceneNavMode = true;
+               sceneBank.setIndication(true);
+               singleTrackBank.setShouldShowClipLauncherFeedback(false);
+            } else {
+               singleTrackBank.scrollBy(-1);
+               theClip.select();
+               theTrack.selectInMixer();
+            }
+         }
+         case ARRANGER -> {
+            sceneBank.scrollBackwards();
+            theClip.select();
+         }
+         default -> {
+         }
+      }
+   }
+
+   protected void doNavigateLeft(TrackBank singleTrackBank, Track theTrack, ClipLauncherSlot theClip,
+                                 SceneBank sceneBank) {
+      switch (currentLayoutType) {
+         case LAUNCHER -> {
+            singleTrackBank.scrollBy(1);
+            theClip.select();
+            theTrack.selectInMixer();
+            if (sceneNavMode) {
+               sceneNavMode = false;
+
+               sceneBank.setIndication(false);
+               singleTrackBank.setShouldShowClipLauncherFeedback(true);
+            }
+         }
+         case ARRANGER -> {
+            sceneBank.scrollForwards();
+            theClip.select();
+         }
+         default -> {
+         }
+      }
    }
 
 }

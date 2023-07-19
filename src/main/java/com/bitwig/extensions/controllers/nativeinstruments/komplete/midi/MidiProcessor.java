@@ -2,10 +2,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.komplete.midi;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
-import com.bitwig.extension.controller.api.HardwareButton;
-import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.MidiIn;
-import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.CcAssignment;
 
 public class MidiProcessor {
@@ -20,9 +17,9 @@ public class MidiProcessor {
    private String lastReportedKKInstance = null;
    private final HardwareSurface surface;
 
-   public MidiProcessor(MidiIn midiIn, MidiOut midiOut, HardwareSurface surface) {
-      this.midiIn = midiIn;
-      this.midiOut = midiOut;
+   public MidiProcessor(ControllerHost host, HardwareSurface surface) {
+      this.midiIn = host.getMidiInPort(0);
+      this.midiOut = host.getMidiOutPort(0);
       this.surface = surface;
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi0);
    }

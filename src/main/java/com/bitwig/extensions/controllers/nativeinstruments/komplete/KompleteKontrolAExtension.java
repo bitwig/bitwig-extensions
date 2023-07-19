@@ -94,7 +94,6 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 
       application.panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
       MidiIn midiIn = midiProcessor.getMidiIn();
-
       final HardwareButton leftNavButton = surface.createHardwareButton("LEFT_NAV_BUTTON");
       leftNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 1));
       final HardwareButton rightNavButton = surface.createHardwareButton("RIGHT_NAV_BUTTON");
@@ -103,89 +102,12 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
       upNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 127));
       final HardwareButton downNavButton = surface.createHardwareButton("DOWN_NAV_BUTTON");
       downNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 1));
-      mainLayer.bindPressed(leftNavButton, () -> {
-         switch (currentLayoutType) {
-            case LAUNCHER:
-               singleTrackBank.scrollBy(1);
-               theClip.select();
-               theTrack.selectInMixer();
-               if (sceneNavMode) {
-                  sceneNavMode = false;
-                  sceneBank.setIndication(false);
-                  singleTrackBank.setShouldShowClipLauncherFeedback(true);
-               }
-               break;
-            case ARRANGER:
-               sceneBank.scrollForwards();
-               theClip.select();
-               break;
-            default:
-               break;
-         }
-      });
-      mainLayer.bindPressed(rightNavButton, () -> {
-         switch (currentLayoutType) {
-            case LAUNCHER:
-               if (singleTrackBank.scrollPosition().get() == 0) {
-                  sceneNavMode = true;
-                  sceneBank.setIndication(true);
-                  singleTrackBank.setShouldShowClipLauncherFeedback(false);
-               } else {
-                  singleTrackBank.scrollBy(-1);
-                  theClip.select();
-                  theTrack.selectInMixer();
-               }
-               break;
-            case ARRANGER:
-               sceneBank.scrollBackwards();
-               theClip.select();
-               break;
-            default:
-               break;
-         }
-      });
-      mainLayer.bindPressed(upNavButton, () -> {
-         switch (currentLayoutType) {
-            case LAUNCHER:
-               sceneBank.scrollBackwards();
-               theClip.select();
-               break;
-            case ARRANGER:
-               if (singleTrackBank.scrollPosition().get() == 0) {
-                  sceneNavMode = true;
-                  sceneBank.setIndication(true);
-                  singleTrackBank.setShouldShowClipLauncherFeedback(false);
-               } else {
-                  singleTrackBank.scrollBy(-1);
-                  theClip.select();
-                  theTrack.selectInMixer();
-               }
-               break;
-            default:
-               break;
-         }
-      });
-      mainLayer.bindPressed(downNavButton, () -> {
-         switch (currentLayoutType) {
-            case LAUNCHER:
-               sceneBank.scrollForwards();
-               theClip.select();
-               break;
-            case ARRANGER:
-               singleTrackBank.scrollBy(1);
-               theClip.select();
-               theTrack.selectInMixer();
-               if (sceneNavMode) {
-                  sceneNavMode = false;
-                  sceneBank.setIndication(false);
-                  singleTrackBank.setShouldShowClipLauncherFeedback(true);
-               }
-               break;
-            default:
-               break;
-         }
-      });
 
+      mainLayer.bindPressed(leftNavButton, () -> doNavigateLeft(singleTrackBank, theTrack, theClip, sceneBank));
+      mainLayer.bindPressed(rightNavButton, () -> doNavigateRight(singleTrackBank, theTrack, theClip, sceneBank));
+      mainLayer.bindPressed(upNavButton, () -> doNavigateUp(singleTrackBank, theTrack, theClip, sceneBank));
+      mainLayer.bindPressed(downNavButton, () -> doNavigateDown(singleTrackBank, theTrack, theClip, sceneBank));
+      
       cursorClip.exists().markInterested();
       final ModeButton quantizeButton = new ModeButton(midiProcessor, "QUANTIZE_BUTTON", CcAssignment.QUANTIZE);
       sessionFocusLayer.bindPressed(quantizeButton, () -> cursorClip.quantize(1.0));
