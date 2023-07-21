@@ -25,6 +25,8 @@ import com.bitwig.extensions.controllers.mackie.value.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,9 +40,16 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    static final String MAIN_UNIT_SYSEX_HEADER = "F0 00 00 66 14 ";
    private static final String SYSEX_DEVICE_RELOAD = "f0000066140158595a";
-   private static final double[] FFWD_SPEEDS = {0.0625, 0.25, 1.0, 4.0};
-   private static final double[] FFWD_SPEEDS_SHIFT = {0.25, 1.0, 4.0, 16.0};
-   private static final long[] FFWD_TIMES = {500, 1000, 2000, 3000, 4000};
+
+   private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
+   private static ControllerHost debuggingHost;
+
+   public static void println(final String format, final Object... args) {
+      if (debuggingHost != null) {
+         final LocalDateTime now = LocalDateTime.now();
+         debuggingHost.println(now.format(DF) + " > " + String.format(format, args));
+      }
+   }
 
    private Layers layers;
    private Layer mainLayer;
@@ -63,7 +72,9 @@ public class MackieMcuProExtension extends ControllerExtension {
    private MasterTrack masterTrack;
    private final BooleanValueObject flipped = new BooleanValueObject();
    private final BooleanValueObject zoomActive = new BooleanValueObject();
-   // private final BooleanValueObject scrubActive = new BooleanValueObject();
+   private final BooleanValueObject mixerButtonHeld = new BooleanValueObject();
+   private boolean heldMixerButtonCanceled = false;
+   private long mixerDownTime = 0L;
 
    private final ValueObject<MixerMode> mixerMode = new ValueObject<>(MixerMode.MAIN);
    private MixerMode previousOverallMode = MixerMode.MAIN;
@@ -104,6 +115,7 @@ public class MackieMcuProExtension extends ControllerExtension {
    private MotorSlider masterSlider;
    private MenuCreator menuCreator;
 
+
    public MackieMcuProExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
                                 final ControllerConfig controllerConfig, final int extenders) {
       super(definition, host);
@@ -114,7 +126,7 @@ public class MackieMcuProExtension extends ControllerExtension {
    @Override
    public void init() {
       host = getHost();
-      DebugUtil.host = host;
+      debuggingHost = host;
       surface = host.createHardwareSurface();
       transport = host.createTransport();
       application = host.createApplication();
@@ -238,20 +250,9 @@ public class MackieMcuProExtension extends ControllerExtension {
       fourDKnob.setAdjustValueMatcher(midiIn.createRelativeSignedBitCCValueMatcher(0, 60, 128));
       fourDKnob.setStepSize(1 / 128.0);
 
-      final HardwareActionBindable incAction = host.createAction(() -> jogWheelPlayPosition(1), () -> "+");
-      final HardwareActionBindable decAction = host.createAction(() -> jogWheelPlayPosition(-1), () -> "-");
-      mainLayer.bind(fourDKnob, host.createRelativeHardwareControlStepTarget(incAction, decAction));
+      JogWheelTransportHandler jogWheelTransportHandler = new JogWheelTransportHandler(this, transport, fourDKnob,
+         holdAction, mainLayer);
       controllerConfig.getSimulationLayout().layoutJogwheel(fourDKnob);
-   }
-
-   private void jogWheelPlayPosition(final int dir) {
-      double resolution = 0.25;
-      if (modifier.isOptionSet()) {
-         resolution = 4.0;
-      } else if (modifier.isShiftSet()) {
-         resolution = 1.0;
-      }
-      changePlayPosition(dir, resolution, !modifier.isOptionSet(), !modifier.isControlSet());
    }
 
    private void changePlayPosition(final int inc, final double resolution, final boolean restrictToStart,
@@ -302,18 +303,16 @@ public class MackieMcuProExtension extends ControllerExtension {
    private void intiVPotModes() {
       MainUnitButton.assignToggle(this, BasicNoteOnAssignment.V_TRACK, mainLayer, trackChannelMode, controllerConfig);
 
-//      final Action[] allActions = application.getActions();
-//      for (final Action action : allActions) {
-//         RemoteConsole.out.println(" ACTION [{}] name={} id=[{}] ", action.getCategory().getName(), action.getName(),
-//            action.getId());
-//   }
-      // createOnOfBoolButton(NoteOnAssignment.SOLO, soloExclusive);
 
-      createModeButton(VPotMode.SEND);
-      createModeButton(VPotMode.PAN);
-      createModeButton(VPotMode.PLUGIN);
-      createModeButton(VPotMode.EQ);
-      createModeButton(VPotMode.INSTRUMENT);
+      if (controllerConfig.getSubType() == SubType.M_PLUS) {
+         createMixerButton();
+      } else {
+         createModeButton(VPotMode.SEND);
+         createModeButton(VPotMode.PAN);
+         createModeButton(VPotMode.PLUGIN);
+         createModeButton(VPotMode.EQ);
+         createModeButton(VPotMode.INSTRUMENT);
+      }
       noteFxButton = createModeButton(VPotMode.MIDI_EFFECT);
    }
 
@@ -336,26 +335,34 @@ public class MackieMcuProExtension extends ControllerExtension {
       MainUnitButton.assignIsPressed(this, BasicNoteOnAssignment.CURSOR_RIGHT, mainLayer, v -> navigateLeftRight(1, v),
          controllerConfig);
       MainUnitButton.assignToggle(this, BasicNoteOnAssignment.ZOOM, mainLayer, zoomActive, controllerConfig);
-      // createOnOfBoolButton(NoteOnAssignment.SCRUB, scrubActive);
    }
 
    private void navigateTrack(final int direction, final boolean isPressed) {
       if (!isPressed) {
          return;
       }
-      if (direction > 0) {
-         if (mixerMode.get() == MixerMode.DRUM) {
-            cursorDeviceControl.getDrumPadBank().scrollForwards();
+      if (mixerButtonHeld.get()) {
+         if (direction > 0) {
+            cursorDeviceControl.getRemotes().selectPreviousPage(true);
          } else {
-            mixerTrackBank.scrollForwards();
-            globalTrackBank.scrollForwards();
+            cursorDeviceControl.getRemotes().selectNextPage(true);
          }
+         heldMixerButtonCanceled = true;
       } else {
-         if (mixerMode.get() == MixerMode.DRUM) {
-            cursorDeviceControl.getDrumPadBank().scrollBackwards();
+         if (direction > 0) {
+            if (mixerMode.get() == MixerMode.DRUM) {
+               cursorDeviceControl.getDrumPadBank().scrollForwards();
+            } else {
+               mixerTrackBank.scrollForwards();
+               globalTrackBank.scrollForwards();
+            }
          } else {
-            mixerTrackBank.scrollBackwards();
-            globalTrackBank.scrollBackwards();
+            if (mixerMode.get() == MixerMode.DRUM) {
+               cursorDeviceControl.getDrumPadBank().scrollBackwards();
+            } else {
+               mixerTrackBank.scrollBackwards();
+               globalTrackBank.scrollBackwards();
+            }
          }
       }
    }
@@ -364,12 +371,21 @@ public class MackieMcuProExtension extends ControllerExtension {
       if (!isPressed) {
          return;
       }
-      final int numberOfTracksToControl = 8 * (nrOfExtenders + 1);
-      if (mixerMode.get() == MixerMode.DRUM) {
-         cursorDeviceControl.getDrumPadBank().scrollBy(direction * numberOfTracksToControl);
+      if (mixerButtonHeld.get()) {
+         if (direction > 0) {
+            cursorDeviceControl.getCursorDevice().selectNext();
+         } else {
+            cursorDeviceControl.getCursorDevice().selectPrevious();
+         }
+         heldMixerButtonCanceled = true;
       } else {
-         mixerTrackBank.scrollBy(direction * numberOfTracksToControl);
-         globalTrackBank.scrollBy(direction * numberOfTracksToControl);
+         final int numberOfTracksToControl = 8 * (nrOfExtenders + 1);
+         if (mixerMode.get() == MixerMode.DRUM) {
+            cursorDeviceControl.getDrumPadBank().scrollBy(direction * numberOfTracksToControl);
+         } else {
+            mixerTrackBank.scrollBy(direction * numberOfTracksToControl);
+            globalTrackBank.scrollBy(direction * numberOfTracksToControl);
+         }
       }
    }
 
@@ -434,6 +450,11 @@ public class MackieMcuProExtension extends ControllerExtension {
       autoWriteButton.bindPressed(mainLayer, transport.isArrangerAutomationWriteEnabled());
       autoWriteButton.bindPressed(shiftLayer, transport.isClipLauncherAutomationWriteEnabled());
 
+      final MainUnitButton autoOverrideButton = new MainUnitButton(this, BasicNoteOnAssignment.AUTO_OVERRIDE,
+         controllerConfig.getSimulationLayout());
+      autoOverrideButton.bindPressed(mainLayer, () -> transport.resetAutomationOverrides());
+      autoOverrideButton.bindLight(mainLayer, transport.isAutomationOverrideActive());
+
       final MainUnitButton touchButton = new MainUnitButton(this, BasicNoteOnAssignment.TOUCH,
          controllerConfig.getSimulationLayout());
       touchButton.bindPressed(mainLayer, () -> transport.automationWriteMode().set("touch"));
@@ -496,13 +517,6 @@ public class MackieMcuProExtension extends ControllerExtension {
          controllerConfig.getSimulationLayout());
       clipRecordButton.bindToggle(mainLayer, transport.isClipLauncherOverdubEnabled());
 
-      final MainUnitButton rewindButton = new MainUnitButton(this, BasicNoteOnAssignment.REWIND,
-         controllerConfig.getSimulationLayout()).activateHoldState();
-      final MainUnitButton fastForwardButton = new MainUnitButton(this, BasicNoteOnAssignment.FFWD,
-         controllerConfig.getSimulationLayout()).activateHoldState();
-      fastForwardButton.bindIsPressed(mainLayer, pressed -> notifyHoldForwardReverse(pressed, 1));
-      rewindButton.bindIsPressed(mainLayer, pressed -> notifyHoldForwardReverse(pressed, 1));
-
       initUndoRedo();
 
       transport.timeSignature().addValueObserver(sig -> ledDisplay.setDivision(sig));
@@ -558,23 +572,6 @@ public class MackieMcuProExtension extends ControllerExtension {
       });
    }
 
-   public void notifyHoldForwardReverse(final Boolean pressed, final int dir) {
-      if (pressed) {
-         holdAction.start(stage -> {
-            if (modifier.isShiftSet()) {
-               changePlayPosition(dir, MackieMcuProExtension.FFWD_SPEEDS_SHIFT[Math.min(stage,
-                  MackieMcuProExtension.FFWD_SPEEDS_SHIFT.length - 1)], true, true);
-            } else {
-               changePlayPosition(dir,
-                  MackieMcuProExtension.FFWD_SPEEDS[Math.min(stage, MackieMcuProExtension.FFWD_SPEEDS.length - 1)],
-                  true, true);
-            }
-         }, MackieMcuProExtension.FFWD_TIMES);
-      } else {
-         holdAction.stop();
-      }
-   }
-
    private void toggleVuMode(final boolean pressed) {
       if (!pressed) {
          return;
@@ -587,6 +584,32 @@ public class MackieMcuProExtension extends ControllerExtension {
          vuMode = VuMode.LED;
       }
       sections.forEach(section -> section.applyVuMode(getVuMode()));
+   }
+
+   private void createMixerButton() {
+      final MainUnitButton mixerButton = new MainUnitButton(this, BasicNoteOnAssignment.MIXER,
+         controllerConfig.getSimulationLayout());
+
+      mixerButton.bindPressed(mainLayer, () -> {
+         if (trackChannelMode.getMode() != VPotMode.PAN) {
+            mixerButtonHeld.set(true);
+         }
+         mixerDownTime = System.currentTimeMillis();
+         heldMixerButtonCanceled = false;
+      });
+      mixerButton.bindReleased(mainLayer, () -> {
+         long downTime = System.currentTimeMillis() - mixerDownTime;
+         if (!heldMixerButtonCanceled && downTime < 500) {
+            if (trackChannelMode.getMode() == VPotMode.PAN) {
+               setVPotMode(VPotMode.INSTRUMENT, true);
+            } else {
+               setVPotMode(VPotMode.PAN, true);
+            }
+         }
+         mixerButtonHeld.set(false);
+         heldMixerButtonCanceled = false;
+      });
+      mixerButton.bindLight(mainLayer, () -> trackChannelMode.getMode() == VPotMode.PAN);
    }
 
    /**
