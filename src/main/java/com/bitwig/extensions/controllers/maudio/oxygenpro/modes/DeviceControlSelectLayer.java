@@ -79,7 +79,7 @@ public class DeviceControlSelectLayer extends Layer {
    }
 
    private void handleDeviceType(int index, String deviceType) {
-      DebugOutOxy.println(" DEVICE type=%s", deviceType);
+      OxygenProExtension.println(" DEVICE type=%s", deviceType);
       deviceColors[index] = DEVICE_TYPE_TO_COLOR.getOrDefault(deviceType, RgbColor.MAGENTA);
    }
 

@@ -28,7 +28,7 @@ public class MidiProcessor {
 
    private void onMidi0(final ShortMidiMessage msg) {
       final int sb = msg.getStatusByte();
-      DebugOutOxy.println("MIDI %02X %02X %02x ", sb, msg.getData1(), msg.getData2());
+      OxygenProExtension.println("MIDI %02X %02X %02x ", sb, msg.getData1(), msg.getData2());
    }
 
    public void start() {
@@ -56,7 +56,7 @@ public class MidiProcessor {
    }
 
    protected void handleSysEx(final String sysExString) {
-      DebugOutOxy.println("SYSEX = %s", sysExString);
+      OxygenProExtension.println("SYSEX = %s", sysExString);
    }
 
    public void sendMidi(final int status, final int val1, final int val2) {

@@ -1,12 +1,7 @@
 package com.bitwig.extensions.controllers.maudio.oxygenpro.modes;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.DebugOutOxy;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.HwElements;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.OxyConfig;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.OxygenCcAssignments;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.RgbColor;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.ViewControl;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.*;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.PadButton;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.definition.BasicMode;
 import com.bitwig.extensions.framework.Layer;
@@ -30,7 +25,8 @@ public class SessionLayer extends Layer {
    private boolean backButtonHeld = false;
    private final boolean hasSceneLaunchButtons;
 
-   public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl, Transport transport, OxyConfig config) {
+   public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl, Transport transport,
+                       OxyConfig config) {
       super(layers, "SESSION_LAYER");
       Arrays.fill(slotColors, RgbColor.OFF);
 
@@ -81,15 +77,16 @@ public class SessionLayer extends Layer {
          modeHandler.changeMode(BasicMode.NOTES);
       }
    }
+
    public void handleBankRight() {
-      if(!hasSceneLaunchButtons) {
+      if (!hasSceneLaunchButtons) {
          launchScene(sceneBank.getScene(0));
-         
+
       }
    }
-   
+
    public void handleBankLeft() {
-      if(!hasSceneLaunchButtons) {
+      if (!hasSceneLaunchButtons) {
          launchScene(sceneBank.getScene(1));
       }
    }

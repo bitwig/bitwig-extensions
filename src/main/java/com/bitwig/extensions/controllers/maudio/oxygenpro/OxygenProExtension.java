@@ -8,7 +8,20 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 import com.bitwig.extensions.framework.values.FocusMode;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class OxygenProExtension extends ControllerExtension {
+
+   private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
+   private static ControllerHost debugHost;
+
+   public static void println(final String format, final Object... args) {
+      if (debugHost != null) {
+         final LocalDateTime now = LocalDateTime.now();
+         debugHost.println(now.format(DF) + " > " + String.format(format, args));
+      }
+   }
 
    private FocusMode recordFocusMode = FocusMode.LAUNCHER;
    private Layer mainLayer;
@@ -27,7 +40,7 @@ public class OxygenProExtension extends ControllerExtension {
    @Override
    public void init() {
       host = getHost();
-      DebugOutOxy.registerHost(host);
+      debugHost = host;
       initPreferences(host);
       final Context diContext = new Context(this);
       diContext.registerService(OxyConfig.class, config);

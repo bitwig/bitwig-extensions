@@ -76,16 +76,15 @@ public class RgbColor extends InternalHardwareLightState {
       if (hsb.sat < 4) {
          return RgbColor.WHITE;
       }
-
       switch (hsb.hue) {
          case 0:
             return OFF;
          case 1, 16:
             return RED;
          case 2:
-            return hsb.sat > 13 ? RED : ORANGE;
+            return ORANGE;
          case 3:
-            return hsb.sat <= 13 ? YELLOW : ORANGE;
+            return hsb.sat <= 14 ? YELLOW : ORANGE;
          case 4, 5:
             return CHARTREUSE;
          case 6:
