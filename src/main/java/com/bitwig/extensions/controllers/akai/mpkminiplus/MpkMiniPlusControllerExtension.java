@@ -61,7 +61,7 @@ public class MpkMiniPlusControllerExtension extends ControllerExtension {
       midiIn.setSysexCallback(this::handleSysEx);
 
       final NoteInput keyboardInput = midiIn.createNoteInput("Keys", "80????", "90????", "b001??", "e0????", "b040??",
-         "D0????", "b002??", "b00C??");
+         "D0????", "b00A??", "b00B??");
       keyboardInput.setShouldConsumeEvents(true);
       final NoteInput padsInput = midiIn.createNoteInput("Pads", "89????", "99????", "D9????", "A9????");
       padsInput.setShouldConsumeEvents(true);
@@ -217,7 +217,7 @@ public class MpkMiniPlusControllerExtension extends ControllerExtension {
    }
 
    private void onMidiCallback(int msg, int data1, int data2) {
-      // println("MIDI IN = > %02X %02X %02X", msg, data1, data2);
+      println("MIDI IN = > %02X %02X %02X", msg, data1, data2);
    }
 
 
