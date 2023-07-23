@@ -12,7 +12,7 @@ import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.display.Lcd
 import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.display.MainScreenSection;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
-import com.bitwig.extensions.framework.time.TimedEvent;
+import com.bitwig.extensions.framework.time.TimedDelayEvent;
 import com.bitwig.extensions.framework.values.FocusMode;
 
 import java.util.ArrayList;
@@ -113,7 +113,7 @@ public class KeylabEssential3Extension extends ControllerExtension {
          case INIT:
             lcdDisplay.logoText("Bitwig", "connected", KeylabIcon.BITWIG);
             sysExHandler.requestPadBank();
-            sysExHandler.queueTimedEvent(new TimedEvent(() -> mainScreenSection.updatePage(), 2000));
+            sysExHandler.queueTimedEvent(new TimedDelayEvent(() -> mainScreenSection.updatePage(), 2000));
             break;
       }
    }

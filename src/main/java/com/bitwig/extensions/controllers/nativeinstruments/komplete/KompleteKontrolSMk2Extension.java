@@ -111,6 +111,7 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
       singleTrackBank.setShouldShowClipLauncherFeedback(true);
       final ClipLauncherSlot theClip = slotBank.getItemAt(0);
 
+
       final PinnableCursorDevice cursorDevice = cursorTrack.createCursorDevice();
       createKompleteKontrolDeviceKompleteKontrol(cursorDevice);
       final SceneBank sceneBank = singleTrackBank.sceneBank();
@@ -197,7 +198,7 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
          }
       });
    }
-   
+
    private void updateLedSceneForwards(final SceneBank sceneBank, final boolean v) {
       final int sv = (v ? 0x2 : 0x0) | (sceneBank.canScrollBackwards().get() ? 0x1 : 0x0);
       switch (currentLayoutType) {

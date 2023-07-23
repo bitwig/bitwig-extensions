@@ -9,6 +9,7 @@ import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.RgbButton;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.Inject;
+import com.bitwig.extensions.framework.time.TimedDelayEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
 import java.util.*;
@@ -120,7 +121,7 @@ public class SysExHandler {
    }
 
    public void sendDelayed(final byte[] sysExByteCommand, final int waitTime) {
-      timedEvents.add(new TimedEvent(() -> midiOut.sendSysex(sysExByteCommand), waitTime));
+      timedEvents.add(new TimedDelayEvent(() -> midiOut.sendSysex(sysExByteCommand), waitTime));
    }
 
    public void queueTimedEvent(final TimedEvent timedEvent) {
