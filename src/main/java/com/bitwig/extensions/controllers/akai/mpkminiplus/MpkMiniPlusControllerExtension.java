@@ -202,6 +202,7 @@ public class MpkMiniPlusControllerExtension extends ControllerExtension {
 
    void initPreferences(final ControllerHost host) {
       DocumentState documentState = host.getDocumentState();
+
       final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Record Button assignment", //
          "Transport", RecordFocusMode.toSelector(), recordFocusMode.getDescriptor());
       recordButtonAssignment.addValueObserver(value -> recordFocusMode = RecordFocusMode.toMode(value));
@@ -217,7 +218,7 @@ public class MpkMiniPlusControllerExtension extends ControllerExtension {
    }
 
    private void onMidiCallback(int msg, int data1, int data2) {
-      println("MIDI IN = > %02X %02X %02X", msg, data1, data2);
+      //println("MIDI IN = > %02X %02X %02X", msg, data1, data2);
    }
 
 

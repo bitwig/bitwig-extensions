@@ -173,8 +173,9 @@ public class MackieMcuProExtension extends ControllerExtension {
       initTransport();
       initTrackBank(4);
       initModifiers();
-
       initCursorSection();
+
+      initDocumentSetting();
 
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi0);
 
@@ -192,6 +193,15 @@ public class MackieMcuProExtension extends ControllerExtension {
 //		for (final Action action : as) {
 //			host.println("ACTION > [ " + action.getId() + "]");
 //		}
+   }
+
+   private void initDocumentSetting() {
+      Preferences preferences = host.getPreferences();
+      SettableBooleanValue followTrack = preferences.getBooleanSetting("Follow Selected Track", "Track Focus", false);
+      if (followTrack.get()) {
+         mixerTrackBank.followCursorTrack(cursorTrack);
+         globalTrackBank.followCursorTrack(cursorTrack);
+      }
    }
 
    public MainUnitButton getEnterButton() {
@@ -702,15 +712,19 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       mainTrackBank.followCursorTrack(cursorTrack);
 
+      cursorTrack.position().addValueObserver(posi -> println("CursorTrack = %d", posi));
+
       mixerTrackBank = getHost().createMainTrackBank(numberOfHwChannels, 1, nrOfScenes);
       mixerTrackBank.setSkipDisabledItems(false);
       mixerTrackBank.canScrollChannelsDown().markInterested();
       mixerTrackBank.canScrollChannelsUp().markInterested();
       mixerTrackBank.scrollPosition().addValueObserver(offset -> {
+         println(" Offset = %d", offset);
          if (mixerMode.get() == MixerMode.MAIN) {
             ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
          }
       });
+
 
       globalTrackBank = host.createTrackBank(numberOfHwChannels, 1, nrOfScenes);
       globalTrackBank.setSkipDisabledItems(false);
