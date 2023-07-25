@@ -6,10 +6,13 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.ControllerHost;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class MpkMiniPlusControllerExtensionDefinition extends ControllerExtensionDefinition {
    private final static UUID ID = UUID.fromString("429d64c5-0da1-475d-aba7-e990b9bbc2e4");
+   private final static String[] PORT_VARIANTS = {"Anschluss","Port","Puerto","Porto"};
 
    @Override
    public String getHardwareVendor() {
@@ -18,7 +21,7 @@ public class MpkMiniPlusControllerExtensionDefinition extends ControllerExtensio
 
    @Override
    public String getHardwareModel() {
-      return "MPK mini plus";
+      return "MPK Mini plus";
    }
 
    @Override
@@ -34,23 +37,26 @@ public class MpkMiniPlusControllerExtensionDefinition extends ControllerExtensio
    @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
-      final String inputNames[] = new String[1];
-      final String outputNames[] = new String[1];
+      List<String[]> portNames = new ArrayList<>();
 
       switch (platformType) {
          case LINUX:
-            inputNames[0] = "MPK mini 3 MIDI 1";
-            outputNames[0] = "MPK mini 3 MIDI 1";
+            portNames.add(new String[]{"MPK mini Plus MIDI 1"});
             break;
-
          case WINDOWS:
+            portNames.add(new String[]{"MPK mini Plus"});
+            break;
          case MAC:
-            inputNames[0] = "MPK mini Plus";
-            outputNames[0] = "MPK mini Plus";
+            for(int i=0;i<PORT_VARIANTS.length;i++) {
+               String port = "MPK mini Plus %s 1".formatted(PORT_VARIANTS[i]);
+               portNames.add(new String[]{port});
+            }
             break;
       }
-
-      list.add(inputNames, outputNames);
+   
+      for(int i=0;i<portNames.size();i++) {
+         list.add(portNames.get(i), portNames.get(i));
+      }
    }
 
    @Override
@@ -60,7 +66,7 @@ public class MpkMiniPlusControllerExtensionDefinition extends ControllerExtensio
 
    @Override
    public String getName() {
-      return "MPK mini plus";
+      return "MPK Mini plus";
    }
 
    @Override
