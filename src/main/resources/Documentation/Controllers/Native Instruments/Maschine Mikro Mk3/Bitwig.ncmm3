@@ -175,7 +175,6 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Perform">
-        <disabled />
         <controller>51</controller>
         <channel>0</channel>
         <off>0</off>

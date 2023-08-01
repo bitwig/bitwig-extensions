@@ -7,10 +7,12 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiPro
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers.TrackLayer;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.time.TimeRepeatEvent;
+import com.bitwig.extensions.framework.time.TimedDelayEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 public class GateButton {
    public static final int STD_REPEAT_DELAY = 400;
@@ -75,6 +77,20 @@ public class GateButton {
       layer.bind(hwButton, hwButton.pressedAction(),
          () -> initiateRepeat(action, STD_REPEAT_DELAY, STD_REPEAT_FREQUENCY));
       layer.bind(hwButton, hwButton.releasedAction(), this::cancelEvent);
+   }
+
+   public void bindHoldDelay(final Layer layer, Runnable initialAction, Runnable holdCallback,
+                             IntConsumer buttonReleasedAction, int delayTime) {
+      layer.bind(hwButton, hwButton.pressedAction(), () -> {
+         initialAction.run();
+         recordedDownTime = System.currentTimeMillis();
+         currentTimer = new TimedDelayEvent(holdCallback, delayTime);
+         midiProcessor.queueEvent(currentTimer);
+      });
+      layer.bind(hwButton, hwButton.releasedAction(), () -> {
+         buttonReleasedAction.accept((int) (System.currentTimeMillis() - recordedDownTime));
+         this.cancelEvent();
+      });
    }
 
    public void initiateRepeat(final Runnable action, final int repeatDelay, final int repeatFrequency) {

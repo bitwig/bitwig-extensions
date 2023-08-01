@@ -6,7 +6,6 @@ import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.TouchStrip;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
@@ -53,9 +52,7 @@ public class PadLayer extends Layer {
    private final Integer[] noteTable = new Integer[128];
    private final Integer[] velocityTable = new Integer[128];
 
-   private final Layer fixedLayer;
    private boolean fixedVelocityActive = false;
-   private boolean fixedVelocityHeld = false;
    private boolean fixedVelocityModified = false;
    private int fixedVelocity = 120;
 
@@ -86,7 +83,6 @@ public class PadLayer extends Layer {
       muteLayer = new Layer(layers, "Drum-mute");
       soloLayer = new Layer(layers, "Drum-solo");
       eraseLayer = new Layer(layers, "Drum-solo");
-      fixedLayer = new Layer(layers, "Fixed_Layer");
 
       Arrays.fill(padColors, RgbColor.OFF);
       Arrays.fill(deactivationTable, -1);
@@ -122,17 +118,8 @@ public class PadLayer extends Layer {
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(dir));
       hwElements.getButton(CcAssignment.ENCODER_PRESS).bindPressed(this, () -> handleEncoderPress(true));
       hwElements.getButton(CcAssignment.ENCODER_PRESS).bindRelease(this, () -> handleEncoderPress(false));
-      hwElements.getButton(CcAssignment.FIXED_VEL).bindPressed(this, () -> handleFixedVelocityPressed());
-      hwElements.getButton(CcAssignment.FIXED_VEL).bindRelease(this, () -> handleFixedVelocityReleased());
-      hwElements.getButton(CcAssignment.FIXED_VEL).bindLight(this, () -> fixedVelocityActive);
 
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
-
-      TouchStrip touchStrip = hwElements.getTouchStrip();
-      touchStrip.bindStripLight(fixedLayer, () -> fixedVelocity);
-      touchStrip.bindValue(fixedLayer, value -> updateFixedVelocity(value));
-      touchStrip.bindTouched(fixedLayer, touched -> {
-      });
 
    }
 
@@ -148,22 +135,19 @@ public class PadLayer extends Layer {
       }
    }
 
-   private void handleFixedVelocityPressed() {
-      fixedVelocityHeld = true;
-      fixedLayer.setIsActive(true);
+   void handleFixedVelocityPressed() {
+      fixedVelocityModified = false;
    }
 
-   private void handleFixedVelocityReleased() {
-      fixedVelocityHeld = false;
+   void handleFixedVelocityReleased() {
       if (!fixedVelocityModified) {
          fixedVelocityActive = !fixedVelocityActive;
          updateFixedVelocity();
          noteInput.setVelocityTranslationTable(velocityTable);
       }
-      fixedLayer.setIsActive(false);
    }
 
-   private void updateFixedVelocity(int value) {
+   void updateFixedVelocity(int value) {
       if (value > 0 && value != fixedVelocity) {
          fixedVelocity = value;
          fixedVelocityModified = true;
@@ -447,6 +431,10 @@ public class PadLayer extends Layer {
       final DrumPad pad = drumPadBank.getItemAt(index);
       pad.selectInEditor();
       // TODO noteFocusHandler.notifyDrumPadSelected(pad, padOffset, index);
+   }
+
+   public boolean isFixedActive() {
+      return fixedVelocityActive;
    }
 
    private int getSelectedIndex() {

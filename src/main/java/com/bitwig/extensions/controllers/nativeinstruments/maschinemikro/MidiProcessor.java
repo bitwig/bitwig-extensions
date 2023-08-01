@@ -133,7 +133,7 @@ public class MidiProcessor {
       return RgbColor.of(color, ColorBrightness.BRIGHT);
    }
 
-   RgbColor blinkFast(int onColor, int offColor) {
+   public RgbColor blinkFast(int onColor, int offColor) {
       return RgbColor.of(blinkState % 8 == 0 ? onColor : offColor);
    }
 

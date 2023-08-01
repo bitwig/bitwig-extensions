@@ -1,9 +1,7 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers;
 
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.FocusClip;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
+import com.bitwig.extension.controller.api.RemoteControl;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.TouchStrip;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -18,12 +16,15 @@ public class TouchStripLayer extends Layer {
    private final Layer pitchBendLayer;
    private final Layer notePlayLayer;
    private final MidiProcessor midiProcessor;
+   private final Layer performLayer;
+   private final Layer fixedLayer;
    private StripMode stripMode = StripMode.NONE;
    private int modValue = 0;
    private int pitchBend = 0;
    private int noteStripValue = 0;
    private int lastNotePlayed = -1;
    private boolean noteHeld = false;
+   private RemoteControl focusedParameter;
 
    @Inject
    private PadLayer padLayer;
@@ -34,7 +35,9 @@ public class TouchStripLayer extends Layer {
       this.midiProcessor = midiProcessor;
       stripModLayer = new Layer(layers, "STRIP_MOD_LAYER");
       pitchBendLayer = new Layer(layers, "PITCH_BEND_LAYER");
-      notePlayLayer = new Layer(layers, "NOTEP_PLAY_LAYER");
+      notePlayLayer = new Layer(layers, "NOTE_PLAY_LAYER");
+      performLayer = new Layer(layers, "PERFORM_LAYER");
+      fixedLayer = new Layer(layers, "FIXED_LAYER");
 
       hwElements.getButton(CcAssignment.MOD).bindPressed(this, () -> selectMode(StripMode.MOD));
       hwElements.getButton(CcAssignment.MOD).bindLight(this, () -> stripMode == StripMode.MOD);
@@ -44,6 +47,9 @@ public class TouchStripLayer extends Layer {
 
       hwElements.getButton(CcAssignment.NOTES).bindPressed(this, () -> selectMode(StripMode.NOTE));
       hwElements.getButton(CcAssignment.NOTES).bindLight(this, () -> stripMode == StripMode.NOTE);
+
+      hwElements.getButton(CcAssignment.PERFORM).bindPressed(this, () -> selectMode(StripMode.PARAMETER));
+      hwElements.getButton(CcAssignment.PERFORM).bindLight(this, () -> stripMode == StripMode.PARAMETER);
 
       TouchStrip touchStrip = hwElements.getTouchStrip();
 
@@ -71,6 +77,56 @@ public class TouchStripLayer extends Layer {
       touchStrip.bindTouched(notePlayLayer, this::playNote);
       touchStrip.bindStripLight(notePlayLayer, () -> noteHeld ? Math.max(noteStripValue, 4) : 0);
       touchStrip.bindValue(notePlayLayer, this::selectNote);
+
+      touchStrip.bindValue(performLayer, value -> {
+         if (focusedParameter != null) {
+            focusedParameter.value().set(value, 128);
+         }
+      });
+      touchStrip.bindStripLight(performLayer, () -> {
+         if (focusedParameter != null) {
+            return (int) (focusedParameter.getAsDouble() * 127);
+         }
+         return 0;
+      });
+
+//      hwElements.getButton(CcAssignment.FIXED_VEL).bindPressed(this, () -> handleFixedVelocityPressed());
+//      hwElements.getButton(CcAssignment.FIXED_VEL).bindRelease(this, () -> handleFixedVelocityReleased());
+      hwElements.getButton(CcAssignment.FIXED_VEL).bindLight(this, () -> isFixedVelocityActive());
+
+      hwElements.getButton(CcAssignment.FIXED_VEL)
+         .bindHoldDelay(this, this::handleFixedInitial, this::handleHeldFixed, this::handleFixedReleased, 1000);
+
+      touchStrip.bindStripLight(fixedLayer, () -> padLayer.getFixedVelocity());
+      touchStrip.bindValue(fixedLayer, value -> padLayer.updateFixedVelocity(value));
+      touchStrip.bindTouched(fixedLayer, touched -> {
+      });
+   }
+
+   private void handleFixedInitial() {
+      DebugOutMk.println(" PRESS FIX INITIAL ");
+   }
+
+   private void handleHeldFixed() {
+      DebugOutMk.println(" PRESS HELD ");
+   }
+
+   private void handleFixedReleased(int timePassed) {
+      DebugOutMk.println(" PRESS Released %d", timePassed);
+   }
+
+   private void handleFixedVelocityPressed() {
+      padLayer.handleFixedVelocityPressed();
+      fixedLayer.setIsActive(true);
+   }
+
+   private void handleFixedVelocityReleased() {
+      padLayer.handleFixedVelocityReleased();
+      fixedLayer.setIsActive(false);
+   }
+
+   private boolean isFixedVelocityActive() {
+      return padLayer.isFixedActive();
    }
 
    private void playNote(Boolean pressed) {
@@ -79,6 +135,11 @@ public class TouchStripLayer extends Layer {
          midiProcessor.releaseNote(0, lastNotePlayed);
          lastNotePlayed = -1;
       }
+   }
+
+   public void setCurrentParameter(RemoteControl parameter) {
+      DebugOutMk.println(" Focused Parameter " + parameter);
+      this.focusedParameter = parameter;
    }
 
    private void selectNote(int stripValue) {
@@ -106,10 +167,12 @@ public class TouchStripLayer extends Layer {
       updateLayers();
    }
 
-
    private void updateLayers() {
       stripModLayer.setIsActive(stripMode == StripMode.MOD);
       pitchBendLayer.setIsActive(stripMode == StripMode.PITCH);
       notePlayLayer.setIsActive(stripMode == StripMode.NOTE);
+      performLayer.setIsActive(stripMode == StripMode.PARAMETER);
    }
+
+
 }

@@ -24,17 +24,20 @@ public class TrackLayer extends Layer {
    private final Layer muteLayer;
    private final Layer soloLayer;
    private final CursorTrack cursorTrack;
+   private final TrackBank trackBank;
    private RgbColor[] trackColors = new RgbColor[16];
    private final boolean[] selectionField = new boolean[16];
    private RgbColor[] sendColors = new RgbColor[8];
    private MuteSoloMode muteSoloMode = MuteSoloMode.NONE;
-   private EncoderDestination currentEncoderDestination = EncoderDestination.VOLUME;
+   private boolean[] isPlaying = new boolean[8];
+   private EncoderDestination currentEncoderDestination = EncoderDestination.TRACK;
    @Inject
    private ModifierLayer modifierLayer;
    @Inject
    private MidiProcessor midiProcessor;
 
    private enum EncoderDestination {
+      TRACK,
       VOLUME,
       PAN,
       SEND1,
@@ -55,14 +58,15 @@ public class TrackLayer extends Layer {
             .sendChannelColor()
             .addValueObserver((r, g, b) -> sendColors[index] = RgbColor.toColor(r, g, b));
       }
-      TrackBank trackBank = viewControl.getGroupTrackBank();
+      trackBank = viewControl.getGroupTrackBank();
+      trackBank.followCursorTrack(cursorTrack);
       List<RgbButton> gridButtons = hwElements.getPadButtons();
       for (int i = 0; i < 16; i++) {
          final int index = i;
          RgbButton button = gridButtons.get(i);
          if (i < trackBank.getSizeOfBank()) {
             Track track = trackBank.getItemAt(i);
-
+            track.playingNotes().addValueObserver(notes -> isPlaying[index] = notes.length > 0);
             prepareTrack(track, index);
             button.bindPressed(this, () -> selectTrack(track, index));
             button.bindLight(this, () -> this.getLight(track, index));
@@ -73,16 +77,16 @@ public class TrackLayer extends Layer {
             button.bindPressed(soloLayer, () -> track.solo().toggle());
             button.bindLight(soloLayer, () -> this.getSoloLight(track, index));
          } else if (i == 12) {
-            button.bindPressed(this, () -> currentEncoderDestination = EncoderDestination.VOLUME);
+            button.bindPressed(this, () -> setCurrentEncoderDestination(EncoderDestination.VOLUME));
             button.bindLight(this, () -> getModeState(EncoderDestination.VOLUME, RgbColor.WHITE));
          } else if (i == 13) {
-            button.bindPressed(this, () -> currentEncoderDestination = EncoderDestination.PAN);
+            button.bindPressed(this, () -> setCurrentEncoderDestination(EncoderDestination.PAN));
             button.bindLight(this, () -> getModeState(EncoderDestination.PAN, RgbColor.ORANGE));
          } else if (i == 14) {
-            button.bindPressed(this, () -> currentEncoderDestination = EncoderDestination.SEND1);
+            button.bindPressed(this, () -> setCurrentEncoderDestination(EncoderDestination.SEND1));
             button.bindLight(this, () -> getModeState(EncoderDestination.SEND1, 0, sendBank.getItemAt(0)));
          } else if (i == 15) {
-            button.bindPressed(this, () -> currentEncoderDestination = EncoderDestination.SEND2);
+            button.bindPressed(this, () -> setCurrentEncoderDestination(EncoderDestination.SEND2));
             button.bindLight(this, () -> getModeState(EncoderDestination.SEND2, 1, sendBank.getItemAt(1)));
          } else {
             button.bindEmptyAction(this);
@@ -90,6 +94,14 @@ public class TrackLayer extends Layer {
          }
       }
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(dir));
+   }
+
+   private void setCurrentEncoderDestination(EncoderDestination destination) {
+      if (destination == currentEncoderDestination) {
+         currentEncoderDestination = EncoderDestination.TRACK;
+      } else {
+         currentEncoderDestination = destination;
+      }
    }
 
    private RgbColor getModeState(EncoderDestination mode, RgbColor color) {
@@ -111,6 +123,13 @@ public class TrackLayer extends Layer {
 
    private void handleEncoder(int diff) {
       switch (currentEncoderDestination) {
+         case TRACK -> {
+            if (diff > 0) {
+               cursorTrack.selectNext();
+            } else {
+               cursorTrack.selectPrevious();
+            }
+         }
          case VOLUME -> {
             if (modifierLayer.getShiftHeld().get()) {
                cursorTrack.volume().value().inc(diff, 128);
@@ -175,13 +194,17 @@ public class TrackLayer extends Layer {
          return RgbColor.OFF;
       }
       if (selectionField[index]) {
-         return trackColors[index].brightness(ColorBrightness.SUPERBRIGHT);
+         //return RgbColor.RED.brightness(ColorBrightness.BRIGHT);
+         return midiProcessor.blinkMid(RgbColor.RED.getColorIndex(), trackColors[index].getColorIndex());
       }
       if (track.isQueuedForStop().get()) {
          return midiProcessor.blinkMid(trackColors[index]);
       }
       if (track.isStopped().get()) {
          return trackColors[index].brightness(ColorBrightness.DARKENED);
+      }
+      if (isPlaying[index]) {
+         return trackColors[index].brightness(ColorBrightness.SUPERBRIGHT);
       }
       return trackColors[index].brightness(ColorBrightness.BRIGHT);
    }
