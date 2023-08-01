@@ -53,7 +53,7 @@ public class PadLayer extends Layer {
    private final Integer[] velocityTable = new Integer[128];
 
    private boolean fixedVelocityActive = false;
-   private boolean fixedVelocityModified = false;
+
    private int fixedVelocity = 120;
 
    private final boolean[] isSelected = new boolean[16];
@@ -135,23 +135,19 @@ public class PadLayer extends Layer {
       }
    }
 
-   void handleFixedVelocityPressed() {
-      fixedVelocityModified = false;
-   }
-
-   void handleFixedVelocityReleased() {
-      if (!fixedVelocityModified) {
-         fixedVelocityActive = !fixedVelocityActive;
-         updateFixedVelocity();
-         noteInput.setVelocityTranslationTable(velocityTable);
-      }
+    public void toggleFixedMode() {
+      fixedVelocityActive = !fixedVelocityActive;
+      updateFixedVelocity();
+      noteInput.setVelocityTranslationTable(velocityTable);
    }
 
    void updateFixedVelocity(int value) {
       if (value > 0 && value != fixedVelocity) {
          fixedVelocity = value;
-         fixedVelocityModified = true;
          updateFixedVelocity();
+         if(fixedVelocityActive) {
+            noteInput.setVelocityTranslationTable(velocityTable);
+         }
       }
    }
 
@@ -525,6 +521,7 @@ public class PadLayer extends Layer {
          noteInput.setVelocityTranslationTable(velocityTable);
       }
    }
-
-
+   
+   
+  
 }

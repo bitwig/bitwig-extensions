@@ -100,10 +100,6 @@ public class MaschineMikroExtension extends ControllerExtension {
    private void intStripHandling(Context diContext, Layer progressLayer) {
       HwElements hwElements = diContext.getService(HwElements.class);
       FocusClip focusClip = diContext.getService(FocusClip.class);
-      MidiProcessor midiProcessor = diContext.getService(MidiProcessor.class);
-      Layer stripModLayer = diContext.createLayer("STRIP_MOD_LAYER");
-      Layer pitchBendLayer = diContext.createLayer("PITCH_BEND_LAYER");
-
       TouchStrip touchStrip = hwElements.getTouchStrip();
       touchStrip.bindStripLight(progressLayer, () -> focusClip.getPlayPosition());
       progressLayer.setIsActive(true);

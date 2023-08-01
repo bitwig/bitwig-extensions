@@ -95,7 +95,7 @@ public class TouchStripLayer extends Layer {
       hwElements.getButton(CcAssignment.FIXED_VEL).bindLight(this, () -> isFixedVelocityActive());
 
       hwElements.getButton(CcAssignment.FIXED_VEL)
-         .bindHoldDelay(this, this::handleFixedInitial, this::handleHeldFixed, this::handleFixedReleased, 1000);
+         .bindHoldDelay(this, this::handleFixedInitial, this::handleHeldFixed, this::handleFixedReleased, 500);
 
       touchStrip.bindStripLight(fixedLayer, () -> padLayer.getFixedVelocity());
       touchStrip.bindValue(fixedLayer, value -> padLayer.updateFixedVelocity(value));
@@ -104,24 +104,17 @@ public class TouchStripLayer extends Layer {
    }
 
    private void handleFixedInitial() {
-      DebugOutMk.println(" PRESS FIX INITIAL ");
+      //
    }
 
    private void handleHeldFixed() {
-      DebugOutMk.println(" PRESS HELD ");
-   }
-
-   private void handleFixedReleased(int timePassed) {
-      DebugOutMk.println(" PRESS Released %d", timePassed);
-   }
-
-   private void handleFixedVelocityPressed() {
-      padLayer.handleFixedVelocityPressed();
       fixedLayer.setIsActive(true);
    }
 
-   private void handleFixedVelocityReleased() {
-      padLayer.handleFixedVelocityReleased();
+   private void handleFixedReleased(int timePassed) {
+      if(timePassed < 500) {
+         padLayer.toggleFixedMode();
+      }
       fixedLayer.setIsActive(false);
    }
 

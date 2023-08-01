@@ -27,7 +27,9 @@ public class ModeHandler extends Layer {
    private BrowserLayer browserLayer;
    @Inject
    private DeviceEncoderLayer deviceEncoderLayer;
-
+   @Inject
+   private StepEditor stepEditorLayer;
+   
    private final PadLayer drumPadLayer;
 
    private Layer activeLayer;
@@ -39,6 +41,7 @@ public class ModeHandler extends Layer {
       GROUP,
       PLUGIN,
       KEYS(true),
+      STEP,
       NOTE_REPEAT(true);
       private boolean keyMode;
 
@@ -66,6 +69,7 @@ public class ModeHandler extends Layer {
       this.drumPadLayer = drumPadLayer;
       bindModeButton(hwElements, CcAssignment.PATTERN, Mode.LAUNCHER);
       bindModeButton(hwElements, CcAssignment.SCENE, Mode.SCENE);
+      bindModeButton(hwElements, CcAssignment.STEP, Mode.STEP);
       bindKeyModeButton(hwElements, CcAssignment.KEYBOARD, Mode.KEYS, () -> keyboardModeActive(drumPadLayer));
       bindKeyModeButton(hwElements, CcAssignment.PAD_MODE, Mode.PADS, () -> padModeActive(drumPadLayer));
       bindMomentaryModeButton(hwElements, CcAssignment.NOTE_REPEAT, Mode.NOTE_REPEAT);
@@ -230,6 +234,8 @@ public class ModeHandler extends Layer {
             activeLayer = deviceEncoderLayer;
          } else if (newMode == Mode.SCENE) {
             activeLayer = sceneLayer;
+         }else if (newMode == Mode.STEP) {
+            activeLayer = stepEditorLayer;
          }
          currentMode = newMode;
          activeLayer.setIsActive(true);

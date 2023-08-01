@@ -7,6 +7,7 @@ import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.NoteStep.State;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.StepViewPosition;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.NIColorUtil;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLed;

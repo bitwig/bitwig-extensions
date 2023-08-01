@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.nativeinstruments.maschine.modes;
+package com.bitwig.extensions.controllers.nativeinstruments.commons;
 
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.Clip;
