@@ -66,6 +66,7 @@ public class PadLayer extends Layer {
    private FocusClip focusClip;
    @Inject
    private ModifierLayer modifierLayer;
+   private StepEditor stepEditor;
 
    public PadLayer(Layers layers, HwElements hwElements, ViewControl viewControl, ModifierLayer modifierLayer,
                    MidiProcessor midiProcessor, ControllerHost host) {
@@ -123,6 +124,12 @@ public class PadLayer extends Layer {
 
    }
 
+   @Inject
+   public void setStepEditor(StepEditor stepEditor) {
+      this.stepEditor = stepEditor;
+      this.stepEditor.setSelectedNote(padOffset + 0);
+   }
+
    private void handleEraseActive(boolean pressed) {
       if (isActive() && !soloLayer.isActive() && !muteLayer.isActive()) {
          if (pressed) {
@@ -135,7 +142,7 @@ public class PadLayer extends Layer {
       }
    }
 
-    public void toggleFixedMode() {
+   public void toggleFixedMode() {
       fixedVelocityActive = !fixedVelocityActive;
       updateFixedVelocity();
       noteInput.setVelocityTranslationTable(velocityTable);
@@ -145,7 +152,7 @@ public class PadLayer extends Layer {
       if (value > 0 && value != fixedVelocity) {
          fixedVelocity = value;
          updateFixedVelocity();
-         if(fixedVelocityActive) {
+         if (fixedVelocityActive) {
             noteInput.setVelocityTranslationTable(velocityTable);
          }
       }
@@ -327,6 +334,9 @@ public class PadLayer extends Layer {
          if (selected) {
             // TODO noteFocusHandler.notifyDrumPadSelected(pad, padOffset, index);
             isSelected[index] = true;
+            if (this.stepEditor != null) {
+               this.stepEditor.setSelectedNote(padOffset + index);
+            }
          } else {
             isSelected[index] = false;
          }
@@ -521,7 +531,6 @@ public class PadLayer extends Layer {
          noteInput.setVelocityTranslationTable(velocityTable);
       }
    }
-   
-   
-  
+
+
 }
