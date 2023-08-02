@@ -83,6 +83,11 @@ public class LaunchPadXExtensionDefinition extends ControllerExtensionDefinition
    }
 
    @Override
+   public String getHelpFilePath() {
+      return "Controllers/Novation/Launchpad X.pdf";
+   }
+
+   @Override
    public ControllerExtension createInstance(final ControllerHost host) {
       return new LaunchpadXControllerExtension(this, host);
    }

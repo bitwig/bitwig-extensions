@@ -4,6 +4,7 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extensions.controllers.novation.common.SimpleLed;
 import com.bitwig.extensions.controllers.novation.common.SimpleLedColor;
 import com.bitwig.extension.controller.ControllerExtension;
@@ -27,24 +28,19 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    // Identify possible modes
    enum Mode
    {
-      Send2FullDevice(8, "Switched to 2 Sends and Selected DEVICE Controls Mode"),
-      Send2Device1(9, "Switched to 2 Sends and 1 per Channel DEVICE Control Mode"),
-      Send2Pan1(10, "Switched to 2 Sends and Pan Mode"),
-      Send3(11, "Switched to 3 Sends Mode"),
-      Send1Device2(12, "Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
-      Device3(13, "Switched to per Channel DEVICE Controls Mode"),
-      Track3(13, "Switched to per Channel TRACK Controls Mode"),
-      None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 6.");
+      Send2FullDevice("Switched to 2 Sends and Selected DEVICE Controls Mode"),
+      Send2Device1("Switched to 2 Sends and 1 per Channel DEVICE Control Mode"),
+      Send2Pan1("Switched to 2 Sends and Pan Mode"),
+      Send3("Switched to 3 Sends Mode"),
+      Send1Device2("Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
+      Device3("Switched to per Channel DEVICE Controls Mode"),
+      Track3("Switched to per Channel TRACK Controls Mode"),
+      Send2Project("Switched to 2 Sends and PROJECT Controls Mode"),
+      None("Unsupported Template. We provide Modes for the Factory Template 1 to 8.");
 
-      Mode(final int channel, final String notification)
+      Mode(final String notification)
       {
-         mChannel = channel;
          mNotification = notification;
-      }
-
-      int getChannel()
-      {
-         return mChannel;
       }
 
       public String getNotification()
@@ -52,7 +48,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          return mNotification;
       }
 
-      private final int mChannel;
       private final String mNotification;
    }
 
@@ -80,8 +75,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
       mMidiIn.setSysexCallback(this::onSysex);
 
-      // Load the template Factory/1
-      mMidiOut.sendSysex("f000202902117708f7");
+      loadFactory1Template();
 
       mCursorTrack = mHost.createCursorTrack("cursor-track", "Launch Control XL Track Cursor", 0, 0, true);
       mCursorDevice = mCursorTrack.createCursorDevice();
@@ -92,8 +86,15 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mRemoteControls.selectedPageIndex().markInterested();
       mRemoteControls.pageCount().markInterested();
 
+      final Project project = mHost.getProject();
+      final Track rootTrackGroup = project.getRootTrackGroup();
+      mProjectRemoteControlsCursor = rootTrackGroup.createCursorRemoteControlsPage("project-remotes", 8, null);
+
       for (int i = 0; i < 8; ++i)
+      {
          markParameterInterested(mRemoteControls.getParameter(i));
+         markParameterInterested(mProjectRemoteControlsCursor.getParameter(i));
+      }
 
       mTrackBank = mHost.createMainTrackBank(8, 3, 0);
       mTrackBank.followCursorTrack(mCursorTrack);
@@ -138,6 +139,13 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       selectMode(Mode.Send2FullDevice);
       setTrackControl(TrackControl.Mute);
       setDeviceOn(false);
+   }
+
+   private void loadFactory1Template()
+   {
+      // Load the template Factory/1
+      mMidiOut.sendSysex("f000202902117708f7");
+      mIgnoreNextSysex = true;
    }
 
    private static void markParameterInterested(final RemoteControl parameter)
@@ -274,6 +282,15 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          mSend2FullDeviceLayer.bind(mHardwareKnobs[16 + i], mRemoteControls.getParameter(i));
       }
 
+      mSend2ProjectLayer = new Layer(layers, "2 Sends and Project Remotes");
+      for (int i = 0; i < 8; ++i)
+      {
+         final SendBank sendBank = mTrackBank.getItemAt(i).sendBank();
+         mSend2ProjectLayer.bind(mHardwareKnobs[i], sendBank.getItemAt(0));
+         mSend2ProjectLayer.bind(mHardwareKnobs[8 + i], sendBank.getItemAt(1));
+         mSend2ProjectLayer.bind(mHardwareKnobs[16 + i], mProjectRemoteControlsCursor.getParameter(i));
+      }
+
       mSend2Device1Layer = new Layer(layers, "2 Sends 1 Device");
       for (int i = 0; i < 8; ++i)
       {
@@ -369,12 +386,36 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mDevice3Layer.setIsActive(mode == Mode.Device3);
       mTrack3layer.setIsActive(mode == Mode.Track3);
       mSend2FullDeviceLayer.setIsActive(mode == Mode.Send2FullDevice);
+      mSend2ProjectLayer.setIsActive(mode == Mode.Send2Project);
+
+      switch (mode)
+      {
+         case Send2FullDevice, Send2Project, Send2Device1, Send2Pan1 -> setSizeOfSendBank(2);
+         case Send3 -> setSizeOfSendBank(3);
+         case Send1Device2 -> setSizeOfSendBank(1);
+      }
 
       mHost.showPopupNotification(mode.getNotification());
    }
 
+   private void setSizeOfSendBank(final int size)
+   {
+      for (int i = 0; i < 8; ++i)
+      {
+         final Track track = mTrackBank.getItemAt(i);
+         final SendBank sendBank = track.sendBank();
+         sendBank.setSizeOfBank(size);
+      }
+   }
+
    private void onSysex(final String sysex)
    {
+      if (mIgnoreNextSysex)
+      {
+         mIgnoreNextSysex = false;
+         return;
+      }
+
       // mHost.println("Sysex IN1: " + sysex);
 
       switch (sysex)
@@ -386,8 +427,11 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          case "f00020290211770cf7" -> selectMode(Mode.Send1Device2);
          case "f00020290211770df7" -> selectMode(Mode.Device3);
          case "f00020290211770ef7" -> selectMode(Mode.Track3);
+         case "f00020290211770ff7" -> selectMode(Mode.Send2Project);
          default -> selectMode(Mode.None);
       }
+
+      loadFactory1Template();
    }
 
    @Override
@@ -421,7 +465,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
       if (!sb.toString().isEmpty())
       {
-         final String sysex = "F0 00 20 29 02 11 78 0" + Integer.toHexString(mMode.getChannel()) + sb + " F7";
+         final String sysex = "F0 00 20 29 02 11 78 08" + sb + " F7";
          mMidiOut.sendSysex(sysex);
       }
    }
@@ -529,6 +573,12 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
                mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? green : off);
                mKnobsLed[16 + i].setColor(mRemoteControls.getParameter(i).exists().get() ? amber : off);
             }
+            case Send2Project ->
+            {
+               mKnobsLed[i].setColor(sendBank.getItemAt(0).exists().get() ? green : off);
+               mKnobsLed[8 + i].setColor(sendBank.getItemAt(1).exists().get() ? green : off);
+               mKnobsLed[16 + i].setColor(mProjectRemoteControlsCursor.getParameter(i).exists().get() ? amber : off);
+            }
             case None ->
             {
                mKnobsLed[i].setColor(off);
@@ -572,7 +622,13 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private CursorTrack mCursorTrack;
    private PinnableCursorDevice mCursorDevice;
    private CursorRemoteControlsPage mRemoteControls;
+   private final CursorDevice[] mTrackDeviceCursors = new CursorDevice[8];
+   private final CursorRemoteControlsPage[] mTrackCursorDeviceRemoteControls = new CursorRemoteControlsPage[8];
+   private final CursorRemoteControlsPage[] mTrackRemoteControls = new CursorRemoteControlsPage[8];
+   private CursorRemoteControlsPage mProjectRemoteControlsCursor;
+
    private boolean mIsDeviceOn = false;
+   private boolean mIgnoreNextSysex = false;
    private TrackControl mTrackControl = TrackControl.Mute;
    private Mode mMode = Mode.Send2Device1;
 
@@ -633,9 +689,6 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private final SimpleLed mDownButtonLed = new SimpleLed(0x90, 45);
    private final SimpleLed mLeftButtonLed = new SimpleLed(0x90, 46);
    private final SimpleLed mRightButtonLed = new SimpleLed(0x90, 47);
-   private final CursorDevice[] mTrackDeviceCursors = new CursorDevice[8];
-   private final CursorRemoteControlsPage[] mTrackCursorDeviceRemoteControls = new CursorRemoteControlsPage[8];
-   private final CursorRemoteControlsPage[] mTrackRemoteControls = new CursorRemoteControlsPage[8];
 
    private HardwareSurface mHardwareSurface;
    private final AbsoluteHardwareKnob[] mHardwareKnobs = new AbsoluteHardwareKnob[3 * 8];
@@ -663,4 +716,5 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    private Layer mRecordArmLayer;
    private Layer mMainLayer;
    private Layer mDeviceLayer;
+   private Layer mSend2ProjectLayer;
 }

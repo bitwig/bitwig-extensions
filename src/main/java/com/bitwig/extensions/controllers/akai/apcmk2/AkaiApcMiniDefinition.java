@@ -15,7 +15,7 @@ public class AkaiApcMiniDefinition extends ControllerExtensionDefinition {
 
    @Override
    public String getName() {
-      return "Akai APC Mini mk2";
+      return "APC Mini mk2";
    }
 
    @Override
@@ -56,6 +56,11 @@ public class AkaiApcMiniDefinition extends ControllerExtensionDefinition {
    @Override
    public int getNumMidiOutPorts() {
       return 1;
+   }
+
+   @Override
+   public String getHelpFilePath() {
+      return "Controllers/Akai/APC Mini Mk2.pdf";
    }
 
    @Override

@@ -47,6 +47,11 @@ public class LaunchkeyMiniMk3ExtensionDefinition extends LaunchkeyMk3ExtensionDe
    }
 
    @Override
+   public String getHelpFilePath() {
+      return "Controllers/Novation/Launchkey Mini MK3.pdf";
+   }
+
+   @Override
    public LaunchkeyMk3Extension createInstance(final ControllerHost host) {
       return new LaunchkeyMk3Extension(this, host, false, true);
    }

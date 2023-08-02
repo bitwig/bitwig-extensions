@@ -15,7 +15,7 @@ public class AkaiApcKeys25Definition extends ControllerExtensionDefinition {
 
    @Override
    public String getName() {
-      return "Akai APC Key25 mk2";
+      return "APC Key25 mk2";
    }
 
    @Override
@@ -56,6 +56,11 @@ public class AkaiApcKeys25Definition extends ControllerExtensionDefinition {
    @Override
    public int getNumMidiOutPorts() {
       return 1;
+   }
+
+   @Override
+   public String getHelpFilePath() {
+      return "Controllers/Akai/APC Key25 Mk2.pdf";
    }
 
    @Override

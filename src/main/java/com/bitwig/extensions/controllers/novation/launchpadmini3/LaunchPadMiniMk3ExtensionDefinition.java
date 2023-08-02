@@ -60,6 +60,11 @@ public class LaunchPadMiniMk3ExtensionDefinition extends ControllerExtensionDefi
    }
 
    @Override
+   public String getHelpFilePath() {
+      return "Controllers/Novation/Launchpad Mini MK3.pdf";
+   }
+
+   @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
       final String[] inputNames = new String[2];
