@@ -37,6 +37,7 @@ public class PadLayer extends Layer {
    private final Layer eraseLayer;
    private final Layer muteLayer;
    private final Layer soloLayer;
+   private final Layer selectLayer;
 
    private int padOffset = 36;
    private int currentArpRate = 2;
@@ -84,6 +85,9 @@ public class PadLayer extends Layer {
       muteLayer = new Layer(layers, "Drum-mute");
       soloLayer = new Layer(layers, "Drum-solo");
       eraseLayer = new Layer(layers, "Drum-solo");
+      selectLayer = new Layer(layers, "Drum-solo");
+      
+      modifierLayer.getSelectHeld().addValueObserver( this::setSelectMode);
 
       Arrays.fill(padColors, RgbColor.OFF);
       Arrays.fill(deactivationTable, -1);
@@ -115,6 +119,7 @@ public class PadLayer extends Layer {
          button.bindPressed(soloLayer, () -> handleSolo(drumPadIndex, pad));
          button.bindLight(soloLayer, () -> soloLedState(drumPadIndex, pad));
          button.bindPressed(eraseLayer, () -> handleErase(drumPadIndex));
+         button.bindPressed(selectLayer, () -> handleSelect(drumPadIndex));
       }
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(dir));
       hwElements.getButton(CcAssignment.ENCODER_PRESS).bindPressed(this, () -> handleEncoderPress(true));
@@ -123,13 +128,18 @@ public class PadLayer extends Layer {
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
 
    }
-
-   @Inject
+   
+    @Inject
    public void setStepEditor(StepEditor stepEditor) {
       this.stepEditor = stepEditor;
       this.stepEditor.setSelectedNote(padOffset + 0);
    }
-
+   
+   private void handleSelect(final int drumPadIndex) {
+      drumPadBank.getItemAt(drumPadIndex).selectInEditor();
+   }
+   
+   
    private void handleEraseActive(boolean pressed) {
       if (isActive() && !soloLayer.isActive() && !muteLayer.isActive()) {
          if (pressed) {
@@ -179,6 +189,24 @@ public class PadLayer extends Layer {
             setNotesActive(false);
             muteLayer.setIsActive(muteSoloMode == MuteSoloMode.MUTE);
             soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO);
+         }
+      }
+   }
+   
+   public void setSelectMode(boolean active) {
+      if (isActive() && inDrumMode.get()) {
+         if(active) {
+            muteLayer.setIsActive(false);
+            soloLayer.setIsActive(false);
+            selectLayer.setIsActive(true);
+            setNotesActive(false);
+         } else {
+            selectLayer.setIsActive(false);
+            if(this.muteSoloMode != MuteSoloMode.NONE) {
+               setMutSoloMode(this.muteSoloMode);
+            } else{
+               setNotesActive(true);
+            }
          }
       }
    }
