@@ -10,6 +10,7 @@ import java.util.Map;
 public class ControllerConfig {
    private final Map<BasicNoteOnAssignment, Integer> assignOverrides;
    private final boolean hasLowerDisplay;
+   private final boolean hasUpperDisplay;
    private final ManufacturerType manufacturerType;
    private final SubType subType;
    private boolean hasDedicateVu;
@@ -21,9 +22,11 @@ public class ControllerConfig {
 
    public ControllerConfig(final Map<BasicNoteOnAssignment, Integer> assignOverrides,
                            final ManufacturerType manufacturerType, final SubType subType,
-                           final boolean hasLowerDisplay, final boolean has2ClickResolution) {
+                           final boolean hasUpperDisplay, final boolean hasLowerDisplay,
+                           final boolean has2ClickResolution) {
       this.assignOverrides = assignOverrides;
       this.hasLowerDisplay = hasLowerDisplay;
+      this.hasUpperDisplay = hasUpperDisplay;
       this.manufacturerType = manufacturerType;
       this.subType = subType;
       hasDedicateVu = false;
@@ -35,12 +38,17 @@ public class ControllerConfig {
    public ControllerConfig(final boolean hasLowerDisplay) {
       assignOverrides = new HashMap<>();
       this.hasLowerDisplay = hasLowerDisplay;
+      this.hasUpperDisplay = true;
       manufacturerType = ManufacturerType.MACKIE;
       hasDedicateVu = true;
       hasMasterVu = false;
       subType = SubType.UNSPECIFIED;
       simulationLayout = new SimulationLayout();
       has2ClickResolution = false;
+   }
+
+   public boolean isHasUpperDisplay() {
+      return hasUpperDisplay;
    }
 
    public boolean isHas2ClickResolution() {

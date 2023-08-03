@@ -538,7 +538,6 @@ public class MackieMcuProExtension extends ControllerExtension {
          flipped, controllerConfig);
 
       initVuModeButton();
-
    }
 
    private void initVuModeButton() {
@@ -712,14 +711,13 @@ public class MackieMcuProExtension extends ControllerExtension {
 
       mainTrackBank.followCursorTrack(cursorTrack);
 
-      cursorTrack.position().addValueObserver(posi -> println("CursorTrack = %d", posi));
+      //cursorTrack.position().addValueObserver(posi -> println("CursorTrack = %d", posi));
 
       mixerTrackBank = getHost().createMainTrackBank(numberOfHwChannels, 1, nrOfScenes);
       mixerTrackBank.setSkipDisabledItems(false);
       mixerTrackBank.canScrollChannelsDown().markInterested();
       mixerTrackBank.canScrollChannelsUp().markInterested();
       mixerTrackBank.scrollPosition().addValueObserver(offset -> {
-         println(" Offset = %d", offset);
          if (mixerMode.get() == MixerMode.MAIN) {
             ledDisplay.setAssignment(StringUtil.toTwoCharVal(offset + 1), false);
          }
@@ -840,7 +838,15 @@ public class MackieMcuProExtension extends ControllerExtension {
       final MainUnitButton loopButton = new MainUnitButton(this, BasicNoteOnAssignment.CYCLE,
          controllerConfig.getSimulationLayout());
 
-      bindHoldToggleButton(loopButton, menuCreator.createCyleMenu(host, transport), transport.isArrangerLoopEnabled());
+      if (controllerConfig.isHasUpperDisplay()) {
+         bindHoldToggleButton(loopButton, menuCreator.createCyleMenu(host, transport),
+            transport.isArrangerLoopEnabled());
+      } else {
+         loopButton.bindLight(mainLayer, transport.isArrangerLoopEnabled());
+         loopButton.bindPressed(mainLayer, () -> {
+            transport.isArrangerLoopEnabled().toggle();
+         });
+      }
 
       application.panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
    }
@@ -1058,7 +1064,6 @@ public class MackieMcuProExtension extends ControllerExtension {
          }
       });
    }
-
 
    private void bindHoldButton(final MainUnitButton button, final MenuModeLayerConfiguration menu) {
       // mainLayer.bind(value, (OnOffHardwareLight) button.backgroundLight());
