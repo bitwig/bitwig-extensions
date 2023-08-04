@@ -6,16 +6,18 @@ import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.NIColorUtil;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLed;
-import com.bitwig.extensions.controllers.nativeinstruments.maschine.Scale;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.ScaleLayer;
+import com.bitwig.extensions.framework.values.Scale;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class KeyboardMode extends BasicKeyPlayingMode {
 
-   private static final List<Scale> scales = new ArrayList<Scale>();
+   private static final List<Scale> scales = List.of(Scale.CHROMATIC, Scale.MAJOR, Scale.MINOR, Scale.PENTATONIC,
+      Scale.PENTATONIC_MINOR, Scale.DORIAN, Scale.PHRYGIAN, Scale.LYDIAN, Scale.MIXOLYDIAN, Scale.LOCRIAN,
+      Scale.DIMINISHED, Scale.MAJOR_BLUES, Scale.MINOR_BLUES, Scale.WHOLE_TONE, Scale.ARABIAN, Scale.EGYPTIAN,
+      Scale.GYPSI, Scale.SPANISH);
 
    private static final RgbLed BASENOTE_COLOR = RgbLed.of(73);
    private static final RgbLed BASENOTE_COLOR_ON = RgbLed.of(75);
@@ -28,28 +30,7 @@ public class KeyboardMode extends BasicKeyPlayingMode {
 
    private int currentScaleIndex = 0;
    private int trackColor = 0;
-
-   static {
-      scales.add(new Scale("Chromatic", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
-      scales.add(new Scale("Ionian/Major", 0, 2, 4, 5, 7, 9, 11));
-      scales.add(new Scale("Aeolian/Minor", 0, 2, 3, 5, 7, 8, 10));
-      scales.add(new Scale("Pentatonic", 0, 2, 4, 7, 9));
-      scales.add(new Scale("Pentatonic Minor", 0, 3, 5, 7, 10));
-      scales.add(new Scale("Dorian (B/g)", 0, 2, 3, 5, 7, 9, 10));
-      scales.add(new Scale("Phrygian (A-flat/f)", 0, 1, 3, 5, 7, 8, 10));
-      scales.add(new Scale("Lydian (D/e)", 0, 2, 4, 6, 7, 9, 11));
-      scales.add(new Scale("Mixolydian (F/d)", 0, 2, 4, 5, 7, 9, 10));
-      scales.add(new Scale("Locrian", 0, 1, 3, 5, 6, 8, 10));
-      scales.add(new Scale("Diminished", 0, 2, 3, 5, 6, 8, 9, 10));
-      scales.add(new Scale("Major Blues", 0, 3, 4, 7, 9, 10));
-      scales.add(new Scale("Minor Blues", 0, 3, 4, 6, 7, 10));
-      scales.add(new Scale("Whole", 0, 2, 4, 6, 8, 10));
-      scales.add(new Scale("Arabian", 0, 2, 4, 5, 6, 8, 10));
-      scales.add(new Scale("Egyptian", 0, 2, 5, 7, 10));
-      scales.add(new Scale("Gypsi", 0, 2, 3, 6, 7, 8, 11));
-      scales.add(new Scale("Spanish", 0, 1, 3, 4, 5, 7, 8, 10));
-   }
-
+   
    public KeyboardMode(final MaschineExtension driver, //
                        final String name, //
                        final NoteFocusHandler noteFocusHandler, //
@@ -154,7 +135,7 @@ public class KeyboardMode extends BasicKeyPlayingMode {
       }
 
       final int startNote = 60 + octaveOffset * 12 + baseNote;
-      final int[] intervals = currentScale.getIntervalls();
+      final int[] intervals = currentScale.getIntervals();
       for (int i = 0; i < 16; i++) {
          final int index = i % intervals.length;
          final int oct = i / intervals.length;

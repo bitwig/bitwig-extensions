@@ -5,35 +5,10 @@ package com.bitwig.extensions.framework.time;
  * The event needs to be queued and the queue repeatedly invokes the process method.
  * Once the given time has passed, the event is executed and will be removed from the queue.
  */
-public class TimedEvent {
-    protected final long startTime;
-    protected final Runnable timedAction;
-    protected boolean completed;
-    protected final long delayTime;
+public interface TimedEvent {
+   boolean isCompleted();
 
-    public TimedEvent(final Runnable timedAction, final long delayTime) {
-        startTime = System.currentTimeMillis();
-        completed = false;
-        this.delayTime = delayTime;
-        this.timedAction = timedAction;
-    }
+   void cancel();
 
-    public void cancel() {
-        completed = true;
-    }
-
-    public boolean isCompleted() {
-        return completed;
-    }
-
-    public void process() {
-        if (completed) {
-            return;
-        }
-        final long passedTime = System.currentTimeMillis() - startTime;
-        if (passedTime >= delayTime) {
-            timedAction.run();
-            completed = true;
-        }
-    }
+   void process();
 }

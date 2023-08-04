@@ -2,21 +2,22 @@ package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.TextCommand;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.ValueCommand;
 import com.bitwig.extensions.framework.Layers;
 
 public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 
-   protected KompleteKontrolAExtension(final ControllerExtensionDefinition definition, final ControllerHost host) {
+   public KompleteKontrolAExtension(final ControllerExtensionDefinition definition, final ControllerHost host) {
       super(definition, host);
    }
 
    @Override
    public void init() {
       super.init();
-      intoDawMode();
+      midiProcessor.intoDawMode();
       final ControllerHost host = getHost();
 
-      surface = host.createHardwareSurface();
       surface.setPhysicalSize(200, 100);
 
       layers = new Layers(this);
@@ -27,7 +28,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
       project = host.getProject();
       mTransport = host.createTransport();
 
-      setUpSliders(midiIn);
+      setUpSliders();
       final MidiIn midiIn2 = host.getMidiInPort(1);
       final NoteInput noteInput = midiIn2.createNoteInput("MIDI", "80????", "90????", "D0????", "E0????", "B001??",
          "B040??", "B1????");
@@ -42,15 +43,13 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 
       doHardwareLayout();
 
-      for (final CcAssignment cc : CcAssignment.values()) {
-         sendLedUpdate(cc, 0);
-      }
+      midiProcessor.resetAllLEDs();
       mainLayer.activate();
-      host.showPopupNotification("Komplete Kontrol A Initialized");
    }
 
    @Override
-   protected void setUpSliders(final MidiIn midiIn) {
+   protected void setUpSliders() {
+      MidiIn midiIn = midiProcessor.getMidiIn();
       for (int i = 0; i < 8; i++) {
          final RelativeHardwareKnob knob = surface.createRelativeHardwareKnob("VOLUME_KNOB" + i);
          volumeKnobs[i] = knob;
@@ -74,13 +73,13 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 
       final TrackBank singleTrackBank = getHost().createTrackBank(1, 0, 1);
       singleTrackBank.scrollPosition().markInterested();
+      singleTrackBank.setShouldShowClipLauncherFeedback(true);
 
       cursorTrack = getHost().createCursorTrack(1, 1);
       singleTrackBank.followCursorTrack(cursorTrack);
 
       final Track theTrack = singleTrackBank.getItemAt(0);
       final ClipLauncherSlotBank slotBank = theTrack.clipLauncherSlotBank();
-      slotBank.setIndication(true);
       final ClipLauncherSlot theClip = slotBank.getItemAt(0);
 
       final PinnableCursorDevice cursorDevice = cursorTrack.createCursorDevice();
@@ -91,10 +90,10 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
       sceneBank.canScrollBackwards().markInterested();
       sceneBank.canScrollForwards().markInterested();
 
-      sceneBank.getScene(0).setIndication(false);
+      sceneBank.setIndication(false);
 
       application.panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
-
+      MidiIn midiIn = midiProcessor.getMidiIn();
       final HardwareButton leftNavButton = surface.createHardwareButton("LEFT_NAV_BUTTON");
       leftNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 1));
       final HardwareButton rightNavButton = surface.createHardwareButton("RIGHT_NAV_BUTTON");
@@ -103,91 +102,14 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
       upNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 127));
       final HardwareButton downNavButton = surface.createHardwareButton("DOWN_NAV_BUTTON");
       downNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 1));
-      mainLayer.bindPressed(leftNavButton, () -> {
-         switch (currentLayoutType) {
-            case LAUNCHER:
-               singleTrackBank.scrollBy(1);
-               theClip.select();
-               theTrack.selectInMixer();
-               if (sceneNavMode) {
-                  sceneNavMode = false;
-                  sceneBank.getScene(0).setIndication(false);
-                  theClip.setIndication(true);
-               }
-               break;
-            case ARRANGER:
-               sceneBank.scrollForwards();
-               theClip.select();
-               break;
-            default:
-               break;
-         }
-      });
-      mainLayer.bindPressed(rightNavButton, () -> {
-         switch (currentLayoutType) {
-            case LAUNCHER:
-               if (singleTrackBank.scrollPosition().get() == 0) {
-                  sceneNavMode = true;
-                  sceneBank.getScene(0).setIndication(true);
-                  theClip.setIndication(false);
-               } else {
-                  singleTrackBank.scrollBy(-1);
-                  theClip.select();
-                  theTrack.selectInMixer();
-               }
-               break;
-            case ARRANGER:
-               sceneBank.scrollBackwards();
-               theClip.select();
-               break;
-            default:
-               break;
-         }
-      });
-      mainLayer.bindPressed(upNavButton, () -> {
-         switch (currentLayoutType) {
-            case LAUNCHER:
-               sceneBank.scrollBackwards();
-               theClip.select();
-               break;
-            case ARRANGER:
-               if (singleTrackBank.scrollPosition().get() == 0) {
-                  sceneNavMode = true;
-                  sceneBank.getScene(0).setIndication(true);
-                  theClip.setIndication(false);
-               } else {
-                  singleTrackBank.scrollBy(-1);
-                  theClip.select();
-                  theTrack.selectInMixer();
-               }
-               break;
-            default:
-               break;
-         }
-      });
-      mainLayer.bindPressed(downNavButton, () -> {
-         switch (currentLayoutType) {
-            case LAUNCHER:
-               sceneBank.scrollForwards();
-               theClip.select();
-               break;
-            case ARRANGER:
-               singleTrackBank.scrollBy(1);
-               theClip.select();
-               theTrack.selectInMixer();
-               if (sceneNavMode) {
-                  sceneNavMode = false;
-                  sceneBank.getScene(0).setIndication(false);
-                  theClip.setIndication(true);
-               }
-               break;
-            default:
-               break;
-         }
-      });
 
+      mainLayer.bindPressed(leftNavButton, () -> doNavigateLeft(singleTrackBank, theTrack, theClip, sceneBank));
+      mainLayer.bindPressed(rightNavButton, () -> doNavigateRight(singleTrackBank, theTrack, theClip, sceneBank));
+      mainLayer.bindPressed(upNavButton, () -> doNavigateUp(singleTrackBank, theTrack, theClip, sceneBank));
+      mainLayer.bindPressed(downNavButton, () -> doNavigateDown(singleTrackBank, theTrack, theClip, sceneBank));
+      
       cursorClip.exists().markInterested();
-      final ModeButton quantizeButton = new ModeButton(this, "QUANTIZE_BUTTON", CcAssignment.QUANTIZE);
+      final ModeButton quantizeButton = new ModeButton(midiProcessor, "QUANTIZE_BUTTON", CcAssignment.QUANTIZE);
       sessionFocusLayer.bindPressed(quantizeButton, () -> cursorClip.quantize(1.0));
       sessionFocusLayer.bind(() -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get(),
          quantizeButton.getLed());
@@ -199,7 +121,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
       cursorTrack.canHoldNoteData().markInterested();
       cursorClip.exists().markInterested();
 
-      final ModeButton clearButton = new ModeButton(this, "CLEAR_BUTTON", CcAssignment.CLEAR);
+      final ModeButton clearButton = new ModeButton(midiProcessor, "CLEAR_BUTTON", CcAssignment.CLEAR);
       sessionFocusLayer.bindPressed(clearButton, cursorClip::clearSteps);
       sessionFocusLayer.bind(() -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get(),
          clearButton.getLed());
@@ -212,7 +134,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
          .isOn()
          .setValueSupplier(() -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get());
 
-      final ModeButton knobPressed = new ModeButton(this, "KNOB4D_PRESSED", CcAssignment.PRESS_4D_KNOB);
+      final ModeButton knobPressed = new ModeButton(midiProcessor, "KNOB4D_PRESSED", CcAssignment.PRESS_4D_KNOB);
       mainLayer.bindPressed(knobPressed, () -> {
          if (sceneNavMode) {
             sceneBank.getScene(0).launch();
@@ -220,7 +142,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
             theClip.launch();
          }
       });
-      final ModeButton knobShiftPressed = new ModeButton(this, "KNOB4D_PRESSED_SHIFT",
+      final ModeButton knobShiftPressed = new ModeButton(midiProcessor, "KNOB4D_PRESSED_SHIFT",
          CcAssignment.PRESS_4D_KNOB_SHIFT);
       mainLayer.bindPressed(knobShiftPressed, () -> {
          if (sceneNavMode) {
@@ -233,51 +155,49 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
 
    @Override
    public void exit() {
-      midiOutDaw.sendMidi(Midi.KK_DAW, Midi.GOODBYE, 0);
-      getHost().showPopupNotification("Komplete Kontrol A Series Exited");
+      midiProcessor.exit();
    }
 
    @Override
    public void flush() {
-      if (dawModeConfirmed) {
-         surface.updateHardware();
-      }
+      midiProcessor.doFlush();
    }
 
    @Override
    protected void setUpChannelControl(final int index, final Track channel) {
-      final IndexButton selectButton = new IndexButton(this, index, "SELECT_BUTTON", 0x42);
-      mainLayer.bindPressed(selectButton.getHwButton(), () -> {
+      HardwareButton selectButton = midiProcessor.createButton("SELECT_BUTTON", 0x42, index);
+      mainLayer.bindPressed(selectButton, () -> {
          if (!channel.exists().get()) {
             application.createInstrumentTrack(-1);
          } else {
             channel.selectInMixer();
          }
       });
-
       channel.exists().markInterested();
-      channel.addIsSelectedInMixerObserver(v -> trackSelectedCommand.send(midiOutDaw, index, v));
-      channel.mute().addValueObserver(v -> trackMutedCommand.send(midiOutDaw, index, v));
-      channel.solo().addValueObserver(v -> trackSoloCommand.send(midiOutDaw, index, v));
-      channel.arm().addValueObserver(v -> trackArmedCommand.send(midiOutDaw, index, v));
-      channel.isMutedBySolo().addValueObserver(v -> trackMutedBySoloCommand.send(midiOutDaw, index, v));
 
-      channel.name().addValueObserver(name -> trackNameCommand.send(midiOutDaw, index, name));
+      channel.addIsSelectedInMixerObserver(v -> {
+         midiProcessor.sendValueCommand(ValueCommand.SELECT, index, v);
+      });
+      channel.mute().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.MUTE, index, v));
+      channel.solo().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.SOLO, index, v));
+      channel.arm().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.ARM, index, v));
+      channel.isMutedBySolo()
+         .addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.MUTED_BY_SOLO, index, v));
+      channel.name().addValueObserver(name -> midiProcessor.sendTextCommand(TextCommand.NAME, index, name));
 
       channel.volume()
          .displayedValue()
-         .addValueObserver(valueText -> trackVolumeTextCommand.send(midiOutDaw, index, valueText));
+         .addValueObserver(valueText -> midiProcessor.sendTextCommand(TextCommand.VOLUME, index, valueText));
 
-      channel.pan().displayedValue().addValueObserver(value -> trackPanTextCommand.send(midiOutDaw, index, value));
+      channel.pan()
+         .displayedValue()
+         .addValueObserver(value -> midiProcessor.sendTextCommand(TextCommand.PAN, index, value));
 
-      channel.pan().value().addValueObserver(value -> {
-         final int v = (int) (value * 127);
-         midiOutDaw.sendMidi(0xBF, 0x58 + index, v);
-      });
+      channel.pan().value().addValueObserver(value -> midiProcessor.sendPanValue(index, (int) (value * 127)));
 
       channel.trackType().addValueObserver(v -> {
          final TrackType type = TrackType.toType(v);
-         trackAvailableCommand.send(midiOutDaw, index, type.getId());
+         midiProcessor.sendValueCommand(ValueCommand.AVAILABLE, index, type.getId());
       });
       volumeKnobs[index].addBindingWithSensitivity(channel.volume(), 0.025);
       panKnobs[index].addBindingWithSensitivity(channel.pan(), 0.025);

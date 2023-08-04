@@ -3,7 +3,11 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschine.modes;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extensions.controllers.nativeinstruments.maschine.*;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.ModifierState;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineExtension;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineLayer;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.NIColorUtil;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLed;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.GroupButton;
 
 /**

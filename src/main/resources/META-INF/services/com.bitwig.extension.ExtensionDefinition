@@ -1,6 +1,7 @@
 com.bitwig.extensions.controllers.akai.advance.AdvanceControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.apc40_mkii.APC40MKIIControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.mpk_mini_mk3.MpkMiniMk3ControllerExtensionDefinition
+#com.bitwig.extensions.controllers.akai.mpkminiplus.MpkMiniPlusControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.apcmk2.AkaiApcKeys25Definition
 com.bitwig.extensions.controllers.akai.apcmk2.AkaiApcMiniDefinition
 
@@ -55,9 +56,11 @@ com.bitwig.extensions.controllers.midiplus.X8ProControllerExtensionDefinition
 
 com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschinePlusExtensionDefinition
 com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineMk3ExtensionDefinition
-com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolSMk2ExtensionDefinition
-com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolASeriesExtensionDefinition
-com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolMSeriesExtensionDefinition
+#com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MaschineMikroMk3ExtensionDefinition
+com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.KompleteKontrolSMk2ExtensionDefinition
+com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.KompleteKontrolASeriesExtensionDefinition
+com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.KompleteKontrolMSeriesExtensionDefinition
+
 com.bitwig.extensions.controllers.mackie.definition.MackieMcuProExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.MackieMcuProXt1ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.MackieMcuProXt2ExtensionDefinition
@@ -72,10 +75,11 @@ com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt2ExtensionDefi
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt3ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconPlatformMExtensionDefinition
 
-com.bitwig.extensions.controllers.m_audio.OxygenPro25Definition   
-com.bitwig.extensions.controllers.m_audio.OxygenPro49Definition 
-com.bitwig.extensions.controllers.m_audio.OxygenPro61Definition   
-com.bitwig.extensions.controllers.m_audio.OxygenProMiniDefinition                                  
+com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenProMiniExtensionDefinition
+com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro25ExtensionDefinition
+com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro49ExtensionDefinition
+com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro61ExtensionDefinition
+com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro88ExtensionDefinition
 
 com.bitwig.extensions.controllers.novation.launch_control_xl.LaunchControlXlControllerExtensionDefinition
 com.bitwig.extensions.controllers.novation.launchkey_mini.LaunchkeyMiniControllerExtensionDefinition

@@ -153,7 +153,6 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Events">
-        <disabled />
         <controller>87</controller>
         <channel>0</channel>
         <off>0</off>
@@ -371,7 +370,6 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Lock">
-        <disabled />
         <controller>48</controller>
         <channel>0</channel>
         <off>0</off>

@@ -28,31 +28,12 @@ public class IconPlatformMExtensionDefinition extends IconQconExtensionDefinitio
 
    @Override
    public void initNoteOverrides() {
-      // DAW Mode Button => Launcher
-      override(BasicNoteOnAssignment.GROUP, BasicNoteOnAssignment.GLOBAL_VIEW);
-      // DVR Button => Keyboard Mode
-      override(BasicNoteOnAssignment.NUDGE, BasicNoteOnAssignment.REPLACE);
-      // STEP Sequencer
-      overrideX(BasicNoteOnAssignment.STEP_SEQ, BasicNoteOnAssignment.SOLO);
-
-      // Clip Overdub
-      override(BasicNoteOnAssignment.CLIP_OVERDUB, BasicNoteOnAssignment.NUDGE);
-
       // Automation Section
-      override(BasicNoteOnAssignment.AUTO_WRITE, BasicNoteOnAssignment.TOUCH);
-      override(BasicNoteOnAssignment.GLOBAL_VIEW, BasicNoteOnAssignment.LATCH);
-      override(BasicNoteOnAssignment.LATCH, BasicNoteOnAssignment.AUTO_WRITE);
-      override(BasicNoteOnAssignment.TOUCH, BasicNoteOnAssignment.TRIM);
+      overrideX(BasicNoteOnAssignment.AUTO_READ_OFF, BasicNoteOnAssignment.AUTO_WRITE);
+      override(BasicNoteOnAssignment.AUTO_OVERRIDE, BasicNoteOnAssignment.AUTO_READ_OFF);
+      overrideX(BasicNoteOnAssignment.MIXER, BasicNoteOnAssignment.MARKER); // Mixer Button on M+
+      //overrideX(BasicNoteOnAssignment.AUTO_WRITE, BasicNoteOnAssignment.GROUP);
 
-      // Punch In
-      overrideX(BasicNoteOnAssignment.DROP, BasicNoteOnAssignment.SAVE);
-      // Punch Out
-      override(BasicNoteOnAssignment.REPLACE, BasicNoteOnAssignment.UNDO);
-
-      // Undo
-      overrideX(BasicNoteOnAssignment.UNDO, BasicNoteOnAssignment.ENTER);
-      // Metronome
-      override(BasicNoteOnAssignment.CLICK, BasicNoteOnAssignment.GROUP);
    }
 
    @Override
@@ -96,7 +77,7 @@ public class IconPlatformMExtensionDefinition extends IconQconExtensionDefinitio
    @Override
    public MackieMcuProExtension createInstance(final ControllerHost host) {
       final ControllerConfig controllerConfig = new ControllerConfig(noteOverrides, ManufacturerType.ICON,
-         SubType.M_PLUS, false, true) //
+         SubType.M_PLUS, false, false, false) //
          .setHasMasterVu(false) //
          .setHasDedicateVu(false) //
          .setFunctionSectionLayered(true) //

@@ -1,9 +1,9 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschine.modes;
 
 import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.ModifierState;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineLayer;
-import com.bitwig.extensions.controllers.nativeinstruments.maschine.ModifierState;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayLayer;
 import com.bitwig.extensions.framework.values.BooleanValueObject;

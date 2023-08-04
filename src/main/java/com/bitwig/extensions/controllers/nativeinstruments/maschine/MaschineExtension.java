@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschine;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.ModifierState;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.GroupButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
@@ -10,9 +11,13 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.Devi
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.*;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.framework.time.TimedEvent;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.function.Consumer;
 
 public class MaschineExtension extends ControllerExtension implements JogWheelDestination {
@@ -82,9 +87,13 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
    private long lastTempUpdate = 0;
    private PopupBrowser browser;
    private BrowserLayer browserLayer;
+   private AutoDisplayLayer autoDisplayLayer;
    private Project project;
    private BooleanValueObject launchModifierSet = new BooleanValueObject();
    private SessionMode sessionMode;
+
+   private final Queue<TimedEvent> timedEvents = new LinkedList<>();
+
 
    protected MaschineExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
                                final MaschineMode mode) {
@@ -195,7 +204,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
          FocusMode.LAUNCHER.getDescriptor());
       focusMode.markInterested();
       final HardwareButton recordButton = createTransportButton("RECD", CcAssignment.RECORD);
-      final HardwareButton autoButton = createTransportButton("AUTO", CcAssignment.AUTO);
+      final HardwareButton autoButton = createHoldTransportButton("AUTO", CcAssignment.AUTO);
       final MaschineLayer arrangeFocusLayer = new MaschineLayer(this, "ArrangeFocus");
       final MaschineLayer sessionFocusLayer = new MaschineLayer(this, "SeesionFocus");
 
@@ -210,7 +219,8 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
          }
       });
       sessionFocusLayer.bindLightState(recordButton, transport.isClipLauncherOverdubEnabled());
-      sessionFocusLayer.bindToggle(autoButton, transport.isClipLauncherAutomationWriteEnabled());
+      sessionFocusLayer.bindIsPressed(autoButton, pressed -> handleAutoButton(pressed));
+      sessionFocusLayer.bindLightState(autoButton, transport.isClipLauncherAutomationWriteEnabled());
 
       focusMode.addValueObserver(newValue -> {
          final FocusMode newMode = FocusMode.toMode(newValue);
@@ -227,6 +237,20 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
                break;
          }
       });
+   }
+
+   private long autoDownTime = 0;
+
+   private void handleAutoButton(boolean pressed) {
+      if (pressed) {
+         autoDownTime = System.currentTimeMillis();
+         setDisplayMode(autoDisplayLayer);
+      } else {
+         if ((System.currentTimeMillis() - autoDownTime) < 300) {
+            transport.isClipLauncherAutomationWriteEnabled().toggle();
+         }
+         backToPreviousDisplayMode();
+      }
    }
 
    void setUpArrangerHandling(final SessionMode sessionMode) {
@@ -315,7 +339,21 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
 
    void handleBlink() {
       blinkState = (blinkState + 1) % 8;
+      if (!timedEvents.isEmpty()) {
+         Iterator<TimedEvent> it = timedEvents.iterator();
+         while (it.hasNext()) {
+            final TimedEvent event = it.next();
+            event.process();
+            if (event.isCompleted()) {
+               it.remove();
+            }
+         }
+      }
       host.scheduleTask(this::handleBlink, 100);
+   }
+
+   public void queueTimedEvent(TimedEvent event) {
+      timedEvents.add(event);
    }
 
    public void backToPreviousDisplayMode() {
@@ -591,6 +629,7 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
       currentMode = sessionMode;
       currentDisplayMode = mixerDisplayMode;
       lastControlDisplay = mixerDisplayMode;
+      autoDisplayLayer = new AutoDisplayLayer(this, "AUTO DISPLAY LAYER");
 
       initNoteRepeat(arpDisplayMode);
       setUpArrangerHandling(sessionMode);

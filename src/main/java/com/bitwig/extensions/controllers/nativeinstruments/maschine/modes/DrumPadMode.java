@@ -3,7 +3,13 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschine.modes;
 import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
-import com.bitwig.extensions.controllers.nativeinstruments.maschine.*;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.ModifierState;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineExtension;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineLayer;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.NIColorUtil;
+import com.bitwig.extensions.controllers.nativeinstruments.maschine.RgbLed;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.PadButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.display.DisplayLayer;
 

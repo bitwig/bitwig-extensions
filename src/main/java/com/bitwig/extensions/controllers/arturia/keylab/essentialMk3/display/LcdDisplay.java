@@ -3,7 +3,7 @@ package com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.display;
 import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.KeylabIcon;
 import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.components.SysExHandler;
 import com.bitwig.extensions.framework.di.Component;
-import com.bitwig.extensions.framework.time.TimedEvent;
+import com.bitwig.extensions.framework.time.TimedDelayEvent;
 
 @Component
 public class LcdDisplay {
@@ -50,7 +50,7 @@ public class LcdDisplay {
 
    public void logoText(final String top, final String bottom, final KeylabIcon icon) {
       final String sysex = createTopIconScreen(top, bottom, icon, true);
-      sysExHandler.queueTimedEvent(new TimedEvent(() -> sysExHandler.sendSysexText(sysex), 100));
+      sysExHandler.queueTimedEvent(new TimedDelayEvent(() -> sysExHandler.sendSysexText(sysex), 100));
    }
 
    public void setTopIconText(final String top, final String bottom, final KeylabIcon icon, final boolean isTransient) {

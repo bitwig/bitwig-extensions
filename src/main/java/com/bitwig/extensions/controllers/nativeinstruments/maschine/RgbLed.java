@@ -2,6 +2,8 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschine;
 
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
 
 import java.util.HashMap;
 import java.util.Map;

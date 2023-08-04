@@ -9,7 +9,7 @@ import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.MaschineExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.buttons.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.StepMode;
-import com.bitwig.extensions.controllers.nativeinstruments.maschine.modes.StepViewPosition;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.StepViewPosition;
 
 public class StepEditDisplayLayer extends DisplayLayer {
 
