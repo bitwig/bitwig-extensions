@@ -21,7 +21,8 @@ public class SysExHandler {
     private static final String DAW_MODE = SYSEX_HEADER + "0E %02X F7";
     private static final String NOTE_MODE = SYSEX_HEADER + "00 %02X F7";
 
-    private static final String DEVICE_REPLY = "f07e0006020020292301000000040605f7";
+    private static final String DEVICE_REPLY = "f07e00060200202923010000000";
+
     private static final String MODE_CHANGE_REPLY = "f0002029020e00";
     private static final String PTC_HEAD = "f0002029020e03";
 
