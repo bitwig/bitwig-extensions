@@ -27,23 +27,28 @@ In case of device, it lets you select the *remote controls page* for the selecte
 The *first* and *second* knobs rows control the **sends**. You can *scroll* the *send window* using the send select buttons.
 The *third* knob row controls the **remote controls** of the currently *selected device*.
 
-## Factory template 2: Two sends and pan mode
+## Factory template 2: Two sends and device mode
 
-Same as above except that the *third* row controls the track's **pan**.
+The *first* and *second* knobs rows control the **sends**. You can *scroll* the *send window* using the send select buttons.
+The *third* knob row controls the first **remote controls** of track's device.
 
-## Factory template 3: Three sends mode
+## Factory template 3: Two sends and project remotes
+
+Same as above except that the *third* row controls the **project's remotes**.
+
+## Factory template 4: Three sends mode
 
 Same as above except that the *third* row is an additional **send** control.
 
-## Factory template 4: One send and Two channel device controls mode
+## Factory template 5: One send and Two channel device controls mode
 
 The *first* row of knobs controls the **send**.
 The *second* and *third* rows of knobs controls the two first **remote controls** of each track's *selected device*.
 
-## Factory template 5: Three channel device controls mode
+## Factory template 6: Three channel device controls mode
 
 The *first*, *second* and *third* rows of knobs controls the three first **remote controls** of each track's *selected device*.
 
-## Factory template 6: Three track remote controls mode
+## Factory template 7: Three track remote controls mode
 
 The *first*, *second* and *third* rows of knobs controls the three first **remote controls** of each track.

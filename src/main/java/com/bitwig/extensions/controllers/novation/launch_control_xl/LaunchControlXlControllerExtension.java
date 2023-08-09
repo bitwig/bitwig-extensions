@@ -28,19 +28,20 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
    // Identify possible modes
    enum Mode
    {
-      Send2FullDevice("Switched to 2 Sends and Selected DEVICE Controls Mode"),
-      Send2Device1("Switched to 2 Sends and 1 per Channel DEVICE Control Mode"),
-      Send2Pan1("Switched to 2 Sends and Pan Mode"),
-      Send3("Switched to 3 Sends Mode"),
-      Send1Device2("Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
-      Device3("Switched to per Channel DEVICE Controls Mode"),
-      Track3("Switched to per Channel TRACK Controls Mode"),
-      Send2Project("Switched to 2 Sends and PROJECT Controls Mode"),
-      None("Unsupported Template. We provide Modes for the Factory Template 1 to 8.");
+      Send2FullDevice(8, "Switched to 2 Sends and Selected DEVICE Controls Mode"),
+      Send2Device1(9, "Switched to 2 Sends and 1 per Channel DEVICE Control Mode"),
+      Send2Project(10, "Switched to 2 Sends and PROJECT Controls Mode"),
+      Send3(11, "Switched to 3 Sends Mode"),
+      Send1Device2(12, "Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
+      Device3(13, "Switched to per Channel DEVICE Controls Mode"),
+      Track3(14, "Switched to per Channel TRACK Controls Mode"),
 
-      Mode(final String notification)
+      None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 7."),
+      Send2Pan1(0, "Switched to 2 Sends and Pan Mode");
+
+      Mode(final int channel, final String notification)
       {
-         mNotification = notification;
+         mChannel = channel; mNotification = notification;
       }
 
       public String getNotification()
@@ -48,7 +49,18 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
          return mNotification;
       }
 
+      public int getChannel()
+      {
+         return mChannel;
+      }
+
+      public String getHexChannel()
+      {
+         return Integer.toHexString(mChannel);
+      }
+
       private final String mNotification;
+      private final int mChannel;
    }
 
    enum TrackControl
@@ -75,7 +87,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
       mMidiIn.setSysexCallback(this::onSysex);
 
-      loadFactory1Template();
+      initializeDeviceWithMode(Mode.Send2FullDevice);
 
       mCursorTrack = mHost.createCursorTrack("cursor-track", "Launch Control XL Track Cursor", 0, 0, true);
       mCursorDevice = mCursorTrack.createCursorDevice();
@@ -141,10 +153,9 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       setDeviceOn(false);
    }
 
-   private void loadFactory1Template()
+   private void initializeDeviceWithMode(final Mode mode)
    {
-      // Load the template Factory/1
-      mMidiOut.sendSysex("f000202902117708f7");
+      mMidiOut.sendSysex("f00020290211770" + mode.getHexChannel() + "f7");
       mIgnoreNextSysex = true;
    }
 
@@ -376,6 +387,30 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       mDeviceLayer.setIsActive(isDeviceOn);
    }
 
+   private void selectModeFromSysex(final String sysex)
+   {
+      final String prefix = "f00020290211770";
+      if (!sysex.startsWith(prefix))
+         return;
+
+      final int n = prefix.length();
+      final int ch = Integer.parseInt(sysex.substring(n, n + 1), 16);
+
+      if (8 <= ch && ch <= 14)
+      {
+         for (final Mode mode : Mode.values())
+         {
+            if (mode.getChannel() == ch)
+            {
+               selectMode(mode);
+               return;
+            }
+         }
+      }
+
+      selectMode(Mode.None);
+   }
+
    private void selectMode(final Mode mode)
    {
       mMode = mode;
@@ -417,21 +452,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       }
 
       // mHost.println("Sysex IN1: " + sysex);
-
-      switch (sysex)
-      {
-         case "f000202902117708f7" -> selectMode(Mode.Send2FullDevice);
-         case "f000202902117709f7" -> selectMode(Mode.Send2Device1);
-         case "f00020290211770af7" -> selectMode(Mode.Send2Pan1);
-         case "f00020290211770bf7" -> selectMode(Mode.Send3);
-         case "f00020290211770cf7" -> selectMode(Mode.Send1Device2);
-         case "f00020290211770df7" -> selectMode(Mode.Device3);
-         case "f00020290211770ef7" -> selectMode(Mode.Track3);
-         case "f00020290211770ff7" -> selectMode(Mode.Send2Project);
-         default -> selectMode(Mode.None);
-      }
-
-      loadFactory1Template();
+      selectModeFromSysex(sysex);
    }
 
    @Override
@@ -465,7 +486,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
 
       if (!sb.toString().isEmpty())
       {
-         final String sysex = "F0 00 20 29 02 11 78 08" + sb + " F7";
+         final String sysex = "F0 00 20 29 02 11 78 0" + mMode.getHexChannel() + sb + " F7";
          mMidiOut.sendSysex(sysex);
       }
    }
