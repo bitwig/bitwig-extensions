@@ -74,8 +74,11 @@ public class SessionLayer extends Layer {
    }
 
    public void invokeDuplicate(int index) {
-      ClipLauncherSlot slot = slotLookup[(3 - index / 4) * 4 + index % 4];
-      if (isActive() && slot.hasContent().get()) {
+      if (!isActive()) {
+         return;
+      }
+      ClipLauncherSlot slot = slotLookup[(index / 4) * 4 + index % 4];
+      if (slot.hasContent().get()) {
          slot.select();
          focusClip.duplicateContent();
       }
@@ -86,8 +89,13 @@ public class SessionLayer extends Layer {
          slot.deleteObject();
       } else if (modifierLayer.getSelectHeld().get()) {
          slot.select();
+         track.selectInEditor();
       } else if (modifierLayer.getDuplicateHeld().get()) {
-         slot.duplicateClip();
+         if (slot.hasContent().get()) {
+            slot.duplicateClip();
+         } else {
+            slot.createEmptyClip(4);
+         }
       } else if (modifierLayer.getVariationHeld().get()) {
          slot.launchAlt();
       } else {
@@ -107,17 +115,26 @@ public class SessionLayer extends Layer {
       if (slot.hasContent().get()) {
          int buttonIndex = sceneIndex * 4 + trackIndex;
          RgbColor color = slotColors[buttonIndex];
+         if (modifierLayer.getSelectHeld().get() && slot.isSelected().get()) {
+            return RgbColor.WHITE.brightness(ColorBrightness.BRIGHT);
+         }
          if (slot.isRecordingQueued().get()) {
+            return midiProcessor.blinkFast(Colors.RED.getIndexValue(ColorBrightness.BRIGHT),
+               Colors.RED.getIndexValue(ColorBrightness.DIMMED));
+         }
+         if (slot.isRecording().get()) {
             return midiProcessor.blinkMid(Colors.RED);
-         } else if (slot.isRecording().get()) {
-            return midiProcessor.blinkMid(Colors.RED);
-         } else if (slot.isPlaybackQueued().get()) {
+         }
+         if (slot.isPlaybackQueued().get()) {
             return midiProcessor.blinkMid(color);
-         } else if (slot.isStopQueued().get()) {
+         }
+         if (slot.isStopQueued().get()) {
             return color.brightness(ColorBrightness.DIMMED); //RgbState.flash(color, 1);
-         } else if (slot.isPlaying().get() && track.isQueuedForStop().get()) {
+         }
+         if (slot.isPlaying().get() && track.isQueuedForStop().get()) {
             return RgbColor.GREEN.brightness(ColorBrightness.BRIGHT);
-         } else if (slot.isPlaying().get()) {
+         }
+         if (slot.isPlaying().get()) {
             if (track.arm().get() && overdubEnabled) {
                return RgbColor.RED.brightness(ColorBrightness.BRIGHT);
             }
@@ -126,11 +143,17 @@ public class SessionLayer extends Layer {
          return color.brightness(ColorBrightness.DIMMED);
       }
 
+      if (modifierLayer.getSelectHeld().get() && slot.isSelected().get()) {
+         return RgbColor.WHITE.brightness(ColorBrightness.BRIGHT);
+      }
       if (slot.isRecordingQueued().get()) {
-         return midiProcessor.blinkMid(Colors.RED);
-      } else if (track.arm().get()) {
+         return midiProcessor.blinkFast(Colors.RED.getIndexValue(ColorBrightness.BRIGHT),
+            Colors.RED.getIndexValue(ColorBrightness.DIMMED));
+      }
+      if (track.arm().get()) {
          return RgbColor.RED.brightness(ColorBrightness.DIMMED);
-      } else if (slot.isStopQueued().get()) {
+      }
+      if (slot.isStopQueued().get()) {
          return RgbColor.WHITE.brightness(ColorBrightness.DIMMED);
       }
 
@@ -156,6 +179,7 @@ public class SessionLayer extends Layer {
       slot.isRecording().markInterested();
       slot.isPlaybackQueued().markInterested();
       slot.name().markInterested();
+      slot.isSelected().markInterested();
       slot.color().addValueObserver((r, g, b) -> {
          slotColors[buttonIndex] = RgbColor.toColor(r, g, b);
       });

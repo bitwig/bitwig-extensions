@@ -35,6 +35,7 @@ public class RgbColor extends InternalHardwareLightState {
    public static final RgbColor ORANGE = RgbColor.of(Colors.ORANGE);
    public static final RgbColor BLUE = RgbColor.of(Colors.BLUE);
    public static final RgbColor PURPLE = RgbColor.of(Colors.PURPLE);
+   public static final RgbColor PINK = RgbColor.of(Colors.FUCHSIA);
 
    private final int colorIndex;
 

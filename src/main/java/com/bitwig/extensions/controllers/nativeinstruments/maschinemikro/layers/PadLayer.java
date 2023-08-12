@@ -68,6 +68,7 @@ public class PadLayer extends Layer {
    @Inject
    private ModifierLayer modifierLayer;
    private StepEditor stepEditor;
+   private int selectedPadIndex = -1;
 
    public PadLayer(Layers layers, HwElements hwElements, ViewControl viewControl, ModifierLayer modifierLayer,
                    MidiProcessor midiProcessor, ControllerHost host) {
@@ -86,8 +87,9 @@ public class PadLayer extends Layer {
       soloLayer = new Layer(layers, "Drum-solo");
       eraseLayer = new Layer(layers, "Drum-solo");
       selectLayer = new Layer(layers, "Drum-solo");
-      
-      modifierLayer.getSelectHeld().addValueObserver( this::setSelectMode);
+
+      modifierLayer.getSelectHeld().addValueObserver(this::setSelectMode);
+      modifierLayer.getDuplicateHeld().addValueObserver(this::handleDuplicate);
 
       Arrays.fill(padColors, RgbColor.OFF);
       Arrays.fill(deactivationTable, -1);
@@ -126,20 +128,29 @@ public class PadLayer extends Layer {
       hwElements.getButton(CcAssignment.ENCODER_PRESS).bindRelease(this, () -> handleEncoderPress(false));
 
       viewControl.getCursorTrack().playingNotes().addValueObserver(this::handleNotePlaying);
-
+      midiProcessor.addNoteListener((note, vel) -> {
+         if (vel > 0) {
+            this.stepEditor.setSelectedNote(noteTable[note], -1);
+         }
+      });
    }
-   
-    @Inject
+
+   private void handleDuplicate(boolean pressed) {
+      if (isActive() && modifierLayer.getShiftHeld().get() && pressed) {
+         this.stepEditor.performDuplicateContent();
+      }
+   }
+
+   @Inject
    public void setStepEditor(StepEditor stepEditor) {
       this.stepEditor = stepEditor;
-      this.stepEditor.setSelectedNote(padOffset + 0);
+      this.stepEditor.setSelectedNote(padOffset + 0, 0);
    }
-   
+
    private void handleSelect(final int drumPadIndex) {
       drumPadBank.getItemAt(drumPadIndex).selectInEditor();
    }
-   
-   
+
    private void handleEraseActive(boolean pressed) {
       if (isActive() && !soloLayer.isActive() && !muteLayer.isActive()) {
          if (pressed) {
@@ -192,19 +203,19 @@ public class PadLayer extends Layer {
          }
       }
    }
-   
+
    public void setSelectMode(boolean active) {
       if (isActive() && inDrumMode.get()) {
-         if(active) {
+         if (active) {
             muteLayer.setIsActive(false);
             soloLayer.setIsActive(false);
             selectLayer.setIsActive(true);
             setNotesActive(false);
          } else {
             selectLayer.setIsActive(false);
-            if(this.muteSoloMode != MuteSoloMode.NONE) {
+            if (this.muteSoloMode != MuteSoloMode.NONE) {
                setMutSoloMode(this.muteSoloMode);
-            } else{
+            } else {
                setNotesActive(true);
             }
          }
@@ -360,15 +371,22 @@ public class PadLayer extends Layer {
       pad.mute().markInterested();
       pad.addIsSelectedInEditorObserver(selected -> {
          if (selected) {
-            // TODO noteFocusHandler.notifyDrumPadSelected(pad, padOffset, index);
             isSelected[index] = true;
             if (this.stepEditor != null) {
-               this.stepEditor.setSelectedNote(padOffset + index);
+               this.selectedPadIndex = index;
+               this.stepEditor.setSelectedNote(padOffset + index, index);
             }
          } else {
             isSelected[index] = false;
          }
       });
+   }
+
+   RgbColor getSelectedColor() {
+      if (selectedPadIndex >= 0 && selectedPadIndex < 16) {
+         return padColors[selectedPadIndex];
+      }
+      return RgbColor.OFF;
    }
 
    private void handleNotePlaying(PlayingNote[] notes) {
@@ -512,6 +530,7 @@ public class PadLayer extends Layer {
       }
       if (isActive()) {
          noteInput.setKeyTranslationTable(noteTable);
+         this.noteInput.setShouldConsumeEvents(false);
       }
    }
 
@@ -545,6 +564,7 @@ public class PadLayer extends Layer {
       super.onDeactivate();
       Arrays.fill(noteTable, -1);
       noteInput.setKeyTranslationTable(noteTable);
+      this.noteInput.setShouldConsumeEvents(false);
       eraseLayer.setIsActive(false);
    }
 
@@ -557,6 +577,7 @@ public class PadLayer extends Layer {
          Arrays.fill(noteTable, -1);
          noteInput.setKeyTranslationTable(noteTable);
          noteInput.setVelocityTranslationTable(velocityTable);
+         this.noteInput.setShouldConsumeEvents(true);
       }
    }
 
