@@ -149,6 +149,10 @@ public class MidiProcessor {
       return color;
    }
 
+   public boolean blinkMid() {
+      return blinkState % 4 < 2;
+   }
+
    public RgbColor blinkMid(Colors color) {
       if (blinkState % 4 < 2) {
          return RgbColor.of(color, ColorBrightness.DIMMED);

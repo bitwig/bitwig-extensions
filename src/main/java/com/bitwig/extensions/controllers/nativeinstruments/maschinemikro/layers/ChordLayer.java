@@ -2,7 +2,10 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbColor;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -94,14 +97,12 @@ public class ChordLayer extends Layer {
    @Override
    protected void onActivate() {
       super.onActivate();
-      DebugOutMk.println(" ACTIVATE CHORD");
       midiProcessor.getNoteInput().setShouldConsumeEvents(false);
    }
 
    @Override
    protected void onDeactivate() {
       super.onDeactivate();
-      DebugOutMk.println(" xxxx CHORD");
       midiProcessor.getNoteInput().setShouldConsumeEvents(true);
    }
 }

@@ -13,6 +13,7 @@ import com.bitwig.extensions.framework.di.Inject;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Component
 public class StepEditor extends Layer {
@@ -26,6 +27,7 @@ public class StepEditor extends Layer {
    private final StepViewPosition positionHandler; // TODO Move this to commons
    private final TouchStripLayer touchStripLayer;
    private final SettableEnumValue gridResolution;
+   private final MidiProcessor midiProcessor;
    private RgbColor clipColor;
    private int focusNote = 60;
    private final NoteStep[] assignments = new NoteStep[16];
@@ -39,12 +41,14 @@ public class StepEditor extends Layer {
    private int selectedPadIndex = -1;
    private Layer stripCurrentLayer;
    private StripMode stripMode = StripMode.NONE;
+   private StripMode holdStripMode = null;
 
-   private double currentRandomValue = 1.0;
+   private double currentRandomValue = 0;
+   private double currentTimbreValue = 0;
    private int currentRepeat = 0;
    private int currentStepLen = 1;
    private boolean eraseDown;
-   private int currentGridRate = 1;
+   private int currentGridRate = 3;
    private double stepLength = 0.95;
 
    private enum PressState {
@@ -58,6 +62,7 @@ public class StepEditor extends Layer {
                      MidiProcessor midiProcessor, ControllerHost host, TouchStripLayer touchStripLayer) {
       super(layers, "PAD_LAYER");
       this.touchStripLayer = touchStripLayer;
+      this.midiProcessor = midiProcessor;
       List<RgbButton> padButtons = hwElements.getPadButtons();
       Arrays.fill(pressStates, PressState.None);
       Arrays.fill(downTimes, -1);
@@ -130,8 +135,8 @@ public class StepEditor extends Layer {
    private void initTouchStripEditing(TouchStripLayer touchStripLayer, HwElements hwElements) {
       TouchStrip touchStrip = hwElements.getTouchStrip();
 
-      hwElements.getButton(CcAssignment.PITCH).bindPressed(this, () -> selectMode(StripMode.PITCH));
-      hwElements.getButton(CcAssignment.PITCH).bindLight(this, () -> stripMode == StripMode.PITCH);
+      hwElements.getButton(CcAssignment.PITCH).bindPressed(this, () -> selectMode(StripMode.PITCH, StripMode.PRESSURE));
+      hwElements.getButton(CcAssignment.PITCH).bindLight(this, () -> blinkModes(StripMode.PITCH, StripMode.PRESSURE));
       hwElements.getButton(CcAssignment.MOD).bindPressed(this, () -> selectMode(StripMode.MOD));
       hwElements.getButton(CcAssignment.MOD).bindLight(this, () -> stripMode == StripMode.MOD);
       hwElements.getButton(CcAssignment.PERFORM).bindPressed(this, () -> selectMode(StripMode.PARAMETER));
@@ -142,65 +147,93 @@ public class StepEditor extends Layer {
       Layer positionLayer = touchStripLayer.getStepLayer(StripMode.NONE);
       touchStrip.bindStripLight(positionLayer, () -> positionToLight());
       touchStrip.bindValue(positionLayer, pos -> positionHandler.setPositionAbsolute(pos));
-      touchStrip.bindTouched(positionLayer, touch -> {
-      });
+      touchStrip.bindTouched(positionLayer, touch -> holdStripMode(StripMode.NONE, touch));
 
       Layer randomLayer = touchStripLayer.getStepLayer(StripMode.MOD);
       touchStrip.bindStripLight(randomLayer, () -> (int) Math.round(currentRandomValue * 127));
       touchStrip.bindValue(randomLayer, this::applyRandomValue);
-      touchStrip.bindTouched(randomLayer, touch -> {
-      });
+      touchStrip.bindTouched(randomLayer, touch -> holdStripMode(StripMode.MOD, touch));
 
       Layer repeatLayer = touchStripLayer.getStepLayer(StripMode.PARAMETER);
       touchStrip.bindStripLight(repeatLayer, () -> Math.min(currentRepeat * 16, 127));
       touchStrip.bindValue(repeatLayer, this::applyNoteRepeats);
-      touchStrip.bindTouched(repeatLayer, touch -> {
-      });
+      touchStrip.bindTouched(repeatLayer, touch -> holdStripMode(StripMode.PARAMETER, touch));
 
       Layer lengthLayer = touchStripLayer.getStepLayer(StripMode.NOTE);
       touchStrip.bindStripLight(lengthLayer, () -> Math.min(currentStepLen * 7, 127));
       touchStrip.bindValue(lengthLayer, this::applyNoteLength);
-      touchStrip.bindTouched(lengthLayer, touch -> {
-      });
+      touchStrip.bindTouched(lengthLayer, touch -> holdStripMode(StripMode.NOTE, touch));
 
       Layer timbreLayer = touchStripLayer.getStepLayer(StripMode.PITCH); // TODO not implemented
-      touchStrip.bindStripLight(timbreLayer, () -> 64);
-      touchStrip.bindValue(timbreLayer, value -> {
-      });
-      touchStrip.bindTouched(timbreLayer, touch -> {
-      });
+      touchStrip.bindStripLight(timbreLayer, () -> Math.min(127, (int) Math.round(currentTimbreValue * 64) + 64));
+      touchStrip.bindTouched(timbreLayer, touch -> holdStripMode(StripMode.PITCH, touch));
+      touchStrip.bindValue(timbreLayer, this::applyTimbreValue);
 
       stripCurrentLayer = positionLayer;
-      stripCurrentLayer.setIsActive(true);
+   }
+
+   private boolean blinkModes(StripMode stdMode, StripMode shiftMode) {
+      if (stripMode == stdMode) {
+         return true;
+      } else if (stripMode == shiftMode) {
+         return midiProcessor.blinkMid();
+      }
+      return false;
+   }
+
+   private void holdStripMode(StripMode mode, boolean hold) {
+      if (hold) {
+         holdStripMode = mode;
+      } else {
+         holdStripMode = null;
+         currentRandomValue = 0;
+         currentTimbreValue = 0;
+         currentRepeat = 1;
+      }
    }
 
    private void applyNoteLength(int pos) {
-      for (int i = 0; i < 16; i++) {
-         if (assignments[i] != null && pressStates[i] != PressState.None) {
-            currentStepLen = pos / 7;
-            assignments[i].setDuration(positionHandler.getGridResolution() * currentStepLen);
-            pressStates[i] = PressState.Modify;
-         }
-      }
+      currentStepLen = pos / 7;
+      getHeldPadsWithNotes().forEach(i -> {
+         assignments[i].setDuration(positionHandler.getGridResolution() * currentStepLen);
+         pressStates[i] = PressState.Modify;
+      });
    }
 
    private void applyNoteRepeats(int pos) {
-      for (int i = 0; i < 16; i++) {
-         if (assignments[i] != null && pressStates[i] != PressState.None) {
-            currentRepeat = pos / 16;
-            assignments[i].setRepeatCount(currentRepeat);
-            pressStates[i] = PressState.Modify;
-         }
-      }
+      currentRepeat = pos / 16;
+      getHeldPadsWithNotes().forEach(i -> {
+         assignments[i].setRepeatCount(currentRepeat);
+         pressStates[i] = PressState.Modify;
+      });
    }
 
    private void applyRandomValue(int pos) {
-      for (int i = 0; i < 16; i++) {
-         if (assignments[i] != null && pressStates[i] != PressState.None) {
-            currentRandomValue = pos / 127.0;
-            assignments[i].setChance(currentRandomValue);
-            pressStates[i] = PressState.Modify;
-         }
+      currentRandomValue = pos / 127.0;
+      getHeldPadsWithNotes().forEach(i -> {
+         assignments[i].setChance(currentRandomValue);
+         pressStates[i] = PressState.Modify;
+      });
+   }
+
+   private void applyTimbreValue(int pos) {
+      currentTimbreValue = (pos - 64) / 64.0;
+      getHeldPadsWithNotes().forEach(i -> {
+         assignments[i].setTimbre(currentTimbreValue);
+         pressStates[i] = PressState.Modify;
+      });
+   }
+
+   private IntStream getHeldPadsWithNotes() {
+      return IntStream.range(0, 16)//
+         .filter(i -> assignments[i] != null && pressStates[i] != PressState.None);
+   }
+
+   private void selectMode(StripMode mode, StripMode shiftMode) {
+      if (shiftDown) {
+         selectMode(shiftMode);
+      } else {
+         selectMode(mode);
       }
    }
 
@@ -348,19 +381,35 @@ public class StepEditor extends Layer {
          clip.setStep(index, 0, padLayer.getFixedVelocity(), positionHandler.getGridResolution() * stepLength);
          pressStates[index] = PressState.New;
       } else if (note == null || note.state() == NoteStep.State.NoteOn) {
-         pressStates[index] = PressState.Delete;
+         if (holdStripMode == StripMode.MOD) {
+            note.setChance(currentRandomValue);
+         } else if (holdStripMode == StripMode.PITCH) {
+            note.setTimbre(currentTimbreValue);
+         } else if (holdStripMode == StripMode.PARAMETER) {
+            note.setRepeatCount(currentRepeat);
+         } else {
+            pressStates[index] = PressState.Delete;
+         }
       }
       downTimes[index] = System.currentTimeMillis();
       collectCurrentParam();
    }
 
    private void collectCurrentParam() {
-      currentRandomValue = 0;
-      currentRepeat = 0;
+      if (holdStripMode != StripMode.MOD) {
+         currentRandomValue = 0;
+      }
+      if (holdStripMode != StripMode.PITCH) {
+         currentTimbreValue = 0;
+      }
+      if (holdStripMode != StripMode.PARAMETER) {
+         currentRepeat = 0;
+      }
       currentStepLen = 1;
       for (int i = 0; i < 16; i++) {
          if (pressStates[i] != PressState.None && assignments[i] != null) {
             currentRandomValue = Math.max(currentRandomValue, assignments[i].chance());
+            currentTimbreValue = Math.max(currentTimbreValue, assignments[i].timbre());
             currentRepeat = Math.max(currentRepeat, assignments[i].repeatCount());
             int len = (int) (assignments[i].duration() / positionHandler.getGridResolution());
             currentStepLen = Math.max(1, len);

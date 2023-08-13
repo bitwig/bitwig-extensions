@@ -2,7 +2,6 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 
 import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.DebugOutMk;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.TouchStrip;
@@ -119,11 +118,13 @@ public class TouchStripLayer extends Layer {
       Layer repeatLayer = new Layer(layers, "STEP_STRIP_REPEAT");
       Layer lengthLayer = new Layer(layers, "STEP_STRIP_LENGTH");
       Layer timbreLayer = new Layer(layers, "STEP_STRIP_TIMBRE");
+      Layer pressureLayer = new Layer(layers, "STEP_STRIP_PRESSURE");
       stepEditLayerMap.put(StripMode.MOD, randomLayer);
       stepEditLayerMap.put(StripMode.PARAMETER, repeatLayer);
       stepEditLayerMap.put(StripMode.NONE, positionLayer);
       stepEditLayerMap.put(StripMode.NOTE, lengthLayer);
       stepEditLayerMap.put(StripMode.PITCH, timbreLayer);
+      stepEditLayerMap.put(StripMode.PRESSURE, pressureLayer);
    }
 
    public Layer getStepLayer(StripMode mode) {
@@ -158,7 +159,6 @@ public class TouchStripLayer extends Layer {
    }
 
    public void setCurrentParameter(RemoteControl parameter) {
-      DebugOutMk.println(" Focused Parameter " + parameter);
       this.focusedParameter = parameter;
    }
 

@@ -1,8 +1,8 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers;
 
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.DebugOutMk;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.CcButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -16,6 +16,7 @@ import java.util.function.BooleanSupplier;
 
 @Component
 public class ModeHandler extends Layer {
+   private final ModifierLayer modifierLayer;
    @Inject
    private SessionLayer sessionLayer;
    @Inject
@@ -75,9 +76,11 @@ public class ModeHandler extends Layer {
    private MuteSoloMode muteSoloMode = MuteSoloMode.NONE;
    private Map<Mode, Layer> layerModeRegister = new HashMap<>();
 
-   public ModeHandler(Layers layers, HwElements hwElements, PadLayer drumPadLayer, ModifierLayer modifierLayer) {
+   public ModeHandler(Layers layers, HwElements hwElements, PadLayer drumPadLayer, ModifierLayer modifierLayer,
+                      MidiProcessor midiProcessor) {
       super(layers, "SESSION_LAYER");
       this.drumPadLayer = drumPadLayer;
+      this.modifierLayer = modifierLayer;
 
       bindModeButton(hwElements, CcAssignment.PATTERN, Mode.LAUNCHER);
       bindModeButton(hwElements, CcAssignment.SCENE, Mode.SCENE);
@@ -94,9 +97,11 @@ public class ModeHandler extends Layer {
       hwElements.getButton(CcAssignment.MUTE).bindRelease(this, () -> handleMutePress(false));
       hwElements.getButton(CcAssignment.MUTE).bindLight(this, () -> muteSoloMode == MuteSoloMode.MUTE);
 
-      hwElements.getButton(CcAssignment.SOLO).bindPressed(this, () -> handleSoloPress(true));
-      hwElements.getButton(CcAssignment.SOLO).bindRelease(this, () -> handleSoloPress(false));
-      hwElements.getButton(CcAssignment.SOLO).bindLight(this, () -> muteSoloMode == MuteSoloMode.SOLO);
+      hwElements.getButton(CcAssignment.SOLO).bindPressed(this, () -> handleSoloArmPress(true));
+      hwElements.getButton(CcAssignment.SOLO).bindRelease(this, () -> handleSoloArmPress(false));
+      hwElements.getButton(CcAssignment.SOLO)
+         .bindLight(this,
+            () -> muteSoloMode == MuteSoloMode.ARM ? midiProcessor.blinkMid() : muteSoloMode == MuteSoloMode.SOLO);
 
       bindEncoderMode(hwElements, CcAssignment.VOLUME, EncoderMode.VOLUME);
       bindEncoderMode(hwElements, CcAssignment.SWING, EncoderMode.SWING);
@@ -126,6 +131,7 @@ public class ModeHandler extends Layer {
       layerModeRegister.put(Mode.SCENE, sceneLayer);
       layerModeRegister.put(Mode.STEP, stepEditorLayer);
       layerModeRegister.put(Mode.PLUGIN, deviceEncoderLayer);
+      layerModeRegister.put(Mode.GRID, gridLayer);
       this.setIsActive(true);
       activeLayer.setIsActive(true);
    }
@@ -142,12 +148,35 @@ public class ModeHandler extends Layer {
       }
    }
 
+   private void handleSoloArmPress(boolean press) {
+      if (!press) {
+         return;
+      }
+      if (modifierLayer.getShiftHeld().get()) {
+         handleArmPress(true);
+      } else {
+         handleSoloPress(true);
+      }
+   }
+
    private void handleSoloPress(boolean press) {
       if (press) {
          if (muteSoloMode == MuteSoloMode.SOLO) {
             muteSoloMode = MuteSoloMode.NONE;
          } else {
             muteSoloMode = MuteSoloMode.SOLO;
+         }
+         drumPadLayer.setMutSoloMode(muteSoloMode);
+         trackLayer.setMutSoloMode(muteSoloMode);
+      }
+   }
+
+   private void handleArmPress(boolean press) {
+      if (press) {
+         if (muteSoloMode == MuteSoloMode.ARM) {
+            muteSoloMode = MuteSoloMode.NONE;
+         } else {
+            muteSoloMode = MuteSoloMode.ARM;
          }
          drumPadLayer.setMutSoloMode(muteSoloMode);
          trackLayer.setMutSoloMode(muteSoloMode);
@@ -265,7 +294,6 @@ public class ModeHandler extends Layer {
             drumPadLayer.enableNoteRepeat(newMode == Mode.NOTE_REPEAT);
          } else {
             Layer nextLayer = layerModeRegister.get(newMode);
-            DebugOutMk.println(" NEXT %s => %s", newMode, nextLayer);
             if (nextLayer != null) {
                activeLayer = nextLayer;
             }

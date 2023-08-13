@@ -5,5 +5,6 @@ public enum StripMode {
    MOD,
    NOTE,
    PITCH,
-   PARAMETER
+   PARAMETER,
+   PRESSURE
 }
