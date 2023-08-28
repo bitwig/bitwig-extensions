@@ -42,12 +42,13 @@ public class OxygenProExtension extends ControllerExtension {
       host = getHost();
       debugHost = host;
       initPreferences(host);
+      println(" >>>>>>>>>>>> ");
       final Context diContext = new Context(this);
       diContext.registerService(OxyConfig.class, config);
       surface = diContext.getService(HardwareSurface.class);
-      MidiIn midiIn = host.getMidiInPort(0);
-      midiInKey = host.getMidiInPort(1);
-      midiOut = host.getMidiOutPort(0);
+      MidiIn midiIn = host.getMidiInPort(1);
+      midiInKey = host.getMidiInPort(0);
+      midiOut = host.getMidiOutPort(1);
       diContext.registerService(MidiIn.class, midiIn);
       diContext.registerService(MidiOut.class, midiOut);
       MidiProcessor midiProcessor = new MidiProcessor(host, midiIn, midiOut);
