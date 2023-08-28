@@ -1,11 +1,9 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers;
 
-import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.PlayingNote;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbColor;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -27,7 +25,7 @@ public class ChordLayer extends Layer {
       }
    }
 
-   private List<Chord> chords = List.of(new Chord(0, 3, 5), new Chord(0, 3, 5, 7), new Chord(0, 4, 5, 7),
+   private List<Chord> chords = List.of(new Chord(0, 7, 12), new Chord(0, 7, 12, 17), new Chord(0, 4, 5, 7),
       new Chord(0, 5, 7), new Chord(0, 2, 5, 11), new Chord(0, 3, 5, 12, 15), new Chord(0, 4, 5, 12, 15),
       new Chord(05, 12, 15));
 
@@ -36,10 +34,16 @@ public class ChordLayer extends Layer {
 
    private boolean[] playing = new boolean[8];
 
-   public ChordLayer(Layers layers, HwElements hwElements, MidiProcessor midiProcessor, ControllerHost host) {
+   private int baseNote = 48;
+
+   public ChordLayer(Layers layers, HwElements hwElements, MidiProcessor midiProcessor, ViewControl viewControl) {
       super(layers, "CHORD_LAYER");
 
       this.midiProcessor = midiProcessor;
+
+      CursorTrack cursorTrack = viewControl.getCursorTrack();
+
+      cursorTrack.playingNotes().addValueObserver(this::handleNotesIn);
 
       List<RgbButton> gridButtons = hwElements.getPadButtons();
       for (int i = 0; i < 8; i++) {
@@ -64,8 +68,16 @@ public class ChordLayer extends Layer {
       hwElements.getButton(CcAssignment.ENCODER_PRESS).bindRelease(this, () -> handleEncoderPress(false));
    }
 
-   private void handleEncoder(int dir) {
+   private void handleNotesIn(PlayingNote[] notes) {
+      if (!isActive()) {
+         return;
+      }
+      DebugOutMk.println(" NOTES IN %d", notes.length);
+   }
 
+   private void handleEncoder(int dir) {
+      int newBaseNote = baseNote + dir;
+      baseNote = newBaseNote;
    }
 
    private void handleEncoderPress(boolean pressed) {
@@ -84,13 +96,15 @@ public class ChordLayer extends Layer {
    private void playChord(Chord chord, double velocity) {
       int intVelocity = (int) (velocity * 127);
       for (int note : chord.notes) {
-         midiProcessor.sendRawNoteOn(note + 48, intVelocity);
+         if (note + baseNote >= 0 && note + baseNote < 128) {
+            midiProcessor.sendRawNoteOn(note + baseNote, intVelocity);
+         }
       }
    }
 
    private void releaseChord(Chord chord) {
       for (int note : chord.notes) {
-         midiProcessor.sendNoteOff(note + 48);
+         midiProcessor.sendNoteOff(note + baseNote);
       }
    }
 

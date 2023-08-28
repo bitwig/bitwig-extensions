@@ -164,7 +164,7 @@ public class StepEditor extends Layer {
       touchStrip.bindValue(lengthLayer, this::applyNoteLength);
       touchStrip.bindTouched(lengthLayer, touch -> holdStripMode(StripMode.NOTE, touch));
 
-      Layer timbreLayer = touchStripLayer.getStepLayer(StripMode.PITCH); // TODO not implemented
+      Layer timbreLayer = touchStripLayer.getStepLayer(StripMode.PITCH);
       touchStrip.bindStripLight(timbreLayer, () -> Math.min(127, (int) Math.round(currentTimbreValue * 64) + 64));
       touchStrip.bindTouched(timbreLayer, touch -> holdStripMode(StripMode.PITCH, touch));
       touchStrip.bindValue(timbreLayer, this::applyTimbreValue);
@@ -314,10 +314,7 @@ public class StepEditor extends Layer {
    public void setPadLayer(PadLayer padLayer) {
       this.padLayer = padLayer;
    }
-
-   private void handleClipColorChanged(float r, float g, float b) {
-   }
-
+   
    private void handleNoteStep(final NoteStep noteStep) {
       assignments[noteStep.x()] = noteStep;
    }
