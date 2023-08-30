@@ -77,8 +77,8 @@ public abstract class OxygenProExtensionDefinition extends ControllerExtensionDe
 
    private void addPorts(final AutoDetectionMidiPortNamesList list, final String inFormat, final String outFormat,
                          String keyFormat, final String keyVersion) {
-      list.add(new String[]{String.format(keyVersion, inFormat), String.format(keyVersion, keyFormat)},
-         new String[]{String.format(keyVersion, outFormat), String.format(keyVersion, keyFormat)});
+      list.add(new String[]{String.format(inFormat, keyVersion), String.format(keyFormat, keyVersion)},
+         new String[]{String.format(outFormat, keyVersion), String.format(keyFormat, keyVersion)});
    }
 
    @Override
