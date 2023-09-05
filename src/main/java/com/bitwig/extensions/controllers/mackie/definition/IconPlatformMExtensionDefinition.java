@@ -33,7 +33,6 @@ public class IconPlatformMExtensionDefinition extends IconQconExtensionDefinitio
       override(BasicNoteOnAssignment.AUTO_OVERRIDE, BasicNoteOnAssignment.AUTO_READ_OFF);
       overrideX(BasicNoteOnAssignment.MIXER, BasicNoteOnAssignment.MARKER); // Mixer Button on M+
       //overrideX(BasicNoteOnAssignment.AUTO_WRITE, BasicNoteOnAssignment.GROUP);
-
    }
 
    @Override
@@ -47,21 +46,35 @@ public class IconPlatformMExtensionDefinition extends IconQconExtensionDefinitio
    }
 
    @Override
-   protected String[] getPortNames(final String baseFormat, final String model, final String version) {
+   protected String[] getPortNames(PlatformType platformType, final String baseFormat, final String model, final String version) {
       final String[] portNames = new String[nrOfExtenders + 1];
-      portNames[0] = String.format("Platform M+ V%s", version);
+      portNames[0] = getFormat(platformType).formatted(version);
       for (int extIndex = 1; extIndex < nrOfExtenders + 1; extIndex++) {
-         portNames[extIndex] = String.format("Platform X%d V%s", extIndex, version);
+         portNames[extIndex] = getXtenderFormat(platformType).formatted(extIndex, version);
       }
       return portNames;
    }
-
+   
+   private String getFormat(PlatformType platformType) {
+      if(platformType == PlatformType.LINUX) {
+         return "Platform M+ V%s MIDI 1";
+      }
+      return "Platform M+ V%s";
+   }
+   
+   private String getXtenderFormat(PlatformType platformType) {
+      if(platformType == PlatformType.LINUX) {
+         return "Platform X%d V%s MIDI 1";
+      }
+      return "Platform X%d V%s";
+   }
+   
    @Override
    public String getName() {
       if (nrOfExtenders == 0) {
          return IconPlatformMExtensionDefinition.DEVICE_NAME;
       }
-      return String.format("%s +%d EXTENDER", IconPlatformMExtensionDefinition.DEVICE_NAME, nrOfExtenders);
+      return "%s +%d EXTENDER".formatted(IconPlatformMExtensionDefinition.DEVICE_NAME, nrOfExtenders);
    }
 
    @Override

@@ -66,12 +66,10 @@ public abstract class OxygenProExtensionDefinition extends ControllerExtensionDe
    @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
-      if (platformType == PlatformType.WINDOWS) {
+      if (platformType == PlatformType.WINDOWS || platformType == PlatformType.LINUX) {
          addPorts(list, STD_MIDI_IN_FORMAT, STD_MIDI_OUT_FORMAT, KEY_FORMAT_WIN, getKeys());
       } else if (platformType == PlatformType.MAC) {
          addPorts(list, STD_MAC_FORMAT_FORMAT, STD_MAC_FORMAT_FORMAT, KEY_FORMAT_MAC, getKeys());
-      } else if (platformType == PlatformType.LINUX) {
-         addPorts(list, STD_MIDI_IN_FORMAT, STD_MIDI_OUT_FORMAT, KEY_FORMAT_MAC, getKeys());
       }
    }
 
