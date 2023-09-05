@@ -23,4 +23,9 @@ public class OxygenProMiniExtensionDefinition extends OxygenProExtensionDefiniti
    public OxygenProExtension createInstance(final ControllerHost host) {
       return new OxygenProExtension(this, host, new OxyConfig(4, true, false, false));
    }
+   
+   @Override
+   public String getHelpFilePath() {
+      return "Controllers/M-Audio/M-Audio Oxygen Pro Mini.pdf";
+   }
 }

@@ -23,4 +23,9 @@ public class OxygenPro25ExtensionDefinition extends OxygenProExtensionDefinition
    public OxygenProExtension createInstance(final ControllerHost host) {
       return new OxygenProExtension(this, host, new OxyConfig(8, false, true, true));
    }
+   
+   @Override
+   public String getHelpFilePath() { //
+      return "Controllers/M-Audio/M-Audio Oxygen Pro 25.pdf";
+   }
 }

@@ -93,4 +93,9 @@ public class MpkMiniPlusControllerExtensionDefinition extends ControllerExtensio
    public String getSupportFolderPath() {
       return "Controllers/Akai/mpkminiplus";
    }
+   
+   @Override
+   public String getHelpFilePath() {
+      return "Controllers/Akai/Akai MPK Mini Plus.pdf";
+   }
 }

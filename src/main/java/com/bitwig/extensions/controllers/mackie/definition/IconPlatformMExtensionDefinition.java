@@ -102,7 +102,7 @@ public class IconPlatformMExtensionDefinition extends IconQconExtensionDefinitio
 
    @Override
    public String getHelpFilePath() {
-      return "Controllers/iCon/iCon QCon Pro X.pdf";
+      return "Controllers/iCon/Icon Platform M-plus.pdf";
    }
 
 

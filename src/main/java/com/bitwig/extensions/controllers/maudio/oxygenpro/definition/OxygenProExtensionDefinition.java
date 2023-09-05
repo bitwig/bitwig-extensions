@@ -62,7 +62,13 @@ public abstract class OxygenProExtensionDefinition extends ControllerExtensionDe
    public int getNumMidiOutPorts() {
       return 2;
    }
-
+   
+   @Override
+   public String getHelpFilePath() {
+      return "Controllers/M-Audio/M-Audio Oxygen Pro 49-61-Hammer88.pdf";
+   }
+   
+   
    @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
