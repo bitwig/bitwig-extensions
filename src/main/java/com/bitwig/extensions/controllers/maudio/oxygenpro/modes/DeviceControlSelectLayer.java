@@ -1,7 +1,10 @@
 package com.bitwig.extensions.controllers.maudio.oxygenpro.modes;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.maudio.oxygenpro.*;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.HwElements;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.OxyConfig;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.RgbColor;
+import com.bitwig.extensions.controllers.maudio.oxygenpro.ViewControl;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.control.PadButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -79,7 +82,6 @@ public class DeviceControlSelectLayer extends Layer {
    }
 
    private void handleDeviceType(int index, String deviceType) {
-      OxygenProExtension.println(" DEVICE type=%s", deviceType);
       deviceColors[index] = DEVICE_TYPE_TO_COLOR.getOrDefault(deviceType, RgbColor.MAGENTA);
    }
 

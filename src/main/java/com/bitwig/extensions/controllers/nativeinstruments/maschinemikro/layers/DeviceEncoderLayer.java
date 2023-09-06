@@ -37,8 +37,8 @@ public class DeviceEncoderLayer extends Layer {
    private final RgbColor[] deviceColors = new RgbColor[8];
    private TouchStripLayer touchStripLayer;
 
-   public DeviceEncoderLayer(Layers layers, HwElements hwElements, ViewControl viewControl, ModifierLayer modifierLayer,
-                             Transport transport, ControllerHost host) {
+   public DeviceEncoderLayer(Layers layers, HwElements hwElements, ViewControl viewControl,
+                             ModifierLayer modifierLayer) {
       super(layers, "DEVICE_ENCODER_LAYER");
       pageLayer = new Layer(layers, "ENCODER_PARAMETER_PAGE_LAYER");
       Arrays.fill(deviceColors, RgbColor.OFF);

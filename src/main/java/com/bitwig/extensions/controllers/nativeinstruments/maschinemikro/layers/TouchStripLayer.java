@@ -1,13 +1,18 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers;
 
 import com.bitwig.extension.controller.api.RemoteControl;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.TouchStrip;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.Inject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class TouchStripLayer extends Layer {
@@ -25,11 +30,12 @@ public class TouchStripLayer extends Layer {
    private int lastNotePlayed = -1;
    private boolean noteHeld = false;
    private RemoteControl focusedParameter;
+   private Map<StripMode, Layer> stepEditLayerMap = new HashMap<>();
 
    @Inject
    private PadLayer padLayer;
 
-   public TouchStripLayer(Layers layers, HwElements hwElements, MidiProcessor midiProcessor, FocusClip focusClip) {
+   public TouchStripLayer(Layers layers, HwElements hwElements, MidiProcessor midiProcessor) {
       super(layers, "TOUCH_STRIP_LAYER");
 
       this.midiProcessor = midiProcessor;
@@ -37,6 +43,9 @@ public class TouchStripLayer extends Layer {
       pitchBendLayer = new Layer(layers, "PITCH_BEND_LAYER");
       notePlayLayer = new Layer(layers, "NOTE_PLAY_LAYER");
       performLayer = new Layer(layers, "PERFORM_LAYER");
+
+      initStepEditLayers(layers);
+
       fixedLayer = new Layer(layers, "FIXED_LAYER");
 
       hwElements.getButton(CcAssignment.MOD).bindPressed(this, () -> selectMode(StripMode.MOD));
@@ -95,12 +104,31 @@ public class TouchStripLayer extends Layer {
       hwElements.getButton(CcAssignment.FIXED_VEL).bindLight(this, () -> isFixedVelocityActive());
 
       hwElements.getButton(CcAssignment.FIXED_VEL)
-         .bindHoldDelay(this, this::handleFixedInitial, this::handleHeldFixed, this::handleFixedReleased, 500);
+         .bindHoldDelay(this, this::handleFixedInitial, this::handleHeldFixed, this::handleFixedReleased, 200);
 
       touchStrip.bindStripLight(fixedLayer, () -> padLayer.getFixedVelocity());
       touchStrip.bindValue(fixedLayer, value -> padLayer.updateFixedVelocity(value));
       touchStrip.bindTouched(fixedLayer, touched -> {
       });
+   }
+
+   private void initStepEditLayers(Layers layers) {
+      Layer positionLayer = new Layer(layers, "STEP_STRIP_POSITION");
+      Layer randomLayer = new Layer(layers, "STEP_STRIP_RANDOM");
+      Layer repeatLayer = new Layer(layers, "STEP_STRIP_REPEAT");
+      Layer lengthLayer = new Layer(layers, "STEP_STRIP_LENGTH");
+      Layer timbreLayer = new Layer(layers, "STEP_STRIP_TIMBRE");
+      Layer pressureLayer = new Layer(layers, "STEP_STRIP_PRESSURE");
+      stepEditLayerMap.put(StripMode.MOD, randomLayer);
+      stepEditLayerMap.put(StripMode.PARAMETER, repeatLayer);
+      stepEditLayerMap.put(StripMode.NONE, positionLayer);
+      stepEditLayerMap.put(StripMode.NOTE, lengthLayer);
+      stepEditLayerMap.put(StripMode.PITCH, timbreLayer);
+      stepEditLayerMap.put(StripMode.PRESSURE, pressureLayer);
+   }
+
+   public Layer getStepLayer(StripMode mode) {
+      return stepEditLayerMap.get(mode);
    }
 
    private void handleFixedInitial() {
@@ -112,7 +140,7 @@ public class TouchStripLayer extends Layer {
    }
 
    private void handleFixedReleased(int timePassed) {
-      if(timePassed < 500) {
+      if (timePassed < 200) {
          padLayer.toggleFixedMode();
       }
       fixedLayer.setIsActive(false);
@@ -131,7 +159,6 @@ public class TouchStripLayer extends Layer {
    }
 
    public void setCurrentParameter(RemoteControl parameter) {
-      DebugOutMk.println(" Focused Parameter " + parameter);
       this.focusedParameter = parameter;
    }
 

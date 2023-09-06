@@ -44,20 +44,24 @@ public class StepViewPosition {
       final int newIndex = Math.min(Math.max(resolutionIndex + amount, 0), rateTable.length - 1);
       if (newIndex != resolutionIndex) {
          resolutionIndex = newIndex;
-         gridResolution = rateTable[resolutionIndex];
-         this.clip.setStepSize(gridResolution);
-
-         final int newPageSize = (int) Math.ceil(this.loopLength / gridResolution / 16);
-         this.pages = newPageSize;
-
-         if (amount < 0) {
-            this.pagePosition *= 2;
-         } else {
-            this.pagePosition /= 2;
-         }
-
-         updateStates();
+         setGridResolution(rateTable[resolutionIndex]);
       }
+   }
+
+   public void setGridResolution(double resolution) {
+      int change = resolution < this.gridResolution ? -1 : (resolution > this.gridResolution) ? 1 : 0;
+      this.gridResolution = resolution;
+      this.clip.setStepSize(gridResolution);
+      final int newPageSize = (int) Math.ceil(this.loopLength / gridResolution / 16);
+      this.pages = newPageSize;
+
+      if (change < 0) {
+         this.pagePosition *= 2;
+      } else {
+         this.pagePosition /= 2;
+      }
+
+      updateStates();
    }
 
    public String getGridValue() {
@@ -116,4 +120,21 @@ public class StepViewPosition {
          updateStates();
       }
    }
+
+   public void setPositionAbsolute(int pos) {
+      int res = 127 / Math.max(pages, 1);
+      int page = pos / res;
+      if (page != pagePosition) {
+         pagePosition = page;
+         clip.scrollToStep(pagePosition * 16);
+         updateStates();
+      }
+   }
+
+   public int getNormalizedLocation() {
+      int res = 127 / Math.max(pages, 1);
+      return Math.min(res * (pagePosition + 1), 127);
+   }
+
+
 }

@@ -44,7 +44,8 @@ public class MaschineMikroExtension extends ControllerExtension {
       shiftLayer = diContext.createLayer("SHIFT");
       initTransport(diContext);
       intStripHandling(diContext, progressLayer);
-      diContext.getService(ModeHandler.class).setEncoderLayer(diContext.getService(EncoderLayer.class));
+      EncoderLayer encoderLayer = diContext.create(EncoderLayer.class);
+      diContext.getService(ModeHandler.class).setEncoderLayer(encoderLayer);
       mainLayer.setIsActive(true);
 
       midiProcessor.start();
@@ -56,6 +57,8 @@ public class MaschineMikroExtension extends ControllerExtension {
       HwElements hwElements = diContext.getService(HwElements.class);
       ModifierLayer modifierLayer = diContext.getService(ModifierLayer.class);
       FocusClip focusClip = diContext.getService(FocusClip.class);
+      ViewControl viewControl = diContext.getService(ViewControl.class);
+      Track rootTrack = host.getProject().getRootTrackGroup();
 
       transport.isPlaying().markInterested();
       transport.isArrangerRecordEnabled().markInterested();
@@ -87,6 +90,8 @@ public class MaschineMikroExtension extends ControllerExtension {
 
       hwElements.getButton(CcAssignment.STOP).bindPressed(mainLayer, transport.stopAction());
       hwElements.getButton(CcAssignment.STOP).bindLightHeld(mainLayer);
+      hwElements.getButton(CcAssignment.STOP).bindPressed(shiftLayer, () -> rootTrack.stop());
+      hwElements.getButton(CcAssignment.STOP).bindLightHeld(shiftLayer);
 
       hwElements.getButton(CcAssignment.TAP).bindPressed(mainLayer, transport.tapTempoAction());
       hwElements.getButton(CcAssignment.TAP).bindLightHeld(mainLayer);
@@ -134,7 +139,7 @@ public class MaschineMikroExtension extends ControllerExtension {
 
    @Override
    public void exit() {
-
+      
    }
 
    @Override

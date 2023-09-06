@@ -1,7 +1,6 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers;
 
 import com.bitwig.extension.controller.api.Application;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.DebugOutMk;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.FocusClip;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
@@ -25,7 +24,6 @@ public class ShiftPadLayer extends Layer {
 
    public ShiftPadLayer(Layers layers, HwElements hwElements, Application application) {
       super(layers, "SHIFT_PAD_LAYER");
-      DebugOutMk.println("Create Shift Pad Layer");
       this.application = application;
 
       List<RgbButton> gridButtons = hwElements.getPadButtons();

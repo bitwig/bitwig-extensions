@@ -12,6 +12,7 @@ import com.bitwig.extensions.framework.time.TimedEvent;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 
 public class GateButton {
@@ -63,6 +64,10 @@ public class GateButton {
 
    public void bindPressed(final Layer layer, final Runnable action) {
       layer.bind(hwButton, hwButton.pressedAction(), action);
+   }
+
+   public void bindPressed(final Layer layer, final DoubleConsumer velocity) {
+      layer.bind(hwButton, hwButton.pressedAction(), velocity);
    }
 
    public void bindPressed(final Layer layer, final HardwareActionBindable action) {

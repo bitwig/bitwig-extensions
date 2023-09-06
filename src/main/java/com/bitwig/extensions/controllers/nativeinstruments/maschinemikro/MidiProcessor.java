@@ -11,7 +11,9 @@ import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
 import com.bitwig.extensions.framework.time.TimedEvent;
 import com.bitwig.extensions.framework.values.Midi;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -23,6 +25,20 @@ public class MidiProcessor {
    protected final ControllerHost host;
    private final NoteInput noteInput;
    private int blinkState = 0;
+   private List<NoteListener> noteListeners = new ArrayList<>();
+
+   public void sendRawNoteOn(int note, int velocity) {
+      noteInput.sendRawMidiEvent(Midi.NOTE_ON, note, velocity);
+   }
+
+   public void sendNoteOff(int note) {
+      noteInput.sendRawMidiEvent(Midi.NOTE_OFF, note, 0);
+   }
+
+   @FunctionalInterface
+   public interface NoteListener {
+      void handleNote(int noteNr, int vel);
+   }
 
    private int[] noteStatus = new int[128];
    private int[] ccStatus = new int[128];
@@ -39,8 +55,12 @@ public class MidiProcessor {
       midiIn.setSysexCallback(this::handleSysEx);
    }
 
+   public void addNoteListener(NoteListener noteListener) {
+      this.noteListeners.add(noteListener);
+   }
+
    private void setupNoteInput() {
-      noteInput.setShouldConsumeEvents(false);
+      noteInput.setShouldConsumeEvents(true);
       Integer[] noAssignTable = new Integer[128];
       Arrays.fill(noAssignTable, Integer.valueOf(-1));
       noteInput.setKeyTranslationTable(noAssignTable);
@@ -48,6 +68,9 @@ public class MidiProcessor {
 
    private void onMidi0(final ShortMidiMessage msg) {
       final int sb = msg.getStatusByte();
+      if (msg.getStatusByte() == 0x90) {
+         noteListeners.forEach(listener -> listener.handleNote(msg.getData1(), msg.getData2()));
+      }
    }
 
    protected void handleSysEx(final String sysExString) {
@@ -126,6 +149,10 @@ public class MidiProcessor {
       return color;
    }
 
+   public boolean blinkMid() {
+      return blinkState % 4 < 2;
+   }
+
    public RgbColor blinkMid(Colors color) {
       if (blinkState % 4 < 2) {
          return RgbColor.of(color, ColorBrightness.DIMMED);
@@ -134,7 +161,7 @@ public class MidiProcessor {
    }
 
    public RgbColor blinkFast(int onColor, int offColor) {
-      return RgbColor.of(blinkState % 8 == 0 ? onColor : offColor);
+      return RgbColor.of(blinkState % 2 == 0 ? onColor : offColor);
    }
 
    public NoteInput getNoteInput() {

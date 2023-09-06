@@ -20,8 +20,10 @@ import java.util.List;
 public class TrackLayer extends Layer {
    private static final RgbColor MUTE_COLOR = RgbColor.of(Colors.LIGHT_ORANGE);
    private static final RgbColor SOLO_COLOR = RgbColor.of(Colors.YELLOW);
+   private static final RgbColor ARM_COLOR = RgbColor.of(Colors.RED);
 
    private final Layer muteLayer;
+   private final Layer armLayer;
    private final Layer soloLayer;
    private final CursorTrack cursorTrack;
    private final TrackBank trackBank;
@@ -48,6 +50,7 @@ public class TrackLayer extends Layer {
       super(layers, "GROUP_LAYER");
       muteLayer = new Layer(layers, "MUTE_LAYER");
       soloLayer = new Layer(layers, "SOLO_LAYER");
+      armLayer = new Layer(layers, "ARM_LAYER");
       Arrays.fill(trackColors, RgbColor.OFF);
       Arrays.fill(sendColors, RgbColor.OFF);
       cursorTrack = viewControl.getCursorTrack();
@@ -76,6 +79,9 @@ public class TrackLayer extends Layer {
 
             button.bindPressed(soloLayer, () -> track.solo().toggle());
             button.bindLight(soloLayer, () -> this.getSoloLight(track, index));
+
+            button.bindPressed(armLayer, () -> track.arm().toggle());
+            button.bindLight(armLayer, () -> this.getArmLight(track, index));
          } else if (i == 12) {
             button.bindPressed(this, () -> setCurrentEncoderDestination(EncoderDestination.VOLUME));
             button.bindLight(this, () -> getModeState(EncoderDestination.VOLUME, RgbColor.WHITE));
@@ -166,7 +172,18 @@ public class TrackLayer extends Layer {
       if (isActive()) {
          soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO);
          muteLayer.setIsActive(muteSoloMode == MuteSoloMode.MUTE);
+         armLayer.setIsActive(muteSoloMode == MuteSoloMode.ARM);
       }
+   }
+
+   private RgbColor getArmLight(Track track, int index) {
+      if (!track.exists().get()) {
+         return RgbColor.OFF;
+      }
+      if (track.arm().get()) {
+         return ARM_COLOR.brightness(ColorBrightness.BRIGHT);
+      }
+      return ARM_COLOR;
    }
 
    private InternalHardwareLightState getSoloLight(Track track, int index) {
@@ -236,6 +253,7 @@ public class TrackLayer extends Layer {
       super.onActivate();
       soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO);
       muteLayer.setIsActive(muteSoloMode == MuteSoloMode.MUTE);
+      armLayer.setIsActive(muteSoloMode == MuteSoloMode.ARM);
    }
 
    @Override
@@ -243,5 +261,6 @@ public class TrackLayer extends Layer {
       super.onDeactivate();
       soloLayer.setIsActive(false);
       muteLayer.setIsActive(false);
+      armLayer.setIsActive(false);
    }
 }

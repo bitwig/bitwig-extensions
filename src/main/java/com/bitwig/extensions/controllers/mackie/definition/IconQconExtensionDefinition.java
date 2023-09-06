@@ -19,12 +19,12 @@ public abstract class IconQconExtensionDefinition extends MackieMcuProExtensionD
       final List<String[]> portList = new ArrayList<>();
       for (int version = startVersion; version < endVersion; version++) {
          final String versionString = String.format("%d.%02d", majorVersion, version);
-         portList.add(getPortNames("iCON QCON Pro " + model + " V%s", model, versionString));
+         portList.add(getPortNames(platformType, "iCON QCON Pro " + model + " V%s", model, versionString));
       }
       return portList;
    }
 
-   protected String[] getPortNames(final String baseFormat, final String model, final String version) {
+   protected String[] getPortNames(PlatformType platformType, final String baseFormat, final String model, final String version) {
       final String[] portNames = new String[nrOfExtenders + 1];
       portNames[0] = String.format(baseFormat, version);
       for (int extIndex = 1; extIndex < nrOfExtenders + 1; extIndex++) {

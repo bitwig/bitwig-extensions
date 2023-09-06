@@ -107,7 +107,6 @@ public class BrowserLayer extends Layer {
          this.setIsActive(false);
       } else {
          this.setIsActive(true);
-         DebugOutMk.println(" ACTIVE ");
          if (cursorDevice.exists().get()) {
             browsingInitiated = true;
             cursorDevice.replaceDeviceInsertionPoint().browse();

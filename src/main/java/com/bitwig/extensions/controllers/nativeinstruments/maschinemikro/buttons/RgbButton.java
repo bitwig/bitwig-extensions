@@ -20,6 +20,7 @@ public class RgbButton extends GateButton {
       hwButton = surface.createHardwareButton(name + "_" + midiId);
       hwButton.pressedAction().setPressureActionMatcher(midiIn.createNoteOnVelocityValueMatcher(0, midiId));
       hwButton.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(0, midiId));
+      
       hwButton.isPressed().markInterested();
       light = surface.createMultiStateHardwareLight(name + "_LIGHT_" + midiId);
       light.state().setValue(RgbLightState.OFF);

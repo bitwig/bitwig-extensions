@@ -8,10 +8,8 @@ import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwEleme
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
 
-@Component(priority = 0)
 public class EncoderLayer extends Layer {
    private final BooleanValueObject shiftHeld;
    private final Transport transport;
@@ -27,10 +25,8 @@ public class EncoderLayer extends Layer {
       this.groove = host.createGroove();
       this.groove.getEnabled().markInterested();
       cursorTrack = viewControl.getCursorTrack();
-
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(cursorTrack, dir));
    }
-
 
    private void handleEncoder(CursorTrack cursorTrack, int diff) {
       switch (encoderMode) {
