@@ -34,9 +34,9 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       Send3(11, "Switched to 3 Sends Mode"),
       Send1Device2(12, "Switched to 1 Send and 2 per Channel DEVICE Controls Mode"),
       Device3(13, "Switched to per Channel DEVICE Controls Mode"),
-      Track3(14, "Switched to per Channel TRACK Controls Mode"),
+      Track3(15, "Switched to per Channel TRACK Controls Mode"),
 
-      None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 7."),
+      None(0, "Unsupported Template. We provide Modes for the Factory Template 1 to 8, except 7."),
       Send2Pan1(0, "Switched to 2 Sends and Pan Mode");
 
       Mode(final int channel, final String notification)
@@ -396,7 +396,7 @@ public class LaunchControlXlControllerExtension extends ControllerExtension
       final int n = prefix.length();
       final int ch = Integer.parseInt(sysex.substring(n, n + 1), 16);
 
-      if (8 <= ch && ch <= 14)
+      if (8 <= ch && ch <= 15)
       {
          for (final Mode mode : Mode.values())
          {
