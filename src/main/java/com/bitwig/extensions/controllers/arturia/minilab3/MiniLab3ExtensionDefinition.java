@@ -9,8 +9,9 @@ import com.bitwig.extension.controller.api.ControllerHost;
 
 public class MiniLab3ExtensionDefinition extends ControllerExtensionDefinition {
     private static final UUID DRIVER_ID = UUID.fromString("6d0d76fc-b9b0-11ec-8422-0242ac120002");
-
-    private static final String MIDI_NAME = "Minilab3 MIDI";
+    
+    private static final String PORT_NAME_MIDI = "Minilab3 MIDI";
+    private static final String PORT_NAME = "Minilab3";
 
     public MiniLab3ExtensionDefinition() {
     }
@@ -32,7 +33,7 @@ public class MiniLab3ExtensionDefinition extends ControllerExtensionDefinition {
 
     @Override
     public String getVersion() {
-        return "1.0";
+        return "1.01";
     }
 
     @Override
@@ -69,12 +70,13 @@ public class MiniLab3ExtensionDefinition extends ControllerExtensionDefinition {
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                                final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) {
-            list.add(new String[]{MIDI_NAME}, new String[]{MIDI_NAME});
-            list.add(new String[]{"2- " + MIDI_NAME}, new String[]{"2- " + MIDI_NAME});
+            list.add(new String[]{PORT_NAME_MIDI}, new String[]{PORT_NAME_MIDI});
+            list.add(new String[]{PORT_NAME}, new String[]{PORT_NAME});
+            list.add(new String[]{"2- " + PORT_NAME_MIDI}, new String[]{"2- " + PORT_NAME_MIDI});
         } else if (platformType == PlatformType.MAC) {
-            list.add(new String[]{MIDI_NAME}, new String[]{MIDI_NAME});
+            list.add(new String[]{PORT_NAME_MIDI}, new String[]{PORT_NAME_MIDI});
         } else if (platformType == PlatformType.LINUX) {
-            list.add(new String[]{"Minilab3"}, new String[]{"Minilab3"});
+            list.add(new String[]{PORT_NAME}, new String[]{PORT_NAME});
         }
     }
 

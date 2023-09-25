@@ -27,7 +27,7 @@ public abstract class AbstractKompleteKontrolExtensionDefinition extends Control
 
    @Override
    public String getVersion() {
-      return "1.2";
+      return "1.4";
    }
 
    @Override
