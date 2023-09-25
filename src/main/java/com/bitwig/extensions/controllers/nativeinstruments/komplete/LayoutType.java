@@ -6,7 +6,7 @@ public enum LayoutType {
 
 	private String name;
 
-	private LayoutType(final String name) {
+	LayoutType(final String name) {
 		this.name = name;
 	}
 

@@ -1,11 +1,11 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete.definition;
 
+import java.util.UUID;
+
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolAExtension;
-
-import java.util.UUID;
 
 public class KompleteKontrolASeriesExtensionDefinition extends AbstractKompleteKontrolExtensionDefinition {
    private static final UUID DRIVER_ID = UUID.fromString("523a5a44-409c-496b-bb74-58bcea37867d");
