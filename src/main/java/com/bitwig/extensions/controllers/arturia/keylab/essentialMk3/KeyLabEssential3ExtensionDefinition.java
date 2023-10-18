@@ -72,25 +72,28 @@ public class KeyLabEssential3ExtensionDefinition extends ControllerExtensionDefi
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
       if (platformType == PlatformType.WINDOWS) {
-         addPorts(list, MIDI_NAME_FORMAT_WINDOWS, KEY_VARS);
-         addPorts(list, MIDI_NAME_FORMAT_WINDOWS, KEY_VARS);
+         addPorts(list, MIDI_NAME_FORMAT_WINDOWS, 4);
       } else if (platformType == PlatformType.MAC) {
-         addPorts(list, MIDI_NAME_FORMAT_MAC, KEY_VARS);
-         addPorts(list, MIDI_NAME_FORMAT_WINDOWS, KEY_VARS);
+         addPorts(list, MIDI_NAME_FORMAT_MAC, 0);
       } else if (platformType == PlatformType.LINUX) {
-         addPorts(list, MIDI_NAME_FORMAT_MAC, KEY_VARS);
+         addPorts(list, MIDI_NAME_FORMAT_MAC, 0);
       }
    }
 
-   private void addPorts(final AutoDetectionMidiPortNamesList list, final String format, final int[] keynumbers) {
-      for (final int keyNumber : keynumbers) {
-         addPorts(list, format, keyNumber);
+   private void addPorts(final AutoDetectionMidiPortNamesList list, final String format, int appendWindowsCount) {
+      for (final int keyNumber : KEY_VARS) {
+         addPorts(list, format, keyNumber, appendWindowsCount);
       }
    }
 
-   private void addPorts(final AutoDetectionMidiPortNamesList list, final String format, final int keynumbers) {
-      final String portName = String.format(format, keynumbers);
+   private void addPorts(final AutoDetectionMidiPortNamesList list, final String format, final int numberOfKeys,
+                         int appendWindowsCount) {
+      final String portName = String.format(format, numberOfKeys);
       list.add(new String[]{portName}, new String[]{portName});
+      for (int i = 0; i < appendWindowsCount; i++) {
+         String portAppended = "%d- s".formatted(i + 2, portName);
+         list.add(new String[]{portAppended}, new String[]{portAppended});
+      }
    }
 
    @Override
