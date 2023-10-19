@@ -1,7 +1,6 @@
 package com.bitwig.extensions.controllers.arturia.keylab.essentialMk3;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.color.RgbLightState;
@@ -15,6 +14,8 @@ import com.bitwig.extensions.framework.di.Context;
 import com.bitwig.extensions.framework.time.TimedDelayEvent;
 import com.bitwig.extensions.framework.values.FocusMode;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -39,6 +40,16 @@ public class KeylabEssential3Extension extends ControllerExtension {
    private SysExHandler.PadMode padMode = SysExHandler.PadMode.PAD_CLIPS;
    private boolean buttonPadRequestInvoked = false;
 
+   private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
+   private static ControllerHost debugHost;
+
+   public static void println(final String format, final Object... args) {
+      if (debugHost != null) {
+         final LocalDateTime now = LocalDateTime.now();
+         debugHost.println(now.format(DF) + " > " + String.format(format, args));
+      }
+   }
+
    protected KeylabEssential3Extension(final KeyLabEssential3ExtensionDefinition definition,
                                        final ControllerHost host) {
       super(definition, host);
@@ -47,11 +58,11 @@ public class KeylabEssential3Extension extends ControllerExtension {
    @Override
    public void init() {
       host = getHost();
-      DebugOut.registerHost(host);
+      debugHost = host;
       final Context diContext = new Context(this);
       surface = diContext.getService(HardwareSurface.class);
       MidiIn midiIn = host.getMidiInPort(0);
-      midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi0);
+      //midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi0);
       MidiOut midiOut = host.getMidiOutPort(0);
       diContext.registerService(MidiIn.class, midiIn);
       diContext.registerService(MidiOut.class, midiOut);
@@ -63,10 +74,6 @@ public class KeylabEssential3Extension extends ControllerExtension {
          getInputMask(0x0A, new int[]{0x1, 0x40, 0x72, 0x73, 0x1E, 0x1F, 0x56, 0x57, 0x49, 0x4B, 0x4F, 0x48, //
             0x50, 0x51, 0x52, 0x53, 0x55, 0x5A, 0x4A, 0x47, 0x4C, 0x4D, 0x5D, 0x12, 0x13, 0x10, 0x11}));
       noteInput.setShouldConsumeEvents(true);
-//      Application application = diContext.getService(Application.class);
-//      application.panelLayout().addValueObserver(layout -> {
-//         DebugOut.println("LAYOUT = %s", layout);
-//      });
 
       mainLayer = diContext.createLayer("MAIN");
       clipLaunchingLayer = diContext.create(ClipLaunchingLayer.class);
@@ -98,16 +105,16 @@ public class KeylabEssential3Extension extends ControllerExtension {
    private void handleSysExEvent(final SysExHandler.SysexEventType sysexEventType) {
       switch (sysexEventType) {
          case DAW_MODE:
-            DebugOut.println(" Into Daw Mode");
+            println(" Into Daw Mode");
             clipLaunchingLayer.activateIndication(true);
             mode = SysExHandler.SysexEventType.DAW_MODE;
             break;
          case ARTURIA_MODE:
-            DebugOut.println(" Into Arturia Mode");
+            println(" Into Arturia Mode");
             mode = SysExHandler.SysexEventType.ARTURIA_MODE;
             break;
          case USER_MODE:
-            DebugOut.println(" USER MODE");
+            println(" USER MODE");
             mode = SysExHandler.SysexEventType.USER_MODE;
             break;
          case INIT:
@@ -281,7 +288,7 @@ public class KeylabEssential3Extension extends ControllerExtension {
 
    private void onMidi0(final ShortMidiMessage msg) {
       final int sb = msg.getStatusByte() & (byte) 0xF0;
-      DebugOut.println("MIDI %02X %02X %02x  %s", sb, msg.getData1(), msg.getData2(), mode);
+      println("MIDI %02X %02X %02x  %s", sb, msg.getData1(), msg.getData2(), mode);
    }
 
    @Override

@@ -4,7 +4,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.CCAssignment;
-import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.DebugOut;
+import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.KeylabEssential3Extension;
 import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.RgbButton;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 @Component
 public class SysExHandler {
 
-   public static final String ARTURIA_CLEAR_SCREEN = "f0 00 20 6B 7f 42 04 01 60 0a 0a 5f 51 00 f7";
+   //public static final String ARTURIA_CLEAR_SCREEN = "f0 00 20 6B 7f 42 04 01 60 0a 0a 5f 51 00 f7";
    public static final String ARTURIA_SYSEX_HEADER = "f0 00 20 6B 7f 42 ";
    public static final String SYSEX_DEVICE_RECOGNITION = "f07e7f060200206b02";
    public static final String PAD_MODE_HEADER = "f000206b7f422111400000";
@@ -100,7 +100,7 @@ public class SysExHandler {
       if (!processingReady) {
          final long diff = System.currentTimeMillis() - creationTime;
          if (diff > 1000) {
-            DebugOut.println(" Not Connected after %d ms", diff);
+            KeylabEssential3Extension.println(" Not Connected after %d ms", diff);
             disconnectState();
             midiProcessingRunning = false;
             pause(100);
@@ -132,18 +132,18 @@ public class SysExHandler {
       if (sysEx.startsWith(SYSEX_DEVICE_RECOGNITION)) {
          final String value = extractSysexRest(sysEx, MODE_CHANGE_HEADER);
          final long diff = System.currentTimeMillis() - creationTime;
-         DebugOut.println("Device Inquiry Response = %s after %d ms MIDI Processing=%s", value, diff,
+         KeylabEssential3Extension.println("Device Inquiry Response = %s after %d ms MIDI Processing=%s", value, diff,
             midiProcessingRunning);
          requestInitState();
          pause(30);
          notify(SysexEventType.INIT);
          if (!midiProcessingRunning) {
-            DebugOut.println(" REACTIVATING ");
+            KeylabEssential3Extension.println(" REACTIVATING ");
             activate();
          }
       } else if (sysEx.startsWith(MODE_CHANGE_HEADER)) {
          final String mode = extractSysexRest(sysEx, MODE_CHANGE_HEADER);
-         DebugOut.println(" MODE = %s", mode);
+         KeylabEssential3Extension.println(" MODE = %s", mode);
          if ("01".equals(mode)) {
             notify(SysexEventType.DAW_MODE);
          } else if ("00".equals(mode)) {
@@ -159,7 +159,7 @@ public class SysExHandler {
             padModeEventListener.forEach(e -> e.accept(PadMode.PAD_CLIPS));
          }
       } else {
-         DebugOut.println("Unknown Received SysEx : %s", sysEx);
+         KeylabEssential3Extension.println("Unknown Received SysEx : %s", sysEx);
       }
    }
 
@@ -193,7 +193,7 @@ public class SysExHandler {
    }
 
    public void disconnectState() {
-      DebugOut.println(" Disconnect ");
+      KeylabEssential3Extension.println(" Disconnect ");
       midiOut.sendSysex("f0 00 20 6B 7f 42 02 0F 40 5A 00 F7");
       processingReady = false;
       pause(20);
