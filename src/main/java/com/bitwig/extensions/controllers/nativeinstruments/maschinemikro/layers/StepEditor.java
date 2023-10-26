@@ -314,7 +314,7 @@ public class StepEditor extends Layer {
    public void setPadLayer(PadLayer padLayer) {
       this.padLayer = padLayer;
    }
-   
+
    private void handleNoteStep(final NoteStep noteStep) {
       assignments[noteStep.x()] = noteStep;
    }
@@ -415,6 +415,9 @@ public class StepEditor extends Layer {
    }
 
    public void setSelectedNote(int selectedNote, int padIndex) {
+      if (selectedNote > 0) {
+         return;
+      }
       if (padIndex == -1 && !isDrumEdit) {
          focusNote = selectedNote;
       } else if (selectedNote == 0 && padIndex == 0 && isDrumEdit) {
@@ -422,6 +425,7 @@ public class StepEditor extends Layer {
       } else {
          focusNote = selectedNote;
       }
+      focusNote = Math.min(127, focusNote);
       clip.scrollToKey(focusNote);
    }
 
