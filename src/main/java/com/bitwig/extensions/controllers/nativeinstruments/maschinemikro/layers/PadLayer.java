@@ -151,6 +151,17 @@ public class PadLayer extends Layer {
       drumPadBank.getItemAt(drumPadIndex).selectInEditor();
    }
 
+   public int matchScale(int inNote) {
+      Scale scale = scaleHandler.getCurrentScale();
+      int scaleIndex = (inNote % 12 + 12 - scaleHandler.getBaseNote()) % 12;
+      if (scale.inScale(scaleIndex)) {
+         return inNote;
+      }
+      int nextInScale = scale.nextInScale(scaleIndex);
+      int diff = nextInScale - scaleIndex;
+      return inNote + diff;
+   }
+
    private void handleEraseActive(boolean pressed) {
       if (isActive() && !soloLayer.isActive() && !muteLayer.isActive()) {
          if (pressed) {
