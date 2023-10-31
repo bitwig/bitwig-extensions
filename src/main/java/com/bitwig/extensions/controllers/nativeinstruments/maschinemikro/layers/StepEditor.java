@@ -415,7 +415,7 @@ public class StepEditor extends Layer {
    }
 
    public void setSelectedNote(int selectedNote, int padIndex) {
-      if (selectedNote > 0) {
+      if (selectedNote < 0) {
          return;
       }
       if (padIndex == -1 && !isDrumEdit) {

@@ -88,6 +88,7 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Lock">
+        <disabled />
         <controller>36</controller>
         <channel>0</channel>
         <off>0</off>
@@ -223,6 +224,7 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Sampling">
+        <disabled />
         <controller>47</controller>
         <channel>0</channel>
         <off>0</off>
@@ -255,6 +257,7 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Star">
+        <disabled />
         <controller>39</controller>
         <channel>0</channel>
         <off>0</off>

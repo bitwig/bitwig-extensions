@@ -42,6 +42,8 @@ public class ModeHandler extends Layer {
 
    private Layer activeLayer;
 
+   private Map<Mode, Runnable> modeAction = new HashMap<>();
+
    private enum Mode {
       LAUNCHER,
       SCENE,
@@ -66,7 +68,6 @@ public class ModeHandler extends Layer {
       public boolean isKeyMode() {
          return keyMode;
       }
-
    }
 
    private Mode currentMode = Mode.LAUNCHER;
@@ -92,6 +93,7 @@ public class ModeHandler extends Layer {
       bindMomentaryModeButton(hwElements, CcAssignment.GROUP, Mode.GROUP);
       bindMomentaryModeButton(hwElements, CcAssignment.PLUGIN, Mode.PLUGIN);
       bindMomentaryModeButton(hwElements, CcAssignment.FOLLOW, Mode.GRID);
+      modeAction.put(Mode.PLUGIN, this::exitEncoderModes);
 
       hwElements.getButton(CcAssignment.MUTE).bindPressed(this, () -> handleMutePress(true));
       hwElements.getButton(CcAssignment.MUTE).bindRelease(this, () -> handleMutePress(false));
@@ -134,6 +136,9 @@ public class ModeHandler extends Layer {
       layerModeRegister.put(Mode.GRID, gridLayer);
       this.setIsActive(true);
       activeLayer.setIsActive(true);
+   }
+
+   public void exitEncoderModes() {
    }
 
    private void handleMutePress(boolean press) {
@@ -250,6 +255,11 @@ public class ModeHandler extends Layer {
          }
       }
       encoderLayer.setMode(encoderMode);
+
+      if (encoderMode != EncoderMode.NONE) {
+         deviceEncoderLayer.deactivateTouch();
+         trackLayer.deactivateTouch();
+      }
    }
 
    private void handleMomentary(Mode mode, boolean pressed, long downtime) {
@@ -299,6 +309,10 @@ public class ModeHandler extends Layer {
             }
          }
          currentMode = newMode;
+         Runnable afterSetAction = modeAction.get(currentMode);
+         if (afterSetAction != null) {
+            afterSetAction.run();
+         }
          activeLayer.setIsActive(true);
       }
    }

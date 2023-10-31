@@ -72,7 +72,7 @@ public class ChordLayer extends Layer {
       if (!isActive()) {
          return;
       }
-      DebugOutMk.println(" NOTES IN %d", notes.length);
+      MaschineMikroExtension.println(" NOTES IN %d", notes.length);
    }
 
    private void handleEncoder(int dir) {

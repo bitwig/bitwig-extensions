@@ -75,7 +75,7 @@ public class MidiProcessor {
 
    protected void handleSysEx(final String sysExString) {
       if (sysExString.equals("f000210917004d5000014601f7")) {
-         DebugOutMk.println(" HANDLE Return from Maschine");
+         MaschineMikroExtension.println(" HANDLE Return from Maschine");
          for (int i = 0; i < noteStatus.length; i++) {
             if (noteStatus[i] != -1) {
                midiOut.sendMidi(Midi.NOTE_ON, i, noteStatus[i]);
@@ -87,7 +87,7 @@ public class MidiProcessor {
             }
          }
       } else {
-         DebugOutMk.println("SYSEX = %s", sysExString);
+         MaschineMikroExtension.println("SYSEX = %s", sysExString);
       }
    }
 

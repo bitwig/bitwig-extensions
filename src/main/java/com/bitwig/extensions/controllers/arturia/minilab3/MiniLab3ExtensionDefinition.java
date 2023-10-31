@@ -53,7 +53,7 @@ public class MiniLab3ExtensionDefinition extends ControllerExtensionDefinition {
 
    @Override
    public int getRequiredAPIVersion() {
-      return 16;
+      return 17;
    }
 
    @Override

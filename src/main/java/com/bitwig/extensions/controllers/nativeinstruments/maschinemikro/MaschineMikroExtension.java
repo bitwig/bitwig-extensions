@@ -12,6 +12,9 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 import com.bitwig.extensions.framework.values.FocusMode;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class MaschineMikroExtension extends ControllerExtension {
 
    private final ControllerHost host;
@@ -20,15 +23,24 @@ public class MaschineMikroExtension extends ControllerExtension {
    private Layer shiftLayer;
    private FocusMode recordFocusMode = FocusMode.LAUNCHER;
    private StripMode stripMode = StripMode.NONE;
+   private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
+   private static ControllerHost debugHost;
 
    protected MaschineMikroExtension(final ControllerExtensionDefinition definition, final ControllerHost host) {
       super(definition, host);
       this.host = host;
    }
 
+   public static void println(final String format, final Object... args) {
+      if (debugHost != null) {
+         final LocalDateTime now = LocalDateTime.now();
+         debugHost.println(now.format(DF) + " > " + String.format(format, args));
+      }
+   }
+
    @Override
    public void init() {
-      DebugOutMk.registerHost(host);
+      debugHost = host;
       initPreferences(host);
       final Context diContext = new Context(this);
       Layer progressLayer = diContext.createLayer("Progress_layer");
@@ -139,7 +151,7 @@ public class MaschineMikroExtension extends ControllerExtension {
 
    @Override
    public void exit() {
-      
+
    }
 
    @Override

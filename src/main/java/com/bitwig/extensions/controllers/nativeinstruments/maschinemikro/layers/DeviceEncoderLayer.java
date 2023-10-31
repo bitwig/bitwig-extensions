@@ -3,10 +3,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbColor;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -17,13 +14,14 @@ import com.bitwig.extensions.framework.values.BooleanValueObject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class DeviceEncoderLayer extends Layer {
 
    private static final RgbColor[] PARAM_COLORS = {RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE};
-   private static Map<String, RgbColor> DEVICE_TYPE_TO_COLOR = Map.of("note_effect", RgbColor.RED, //
-      "instrument", RgbColor.GREEN, "audio_to_audio", RgbColor.of(Colors.CYAN));
+   private static Map<String, RgbColor> DEVICE_TYPE_TO_COLOR = Map.of("note-effect", RgbColor.of(Colors.CYAN), //
+      "instrument", RgbColor.of(Colors.YELLOW), "audio_to_audio", RgbColor.of(Colors.ORANGE));
 
    private final BooleanValueObject shiftHeld;
    private final PinnableCursorDevice cursorDevice;
@@ -114,6 +112,7 @@ public class DeviceEncoderLayer extends Layer {
    }
 
    private void handleDeviceTypeChanged(int index, String deviceType) {
+      MaschineMikroExtension.println(" Type = <%s>", deviceType);
       deviceColors[index] = DEVICE_TYPE_TO_COLOR.getOrDefault(deviceType, RgbColor.ORANGE);
    }
 
@@ -183,12 +182,28 @@ public class DeviceEncoderLayer extends Layer {
       }
    }
 
+   private Optional<RemoteControl> getCurrentControl() {
+      if (selectedParameter != -1) {
+         return Optional.of(remoteBank.getParameter(selectedParameter));
+      }
+      return Optional.empty();
+   }
+
+   public void deactivateTouch() {
+      if (isActive()) {
+         MaschineMikroExtension.println("Deactivate Touching");
+         getCurrentControl().ifPresent(parameter -> parameter.touch(false));
+      }
+   }
+
    @Override
    protected void onDeactivate() {
       super.onDeactivate();
-      if (selectedParameter != -1) {
-         RemoteControl previousParameter = remoteBank.getParameter(selectedParameter);
-         previousParameter.touch(false);
-      }
+      getCurrentControl().ifPresent(parameter -> parameter.touch(false));
+   }
+
+   @Override
+   protected void onActivate() {
+      super.onActivate();
    }
 }

@@ -2,8 +2,8 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.DebugOutMk;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MaschineMikroExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -98,7 +98,7 @@ public class BrowserLayer extends Layer {
    }
 
    private void handleFavorite() {
-      DebugOutMk.println(" FAV Pressed ");
+      MaschineMikroExtension.println(" FAV Pressed ");
    }
 
    public void handleBrowserActivation() {

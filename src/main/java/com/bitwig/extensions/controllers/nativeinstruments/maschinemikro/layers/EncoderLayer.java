@@ -1,14 +1,14 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers;
 
-import com.bitwig.extension.controller.api.ControllerHost;
-import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.Groove;
-import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extension.controller.api.*;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
+
+import java.util.Optional;
 
 public class EncoderLayer extends Layer {
    private final BooleanValueObject shiftHeld;
@@ -26,6 +26,20 @@ public class EncoderLayer extends Layer {
       this.groove.getEnabled().markInterested();
       cursorTrack = viewControl.getCursorTrack();
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(cursorTrack, dir));
+      hwElements.getButton(CcAssignment.ENCODER_TOUCH).bindIsPressed(this, this::handleEncoderTouch);
+   }
+
+   private void handleEncoderTouch(boolean touched) {
+      getCurrentParameter().ifPresent(parameter -> {
+         parameter.touch(touched);
+      });
+   }
+
+   private Optional<Parameter> getCurrentParameter() {
+      if (encoderMode == EncoderMode.VOLUME) {
+         return Optional.of(cursorTrack.volume());
+      }
+      return Optional.empty();
    }
 
    private void handleEncoder(CursorTrack cursorTrack, int diff) {
@@ -54,6 +68,7 @@ public class EncoderLayer extends Layer {
    }
 
    public void setMode(EncoderMode encoderMode) {
+      getCurrentParameter().ifPresent(parameter -> parameter.touch(false));
       this.encoderMode = encoderMode;
       if (encoderMode == EncoderMode.NONE) {
          setIsActive(false);
