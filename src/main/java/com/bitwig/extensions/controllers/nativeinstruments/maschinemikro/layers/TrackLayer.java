@@ -36,6 +36,7 @@ public class TrackLayer extends Layer {
    private ModifierLayer modifierLayer;
    @Inject
    private MidiProcessor midiProcessor;
+   private boolean lockButtonHeld;
 
    private enum EncoderDestination {
       TRACK,
@@ -76,7 +77,7 @@ public class TrackLayer extends Layer {
             button.bindPressed(muteLayer, () -> track.mute().toggle());
             button.bindLight(muteLayer, () -> this.getMuteLight(track, index));
 
-            button.bindPressed(soloLayer, () -> track.solo().toggle());
+            button.bindPressed(soloLayer, () -> track.solo().toggle(muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE));
             button.bindLight(soloLayer, () -> this.getSoloLight(track, index));
 
             button.bindPressed(armLayer, () -> track.arm().toggle());
@@ -100,6 +101,12 @@ public class TrackLayer extends Layer {
       }
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(dir));
       hwElements.getButton(CcAssignment.ENCODER_TOUCH).bindIsPressed(this, this::handleEncoderTouch);
+      hwElements.getButton(CcAssignment.LOCK).bindIsPressed(this, this::handleLockButton);
+      hwElements.getButton(CcAssignment.LOCK).bindLightHeld(this);
+   }
+
+   private void handleLockButton(boolean pressed) {
+      this.lockButtonHeld = pressed;
    }
 
    private void setCurrentEncoderDestination(EncoderDestination destination) {
@@ -191,7 +198,7 @@ public class TrackLayer extends Layer {
    public void setMutSoloMode(MuteSoloMode muteSoloMode) {
       this.muteSoloMode = muteSoloMode;
       if (isActive()) {
-         soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO);
+         soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO || muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE);
          muteLayer.setIsActive(muteSoloMode == MuteSoloMode.MUTE);
          armLayer.setIsActive(muteSoloMode == MuteSoloMode.ARM);
       }
@@ -248,7 +255,13 @@ public class TrackLayer extends Layer {
    }
 
    private void selectTrack(Track track, int index) {
-      if (modifierLayer.getDuplicateHeld().get()) {
+      if (lockButtonHeld) {
+         if (modifierLayer.getVariationHeld().get()) {
+            track.stopAlt();
+         } else {
+            track.stop();
+         }
+      } else if (modifierLayer.getDuplicateHeld().get()) {
          track.duplicate();
       } else if (modifierLayer.getEraseHeld().get()) {
          track.deleteObject();
@@ -285,5 +298,6 @@ public class TrackLayer extends Layer {
       soloLayer.setIsActive(false);
       muteLayer.setIsActive(false);
       armLayer.setIsActive(false);
+      lockButtonHeld = false;
    }
 }

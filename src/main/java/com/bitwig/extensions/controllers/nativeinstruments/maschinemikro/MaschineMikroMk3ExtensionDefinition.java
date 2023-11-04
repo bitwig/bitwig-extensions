@@ -69,8 +69,7 @@ public class MaschineMikroMk3ExtensionDefinition extends ControllerExtensionDefi
 
    @Override
    public String getHelpFilePath() {
-      return "";
-      //return "Controllers/Native Instruments/Maschine MK3 Plus/Maschine MK3 Plus.pdf";
+      return "Controllers/Native Instruments/Maschine Mikro Mk3/NI Maschine Micro Mk3.pdf";
    }
 
    @Override

@@ -69,11 +69,15 @@ public class PadLayer extends Layer {
    private ModifierLayer modifierLayer;
    private StepEditor stepEditor;
    private int selectedPadIndex = -1;
+   private MidiProcessor midiProcessor;
+   private boolean sustainOn = false;
+   private Runnable sustainReleaseListener;
 
    public PadLayer(Layers layers, HwElements hwElements, ViewControl viewControl, ModifierLayer modifierLayer,
                    MidiProcessor midiProcessor, ControllerHost host) {
       super(layers, "PAD_LAYER");
       this.noteInput = midiProcessor.getNoteInput();
+      this.midiProcessor = midiProcessor;
       scaleHandler = new PadScaleHandler(host,
          List.of(Scale.CHROMATIC, Scale.MAJOR, Scale.MINOR, Scale.PENTATONIC, Scale.PENTATONIC_MINOR, Scale.DORIAN,
             Scale.MIXOLYDIAN, Scale.LOCRIAN, Scale.LYDIAN, Scale.PHRYGIAN), 16, true);
@@ -133,6 +137,8 @@ public class PadLayer extends Layer {
             this.stepEditor.setSelectedNote(noteTable[note], -1);
          }
       });
+      hwElements.getButton(CcAssignment.LOCK).bindIsPressed(this, this::handleLockButton);
+      hwElements.getButton(CcAssignment.LOCK).bindLightHeld(this);
    }
 
    private void handleDuplicate(boolean pressed) {
@@ -165,11 +171,11 @@ public class PadLayer extends Layer {
    private void handleEraseActive(boolean pressed) {
       if (isActive() && !soloLayer.isActive() && !muteLayer.isActive()) {
          if (pressed) {
-            setNotesActive(false);
+            doNotesActive(false);
             eraseLayer.setIsActive(true);
          } else {
             eraseLayer.setIsActive(false);
-            setNotesActive(true);
+            doNotesActive(true);
          }
       }
    }
@@ -206,11 +212,12 @@ public class PadLayer extends Layer {
          if (this.muteSoloMode == MuteSoloMode.NONE) {
             muteLayer.setIsActive(false);
             soloLayer.setIsActive(false);
-            setNotesActive(true);
+            doNotesActive(true);
          } else {
-            setNotesActive(false);
+            MaschineMikroExtension.println(" MODE = %s", muteSoloMode);
+            doNotesActive(false);
             muteLayer.setIsActive(muteSoloMode == MuteSoloMode.MUTE);
-            soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO);
+            soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO || muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE);
          }
       }
    }
@@ -221,13 +228,13 @@ public class PadLayer extends Layer {
             muteLayer.setIsActive(false);
             soloLayer.setIsActive(false);
             selectLayer.setIsActive(true);
-            setNotesActive(false);
+            doNotesActive(false);
          } else {
             selectLayer.setIsActive(false);
             if (this.muteSoloMode != MuteSoloMode.NONE) {
                setMutSoloMode(this.muteSoloMode);
             } else {
-               setNotesActive(true);
+               doNotesActive(true);
             }
          }
       }
@@ -238,7 +245,7 @@ public class PadLayer extends Layer {
    }
 
    private void handleSolo(int drumPadIndex, DrumPad pad) {
-      pad.solo().toggle(true);
+      pad.solo().toggle(muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE);
    }
 
    private void handleErase(int drumPadIndex) {
@@ -347,6 +354,19 @@ public class PadLayer extends Layer {
             scaleHandler.incrementNoteOffset(dir);
          }
       }
+   }
+
+
+   private void handleLockButton(boolean pressed) {
+      sustainOn = pressed;
+      midiProcessor.sendRawCC(0x40, pressed ? 127 : 0);
+      if (!pressed && sustainReleaseListener != null) {
+         sustainReleaseListener.run();
+      }
+   }
+
+   public boolean isSustainOn() {
+      return sustainOn;
    }
 
    public int getFixedVelocity() {
@@ -560,9 +580,9 @@ public class PadLayer extends Layer {
 
    private void applyMode() {
       if (inDrumMode.get() && muteSoloMode != MuteSoloMode.NONE) {
-         setNotesActive(false);
+         doNotesActive(false);
          muteLayer.setIsActive(muteSoloMode == MuteSoloMode.MUTE);
-         soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO);
+         soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO || muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE);
       } else {
          muteLayer.setIsActive(false);
          soloLayer.setIsActive(false);
@@ -577,9 +597,16 @@ public class PadLayer extends Layer {
       noteInput.setKeyTranslationTable(noteTable);
       this.noteInput.setShouldConsumeEvents(false);
       eraseLayer.setIsActive(false);
+      sustainOn = false;
    }
 
    public void setNotesActive(boolean notesActive) {
+      if (muteSoloMode == MuteSoloMode.NONE) {
+         doNotesActive(notesActive);
+      }
+   }
+
+   private void doNotesActive(boolean notesActive) {
       if (notesActive) {
          applyScale();
          noteInput.setKeyTranslationTable(noteTable);
@@ -593,4 +620,7 @@ public class PadLayer extends Layer {
    }
 
 
+   public void registerSustainReleaseListener(Runnable sustainReleaseListener) {
+      this.sustainReleaseListener = sustainReleaseListener;
+   }
 }

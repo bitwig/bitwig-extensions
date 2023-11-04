@@ -95,15 +95,15 @@ public class ModeHandler extends Layer {
       bindMomentaryModeButton(hwElements, CcAssignment.FOLLOW, Mode.GRID);
       modeAction.put(Mode.PLUGIN, this::exitEncoderModes);
 
-      hwElements.getButton(CcAssignment.MUTE).bindPressed(this, () -> handleMutePress(true));
-      hwElements.getButton(CcAssignment.MUTE).bindRelease(this, () -> handleMutePress(false));
-      hwElements.getButton(CcAssignment.MUTE).bindLight(this, () -> muteSoloMode == MuteSoloMode.MUTE);
+      hwElements.getButton(CcAssignment.MUTE).bindIsPressed(this, this::handleMuteArmPress);
+      hwElements.getButton(CcAssignment.MUTE)
+         .bindLight(this,
+            () -> muteSoloMode == MuteSoloMode.ARM ? midiProcessor.blinkMid() : muteSoloMode == MuteSoloMode.MUTE);
 
-      hwElements.getButton(CcAssignment.SOLO).bindPressed(this, () -> handleSoloArmPress(true));
-      hwElements.getButton(CcAssignment.SOLO).bindRelease(this, () -> handleSoloArmPress(false));
+      hwElements.getButton(CcAssignment.SOLO).bindIsPressed(this, this::handleSoloExclusivePress);
       hwElements.getButton(CcAssignment.SOLO)
          .bindLight(this,
-            () -> muteSoloMode == MuteSoloMode.ARM ? midiProcessor.blinkMid() : muteSoloMode == MuteSoloMode.SOLO);
+            () -> muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE ? midiProcessor.blinkMid() : muteSoloMode == MuteSoloMode.SOLO);
 
       bindEncoderMode(hwElements, CcAssignment.VOLUME, EncoderMode.VOLUME);
       bindEncoderMode(hwElements, CcAssignment.SWING, EncoderMode.SWING);
@@ -141,6 +141,17 @@ public class ModeHandler extends Layer {
    public void exitEncoderModes() {
    }
 
+   private void handleMuteArmPress(boolean press) {
+      if (!press) {
+         return;
+      }
+      if (modifierLayer.getShiftHeld().get()) {
+         handleArmPress(true);
+      } else {
+         handleMutePress(true);
+      }
+   }
+
    private void handleMutePress(boolean press) {
       if (press) {
          if (muteSoloMode == MuteSoloMode.MUTE) {
@@ -153,33 +164,38 @@ public class ModeHandler extends Layer {
       }
    }
 
-   private void handleSoloArmPress(boolean press) {
+   private void handleSoloExclusivePress(boolean press) {
+      if (!press) {
+         return;
+      }
+      handleSoloPress(true);
+   }
+
+   private void handleSoloPress(boolean press) {
       if (!press) {
          return;
       }
       if (modifierLayer.getShiftHeld().get()) {
-         handleArmPress(true);
+         if (muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE) {
+            muteSoloMode = MuteSoloMode.SOLO;
+         } else {
+            muteSoloMode = MuteSoloMode.SOLO_EXCLUSIVE;
+         }
       } else {
-         handleSoloPress(true);
-      }
-   }
-
-   private void handleSoloPress(boolean press) {
-      if (press) {
-         if (muteSoloMode == MuteSoloMode.SOLO) {
+         if (muteSoloMode == MuteSoloMode.SOLO || muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE) {
             muteSoloMode = MuteSoloMode.NONE;
          } else {
             muteSoloMode = MuteSoloMode.SOLO;
          }
-         drumPadLayer.setMutSoloMode(muteSoloMode);
-         trackLayer.setMutSoloMode(muteSoloMode);
       }
+      drumPadLayer.setMutSoloMode(muteSoloMode);
+      trackLayer.setMutSoloMode(muteSoloMode);
    }
 
    private void handleArmPress(boolean press) {
       if (press) {
          if (muteSoloMode == MuteSoloMode.ARM) {
-            muteSoloMode = MuteSoloMode.NONE;
+            muteSoloMode = MuteSoloMode.MUTE;
          } else {
             muteSoloMode = MuteSoloMode.ARM;
          }

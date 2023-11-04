@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
+import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
 import com.bitwig.extensions.framework.Layer;
@@ -9,16 +10,17 @@ import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.Inject;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 public class ChordLayer extends Layer {
 
    private final MidiProcessor midiProcessor;
-   private final SettableEnumValue scaleFiltering;
    private final SettableStringValue chordData;
+   private boolean filterByScale = false;
+   private boolean recordingModeActive = false;
+   private int recordingIndex = 0;
 
    static class Chord {
       private final int[] notes;
@@ -27,6 +29,10 @@ public class ChordLayer extends Layer {
 
       public Chord(int... notes) {
          this.notes = notes;
+      }
+
+      public Chord(Collection<Integer> notes) {
+         this.notes = notes.stream().mapToInt(Integer::intValue).toArray();
       }
 
       public Chord(List<Integer> notes) {
@@ -48,30 +54,21 @@ public class ChordLayer extends Layer {
          Chord newChord = new Chord(notes);
          return newChord;
       }
+
+      public String serialized() {
+         return Arrays.stream(notes).mapToObj(Integer::toString).collect(Collectors.joining(","));
+      }
    }
 
-   private List<Chord> chords = List.of(new Chord(-1, 11, 14, 17, 21), new Chord(-8, 11, 14, 17, 20),
-      new Chord(-3, 11, 12, 16, 19), new Chord(-7, 9, 12, 16, 19), new Chord(-10, 9, 12, 16, 17),
-      new Chord(-2, 8, 12, 14, 17), new Chord(-3, 11, 12, 16, 19), new Chord(-6, 13, 18, 20), new Chord(-4, 14, 20, 23),
-      new Chord(1, 8, 9, 13, 25), new Chord(2, 9, 18, 25), new Chord(-6, 13, 18, 20));
+   private List<Chord> chords = List.of(new Chord(0, 12, 16, 19), new Chord(7, 19, 23, 26), new Chord(5, 17, 21, 24),
+      new Chord(4, 16, 19, 23), new Chord(2, 14, 17, 21), new Chord(-3, 4, 9, 14, 17, 23), new Chord(9, 14, 17, 23),
+      new Chord(-3, 9, 21, 24, 28), new Chord(9, 21, 24, 28), new Chord(0, 12, 14, 19), new Chord(0, 16, 19, 23),
+      new Chord(0, 12, 16, 19, 23), new Chord(0, 12, 16, 23)).stream().collect(Collectors.toList());
 
 
-   private List<Chord> chords1 = List.of(new Chord(0, 7, 12, 16), new Chord(2, 9, 14, 17), new Chord(4, 7, 11, 16),
-      new Chord(5, 9, 12, 17), new Chord(-5, 7, 11, 14), new Chord(-3, 9, 12, 16), new Chord(-1, 7, 11, 14),
-      new Chord(-3, 7, 12, 16), new Chord(-3, 4, 11, 12, 19), new Chord(-10, 5, 9, 12, 16), new Chord(-5, 5, 11, 14),
-      new Chord(2, 9, 17, 24));
-
-
-   private List<Chord> chords2 = List.of(new Chord(0, 7, 9, 12, 24), new Chord(5, 12, 17, 21), new Chord(4, 12, 16, 21),
-      new Chord(2, 14, 17, 21), new Chord(-7, 12, 17, 21), new Chord(-2, 14, 17, 22), new Chord(-5, 14, 19, 22),
-      new Chord(-7, 12, 17, 19), new Chord(0, 12, 16, 19), new Chord(2, 14, 17, 21), new Chord(-3, 12, 16, 21),
-      new Chord(2, 9, 17, 24));
-
-
+   private PadLayer padLayer;
    @Inject
-   PadLayer padLayer;
-   @Inject
-   ModifierLayer modifierLayer;
+   private ModifierLayer modifierLayer;
 
    private Chord[] playing = new Chord[12];
 
@@ -83,21 +80,31 @@ public class ChordLayer extends Layer {
 
       this.midiProcessor = midiProcessor;
       DocumentState documentState = host.getDocumentState();
-      scaleFiltering = documentState.getEnumSetting("Chord Filtering", //
-         "Chord", new String[]{"No Filter", "Filter by Scale"}, "No Filter");
-      scaleFiltering.markInterested();
       chordData = documentState.getStringSetting("Chord Data", "Chords", 2000, "");
+      chordData.addValueObserver(this::deserializeChordData);
 //      baseNotesAssignment = documentState.getEnumSetting("Base Note", //
 //         "Pads", baseNotes.stream().toArray(String[]::new), baseNotes.get(0));
 //      baseNotesAssignment.addValueObserver(this::handleBaseNoteChanged);
 //
-
       CursorTrack cursorTrack = viewControl.getCursorTrack();
 
       cursorTrack.playingNotes().addValueObserver(this::handleNotesIn);
 
       List<RgbButton> gridButtons = hwElements.getPadButtons();
-      for (int i = 0; i < 4; i++) {
+      RgbButton scaleLockButton = gridButtons.get(3);
+      scaleLockButton.bindLight(this,
+         () -> filterByScale ? RgbColor.of(Colors.ORANGE, ColorBrightness.BRIGHT) : RgbColor.of(Colors.ORANGE,
+            ColorBrightness.DIMMED));
+      scaleLockButton.bindPressed(this, () -> filterByScale = !filterByScale);
+      RgbButton scaleRecordButton = gridButtons.get(0);
+      scaleRecordButton.bindLight(this,
+         () -> recordingModeActive ? RgbColor.RED.brightness(ColorBrightness.BRIGHT) : RgbColor.RED.brightness(
+            ColorBrightness.DIMMED));
+      scaleRecordButton.bindPressed(this, () -> {
+         recordingModeActive = !recordingModeActive;
+      });
+
+      for (int i = 1; i < 3; i++) {
          final int index = i;
          RgbButton button = gridButtons.get(i);
          button.bindLight(this, () -> RgbColor.OFF);
@@ -109,28 +116,90 @@ public class ChordLayer extends Layer {
       for (int i = 4; i < 16; i++) {
          final int index = (3 - i / 4) * 4 + i % 4;
          RgbButton button = gridButtons.get(i);
-         button.bindLight(this,
-            () -> playing[index] != null ? RgbColor.WHITE : RgbColor.GREEN.brightness(ColorBrightness.DIMMED));
+         button.bindLight(this, () -> getPadLight(index));
          button.bindPressed(this, velocity -> handlePlayed(index, velocity));
          button.bindRelease(this, () -> handleReleased(index));
       }
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(dir));
-      hwElements.getButton(CcAssignment.ENCODER_PRESS).bindPressed(this, () -> handleEncoderPress(true));
-      hwElements.getButton(CcAssignment.ENCODER_PRESS).bindRelease(this, () -> handleEncoderPress(false));
+      hwElements.getButton(CcAssignment.ENCODER_PRESS).bindIsPressed(this, this::handleEncoderPress);
+      hwElements.getButton(CcAssignment.LOCK).bindIsPressed(this, this::handleLockButton);
+      hwElements.getButton(CcAssignment.LOCK).bindLightHeld(this);
    }
 
+   @Inject
+   public void setPadLayer(PadLayer padLayer) {
+      this.padLayer = padLayer;
+      this.padLayer.registerSustainReleaseListener(() -> collectedHeldNotesToChord());
+   }
+
+   private void deserializeChordData(String data) {
+      String[] chordValues = data.split(";");
+      List<Chord> readChords = new ArrayList<>();
+      for (String individualChord : chordValues) {
+         String[] offsets = individualChord.split(",");
+         List<Integer> chordOffsets = new ArrayList<>();
+         for (String offset : offsets) {
+            if (!offset.isEmpty() && offset.chars().allMatch(Character::isDigit)) {
+               chordOffsets.add(Integer.parseInt(offset));
+            }
+         }
+         if (!chordOffsets.isEmpty()) {
+            readChords.add(new Chord(chordOffsets));
+         }
+      }
+      MaschineMikroExtension.println(" Read chords %d", readChords.size());
+      int limit = Math.min(chords.size(), readChords.size());
+      for (int i = 0; i < limit; i++) {
+         chords.set(i, readChords.get(i));
+      }
+   }
+
+   private InternalHardwareLightState getPadLight(int index) {
+      if (recordingModeActive && index == recordingIndex) {
+         return playing[index] != null ? RgbColor.ORANGE : RgbColor.RED.brightness(ColorBrightness.DIMMED);
+      }
+      return playing[index] != null ? RgbColor.WHITE : RgbColor.GREEN.brightness(ColorBrightness.DIMMED);
+   }
+
+   private Set<Integer> noteSet = new HashSet<>();
+
    private void handleNotesIn(PlayingNote[] notes) {
-      if (!isActive()) {
+      if (!recordingModeActive || isPadHeld()) {
          return;
       }
-      if (notes.length > 2) {
-         List<Integer> noteValues = new ArrayList<>();
+      if (notes.length == 0 && !padLayer.isSustainOn()) {
+         collectedHeldNotesToChord();
+      } else {
          for (int i = 0; i < notes.length; i++) {
-            noteValues.add(notes[i].pitch() - baseNote);
+            noteSet.add(notes[i].pitch() - baseNote);
          }
-         String v = noteValues.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
-         MaschineMikroExtension.println("new Chord (%s)", v);
       }
+   }
+
+   private void collectedHeldNotesToChord() {
+      if (noteSet.isEmpty()) {
+         return;
+      }
+      List<Integer> noteList = noteSet.stream().sorted().toList();
+      Chord chord = new Chord(noteList);
+      chords.set(recordingIndex, chord);
+      //String v = noteList.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
+      //MaschineMikroExtension.println("new Chord (%s), ", v);
+      noteSet.clear();
+      recordingIndex = recordingIndex + 1;
+      if (recordingIndex > 11) {
+         recordingModeActive = false;
+         recordingIndex = 0;
+      }
+   }
+
+   private boolean isPadHeld() {
+      for (Chord play : playing) {
+         if (play != null) {
+            return true;
+         }
+      }
+      return false;
    }
 
    private void handleEncoder(int dir) {
@@ -172,18 +241,22 @@ public class ChordLayer extends Layer {
       if (!pressed) {
          return;
       }
-      if (scaleFiltering.get().equals("No Filter")) {
-         scaleFiltering.set("Filter by Scale");
-      } else {
-         scaleFiltering.set("No Filter");
-      }
+      String dataString = chords.stream().map(Chord::serialized).collect(Collectors.joining(";"));
+      chordData.set(dataString);
    }
 
    void handlePlayed(int index, double velocity) {
-      Chord notesChord = toNotesChord(chords.get(index));
-
-      playChord(notesChord, velocity);
-      playing[index] = notesChord;
+      if (modifierLayer.getSelectHeld().get()) {
+         recordingIndex = index;
+         if (!recordingModeActive) {
+            recordingModeActive = true;
+         }
+      } else {
+         Chord notesChord = toNotesChord(chords.get(index));
+         double playVel = padLayer.isFixedActive() ? (padLayer.getFixedVelocity() / 127.0) : velocity;
+         playChord(notesChord, playVel);
+         playing[index] = notesChord;
+      }
    }
 
    void handleReleased(int index) {
@@ -199,7 +272,7 @@ public class ChordLayer extends Layer {
       List<Integer> notes = new ArrayList<>();
       int offset = baseNote + chord.getBasicOffset();
       for (int note : chord.notes) {
-         int playedNote = scaleFiltering.get().equals("No Filter") ? note + offset : padLayer.matchScale(note + offset);
+         int playedNote = filterByScale ? padLayer.matchScale(note + offset) : note + offset;
          if (playedNote >= 0 && playedNote < 128) {
             notes.add(playedNote);
          }
@@ -213,6 +286,10 @@ public class ChordLayer extends Layer {
       for (int note : chord.notes) {
          midiProcessor.sendRawNoteOn(note, intVelocity);
       }
+   }
+
+   private void handleLockButton(boolean pressed) {
+      midiProcessor.sendRawCC(0x40, pressed ? 127 : 0);
    }
 
    private void releaseChord(Chord chord) {

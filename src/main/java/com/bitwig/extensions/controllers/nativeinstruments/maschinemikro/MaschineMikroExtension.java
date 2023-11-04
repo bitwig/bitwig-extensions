@@ -34,7 +34,8 @@ public class MaschineMikroExtension extends ControllerExtension {
    public static void println(final String format, final Object... args) {
       if (debugHost != null) {
          final LocalDateTime now = LocalDateTime.now();
-         debugHost.println(now.format(DF) + " > " + String.format(format, args));
+         //debugHost.println(now.format(DF) + " > " + String.format(format, args));
+         debugHost.println(String.format(format, args));
       }
    }
 
@@ -130,7 +131,7 @@ public class MaschineMikroExtension extends ControllerExtension {
       if (recordFocusMode == FocusMode.LAUNCHER) {
          transport.isClipLauncherOverdubEnabled().toggle();
       } else {
-         transport.isClipLauncherOverdubEnabled().toggle();
+         transport.isArrangerRecordEnabled().toggle();
       }
    }
 
@@ -142,10 +143,10 @@ public class MaschineMikroExtension extends ControllerExtension {
    }
 
    void initPreferences(final ControllerHost host) {
-      final Preferences preferences = host.getPreferences(); // THIS
-      final SettableEnumValue recordButtonAssignment = preferences.getEnumSetting("Record Button assignment", //
-         "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
-         recordFocusMode.getDescriptor());
+      final SettableEnumValue recordButtonAssignment = host.getDocumentState()
+         .getEnumSetting("(Shift) Record Button", //
+            "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
+            recordFocusMode.getDescriptor());
       recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));
    }
 

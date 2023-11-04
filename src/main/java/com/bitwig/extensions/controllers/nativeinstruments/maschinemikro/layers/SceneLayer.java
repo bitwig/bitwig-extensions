@@ -2,10 +2,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbColor;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -21,6 +18,7 @@ public class SceneLayer extends Layer {
    private final BooleanValueObject altHeld;
    private final BooleanValueObject deleteHeld;
    private final BooleanValueObject duplicateHeld;
+   private final Project project;
    private int sceneOffset;
 
    @Inject
@@ -31,6 +29,7 @@ public class SceneLayer extends Layer {
    public SceneLayer(Layers layers, HwElements hwElements, ControllerHost host, ModifierLayer modifierLayer,
                      Application application) {
       super(layers, "SCENE");
+      this.project = host.getProject();
       this.altHeld = modifierLayer.getVariationHeld();
       this.deleteHeld = modifierLayer.getEraseHeld();
       this.duplicateHeld = modifierLayer.getDuplicateHeld();
@@ -61,7 +60,10 @@ public class SceneLayer extends Layer {
    }
 
    private void pressScene(Scene scene, int sceneIndex) {
-      if (deleteHeld.get()) {
+      MaschineMikroExtension.println("SCENE PRESSED => %d exists %s", sceneIndex, scene.exists().get());
+      if (!scene.exists().get()) {
+         project.createScene();
+      } else if (deleteHeld.get()) {
          scene.deleteObject();
       } else if (duplicateHeld.get()) {
          // NO CLEAR WHAT TO DO HERE

@@ -31,6 +31,11 @@ public class MidiProcessor {
       noteInput.sendRawMidiEvent(Midi.NOTE_ON, note, velocity);
    }
 
+   public void sendRawCC(int ccNr, int value) {
+      noteInput.sendRawMidiEvent(Midi.CC, ccNr, value);
+   }
+
+
    public void sendNoteOff(int note) {
       noteInput.sendRawMidiEvent(Midi.NOTE_OFF, note, 0);
    }

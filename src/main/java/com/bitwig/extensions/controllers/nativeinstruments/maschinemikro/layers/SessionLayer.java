@@ -27,6 +27,7 @@ public class SessionLayer extends Layer {
    private FocusClip focusClip;
    @Inject
    private ModifierLayer modifierLayer;
+   private boolean lockButtonHeld;
 
    public SessionLayer(Layers layers, HwElements hwElements, ViewControl viewControl, Transport transport,
                        MidiProcessor midiProcessor) {
@@ -55,6 +56,8 @@ public class SessionLayer extends Layer {
          }
       }
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(trackBank, sceneBank, dir));
+      hwElements.getButton(CcAssignment.LOCK).bindIsPressed(this, this::handleLockButton);
+      hwElements.getButton(CcAssignment.LOCK).bindLightHeld(this);
    }
 
    private void handleEncoder(TrackBank trackBank, SceneBank sceneBank, int dir) {
@@ -73,6 +76,10 @@ public class SessionLayer extends Layer {
       }
    }
 
+   private void handleLockButton(boolean pressed) {
+      this.lockButtonHeld = pressed;
+   }
+
    public void invokeDuplicate(int index) {
       if (!isActive()) {
          return;
@@ -85,7 +92,13 @@ public class SessionLayer extends Layer {
    }
 
    private void handlePress(Track track, ClipLauncherSlot slot, int trackIndex, int sceneIndex) {
-      if (modifierLayer.getEraseHeld().get()) {
+      if (lockButtonHeld) {
+         if (modifierLayer.getVariationHeld().get()) {
+            track.stopAlt();
+         } else {
+            track.stop();
+         }
+      } else if (modifierLayer.getEraseHeld().get()) {
          slot.deleteObject();
       } else if (modifierLayer.getSelectHeld().get()) {
          slot.select();

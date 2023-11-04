@@ -112,7 +112,6 @@ public class DeviceEncoderLayer extends Layer {
    }
 
    private void handleDeviceTypeChanged(int index, String deviceType) {
-      MaschineMikroExtension.println(" Type = <%s>", deviceType);
       deviceColors[index] = DEVICE_TYPE_TO_COLOR.getOrDefault(deviceType, RgbColor.ORANGE);
    }
 

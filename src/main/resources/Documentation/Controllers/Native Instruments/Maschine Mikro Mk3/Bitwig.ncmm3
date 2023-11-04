@@ -88,7 +88,6 @@
         <reaction>ondown</reaction>
       </button>
       <button version="1" id="Lock">
-        <disabled />
         <controller>36</controller>
         <channel>0</channel>
         <off>0</off>
@@ -329,7 +328,7 @@
       </button>
       <led version="1" id="TouchstripIDX">
         <display type="0">
-          <unit color-type="1" color-mode="0" color-on-index="8" color-off-index="1" />
+          <unit color-type="1" color-mode="0" color-on-index="18" color-off-index="1" />
         </display>
         <controller>1</controller>
         <channel>0</channel>
