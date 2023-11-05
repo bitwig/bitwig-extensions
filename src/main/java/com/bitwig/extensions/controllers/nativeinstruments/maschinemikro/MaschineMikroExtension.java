@@ -45,6 +45,7 @@ public class MaschineMikroExtension extends ControllerExtension {
       initPreferences(host);
       final Context diContext = new Context(this);
       Layer progressLayer = diContext.createLayer("Progress_layer");
+      Layer lowPriorityLayer = diContext.createLayer("LOW_PRIORITY_LAYER");
       surface = diContext.getService(HardwareSurface.class);
       MidiIn midiIn = host.getMidiInPort(0);
       MidiOut midiOut = host.getMidiOutPort(0);
@@ -60,7 +61,7 @@ public class MaschineMikroExtension extends ControllerExtension {
       EncoderLayer encoderLayer = diContext.create(EncoderLayer.class);
       diContext.getService(ModeHandler.class).setEncoderLayer(encoderLayer);
       mainLayer.setIsActive(true);
-
+      lowPriorityLayer.setIsActive(true);
       midiProcessor.start();
       diContext.activate();
    }
@@ -88,7 +89,7 @@ public class MaschineMikroExtension extends ControllerExtension {
 
       hwElements.getButton(CcAssignment.RECORD).bindPressed(mainLayer, () -> handleRecordButton(transport, focusClip));
       hwElements.getButton(CcAssignment.RECORD).bindLight(mainLayer, () -> recordActive(transport));
-      hwElements.getButton(CcAssignment.RECORD).bindPressed(shiftLayer, () -> handleRecordButton(transport));
+      hwElements.getButton(CcAssignment.RECORD).bindPressed(shiftLayer, () -> handleRecordButtonShift(transport));
       hwElements.getButton(CcAssignment.RECORD).bindLight(shiftLayer, () -> recordActive(transport));
 
       hwElements.getButton(CcAssignment.AUTO)
@@ -124,10 +125,20 @@ public class MaschineMikroExtension extends ControllerExtension {
    }
 
    private void handleRecordButton(Transport transport, FocusClip focusClip) {
-      focusClip.invokeRecord();
+      if (recordFocusMode == FocusMode.LAUNCHER) {
+         focusClip.invokeRecord();
+      } else {
+         if (transport.isArrangerRecordEnabled().get()) {
+            transport.isArrangerRecordEnabled().set(false);
+            transport.stop();
+         } else {
+            transport.isArrangerRecordEnabled().set(true);
+            transport.play();
+         }
+      }
    }
 
-   private void handleRecordButton(Transport transport) {
+   private void handleRecordButtonShift(Transport transport) {
       if (recordFocusMode == FocusMode.LAUNCHER) {
          transport.isClipLauncherOverdubEnabled().toggle();
       } else {

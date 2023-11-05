@@ -82,6 +82,11 @@ public class ModeHandler extends Layer {
       super(layers, "SESSION_LAYER");
       this.drumPadLayer = drumPadLayer;
       this.modifierLayer = modifierLayer;
+      Layer subLayer = layers.getLayers()
+         .stream()
+         .filter(l -> l.getName().equals("LOW_PRIORITY_LAYER"))
+         .findFirst()
+         .orElse(this);
 
       bindModeButton(hwElements, CcAssignment.PATTERN, Mode.LAUNCHER);
       bindModeButton(hwElements, CcAssignment.SCENE, Mode.SCENE);
@@ -95,14 +100,14 @@ public class ModeHandler extends Layer {
       bindMomentaryModeButton(hwElements, CcAssignment.FOLLOW, Mode.GRID);
       modeAction.put(Mode.PLUGIN, this::exitEncoderModes);
 
-      hwElements.getButton(CcAssignment.MUTE).bindIsPressed(this, this::handleMuteArmPress);
+      hwElements.getButton(CcAssignment.MUTE).bindIsPressed(subLayer, this::handleMuteArmPress);
       hwElements.getButton(CcAssignment.MUTE)
-         .bindLight(this,
+         .bindLight(subLayer,
             () -> muteSoloMode == MuteSoloMode.ARM ? midiProcessor.blinkMid() : muteSoloMode == MuteSoloMode.MUTE);
 
-      hwElements.getButton(CcAssignment.SOLO).bindIsPressed(this, this::handleSoloExclusivePress);
+      hwElements.getButton(CcAssignment.SOLO).bindIsPressed(subLayer, this::handleSoloExclusivePress);
       hwElements.getButton(CcAssignment.SOLO)
-         .bindLight(this,
+         .bindLight(subLayer,
             () -> muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE ? midiProcessor.blinkMid() : muteSoloMode == MuteSoloMode.SOLO);
 
       bindEncoderMode(hwElements, CcAssignment.VOLUME, EncoderMode.VOLUME);

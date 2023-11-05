@@ -3,7 +3,10 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.CcAssignment;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbColor;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -34,6 +37,8 @@ public class DeviceEncoderLayer extends Layer {
    private final CursorRemoteControlsPage remoteBank;
    private final RgbColor[] deviceColors = new RgbColor[8];
    private TouchStripLayer touchStripLayer;
+   private boolean lockButtonHeld;
+   private boolean muteButtonHeld;
 
    public DeviceEncoderLayer(Layers layers, HwElements hwElements, ViewControl viewControl,
                              ModifierLayer modifierLayer) {
@@ -58,6 +63,7 @@ public class DeviceEncoderLayer extends Layer {
          final int index = i;
          Device bankDevice = deviceBank.getDevice(index);
          bankDevice.exists().markInterested();
+         bankDevice.isEnabled().markInterested();
          bankDevice.deviceType().addValueObserver(deviceType -> handleDeviceTypeChanged(index, deviceType));
          BooleanValue onCursor = bankDevice.createEqualsValue(cursorDevice);
          onCursor.addValueObserver(isOnCursor -> handleDeviceSelection(index, isOnCursor));
@@ -78,6 +84,19 @@ public class DeviceEncoderLayer extends Layer {
          button.bindLight(this, () -> paramSelectionColor(index, parameter));
          button.bindPressed(this, () -> selectedParameter(index));
       }
+
+      hwElements.getButton(CcAssignment.MUTE).bindIsPressed(this, this::handleMuteButton);
+      hwElements.getButton(CcAssignment.MUTE).bindLightHeld(this);
+      hwElements.getButton(CcAssignment.LOCK).bindIsPressed(this, this::handleLockButton);
+      hwElements.getButton(CcAssignment.LOCK).bindLightHeld(this);
+   }
+
+   private void handleLockButton(boolean pressed) {
+      this.lockButtonHeld = pressed;
+   }
+
+   private void handleMuteButton(boolean pressed) {
+      this.muteButtonHeld = pressed;
    }
 
    @Inject
@@ -152,15 +171,27 @@ public class DeviceEncoderLayer extends Layer {
 
    private RgbColor deviceColor(int index, Device device) {
       if (device.exists().get()) {
-         return index == selectedDeviceIndex ? deviceColors[index].brightness(
-            ColorBrightness.BRIGHT) : deviceColors[index];
+         if (device.isEnabled().get()) {
+            ColorBrightness brightness = index == selectedDeviceIndex ? ColorBrightness.BRIGHT : ColorBrightness.DIMMED;
+            return deviceColors[index].brightness(brightness);
+         } else {
+            return index == selectedDeviceIndex ? deviceColors[index].brightness(
+               ColorBrightness.SUPERBRIGHT) : RgbColor.WHITE.brightness(ColorBrightness.DIMMED);
+         }
       }
-      return RgbColor.WHITE;
+      return RgbColor.OFF;
    }
 
    private void selectDevice(int index, Device bankDevice) {
-      cursorDevice.selectDevice(bankDevice);
-      bankDevice.selectInEditor();
+      if (muteButtonHeld) {
+         bankDevice.isEnabled().toggle();
+      } else {
+         cursorDevice.selectDevice(bankDevice);
+         bankDevice.selectInEditor();
+         if (lockButtonHeld) {
+            cursorDevice.isPinned().toggle();
+         }
+      }
    }
 
    private void handleEncoder(int diff) {
@@ -190,7 +221,6 @@ public class DeviceEncoderLayer extends Layer {
 
    public void deactivateTouch() {
       if (isActive()) {
-         MaschineMikroExtension.println("Deactivate Touching");
          getCurrentControl().ifPresent(parameter -> parameter.touch(false));
       }
    }

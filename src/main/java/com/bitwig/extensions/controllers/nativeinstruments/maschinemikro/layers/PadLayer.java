@@ -214,7 +214,6 @@ public class PadLayer extends Layer {
             soloLayer.setIsActive(false);
             doNotesActive(true);
          } else {
-            MaschineMikroExtension.println(" MODE = %s", muteSoloMode);
             doNotesActive(false);
             muteLayer.setIsActive(muteSoloMode == MuteSoloMode.MUTE);
             soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO || muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE);

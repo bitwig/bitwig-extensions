@@ -63,7 +63,7 @@ public class ChordLayer extends Layer {
    private List<Chord> chords = List.of(new Chord(0, 12, 16, 19), new Chord(7, 19, 23, 26), new Chord(5, 17, 21, 24),
       new Chord(4, 16, 19, 23), new Chord(2, 14, 17, 21), new Chord(-3, 4, 9, 14, 17, 23), new Chord(9, 14, 17, 23),
       new Chord(-3, 9, 21, 24, 28), new Chord(9, 21, 24, 28), new Chord(0, 12, 14, 19), new Chord(0, 16, 19, 23),
-      new Chord(0, 12, 16, 19, 23), new Chord(0, 12, 16, 23)).stream().collect(Collectors.toList());
+      new Chord(0, 12, 16, 19, 23)).stream().collect(Collectors.toList());
 
 
    private PadLayer padLayer;
@@ -82,10 +82,7 @@ public class ChordLayer extends Layer {
       DocumentState documentState = host.getDocumentState();
       chordData = documentState.getStringSetting("Chord Data", "Chords", 2000, "");
       chordData.addValueObserver(this::deserializeChordData);
-//      baseNotesAssignment = documentState.getEnumSetting("Base Note", //
-//         "Pads", baseNotes.stream().toArray(String[]::new), baseNotes.get(0));
-//      baseNotesAssignment.addValueObserver(this::handleBaseNoteChanged);
-//
+
       CursorTrack cursorTrack = viewControl.getCursorTrack();
 
       cursorTrack.playingNotes().addValueObserver(this::handleNotesIn);
@@ -241,8 +238,12 @@ public class ChordLayer extends Layer {
       if (!pressed) {
          return;
       }
-      String dataString = chords.stream().map(Chord::serialized).collect(Collectors.joining(";"));
-      chordData.set(dataString);
+      if (modifierLayer.getShiftHeld().get()) {
+         deserializeChordData(chordData.get());
+      } else {
+         String dataString = chords.stream().map(Chord::serialized).collect(Collectors.joining(";"));
+         chordData.set(dataString);
+      }
    }
 
    void handlePlayed(int index, double velocity) {

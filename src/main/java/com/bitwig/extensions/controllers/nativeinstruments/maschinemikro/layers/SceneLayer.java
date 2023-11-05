@@ -2,7 +2,10 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbColor;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -60,7 +63,6 @@ public class SceneLayer extends Layer {
    }
 
    private void pressScene(Scene scene, int sceneIndex) {
-      MaschineMikroExtension.println("SCENE PRESSED => %d exists %s", sceneIndex, scene.exists().get());
       if (!scene.exists().get()) {
          project.createScene();
       } else if (deleteHeld.get()) {
