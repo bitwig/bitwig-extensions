@@ -9,6 +9,7 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.Inject;
+import com.bitwig.extensions.framework.values.PadScaleHandler;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,25 +22,19 @@ public class ChordLayer extends Layer {
    private boolean filterByScale = false;
    private boolean recordingModeActive = false;
    private int recordingIndex = 0;
+   private PadScaleHandler scaleHandler;
 
    static class Chord {
-      private final int[] notes;
-
+      private final List<Integer> notes;
       private int basicOffset;
+      private boolean allInScale = false;
 
       public Chord(int... notes) {
-         this.notes = notes;
+         this.notes = Arrays.stream(notes).mapToObj(Integer::valueOf).toList();
       }
 
       public Chord(Collection<Integer> notes) {
-         this.notes = notes.stream().mapToInt(Integer::intValue).toArray();
-      }
-
-      public Chord(List<Integer> notes) {
-         this.notes = new int[notes.size()];
-         for (int i = 0; i < notes.size(); i++) {
-            this.notes[i] = notes.get(i);
-         }
+         this.notes = notes.stream().toList();
       }
 
       public void setBasicOffset(int basicOffset) {
@@ -50,15 +45,40 @@ public class ChordLayer extends Layer {
          return basicOffset;
       }
 
-      public Chord copy() {
-         Chord newChord = new Chord(notes);
-         return newChord;
+      public Set<Integer> getNotes(boolean filterByScale, int baseNote, PadScaleHandler scaleHandler) {
+         int offset = baseNote + basicOffset;
+         Set<Integer> result = new HashSet<>();
+         for (Integer note : notes) {
+            int playedNote = filterByScale ? scaleHandler.matchScale(note + offset, -1) : note + offset;
+            if (playedNote >= 0 && playedNote < 128) {
+               result.add(playedNote);
+            }
+         }
+         return result;
+      }
+
+      public boolean isAllInScale() {
+         return allInScale;
+      }
+
+      public void calcAllInScale(int baseNote, PadScaleHandler scaleHandler) {
+         if (scaleHandler.getCurrentScale().getIntervals().length == 12) {
+            allInScale = true;
+         } else {
+            allInScale = notes.stream().allMatch(note -> scaleHandler.inScale(note + baseNote + basicOffset));
+         }
+      }
+
+      public Chord getPlayingNotes(boolean filterByScale, int baseNote, PadScaleHandler scaleHandler) {
+         return new Chord(getNotes(filterByScale, baseNote, scaleHandler));
       }
 
       public String serialized() {
-         return Arrays.stream(notes).mapToObj(Integer::toString).collect(Collectors.joining(","));
+         return notes.stream().map(v -> v.toString()).collect(Collectors.joining(","));
       }
    }
+
+   private final static String INIT_CHORD_DATA = "0,12,16,19;7,19,23,26;5,17,21,24;9,21,24,28;4,16,19,23;0,12,14,19;" + "0,12,16,19,23;0,7,14,19,26;5,17,19,24;7,19,24,26;0,12,19,24,26;-7,5,17,24,31";
 
    private List<Chord> chords = List.of(new Chord(0, 12, 16, 19), new Chord(7, 19, 23, 26), new Chord(5, 17, 21, 24),
       new Chord(4, 16, 19, 23), new Chord(2, 14, 17, 21), new Chord(-3, 4, 9, 14, 17, 23), new Chord(9, 14, 17, 23),
@@ -66,9 +86,9 @@ public class ChordLayer extends Layer {
       new Chord(0, 12, 16, 19, 23)).stream().collect(Collectors.toList());
 
 
-   private PadLayer padLayer;
    @Inject
    private ModifierLayer modifierLayer;
+   private PadLayer padLayer;
 
    private Chord[] playing = new Chord[12];
 
@@ -80,7 +100,7 @@ public class ChordLayer extends Layer {
 
       this.midiProcessor = midiProcessor;
       DocumentState documentState = host.getDocumentState();
-      chordData = documentState.getStringSetting("Chord Data", "Chords", 2000, "");
+      chordData = documentState.getStringSetting("Chord Data", "Chords", 500, INIT_CHORD_DATA);
       chordData.addValueObserver(this::deserializeChordData);
 
       CursorTrack cursorTrack = viewControl.getCursorTrack();
@@ -126,6 +146,14 @@ public class ChordLayer extends Layer {
    @Inject
    public void setPadLayer(PadLayer padLayer) {
       this.padLayer = padLayer;
+      this.scaleHandler = this.padLayer.getScaleHandler();
+      scaleHandler.addStateChangedListener(() -> {
+         for (Chord chord : chords) {
+            chord.calcAllInScale(baseNote, scaleHandler);
+         }
+//         MaschineMikroExtension.println(" SCALE %s %d", scaleHandler.getCurrentScale().getName(),
+//            scaleHandler.getBaseNote());
+      });
       this.padLayer.registerSustainReleaseListener(() -> collectedHeldNotesToChord());
    }
 
@@ -155,7 +183,13 @@ public class ChordLayer extends Layer {
       if (recordingModeActive && index == recordingIndex) {
          return playing[index] != null ? RgbColor.ORANGE : RgbColor.RED.brightness(ColorBrightness.DIMMED);
       }
-      return playing[index] != null ? RgbColor.WHITE : RgbColor.GREEN.brightness(ColorBrightness.DIMMED);
+      if (playing[index] != null) {
+         return chords.get(index).isAllInScale() ? RgbColor.WHITE.brightness(
+            ColorBrightness.BRIGHT) : RgbColor.PINK.brightness(ColorBrightness.SUPERBRIGHT);
+      } else {
+         return chords.get(index).isAllInScale() ? RgbColor.GREEN.brightness(ColorBrightness.DIMMED) : RgbColor.of(
+            Colors.MINT).brightness(ColorBrightness.DIMMED);
+      }
    }
 
    private Set<Integer> noteSet = new HashSet<>();
@@ -179,6 +213,7 @@ public class ChordLayer extends Layer {
       }
       List<Integer> noteList = noteSet.stream().sorted().toList();
       Chord chord = new Chord(noteList);
+      chord.calcAllInScale(baseNote, scaleHandler);
       chords.set(recordingIndex, chord);
       //String v = noteList.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
       //MaschineMikroExtension.println("new Chord (%s), ", v);
@@ -203,7 +238,6 @@ public class ChordLayer extends Layer {
       if (modifiedPlaying(dir)) {
          return;
       }
-
       int newBaseNote = -1;
       if (modifierLayer.getShiftHeld().get()) {
          newBaseNote = baseNote + dir * 12;
@@ -212,6 +246,9 @@ public class ChordLayer extends Layer {
       }
       if (newBaseNote >= 12 && newBaseNote < 112) {
          baseNote = newBaseNote;
+      }
+      for (Chord chord : chords) {
+         chord.calcAllInScale(baseNote, scaleHandler);
       }
    }
 
@@ -226,6 +263,7 @@ public class ChordLayer extends Layer {
                chord.setBasicOffset(offset);
             }
             Chord notesChord = toNotesChord(chord);
+            chord.calcAllInScale(baseNote, scaleHandler);
             playChord(notesChord, 0.5);
             playing[i] = notesChord;
             modifed = true;
@@ -253,7 +291,7 @@ public class ChordLayer extends Layer {
             recordingModeActive = true;
          }
       } else {
-         Chord notesChord = toNotesChord(chords.get(index));
+         Chord notesChord = chords.get(index).getPlayingNotes(filterByScale, baseNote, scaleHandler);
          double playVel = padLayer.isFixedActive() ? (padLayer.getFixedVelocity() / 127.0) : velocity;
          playChord(notesChord, playVel);
          playing[index] = notesChord;
@@ -273,7 +311,7 @@ public class ChordLayer extends Layer {
       List<Integer> notes = new ArrayList<>();
       int offset = baseNote + chord.getBasicOffset();
       for (int note : chord.notes) {
-         int playedNote = filterByScale ? padLayer.matchScale(note + offset) : note + offset;
+         int playedNote = filterByScale ? scaleHandler.matchScale(note + offset, -1) : note + offset;
          if (playedNote >= 0 && playedNote < 128) {
             notes.add(playedNote);
          }
@@ -283,11 +321,11 @@ public class ChordLayer extends Layer {
 
    private void playChord(Chord chord, double velocity) {
       int intVelocity = (int) (velocity * 127);
-      //MaschineMikroExtension.println(" Play %s vel=%d", Arrays.toString(chord.notes), intVelocity);
       for (int note : chord.notes) {
          midiProcessor.sendRawNoteOn(note, intVelocity);
       }
    }
+
 
    private void handleLockButton(boolean pressed) {
       midiProcessor.sendRawCC(0x40, pressed ? 127 : 0);
