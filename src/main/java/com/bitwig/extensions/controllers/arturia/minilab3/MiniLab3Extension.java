@@ -3,36 +3,7 @@ package com.bitwig.extensions.controllers.arturia.minilab3;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.ControllerExtension;
-import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
-import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
-import com.bitwig.extension.controller.api.BooleanValue;
-import com.bitwig.extension.controller.api.ControllerHost;
-import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
-import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
-import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.Device;
-import com.bitwig.extension.controller.api.DeviceBank;
-import com.bitwig.extension.controller.api.DeviceMatcher;
-import com.bitwig.extension.controller.api.HardwareActionBindable;
-import com.bitwig.extension.controller.api.HardwareButton;
-import com.bitwig.extension.controller.api.HardwareSlider;
-import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.InternalHardwareLightState;
-import com.bitwig.extension.controller.api.MidiIn;
-import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.NoteInput;
-import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extension.controller.api.PinnableCursorDevice;
-import com.bitwig.extension.controller.api.Preferences;
-import com.bitwig.extension.controller.api.RelativeHardwareKnob;
-import com.bitwig.extension.controller.api.RelativeHardwareValueMatcher;
-import com.bitwig.extension.controller.api.RemoteControl;
-import com.bitwig.extension.controller.api.Scene;
-import com.bitwig.extension.controller.api.SettableEnumValue;
-import com.bitwig.extension.controller.api.SettableRangedValue;
-import com.bitwig.extension.controller.api.StringValue;
-import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.values.BasicStringValue;
@@ -74,8 +45,6 @@ public class MiniLab3Extension extends ControllerExtension {
    private int blinkState = 0;
    private CursorTrack cursorTrack;
 
-   boolean encoderPressTurned = true; // track if encoder was turned while being pressed.
-
    private PinnableCursorDevice cursorDevice;
    private CursorRemoteControlsPage parameterBank;
 
@@ -86,10 +55,8 @@ public class MiniLab3Extension extends ControllerExtension {
    private Scene sceneTrackItem;
 
    private final ValueObject<PadBank> padBank = new ValueObject<>(PadBank.BANK_A);
-   private final BooleanValueObject shiftDown = new BooleanValueObject();
    private SysExHandler sysExHandler;
 
-   private final BooleanValueObject encoderDown = new BooleanValueObject();
    private TrackBank viewTrackBank;
    private Runnable nextPingAction = null;
    private BrowserLayer browserLayer;
@@ -106,9 +73,18 @@ public class MiniLab3Extension extends ControllerExtension {
       super(definition, host);
    }
 
+   private static ControllerHost debugHost;
+
+   public static void println(final String format, final Object... args) {
+      if (debugHost != null) {
+         debugHost.println(format.formatted(args));
+      }
+   }
+
    @Override
    public void init() {
       host = getHost();
+      debugHost = host;
       layers = new Layers(this);
       midiIn = host.getMidiInPort(0);
       midiIn.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi0);
@@ -128,8 +104,9 @@ public class MiniLab3Extension extends ControllerExtension {
 
       mainLayer = new Layer(layers, "MAIN");
       shiftLayer = new Layer(layers, "SHIFT");
-
+      //shiftDown.addValueObserver(active -> shiftLayer.setIsActive(active));
       browserLayer = new BrowserLayer(this);
+      shiftLayer.setIsActive(true);
 
       bindSliderValue(mainLayer, cursorTrack.volume(), sliders[0], cursorTrack.name(), new BasicStringValue("Vol"));
       bindKnobValue(4, mainLayer, cursorTrack.pan(), sliders[3], cursorTrack.name(), new BasicStringValue("Pan"),
@@ -164,7 +141,6 @@ public class MiniLab3Extension extends ControllerExtension {
    }
 
    private void handleSysExData(final String sysEx) {
-
       switch (sysEx) {
          case "f000206b7f420200406301f7":
          case "f000206b7f420200400300f7":
@@ -200,7 +176,7 @@ public class MiniLab3Extension extends ControllerExtension {
             break;
          default:
             if (sysEx.startsWith("f07e7f060200206b0200040")) {
-               host.println(" DEVICE ID " + sysEx);
+               //host.println(" DEVICE ID " + sysEx);
                sysExHandler.requestInitState();
             } else {
                host.println("Unknown Received SysEx : " + sysEx);
@@ -250,6 +226,9 @@ public class MiniLab3Extension extends ControllerExtension {
             sceneName -> oled.sendTextInfo(DisplayMode.SCENE, cursorTrack.name().get(), sceneName, true));
 
       cursorDevice = cursorTrack.createCursorDevice();
+      cursorDevice.hasNext().markInterested();
+      cursorDevice.hasPrevious().markInterested();
+      cursorDevice.exists().markInterested();
 
       primaryDevice = cursorTrack.createCursorDevice("DrumDetection", "Pad Device", NUM_PADS_TRACK,
          CursorDeviceFollowMode.FIRST_INSTRUMENT);
@@ -299,30 +278,19 @@ public class MiniLab3Extension extends ControllerExtension {
 
 
    private void setUpPreferences() {
-      final Preferences preferences = getHost().getPreferences(); // THIS
-      final SettableEnumValue recordButtonAssignment = preferences.getEnumSetting("Recording Button assignment", //
+      DocumentState documentState = getHost().getDocumentState(); // THIS
+      final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Recording Button assignment", //
          "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
          recordFocusMode.getDescriptor());
       recordButtonAssignment.addValueObserver(value -> {
          recordFocusMode = FocusMode.toMode(value);
          updateTrackInfo();
       });
+      Preferences preferences = getHost().getPreferences();
       final SettableEnumValue clipStopTiming = preferences.getEnumSetting("Long press to stop clip", //
          "Clip", new String[]{"Fast", "Medium", "Standard"}, "Medium");
       clipStopTiming.addValueObserver(clipLaunchingLayer::setClipStopTiming);
    }
-
-   private void handleShift(final boolean pressed) {
-      shiftDown.set(pressed);
-      if (!pressed) {
-         shiftLayer.deactivate();
-         // When holding Shift and releasing the Encoder, no Event is sent! Thus we preemptively release it.
-         encoderDown.set(false);
-      } else {
-         shiftLayer.activate();
-      }
-   }
-
 
    void bindEncoder(final Layer layer, final RelativeHardwareKnob encoder, final IntConsumer action) {
       final HardwareActionBindable incAction = host.createAction(() -> action.accept(1), () -> "+");
@@ -342,33 +310,6 @@ public class MiniLab3Extension extends ControllerExtension {
       parameterBank.selectedPageIndex().addValueObserver(this::showParameterPage);
       shiftEncoderPress.isPressed().addValueObserver(this::handleShiftEncoderPressed);
       encoderPress.isPressed().addValueObserver(this::handleEncoderPressed);
-   }
-
-   private void handleShiftEncoderPressed(final boolean down) {
-      encoderDown.set(down);
-      if (down) {
-         encoderPressTurned = false;
-         browserLayer.shiftPressAction();
-      }
-   }
-
-   private void handleEncoderPressed(final boolean down) {
-      encoderDown.set(down);
-      if (down) {
-         encoderPressTurned = false;
-      }
-      if (browserLayer.isActive()) {
-         browserLayer.pressAction(down);
-      } else {
-         if (down) {
-            oled.enableValues(DisplayMode.PARAM_PAGE);
-         } else {
-            if (!encoderPressTurned && padBank.get() != PadBank.BANK_B) {
-               clipLaunchingLayer.launchScene();
-            }
-            updateTrackInfo();
-         }
-      }
    }
 
    public RelativeHardwareKnob getMainEncoder() {
@@ -460,7 +401,6 @@ public class MiniLab3Extension extends ControllerExtension {
       }
    }
 
-
    private void setUpTransportControl() {
       final RgbButton loopButton = new RgbButton(0x57, PadBank.TRANSPORT, RgbButton.Type.CC, 105, 0, true, this);
       loopButton.bindToggle(shiftLayer, transport.isArrangerLoopEnabled(), RgbLightState.ORANGE,
@@ -527,10 +467,6 @@ public class MiniLab3Extension extends ControllerExtension {
       }
    }
 
-   public BooleanValueObject getShiftDown() {
-      return shiftDown;
-   }
-
    public void browserDisplayMode(final boolean browserModeActive) {
       oled.setMainMode(browserModeActive ? DisplayMode.BROWSER : DisplayMode.TRACK,
          browserModeActive ? browserLayer::updateInfo : this::updateTrackInfo);
@@ -538,7 +474,6 @@ public class MiniLab3Extension extends ControllerExtension {
          updateTrackInfo();
       }
    }
-
 
    private void updateTrackInfo(final boolean isPlaying, final boolean isRecording, final String trackName,
                                 final String deviceName, final boolean deviceExists) {
@@ -585,37 +520,75 @@ public class MiniLab3Extension extends ControllerExtension {
       return encoderButton;
    }
 
-   private void mainEncoderAction(final int dir) {
-      oled.disableValues();
-      if (encoderDown.get()) {
-         oled.enableValues(DisplayMode.PARAM_PAGE);
-         if (!encoderPressTurned) {
-            showParameterPage(parameterBank.selectedPageIndex().get());
-         } else {
-            navigateParametersBanks(dir);
-         }
+
+   private EncoderStateMaschine sm = new EncoderStateMaschine();
+
+   private void handleShift(final boolean pressed) {
+      sm.doTransition(pressed ? EncoderStateMaschine.Event.SHIFT_DOWN : EncoderStateMaschine.Event.SHIFT_UP);
+   }
+
+   private void handleEncoderPressed(final boolean down) {
+      if (browserLayer.isActive()) {
+         browserLayer.pressAction(down);
       } else {
-         if (padBank.get() == PadBank.BANK_A) {
-            oled.enableValues(DisplayMode.SCENE);
-            oled.sendTextInfo(DisplayMode.SCENE, cursorTrack.name().get(), sceneTrackItem.name().get(), true);
-            clipLaunchingLayer.navigateScenes(dir);
+         if (down && sm.getState() == EncoderStateMaschine.State.INITIAL) {
+            oled.enableValues(DisplayMode.PARAM_PAGE);
          } else {
-            drumPadLayer.navigate(dir);
+            if (sm.getState() == EncoderStateMaschine.State.HOLD && !sm.isTurnAction() && padBank.get() != PadBank.BANK_B) {
+               clipLaunchingLayer.launchScene();
+            }
+         }
+         updateTrackInfo();
+      }
+      sm.doTransition(down ? EncoderStateMaschine.Event.ENCODER_DOWN : EncoderStateMaschine.Event.ENCODER_UP);
+   }
+
+   private void handleShiftEncoderPressed(final boolean down) {
+      if (!down && sm.getState() == EncoderStateMaschine.State.SHIFT_HOLD) {
+         if (!browserLayer.isActive()) {
+            browserLayer.shiftPressAction(-1);
+         } else {
+            browserLayer.shiftPressAction(sm.getTimeSinceLastEvent());
          }
       }
-      encoderPressTurned = true;
+      sm.doTransition(down ? EncoderStateMaschine.Event.ENCODER_DOWN : EncoderStateMaschine.Event.ENCODER_UP);
+   }
+
+   private void mainEncoderAction(final int dir) {
+      sm.notifyTurn();
+      oled.disableValues();
+      switch (sm.getState()) {
+         case INITIAL -> navigateScenesOrPads(dir);
+         case HOLD -> navigateParametersBanks(dir);
+      }
    }
 
    private void mainEncoderShiftAction(final int dir) {
-      encoderPressTurned = true;
-      if (encoderDown.get()) {
-         if (dir > 0) {
-            cursorDevice.selectNext();
-         } else {
-            cursorDevice.selectPrevious();
-         }
+      sm.notifyTurn();
+      oled.disableValues();
+      switch (sm.getState()) {
+         case HOLD_SHIFT -> navigateDevice(dir);
+         case SHIFT -> navigateTracks(dir);
+      }
+   }
+
+   private void navigateScenesOrPads(int dir) {
+      if (padBank.get() == PadBank.BANK_A) {
+         oled.enableValues(DisplayMode.SCENE);
+         oled.sendTextInfo(DisplayMode.SCENE, cursorTrack.name().get(), sceneTrackItem.name().get(), true);
+         clipLaunchingLayer.navigateScenes(dir);
       } else {
-         navigateTracks(dir);
+         drumPadLayer.navigate(dir);
+      }
+   }
+
+   private void navigateDevice(final int dir) {
+      if (!cursorDevice.exists().get() && !cursorDevice.hasNext().get() && !cursorDevice.hasPrevious().get()) {
+         cursorDevice.selectFirstInChannel(cursorTrack);
+      } else if (dir > 0) {
+         cursorDevice.selectNext();
+      } else {
+         cursorDevice.selectPrevious();
       }
    }
 
@@ -628,6 +601,8 @@ public class MiniLab3Extension extends ControllerExtension {
    }
 
    private void navigateParametersBanks(final int dir) {
+      oled.enableValues(DisplayMode.PARAM_PAGE);
+      showParameterPage(parameterBank.selectedPageIndex().get());
       if (dir > 0) {
          parameterBank.selectNext();
       } else {
@@ -729,7 +704,7 @@ public class MiniLab3Extension extends ControllerExtension {
     * Make sure no scene is launched upon release.
     */
    public void notifyTurn() {
-      encoderPressTurned = true;
+      sm.notifyTurn();
    }
 
 
