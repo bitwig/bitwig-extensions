@@ -26,8 +26,7 @@ public class BrowserLayer extends Layer {
       cursorDevice = driver.getCursorDevice();
       cursorTrack = driver.getCursorTrack();
       cursorDevice.exists().markInterested();
-//      cursorDevice.hasNext().addValueObserver(hasNext -> MiniLab3Extension.println("DHN = " + hasNext));
-//      cursorDevice.hasPrevious().addValueObserver(hasPrevious -> MiniLab3Extension.println("DHP = " + hasPrevious));
+
       this.driver = driver;
       browser.exists().markInterested();
       browser.exists().addValueObserver(exists -> {
@@ -100,7 +99,7 @@ public class BrowserLayer extends Layer {
       } else {
          if (cursorDevice.exists().get()) {
             browsingInitiated = true;
-            if (time > 1000) {
+            if (time > 700) {
                cursorDevice.afterDeviceInsertionPoint().browse();
             } else {
                cursorDevice.replaceDeviceInsertionPoint().browse();
@@ -123,7 +122,7 @@ public class BrowserLayer extends Layer {
          driver.getOled().sendTextInfo(DisplayMode.BROWSER_INFO, "", "Click again to load", true);
       } else {
          browser.commit();
-         driver.notifyTurn();  // makes sure release doesn't trigger scene
+         driver.notifyTurn(false);  // makes sure release doesn't trigger scene
       }
    }
 

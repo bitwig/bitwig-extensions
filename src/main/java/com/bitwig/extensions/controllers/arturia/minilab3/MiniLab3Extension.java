@@ -68,6 +68,7 @@ public class MiniLab3Extension extends ControllerExtension {
    private Transport transport;
    private PinnableCursorDevice primaryDevice;
    private FocusMode recordFocusMode = FocusMode.ARRANGER;
+   private EncoderStateMaschine encoderStateMaschine = new EncoderStateMaschine();
 
    protected MiniLab3Extension(final MiniLab3ExtensionDefinition definition, final ControllerHost host) {
       super(definition, host);
@@ -141,13 +142,14 @@ public class MiniLab3Extension extends ControllerExtension {
    }
 
    private void handleSysExData(final String sysEx) {
+      //MiniLab3Extension.println("<%s>", sysEx);
       switch (sysEx) {
-         case "f000206b7f420200406301f7":
-         case "f000206b7f420200400300f7":
+         case "f000206b7f420200406300f7":
+            MiniLab3Extension.println(" ==> BANK A");
             toBankMode(PadBank.BANK_A);
             break;
-         case "f000206b7f420200406302f7":
-         case "f000206b7f420200400301f7":
+         case "f000206b7f420200406301f7":
+            MiniLab3Extension.println(" ==> BANK B");
             toBankMode(PadBank.BANK_B);
             break;
          case "f000206b7f420200406201f7": // Arturia Mode
@@ -520,54 +522,62 @@ public class MiniLab3Extension extends ControllerExtension {
       return encoderButton;
    }
 
-
-   private EncoderStateMaschine sm = new EncoderStateMaschine();
-
    private void handleShift(final boolean pressed) {
-      sm.doTransition(pressed ? EncoderStateMaschine.Event.SHIFT_DOWN : EncoderStateMaschine.Event.SHIFT_UP);
+      encoderStateMaschine.doTransition(
+         pressed ? EncoderStateMaschine.Event.SHIFT_DOWN : EncoderStateMaschine.Event.SHIFT_UP);
    }
+
+   /**
+    * when in mode HOLD+SHIFT and you release the Hold button, you of stay in the parameter/device mode.
+    * from now on,
+    */
 
    private void handleEncoderPressed(final boolean down) {
       if (browserLayer.isActive()) {
          browserLayer.pressAction(down);
+         encoderStateMaschine.doTransition(
+            down ? EncoderStateMaschine.Event.ENCODER_DOWN : EncoderStateMaschine.Event.ENCODER_UP);
+         encoderStateMaschine.notifyTurn(false);
       } else {
-         if (down && sm.getState() == EncoderStateMaschine.State.INITIAL) {
+         if (down && encoderStateMaschine.getState() == EncoderStateMaschine.State.INITIAL) {
             oled.enableValues(DisplayMode.PARAM_PAGE);
          } else {
-            if (sm.getState() == EncoderStateMaschine.State.HOLD && !sm.isTurnAction() && padBank.get() != PadBank.BANK_B) {
+            if (encoderStateMaschine.getState() == EncoderStateMaschine.State.HOLD && !encoderStateMaschine.isTurnAction() && padBank.get() != PadBank.BANK_B) {
                clipLaunchingLayer.launchScene();
             }
          }
          updateTrackInfo();
+         encoderStateMaschine.doTransition(
+            down ? EncoderStateMaschine.Event.ENCODER_DOWN : EncoderStateMaschine.Event.ENCODER_UP);
       }
-      sm.doTransition(down ? EncoderStateMaschine.Event.ENCODER_DOWN : EncoderStateMaschine.Event.ENCODER_UP);
    }
 
    private void handleShiftEncoderPressed(final boolean down) {
-      if (!down && sm.getState() == EncoderStateMaschine.State.SHIFT_HOLD) {
+      if (!down && encoderStateMaschine.getState() == EncoderStateMaschine.State.SHIFT_HOLD && !encoderStateMaschine.isTurnAction()) {
          if (!browserLayer.isActive()) {
-            browserLayer.shiftPressAction(-1);
+            browserLayer.shiftPressAction(encoderStateMaschine.getTimeSinceLastEvent());
          } else {
-            browserLayer.shiftPressAction(sm.getTimeSinceLastEvent());
+            browserLayer.shiftPressAction(-1);
          }
       }
-      sm.doTransition(down ? EncoderStateMaschine.Event.ENCODER_DOWN : EncoderStateMaschine.Event.ENCODER_UP);
+      encoderStateMaschine.doTransition(
+         down ? EncoderStateMaschine.Event.ENCODER_DOWN : EncoderStateMaschine.Event.ENCODER_UP);
    }
 
    private void mainEncoderAction(final int dir) {
-      sm.notifyTurn();
+      encoderStateMaschine.notifyTurn(false);
       oled.disableValues();
-      switch (sm.getState()) {
+      switch (encoderStateMaschine.getState()) {
          case INITIAL -> navigateScenesOrPads(dir);
          case HOLD -> navigateParametersBanks(dir);
       }
    }
 
    private void mainEncoderShiftAction(final int dir) {
-      sm.notifyTurn();
+      encoderStateMaschine.notifyTurn(true);
       oled.disableValues();
-      switch (sm.getState()) {
-         case HOLD_SHIFT -> navigateDevice(dir);
+      switch (encoderStateMaschine.getState()) {
+         case HOLD_SHIFT, SHIFT_HOLD -> navigateDevice(dir);
          case SHIFT -> navigateTracks(dir);
       }
    }
@@ -703,8 +713,8 @@ public class MiniLab3Extension extends ControllerExtension {
    /**
     * Make sure no scene is launched upon release.
     */
-   public void notifyTurn() {
-      sm.notifyTurn();
+   public void notifyTurn(boolean shift) {
+      encoderStateMaschine.notifyTurn(shift);
    }
 
 

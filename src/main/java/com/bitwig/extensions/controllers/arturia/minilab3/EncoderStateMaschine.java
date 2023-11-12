@@ -5,11 +5,27 @@ import java.util.Optional;
 
 public class EncoderStateMaschine {
    public enum State {
-      INITIAL, //
-      HOLD, // ;
-      HOLD_SHIFT, //
-      SHIFT, //
-      SHIFT_HOLD
+      INITIAL(false, false), //
+      HOLD(false, true), // ;
+      HOLD_SHIFT(true, true), //
+      SHIFT(true, false), //
+      SHIFT_HOLD(false, true);
+
+      final boolean shift;
+      final boolean encoder;
+
+      State(boolean shift, boolean encoder) {
+         this.shift = shift;
+         this.encoder = encoder;
+      }
+
+      public boolean isEncoder() {
+         return encoder;
+      }
+
+      public boolean isShift() {
+         return shift;
+      }
    }
 
    public enum Event {
@@ -28,10 +44,11 @@ public class EncoderStateMaschine {
    private List<Transition> transitions = List.of(//
       new Transition(State.INITIAL, Event.SHIFT_DOWN, State.SHIFT),//
       new Transition(State.INITIAL, Event.ENCODER_DOWN, State.HOLD, true),//
+      new Transition(State.INITIAL, Event.SHIFT_UP, State.HOLD, true),//
       new Transition(State.HOLD, Event.ENCODER_UP, State.INITIAL, true),//
       new Transition(State.HOLD, Event.SHIFT_DOWN, State.HOLD_SHIFT),//
       new Transition(State.HOLD_SHIFT, Event.SHIFT_UP, State.HOLD),//
-      new Transition(State.SHIFT, Event.SHIFT_UP, State.INITIAL), //
+      new Transition(State.SHIFT, Event.SHIFT_UP, State.INITIAL, true), //
       new Transition(State.SHIFT, Event.ENCODER_DOWN, State.SHIFT_HOLD), //
       new Transition(State.SHIFT_HOLD, Event.ENCODER_UP, State.SHIFT), //
       new Transition(State.SHIFT_HOLD, Event.ENCODER_UP, State.SHIFT),//
@@ -42,21 +59,26 @@ public class EncoderStateMaschine {
       public Transition(State state, Event event, State result) {
          this(state, event, result, false);
       }
+
+      @Override
+      public String toString() {
+         return "%s =[%s]=> %s".formatted(state, event, result);
+      }
    }
 
    public void doTransition(Event event) {
-      //MiniLab3Extension.println(" EVENT > %s", event);
       eventTime = System.currentTimeMillis();
       Optional<Transition> result = transitions.stream()
          .filter(t -> t.state == state)
          .filter(t -> t.event == event)
          .findFirst();
       if (result.isPresent()) {
-         this.state = result.get().result;
-         if (result.get().resetTurn) {
+         Transition transition = result.get();
+         this.state = transition.result;
+         if (transition.resetTurn) {
             turnAction = false;
          }
-         //MiniLab3Extension.println(" RESULT = %s", this);
+         //MiniLab3Extension.println(" TRANS = %s <%s>", transition, (turnAction ? "*" : "-"));
       }
    }
 
@@ -68,10 +90,9 @@ public class EncoderStateMaschine {
       return state;
    }
 
-   public void notifyTurn() {
-      if (state != State.INITIAL) {
-         turnAction = true;
-      }
+   public void notifyTurn(boolean shift) {
+      turnAction = state != State.INITIAL;
+      //MiniLab3Extension.println("  TURN(%s)  = %s ", shift, this);
    }
 
    public boolean isTurnAction() {
