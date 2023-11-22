@@ -82,6 +82,11 @@ public class PadScaleHandler {
       return inNote + diff * dir;
    }
 
+   public boolean inScale(int inNote) {
+      Scale scale = scales.get(currentScale);
+      int scaleIndex = (inNote % 12 + 12 - baseNote) % 12;
+      return scale.inScale(scaleIndex);
+   }
 
    public void incScaleSelection(int dir) {
       currentScale += dir;

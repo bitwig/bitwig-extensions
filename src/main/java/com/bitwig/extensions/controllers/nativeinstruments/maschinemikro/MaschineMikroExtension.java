@@ -154,10 +154,9 @@ public class MaschineMikroExtension extends ControllerExtension {
    }
 
    void initPreferences(final ControllerHost host) {
-      final SettableEnumValue recordButtonAssignment = host.getDocumentState()
-         .getEnumSetting("(Shift) Record Button", //
-            "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
-            recordFocusMode.getDescriptor());
+      final SettableEnumValue recordButtonAssignment = host.getDocumentState().getEnumSetting("Record Button", //
+         "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
+         recordFocusMode.getDescriptor());
       recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));
    }
 

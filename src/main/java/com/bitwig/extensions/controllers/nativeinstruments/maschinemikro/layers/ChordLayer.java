@@ -20,9 +20,24 @@ public class ChordLayer extends Layer {
    private final MidiProcessor midiProcessor;
    private final SettableStringValue chordData;
    private boolean filterByScale = false;
+   private FilterMethod filterMethod = FilterMethod.UP;
    private boolean recordingModeActive = false;
    private int recordingIndex = 0;
    private PadScaleHandler scaleHandler;
+
+   private enum FilterMethod {
+      UP,
+      DOWN,
+      ELIMINATE;
+
+      FilterMethod next() {
+         return switch (this) {
+            case UP -> DOWN;
+            case DOWN -> ELIMINATE;
+            case ELIMINATE -> UP;
+         };
+      }
+   }
 
    static class Chord {
       private final List<Integer> notes;
@@ -45,11 +60,22 @@ public class ChordLayer extends Layer {
          return basicOffset;
       }
 
-      public Set<Integer> getNotes(boolean filterByScale, int baseNote, PadScaleHandler scaleHandler) {
+      public Set<Integer> getNotes(boolean filterByScale, FilterMethod method, int baseNote,
+                                   PadScaleHandler scaleHandler) {
          int offset = baseNote + basicOffset;
          Set<Integer> result = new HashSet<>();
          for (Integer note : notes) {
-            int playedNote = filterByScale ? scaleHandler.matchScale(note + offset, -1) : note + offset;
+            int playedNote = note + offset;
+            if (filterByScale) {
+               switch (method) {
+                  case UP:
+                     playedNote = scaleHandler.matchScale(playedNote, 1);
+                  case DOWN:
+                     playedNote = scaleHandler.matchScale(playedNote, -1);
+                  case ELIMINATE:
+                     playedNote = scaleHandler.inScale(playedNote) ? playedNote : -1;
+               }
+            }
             if (playedNote >= 0 && playedNote < 128) {
                result.add(playedNote);
             }
@@ -69,8 +95,9 @@ public class ChordLayer extends Layer {
          }
       }
 
-      public Chord getPlayingNotes(boolean filterByScale, int baseNote, PadScaleHandler scaleHandler) {
-         return new Chord(getNotes(filterByScale, baseNote, scaleHandler));
+      public Chord getPlayingNotes(boolean filterByScale, FilterMethod method, int baseNote,
+                                   PadScaleHandler scaleHandler) {
+         return new Chord(getNotes(filterByScale, method, baseNote, scaleHandler));
       }
 
       public String serialized() {
@@ -108,6 +135,10 @@ public class ChordLayer extends Layer {
       cursorTrack.playingNotes().addValueObserver(this::handleNotesIn);
 
       List<RgbButton> gridButtons = hwElements.getPadButtons();
+      RgbButton scaleTransposeMethod = gridButtons.get(2);
+      scaleTransposeMethod.bindLight(this, this::getFilterStateButtonColor);
+      scaleTransposeMethod.bindPressed(this, () -> this.filterMethod = this.filterMethod.next());
+
       RgbButton scaleLockButton = gridButtons.get(3);
       scaleLockButton.bindLight(this,
          () -> filterByScale ? RgbColor.of(Colors.ORANGE, ColorBrightness.BRIGHT) : RgbColor.of(Colors.ORANGE,
@@ -120,16 +151,8 @@ public class ChordLayer extends Layer {
       scaleRecordButton.bindPressed(this, () -> {
          recordingModeActive = !recordingModeActive;
       });
+      gridButtons.get(1).bindDisabled(this);
 
-      for (int i = 1; i < 3; i++) {
-         final int index = i;
-         RgbButton button = gridButtons.get(i);
-         button.bindLight(this, () -> RgbColor.OFF);
-         button.bindPressed(this, () -> {
-         });
-         button.bindRelease(this, () -> {
-         });
-      }
       for (int i = 4; i < 16; i++) {
          final int index = (3 - i / 4) * 4 + i % 4;
          RgbButton button = gridButtons.get(i);
@@ -193,6 +216,17 @@ public class ChordLayer extends Layer {
    }
 
    private Set<Integer> noteSet = new HashSet<>();
+
+   private RgbColor getFilterStateButtonColor() {
+      if (filterByScale) {
+         return switch (filterMethod) {
+            case UP -> RgbColor.BLUE;
+            case DOWN -> RgbColor.PURPLE;
+            case ELIMINATE -> RgbColor.GRAY;
+         };
+      }
+      return RgbColor.OFF;
+   }
 
    private void handleNotesIn(PlayingNote[] notes) {
       if (!recordingModeActive || isPadHeld()) {
@@ -291,7 +325,7 @@ public class ChordLayer extends Layer {
             recordingModeActive = true;
          }
       } else {
-         Chord notesChord = chords.get(index).getPlayingNotes(filterByScale, baseNote, scaleHandler);
+         Chord notesChord = chords.get(index).getPlayingNotes(filterByScale, filterMethod, baseNote, scaleHandler);
          double playVel = padLayer.isFixedActive() ? (padLayer.getFixedVelocity() / 127.0) : velocity;
          playChord(notesChord, playVel);
          playing[index] = notesChord;

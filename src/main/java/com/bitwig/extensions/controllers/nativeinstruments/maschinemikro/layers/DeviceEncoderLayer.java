@@ -37,7 +37,6 @@ public class DeviceEncoderLayer extends Layer {
    private final CursorRemoteControlsPage remoteBank;
    private final RgbColor[] deviceColors = new RgbColor[8];
    private TouchStripLayer touchStripLayer;
-   private boolean lockButtonHeld;
    private boolean muteButtonHeld;
 
    public DeviceEncoderLayer(Layers layers, HwElements hwElements, ViewControl viewControl,
@@ -92,7 +91,7 @@ public class DeviceEncoderLayer extends Layer {
    }
 
    private void handleLockButton(boolean pressed) {
-      this.lockButtonHeld = pressed;
+      // currently do nothing
    }
 
    private void handleMuteButton(boolean pressed) {
@@ -188,9 +187,6 @@ public class DeviceEncoderLayer extends Layer {
       } else {
          cursorDevice.selectDevice(bankDevice);
          bankDevice.selectInEditor();
-         if (lockButtonHeld) {
-            cursorDevice.isPinned().toggle();
-         }
       }
    }
 
