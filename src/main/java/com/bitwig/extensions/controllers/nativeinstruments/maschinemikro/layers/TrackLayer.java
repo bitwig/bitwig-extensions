@@ -3,10 +3,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.layers
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.ColorBrightness;
 import com.bitwig.extensions.controllers.nativeinstruments.commons.Colors;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.HwElements;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbColor;
-import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.ViewControl;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.*;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -15,12 +12,14 @@ import com.bitwig.extensions.framework.di.Inject;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class TrackLayer extends Layer {
    private static final RgbColor MUTE_COLOR = RgbColor.of(Colors.LIGHT_ORANGE);
    private static final RgbColor SOLO_COLOR = RgbColor.of(Colors.YELLOW);
    private static final RgbColor ARM_COLOR = RgbColor.of(Colors.RED);
+   //TODO make sure touch is of when the current parameter changes
 
    private final Layer muteLayer;
    private final Layer armLayer;
@@ -37,6 +36,7 @@ public class TrackLayer extends Layer {
    private ModifierLayer modifierLayer;
    @Inject
    private MidiProcessor midiProcessor;
+   private boolean lockButtonHeld;
 
    private enum EncoderDestination {
       TRACK,
@@ -77,7 +77,7 @@ public class TrackLayer extends Layer {
             button.bindPressed(muteLayer, () -> track.mute().toggle());
             button.bindLight(muteLayer, () -> this.getMuteLight(track, index));
 
-            button.bindPressed(soloLayer, () -> track.solo().toggle());
+            button.bindPressed(soloLayer, () -> track.solo().toggle(muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE));
             button.bindLight(soloLayer, () -> this.getSoloLight(track, index));
 
             button.bindPressed(armLayer, () -> track.arm().toggle());
@@ -100,9 +100,17 @@ public class TrackLayer extends Layer {
          }
       }
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(dir));
+      hwElements.getButton(CcAssignment.ENCODER_TOUCH).bindIsPressed(this, this::handleEncoderTouch);
+      hwElements.getButton(CcAssignment.LOCK).bindIsPressed(this, this::handleLockButton);
+      hwElements.getButton(CcAssignment.LOCK).bindLightHeld(this);
+   }
+
+   private void handleLockButton(boolean pressed) {
+      this.lockButtonHeld = pressed;
    }
 
    private void setCurrentEncoderDestination(EncoderDestination destination) {
+      getCurrentParameter().ifPresent(parameter -> parameter.touch(false));
       if (destination == currentEncoderDestination) {
          currentEncoderDestination = EncoderDestination.TRACK;
       } else {
@@ -125,6 +133,26 @@ public class TrackLayer extends Layer {
             ColorBrightness.DARKENED);
       }
       return RgbColor.OFF;
+   }
+
+   private void handleEncoderTouch(boolean touched) {
+      getCurrentParameter().ifPresent(parameter -> parameter.touch(touched));
+   }
+
+   public void deactivateTouch() {
+      if (isActive()) {
+         getCurrentParameter().ifPresent(parameter -> parameter.touch(false));
+      }
+   }
+
+   private Optional<Parameter> getCurrentParameter() {
+      return switch (currentEncoderDestination) {
+         case VOLUME -> Optional.of(cursorTrack.volume());
+         case PAN -> Optional.of(cursorTrack.pan());
+         case SEND1 -> Optional.of(cursorTrack.sendBank().getItemAt(0));
+         case SEND2 -> Optional.of(cursorTrack.sendBank().getItemAt(1));
+         case TRACK -> Optional.empty();
+      };
    }
 
    private void handleEncoder(int diff) {
@@ -170,7 +198,7 @@ public class TrackLayer extends Layer {
    public void setMutSoloMode(MuteSoloMode muteSoloMode) {
       this.muteSoloMode = muteSoloMode;
       if (isActive()) {
-         soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO);
+         soloLayer.setIsActive(muteSoloMode == MuteSoloMode.SOLO || muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE);
          muteLayer.setIsActive(muteSoloMode == MuteSoloMode.MUTE);
          armLayer.setIsActive(muteSoloMode == MuteSoloMode.ARM);
       }
@@ -227,11 +255,18 @@ public class TrackLayer extends Layer {
    }
 
    private void selectTrack(Track track, int index) {
-      if (modifierLayer.getDuplicateHeld().get()) {
+      if (lockButtonHeld) {
+         if (modifierLayer.getVariationHeld().get()) {
+            track.stopAlt();
+         } else {
+            track.stop();
+         }
+      } else if (modifierLayer.getDuplicateHeld().get()) {
          track.duplicate();
       } else if (modifierLayer.getEraseHeld().get()) {
          track.deleteObject();
       } else {
+         getCurrentParameter().ifPresent(parameter -> parameter.touch(false));
          track.selectInEditor();
       }
    }
@@ -259,8 +294,10 @@ public class TrackLayer extends Layer {
    @Override
    protected void onDeactivate() {
       super.onDeactivate();
+      getCurrentParameter().ifPresent(parameter -> parameter.touch(false));
       soloLayer.setIsActive(false);
       muteLayer.setIsActive(false);
       armLayer.setIsActive(false);
+      lockButtonHeld = false;
    }
 }

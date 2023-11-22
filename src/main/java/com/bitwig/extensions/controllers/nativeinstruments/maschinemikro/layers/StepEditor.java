@@ -48,6 +48,7 @@ public class StepEditor extends Layer {
    private int currentRepeat = 0;
    private int currentStepLen = 1;
    private boolean eraseDown;
+   private boolean encoderTouched = false;
    private int currentGridRate = 3;
    private double stepLength = 0.95;
 
@@ -59,7 +60,8 @@ public class StepEditor extends Layer {
    }
 
    public StepEditor(Layers layers, HwElements hwElements, ViewControl viewControl, ModifierLayer modifierLayer,
-                     MidiProcessor midiProcessor, ControllerHost host, TouchStripLayer touchStripLayer) {
+                     MidiProcessor midiProcessor, ControllerHost host, TouchStripLayer touchStripLayer,
+                     FocusClip focusClip) {
       super(layers, "PAD_LAYER");
       this.touchStripLayer = touchStripLayer;
       this.midiProcessor = midiProcessor;
@@ -92,12 +94,10 @@ public class StepEditor extends Layer {
       this.clip.scrollToKey(focusNote);
 
       hwElements.bindEncoder(this, hwElements.getMainEncoder(), dir -> handleEncoder(dir));
-      hwElements.getButton(CcAssignment.ENCODER_PRESS).bindPressed(this, () -> handleEncoderPress(true));
-      hwElements.getButton(CcAssignment.ENCODER_PRESS).bindRelease(this, () -> handleEncoderPress(false));
-      hwElements.getButton(CcAssignment.ENCODER_TOUCH).bindPressed(this, () -> handleEncoderTouch(true));
-      hwElements.getButton(CcAssignment.ENCODER_TOUCH).bindRelease(this, () -> handleEncoderTouch(false));
+      hwElements.getButton(CcAssignment.ENCODER_PRESS).bindIsPressed(this, this::handleEncoderPress);
+      hwElements.getButton(CcAssignment.ENCODER_TOUCH).bindIsPressed(this, this::handleEncoderTouch);
 
-      initTouchStripEditing(touchStripLayer, hwElements);
+      initTouchStripEditing(touchStripLayer, hwElements, focusClip);
       DocumentState documentState = host.getDocumentState();
       gridResolution = documentState.getEnumSetting("Step Grid Resolution", //
          "Step Grid resolution", rateDisplayValues, rateDisplayValues[currentGridRate]);
@@ -132,7 +132,7 @@ public class StepEditor extends Layer {
       return currentGridRate;
    }
 
-   private void initTouchStripEditing(TouchStripLayer touchStripLayer, HwElements hwElements) {
+   private void initTouchStripEditing(TouchStripLayer touchStripLayer, HwElements hwElements, FocusClip focusClip) {
       TouchStrip touchStrip = hwElements.getTouchStrip();
 
       hwElements.getButton(CcAssignment.PITCH).bindPressed(this, () -> selectMode(StripMode.PITCH, StripMode.PRESSURE));
@@ -145,9 +145,15 @@ public class StepEditor extends Layer {
       hwElements.getButton(CcAssignment.NOTES).bindLight(this, () -> stripMode == StripMode.NOTE);
 
       Layer positionLayer = touchStripLayer.getStepLayer(StripMode.NONE);
-      touchStrip.bindStripLight(positionLayer, () -> positionToLight());
+      touchStrip.bindStripLight(positionLayer,
+         () -> holdStripMode != null || encoderTouched ? positionToLight() : focusClip.getPlayPosition());
       touchStrip.bindValue(positionLayer, pos -> positionHandler.setPositionAbsolute(pos));
       touchStrip.bindTouched(positionLayer, touch -> holdStripMode(StripMode.NONE, touch));
+
+      Layer timbreLayer = touchStripLayer.getStepLayer(StripMode.PITCH);
+      touchStrip.bindStripLight(timbreLayer, () -> Math.min(127, (int) Math.round(currentTimbreValue * 64) + 64));
+      touchStrip.bindTouched(timbreLayer, touch -> holdStripMode(StripMode.PITCH, touch));
+      touchStrip.bindValue(timbreLayer, this::applyTimbreValue);
 
       Layer randomLayer = touchStripLayer.getStepLayer(StripMode.MOD);
       touchStrip.bindStripLight(randomLayer, () -> (int) Math.round(currentRandomValue * 127));
@@ -164,10 +170,6 @@ public class StepEditor extends Layer {
       touchStrip.bindValue(lengthLayer, this::applyNoteLength);
       touchStrip.bindTouched(lengthLayer, touch -> holdStripMode(StripMode.NOTE, touch));
 
-      Layer timbreLayer = touchStripLayer.getStepLayer(StripMode.PITCH);
-      touchStrip.bindStripLight(timbreLayer, () -> Math.min(127, (int) Math.round(currentTimbreValue * 64) + 64));
-      touchStrip.bindTouched(timbreLayer, touch -> holdStripMode(StripMode.PITCH, touch));
-      touchStrip.bindValue(timbreLayer, this::applyTimbreValue);
 
       stripCurrentLayer = positionLayer;
    }
@@ -284,7 +286,7 @@ public class StepEditor extends Layer {
       if (!isActive()) {
          return;
       }
-      stripCurrentLayer.setIsActive(!touch);
+      encoderTouched = touch;
    }
 
    private void handleEncoderPress(final boolean down) {
@@ -314,7 +316,7 @@ public class StepEditor extends Layer {
    public void setPadLayer(PadLayer padLayer) {
       this.padLayer = padLayer;
    }
-   
+
    private void handleNoteStep(final NoteStep noteStep) {
       assignments[noteStep.x()] = noteStep;
    }
@@ -415,6 +417,9 @@ public class StepEditor extends Layer {
    }
 
    public void setSelectedNote(int selectedNote, int padIndex) {
+      if (selectedNote < 0) {
+         return;
+      }
       if (padIndex == -1 && !isDrumEdit) {
          focusNote = selectedNote;
       } else if (selectedNote == 0 && padIndex == 0 && isDrumEdit) {
@@ -422,6 +427,7 @@ public class StepEditor extends Layer {
       } else {
          focusNote = selectedNote;
       }
+      focusNote = Math.min(127, focusNote);
       clip.scrollToKey(focusNote);
    }
 

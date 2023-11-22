@@ -31,6 +31,11 @@ public class MidiProcessor {
       noteInput.sendRawMidiEvent(Midi.NOTE_ON, note, velocity);
    }
 
+   public void sendRawCC(int ccNr, int value) {
+      noteInput.sendRawMidiEvent(Midi.CC, ccNr, value);
+   }
+
+
    public void sendNoteOff(int note) {
       noteInput.sendRawMidiEvent(Midi.NOTE_OFF, note, 0);
    }
@@ -75,7 +80,7 @@ public class MidiProcessor {
 
    protected void handleSysEx(final String sysExString) {
       if (sysExString.equals("f000210917004d5000014601f7")) {
-         DebugOutMk.println(" HANDLE Return from Maschine");
+         MaschineMikroExtension.println(" HANDLE Return from Maschine");
          for (int i = 0; i < noteStatus.length; i++) {
             if (noteStatus[i] != -1) {
                midiOut.sendMidi(Midi.NOTE_ON, i, noteStatus[i]);
@@ -87,7 +92,7 @@ public class MidiProcessor {
             }
          }
       } else {
-         DebugOutMk.println("SYSEX = %s", sysExString);
+         MaschineMikroExtension.println("SYSEX = %s", sysExString);
       }
    }
 
@@ -136,7 +141,6 @@ public class MidiProcessor {
       }
       return RgbColor.of(color, ColorBrightness.BRIGHT);
    }
-
 
    public RgbColor blinkMid(int onColor, int offColor) {
       return RgbColor.of(blinkState % 4 < 2 ? onColor : offColor);

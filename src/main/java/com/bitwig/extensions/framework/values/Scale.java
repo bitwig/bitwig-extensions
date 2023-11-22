@@ -24,10 +24,14 @@ public enum Scale {
 
    private final String name;
    private final int[] intervals;
+   private final boolean[] inscaleMatch = new boolean[12];
 
-   private Scale(final String name, final int... notes) {
+   Scale(final String name, final int... notes) {
       this.name = name;
       this.intervals = notes;
+      for (int i = 0; i < this.intervals.length; i++) {
+         inscaleMatch[this.intervals[i] % 12] = true;
+      }
    }
 
    public String getName() {
@@ -55,6 +59,21 @@ public enum Scale {
       return intervals[nextIndex] + baseNote + octave * 12;
    }
 
+   public boolean inScale(int noteBase) {
+      return inscaleMatch[noteBase % 12];
+   }
+
+   public int nextInScale(int index) {
+      int calcIndex = index;
+      while (index < 26) {
+         if (inScale(index)) {
+            return index;
+         }
+         index++;
+      }
+      return index;
+   }
+
    private static int findScaleIndex(final int noteIndex, final int[] intervalls) {
       for (int i = 0; i < intervalls.length; i++) {
          if (intervalls[i] >= noteIndex) {
@@ -76,5 +95,6 @@ public enum Scale {
       final int lastValue = intervals[(noteRange - 1) % intervals.length];
       return startNote + octaves * 12 + lastValue;
    }
+
 
 }

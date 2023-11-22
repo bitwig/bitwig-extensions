@@ -17,6 +17,7 @@ import java.util.function.BooleanSupplier;
 @Component
 public class ModeHandler extends Layer {
    private final ModifierLayer modifierLayer;
+   private final Layer noteRepeatLayer;
    @Inject
    private SessionLayer sessionLayer;
    @Inject
@@ -42,7 +43,10 @@ public class ModeHandler extends Layer {
 
    private Layer activeLayer;
 
+   private Map<Mode, Runnable> modeAction = new HashMap<>();
+
    private enum Mode {
+      NONE,
       LAUNCHER,
       SCENE,
       PADS(true),
@@ -67,10 +71,13 @@ public class ModeHandler extends Layer {
          return keyMode;
       }
 
+      public boolean isKeyboardPlayable() {
+         return keyMode || this == CHORD;
+      }
    }
 
    private Mode currentMode = Mode.LAUNCHER;
-   private Mode stashedMode = currentMode;
+   private Mode stashedMode = Mode.NONE;
    private Layer stashedLayer = null;
    private EncoderMode encoderMode = EncoderMode.NONE;
    private MuteSoloMode muteSoloMode = MuteSoloMode.NONE;
@@ -81,27 +88,38 @@ public class ModeHandler extends Layer {
       super(layers, "SESSION_LAYER");
       this.drumPadLayer = drumPadLayer;
       this.modifierLayer = modifierLayer;
+      this.noteRepeatLayer = new Layer(layers, "NOTE_REPEAT_LAYER");
+      Layer subLayer = layers.getLayers()
+         .stream()
+         .filter(l -> l.getName().equals("LOW_PRIORITY_LAYER"))
+         .findFirst()
+         .orElse(this);
 
       bindModeButton(hwElements, CcAssignment.PATTERN, Mode.LAUNCHER);
-      bindModeButton(hwElements, CcAssignment.SCENE, Mode.SCENE);
+      bindMomentaryModeButton(hwElements, CcAssignment.SCENE, Mode.SCENE);
       bindModeButton(hwElements, CcAssignment.STEP, Mode.STEP);
       bindModeButton(hwElements, CcAssignment.CHORD, Mode.CHORD);
       bindKeyModeButton(hwElements, CcAssignment.KEYBOARD, Mode.KEYS, () -> keyboardModeActive(drumPadLayer));
       bindKeyModeButton(hwElements, CcAssignment.PAD_MODE, Mode.PADS, () -> padModeActive(drumPadLayer));
-      bindMomentaryModeButton(hwElements, CcAssignment.NOTE_REPEAT, Mode.NOTE_REPEAT);
+
+      CcButton button = hwElements.getButton(CcAssignment.NOTE_REPEAT);
+      button.bindIsPressedTimed(this, this::handleNoteRepeat);
+      button.bindLight(this, () -> drumPadLayer.isNoteRepeatActive());
+
       bindMomentaryModeButton(hwElements, CcAssignment.GROUP, Mode.GROUP);
       bindMomentaryModeButton(hwElements, CcAssignment.PLUGIN, Mode.PLUGIN);
       bindMomentaryModeButton(hwElements, CcAssignment.FOLLOW, Mode.GRID);
+      modeAction.put(Mode.PLUGIN, this::exitEncoderModes);
 
-      hwElements.getButton(CcAssignment.MUTE).bindPressed(this, () -> handleMutePress(true));
-      hwElements.getButton(CcAssignment.MUTE).bindRelease(this, () -> handleMutePress(false));
-      hwElements.getButton(CcAssignment.MUTE).bindLight(this, () -> muteSoloMode == MuteSoloMode.MUTE);
+      hwElements.getButton(CcAssignment.MUTE).bindIsPressed(subLayer, this::handleMuteArmPress);
+      hwElements.getButton(CcAssignment.MUTE)
+         .bindLight(subLayer,
+            () -> muteSoloMode == MuteSoloMode.ARM ? midiProcessor.blinkMid() : muteSoloMode == MuteSoloMode.MUTE);
 
-      hwElements.getButton(CcAssignment.SOLO).bindPressed(this, () -> handleSoloArmPress(true));
-      hwElements.getButton(CcAssignment.SOLO).bindRelease(this, () -> handleSoloArmPress(false));
+      hwElements.getButton(CcAssignment.SOLO).bindIsPressed(subLayer, this::handleSoloPress);
       hwElements.getButton(CcAssignment.SOLO)
-         .bindLight(this,
-            () -> muteSoloMode == MuteSoloMode.ARM ? midiProcessor.blinkMid() : muteSoloMode == MuteSoloMode.SOLO);
+         .bindLight(subLayer,
+            () -> muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE ? midiProcessor.blinkMid() : muteSoloMode == MuteSoloMode.SOLO);
 
       bindEncoderMode(hwElements, CcAssignment.VOLUME, EncoderMode.VOLUME);
       bindEncoderMode(hwElements, CcAssignment.SWING, EncoderMode.SWING);
@@ -111,8 +129,19 @@ public class ModeHandler extends Layer {
 
       modifierLayer.getShiftHeld().addValueObserver(this::handleShiftPressed);
       modifierLayer.getSelectHeld().addValueObserver(this::handleSelectPressed);
+
+      hwElements.bindEncoder(noteRepeatLayer, hwElements.getMainEncoder(), dir -> handleArpEncoder(dir));
+      hwElements.getButton(CcAssignment.ENCODER_PRESS).bindIsPressed(noteRepeatLayer, this::handleArpEncoderPress);
    }
 
+   public void handleArpEncoder(int dir) {
+      drumPadLayer.modifyArpRate(dir);
+      nrValueChanged = true;
+   }
+
+   public void handleArpEncoderPress(boolean pressed) {
+      // Do nothing now
+   }
 
    private boolean browsingActive() {
       return browserLayer.isActive();
@@ -136,6 +165,20 @@ public class ModeHandler extends Layer {
       activeLayer.setIsActive(true);
    }
 
+   public void exitEncoderModes() {
+   }
+
+   private void handleMuteArmPress(boolean press) {
+      if (!press) {
+         return;
+      }
+      if (modifierLayer.getShiftHeld().get()) {
+         handleArmPress(true);
+      } else {
+         handleMutePress(true);
+      }
+   }
+
    private void handleMutePress(boolean press) {
       if (press) {
          if (muteSoloMode == MuteSoloMode.MUTE) {
@@ -148,33 +191,31 @@ public class ModeHandler extends Layer {
       }
    }
 
-   private void handleSoloArmPress(boolean press) {
+   private void handleSoloPress(boolean press) {
       if (!press) {
          return;
       }
       if (modifierLayer.getShiftHeld().get()) {
-         handleArmPress(true);
+         if (muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE) {
+            muteSoloMode = MuteSoloMode.SOLO;
+         } else {
+            muteSoloMode = MuteSoloMode.SOLO_EXCLUSIVE;
+         }
       } else {
-         handleSoloPress(true);
-      }
-   }
-
-   private void handleSoloPress(boolean press) {
-      if (press) {
-         if (muteSoloMode == MuteSoloMode.SOLO) {
+         if (muteSoloMode == MuteSoloMode.SOLO || muteSoloMode == MuteSoloMode.SOLO_EXCLUSIVE) {
             muteSoloMode = MuteSoloMode.NONE;
          } else {
             muteSoloMode = MuteSoloMode.SOLO;
          }
-         drumPadLayer.setMutSoloMode(muteSoloMode);
-         trackLayer.setMutSoloMode(muteSoloMode);
       }
+      drumPadLayer.setMutSoloMode(muteSoloMode);
+      trackLayer.setMutSoloMode(muteSoloMode);
    }
 
    private void handleArmPress(boolean press) {
       if (press) {
          if (muteSoloMode == MuteSoloMode.ARM) {
-            muteSoloMode = MuteSoloMode.NONE;
+            muteSoloMode = MuteSoloMode.MUTE;
          } else {
             muteSoloMode = MuteSoloMode.ARM;
          }
@@ -250,6 +291,52 @@ public class ModeHandler extends Layer {
          }
       }
       encoderLayer.setMode(encoderMode);
+
+      if (encoderMode != EncoderMode.NONE) {
+         deviceEncoderLayer.deactivateTouch();
+         trackLayer.deactivateTouch();
+      }
+   }
+
+   private boolean nrActivatedOnPress = false;
+   private boolean nrValueChanged = false;
+
+   private void handleNoteRepeat(boolean pressed, long downtime) {
+      boolean nrActive = drumPadLayer.isNoteRepeatActive();
+      if (pressed) {
+         if (!currentMode.isKeyboardPlayable()) {
+            stashedMode = currentMode;
+            pressMode(Mode.PADS, false);
+            drumPadLayer.enableNoteRepeat(true);
+            nrActivatedOnPress = true;
+         } else if (!nrActive) {
+            drumPadLayer.enableNoteRepeat(true);
+            nrActivatedOnPress = true;
+         }
+      } else {
+         if (currentMode.isKeyboardPlayable()) {
+            if (stashedMode != currentMode && stashedMode != Mode.NONE) {
+               if (downtime > 300) {
+                  pressMode(stashedMode, true);
+                  stashedMode = Mode.NONE;
+                  drumPadLayer.enableNoteRepeat(false);
+               } else {
+                  stashedMode = Mode.NONE;
+               }
+            } else if (downtime <= 300) {
+               if (!nrActivatedOnPress) {
+                  drumPadLayer.enableNoteRepeat(false);
+               }
+            } else if (!nrValueChanged) {
+               drumPadLayer.enableNoteRepeat(false);
+            }
+         } else if (!nrActive) {
+            drumPadLayer.enableNoteRepeat(false);
+         }
+         nrActivatedOnPress = false;
+      }
+      noteRepeatLayer.setIsActive(pressed);
+      nrValueChanged = false;
    }
 
    private void handleMomentary(Mode mode, boolean pressed, long downtime) {
@@ -289,9 +376,8 @@ public class ModeHandler extends Layer {
    private void pressMode(Mode newMode, boolean fromStash) {
       if (newMode != currentMode) {
          activeLayer.setIsActive(false);
-         if (newMode == Mode.PADS || newMode == Mode.KEYS || newMode == Mode.NOTE_REPEAT) {
+         if (newMode == Mode.PADS || newMode == Mode.KEYS) {
             activeLayer = drumPadLayer;
-            drumPadLayer.enableNoteRepeat(newMode == Mode.NOTE_REPEAT);
          } else {
             Layer nextLayer = layerModeRegister.get(newMode);
             if (nextLayer != null) {
@@ -299,6 +385,10 @@ public class ModeHandler extends Layer {
             }
          }
          currentMode = newMode;
+         Runnable afterSetAction = modeAction.get(currentMode);
+         if (afterSetAction != null) {
+            afterSetAction.run();
+         }
          activeLayer.setIsActive(true);
       }
    }

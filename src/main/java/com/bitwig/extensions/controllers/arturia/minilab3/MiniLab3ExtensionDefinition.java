@@ -12,6 +12,7 @@ public class MiniLab3ExtensionDefinition extends ControllerExtensionDefinition {
 
    private static final String PORT_NAME_MIDI = "Minilab3 MIDI";
    private static final String PORT_NAME = "Minilab3";
+   private static final String PORT_NAME_LINUX = "Minilab3 Minilab3 MIDI";
 
    public MiniLab3ExtensionDefinition() {
    }
@@ -53,7 +54,7 @@ public class MiniLab3ExtensionDefinition extends ControllerExtensionDefinition {
 
    @Override
    public int getRequiredAPIVersion() {
-      return 16;
+      return 18;
    }
 
    @Override
@@ -76,7 +77,7 @@ public class MiniLab3ExtensionDefinition extends ControllerExtensionDefinition {
       } else if (platformType == PlatformType.MAC) {
          list.add(new String[]{PORT_NAME_MIDI}, new String[]{PORT_NAME_MIDI});
       } else if (platformType == PlatformType.LINUX) {
-         list.add(new String[]{PORT_NAME}, new String[]{PORT_NAME});
+         list.add(new String[]{PORT_NAME_LINUX}, new String[]{PORT_NAME_LINUX});
       }
    }
 

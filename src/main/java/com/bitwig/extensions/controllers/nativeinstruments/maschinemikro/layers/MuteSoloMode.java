@@ -4,5 +4,6 @@ public enum MuteSoloMode {
    NONE,
    MUTE,
    ARM,
-   SOLO;
+   SOLO,
+   SOLO_EXCLUSIVE;
 }

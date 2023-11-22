@@ -91,7 +91,7 @@ public class KeyLabEssential3ExtensionDefinition extends ControllerExtensionDefi
       final String portName = String.format(format, numberOfKeys);
       list.add(new String[]{portName}, new String[]{portName});
       for (int i = 0; i < appendWindowsCount; i++) {
-         String portAppended = "%d- s".formatted(i + 2, portName);
+         String portAppended = "%d- %s".formatted(i + 2, portName);
          list.add(new String[]{portAppended}, new String[]{portAppended});
       }
    }

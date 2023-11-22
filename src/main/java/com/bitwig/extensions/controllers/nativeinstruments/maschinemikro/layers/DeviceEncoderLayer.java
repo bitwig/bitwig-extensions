@@ -17,13 +17,14 @@ import com.bitwig.extensions.framework.values.BooleanValueObject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class DeviceEncoderLayer extends Layer {
 
    private static final RgbColor[] PARAM_COLORS = {RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE, RgbColor.PURPLE};
-   private static Map<String, RgbColor> DEVICE_TYPE_TO_COLOR = Map.of("note_effect", RgbColor.RED, //
-      "instrument", RgbColor.GREEN, "audio_to_audio", RgbColor.of(Colors.CYAN));
+   private static Map<String, RgbColor> DEVICE_TYPE_TO_COLOR = Map.of("note-effect", RgbColor.of(Colors.CYAN), //
+      "instrument", RgbColor.of(Colors.YELLOW), "audio_to_audio", RgbColor.of(Colors.ORANGE));
 
    private final BooleanValueObject shiftHeld;
    private final PinnableCursorDevice cursorDevice;
@@ -36,6 +37,7 @@ public class DeviceEncoderLayer extends Layer {
    private final CursorRemoteControlsPage remoteBank;
    private final RgbColor[] deviceColors = new RgbColor[8];
    private TouchStripLayer touchStripLayer;
+   private boolean muteButtonHeld;
 
    public DeviceEncoderLayer(Layers layers, HwElements hwElements, ViewControl viewControl,
                              ModifierLayer modifierLayer) {
@@ -60,6 +62,7 @@ public class DeviceEncoderLayer extends Layer {
          final int index = i;
          Device bankDevice = deviceBank.getDevice(index);
          bankDevice.exists().markInterested();
+         bankDevice.isEnabled().markInterested();
          bankDevice.deviceType().addValueObserver(deviceType -> handleDeviceTypeChanged(index, deviceType));
          BooleanValue onCursor = bankDevice.createEqualsValue(cursorDevice);
          onCursor.addValueObserver(isOnCursor -> handleDeviceSelection(index, isOnCursor));
@@ -80,6 +83,19 @@ public class DeviceEncoderLayer extends Layer {
          button.bindLight(this, () -> paramSelectionColor(index, parameter));
          button.bindPressed(this, () -> selectedParameter(index));
       }
+
+      hwElements.getButton(CcAssignment.MUTE).bindIsPressed(this, this::handleMuteButton);
+      hwElements.getButton(CcAssignment.MUTE).bindLightHeld(this);
+      hwElements.getButton(CcAssignment.LOCK).bindIsPressed(this, this::handleLockButton);
+      hwElements.getButton(CcAssignment.LOCK).bindLightHeld(this);
+   }
+
+   private void handleLockButton(boolean pressed) {
+      // currently do nothing
+   }
+
+   private void handleMuteButton(boolean pressed) {
+      this.muteButtonHeld = pressed;
    }
 
    @Inject
@@ -154,15 +170,24 @@ public class DeviceEncoderLayer extends Layer {
 
    private RgbColor deviceColor(int index, Device device) {
       if (device.exists().get()) {
-         return index == selectedDeviceIndex ? deviceColors[index].brightness(
-            ColorBrightness.BRIGHT) : deviceColors[index];
+         if (device.isEnabled().get()) {
+            ColorBrightness brightness = index == selectedDeviceIndex ? ColorBrightness.BRIGHT : ColorBrightness.DIMMED;
+            return deviceColors[index].brightness(brightness);
+         } else {
+            return index == selectedDeviceIndex ? deviceColors[index].brightness(
+               ColorBrightness.SUPERBRIGHT) : RgbColor.WHITE.brightness(ColorBrightness.DIMMED);
+         }
       }
-      return RgbColor.WHITE;
+      return RgbColor.OFF;
    }
 
    private void selectDevice(int index, Device bankDevice) {
-      cursorDevice.selectDevice(bankDevice);
-      bankDevice.selectInEditor();
+      if (muteButtonHeld) {
+         bankDevice.isEnabled().toggle();
+      } else {
+         cursorDevice.selectDevice(bankDevice);
+         bankDevice.selectInEditor();
+      }
    }
 
    private void handleEncoder(int diff) {
@@ -183,12 +208,27 @@ public class DeviceEncoderLayer extends Layer {
       }
    }
 
+   private Optional<RemoteControl> getCurrentControl() {
+      if (selectedParameter != -1) {
+         return Optional.of(remoteBank.getParameter(selectedParameter));
+      }
+      return Optional.empty();
+   }
+
+   public void deactivateTouch() {
+      if (isActive()) {
+         getCurrentControl().ifPresent(parameter -> parameter.touch(false));
+      }
+   }
+
    @Override
    protected void onDeactivate() {
       super.onDeactivate();
-      if (selectedParameter != -1) {
-         RemoteControl previousParameter = remoteBank.getParameter(selectedParameter);
-         previousParameter.touch(false);
-      }
+      getCurrentControl().ifPresent(parameter -> parameter.touch(false));
+   }
+
+   @Override
+   protected void onActivate() {
+      super.onActivate();
    }
 }

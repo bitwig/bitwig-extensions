@@ -21,6 +21,7 @@ public class SceneLayer extends Layer {
    private final BooleanValueObject altHeld;
    private final BooleanValueObject deleteHeld;
    private final BooleanValueObject duplicateHeld;
+   private final Project project;
    private int sceneOffset;
 
    @Inject
@@ -31,6 +32,7 @@ public class SceneLayer extends Layer {
    public SceneLayer(Layers layers, HwElements hwElements, ControllerHost host, ModifierLayer modifierLayer,
                      Application application) {
       super(layers, "SCENE");
+      this.project = host.getProject();
       this.altHeld = modifierLayer.getVariationHeld();
       this.deleteHeld = modifierLayer.getEraseHeld();
       this.duplicateHeld = modifierLayer.getDuplicateHeld();
@@ -61,7 +63,9 @@ public class SceneLayer extends Layer {
    }
 
    private void pressScene(Scene scene, int sceneIndex) {
-      if (deleteHeld.get()) {
+      if (!scene.exists().get()) {
+         project.createScene();
+      } else if (deleteHeld.get()) {
          scene.deleteObject();
       } else if (duplicateHeld.get()) {
          // NO CLEAR WHAT TO DO HERE

@@ -214,7 +214,8 @@ public class MackieMcuProExtension extends ControllerExtension {
 
    public void initChannelSections() {
       Preferences preferences = host.getPreferences();
-      SettableBooleanValue devicePositionChangeValue = preferences.getBooleanSetting("Left to Right", "Device Poistion(Restart required)", false);
+      SettableBooleanValue devicePositionChangeValue = preferences.getBooleanSetting("Left to Right", //
+         "Device Position (Restart required)", false);
 
       int sectionIndex = (devicePositionChangeValue.get()) ? 0 : nrOfExtenders;
       mainSection = new MixControl(this, midiIn, midiOut, sectionIndex, SectionType.MAIN, false);
@@ -224,7 +225,8 @@ public class MackieMcuProExtension extends ControllerExtension {
          final MidiIn extMidiIn = host.getMidiInPort(i + 1);
          if (extMidiIn != null && extMidiOut != null) {
             int extSectionIndex = (devicePositionChangeValue.get()) ? i + 1 : i;
-            final MixControl extenderSection = new ExtenderMixControl(this, extMidiIn, extMidiOut, extSectionIndex, false);
+            final MixControl extenderSection = new ExtenderMixControl(this, extMidiIn, extMidiOut, extSectionIndex,
+               false);
             sections.add(extenderSection);
          }
       }

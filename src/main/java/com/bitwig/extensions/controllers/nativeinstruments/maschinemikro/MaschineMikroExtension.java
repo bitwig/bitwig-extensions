@@ -12,6 +12,9 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 import com.bitwig.extensions.framework.values.FocusMode;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class MaschineMikroExtension extends ControllerExtension {
 
    private final ControllerHost host;
@@ -20,18 +23,29 @@ public class MaschineMikroExtension extends ControllerExtension {
    private Layer shiftLayer;
    private FocusMode recordFocusMode = FocusMode.LAUNCHER;
    private StripMode stripMode = StripMode.NONE;
+   private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
+   private static ControllerHost debugHost;
 
    protected MaschineMikroExtension(final ControllerExtensionDefinition definition, final ControllerHost host) {
       super(definition, host);
       this.host = host;
    }
 
+   public static void println(final String format, final Object... args) {
+      if (debugHost != null) {
+         final LocalDateTime now = LocalDateTime.now();
+         //debugHost.println(now.format(DF) + " > " + String.format(format, args));
+         debugHost.println(String.format(format, args));
+      }
+   }
+
    @Override
    public void init() {
-      DebugOutMk.registerHost(host);
+      debugHost = host;
       initPreferences(host);
       final Context diContext = new Context(this);
       Layer progressLayer = diContext.createLayer("Progress_layer");
+      Layer lowPriorityLayer = diContext.createLayer("LOW_PRIORITY_LAYER");
       surface = diContext.getService(HardwareSurface.class);
       MidiIn midiIn = host.getMidiInPort(0);
       MidiOut midiOut = host.getMidiOutPort(0);
@@ -47,7 +61,7 @@ public class MaschineMikroExtension extends ControllerExtension {
       EncoderLayer encoderLayer = diContext.create(EncoderLayer.class);
       diContext.getService(ModeHandler.class).setEncoderLayer(encoderLayer);
       mainLayer.setIsActive(true);
-
+      lowPriorityLayer.setIsActive(true);
       midiProcessor.start();
       diContext.activate();
    }
@@ -75,7 +89,7 @@ public class MaschineMikroExtension extends ControllerExtension {
 
       hwElements.getButton(CcAssignment.RECORD).bindPressed(mainLayer, () -> handleRecordButton(transport, focusClip));
       hwElements.getButton(CcAssignment.RECORD).bindLight(mainLayer, () -> recordActive(transport));
-      hwElements.getButton(CcAssignment.RECORD).bindPressed(shiftLayer, () -> handleRecordButton(transport));
+      hwElements.getButton(CcAssignment.RECORD).bindPressed(shiftLayer, () -> handleRecordButtonShift(transport));
       hwElements.getButton(CcAssignment.RECORD).bindLight(shiftLayer, () -> recordActive(transport));
 
       hwElements.getButton(CcAssignment.AUTO)
@@ -111,14 +125,24 @@ public class MaschineMikroExtension extends ControllerExtension {
    }
 
    private void handleRecordButton(Transport transport, FocusClip focusClip) {
-      focusClip.invokeRecord();
+      if (recordFocusMode == FocusMode.LAUNCHER) {
+         focusClip.invokeRecord();
+      } else {
+         if (transport.isArrangerRecordEnabled().get()) {
+            transport.isArrangerRecordEnabled().set(false);
+            transport.stop();
+         } else {
+            transport.isArrangerRecordEnabled().set(true);
+            transport.play();
+         }
+      }
    }
 
-   private void handleRecordButton(Transport transport) {
+   private void handleRecordButtonShift(Transport transport) {
       if (recordFocusMode == FocusMode.LAUNCHER) {
          transport.isClipLauncherOverdubEnabled().toggle();
       } else {
-         transport.isClipLauncherOverdubEnabled().toggle();
+         transport.isArrangerRecordEnabled().toggle();
       }
    }
 
@@ -130,8 +154,7 @@ public class MaschineMikroExtension extends ControllerExtension {
    }
 
    void initPreferences(final ControllerHost host) {
-      final Preferences preferences = host.getPreferences(); // THIS
-      final SettableEnumValue recordButtonAssignment = preferences.getEnumSetting("Record Button assignment", //
+      final SettableEnumValue recordButtonAssignment = host.getDocumentState().getEnumSetting("Record Button", //
          "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
          recordFocusMode.getDescriptor());
       recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));
@@ -139,7 +162,7 @@ public class MaschineMikroExtension extends ControllerExtension {
 
    @Override
    public void exit() {
-      
+
    }
 
    @Override

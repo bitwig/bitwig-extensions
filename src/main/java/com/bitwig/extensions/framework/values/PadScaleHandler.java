@@ -71,6 +71,23 @@ public class PadScaleHandler {
          });
    }
 
+   public int matchScale(int inNote, int dir) {
+      Scale scale = scales.get(currentScale);
+      int scaleIndex = (inNote % 12 + 12 - baseNote) % 12;
+      if (scale.inScale(scaleIndex)) {
+         return inNote;
+      }
+      int nextInScale = scale.nextInScale(scaleIndex);
+      int diff = nextInScale - scaleIndex;
+      return inNote + diff * dir;
+   }
+
+   public boolean inScale(int inNote) {
+      Scale scale = scales.get(currentScale);
+      int scaleIndex = (inNote % 12 + 12 - baseNote) % 12;
+      return scale.inScale(scaleIndex);
+   }
+
    public void incScaleSelection(int dir) {
       currentScale += dir;
       if (currentScale >= scales.size()) {
@@ -117,5 +134,10 @@ public class PadScaleHandler {
 
    public boolean isBaseNote(int note) {
       return (note + 12 - baseNote) % 12 == 0;
+   }
+
+   public boolean inScale(Integer note) {
+      int noteBase = (note - baseNote + 120) % 12;
+      return getCurrentScale().inScale(noteBase);
    }
 }
