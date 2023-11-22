@@ -281,7 +281,7 @@ public class MiniLab3Extension extends ControllerExtension {
 
    private void setUpPreferences() {
       DocumentState documentState = getHost().getDocumentState(); // THIS
-      final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Recording Button assignment", //
+      final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Record Button assignment", //
          "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
          recordFocusMode.getDescriptor());
       recordButtonAssignment.addValueObserver(value -> {
