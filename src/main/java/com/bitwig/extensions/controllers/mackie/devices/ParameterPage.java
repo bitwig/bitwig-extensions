@@ -134,7 +134,7 @@ public class ParameterPage implements SettableRangedValue {
    }
 
    @Override
-   public double getOrigin()
+   public DoubleValue getOrigin()
    {
       return currentParameter.parameter.getOrigin();
    }
