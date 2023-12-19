@@ -36,6 +36,7 @@ import com.bitwig.extension.controller.api.PianoKeyboard;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
@@ -205,6 +206,45 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          else
             mBrowserLayer.deactivate();
       });
+
+      setupEncoders();
+
+   }
+
+   /**
+    * Sets up the encoders for the MIDI controller. This method configures each encoder
+    * by attaching a value observer to the corresponding parameter in the DAW.
+    * When a parameter value changes (for example, due to an encoder being adjusted),
+    * the display is updated to show the current parameter name and its value.
+    * It assumes that the encoders are already created in the `initHardwareSurface` method.
+    */
+   private void setupEncoders() {
+      // Assuming mEncoders have already been created in initHardwareSurface
+      for (int i = 0; i < 8; i++) {
+         final int index = i;
+         final RemoteControl parameter = mRemoteControls.getParameter(i);
+
+         // Configure the existing encoders, e.g., adding value observers
+         parameter.value().addValueObserver(value -> {
+            String paramValue = parameter.value().displayedValue().get();
+            updateEncoderDisplay(index, parameter.name().get(), paramValue);
+         });
+      }
+   }
+
+   /**
+    * Updates the MIDI controller's display with encoder information.
+    * The first line shows the name of the currently selected track,
+    * and the second line displays the encoder parameter name (truncated to 9 characters) and its value.
+    *
+    * @param encoderIndex The index of the encoder being updated.
+    * @param paramName The name of the parameter controlled by the encoder.
+    * @param paramValue The current value of the parameter.
+    */
+   private void updateEncoderDisplay(int encoderIndex, String paramName, String paramValue) {
+      mDisplay.line(0).text().setValue(mCursorTrack.name().get());
+      mDisplay.line(1).text().setValue(String.format("%.9s", paramName) + ": " + paramValue);
+
    }
 
    private void initHardwareSurface()
