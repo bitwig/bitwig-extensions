@@ -34,8 +34,10 @@ import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PianoKeyboard;
 import com.bitwig.extension.controller.api.PopupBrowser;
+import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
@@ -271,6 +273,11 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          }
       };
 
+      for (int i = 0; i < 8; ++i)
+      {
+         mRemoteControlValueLayers[i] = new Layer(mLayers, "RemoteControlValue" + i);
+      }
+
       mMultiLayer = new Layer(mLayers, "Multi")
       {
          @Override
@@ -381,7 +388,21 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
       for (int i = 0; i < 8; i++)
       {
-         layer.bind(mEncoders[i], mRemoteControls.getParameter(i));
+         final RemoteControl parameter = mRemoteControls.getParameter(i);
+
+         layer.bind(mEncoders[i], parameter);
+
+         final Layer remoteControlValueLayer = mRemoteControlValueLayers[i];
+         remoteControlValueLayer.showText(parameter.name(), parameter.value().displayedValue());
+
+         // When the value of a remote control changes, show it briefly on the display
+         parameter.exists().markInterested();
+         final RelativeHardwarControlBindable showNotificationAction =
+         getHost().createRelativeHardwareControlAdjustmentTarget(value -> {
+            if (parameter.exists().get())
+               showNotificationLayer(remoteControlValueLayer);
+         });
+         layer.bind(mEncoders[i], showNotificationAction);
       }
 
       layer.bind(mWheel, mCursorTrack);
@@ -395,6 +416,24 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          () -> mCursorTrack.exists().get()
             ? mDevice.exists().get() ? (mDevice.name().getLimited(16)) : "No Device"
             : "");
+   }
+
+   private void showNotificationLayer(final Layer layer)
+   {
+      if (mCurrentNotificationLayer != null && mCurrentNotificationLayer != layer)
+         mCurrentNotificationLayer.deactivate();
+
+      // Activate
+      layer.activate();
+      mCurrentNotificationLayer = layer;
+
+      // Deactivate after a brief delay
+      final int taskCount = ++mShowNotificationLayerTaskCount;
+      getHost().scheduleTask(() -> {
+         if (mShowNotificationLayerTaskCount != taskCount)
+            return; // other tasks were scheduled in the meantime
+         layer.deactivate();
+      }, 500);
    }
 
    private void initBrowserLayer()
@@ -842,6 +881,12 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    private Layer mBaseLayer;
 
    private Layer mDAWLayer;
+
+   private Layer[] mRemoteControlValueLayers = new Layer[8];
+
+   private int mShowNotificationLayerTaskCount;
+
+   private Layer mCurrentNotificationLayer;
 
    private Layer mBrowserLayer;
 
