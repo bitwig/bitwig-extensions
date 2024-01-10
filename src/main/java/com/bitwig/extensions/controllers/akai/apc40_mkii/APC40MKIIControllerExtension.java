@@ -193,7 +193,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
       mIsMasterSelected = mTrackCursor.createEqualsValue(mMasterTrack);
 
-      PinnableCursorDevice channelStripDevice =
+      final PinnableCursorDevice channelStripDevice =
          mTrackCursor.createCursorDevice("channel-strip", "Channel Strip", 4, CursorDeviceFollowMode.LAST_DEVICE);
       channelStripDevice.exists().markInterested();
       mChannelStripRemoteControls = channelStripDevice.createCursorRemoteControlsPage(8);
@@ -515,7 +515,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       if (ENABLE_DEBUG_LAYER)
       {
-         Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
+         final Layer debugLayer = DebugUtilities.createDebugLayer(mLayers, mHardwareSurface);
          debugLayer.activate();
       }
    }
@@ -882,14 +882,14 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mTapTempoButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_TAP_TEMPO));
       mTapTempoButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_TAP_TEMPO));
 
-      HardwareButton nudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
+      final HardwareButton nudgePlusButton = mHardwareSurface.createHardwareButton("Nudge+");
       nudgePlusButton.setLabel("NUDGE +");
       nudgePlusButton.setLabelPosition(RelativePosition.ABOVE);
       nudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
       nudgePlusButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_PLUS));
 
-      HardwareButton nudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
+      final HardwareButton nudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
       nudgeMinusButton.setLabel("NUDGE -");
       nudgeMinusButton.setLabelPosition(RelativePosition.ABOVE);
       nudgeMinusButton.pressedAction()
@@ -997,7 +997,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createArmButtons()
    {
       mArmButtons = new HardwareButton[8];
-      OnOffHardwareLight[] armLeds = new OnOffHardwareLight[8];
+      final OnOffHardwareLight[] armLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Arm-" + x);
@@ -1019,7 +1019,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createSoloButtons()
    {
       mSoloButtons = new HardwareButton[8];
-      OnOffHardwareLight[] soloLeds = new OnOffHardwareLight[8];
+      final OnOffHardwareLight[] soloLeds = new OnOffHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("Solo-" + x);
@@ -1074,7 +1074,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
             bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
             mGridButtons[y * 8 + x] = bt;
-            mGridLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_GRID0 + x + (4 - y) * 8);
+            mGridLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_GRID0 + x + (4 - y) * 8, mMidiOut);
          }
       }
 
@@ -1087,7 +1087,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SCENE0 + y));
          mSceneButtons[y] = bt;
 
-         mSceneLeds[y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_SCENE0 + y);
+         mSceneLeds[y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_SCENE0 + y, mMidiOut);
       }
    }
 
@@ -1298,7 +1298,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mShiftButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_SHIFT));
       mShiftButton.isPressed().markInterested();
 
-      HardwareButton bankButton = mHardwareSurface.createHardwareButton("Bank");
+      final HardwareButton bankButton = mHardwareSurface.createHardwareButton("Bank");
       bankButton.setLabel("BANK");
       bankButton.setLabelPosition(RelativePosition.BELOW);
       bankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_BANK));
@@ -1466,33 +1466,36 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 5; ++i)
       {
          final RgbLed rgbLed = mSceneLeds[i];
+
+         int colorValue = RGBLedState.COLOR_NONE, blinkColorValue = RGBLedState.COLOR_NONE, blinkType = RGBLedState.BLINK_NONE;
+
          if (mSendsOn.isOn())
          {
             final boolean isSelected = mSendIndex == i;
-            rgbLed.setColor(isSelected ? RGBLedState.COLOR_SELECTED : RGBLedState.COLOR_SELECTABLE);
-            rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
-            rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
+            colorValue = isSelected ? RGBLedState.COLOR_SELECTED : RGBLedState.COLOR_SELECTABLE;
+            blinkType = RGBLedState.BLINK_NONE;
+            blinkColorValue = RGBLedState.COLOR_NONE;
          }
          else if (mUserOn.isOn())
          {
             final boolean exists = i < mProjectRemoteControls.pageCount().get();
             final boolean isSelected = exists && mProjectRemoteControls.selectedPageIndex().get() == i;
-            rgbLed.setColor(isSelected ? RGBLedState.COLOR_SELECTED : (exists ? RGBLedState.COLOR_SELECTABLE : RGBLedState.COLOR_NONE));
-            rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
-            rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
+            colorValue = isSelected ? RGBLedState.COLOR_SELECTED : (exists ? RGBLedState.COLOR_SELECTABLE : RGBLedState.COLOR_NONE);
+            blinkType = RGBLedState.BLINK_NONE;
+            blinkColorValue = RGBLedState.COLOR_NONE;
          }
          else
          {
             final Scene scene = mSceneBank.getScene(i);
             if (scene.exists().get())
-               rgbLed.setColor(scene.color());
+               colorValue = RGBLedState.getColorValueForColor(scene.color().get());
             else
-               rgbLed.setColor(RGBLedState.COLOR_NONE);
-            rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
-            rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
+               colorValue = (RGBLedState.COLOR_NONE);
+            blinkType = RGBLedState.BLINK_NONE;
+            blinkColorValue = RGBLedState.COLOR_NONE;
          }
 
-         rgbLed.paint(mMidiOut);
+         rgbLed.setState(new RGBLedState(colorValue, blinkColorValue, blinkType));
       }
    }
 
@@ -1502,15 +1505,16 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       {
          final Track track = mTrackBank.getItemAt(i);
          final ClipLauncherSlotBank clipLauncherSlotBank = track.clipLauncherSlotBank();
+
          for (int j = 0; j < 5; ++j)
          {
             final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
             final RgbLed rgbLed = mGridLeds[i][j];
 
+            int colorValue = RGBLedState.COLOR_NONE, blinkColorValue = RGBLedState.COLOR_NONE, blinkType = RGBLedState.BLINK_NONE;
+
             if (slot.exists().get() && slot.hasContent().get())
-               rgbLed.setColor(slot.color().red(), slot.color().green(), slot.color().blue());
-            else
-               rgbLed.setColor(RGBLedState.COLOR_NONE);
+               colorValue = RGBLedState.getColorValueForRGB(slot.color().red(), slot.color().green(), slot.color().blue());
 
             /*
              * if (slot.isStopQueued().get()) { rgbLed.setBlinkType(RgbLed.BLINK_STOP_QUEUED);
@@ -1519,33 +1523,33 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
             if (slot.isRecordingQueued().get())
             {
-               rgbLed.setBlinkType(RGBLedState.BLINK_RECORD_QUEUED);
-               rgbLed.setBlinkColor(RGBLedState.COLOR_RECORDING);
+               blinkType = RGBLedState.BLINK_RECORD_QUEUED;
+               blinkColorValue = RGBLedState.COLOR_RECORDING;
             }
             else if (slot.isPlaybackQueued().get())
             {
-               rgbLed.setBlinkType(RGBLedState.BLINK_PLAY_QUEUED);
-               rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING_QUEUED);
+               blinkType = RGBLedState.BLINK_PLAY_QUEUED;
+               blinkColorValue = RGBLedState.COLOR_PLAYING_QUEUED;
             }
             else if (slot.isRecording().get())
             {
-               rgbLed.setColor(RGBLedState.COLOR_NONE);
-               rgbLed.setBlinkType(RGBLedState.BLINK_ACTIVE);
-               rgbLed.setBlinkColor(RGBLedState.COLOR_RECORDING);
+               colorValue = RGBLedState.COLOR_NONE;
+               blinkType = RGBLedState.BLINK_ACTIVE;
+               blinkColorValue = RGBLedState.COLOR_RECORDING;
             }
             else if (slot.isPlaying().get())
             {
-               rgbLed.setColor(RGBLedState.COLOR_NONE);
-               rgbLed.setBlinkType(RGBLedState.BLINK_ACTIVE);
-               rgbLed.setBlinkColor(RGBLedState.COLOR_PLAYING);
+               colorValue = RGBLedState.COLOR_NONE;
+               blinkType = RGBLedState.BLINK_ACTIVE;
+               blinkColorValue = RGBLedState.COLOR_PLAYING;
             }
             else /* stopped */
             {
-               rgbLed.setBlinkType(RGBLedState.BLINK_NONE);
-               rgbLed.setBlinkColor(RGBLedState.COLOR_NONE);
+               blinkType = RGBLedState.BLINK_NONE;
+               blinkColorValue = RGBLedState.COLOR_NONE;
             }
 
-            rgbLed.paint(mMidiOut);
+            rgbLed.setState(new RGBLedState(colorValue, blinkColorValue, blinkType));
          }
       }
    }
