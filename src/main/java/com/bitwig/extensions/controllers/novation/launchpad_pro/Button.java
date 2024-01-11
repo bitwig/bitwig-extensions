@@ -63,6 +63,7 @@ final class Button
 
       final MultiStateHardwareLight light = hardwareSurface.createMultiStateHardwareLight(id + "-light");
       light.state().setValue(LedState.OFF);
+      light.setColorToStateFunction(color -> new LedState(color));
       light.state().onUpdateHardware(internalHardwareLightState -> mDriver.updateButtonLed(Button.this));
       bt.setBackgroundLight(light);
 
