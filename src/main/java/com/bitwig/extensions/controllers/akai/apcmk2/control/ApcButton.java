@@ -37,6 +37,7 @@ public abstract class ApcButton {
         light = surface.createMultiStateHardwareLight(name + "_LIGHT_" + midiId);
         hwButton.setBackgroundLight(light);
         light.state().setValue(RgbLightState.OFF);
+        light.setColorToStateFunction(RgbLightState::forColor);
         hwButton.isPressed().markInterested();
     }
 

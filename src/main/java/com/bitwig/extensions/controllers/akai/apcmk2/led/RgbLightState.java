@@ -1,11 +1,12 @@
 package com.bitwig.extensions.controllers.akai.apcmk2.led;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extensions.framework.values.Midi;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class RgbLightState extends InternalHardwareLightState {
 
@@ -21,28 +22,38 @@ public class RgbLightState extends InternalHardwareLightState {
     private final int colorIndex;
     private final LedBehavior ledBehavior;
 
-    public static RgbLightState of(int colorIndex) {
+    public static RgbLightState of(final int colorIndex) {
         return STATE_MAP.computeIfAbsent(colorIndex | LedBehavior.FULL.getCode() << 8,
-           index -> new RgbLightState(colorIndex));
+                index -> new RgbLightState(colorIndex));
     }
 
-    public static RgbLightState of(int colorIndex, LedBehavior behavior) {
+    public static RgbLightState of(final int colorIndex, final LedBehavior behavior) {
         return STATE_MAP.computeIfAbsent(colorIndex | behavior.getCode() << 8,
-           index -> new RgbLightState(colorIndex, behavior));
+                index -> new RgbLightState(colorIndex, behavior));
     }
 
-    public RgbLightState behavior(LedBehavior behavior) {
+    public static RgbLightState forColor(final Color color) {
+        if (color == null || color.getAlpha() == 0
+                || color.getRed() == 0 && color.getGreen() == 0 && color.getBlue() == 0)
+            return OFF;
+
+        // TODO: Better color mapping here.
+        // This will be used for manual mapping feedback
+        return WHITE;
+    }
+
+    public RgbLightState behavior(final LedBehavior behavior) {
         if (this.ledBehavior == behavior) {
             return this;
         }
         return of(this.colorIndex, behavior);
     }
 
-    private RgbLightState(int colorIndex) {
+    private RgbLightState(final int colorIndex) {
         this(colorIndex, LedBehavior.FULL);
     }
 
-    private RgbLightState(int colorIndex, LedBehavior ledBehavior) {
+    private RgbLightState(final int colorIndex, final LedBehavior ledBehavior) {
         this.colorIndex = colorIndex;
         this.ledBehavior = ledBehavior;
     }
@@ -57,13 +68,17 @@ public class RgbLightState extends InternalHardwareLightState {
 
     @Override
     public HardwareLightVisualState getVisualState() {
-        return null;
+        if (colorIndex == 0)
+            return null;
+
+        // TODO: Better visual representation
+        return HardwareLightVisualState.createForColor(Color.fromRGB(1, 1, 1));
     }
 
     @Override
     public boolean equals(final Object o) {
         if (o instanceof RgbLightState) {
-            RgbLightState other = (RgbLightState) o;
+            final RgbLightState other = (RgbLightState) o;
             return other.colorIndex == colorIndex && other.ledBehavior == ledBehavior;
         }
         return false;
