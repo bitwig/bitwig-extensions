@@ -25,8 +25,10 @@ public class PadButton extends OxygenButton {
       hwButton.isPressed().markInterested();
       light = surface.createMultiStateHardwareLight(name + "_LIGHT_" + midiId);
       light.state().setValue(RgbLightState.OFF);
+      light.setColorToStateFunction(RgbLightState::forColor);
       hwButton.isPressed().markInterested();
       light.state().onUpdateHardware(this::updateState);
+      hwButton.setBackgroundLight(light);
    }
 
    private void updateState(final InternalHardwareLightState state) {
