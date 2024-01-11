@@ -145,13 +145,6 @@ class RGBLedState extends InternalHardwareLightState
       return new RGBLedState(colorValue, COLOR_NONE, BLINK_NONE);
    }
 
-   public static RGBLedState getBestStateForColor(final float red, final float green, final float blue) 
-   {
-      final int colorValue = getColorValueForRGB(red, green, blue);
-
-      return new RGBLedState(colorValue, COLOR_NONE, BLINK_NONE);
-   }
-
    public RGBLedState(final int color, final int blinkColor, final int blinkType)
    {
       super();

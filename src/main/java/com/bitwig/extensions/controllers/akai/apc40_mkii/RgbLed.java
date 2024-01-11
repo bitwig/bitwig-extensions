@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
-import com.bitwig.extension.controller.api.ColorValue;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -48,11 +47,6 @@ class RgbLed
       {
          midiOut.sendMidi(mMessage << 4, mData1, color);
       }
-   }
-
-   public void setColor(final float red, final float green, final float blue)
-   {
-      setState(RGBLedState.getBestStateForColor(red, green, blue));
    }
 
    public RGBLedState getState()
