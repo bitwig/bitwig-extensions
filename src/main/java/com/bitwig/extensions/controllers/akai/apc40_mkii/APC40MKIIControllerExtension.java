@@ -17,10 +17,10 @@ import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Preferences;
@@ -41,7 +41,7 @@ import com.bitwig.extensions.framework.DebugUtilities;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
-public class APC40MKIIControllerExtension extends ControllerExtension
+class APC40MKIIControllerExtension extends ControllerExtension
 {
    private static final boolean ENABLE_DEBUG_LAYER = false;
 
@@ -547,11 +547,9 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mMainLayer.bindToggle(mSoloButtons[x], track.solo());
          mMainLayer.bindToggle(mArmButtons[x], track.arm());
          mMainLayer.bindPressed(mABButtons[x], getHost().createAction(() -> {
-            final SettableEnumValue crossFadeMode = track.crossFadeMode();
-            final int nextValue = (crossFadeToInt(crossFadeMode.get()) + 1) % 3;
-            crossFadeMode.set(intToCrossFade(nextValue));
+            track.crossFadeMode().set(CrossFadeMode.forTrack(track).getNext().getEnumName());
          }, () -> "Cycle through crossfade values"));
-         mMainLayer.bind(track.crossFadeMode(), mABLeds[x]);
+         mMainLayer.bindLightState(() -> CrossFadeMode.forTrack(track), mABLeds[x]);
 
          mMainLayer.bindPressed(mTrackSelectButtons[x],
             getHost().createAction(() -> mTrackCursor.selectChannel(track), () -> "Selects the track"));
@@ -969,7 +967,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    private void createABButtons()
    {
       mABButtons = new HardwareButton[8];
-      mABLeds = new HardwareTextDisplay[8];
+      mABLeds = new MultiStateHardwareLight[8];
       for (int x = 0; x < 8; ++x)
       {
          final HardwareButton bt = mHardwareSurface.createHardwareButton("AB-" + x);
@@ -978,20 +976,12 @@ public class APC40MKIIControllerExtension extends ControllerExtension
          mABButtons[x] = bt;
 
          final int channel = x;
-         final HardwareTextDisplay led = mHardwareSurface.createHardwareTextDisplay("ABLed-" + x, 1);
-         led.onUpdateHardware(() -> sendLedUpdate(BT_TRACK_AB, channel, crossFadeToInt(led.line(0).text().currentValue())));
+         final MultiStateHardwareLight led = mHardwareSurface.createMultiStateHardwareLight("ABLed-" + x);
+         led.setColorToStateFunction(CrossFadeMode::getBestModeForColor);
+         led.state().onUpdateHardware(state -> sendLedUpdate(BT_TRACK_AB, channel, (CrossFadeMode)state));
+         bt.setBackgroundLight(led);
          mABLeds[x] = led;
       }
-   }
-
-   private static Color getABLedColor(final int i)
-   {
-      return switch (i)
-         {
-            case 1 -> Color.fromRGB(1.0, 0.5, 0);
-            case 2 -> Color.fromRGB(0, 0, 1.0);
-            default -> Color.fromRGB(0, 0, 0);
-         };
    }
 
    private void createArmButtons()
@@ -1398,6 +1388,11 @@ public class APC40MKIIControllerExtension extends ControllerExtension
       mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note, isOn ? 1 : 0);
    }
 
+   private void sendLedUpdate(final int note, final int channel, final CrossFadeMode lightState)
+   {
+      mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note, lightState != null ? lightState.getColorIndex() : CrossFadeMode.AB.getColorIndex());
+   }
+
    private void sendLedUpdate(final int note, final int channel, final int color)
    {
       mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note, color);
@@ -1426,25 +1421,6 @@ public class APC40MKIIControllerExtension extends ControllerExtension
    {
       // Set the device in the proper mode (Ableton Live Mode 2)
       mMidiOut.sendSysex("F0 47 7F 29 60 00 04 41 02 01 00 F7");
-   }
-
-   private String intToCrossFade(final int index)
-   {
-      return switch (index)
-         {
-            case 1 -> "A";
-            case 2 -> "B";
-            default -> "AB";
-         };
-   }
-
-   private int crossFadeToInt(final String s)
-   {
-      if (s.equals("A"))
-         return 1;
-      if (s.equals("B"))
-         return 2;
-      return 0;
    }
 
    @Override
@@ -1817,7 +1793,7 @@ public class APC40MKIIControllerExtension extends ControllerExtension
 
    private OnOffHardwareLight[] mMuteLeds;
 
-   private HardwareTextDisplay[] mABLeds;
+   private MultiStateHardwareLight[] mABLeds;
 
    private OnOffHardwareLight[] mTrackSelectLeds;
 
