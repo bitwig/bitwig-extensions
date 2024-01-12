@@ -560,9 +560,9 @@ final class LaunchpadProControllerExtension extends ControllerExtension
       mMidiOut.sendSysex("F0 00 20 29 02 10 0E 00 F7");
    }
 
-   public void updateButtonLed(final Button button)
+   public void updateButtonLed(final Button button, final LedState ledState)
    {
-      button.appendLedUpdate(mLedClearSysexBuffer, mLedColorUpdateSysexBuffer, mLedPulseUpdateSysexBuffer);
+      button.appendLedUpdate(ledState, mLedClearSysexBuffer, mLedColorUpdateSysexBuffer, mLedPulseUpdateSysexBuffer);
 
       // Let's not send sysex that are too big
       if (mLedColorUpdateSysexBuffer.length() >= 4 * 3 * 48)
