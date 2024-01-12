@@ -21,8 +21,8 @@ public abstract class LaunchPadButton {
    public static final int STD_REPEAT_DELAY = 400;
    public static final int STD_REPEAT_FREQUENCY = 50;
 
-   protected HardwareButton hwButton;
-   protected MultiStateHardwareLight light;
+   protected final HardwareButton hwButton;
+   protected final MultiStateHardwareLight light;
    protected final MidiProcessor midiProcessor;
    protected final int channel;
    private TimedEvent currentTimer;
