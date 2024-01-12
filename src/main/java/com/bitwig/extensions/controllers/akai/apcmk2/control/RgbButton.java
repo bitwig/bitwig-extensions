@@ -8,7 +8,7 @@ import com.bitwig.extensions.framework.values.Midi;
 
 public class RgbButton extends ApcButton {
 
-    protected RgbButton(final int channel, final int noteNr, String name, final HardwareSurface surface,
+    protected RgbButton(final int channel, final int noteNr, final String name, final HardwareSurface surface,
                         final MidiProcessor midiProcessor) {
         super(channel, noteNr, name, surface, midiProcessor);
         light.state().setValue(RgbLightState.OFF);
@@ -20,8 +20,7 @@ public class RgbButton extends ApcButton {
     }
 
     private void updateDrumState(final InternalHardwareLightState internalHardwareLightState) {
-        if (internalHardwareLightState instanceof RgbLightState) {
-            RgbLightState state = (RgbLightState) internalHardwareLightState;
+        if (internalHardwareLightState instanceof final RgbLightState state) {
             midiProcessor.sendMidi(Midi.NOTE_ON | 0x9, midiId, state.getColorIndex());
         } else {
             midiProcessor.sendMidi(Midi.NOTE_ON, midiId, 0);
@@ -31,7 +30,7 @@ public class RgbButton extends ApcButton {
 
     private void updateState(final InternalHardwareLightState internalHardwareLightState) {
         if (internalHardwareLightState instanceof RgbLightState) {
-            RgbLightState state = (RgbLightState) internalHardwareLightState;
+            final RgbLightState state = (RgbLightState) internalHardwareLightState;
             midiProcessor.sendMidi(state.getMidiCode(), midiId, state.getColorIndex());
         } else {
             midiProcessor.sendMidi(Midi.NOTE_ON, midiId, 0);

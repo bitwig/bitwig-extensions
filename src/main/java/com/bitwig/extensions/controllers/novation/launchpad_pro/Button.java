@@ -4,10 +4,8 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
-import com.bitwig.extension.controller.api.ObjectHardwareProperty;
 
 final class Button
 {
@@ -63,7 +61,8 @@ final class Button
 
       final MultiStateHardwareLight light = hardwareSurface.createMultiStateHardwareLight(id + "-light");
       light.state().setValue(LedState.OFF);
-      light.state().onUpdateHardware(internalHardwareLightState -> mDriver.updateButtonLed(Button.this));
+      light.setColorToStateFunction(color -> new LedState(color));
+      light.state().onUpdateHardware(internalHardwareLightState -> mDriver.updateButtonLed(Button.this, (LedState)internalHardwareLightState));
       bt.setBackgroundLight(light);
 
       mButton = bt;
@@ -100,21 +99,14 @@ final class Button
       return mButtonState == State.PRESSED || mButtonState == State.HOLD;
    }
 
-   public void appendLedUpdate(
+   public void appendLedUpdate(LedState ledState,
       final StringBuilder ledClear, final StringBuilder ledUpdate, final StringBuilder ledPulseUpdate)
    {
-      final ObjectHardwareProperty<InternalHardwareLightState> state = mLight.state();
-      LedState currentState = (LedState)state.currentValue();
-      final LedState lastSent = (LedState)state.lastSentValue();
+      if (ledState == null)
+         ledState = LedState.OFF;
 
-      if (currentState == null)
-         currentState = LedState.OFF;
-
-      if (lastSent != null && currentState.equals(lastSent))
-         return;
-
-      final Color color = currentState.mColor;
-      final int pulse = currentState.mPulse;
+      final Color color = ledState.mColor;
+      final int pulse = ledState.mPulse;
 
       if (pulse == NO_PULSE)
       {

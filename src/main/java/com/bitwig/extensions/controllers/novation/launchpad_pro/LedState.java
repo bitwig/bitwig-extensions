@@ -84,15 +84,19 @@ final class LedState extends InternalHardwareLightState
    final static LedState SCALE_ON_COLOR = new LedState(Color.fromRgb255(50, 167, 202));
    final static LedState SCALE_OFF_COLOR = new LedState(Color.scale(SCALE_ON_COLOR.mColor, 0.2f));
 
-
    public LedState(final ColorValue color)
    {
       this(new Color(color));
    }
 
-   LedState(final Color color)
+   public LedState(final Color color)
    {
-      this(color, 0);
+      this(color, 1);
+   }
+
+   public LedState(final com.bitwig.extension.api.Color color)
+   {
+      this(new Color(color));
    }
 
    LedState(final Color color, final int pulse)

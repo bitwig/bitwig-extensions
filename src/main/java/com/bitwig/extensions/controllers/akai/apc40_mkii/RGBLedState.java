@@ -47,6 +47,8 @@ class RGBLedState extends InternalHardwareLightState
 
    private static final Map<Integer, Color> COLOR_VALUE_TO_COLOR_MAP = new HashMap<>();
 
+   public static final RGBLedState OFF_STATE = new RGBLedState(COLOR_NONE, COLOR_NONE, BLINK_NONE);
+
    private static void registerColor(final int rgb, final int value)
    {
       COLOR_VALUE_TO_COLOR_MAP.put(value,
@@ -110,9 +112,37 @@ class RGBLedState extends InternalHardwareLightState
       return 13;
    }
 
+   public static int getColorValueForRGB(final double red, final double green, final double blue)
+   {
+      final int r8 = (int)(red * 255);
+      final int g8 = (int)(green * 255);
+      final int b8 = (int)(blue * 255);
+      final int total = (r8 << 16) | (g8 << 8) | b8;
+
+      return getColorValueForRGB(total);
+   }
+
+   public static int getColorValueForColor(final Color color)
+   {
+      if (color == null || color.getAlpha() == 0)
+         return getColorValueForRGB(0);
+
+      return getColorValueForRGB(color.getRed(), color.getGreen(), color.getBlue());
+   }
+
    public static Color getColorForColorValue(final int colorValue)
    {
       return COLOR_VALUE_TO_COLOR_MAP.get(colorValue);
+   }
+
+   public static RGBLedState getBestStateForColor(final Color color) 
+   {
+      if (color == null || color.getAlpha() == 0)
+         return OFF_STATE;
+
+      final int colorValue = getColorValueForColor(color);
+
+      return new RGBLedState(colorValue, COLOR_NONE, BLINK_NONE);
    }
 
    public RGBLedState(final int color, final int blinkColor, final int blinkType)

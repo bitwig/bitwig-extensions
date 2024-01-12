@@ -71,8 +71,7 @@ public class RgbBankLightState extends InternalHardwareLightState {
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj instanceof RgbBankLightState) {
-            final RgbBankLightState other = (RgbBankLightState) obj;
+        if (obj instanceof final RgbBankLightState other) {
             return other.bank == bank && Arrays.equals(other.colors, colors);
         }
         return false;

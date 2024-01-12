@@ -1,16 +1,12 @@
 package com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.color;
 
+import java.util.Arrays;
+
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 public class RgbLightState extends InternalHardwareLightState {
-   private static final Map<Integer, RgbLightState> indexLookup = new HashMap<>();
-
    private static final int DIM_VAL = 0x20;
    private static final int MAX_VAL = 0x7F;
 
@@ -36,6 +32,18 @@ public class RgbLightState extends InternalHardwareLightState {
 
    private final HardwareLightVisualState visualState;
    private final BlinkState state;
+
+   public static RgbLightState forColor(final Color color)
+   {
+      if (color == null || color.getAlpha() == 0)
+         return OFF;
+
+      final int red = (int)(color.getRed() * MAX_VAL);
+      final int green = (int)(color.getGreen() * MAX_VAL);
+      final int blue = (int)(color.getBlue() * MAX_VAL);
+
+      return new RgbLightState(red, green, blue);
+   }
 
    RgbLightState(final int red, final int green, final int blue, final BlinkState state) {
       rgb = saturate(red, green, blue, SAT_AMOUNT);

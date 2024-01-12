@@ -1,21 +1,51 @@
 package com.bitwig.extensions.controllers.arturia.minilab3;
 
-import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
-import com.bitwig.extension.controller.ControllerExtension;
-import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.framework.Layers;
-import com.bitwig.extensions.framework.values.BasicStringValue;
-import com.bitwig.extensions.framework.values.BooleanValueObject;
-import com.bitwig.extensions.framework.values.ValueObject;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.function.IntConsumer;
+
+import com.bitwig.extension.api.util.midi.ShortMidiMessage;
+import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
+import com.bitwig.extension.controller.ControllerExtension;
+import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
+import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
+import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
+import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.Device;
+import com.bitwig.extension.controller.api.DeviceBank;
+import com.bitwig.extension.controller.api.DeviceMatcher;
+import com.bitwig.extension.controller.api.DocumentState;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.HardwareSlider;
+import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.InternalHardwareLightState;
+import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.Parameter;
+import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.Preferences;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.RelativeHardwareValueMatcher;
+import com.bitwig.extension.controller.api.RemoteControl;
+import com.bitwig.extension.controller.api.Scene;
+import com.bitwig.extension.controller.api.SettableEnumValue;
+import com.bitwig.extension.controller.api.SettableRangedValue;
+import com.bitwig.extension.controller.api.StringValue;
+import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.framework.values.BasicStringValue;
+import com.bitwig.extensions.framework.values.BooleanValueObject;
+import com.bitwig.extensions.framework.values.ValueObject;
 
 public class MiniLab3Extension extends ControllerExtension {
 
@@ -68,7 +98,7 @@ public class MiniLab3Extension extends ControllerExtension {
    private Transport transport;
    private PinnableCursorDevice primaryDevice;
    private FocusMode recordFocusMode = FocusMode.ARRANGER;
-   private EncoderStateMaschine encoderStateMaschine = new EncoderStateMaschine();
+   private final EncoderStateMaschine encoderStateMaschine = new EncoderStateMaschine();
 
    protected MiniLab3Extension(final MiniLab3ExtensionDefinition definition, final ControllerHost host) {
       super(definition, host);
@@ -280,7 +310,7 @@ public class MiniLab3Extension extends ControllerExtension {
 
 
    private void setUpPreferences() {
-      DocumentState documentState = getHost().getDocumentState(); // THIS
+      final DocumentState documentState = getHost().getDocumentState(); // THIS
       final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Record Button assignment", //
          "Transport", new String[]{FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
          recordFocusMode.getDescriptor());
@@ -288,7 +318,7 @@ public class MiniLab3Extension extends ControllerExtension {
          recordFocusMode = FocusMode.toMode(value);
          updateTrackInfo();
       });
-      Preferences preferences = getHost().getPreferences();
+      final Preferences preferences = getHost().getPreferences();
       final SettableEnumValue clipStopTiming = preferences.getEnumSetting("Long press to stop clip", //
          "Clip", new String[]{"Fast", "Medium", "Standard"}, "Medium");
       clipStopTiming.addValueObserver(clipLaunchingLayer::setClipStopTiming);
@@ -582,7 +612,7 @@ public class MiniLab3Extension extends ControllerExtension {
       }
    }
 
-   private void navigateScenesOrPads(int dir) {
+   private void navigateScenesOrPads(final int dir) {
       if (padBank.get() == PadBank.BANK_A) {
          oled.enableValues(DisplayMode.SCENE);
          oled.sendTextInfo(DisplayMode.SCENE, cursorTrack.name().get(), sceneTrackItem.name().get(), true);
@@ -660,8 +690,8 @@ public class MiniLab3Extension extends ControllerExtension {
    }
 
    public void updateBankState(final InternalHardwareLightState state) {
-      if (state instanceof RgbBankLightState) {
-         sysExHandler.sendBankState((RgbBankLightState) state);
+      if (state instanceof final RgbBankLightState lightState) {
+         sysExHandler.sendBankState(lightState);
       }
    }
 
@@ -713,7 +743,7 @@ public class MiniLab3Extension extends ControllerExtension {
    /**
     * Make sure no scene is launched upon release.
     */
-   public void notifyTurn(boolean shift) {
+   public void notifyTurn(final boolean shift) {
       encoderStateMaschine.notifyTurn(shift);
    }
 

@@ -1,10 +1,11 @@
 package com.bitwig.extensions.controllers.novation.commonsmk3;
 
-import com.bitwig.extension.controller.api.HardwareLightVisualState;
-import com.bitwig.extension.controller.api.InternalHardwareLightState;
-
 import java.util.HashMap;
 import java.util.Objects;
+
+import com.bitwig.extension.api.Color;
+import com.bitwig.extension.controller.api.HardwareLightVisualState;
+import com.bitwig.extension.controller.api.InternalHardwareLightState;
 
 public class RgbState extends InternalHardwareLightState {
 
@@ -35,6 +36,14 @@ public class RgbState extends InternalHardwareLightState {
     private final int colorIndex;
     private final int altColorIndex;
     private LightState state;
+
+    public static RgbState forColor(final Color color) {
+        if (color == null || color.getAlpha() == 0)
+            return OFF;
+
+        // TODO: Improve this
+        return WHITE;
+    }
 
     private RgbState(final int colorIndex, final LightState state) {
         super();

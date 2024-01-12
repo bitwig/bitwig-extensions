@@ -1,14 +1,19 @@
 package com.bitwig.extensions.controllers.akai.apcmk2.control;
 
-import com.bitwig.extension.controller.api.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.InternalHardwareLightState;
+import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extensions.controllers.akai.apcmk2.led.RgbLightState;
 import com.bitwig.extensions.controllers.akai.apcmk2.midi.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.time.TimeRepeatEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
-
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public abstract class ApcButton {
     public static final int STD_REPEAT_DELAY = 400;
@@ -21,7 +26,7 @@ public abstract class ApcButton {
     private long recordedDownTime;
     protected final int midiId;
 
-    protected ApcButton(final int channel, final int midiId, String name, HardwareSurface surface,
+    protected ApcButton(final int channel, final int midiId, final String name, final HardwareSurface surface,
                         final MidiProcessor midiProcessor) {
         this.midiProcessor = midiProcessor;
         final MidiIn midiIn = midiProcessor.getMidiIn();
@@ -30,7 +35,9 @@ public abstract class ApcButton {
         hwButton.pressedAction().setPressureActionMatcher(midiIn.createNoteOnVelocityValueMatcher(channel, midiId));
         hwButton.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(channel, midiId));
         light = surface.createMultiStateHardwareLight(name + "_LIGHT_" + midiId);
+        hwButton.setBackgroundLight(light);
         light.state().setValue(RgbLightState.OFF);
+        light.setColorToStateFunction(RgbLightState::forColor);
         hwButton.isPressed().markInterested();
     }
 

@@ -1,22 +1,28 @@
 package com.bitwig.extensions.controllers.novation.commonsmk3;
 
-import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.framework.time.TimeRepeatEvent;
-import com.bitwig.extensions.framework.time.TimedDelayEvent;
-import com.bitwig.extensions.framework.time.TimedEvent;
-
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.InternalHardwareLightState;
+import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.MultiStateHardwareLight;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
+import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.time.TimeRepeatEvent;
+import com.bitwig.extensions.framework.time.TimedDelayEvent;
+import com.bitwig.extensions.framework.time.TimedEvent;
+
 public abstract class LaunchPadButton {
    public static final int STD_REPEAT_DELAY = 400;
    public static final int STD_REPEAT_FREQUENCY = 50;
 
-   protected HardwareButton hwButton;
-   protected MultiStateHardwareLight light;
+   protected final HardwareButton hwButton;
+   protected final MultiStateHardwareLight light;
    protected final MidiProcessor midiProcessor;
    protected final int channel;
    private TimedEvent currentTimer;
@@ -30,6 +36,8 @@ public abstract class LaunchPadButton {
       hwButton = surface.createHardwareButton(id);
       light = surface.createMultiStateHardwareLight(id + "-light");
       light.state().setValue(RgbState.of(0));
+      light.setColorToStateFunction(RgbState::forColor);
+      hwButton.setBackgroundLight(light);
       hwButton.isPressed().markInterested();
    }
 

@@ -1,12 +1,30 @@
 package com.bitwig.extensions.controllers.mackie.section;
 
-import com.bitwig.extension.controller.api.*;
+import com.bitwig.extension.controller.api.Channel;
+import com.bitwig.extension.controller.api.CursorDeviceLayer;
+import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.Device;
+import com.bitwig.extension.controller.api.DrumPad;
+import com.bitwig.extension.controller.api.DrumPadBank;
+import com.bitwig.extension.controller.api.InsertionPoint;
+import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.MultiStateHardwareLight;
+import com.bitwig.extension.controller.api.NoteInput;
+import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.SendBank;
+import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.mackie.ButtonViewState;
 import com.bitwig.extensions.controllers.mackie.MackieMcuProExtension;
 import com.bitwig.extensions.controllers.mackie.MixerMode;
 import com.bitwig.extensions.controllers.mackie.VPotMode;
-import com.bitwig.extensions.controllers.mackie.configurations.*;
+import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration;
 import com.bitwig.extensions.controllers.mackie.configurations.BrowserConfiguration.Type;
+import com.bitwig.extensions.controllers.mackie.configurations.DeviceMenuConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.GlovalViewLayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.LayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.MixerLayerConfiguration;
+import com.bitwig.extensions.controllers.mackie.configurations.TrackLayerConfiguration;
 import com.bitwig.extensions.controllers.mackie.devices.CursorDeviceControl;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceManager;
 import com.bitwig.extensions.controllers.mackie.devices.DeviceTypeBank;
@@ -15,7 +33,11 @@ import com.bitwig.extensions.controllers.mackie.display.DisplayLayer;
 import com.bitwig.extensions.controllers.mackie.display.LcdDisplay;
 import com.bitwig.extensions.controllers.mackie.display.RingDisplayType;
 import com.bitwig.extensions.controllers.mackie.display.VuMode;
-import com.bitwig.extensions.controllers.mackie.layer.*;
+import com.bitwig.extensions.controllers.mackie.layer.ClipLaunchButtonLayer;
+import com.bitwig.extensions.controllers.mackie.layer.DrumMixerLayerGroup;
+import com.bitwig.extensions.controllers.mackie.layer.HelperInfo;
+import com.bitwig.extensions.controllers.mackie.layer.MixerLayerGroup;
+import com.bitwig.extensions.controllers.mackie.layer.NotePlayingButtonLayer;
 import com.bitwig.extensions.controllers.mackie.seqencer.NoteSequenceLayer;
 import com.bitwig.extensions.controllers.mackie.value.BooleanValueObject;
 import com.bitwig.extensions.controllers.mackie.value.ModifierValueObject;
@@ -71,8 +93,8 @@ public class MixControl implements LayerStateHandler {
 
       if (hasTrackColoring) {
          backgroundColoring.state().onUpdateHardware(state -> {
-            if (state instanceof TrackColor) {
-               ((TrackColor) state).send(midiOut);
+            if (state instanceof final TrackColor trackColor) {
+               trackColor.send(midiOut);
             }
          });
       }
