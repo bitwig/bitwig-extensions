@@ -73,8 +73,8 @@ public class SendsSliderLayer extends TrackSliderLayer {
          final Track track = trackBank.getItemAt(i);
          track.sendBank().scrollPosition().set(mode == ControlMode.SENDS_A ? 0 : 1);
       }
+      updateFaderState();
    }
-
 
    @Override
    protected void updateFaderState() {
@@ -84,7 +84,6 @@ public class SendsSliderLayer extends TrackSliderLayer {
          valueBindings.forEach(SliderBinding::update);
       }
    }
-
 
    @Override
    protected void refreshTrackColors() {

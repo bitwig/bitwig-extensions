@@ -105,8 +105,7 @@ public class MidiProcessor {
    }
 
    public void updatePadLed(final InternalHardwareLightState state, final int ccValue) {
-      if (state instanceof RgbState) {
-         final RgbState rgbState = (RgbState) state;
+      if (state instanceof final RgbState rgbState) {
          switch (rgbState.getState()) {
             case NORMAL:
                sendMidi(Midi.CC, ccValue, rgbState.getColorIndex());

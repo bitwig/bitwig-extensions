@@ -25,8 +25,7 @@ public class ViewCursorControl {
    private final Track largeFocusTrack;
    private FocusSlot focusSlot;
    private final TrackBank maxTrackBank;
-   private int queuedForPlaying = 0;
-   private int focusSceneIndex;
+   private final int queuedForPlaying = 0;
 
    private final OverviewGrid overviewGrid = new OverviewGrid();
 
@@ -34,16 +33,28 @@ public class ViewCursorControl {
       rootTrack = host.getProject().getRootTrackGroup();
       rootTrack.arm().markInterested();
 
-      maxTrackBank = host.createTrackBank(64, 1, 1);
+      maxTrackBank = host.createTrackBank(64, 1, 64);
+      maxTrackBank.sceneBank().scrollPosition().markInterested();
+      maxTrackBank.scrollPosition().markInterested();
 
-      setUpFocusScene();
 
       trackBank = host.createTrackBank(8, 1, 8);
 
       trackBank.sceneBank().itemCount().addValueObserver(overviewGrid::setNumberOfScenes);
       trackBank.channelCount().addValueObserver(overviewGrid::setNumberOfTracks);
-      trackBank.scrollPosition().addValueObserver(overviewGrid::setTrackPosition);
-      trackBank.sceneBank().scrollPosition().addValueObserver(overviewGrid::setScenePosition);
+      trackBank.scrollPosition().addValueObserver(pos -> {
+         overviewGrid.setTrackPosition(pos);
+         if (maxTrackBank.scrollPosition().get() != overviewGrid.getTrackOffset()) {
+            maxTrackBank.scrollPosition().set(overviewGrid.getTrackOffset());
+         }
+      });
+      trackBank.sceneBank().scrollPosition().addValueObserver(pos -> {
+         overviewGrid.setScenePosition(pos);
+         if (maxTrackBank.sceneBank().scrollPosition().get() != overviewGrid.getSceneOffset()) {
+            maxTrackBank.sceneBank().scrollPosition().set(overviewGrid.getSceneOffset());
+         }
+      });
+      setUpFocusScene();
 
       cursorTrack = host.createCursorTrack(8, 8);
       for (int i = 0; i < 8; i++) {
@@ -90,26 +101,24 @@ public class ViewCursorControl {
    }
 
    private void setUpFocusScene() {
-      maxTrackBank.sceneBank().scrollPosition().addValueObserver(scrollPos -> focusSceneIndex = scrollPos);
       for (int i = 0; i < 64; i++) {
-         final Track track = maxTrackBank.getItemAt(i);
-         final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(0);
-         slot.isPlaybackQueued().addValueObserver(queued -> {
-            if (queued) {
-               queuedForPlaying++;
-            } else if (queuedForPlaying > 0) {
-               queuedForPlaying--;
-            }
-         });
+         final int trackIndex = i;
+         final Track track = maxTrackBank.getItemAt(trackIndex);
+         for (int j = 0; j < 64; j++) {
+            final int sceneIndex = j;
+            final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
+            slot.hasContent().addValueObserver(hasContent -> {
+               overviewGrid.setHasClips(trackIndex, sceneIndex, hasContent);
+            });
+            slot.isPlaybackQueued().addValueObserver(isQueued -> {
+               overviewGrid.markSceneQueued(sceneIndex, isQueued);
+            });
+         }
       }
    }
 
-   public boolean hasQueuedForPlaying() {
-      return queuedForPlaying > 0;
-   }
-
-   public void focusScene(final int sceneIndex) {
-      maxTrackBank.sceneBank().scrollPosition().set(sceneIndex);
+   public boolean hasQueuedForPlaying(final int sceneIndex) {
+      return overviewGrid.hasQueuedScenes(sceneIndex);
    }
 
    private void prepareTrack(final Track track) {
@@ -242,10 +251,6 @@ public class ViewCursorControl {
          .get();
    }
 
-   public int getFocusSceneIndex() {
-      return focusSceneIndex;
-   }
-
    public Optional<ClipLauncherSlot> findCursorFirstEmptySlot(final int firstIndex) {
       if (firstIndex >= 0 && firstIndex < 16) {
          final ClipLauncherSlot slot = mainTrackSlotBank.getItemAt(firstIndex);
@@ -297,4 +302,7 @@ public class ViewCursorControl {
       return Optional.empty();
    }
 
+   public boolean hasClips(final int trackIndex, final int sceneIndex) {
+      return overviewGrid.hasClips(trackIndex, sceneIndex);
+   }
 }

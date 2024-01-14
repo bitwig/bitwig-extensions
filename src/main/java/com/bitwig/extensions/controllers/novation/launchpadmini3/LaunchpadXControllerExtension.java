@@ -50,7 +50,9 @@ public class LaunchpadXControllerExtension extends AbstractLaunchpadMk3Extension
    private void initModeButtons(final Context diContext, final Layer layer) {
       final HwElements hwElements = diContext.getService(HwElements.class);
       final LabeledButton sessionButton = hwElements.getLabeledButton(LabelCcAssignmentsMini.SESSION);
-      sessionButton.bindPressed(layer, this::toggleMode);
+      //sessionButton.bindPressed(layer, this::toggleMode);
+      sessionButton.bindDoublePressCombo(layer, this::toggleMode, this::toOverviewMode);
+      // Double Press to Overview Mode
 
       final LabeledButton keysButton = hwElements.getLabeledButton(LabelCcAssignmentsMini.DRUMS);
       keysButton.bindPressed(layer, () -> {
@@ -107,11 +109,17 @@ public class LaunchpadXControllerExtension extends AbstractLaunchpadMk3Extension
       drumLayer.setIsActive(drumModeActive);
    }
 
+   private void toOverviewMode() {
+      if (mode != LpMode.OVERVIEW) {
+         changeMode(LpMode.OVERVIEW);
+         midiProcessor.setButtonLed(0x14, 38);
+      }
+   }
+
    private void toggleMode() {
       if (mode == LpMode.SESSION) {
          changeMode(LpMode.MIXER);
          midiProcessor.setButtonLed(0x14, 0x3E);
-
       } else {
          changeMode(LpMode.SESSION);
          midiProcessor.setButtonLed(0x14, 0x14);
@@ -143,7 +151,6 @@ public class LaunchpadXControllerExtension extends AbstractLaunchpadMk3Extension
          hwElements.refresh();
       } else if (sysExString.startsWith(MODE_CHANGE_PREFIX)) {
          final String modeString = sysExString.substring(MODE_CHANGE_PREFIX.length(), sysExString.length() - 2);
-         DebugMini.println("MODE = %s", modeString);
       }
    }
 

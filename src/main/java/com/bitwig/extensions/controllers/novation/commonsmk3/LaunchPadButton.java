@@ -1,10 +1,5 @@
 package com.bitwig.extensions.controllers.novation.commonsmk3;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -17,6 +12,11 @@ import com.bitwig.extensions.framework.time.TimeRepeatEvent;
 import com.bitwig.extensions.framework.time.TimedDelayEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 public abstract class LaunchPadButton {
    public static final int STD_REPEAT_DELAY = 400;
    public static final int STD_REPEAT_FREQUENCY = 50;
@@ -27,6 +27,8 @@ public abstract class LaunchPadButton {
    protected final int channel;
    private TimedEvent currentTimer;
    private long recordedDownTime;
+   private boolean doubleStatus = false;
+
 
    protected LaunchPadButton(final String id, final HardwareSurface surface, final MidiProcessor midiProcessor,
                              final int channel) {
@@ -127,10 +129,30 @@ public abstract class LaunchPadButton {
       layer.bind(hwButton, hwButton.pressedAction(), action);
    }
 
+   public void bindDoublePressCombo(final Layer layer, final Runnable singleAction, final Runnable doubleAction) {
+      layer.bind(hwButton, hwButton.pressedAction(), () -> handleDoubleTap(singleAction, doubleAction));
+   }
+
+   private void handleDoubleTap(final Runnable singleAction, final Runnable doubleAction) {
+      if (!doubleStatus) {
+         recordedDownTime = System.currentTimeMillis();
+         singleAction.run();
+         doubleStatus = true;
+      } else {
+         final long clickTime = System.currentTimeMillis() - recordedDownTime;
+         if (clickTime < 200) {
+            doubleAction.run();
+            doubleStatus = false;
+         } else {
+            singleAction.run();
+         }
+         recordedDownTime = System.currentTimeMillis();
+      }
+   }
+
    public void bindRelease(final Layer layer, final Runnable action) {
       layer.bind(hwButton, hwButton.releasedAction(), action);
    }
-
 
    public void bind(final Layer layer, final Runnable action, final Supplier<InternalHardwareLightState> supplier) {
       layer.bind(hwButton, hwButton.pressedAction(), action);

@@ -1,14 +1,12 @@
 package com.bitwig.extensions.framework.di;
 
 import com.bitwig.extension.controller.ControllerExtension;
-import com.bitwig.extension.controller.api.Application;
-import com.bitwig.extension.controller.api.ControllerHost;
-import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
 import java.io.IOException;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.*;
 import java.util.*;
 
@@ -142,6 +140,7 @@ public class Context {
       registerService(HardwareSurface.class, host.createHardwareSurface());
       registerService(Layers.class, new Layers(extension));
       registerService(Transport.class, host.createTransport());
+      registerService(Project.class, host.getProject());
    }
 
    public ViewTracker getViewTracker() {

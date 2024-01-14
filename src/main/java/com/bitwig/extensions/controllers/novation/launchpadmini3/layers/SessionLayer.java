@@ -102,13 +102,11 @@ public class SessionLayer extends AbstractLpSessionLayer {
       initClipControl(hwElements, trackBank);
       initNavigation(hwElements, trackBank, sceneBank);
 
-      trackBank.setShouldShowClipLauncherFeedback(true);
-
-      int n = config.isMiniVersion() ? 7 : 8;
+      final int n = config.isMiniVersion() ? 7 : 8;
       for (int i = 0; i < n; i++) {
          final int index = i;
-         LabeledButton button = hwElements.getSceneLaunchButtons().get(i);
-         Track track = trackBank.getItemAt(i);
+         final LabeledButton button = hwElements.getSceneLaunchButtons().get(i);
+         final Track track = trackBank.getItemAt(i);
          track.addIsSelectedInMixerObserver(selectedInMixer -> selectionField[index] = selectedInMixer);
          button.bindPressed(sceneControlHorizontalLayer, pressed -> handleTrackSelect(pressed, track));
          button.bindLight(sceneControlHorizontalLayer, () -> getTrackColorSelect(index, track));
@@ -123,7 +121,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
       initSceneControl(hwElements, sceneBank);
    }
 
-   private void handleTrackSelect(boolean pressed, Track track) {
+   private void handleTrackSelect(final boolean pressed, final Track track) {
       if (!pressed) {
          return;
       }
@@ -198,7 +196,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
       }
    }
 
-   public void setShiftHeld(boolean value) {
+   public void setShiftHeld(final boolean value) {
       this.shiftHeld = value;
    }
 
@@ -290,13 +288,13 @@ public class SessionLayer extends AbstractLpSessionLayer {
          });
       }
 
-      List<LaunchPadButton> sceneButtonsVertical = new ArrayList<>();
+      final List<LaunchPadButton> sceneButtonsVertical = new ArrayList<>();
       final int n = config.isMiniVersion() ? 7 : 8;
       for (int i = 0; i < n; i++) {
          sceneButtonsVertical.add(hwElements.getSceneLaunchButtons().get(i));
       }
       sceneControlVertical.initSceneControl(sceneBank, sceneButtonsVertical);
-      List<LaunchPadButton> sceneButtonsHorizontal = new ArrayList<>();
+      final List<LaunchPadButton> sceneButtonsHorizontal = new ArrayList<>();
       for (int i = 0; i < 8; i++) {
          sceneButtonsHorizontal.add(hwElements.getGridButton(7, i));
       }
@@ -312,15 +310,14 @@ public class SessionLayer extends AbstractLpSessionLayer {
       }
    }
 
-   private static int darkenHorizontal(int colorIndex) {
+   private static int darkenHorizontal(final int colorIndex) {
       if (colorIndex < 4) {
          return 1;
       }
       return colorIndex + 2;
    }
 
-   public static int adjustHorizontal(int colorIndex) {
-      DebugMini.println(" COLOR %d", colorIndex);
+   public static int adjustHorizontal(final int colorIndex) {
       if (colorIndex == 0) {
          return 0;
       }
@@ -329,7 +326,6 @@ public class SessionLayer extends AbstractLpSessionLayer {
       }
       return colorIndex;
    }
-
 
    private void initTrackControlXSceneButtons(final HwElements hwElements, final Layer layer) {
       initVolumeControl(hwElements, layer, 0);
@@ -468,6 +464,9 @@ public class SessionLayer extends AbstractLpSessionLayer {
          controlMode = mode;
          if (modeLayer != null) {
             modeLayer.setIsActive(true);
+            if (modeLayer instanceof SendsSliderLayer sendsSliderLayer) {
+               sendsSliderLayer.setControl(mode);
+            }
          }
       }
       trackMode = TrackMode.NONE;
@@ -498,8 +497,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
       if (currentMode != null) {
          currentMode.setIsActive(false);
       }
-      if (modeLayer instanceof SendsSliderLayer) {
-         final SendsSliderLayer sendingLayer = (SendsSliderLayer) modeLayer;
+      if (modeLayer instanceof final SendsSliderLayer sendingLayer) {
          sendingLayer.setControl(newMode);
       }
       if (modeLayer != null) {
@@ -574,7 +572,6 @@ public class SessionLayer extends AbstractLpSessionLayer {
 
    void handleScene(final boolean pressed, final Scene scene, final int sceneIndex) {
       if (pressed) {
-         viewCursorControl.focusScene(sceneIndex + sceneOffset);
          if (shiftHeld) {
             scene.launchAlt();
          } else {
@@ -591,7 +588,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
 
    RgbState getSceneColorVertical(final int sceneIndex, final Scene scene) {
       if (scene.clipCount().get() > 0) {
-         if (sceneOffset + sceneIndex == viewCursorControl.getFocusSceneIndex() && viewCursorControl.hasQueuedForPlaying()) {
+         if (viewCursorControl.hasQueuedForPlaying(sceneOffset + sceneIndex)) {
             return RgbState.GREEN_FLASH;
          }
          return RgbState.of(sceneColorIndex[sceneIndex]);
@@ -601,7 +598,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
 
    RgbState getSceneColorHorizontal(final int sceneIndex, final Scene scene) {
       if (scene.clipCount().get() > 0) {
-         if (sceneOffset + sceneIndex == viewCursorControl.getFocusSceneIndex() && viewCursorControl.hasQueuedForPlaying()) {
+         if (viewCursorControl.hasQueuedForPlaying(sceneOffset + sceneIndex)) {
             return RgbState.GREEN_FLASH;
          }
          return RgbState.of(sceneColorHorizontal[sceneIndex]);
