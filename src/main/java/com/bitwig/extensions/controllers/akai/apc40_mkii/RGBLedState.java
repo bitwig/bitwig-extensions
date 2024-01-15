@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
+import java.util.ArrayList;
+
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
@@ -10,13 +12,11 @@ class RGBLedState extends InternalHardwareLightState
 
    public static final int COLOR_NONE = 0;
 
-   public static final int COLOR_RED = 2;
+   public static final int COLOR_RED = 5;
 
-   public static final int COLOR_GREEN = 18;
+   public static final int COLOR_GREEN = 21;
 
-   public static final int COLOR_BLUE = 42;
-
-   public static final int COLOR_YELLOW = 10;
+   public static final int COLOR_YELLOW = 13;
 
    public static final int COLOR_RECORDING = COLOR_RED;
 
@@ -25,8 +25,6 @@ class RGBLedState extends InternalHardwareLightState
    public static final int COLOR_PLAYING_QUEUED = COLOR_YELLOW;
 
    public static final int COLOR_STOPPING = COLOR_NONE;
-
-   public static final int COLOR_SCENE = COLOR_YELLOW;
 
    public static final int COLOR_SELECTED = COLOR_YELLOW;
 
@@ -46,7 +44,6 @@ class RGBLedState extends InternalHardwareLightState
 
    private static void registerColor(final int rgb, final int value)
    {
-
       assert value >= 0 && value <= 127;
       assert COLORS[value] == null;
 
@@ -79,7 +76,38 @@ class RGBLedState extends InternalHardwareLightState
       return Math.sqrt(dr * dr + dg * dg + db * db);
    }
 
+   private static record ColorToIndexCacheEntry (Color color, int index) {}
+
+   private static final ArrayList<ColorToIndexCacheEntry> COLOR_TO_INDEX_CACHE = new ArrayList<>();
+
    public static int getClosestColorIndex(final Color color)
+   {
+      final int MAX_CACHE_SIZE = 64;
+
+      synchronized (COLOR_TO_INDEX_CACHE)
+      {
+         final int cacheSize = COLOR_TO_INDEX_CACHE.size();
+         
+         for (int i = 0; i < cacheSize; i++)
+         {
+            final var cacheEntry = COLOR_TO_INDEX_CACHE.get(i);
+
+            if (cacheEntry.color.equals(color))
+               return cacheEntry.index;
+         }
+
+         final int colorIndex = computeClosestColorIndex(color);
+
+         if (cacheSize == MAX_CACHE_SIZE)
+            COLOR_TO_INDEX_CACHE.remove(MAX_CACHE_SIZE - 1);
+
+         COLOR_TO_INDEX_CACHE.add(0, new ColorToIndexCacheEntry(color, colorIndex));
+
+         return colorIndex;
+      }      
+   }
+
+   private static int computeClosestColorIndex(final Color color)
    {
 
       if (color == null || color.getAlpha() == 0)
