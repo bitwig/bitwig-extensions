@@ -33,7 +33,6 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
-import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -1464,7 +1463,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
          {
             final Scene scene = mSceneBank.getScene(i);
             if (scene.exists().get())
-               colorValue = RGBLedState.getColorValueForColor(scene.color().get());
+               colorValue = RGBLedState.getClosestColorIndex(scene.color().get());
             else
                colorValue = (RGBLedState.COLOR_NONE);
             blinkType = RGBLedState.BLINK_NONE;
@@ -1490,7 +1489,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
             int colorValue = RGBLedState.COLOR_NONE, blinkColorValue = RGBLedState.COLOR_NONE, blinkType = RGBLedState.BLINK_NONE;
 
             if (slot.exists().get() && slot.hasContent().get())
-               colorValue = RGBLedState.getColorValueForRGB(slot.color().red(), slot.color().green(), slot.color().blue());
+               colorValue = RGBLedState.getClosestColorIndex(slot.color().get());
 
             /*
              * if (slot.isStopQueued().get()) { rgbLed.setBlinkType(RgbLed.BLINK_STOP_QUEUED);
