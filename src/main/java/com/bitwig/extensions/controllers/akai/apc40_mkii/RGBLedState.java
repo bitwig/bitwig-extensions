@@ -1,6 +1,8 @@
 package com.bitwig.extensions.controllers.akai.apc40_mkii;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
@@ -8,9 +10,12 @@ import com.bitwig.extension.controller.api.InternalHardwareLightState;
 
 class RGBLedState extends InternalHardwareLightState
 {
+   /** Array of colors that the protocol specifies. */
    private static final Color[] COLORS = new Color[128];
 
    public static final int COLOR_NONE = 0;
+
+   public static final int COLOR_WHITE = 3;
 
    public static final int COLOR_RED = 5;
 
@@ -42,6 +47,10 @@ class RGBLedState extends InternalHardwareLightState
 
    public static final RGBLedState OFF_STATE = new RGBLedState(COLOR_NONE, COLOR_NONE, BLINK_NONE);
 
+   /**
+    * Registers a color as defined in the APC 40 mkii MIDI protocol. The color value is the velocity to use
+    * for the provided RGB integer color.
+    */
    private static void registerColor(final int rgb, final int value)
    {
       assert value >= 0 && value <= 127;
@@ -59,7 +68,51 @@ class RGBLedState extends InternalHardwareLightState
       return Color.fromRGB255(red, green, blue);
    }
 
+   public static double[] rgbToHsv(final Color color)
+   {
+      final double[] hsv = new double[3];
+
+      final double r = color.getRed();
+      final double g = color.getGreen();
+      final double b = color.getBlue();
+
+      final double max = Math.max(r, Math.max(g, b));
+      final double min = Math.min(r, Math.min(g, b));
+      final double delta = max - min;
+
+      // Calculate hue
+      if (delta == 0)
+      {
+         hsv[0] = 0;
+      }
+      else if (max == r)
+      {
+         hsv[0] = (60 * ((g - b) / delta) + 360) % 360;
+      }
+      else if (max == g)
+      {
+         hsv[0] = (60 * ((b - r) / delta) + 120) % 360;
+      }
+      else if (max == b)
+      {
+         hsv[0] = (60 * ((r - g) / delta) + 240) % 360;
+      }
+
+      // Calculate saturation
+      hsv[1] = (max == 0) ? 0 : (delta / max);
+
+      // Calculate value
+      hsv[2] = max;
+
+      return hsv;
+   }
+
    private static double colorDistance(final Color color1, final Color color2)
+   {
+      return 0.5 * colorDistanceRGB(color1, color2) + 0.5 * colorDistanceHSV(color1, color2);
+   }
+
+   private static double colorDistanceRGB(final Color color1, final Color color2)
    {
       final double r1 = color1.getRed();
       final double g1 = color1.getGreen();
@@ -76,40 +129,120 @@ class RGBLedState extends InternalHardwareLightState
       return Math.sqrt(dr * dr + dg * dg + db * db);
    }
 
-   private static record ColorToIndexCacheEntry (Color color, int index) {}
+   private static double colorDistanceHSV(final Color color1, final Color color2)
+   {
+      final double[] hsv1 = rgbToHsv(color1);
+      final double[] hsv2 = rgbToHsv(color2);
 
-   private static final ArrayList<ColorToIndexCacheEntry> COLOR_TO_INDEX_CACHE = new ArrayList<>();
+      final double dh = Math.min(Math.abs(hsv1[0] - hsv2[0]), 1 - Math.abs(hsv1[0] - hsv2[0]));
+      final double ds = Math.abs(hsv1[1] - hsv2[1]);
+      final double dv = Math.abs(hsv1[2] - hsv2[2]);
+
+      return Math.sqrt(dh * dh + ds * ds + dv * dv);
+   }
+
+   private static record ColorToIndexCacheEntry(int rgb, int index)
+   {
+   }
+
+   private static final int colorToRGBInt(final Color color)
+   {
+      return color.getRed255() << 16 | color.getGreen255() << 8 | color.getBlue255();
+   }
+
+   private static final Map<Integer, Integer> HANDPICKED_RGBINT_TO_CLOSEST_COLOR_INDEX = new HashMap<>();
+
+   private static void registerHandpickedClosestColor(final int rgb, final int colorIndex)
+   {
+      HANDPICKED_RGBINT_TO_CLOSEST_COLOR_INDEX.put(rgb, colorIndex);
+   }
+
+   static 
+   {
+      registerHandpickedClosestColor(0xFF0000, COLOR_RED);
+      registerHandpickedClosestColor(0xFF00, COLOR_GREEN);
+      registerHandpickedClosestColor(0xFF, 45);
+      registerHandpickedClosestColor(0xFFD90F, COLOR_YELLOW);
+
+      registerHandpickedClosestColor(0, 0);
+
+      registerHandpickedClosestColor(14235761, 57);
+      registerHandpickedClosestColor(14771857, 107);
+      registerHandpickedClosestColor(5526612, 1);
+
+      registerHandpickedClosestColor(14233124, 6);
+      registerHandpickedClosestColor(15491415, 5);
+      registerHandpickedClosestColor(8026746, 2);
+
+      registerHandpickedClosestColor(16733958, 9);
+      registerHandpickedClosestColor(16745278, 12);
+      registerHandpickedClosestColor(13224393, 3);
+
+      registerHandpickedClosestColor(14261520, 14);
+      registerHandpickedClosestColor(14989134, 13);
+      registerHandpickedClosestColor(8817068, 104);
+
+      registerHandpickedClosestColor(7575572, 18);
+      registerHandpickedClosestColor(10534988, 17);
+      registerHandpickedClosestColor(10713411, 125);
+
+      registerHandpickedClosestColor(40263, 22);
+      registerHandpickedClosestColor(4111202, 21);
+      registerHandpickedClosestColor(13016944, 124);
+
+      registerHandpickedClosestColor(42644, 34);
+      registerHandpickedClosestColor(4444857, 33);
+      registerHandpickedClosestColor(5726662, 43);
+
+      registerHandpickedClosestColor(39385, 38);
+      registerHandpickedClosestColor(4507903, 37);
+      registerHandpickedClosestColor(8686304, 115);
+
+      registerHandpickedClosestColor(9783755, 50);
+      registerHandpickedClosestColor(12351216, 49);
+   }
+
+   private static final ArrayList<ColorToIndexCacheEntry> RGB_TO_COMPUTED_CLOSEST_COLOR_INDEX_CACHE = new ArrayList<>();
 
    public static int getClosestColorIndex(final Color color)
    {
+      if (color == null || color.getAlpha() == 0)
+         return 0;
+
+      final int rgb = colorToRGBInt(color);
+
+      final Integer handPickedColorIndex = HANDPICKED_RGBINT_TO_CLOSEST_COLOR_INDEX.get(rgb);
+
+      if (handPickedColorIndex != null)
+         return handPickedColorIndex;
+
       final int MAX_CACHE_SIZE = 64;
 
-      synchronized (COLOR_TO_INDEX_CACHE)
+      synchronized (RGB_TO_COMPUTED_CLOSEST_COLOR_INDEX_CACHE)
       {
-         final int cacheSize = COLOR_TO_INDEX_CACHE.size();
-         
+         final int cacheSize = RGB_TO_COMPUTED_CLOSEST_COLOR_INDEX_CACHE.size();
+
          for (int i = 0; i < cacheSize; i++)
          {
-            final var cacheEntry = COLOR_TO_INDEX_CACHE.get(i);
+            final var cacheEntry = RGB_TO_COMPUTED_CLOSEST_COLOR_INDEX_CACHE.get(i);
 
-            if (cacheEntry.color.equals(color))
+            if (cacheEntry.rgb == rgb)
                return cacheEntry.index;
          }
 
          final int colorIndex = computeClosestColorIndex(color);
 
          if (cacheSize == MAX_CACHE_SIZE)
-            COLOR_TO_INDEX_CACHE.remove(MAX_CACHE_SIZE - 1);
+            RGB_TO_COMPUTED_CLOSEST_COLOR_INDEX_CACHE.remove(MAX_CACHE_SIZE - 1);
 
-         COLOR_TO_INDEX_CACHE.add(0, new ColorToIndexCacheEntry(color, colorIndex));
+         RGB_TO_COMPUTED_CLOSEST_COLOR_INDEX_CACHE.add(0, new ColorToIndexCacheEntry(rgb, colorIndex));
 
          return colorIndex;
-      }      
+      }
    }
 
    private static int computeClosestColorIndex(final Color color)
    {
-
       if (color == null || color.getAlpha() == 0)
          return 0;
 
