@@ -192,8 +192,8 @@ class APC40MKIIControllerExtension extends ControllerExtension
 
       mIsMasterSelected = mTrackCursor.createEqualsValue(mMasterTrack);
 
-      final PinnableCursorDevice channelStripDevice =
-         mTrackCursor.createCursorDevice("channel-strip", "Channel Strip", 4, CursorDeviceFollowMode.LAST_DEVICE);
+      final PinnableCursorDevice channelStripDevice = mTrackCursor.createCursorDevice("channel-strip",
+         "Channel Strip", 4, CursorDeviceFollowMode.LAST_DEVICE);
       channelStripDevice.exists().markInterested();
       mChannelStripRemoteControls = channelStripDevice.createCursorRemoteControlsPage(8);
       mChannelStripRemoteControls.setHardwareLayout(HardwareControlType.KNOB, 8);
@@ -324,8 +324,8 @@ class APC40MKIIControllerExtension extends ControllerExtension
    private void createSettingsObjects(final ControllerHost host)
    {
       final Preferences preferences = host.getPreferences();
-      mPanAsTrackRemoteSetting = preferences.getBooleanSetting("Replace PAN by Track Remotes",
-         "Controls", false);
+      mPanAsTrackRemoteSetting = preferences.getBooleanSetting("Replace PAN by Track Remotes", "Controls",
+         false);
       mPanAsTrackRemoteSetting.markInterested();
       if (mPanAsTrackRemoteSetting.get())
          mTopMode = TopMode.TRACK_CONTROLS;
@@ -437,7 +437,9 @@ class APC40MKIIControllerExtension extends ControllerExtension
       for (int i = 0; i < 8; ++i)
       {
          final int x = i;
-         mShiftLayer.bindPressed(mTrackSelectButtons[x], getHost().createAction(() -> setLaunchQuantizationFromTrackSelect(x), () -> "Configures the default launch quantization"));
+         mShiftLayer.bindPressed(mTrackSelectButtons[x],
+            getHost().createAction(() -> setLaunchQuantizationFromTrackSelect(x),
+               () -> "Configures the default launch quantization"));
          mShiftLayer.bind(() -> x == computeLaunchQuantizationIndex(), mTrackSelectLeds[x]);
 
          final Track track = mTrackBank.getItemAt(i);
@@ -463,17 +465,17 @@ class APC40MKIIControllerExtension extends ControllerExtension
    private void setLaunchQuantizationFromTrackSelect(final int x)
    {
       final String quantization = switch (x)
-         {
-            case 0 -> "none";
-            case 1 -> "8";
-            case 2 -> "4";
-            case 3 -> "2";
-            case 4 -> "1";
-            case 5 -> "1/4";
-            case 6 -> "1/8";
-            case 7 -> "1/16";
-            default -> "1";
-         };
+      {
+      case 0 -> "none";
+      case 1 -> "8";
+      case 2 -> "4";
+      case 3 -> "2";
+      case 4 -> "1";
+      case 5 -> "1/4";
+      case 6 -> "1/8";
+      case 7 -> "1/16";
+      default -> "1";
+      };
 
       mTransport.defaultLaunchQuantization().set(quantization);
    }
@@ -642,11 +644,33 @@ class APC40MKIIControllerExtension extends ControllerExtension
             () -> "Activate Pan mode or Track Remote Controls mode"));
       mMainLayer.bindPressed(mSendsButton,
          getHost().createAction(() -> activateTopMode(TopMode.SENDS), () -> "Activate Sends mode"));
-      mMainLayer.bindPressed(mUserButton,
-         getHost().createAction(() -> activateTopMode(TopMode.PROJECT_CONTROLS), () -> "Activate Project Remote Controls mode"));
+      mMainLayer.bindPressed(mUserButton, getHost().createAction(
+         () -> activateTopMode(TopMode.PROJECT_CONTROLS), () -> "Activate Project Remote Controls mode"));
 
       mMainLayer.bindPressed(mShiftButton, mShiftLayer.getActivateAction());
       mMainLayer.bindReleased(mShiftButton, mShiftLayer.getDeactivateAction());
+
+      for (int i = 0; i < 8; ++i)
+      {
+         final Track track = mTrackBank.getItemAt(i);
+         final ClipLauncherSlotBank clipLauncherSlotBank = track.clipLauncherSlotBank();
+
+         for (int j = 0; j < 5; ++j)
+         {
+            final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
+            final RgbLed rgbLed = mGridLeds[i][j];
+
+            mMainLayer.bindLightState(() -> computeRGBLedStateForSlot(slot), rgbLed.getLight());
+         }
+      }
+
+      for (int i = 0; i < 5; ++i)
+      {
+         final RgbLed rgbLed = mSceneLeds[i];
+         final int sceneButtonIndex = i;
+
+         mMainLayer.bindLightState(() -> computeRGBLedStateForScene(sceneButtonIndex), rgbLed.getLight());
+      }
 
       mMainLayer.activate();
    }
@@ -869,7 +893,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mMetronomeButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_METRONOME));
       mMetronomeButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_METRONOME));
       mMetronomeLed = mHardwareSurface.createOnOffHardwareLight("MetronomeLed");
-      mMetronomeLed.setOnColor(Color.fromRGB255(255,165,0));
+      mMetronomeLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mMetronomeLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_METRONOME, isOn));
       mMetronomeButton.setBackgroundLight(mMetronomeLed);
 
@@ -883,14 +907,12 @@ class APC40MKIIControllerExtension extends ControllerExtension
       nudgePlusButton.setLabel("NUDGE +");
       nudgePlusButton.setLabelPosition(RelativePosition.ABOVE);
       nudgePlusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_PLUS));
-      nudgePlusButton.releasedAction()
-         .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_PLUS));
+      nudgePlusButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_PLUS));
 
       final HardwareButton nudgeMinusButton = mHardwareSurface.createHardwareButton("Nudge-");
       nudgeMinusButton.setLabel("NUDGE -");
       nudgeMinusButton.setLabelPosition(RelativePosition.ABOVE);
-      nudgeMinusButton.pressedAction()
-         .setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_MINUS));
+      nudgeMinusButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NUDGE_MINUS));
       nudgeMinusButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NUDGE_MINUS));
 
@@ -915,7 +937,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("TrackStopLed-" + x);
-         led.setOnColor(Color.fromRGB255(255,165,0));
+         led.setOnColor(Color.fromRGB255(255, 165, 0));
          led.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_TRACK_STOP, channel, isOn));
          bt.setBackgroundLight(led);
          mTrackStopLeds[x] = led;
@@ -927,7 +949,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mMasterTrackStopButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_STOP));
       mMasterTrackStopLed = mHardwareSurface.createOnOffHardwareLight("MasterTrackStopLed");
-      mMasterTrackStopLed.setOnColor(Color.fromRGB255(255,165,0));
+      mMasterTrackStopLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mMasterTrackStopButton.setBackgroundLight(mMasterTrackStopLed);
       mMasterTrackStopLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_MASTER_STOP, isOn));
    }
@@ -946,7 +968,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("TrackSelectLed-" + x);
-         led.setOnColor(Color.fromRGB255(255,165,0));
+         led.setOnColor(Color.fromRGB255(255, 165, 0));
          led.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_TRACK_SELECT, channel, isOn));
          bt.setBackgroundLight(led);
          mTrackSelectLeds[x] = led;
@@ -958,7 +980,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mMasterTrackSelectButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_MASTER_SELECT));
       mMasterTrackSelectLed = mHardwareSurface.createOnOffHardwareLight("MasterTrackSelectLed");
-      mMasterTrackSelectLed.setOnColor(Color.fromRGB255(255,165,0));
+      mMasterTrackSelectLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mMasterTrackSelectButton.setBackgroundLight(mMasterTrackSelectLed);
       mMasterTrackSelectLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_MASTER_SELECT, isOn));
    }
@@ -1042,7 +1064,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
 
          final int channel = x;
          final OnOffHardwareLight led = mHardwareSurface.createOnOffHardwareLight("MuteLed-" + x);
-         led.setOnColor(Color.fromRGB255(255,165,0));
+         led.setOnColor(Color.fromRGB255(255, 165, 0));
          led.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_TRACK_MUTE, channel, isOn));
          bt.setBackgroundLight(led);
          mMuteLeds[x] = led;
@@ -1063,7 +1085,8 @@ class APC40MKIIControllerExtension extends ControllerExtension
             bt.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, note));
 
             mGridButtons[y * 8 + x] = bt;
-            mGridLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_GRID0 + x + (4 - y) * 8, mMidiOut);
+            mGridLeds[x][y] = new RgbLed(bt, mHardwareSurface, MSG_NOTE_ON, BT_GRID0 + x + (4 - y) * 8,
+               mMidiOut);
          }
       }
 
@@ -1127,7 +1150,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mPanButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PAN));
       mPanButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PAN));
       mPanLed = mHardwareSurface.createOnOffHardwareLight("PanLed");
-      mPanLed.setOnColor(Color.fromRGB255(255,165,0));
+      mPanLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mPanButton.setBackgroundLight(mPanLed);
       mPanLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_PAN, isOn));
 
@@ -1144,7 +1167,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
             mSendSelectLayer.deactivate();
       });
       mSendsLed = mHardwareSurface.createOnOffHardwareLight("SendsLed");
-      mSendsLed.setOnColor(Color.fromRGB255(255,165,0));
+      mSendsLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mSendsButton.setBackgroundLight(mSendsLed);
       mSendsLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_SENDS, isOn));
 
@@ -1161,7 +1184,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
             mProjectSelectLayer.deactivate();
       });
       mUserLed = mHardwareSurface.createOnOffHardwareLight("UserLed");
-      mUserLed.setOnColor(Color.fromRGB255(255,165,0));
+      mUserLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mUserButton.setBackgroundLight(mUserLed);
       mUserLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_USER, isOn));
    }
@@ -1196,7 +1219,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mPrevDeviceButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_DEVICE));
       mPrevDeviceLed = mHardwareSurface.createOnOffHardwareLight("PrevDeviceLed");
-      mPrevDeviceLed.setOnColor(Color.fromRGB255(255,165,0));
+      mPrevDeviceLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mPrevDeviceButton.setBackgroundLight(mPrevDeviceLed);
       mPrevDeviceLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_PREV_DEVICE, isOn));
 
@@ -1208,7 +1231,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mNextDeviceButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_DEVICE));
       mNextDeviceLed = mHardwareSurface.createOnOffHardwareLight("NextDeviceLed");
-      mNextDeviceLed.setOnColor(Color.fromRGB255(255,165,0));
+      mNextDeviceLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mNextDeviceButton.setBackgroundLight(mNextDeviceLed);
       mNextDeviceLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_NEXT_DEVICE, isOn));
 
@@ -1218,7 +1241,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mPrevBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_PREV_BANK));
       mPrevBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_PREV_BANK));
       mPrevBankLed = mHardwareSurface.createOnOffHardwareLight("PrevBankLed");
-      mPrevBankLed.setOnColor(Color.fromRGB255(255,165,0));
+      mPrevBankLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mPrevBankButton.setBackgroundLight(mPrevBankLed);
       mPrevBankLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_PREV_BANK, isOn));
 
@@ -1228,7 +1251,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mNextBankButton.pressedAction().setActionMatcher(mMidiIn.createNoteOnActionMatcher(0, BT_NEXT_BANK));
       mNextBankButton.releasedAction().setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_NEXT_BANK));
       mNextBankLed = mHardwareSurface.createOnOffHardwareLight("NextBankLed");
-      mNextBankLed.setOnColor(Color.fromRGB255(255,165,0));
+      mNextBankLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mNextBankButton.setBackgroundLight(mNextBankLed);
       mNextBankLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_NEXT_BANK, isOn));
 
@@ -1240,7 +1263,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mDeviceOnOffButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_ONOFF));
       mDeviceOnOffLed = mHardwareSurface.createOnOffHardwareLight("DeviceOnOffLed");
-      mDeviceOnOffLed.setOnColor(Color.fromRGB255(255,165,0));
+      mDeviceOnOffLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mDeviceOnOffButton.setBackgroundLight(mDeviceOnOffLed);
       mDeviceOnOffLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_DEVICE_ONOFF, isOn));
 
@@ -1252,7 +1275,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mDeviceLockButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DEVICE_LOCK));
       mDeviceLockLed = mHardwareSurface.createOnOffHardwareLight("DeviceLockLed");
-      mDeviceLockLed.setOnColor(Color.fromRGB255(255,165,0));
+      mDeviceLockLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mDeviceLockButton.setBackgroundLight(mDeviceLockLed);
       mDeviceLockLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_DEVICE_LOCK, isOn));
 
@@ -1264,7 +1287,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mClipDeviceViewButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_CLIP_DEVICE_VIEW));
       mClipDeviceViewLed = mHardwareSurface.createOnOffHardwareLight("ClipDeviceViewLed");
-      mClipDeviceViewLed.setOnColor(Color.fromRGB255(255,165,0));
+      mClipDeviceViewLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mClipDeviceViewButton.setBackgroundLight(mClipDeviceViewLed);
       mClipDeviceViewLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_CLIP_DEVICE_VIEW, isOn));
 
@@ -1276,7 +1299,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
       mDetailViewButton.releasedAction()
          .setActionMatcher(mMidiIn.createNoteOffActionMatcher(0, BT_DETAIL_VIEW));
       mDetailViewLed = mHardwareSurface.createOnOffHardwareLight("DetailViewLed");
-      mDetailViewLed.setOnColor(Color.fromRGB255(255,165,0));
+      mDetailViewLed.setOnColor(Color.fromRGB255(255, 165, 0));
       mDetailViewButton.setBackgroundLight(mDetailViewLed);
       mDetailViewLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_DETAIL_VIEW, isOn));
 
@@ -1306,7 +1329,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
          }
       });
       mBankLed = mHardwareSurface.createOnOffHardwareLight("BankLed");
-      mBankLed.setOnColor(Color.fromRGB255(255,165,0));
+      mBankLed.setOnColor(Color.fromRGB255(255, 165, 0));
       bankButton.setBackgroundLight(mBankLed);
       mBankLed.isOn().onUpdateHardware(isOn -> sendLedUpdate(BT_BANK, isOn));
 
@@ -1350,12 +1373,12 @@ class APC40MKIIControllerExtension extends ControllerExtension
          knobLed.setDisplayedValue(value);
 
       final int ring = switch (mTopMode)
-         {
-            case PAN -> KnobLed.RING_PAN;
-            case SENDS -> KnobLed.RING_VOLUME;
-            case TRACK_CONTROLS, PROJECT_CONTROLS -> KnobLed.RING_SINGLE;
-            default -> throw new IllegalStateException();
-         };
+      {
+      case PAN -> KnobLed.RING_PAN;
+      case SENDS -> KnobLed.RING_VOLUME;
+      case TRACK_CONTROLS, PROJECT_CONTROLS -> KnobLed.RING_SINGLE;
+      default -> throw new IllegalStateException();
+      };
       knobLed.setRing(knob.hasTargetValue().get() ? ring : KnobLed.RING_OFF);
 
       if (knobLed.wantsFlush())
@@ -1389,7 +1412,8 @@ class APC40MKIIControllerExtension extends ControllerExtension
 
    private void sendLedUpdate(final int note, final int channel, final CrossFadeMode lightState)
    {
-      mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note, lightState != null ? lightState.getColorIndex() : CrossFadeMode.AB.getColorIndex());
+      mMidiOut.sendMidi((MSG_NOTE_ON << 4) | channel, note,
+         lightState != null ? lightState.getColorIndex() : CrossFadeMode.AB.getColorIndex());
    }
 
    private void sendLedUpdate(final int note, final int channel, final int color)
@@ -1431,102 +1455,86 @@ class APC40MKIIControllerExtension extends ControllerExtension
    public void flush()
    {
       flushKnobs();
-      paintPads();
-      paintScenes();
       mHardwareSurface.updateHardware();
    }
 
-   private void paintScenes()
+   private RGBLedState computeRGBLedStateForSlot(final ClipLauncherSlot slot)
    {
-      for (int i = 0; i < 5; ++i)
+      int colorValue = RGBLedState.COLOR_NONE, blinkColorValue = RGBLedState.COLOR_NONE,
+         blinkType = RGBLedState.BLINK_NONE;
+
+      if (slot.exists().get() && slot.hasContent().get())
+         colorValue = RGBLedState.getClosestColorIndex(slot.color().get());
+
+      /*
+       * if (slot.isStopQueued().get()) { rgbLed.setBlinkType(RgbLed.BLINK_STOP_QUEUED);
+       * rgbLed.setBlinkColor(RgbLed.COLOR_STOPPING); } else
+       */
+
+      if (slot.isRecordingQueued().get())
       {
-         final RgbLed rgbLed = mSceneLeds[i];
-
-         int colorValue = RGBLedState.COLOR_NONE, blinkColorValue = RGBLedState.COLOR_NONE, blinkType = RGBLedState.BLINK_NONE;
-
-         if (mSendsOn.isOn())
-         {
-            final boolean isSelected = mSendIndex == i;
-            colorValue = isSelected ? RGBLedState.COLOR_SELECTED : RGBLedState.COLOR_SELECTABLE;
-            blinkType = RGBLedState.BLINK_NONE;
-            blinkColorValue = RGBLedState.COLOR_NONE;
-         }
-         else if (mUserOn.isOn())
-         {
-            final boolean exists = i < mProjectRemoteControls.pageCount().get();
-            final boolean isSelected = exists && mProjectRemoteControls.selectedPageIndex().get() == i;
-            colorValue = isSelected ? RGBLedState.COLOR_SELECTED : (exists ? RGBLedState.COLOR_SELECTABLE : RGBLedState.COLOR_NONE);
-            blinkType = RGBLedState.BLINK_NONE;
-            blinkColorValue = RGBLedState.COLOR_NONE;
-         }
-         else
-         {
-            final Scene scene = mSceneBank.getScene(i);
-            if (scene.exists().get())
-               colorValue = RGBLedState.getClosestColorIndex(scene.color().get());
-            else
-               colorValue = (RGBLedState.COLOR_NONE);
-            blinkType = RGBLedState.BLINK_NONE;
-            blinkColorValue = RGBLedState.COLOR_NONE;
-         }
-
-         rgbLed.setState(new RGBLedState(colorValue, blinkColorValue, blinkType));
+         blinkType = RGBLedState.BLINK_RECORD_QUEUED;
+         blinkColorValue = RGBLedState.COLOR_RECORDING;
       }
+      else if (slot.isPlaybackQueued().get())
+      {
+         blinkType = RGBLedState.BLINK_PLAY_QUEUED;
+         blinkColorValue = RGBLedState.COLOR_PLAYING_QUEUED;
+      }
+      else if (slot.isRecording().get())
+      {
+         colorValue = RGBLedState.COLOR_NONE;
+         blinkType = RGBLedState.BLINK_ACTIVE;
+         blinkColorValue = RGBLedState.COLOR_RECORDING;
+      }
+      else if (slot.isPlaying().get())
+      {
+         colorValue = RGBLedState.COLOR_NONE;
+         blinkType = RGBLedState.BLINK_ACTIVE;
+         blinkColorValue = RGBLedState.COLOR_PLAYING;
+      }
+      else /* stopped */
+      {
+         blinkType = RGBLedState.BLINK_NONE;
+         blinkColorValue = RGBLedState.COLOR_NONE;
+      }
+
+      return new RGBLedState(colorValue, blinkColorValue, blinkType);
    }
 
-   private void paintPads()
+   private RGBLedState computeRGBLedStateForScene(final int sceneButtonIndex)
    {
-      for (int i = 0; i < 8; ++i)
+      int colorValue = RGBLedState.COLOR_NONE, blinkColorValue = RGBLedState.COLOR_NONE,
+         blinkType = RGBLedState.BLINK_NONE;
+
+      if (mSendsOn.isOn())
       {
-         final Track track = mTrackBank.getItemAt(i);
-         final ClipLauncherSlotBank clipLauncherSlotBank = track.clipLauncherSlotBank();
-
-         for (int j = 0; j < 5; ++j)
-         {
-            final ClipLauncherSlot slot = clipLauncherSlotBank.getItemAt(j);
-            final RgbLed rgbLed = mGridLeds[i][j];
-
-            int colorValue = RGBLedState.COLOR_NONE, blinkColorValue = RGBLedState.COLOR_NONE, blinkType = RGBLedState.BLINK_NONE;
-
-            if (slot.exists().get() && slot.hasContent().get())
-               colorValue = RGBLedState.getClosestColorIndex(slot.color().get());
-
-            /*
-             * if (slot.isStopQueued().get()) { rgbLed.setBlinkType(RgbLed.BLINK_STOP_QUEUED);
-             * rgbLed.setBlinkColor(RgbLed.COLOR_STOPPING); } else
-             */
-
-            if (slot.isRecordingQueued().get())
-            {
-               blinkType = RGBLedState.BLINK_RECORD_QUEUED;
-               blinkColorValue = RGBLedState.COLOR_RECORDING;
-            }
-            else if (slot.isPlaybackQueued().get())
-            {
-               blinkType = RGBLedState.BLINK_PLAY_QUEUED;
-               blinkColorValue = RGBLedState.COLOR_PLAYING_QUEUED;
-            }
-            else if (slot.isRecording().get())
-            {
-               colorValue = RGBLedState.COLOR_NONE;
-               blinkType = RGBLedState.BLINK_ACTIVE;
-               blinkColorValue = RGBLedState.COLOR_RECORDING;
-            }
-            else if (slot.isPlaying().get())
-            {
-               colorValue = RGBLedState.COLOR_NONE;
-               blinkType = RGBLedState.BLINK_ACTIVE;
-               blinkColorValue = RGBLedState.COLOR_PLAYING;
-            }
-            else /* stopped */
-            {
-               blinkType = RGBLedState.BLINK_NONE;
-               blinkColorValue = RGBLedState.COLOR_NONE;
-            }
-
-            rgbLed.setState(new RGBLedState(colorValue, blinkColorValue, blinkType));
-         }
+         final boolean isSelected = mSendIndex == sceneButtonIndex;
+         colorValue = isSelected ? RGBLedState.COLOR_SELECTED : RGBLedState.COLOR_SELECTABLE;
+         blinkType = RGBLedState.BLINK_NONE;
+         blinkColorValue = RGBLedState.COLOR_NONE;
       }
+      else if (mUserOn.isOn())
+      {
+         final boolean exists = sceneButtonIndex < mProjectRemoteControls.pageCount().get();
+         final boolean isSelected = exists && mProjectRemoteControls.selectedPageIndex().get() == sceneButtonIndex;
+         colorValue = isSelected ? RGBLedState.COLOR_SELECTED
+            : (exists ? RGBLedState.COLOR_SELECTABLE : RGBLedState.COLOR_NONE);
+         blinkType = RGBLedState.BLINK_NONE;
+         blinkColorValue = RGBLedState.COLOR_NONE;
+      }
+      else
+      {
+         final Scene scene = mSceneBank.getScene(sceneButtonIndex);
+         if (scene.exists().get())
+            colorValue = RGBLedState.getClosestColorIndex(scene.color().get());
+         else
+            colorValue = (RGBLedState.COLOR_NONE);
+         blinkType = RGBLedState.BLINK_NONE;
+         blinkColorValue = RGBLedState.COLOR_NONE;
+      }
+
+      return new RGBLedState(colorValue, blinkColorValue, blinkType);
    }
 
    private void flushKnobs()
@@ -1541,17 +1549,17 @@ class APC40MKIIControllerExtension extends ControllerExtension
    private int computeLaunchQuantizationIndex()
    {
       return switch (mTransport.defaultLaunchQuantization().get())
-         {
-            case "none" -> 0;
-            case "8" -> 1;
-            case "4" -> 2;
-            case "2" -> 3;
-            case "1" -> 4;
-            case "1/4" -> 5;
-            case "1/8" -> 6;
-            case "1/16" -> 7;
-            default -> -1;
-         };
+      {
+      case "none" -> 0;
+      case "8" -> 1;
+      case "4" -> 2;
+      case "2" -> 3;
+      case "1" -> 4;
+      case "1/4" -> 5;
+      case "1/8" -> 6;
+      case "1/16" -> 7;
+      default -> -1;
+      };
    }
 
    /**
@@ -1620,7 +1628,9 @@ class APC40MKIIControllerExtension extends ControllerExtension
    private CursorRemoteControlsPage mRemoteControls = null;
 
    private CursorRemoteControlsPage mChannelStripRemoteControls;
+
    private CursorRemoteControlsPage mTrackRemoteControls;
+
    private CursorRemoteControlsPage mProjectRemoteControls;
 
    private MidiIn mMidiIn = null;
@@ -1666,6 +1676,7 @@ class APC40MKIIControllerExtension extends ControllerExtension
    private Layer[] mSendLayers;
 
    private Layer mTrackRemoteControlsLayer;
+
    private Layer mProjectRemoteControlsLayer;
 
    private Layer mShiftLayer;

@@ -68,7 +68,7 @@ class RGBLedState extends InternalHardwareLightState
       return Color.fromRGB255(red, green, blue);
    }
 
-   public static double[] rgbToHsv(final Color color)
+   private static double[] rgbToHsv(final Color color)
    {
       final double[] hsv = new double[3];
 
