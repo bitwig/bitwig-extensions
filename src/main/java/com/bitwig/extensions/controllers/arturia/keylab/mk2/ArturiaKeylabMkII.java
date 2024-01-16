@@ -273,11 +273,6 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          }
       };
 
-      for (int i = 0; i < 8; ++i)
-      {
-         mRemoteControlValueLayers[i] = new Layer(mLayers, "RemoteControlValue" + i);
-      }
-
       mMultiLayer = new Layer(mLayers, "Multi")
       {
          @Override
@@ -300,10 +295,14 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       };
       mBrowserLayer = new Layer(mLayers, "Browser");
 
+      mRemoteControlAdjustingValueNotificationLayer = new Layer(mLayers, "RemoteControlValue");
+
       initBaseLayer();
       initDAWLayer();
       initBrowserLayer();
       initMultiLayer();
+      initRemoteControlAdjustingValueNotificationLayer();
+
 
       mBaseLayer.activate();
       mDAWLayer.activate();
@@ -392,16 +391,17 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
          layer.bind(mEncoders[i], parameter);
 
-         final Layer remoteControlValueLayer = mRemoteControlValueLayers[i];
-         remoteControlValueLayer.showText(parameter.name(), parameter.value().displayedValue());
+         parameter.name().markInterested();
+         parameter.value().displayedValue().markInterested();
 
          // When the value of a remote control changes, show it briefly on the display
+         final int remoteControlIndex = i;
          parameter.exists().markInterested();
          final RelativeHardwarControlBindable showNotificationAction =
-         getHost().createRelativeHardwareControlAdjustmentTarget(value -> {
-            if (parameter.exists().get())
-               showNotificationLayer(remoteControlValueLayer);
-         });
+            getHost().createRelativeHardwareControlAdjustmentTarget(value -> {
+               if (parameter.exists().get())
+                  showRemoteControlAdjustingValueNotificationLayer(remoteControlIndex);
+            });
          layer.bind(mEncoders[i], showNotificationAction);
       }
 
@@ -416,24 +416,6 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          () -> mCursorTrack.exists().get()
             ? mDevice.exists().get() ? (mDevice.name().getLimited(16)) : "No Device"
             : "");
-   }
-
-   private void showNotificationLayer(final Layer layer)
-   {
-      if (mCurrentNotificationLayer != null && mCurrentNotificationLayer != layer)
-         mCurrentNotificationLayer.deactivate();
-
-      // Activate
-      layer.activate();
-      mCurrentNotificationLayer = layer;
-
-      // Deactivate after a brief delay
-      final int taskCount = ++mShowNotificationLayerTaskCount;
-      getHost().scheduleTask(() -> {
-         if (mShowNotificationLayerTaskCount != taskCount)
-            return; // other tasks were scheduled in the meantime
-         layer.deactivate();
-      }, 500);
    }
 
    private void initBrowserLayer()
@@ -543,6 +525,65 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
          return sb.toString();
       });
+   }
+
+   private void initRemoteControlAdjustingValueNotificationLayer()
+   {
+      mRemoteControlAdjustingValueNotificationLayer.showText(this::getRemoteControlAdjustingValueNotificationTopLine, this::getRemoteControlAdjustingValueNotificationBottomLine);
+   }
+
+   private void showRemoteControlAdjustingValueNotificationLayer(final int remoteControlIndex)
+   {
+      final int notificationDurationInMs = 500;
+
+      mRemoteControlThatWasAdjustedLastIndex = remoteControlIndex;
+
+      // Set end time for notification. If there is an active notification, we will respect the new end time.
+      mHideRemoteControlAdjustingValueNotificationLayerTime = System.currentTimeMillis() + notificationDurationInMs;
+
+      // Enable notification layer.
+      if (!mRemoteControlAdjustingValueNotificationLayer.isActive())
+      {
+         mRemoteControlAdjustingValueNotificationLayer.activate();
+         scheduleHideNotificationTask(mHideRemoteControlAdjustingValueNotificationLayerTime, notificationDurationInMs);
+      }
+   }
+
+   private void scheduleHideNotificationTask(final long hideRemoteControlAdjustingValueNotificationLayerTime, final int durationInMs)
+   {
+      if (durationInMs <= 0)
+      {
+         hideNotification();
+         return;
+      }
+
+      getHost().scheduleTask(() -> {
+         if (hideRemoteControlAdjustingValueNotificationLayerTime == mHideRemoteControlAdjustingValueNotificationLayerTime)
+         {
+            // No other notification was shown in between
+            hideNotification();
+         }
+         else
+         {
+            final long delta = mHideRemoteControlAdjustingValueNotificationLayerTime - System.currentTimeMillis();
+            scheduleHideNotificationTask(mHideRemoteControlAdjustingValueNotificationLayerTime, (int) delta);
+         }
+      }, durationInMs);
+   }
+
+   private void hideNotification()
+   {
+      mRemoteControlAdjustingValueNotificationLayer.deactivate();
+   }
+
+   private String getRemoteControlAdjustingValueNotificationTopLine()
+   {
+      return mRemoteControls.getParameter(mRemoteControlThatWasAdjustedLastIndex).name().get();
+   }
+
+   private String getRemoteControlAdjustingValueNotificationBottomLine()
+   {
+      return mRemoteControls.getParameter(mRemoteControlThatWasAdjustedLastIndex).value().displayedValue().get();
    }
 
    @Override
@@ -882,11 +923,11 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
    private Layer mDAWLayer;
 
-   private Layer[] mRemoteControlValueLayers = new Layer[8];
+   private Layer mRemoteControlAdjustingValueNotificationLayer;
 
-   private int mShowNotificationLayerTaskCount;
+   private int mRemoteControlThatWasAdjustedLastIndex;
 
-   private Layer mCurrentNotificationLayer;
+   private long mHideRemoteControlAdjustingValueNotificationLayerTime;
 
    private Layer mBrowserLayer;
 
