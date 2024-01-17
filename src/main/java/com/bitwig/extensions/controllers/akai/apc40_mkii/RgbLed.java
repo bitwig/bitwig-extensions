@@ -7,8 +7,6 @@ import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 
 class RgbLed
 {
-
-
    protected RgbLed(
       final HardwareButton button,
       final HardwareSurface surface,
@@ -20,11 +18,15 @@ class RgbLed
       mMessage = message;
       mData1 = data1;
 
-      final MultiStateHardwareLight hardwareLight = surface.createMultiStateHardwareLight(button.getId() + "-light");
-      hardwareLight.state().setValueSupplier(this::getState);
-      hardwareLight.setColorToStateFunction(RGBLedState::getBestStateForColor);
-      hardwareLight.state().onUpdateHardware(state -> sendLightState(midiOut, (RGBLedState)state));
-      button.setBackgroundLight(hardwareLight);
+      mLight = surface.createMultiStateHardwareLight(button.getId() + "-light");
+      mLight.setColorToStateFunction(RGBLedState::getBestStateForColor);
+      mLight.state().onUpdateHardware(state -> sendLightState(midiOut, (RGBLedState)state));
+      button.setBackgroundLight(mLight);
+   }
+
+   public MultiStateHardwareLight getLight()
+   {
+       return mLight;
    }
 
    private void sendLightState(final MidiOut midiOut, RGBLedState state)
@@ -49,17 +51,7 @@ class RgbLed
       }
    }
 
-   public RGBLedState getState()
-   {
-      return mState;
-   }
-
-   public void setState(final RGBLedState state)
-   {
-      mState = state;
-   }
+   private final MultiStateHardwareLight mLight;
 
    private final int mMessage, mData1;
-
-   private RGBLedState mState;
 }
