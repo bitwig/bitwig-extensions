@@ -16,6 +16,7 @@ import com.bitwig.extension.controller.api.BrowserFilterItem;
 import com.bitwig.extension.controller.api.BrowserResultsItem;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
+import com.bitwig.extension.controller.api.ContinuousHardwareControl;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorBrowserFilterItem;
 import com.bitwig.extension.controller.api.CursorDevice;
@@ -38,7 +39,6 @@ import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
-import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
@@ -294,13 +294,13 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       };
       mBrowserLayer = new Layer(mLayers, "Browser");
 
-      mNotificationLayer = new Layer(mLayers, "Notifications");
+      mAdjustingContinuousHardwareControlNotificationLayer = new Layer(mLayers, "Notifications");
 
       initBaseLayer();
       initDAWLayer();
       initBrowserLayer();
       initMultiLayer();
-      initNotificationLayer();
+      initAdjustingContinuousHardwareControlNotificationLayer();
 
 
       mBaseLayer.activate();
@@ -511,19 +511,20 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       });
    }
 
-   private void initNotificationLayer()
+   private void initAdjustingContinuousHardwareControlNotificationLayer()
    {
-      mNotificationLayer.showText(this::getNotificationTopLine, this::getNotificationBottomLine);
+      mAdjustingContinuousHardwareControlNotificationLayer.showText(
+         this::getAdjustingContinuousHardwareControlNotificationTopLine,
+         this::getAdjustingContinuousHardwareControlNotificationBottomLine);
 
       for (final RelativeHardwareControl encoder : mEncoders)
       {
          encoder.isUpdatingTargetValue().markInterested();
          encoder.targetName().markInterested();
          encoder.targetDisplayedValue().markInterested();
-         encoder.isBeingTouched().markInterested();
          encoder.targetValue().addValueObserver((v) -> {
             if (encoder.isUpdatingTargetValue().get())
-               showNotificationOnDisplay(encoder.targetName(), encoder.targetDisplayedValue());
+               showAdjustingContinuousHardwareControlNotification(encoder);
          });
       }
 
@@ -531,65 +532,70 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       {
          fader.targetName().markInterested();
          fader.targetDisplayedValue().markInterested();
-         fader.value().addValueObserver((v) -> showNotificationOnDisplay(fader.targetName(), fader.targetDisplayedValue()));
+         fader.value().addValueObserver((v) -> showAdjustingContinuousHardwareControlNotification(fader));
       }
    }
 
-   private void showNotificationOnDisplay(final StringValue topRowText, final StringValue bottomRowText)
+   private void showAdjustingContinuousHardwareControlNotification(final ContinuousHardwareControl<?> control)
    {
       final int notificationDurationInMs = 500;
 
-      mNotificationTopRowText = topRowText;
-      mNotificationBottomRowText = bottomRowText;
+      mContinuousHardwareControlThatIsBeingAdjusted = control;
 
       // Set end time for notification. If there is an active notification, we will respect the new end time.
-      mHideNotificationTime = System.currentTimeMillis() + notificationDurationInMs;
+      mHideAdjustingContinuousHardwareControlNotificationTime = System.currentTimeMillis() + notificationDurationInMs;
 
       // Enable notification layer.
-      if (!mNotificationLayer.isActive())
+      if (!mAdjustingContinuousHardwareControlNotificationLayer.isActive())
       {
-         mNotificationLayer.activate();
-         scheduleHideNotificationTask(mHideNotificationTime, notificationDurationInMs);
+         mAdjustingContinuousHardwareControlNotificationLayer.activate();
+         scheduleHideAdjustingContinuousHardwareControlNotificationTask(mHideAdjustingContinuousHardwareControlNotificationTime, notificationDurationInMs);
       }
    }
 
-   private void scheduleHideNotificationTask(final long hideNotificationTime, final int durationInMs)
+   private void scheduleHideAdjustingContinuousHardwareControlNotificationTask(final long hideNotificationTime, final int durationInMs)
    {
       if (durationInMs <= 0)
       {
-         hideNotification();
+         hideAdjustingContinuousHardwareControlNotification();
          return;
       }
 
       getHost().scheduleTask(() -> {
-         if (hideNotificationTime == mHideNotificationTime)
+         if (hideNotificationTime == mHideAdjustingContinuousHardwareControlNotificationTime)
          {
             // No other notification was shown in between
-            hideNotification();
+            hideAdjustingContinuousHardwareControlNotification();
          }
          else
          {
             // Another notification was shown since this task was scheduled. That means we should not hide the
             // notification now, but schedule another task.
-            final long remainingTimeInMs = mHideNotificationTime - System.currentTimeMillis();
-            scheduleHideNotificationTask(mHideNotificationTime, (int) remainingTimeInMs);
+            final long remainingTimeInMs = mHideAdjustingContinuousHardwareControlNotificationTime - System.currentTimeMillis();
+            scheduleHideAdjustingContinuousHardwareControlNotificationTask(
+               mHideAdjustingContinuousHardwareControlNotificationTime,
+               (int) remainingTimeInMs);
          }
       }, durationInMs);
    }
 
-   private void hideNotification()
+   private void hideAdjustingContinuousHardwareControlNotification()
    {
-      mNotificationLayer.deactivate();
+      mAdjustingContinuousHardwareControlNotificationLayer.deactivate();
    }
 
-   private String getNotificationTopLine()
+   private String getAdjustingContinuousHardwareControlNotificationTopLine()
    {
-      return mNotificationTopRowText != null ? mNotificationTopRowText.getLimited(8) : "";
+      return mContinuousHardwareControlThatIsBeingAdjusted != null
+         ? mContinuousHardwareControlThatIsBeingAdjusted.targetName().getLimited(8)
+         : "";
    }
 
-   private String getNotificationBottomLine()
+   private String getAdjustingContinuousHardwareControlNotificationBottomLine()
    {
-      return mNotificationBottomRowText != null ? mNotificationBottomRowText.getLimited(8) : "";
+      return mContinuousHardwareControlThatIsBeingAdjusted != null
+         ? mContinuousHardwareControlThatIsBeingAdjusted.targetDisplayedValue().getLimited(8)
+         : "";
    }
 
    @Override
@@ -929,13 +935,11 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
    private Layer mDAWLayer;
 
-   private Layer mNotificationLayer;
+   private Layer mAdjustingContinuousHardwareControlNotificationLayer;
 
-   private StringValue mNotificationTopRowText;
+   private ContinuousHardwareControl<?> mContinuousHardwareControlThatIsBeingAdjusted;
 
-   private StringValue mNotificationBottomRowText;
-
-   private long mHideNotificationTime;
+   private long mHideAdjustingContinuousHardwareControlNotificationTime;
 
    private Layer mBrowserLayer;
 
