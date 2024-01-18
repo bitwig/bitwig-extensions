@@ -34,10 +34,8 @@ import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
 import com.bitwig.extension.controller.api.PianoKeyboard;
 import com.bitwig.extension.controller.api.PopupBrowser;
-import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
-import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.StringValue;
@@ -302,7 +300,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       initDAWLayer();
       initBrowserLayer();
       initMultiLayer();
-      initRemoteControlAdjustingValueNotificationLayer();
+      initNotificationLayer();
 
 
       mBaseLayer.activate();
@@ -388,21 +386,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
       for (int i = 0; i < 8; i++)
       {
-         final RemoteControl parameter = mRemoteControls.getParameter(i);
-
-         layer.bind(mEncoders[i], parameter);
-
-         parameter.name().markInterested();
-         parameter.value().displayedValue().markInterested();
-
-         // When the value of a remote control changes, show it briefly on the display
-         parameter.exists().markInterested();
-         final RelativeHardwarControlBindable showNotificationAction =
-            getHost().createRelativeHardwareControlAdjustmentTarget(value -> {
-               if (parameter.exists().get())
-                  showNotificationOnDisplay(parameter.name(), parameter.displayedValue());
-            });
-         layer.bind(mEncoders[i], showNotificationAction);
+         layer.bind(mEncoders[i], mRemoteControls.getParameter(i));
       }
 
       layer.bind(mWheel, mCursorTrack);
@@ -527,9 +511,28 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       });
    }
 
-   private void initRemoteControlAdjustingValueNotificationLayer()
+   private void initNotificationLayer()
    {
       mNotificationLayer.showText(this::getNotificationTopLine, this::getNotificationBottomLine);
+
+      for (final RelativeHardwareControl encoder : mEncoders)
+      {
+         encoder.isUpdatingTargetValue().markInterested();
+         encoder.targetName().markInterested();
+         encoder.targetDisplayedValue().markInterested();
+         encoder.isBeingTouched().markInterested();
+         encoder.targetValue().addValueObserver((v) -> {
+            if (encoder.isUpdatingTargetValue().get())
+               showNotificationOnDisplay(encoder.targetName(), encoder.targetDisplayedValue());
+         });
+      }
+
+      for (final AbsoluteHardwareControl fader : mFaders)
+      {
+         fader.targetName().markInterested();
+         fader.targetDisplayedValue().markInterested();
+         fader.value().addValueObserver((v) -> showNotificationOnDisplay(fader.targetName(), fader.targetDisplayedValue()));
+      }
    }
 
    private void showNotificationOnDisplay(final StringValue topRowText, final StringValue bottomRowText)
@@ -581,12 +584,12 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
    private String getNotificationTopLine()
    {
-      return mNotificationTopRowText != null ? mNotificationTopRowText.get() : "";
+      return mNotificationTopRowText != null ? mNotificationTopRowText.getLimited(8) : "";
    }
 
    private String getNotificationBottomLine()
    {
-      return mNotificationBottomRowText != null ? mNotificationBottomRowText.get() : "";
+      return mNotificationBottomRowText != null ? mNotificationBottomRowText.getLimited(8) : "";
    }
 
    @Override
