@@ -1,20 +1,21 @@
 package com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.buttons;
 
-import java.util.function.Supplier;
-
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
-import com.bitwig.extensions.controllers.akai.apcmk2.led.RgbLightState;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.MidiProcessor;
 import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbColor;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbLightState;
 import com.bitwig.extensions.framework.Layer;
+
+import java.util.function.Supplier;
 
 public class RgbButton extends GateButton {
    private final MultiStateHardwareLight light;
 
-   public RgbButton(final int midiId, final String name, final HardwareSurface surface, final MidiProcessor midiProcessor) {
+   public RgbButton(final int midiId, final String name, final HardwareSurface surface,
+                    final MidiProcessor midiProcessor) {
       super(midiId, midiProcessor);
       final MidiIn midiIn = midiProcessor.getMidiIn();
       hwButton = surface.createHardwareButton(name + "_" + midiId);

@@ -1,22 +1,23 @@
 package com.bitwig.extensions.controllers.maudio.oxygenpro.control;
 
-import java.util.function.Supplier;
-
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
-import com.bitwig.extensions.controllers.akai.apcmk2.led.RgbLightState;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.MidiProcessor;
 import com.bitwig.extensions.controllers.maudio.oxygenpro.RgbColor;
+import com.bitwig.extensions.controllers.nativeinstruments.maschinemikro.RgbLightState;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.values.Midi;
+
+import java.util.function.Supplier;
 
 public class PadButton extends OxygenButton {
 
    private final MultiStateHardwareLight light;
 
-   public PadButton(final int midiId, final String name, final HardwareSurface surface, final MidiProcessor midiProcessor) {
+   public PadButton(final int midiId, final String name, final HardwareSurface surface,
+                    final MidiProcessor midiProcessor) {
       super(midiId, midiProcessor);
       final MidiIn midiIn = midiProcessor.getMidiIn();
       hwButton = surface.createHardwareButton(name + "_" + midiId);
@@ -33,7 +34,6 @@ public class PadButton extends OxygenButton {
 
    private void updateState(final InternalHardwareLightState state) {
       if (state instanceof final RgbColor rgbState) {
-         
          midiProcessor.sendMidi(Midi.NOTE_ON, midiId, rgbState.getStateIndex());
       }
    }

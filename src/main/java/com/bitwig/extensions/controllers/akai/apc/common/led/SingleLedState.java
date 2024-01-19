@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.akai.apcmk2.led;
+package com.bitwig.extensions.controllers.akai.apc.common.led;
 
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;

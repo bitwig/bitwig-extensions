@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.akai.apcmk2.midi;
+package com.bitwig.extensions.controllers.akai.apc.common;
 
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
@@ -19,4 +19,5 @@ public interface MidiProcessor {
     void setModeChangeListener(final IntConsumer modeChangeListener);
 
     MidiIn getMidiIn();
+
 }

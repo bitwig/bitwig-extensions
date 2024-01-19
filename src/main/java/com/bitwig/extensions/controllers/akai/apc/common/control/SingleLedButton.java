@@ -1,10 +1,10 @@
-package com.bitwig.extensions.controllers.akai.apcmk2.control;
+package com.bitwig.extensions.controllers.akai.apc.common.control;
 
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
-import com.bitwig.extensions.controllers.akai.apcmk2.led.RgbLightState;
-import com.bitwig.extensions.controllers.akai.apcmk2.led.SingleLedState;
-import com.bitwig.extensions.controllers.akai.apcmk2.midi.MidiProcessor;
+import com.bitwig.extensions.controllers.akai.apc.common.led.RgbLightState;
+import com.bitwig.extensions.controllers.akai.apc.common.led.SingleLedState;
+import com.bitwig.extensions.controllers.akai.apc.common.MidiProcessor;
 import com.bitwig.extensions.framework.values.Midi;
 
 public class SingleLedButton extends ApcButton {

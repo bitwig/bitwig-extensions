@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.akai.apcmk2.control;
+package com.bitwig.extensions.controllers.akai.apc.common.control;
 
 import com.bitwig.extension.controller.api.HardwareBinding;
 import com.bitwig.extension.controller.api.RelativeHardwareControlBinding;

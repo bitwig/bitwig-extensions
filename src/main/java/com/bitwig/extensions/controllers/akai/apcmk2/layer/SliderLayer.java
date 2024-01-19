@@ -3,7 +3,7 @@ package com.bitwig.extensions.controllers.akai.apcmk2.layer;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.controllers.akai.apcmk2.ControlMode;
 import com.bitwig.extensions.controllers.akai.apcmk2.ViewControl;
-import com.bitwig.extensions.controllers.akai.apcmk2.control.HardwareElementsApc;
+import com.bitwig.extensions.controllers.akai.apcmk2.HardwareElementsApc;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.PostConstruct;
 

@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.akai.apcmk2.led;
+package com.bitwig.extensions.controllers.akai.apc.common.led;
 
 public class ColorLookup {
     private static final Hsb BLACK_HSB = new Hsb(0, 0, 0);

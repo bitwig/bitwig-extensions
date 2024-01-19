@@ -15,7 +15,7 @@ public abstract class OxygenProExtensionDefinition extends ControllerExtensionDe
    private static final String KEY_FORMAT_WIN = "Oxygen Pro %s";
    private static final String KEY_FORMAT_MAC = "Oxygen Pro %s USB MIDI";
 
-   private static final String VERSION = "1.01";
+   private static final String VERSION = "1.02";
 
    public OxygenProExtensionDefinition() {
    }
@@ -62,13 +62,13 @@ public abstract class OxygenProExtensionDefinition extends ControllerExtensionDe
    public int getNumMidiOutPorts() {
       return 2;
    }
-   
+
    @Override
    public String getHelpFilePath() {
       return "Controllers/M-Audio/M-Audio Oxygen Pro 49-61-Hammer88.pdf";
    }
-   
-   
+
+
    @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
                                               final PlatformType platformType) {
@@ -80,7 +80,7 @@ public abstract class OxygenProExtensionDefinition extends ControllerExtensionDe
    }
 
    private void addPorts(final AutoDetectionMidiPortNamesList list, final String inFormat, final String outFormat,
-                         String keyFormat, final String keyVersion) {
+                         final String keyFormat, final String keyVersion) {
       list.add(new String[]{String.format(inFormat, keyVersion), String.format(keyFormat, keyVersion)},
          new String[]{String.format(outFormat, keyVersion), String.format(keyFormat, keyVersion)});
    }

@@ -1,10 +1,13 @@
-package com.bitwig.extensions.controllers.akai.apcmk2.control;
+package com.bitwig.extensions.controllers.akai.apcmk2;
 
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extensions.controllers.akai.apc.common.control.Encoder;
+import com.bitwig.extensions.controllers.akai.apc.common.control.RgbButton;
+import com.bitwig.extensions.controllers.akai.apc.common.control.SingleLedButton;
 import com.bitwig.extensions.controllers.akai.apcmk2.ApcConfiguration;
-import com.bitwig.extensions.controllers.akai.apcmk2.midi.MidiProcessor;
+import com.bitwig.extensions.controllers.akai.apc.common.MidiProcessor;
 import com.bitwig.extensions.framework.di.PostConstruct;
 
 public class HardwareElementsApc {

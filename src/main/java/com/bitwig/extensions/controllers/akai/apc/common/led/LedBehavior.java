@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.akai.apcmk2.led;
+package com.bitwig.extensions.controllers.akai.apc.common.led;
 
 public enum LedBehavior {
     LIGHT_10(0),
@@ -18,11 +18,13 @@ public enum LedBehavior {
     BLINK_4(14),
     BLINK_2(15);
     final int code;
+
     LedBehavior(int code) {
         this.code = code;
-    }
+     }
     
     public int getCode() {
         return code;
     }
-}
+    
+ }
