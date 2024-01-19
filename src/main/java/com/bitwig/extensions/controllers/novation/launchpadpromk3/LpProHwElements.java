@@ -4,6 +4,7 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extensions.controllers.novation.commonsmk3.DrumButton;
 import com.bitwig.extensions.controllers.novation.commonsmk3.GridButton;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LabeledButton;
+import com.bitwig.extensions.controllers.novation.commonsmk3.LpHwElements;
 import com.bitwig.extensions.controllers.novation.commonsmk3.MidiProcessor;
 import com.bitwig.extensions.framework.di.PostConstruct;
 
@@ -12,13 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HwElements {
+public class LpProHwElements implements LpHwElements {
     private final GridButton[][] gridButtons = new GridButton[8][8];
     private final Map<LabelCcAssignments, LabeledButton> labeledButtons = new HashMap<>();
     private final List<LabeledButton> sceneLaunchButtons = new ArrayList<>();
     private final List<LabeledButton> trackSelectButtons = new ArrayList<>();
     private final List<DrumButton> drumGridButtons = new ArrayList<>();
-
+    
     @PostConstruct
     public void init(final HardwareSurface surface, final MidiProcessor midiProcessor) {
         initGridButtons(surface, midiProcessor);
@@ -30,16 +31,16 @@ public class HwElements {
         }
         for (int i = 0; i < 8; i++) {
             final LabeledButton sceneButton = new LabeledButton("SCENE_LAUNCH_" + (i + 1), surface, midiProcessor,
-                    LabelCcAssignments.R8_PRINT_TO_CLIP.getCcValue() + (7 - i) * 10);
+                LabelCcAssignments.R8_PRINT_TO_CLIP.getCcValue() + (7 - i) * 10);
             sceneLaunchButtons.add(sceneButton);
-
+            
             final LabeledButton trackButton = new LabeledButton("TRACK_" + (i + 1), surface, midiProcessor,
-                    LabelCcAssignments.TRACK_SEL_1.getCcValue() + i);
+                LabelCcAssignments.TRACK_SEL_1.getCcValue() + i);
             trackSelectButtons.add(trackButton);
         }
-
+        
     }
-
+    
     private void initGridButtons(final HardwareSurface surface, final MidiProcessor midiProcessor) {
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
@@ -51,23 +52,26 @@ public class HwElements {
             drumGridButtons.add(new DrumButton(surface, midiProcessor, 8, noteValue));
         }
     }
-
+    
+    @Override
     public GridButton getGridButton(final int row, final int col) {
         return gridButtons[row][col];
     }
-
+    
     public LabeledButton getLabeledButton(final LabelCcAssignments assignment) {
         return labeledButtons.get(assignment);
     }
-
+    
+    @Override
     public List<DrumButton> getDrumGridButtons() {
         return drumGridButtons;
     }
-
+    
+    @Override
     public List<LabeledButton> getSceneLaunchButtons() {
         return sceneLaunchButtons;
     }
-
+    
     public List<LabeledButton> getTrackSelectButtons() {
         return trackSelectButtons;
     }

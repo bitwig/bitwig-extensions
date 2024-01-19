@@ -10,6 +10,7 @@ import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LabeledButton;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LaunchpadDeviceConfig;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
+import com.bitwig.extensions.controllers.novation.commonsmk3.ViewCursorControl;
 import com.bitwig.extensions.controllers.novation.launchpadmini3.layers.DrumLayer;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
@@ -54,7 +55,7 @@ public class LaunchpadXControllerExtension extends AbstractLaunchpadMk3Extension
     }
     
     private void initModeButtons(final Context diContext, final Layer layer) {
-        final HwElements hwElements = diContext.getService(HwElements.class);
+        final LpMiniHwElements hwElements = diContext.getService(LpMiniHwElements.class);
         final LabeledButton sessionButton = hwElements.getLabeledButton(LabelCcAssignmentsMini.SESSION);
         //sessionButton.bindPressed(layer, this::toggleMode);
         sessionButton.bindDoubleTapCombo(
