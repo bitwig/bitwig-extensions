@@ -88,7 +88,7 @@ public class PresonusAtomDefinition extends ControllerExtensionDefinition
    @Override
    public String getVersion()
    {
-      return "3.1";
+      return "3.2";
    }
 
    @Override

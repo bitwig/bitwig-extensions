@@ -286,6 +286,8 @@ public class PresonusAtom extends ControllerExtension
          final DrumPad drumPad = mDrumPadBank.getItemAt(i);
          drumPad.exists().markInterested();
          drumPad.color().markInterested();
+         drumPad.mute().markInterested();
+         drumPad.solo().markInterested();
 
          createPadButton(i);
       }
@@ -352,6 +354,7 @@ public class PresonusAtom extends ControllerExtension
       mLauncherClipsLayer = createLayer("Launcher Clips");
       mNoteRepeatLayer = createLayer("Note Repeat");
       mNoteRepeatShiftLayer = createLayer("Note Repeat Shift");
+      mMuteLayer = createLayer("Mute");
 
       initBaseLayer();
       initStepsLayer();
@@ -360,6 +363,7 @@ public class PresonusAtom extends ControllerExtension
       initLauncherClipsLayer();
       initNoteRepeatLayer();
       initNoteRepeatShiftLayer();
+      initMuteLayer();
 
       // DebugUtilities.createDebugLayer(mLayers, mHardwareSurface).activate();
    }
@@ -407,6 +411,7 @@ public class PresonusAtom extends ControllerExtension
       mBaseLayer.bind(() -> getClipColor(mCursorClip.clipLauncherSlot()), mSelectButton);
 
       mBaseLayer.bindToggle(mEditorButton, mStepsLayer);
+      mBaseLayer.bindToggle(mShowHideButton, mMuteLayer);
 
       mBaseLayer.bindReleased(mNoteRepeatButton, () -> {
          mArpeggiator.mode().set("all");
@@ -579,6 +584,19 @@ public class PresonusAtom extends ControllerExtension
       }
    }
 
+   private void initMuteLayer()
+   {
+      for (int i = 0; i < 16; i++)
+      {
+         final int drumPadIndex = i;
+         final DrumPad pad = mDrumPadBank.getItemAt(i);
+         final HardwareButton padButton = mPadButtons[i];
+
+         mMuteLayer.bindPressed(padButton, () -> (mShift ? pad.solo() : pad.mute()).toggle());
+         mMuteLayer.bind(() -> getDrumPadColor(drumPadIndex), padButton);
+      }
+   }
+
    private Color getStepsZoomPadColor(final int padIndex)
    {
       final int numStepPages = getNumStepPages();
@@ -672,6 +690,8 @@ public class PresonusAtom extends ControllerExtension
       final DrumPad drumPad = mDrumPadBank.getItemAt(padIndex);
       final boolean padBankExists = mDrumPadBank.exists().get();
       final boolean isOn = padBankExists ? drumPad.exists().get() : true;
+      final boolean isMuted = padBankExists ? drumPad.mute().get() : true;
+      final boolean isSolo = padBankExists ? drumPad.solo().get() : true;
 
       if (!isOn)
          return null;
@@ -699,6 +719,14 @@ public class PresonusAtom extends ControllerExtension
       if (playing > 0)
       {
          return mixColorWithWhite(drumPadColor, playing);
+      }
+
+      if (isSolo) {
+         return ORANGE;
+      }
+
+      if (isMuted) {
+         return RED;
       }
 
       return drumPadColor;
@@ -997,7 +1025,7 @@ public class PresonusAtom extends ControllerExtension
 
          final boolean shouldPlayDrums = !mStepsLayer.isActive() && !mNoteRepeatShiftLayer.isActive()
             && !mLauncherClipsLayer.isActive() && !mStepsZoomLayer.isActive()
-            && !mStepsSetupLoopLayer.isActive();
+            && !mStepsSetupLoopLayer.isActive() && !mMuteLayer.isActive();
 
          mNoteInput
             .setKeyTranslationTable(shouldPlayDrums ? NoteInputUtils.ALL_NOTES : NoteInputUtils.NO_NOTES);
@@ -1005,7 +1033,7 @@ public class PresonusAtom extends ControllerExtension
    };
 
    private Layer mBaseLayer, mStepsLayer, mLauncherClipsLayer, mNoteRepeatLayer, mNoteRepeatShiftLayer,
-      mStepsZoomLayer, mStepsSetupLoopLayer;
+      mStepsZoomLayer, mStepsSetupLoopLayer, mMuteLayer;
 
    private Arpeggiator mArpeggiator;
 
