@@ -40,7 +40,7 @@ public class SceneLayer extends Layer {
       sceneBank.scrollPosition().addValueObserver(value -> sceneOffset = value);
       List<RgbButton> padButtons = hwElements.getPadButtons();
       sceneBank.setIndication(true);
-
+      
       for (int i = 0; i < 16; i++) {
          final int index = i;
          RgbButton button = padButtons.get(i);

@@ -4,6 +4,7 @@ com.bitwig.extensions.controllers.akai.mpk_mini_mk3.MpkMiniMk3ControllerExtensio
 com.bitwig.extensions.controllers.akai.mpkminiplus.MpkMiniPlusControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.apcmk2.AkaiApcKeys25Definition
 com.bitwig.extensions.controllers.akai.apcmk2.AkaiApcMiniDefinition
+com.bitwig.extensions.controllers.akai.apc64.Apc64ExtensionDefinition
 
 com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab25ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.mk2.ArturiaKeylab49MkIIControllerExtensionDefinition
