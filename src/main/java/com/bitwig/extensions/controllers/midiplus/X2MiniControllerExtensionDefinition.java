@@ -44,11 +44,7 @@ public class X2MiniControllerExtensionDefinition extends ControllerExtensionDefi
             list.add(new String[]{"X2mini MIDI 1"}, new String[]{"X2mini MIDI 1"});
             break;
 
-         case WINDOWS:
-            list.add(new String[]{"X2mini"}, new String[]{"X2mini"});
-            break;
-
-         case MAC:
+         case WINDOWS, MAC:
             list.add(new String[]{"X2mini"}, new String[]{"X2mini"});
             break;
       }
@@ -88,12 +84,6 @@ public class X2MiniControllerExtensionDefinition extends ControllerExtensionDefi
    public int getRequiredAPIVersion()
    {
       return XControllerExtension.REQUIRED_API_VERSION;
-   }
-
-   @Override
-   public boolean shouldFailOnDeprecatedUse()
-   {
-      return true;
    }
 
    public static X2MiniControllerExtensionDefinition getInstance()
