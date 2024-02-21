@@ -1,12 +1,12 @@
 package com.bitwig.extensions.controllers.akai.apcmk2.layer;
 
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.akai.apcmk2.DebugApc;
+import com.bitwig.extensions.controllers.akai.apcmk2.AbstractAkaiApcExtension;
 import com.bitwig.extensions.controllers.akai.apcmk2.ViewControl;
-import com.bitwig.extensions.controllers.akai.apcmk2.control.HardwareElementsApc;
-import com.bitwig.extensions.controllers.akai.apcmk2.control.RgbButton;
-import com.bitwig.extensions.controllers.akai.apcmk2.led.RgbLightState;
-import com.bitwig.extensions.controllers.akai.apcmk2.midi.MidiProcessor;
+import com.bitwig.extensions.controllers.akai.apcmk2.HardwareElementsApc;
+import com.bitwig.extensions.controllers.akai.apc.common.control.RgbButton;
+import com.bitwig.extensions.controllers.akai.apc.common.led.RgbLightState;
+import com.bitwig.extensions.controllers.akai.apc.common.MidiProcessor;
 import com.bitwig.extensions.controllers.novation.commonsmk3.ColorLookup;
 import com.bitwig.extensions.controllers.novation.commonsmk3.SpecialDevices;
 import com.bitwig.extensions.framework.Layer;
@@ -47,8 +47,7 @@ public class DrumPadLayer extends Layer {
         final CursorTrack cursorTrack = viewCursorControl.getCursorTrack();
         cursorTrack.color()
                 .addValueObserver(
-                        (r, g, b) -> currentTrackColor = com.bitwig.extensions.controllers.akai.apcmk2.led.ColorLookup.toColor(
-                                r, g, b));
+                        (r, g, b) -> currentTrackColor = ColorLookup.toColor(r, g, b));
         cursorTrack.playingNotes().addValueObserver(this::handleNotes);
 
         final PinnableCursorDevice primaryDevice = viewCursorControl.getPrimaryDevice();
@@ -60,7 +59,7 @@ public class DrumPadLayer extends Layer {
         drumPadBank = primaryDevice.createDrumPadBank(64);
         drumPadBank.scrollPosition().addValueObserver(index -> {
             padsNoteOffset = index;
-            DebugApc.println(" PAD Offset = %d", padsNoteOffset);
+            AbstractAkaiApcExtension.println(" PAD Offset = %d", padsNoteOffset);
             if (isActive()) {
                 applyNotes(padsNoteOffset);
             }

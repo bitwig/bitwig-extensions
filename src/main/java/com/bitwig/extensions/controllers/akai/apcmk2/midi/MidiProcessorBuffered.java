@@ -3,7 +3,7 @@ package com.bitwig.extensions.controllers.akai.apcmk2.midi;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.akai.apcmk2.DebugApc;
+import com.bitwig.extensions.controllers.akai.apcmk2.AbstractAkaiApcExtension;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
 import java.util.LinkedList;
@@ -55,7 +55,7 @@ public class MidiProcessorBuffered extends AbstractMidiProcessor {
                 modeChangeListener.accept(mode);
             }
         } else {
-            DebugApc.println("Sysex %s", sysExString);
+            AbstractAkaiApcExtension.println("Sysex %s", sysExString);
         }
     }
 

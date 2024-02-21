@@ -71,13 +71,13 @@ public class LaunchPadMiniMk3ExtensionDefinition extends ControllerExtensionDefi
       final String[] outputNames = new String[1];
 
       switch (platformType) {
-         case LINUX:
          case WINDOWS:
             inputNames[0] = "LPMiniMK3 MIDI";
             inputNames[1] = "MIDIIN2 (LPMiniMK3 MIDI)";
             outputNames[0] = "LPMiniMK3 MIDI";
             break;
          case MAC:
+         case LINUX:
             inputNames[0] = "Launchpad Mini MK3 LPMiniMK3 DAW Out";
             inputNames[1] = "Launchpad Mini MK3 LPMiniMK3 MIDI Out";
             outputNames[0] = "Launchpad Mini MK3 LPMiniMK3 DAW In";

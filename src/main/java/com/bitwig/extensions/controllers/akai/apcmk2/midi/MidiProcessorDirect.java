@@ -3,7 +3,7 @@ package com.bitwig.extensions.controllers.akai.apcmk2.midi;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extensions.controllers.akai.apcmk2.DebugApc;
+import com.bitwig.extensions.controllers.akai.apcmk2.AbstractAkaiApcExtension;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
 public class MidiProcessorDirect extends AbstractMidiProcessor {
@@ -32,7 +32,7 @@ public class MidiProcessorDirect extends AbstractMidiProcessor {
 
     protected void handleSysEx(final String sysExString) {
         if (sysExString.startsWith(KEYS_DEVICE_RESPONSE)) {
-            DebugApc.println(" Response KEYS");
+            AbstractAkaiApcExtension.println(" Response KEYS");
         }
     }
 
