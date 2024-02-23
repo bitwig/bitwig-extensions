@@ -47,6 +47,8 @@ public class McuExtension extends ControllerExtension {
         mainLayer = diContext.createLayer("MAIN_LAYER");
         surface = diContext.getService(HardwareSurface.class);
         MainSection mainControl = null;
+        final List<MainSection> mainSections = new ArrayList<>();
+        final List<MixerSection> mixerSections = new ArrayList<>();
         
         for (int portIndex = 0; portIndex < controllerConfig.getNrOfExtenders() + 1; portIndex++) {
             final MidiProcessor midiProcessor = new MidiProcessor(diContext, portIndex);
@@ -57,7 +59,7 @@ public class McuExtension extends ControllerExtension {
                     new MainHardwareSection(diContext, midiProcessor, portIndex);
                 mainHardwareSections.add(mainHardwareSection);
                 mainControl = new MainSection(diContext, mainHardwareSection);
-                mainControl.activate();
+                mainSections.add(mainControl);
             }
             
             final MixerSectionHardware mixerSectionHardware =
@@ -65,9 +67,11 @@ public class McuExtension extends ControllerExtension {
             final MixerSection mixerLayer =
                 new MixerSection(diContext, mixerSectionHardware, mainControl, portIndex, portIndex == 0);
             mixerHardwareSections.add(mixerSectionHardware);
-            mixerLayer.activate();
+            mixerSections.add(mixerLayer);
         }
         diContext.activate();
+        mainSections.forEach(MainSection::activate);
+        mixerSections.forEach(MixerSection::activate);
     }
     
     @Override
