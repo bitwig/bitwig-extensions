@@ -70,8 +70,8 @@ public class McuExtension extends ControllerExtension {
             mixerSections.add(mixerLayer);
         }
         diContext.activate();
-        mixerSections.forEach(MixerSection::activate);
         mainSections.forEach(MainSection::activate);
+        mixerSections.forEach(MixerSection::activate);
     }
     
     @Override
