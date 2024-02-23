@@ -47,6 +47,8 @@ public class McuExtension extends ControllerExtension {
         mainLayer = diContext.createLayer("MAIN_LAYER");
         surface = diContext.getService(HardwareSurface.class);
         MainSection mainControl = null;
+        final List<MainSection> mainSections = new ArrayList<>();
+        final List<MixerSection> mixerSections = new ArrayList<>();
         
         for (int portIndex = 0; portIndex < controllerConfig.getNrOfExtenders() + 1; portIndex++) {
             final MidiProcessor midiProcessor = new MidiProcessor(diContext, portIndex);
