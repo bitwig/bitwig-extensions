@@ -59,7 +59,7 @@ public class McuExtension extends ControllerExtension {
                     new MainHardwareSection(diContext, midiProcessor, portIndex);
                 mainHardwareSections.add(mainHardwareSection);
                 mainControl = new MainSection(diContext, mainHardwareSection);
-                mainControl.activate();
+                mainSections.add(mainControl);
             }
             
             final MixerSectionHardware mixerSectionHardware =
@@ -67,9 +67,11 @@ public class McuExtension extends ControllerExtension {
             final MixerSection mixerLayer =
                 new MixerSection(diContext, mixerSectionHardware, mainControl, portIndex, portIndex == 0);
             mixerHardwareSections.add(mixerSectionHardware);
-            mixerLayer.activate();
+            mixerSections.add(mixerLayer);
         }
         diContext.activate();
+        mixerSections.forEach(MixerSection::activate);
+        mainSections.forEach(MainSection::activate);
     }
     
     @Override
