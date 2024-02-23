@@ -9,13 +9,6 @@ import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 
 final class Button
 {
-   static final int NO_PULSE = 0;
-   static final int PULSE_PLAYING = 88;
-   static final int PULSE_RECORDING = 72;
-   static final int PULSE_PLAYBACK_QUEUED = 89;
-   static final int PULSE_RECORDING_QUEUED = 56;
-   static final int PULSE_STOP_QUEUED = 118;
-
    enum State
    {
       RELEASED, PRESSED, HOLD,
@@ -108,7 +101,7 @@ final class Button
       final Color color = ledState.mColor;
       final int pulse = ledState.mPulse;
 
-      if (pulse == NO_PULSE)
+      if (pulse == LedState.NO_PULSE)
       {
          if (color.isBlack())
             ledClear.append(String.format(" %02x 00", mIndex));
