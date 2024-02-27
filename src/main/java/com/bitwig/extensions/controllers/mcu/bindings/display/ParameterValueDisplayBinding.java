@@ -9,11 +9,6 @@ public class ParameterValueDisplayBinding extends AbstractDisplayBinding<Paramet
     private final DoubleValueConverter converter;
     
     public ParameterValueDisplayBinding(final DisplayManager target, final ControlMode mode,
-        final DisplayTarget displayTargetIndex, final Parameter parameter) {
-        this(target, mode, displayTargetIndex, parameter, value -> Double.toString(value));
-    }
-    
-    public ParameterValueDisplayBinding(final DisplayManager target, final ControlMode mode,
         final DisplayTarget displayTargetIndex, final Parameter parameter, final DoubleValueConverter converter) {
         super(target, mode, displayTargetIndex, parameter);
         parameter.exists().addValueObserver(this::handleExists);

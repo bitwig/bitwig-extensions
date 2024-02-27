@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.mcu.layer;
 
+import com.bitwig.extensions.controllers.mcu.McuExtension;
 import com.bitwig.extensions.controllers.mcu.VPotMode;
 import com.bitwig.extensions.controllers.mcu.bindings.ResetableBinding;
 import com.bitwig.extensions.controllers.mcu.bindings.display.StringRowDisplayBinding;
@@ -38,6 +39,7 @@ public class SpecialDeviceModeLayer extends MixerModeLayer {
                 bottomRowInfoText));
         device.addUpdateListeners(this::updateBindings);
         device.addExistChangeListener(this::handleExistenceChanged);
+        device.getDeviceFollower().getTrackIndex().addListener(this::changeTrackIndex);
     }
     
     private void updateBindings() {
@@ -64,6 +66,14 @@ public class SpecialDeviceModeLayer extends MixerModeLayer {
     private void resetBindings(final Layer layer) {
         layer.getBindings().stream().filter(ResetableBinding.class::isInstance).map(ResetableBinding.class::cast)
             .forEach(binding -> binding.reset());
+    }
+    
+    private void changeTrackIndex(final int index) {
+        if (active) {
+            if (device.isSpecificDevicePresent()) {
+                device.getDeviceFollower().ensurePosition();
+            }
+        }
     }
     
     @Override
@@ -176,6 +186,10 @@ public class SpecialDeviceModeLayer extends MixerModeLayer {
     
     @Override
     public void handleModePress(final VPotMode mode, final boolean pressed, final boolean selection) {
+        McuExtension.println(" Pressed EQ+ %s present=%s", pressed, device.isSpecificDevicePresent());
+        if (pressed) {
+            device.getDeviceFollower().ensurePosition();
+        }
     }
     
 }

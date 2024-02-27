@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.mcu.bindings.display;
 
 import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.StringValue;
+import com.bitwig.extensions.controllers.mcu.StringUtil;
 import com.bitwig.extensions.controllers.mcu.bindings.ResetableBinding;
 import com.bitwig.extensions.controllers.mcu.display.DisplayManager;
 import com.bitwig.extensions.controllers.mcu.layer.ControlMode;
@@ -24,7 +25,7 @@ public class StringDisplayBinding extends AbstractDisplayBinding<StringValue> im
     
     public StringDisplayBinding(final DisplayManager target, final ControlMode mode,
         final DisplayTarget displayTargetIndex, final StringValue stringValue, final BooleanValue existsValue) {
-        this(target, mode, displayTargetIndex, stringValue, existsValue, s -> s);
+        this(target, mode, displayTargetIndex, stringValue, existsValue, s -> StringUtil.toAsciiDisplay(s, 8));
     }
     
     private void handleValueChange(final String newValue) {
@@ -36,7 +37,7 @@ public class StringDisplayBinding extends AbstractDisplayBinding<StringValue> im
     
     @Override
     public void reset() {
-        this.lastValue = getSource().get();
+        this.lastValue = stringConversion.convert(getSource().get());
         if (isActive()) {
             updateDisplay();
         }
