@@ -81,7 +81,7 @@ public abstract class SpecificDevice implements DeviceManager {
     }
     
     @Override
-    public DeviceTypeFollower getCurrentFollower() {
+    public DeviceTypeFollower getDeviceFollower() {
         return deviceFollower;
     }
     
