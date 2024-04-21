@@ -102,7 +102,14 @@ public class TrackBankView {
     
     public void navigateSends(final int dir) {
         if (numberOfSends == 1) {
-            navigateSends(dir);
+            for (int trackIndex = 0; trackIndex < trackBank.getSizeOfBank(); trackIndex++) {
+                final SendBank sendBank = trackBank.getItemAt(trackIndex).sendBank();
+                if (dir > 0) {
+                    sendBank.scrollForwards();
+                } else {
+                    sendBank.scrollBackwards();
+                }
+            }
         } else {
             navigateSendsBank(dir);
         }

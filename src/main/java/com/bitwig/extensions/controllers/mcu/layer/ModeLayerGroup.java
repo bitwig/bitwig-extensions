@@ -45,21 +45,20 @@ public class ModeLayerGroup {
     
     public void bindDisplay(final DisplayManager displayManager, final StringValue labelValue,
         final BooleanValue exists, final Parameter parameter, final int index) {
-        displayLabelLayer.addBinding(
-            new StringDisplayBinding(displayManager, mode, DisplayTarget.of(DisplayRow.LABEL, index, sectionIndex),
-                labelValue, exists, name -> StringUtil.reduceAscii(name, 6)));
-        displayValueLayer.addBinding(
-            new StringDisplayBinding(displayManager, mode, DisplayTarget.of(DisplayRow.VALUE, index, sectionIndex),
-                parameter.displayedValue(), exists));
+        displayLabelLayer.addBinding(new StringDisplayBinding(displayManager, mode,
+            DisplayTarget.of(DisplayRow.LABEL, index, sectionIndex, parameter), labelValue, exists,
+            name -> StringUtil.toAscii(name)));
+        displayValueLayer.addBinding(new StringDisplayBinding(displayManager, mode,
+            DisplayTarget.of(DisplayRow.VALUE, index, sectionIndex, parameter), parameter.displayedValue(), exists));
     }
     
     public void bindValue(final DisplayManager displayManager, final StringValue labelValue, final BooleanValue exists,
         final Parameter parameter, final int index, final DoubleValueConverter valueConverter) {
-        displayLabelLayer.addBinding(
-            new StringDisplayBinding(displayManager, mode, DisplayTarget.of(DisplayRow.LABEL, index, sectionIndex),
-                labelValue, exists, name -> StringUtil.reduceAscii(name, 6)));
+        displayLabelLayer.addBinding(new StringDisplayBinding(displayManager, mode,
+            DisplayTarget.of(DisplayRow.LABEL, index, sectionIndex, parameter), labelValue, exists,
+            name -> StringUtil.reduceAscii(name, 6)));
         displayValueLayer.addBinding(new ParameterValueDisplayBinding(displayManager, mode,
-            DisplayTarget.of(DisplayRow.VALUE, index, sectionIndex), parameter, valueConverter));
+            DisplayTarget.of(DisplayRow.VALUE, index, sectionIndex, parameter), parameter, valueConverter));
     }
     
     
@@ -72,12 +71,12 @@ public class ModeLayerGroup {
     
     public void bindDisplay(final SpecificDevice device, final DisplayManager displayManager, final int index) {
         final ParamPageSlot slot = device.getParamPageSlot(index);
-        displayLabelLayer.addBinding(
-            new StringDisplayBinding(displayManager, mode, DisplayTarget.of(DisplayRow.LABEL, index, sectionIndex),
-                slot.getNameValue(), slot.getExistsValue(), name -> StringUtil.reduceAscii(name, 7)));
-        displayValueLayer.addBinding(
-            new StringDisplayBinding(displayManager, mode, DisplayTarget.of(DisplayRow.VALUE, index, sectionIndex),
-                slot.getDisplayValue(), slot.getExistsValue(), name -> StringUtil.reduceAscii(name, 7)));
+        displayLabelLayer.addBinding(new StringDisplayBinding(displayManager, mode,
+            DisplayTarget.of(DisplayRow.LABEL, index, sectionIndex, slot), slot.getNameValue(), slot.getExistsValue(),
+            name -> StringUtil.reduceAscii(name, 7)));
+        displayValueLayer.addBinding(new StringDisplayBinding(displayManager, mode,
+            DisplayTarget.of(DisplayRow.VALUE, index, sectionIndex, slot), slot.getDisplayValue(),
+            slot.getExistsValue(), name -> StringUtil.reduceAscii(name, 7)));
     }
     
     

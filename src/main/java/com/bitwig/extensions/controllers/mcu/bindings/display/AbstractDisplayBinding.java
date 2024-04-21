@@ -7,7 +7,7 @@ import com.bitwig.extensions.framework.Binding;
 public abstract class AbstractDisplayBinding<T> extends Binding<T, DisplayManager> {
     protected ControlMode controlMode;
     protected String lastValue = "";
-    protected boolean exists = false;
+    protected boolean exists;
     protected DisplayTarget targetIndex;
     
     public AbstractDisplayBinding(final DisplayManager target, final ControlMode mode, final DisplayTarget targetIndex,
@@ -17,10 +17,6 @@ public abstract class AbstractDisplayBinding<T> extends Binding<T, DisplayManage
         this.controlMode = mode;
         this.exists = true;
     }
-    
-    //    public void setControlMode(ControlMode controlMode) {
-    //        this.controlMode = controlMode;
-    //    }
     
     @Override
     protected void deactivate() {

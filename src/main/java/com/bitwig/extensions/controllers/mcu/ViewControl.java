@@ -51,7 +51,7 @@ public class ViewControl {
         arranger = host.createArranger();
         detailEditor = host.createDetailEditor();
         
-        trackRemotes = cursorTrack.createCursorRemoteControlsPage("track-remotes", 8, null);
+        trackRemotes = cursorTrack.createCursorRemoteControlsPage(8);
         projectRemotes = rootTrack.createCursorRemoteControlsPage(8);
         
         trackRemotes.pageCount().markInterested();
@@ -86,8 +86,12 @@ public class ViewControl {
         return cursorDeviceControl;
     }
     
-    public int[] getColor(final int channelOffset) {
+    public int[] getColorMain(final int channelOffset) {
         return mainTrackBank.getColor(channelOffset);
+    }
+    
+    public int[] getColorGlobal(final int channelOffset) {
+        return globalTrackBank.getColor(channelOffset);
     }
     
     public void navigateToTrackRemotePage(final int index) {
