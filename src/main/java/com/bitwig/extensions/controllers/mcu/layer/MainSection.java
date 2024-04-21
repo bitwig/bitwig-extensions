@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.mcu.layer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.Arranger;
@@ -15,6 +14,7 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.mcu.GlobalStates;
+import com.bitwig.extensions.controllers.mcu.McuExtension;
 import com.bitwig.extensions.controllers.mcu.TimedProcessor;
 import com.bitwig.extensions.controllers.mcu.VPotMode;
 import com.bitwig.extensions.controllers.mcu.ViewControl;
@@ -30,6 +30,7 @@ import com.bitwig.extensions.controllers.mcu.value.Orientation;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 import com.bitwig.extensions.framework.time.TimeRepeatEvent;
+import com.bitwig.extensions.framework.values.LayoutType;
 
 public class MainSection {
     
@@ -45,7 +46,6 @@ public class MainSection {
     private final List<DirectNavigationListener> directNavigationListeners = new ArrayList<>();
     private final List<NavigationInfoListener> navigationInfoListeners = new ArrayList<>();
     private String autoMode = "latch";
-    
     private LayerGroup metroMenuLayer;
     private LayerGroup tempoMenuLayer;
     private LayerGroup cueMarkerMenuLayer;
@@ -60,6 +60,10 @@ public class MainSection {
     private final Application application;
     private final TimedProcessor timedProcessor;
     private TimeRepeatEvent scrollEvent = null;
+    private LayoutType currentLayoutType;
+    public static final int DECELERATION_THRESHOLD_MS = 100;
+    long lastNavMessage = -1;
+    
     
     @FunctionalInterface
     public interface ModeChangeListener {
@@ -99,14 +103,20 @@ public class MainSection {
             .ifPresent(button -> button.bindToggle(mainLayer, this.states.getFlipped()));
         hwElements.getButton(McuFunction.NAME_VALUE)
             .ifPresent(button -> button.bindMomentary(mainLayer, this.states.getNameValue()));
-        hwElements.getButton(McuFunction.ZOOM)
-            .ifPresent(button -> button.bindToggle(mainLayer, this.states.getZoomMode()));
+        
+        if (config.isNoDedicatedZoom()) {
+            hwElements.getButton(McuFunction.ZOOM)
+                .ifPresent(button -> button.bindPressed(mainLayer, () -> this.states.getZoomMode().toggle()));
+        } else {
+            hwElements.getButton(McuFunction.ZOOM)
+                .ifPresent(button -> button.bindToggle(mainLayer, this.states.getZoomMode()));
+        }
         this.states.getZoomMode().addValueObserver(zoomActive -> {
             zoomLayer.setIsActive(zoomActive);
         });
         potMode(hwElements);
         initTransport(hwElements, context.getService(Transport.class), context.getService(Application.class));
-        initNavigation(hwElements, !config.hasNavigationWithJogWheel());
+        initNavigation(hwElements, config);
         final JogWheelTransportHandler jogWheelTransportHandler =
             new JogWheelTransportHandler(this, context, hwElements);
     }
@@ -127,6 +137,7 @@ public class MainSection {
         });
         hwElements.getButton(McuFunction.CLIP_LAUNCHER_MODE_4).ifPresent(button -> {
             button.bindToggle(mainLayer, states.getClipLaunchingActive());
+            button.bindIsPressed(mainLayer, pressed -> McuExtension.println(" >> %s", pressed));
         });
     }
     
@@ -165,16 +176,7 @@ public class MainSection {
             hwElements.getButton(McuFunction.MODE_ALL_SENDS).ifPresent(button -> bindMode(button, VPotMode.ALL_SENDS));
         }
         hwElements.getButton(McuFunction.MODE_PAN).ifPresent(button -> bindMode(button, VPotMode.PAN));
-        
-        final Optional<McuButton> deviceDirectButton = hwElements.getButton(McuFunction.MODE_DEVICE);
-        if (deviceDirectButton.isPresent()) {
-            bindMode(deviceDirectButton.get(), VPotMode.DEVICE);
-        } else {
-            hwElements.getButton(McuFunction.MODE_PLUGIN).ifPresent(button -> bindMode(button, VPotMode.PLUGIN));
-            hwElements.getButton(McuFunction.MODE_INSTRUMENT)
-                .ifPresent(button -> bindMode(button, VPotMode.INSTRUMENT));
-            hwElements.getButton(McuFunction.MODE_NOTE_FX).ifPresent(button -> bindMode(button, VPotMode.MIDI_EFFECT));
-        }
+        hwElements.getButton(McuFunction.MODE_DEVICE).ifPresent(button -> bindMode(button, VPotMode.DEVICE));
         
         hwElements.getButton(McuFunction.MODE_EQ).ifPresent(button -> bindMode(button, VPotMode.EQ));
         hwElements.getButton(McuFunction.MODE_TRACK_REMOTE)
@@ -217,6 +219,9 @@ public class MainSection {
             overdubButton.bindToggle(mainLayer, transport.isArrangerOverdubEnabled());
             overdubButton.bindToggle(shiftLayer, transport.isClipLauncherOverdubEnabled());
         });
+        hwElements.getButton(McuFunction.AUTOMATION_LAUNCHER).ifPresent(button -> {
+            button.bindToggle(mainLayer, transport.isClipLauncherAutomationWriteEnabled());
+        });
         hwElements.getButton(McuFunction.RESTORE_AUTOMATION).ifPresent(restoreAutoButton -> {
             restoreAutoButton.bindPressed(mainLayer, () -> transport.resetAutomationOverrides());
             restoreAutoButton.bindLight(mainLayer, transport.isAutomationOverrideActive());
@@ -235,6 +240,8 @@ public class MainSection {
         hwElements.getButton(McuFunction.UNDO).ifPresent(undoButton -> {
             undoButton.bindPressed(mainLayer, application.undoAction());
             undoButton.bindLight(mainLayer, application.canUndo());
+            undoButton.bindPressed(shiftLayer, application.redoAction());
+            undoButton.bindLight(shiftLayer, application.canRedo());
         });
         hwElements.getButton(McuFunction.SSL_PLUGINS_MENU).ifPresent(
             sslMenuButton -> sslMenuButton.bindIsPressed(mainLayer,
@@ -245,11 +252,19 @@ public class MainSection {
                 pressed -> handleMenuPressed(pressed, loopMenuLayer));
             loopButton.bindLight(mainLayer, transport.isArrangerLoopEnabled());
         });
+        application.panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
+        hwElements.getButton(McuFunction.ARRANGER).ifPresent(button -> {
+            button.bindPressed(mainLayer, () -> {
+                this.application.setPanelLayout(currentLayoutType.other().getName());
+            });
+            button.bindLight(mainLayer, () -> currentLayoutType == LayoutType.ARRANGER);
+        });
         
         hwElements.getTimeCodeLed().ifPresent(timeCodeLed -> assignTimeCodeDisplay(transport, timeCodeLed, hwElements));
     }
     
-    private void initNavigation(final MainHardwareSection hwElements, final boolean withHold) {
+    private void initNavigation(final MainHardwareSection hwElements, final ControllerConfig config) {
+        final boolean withHold = !config.hasNavigationWithJogWheel();
         hwElements.getButton(McuFunction.ZOOM_IN).ifPresent(button -> bindZoom(button, -1));
         hwElements.getButton(McuFunction.ZOOM_OUT).ifPresent(button -> bindZoom(button, 1));
         hwElements.getButton(McuFunction.PAGE_LEFT).ifPresent(button -> bindPageNav(button, -1));
@@ -259,10 +274,17 @@ public class MainSection {
         hwElements.getButton(McuFunction.BANK_LEFT).ifPresent(button -> bindChannelNav(button, -8));
         hwElements.getButton(McuFunction.BANK_RIGHT).ifPresent(button -> bindChannelNav(button, 8));
         
-        hwElements.getButton(McuFunction.NAV_LEFT).ifPresent(button -> bindHorizontalNav(button, -1, withHold));
-        hwElements.getButton(McuFunction.NAV_RIGHT).ifPresent(button -> bindHorizontalNav(button, 1, withHold));
-        hwElements.getButton(McuFunction.NAV_UP).ifPresent(button -> bindVerticalNav(button, 1, withHold));
-        hwElements.getButton(McuFunction.NAV_DOWN).ifPresent(button -> bindVerticalNav(button, -1, withHold));
+        if (config.isDecelerateJogWheel()) {
+            hwElements.getButton(McuFunction.NAV_LEFT).ifPresent(button -> bindDeceleratedHorizontalNav(button, -1));
+            hwElements.getButton(McuFunction.NAV_RIGHT).ifPresent(button -> bindDeceleratedHorizontalNav(button, 1));
+            hwElements.getButton(McuFunction.NAV_UP).ifPresent(button -> bindDeceleratedVerticalNav(button, -1));
+            hwElements.getButton(McuFunction.NAV_DOWN).ifPresent(button -> bindDeceleratedVerticalNav(button, 1));
+        } else {
+            hwElements.getButton(McuFunction.NAV_LEFT).ifPresent(button -> bindHorizontalNav(button, -1, withHold));
+            hwElements.getButton(McuFunction.NAV_RIGHT).ifPresent(button -> bindHorizontalNav(button, 1, withHold));
+            hwElements.getButton(McuFunction.NAV_UP).ifPresent(button -> bindVerticalNav(button, 1, withHold));
+            hwElements.getButton(McuFunction.NAV_DOWN).ifPresent(button -> bindVerticalNav(button, -1, withHold));
+        }
     }
     
     private void directSendSelect(final int index, final boolean pressed) {
@@ -334,6 +356,23 @@ public class MainSection {
         button.bindRepeatHold(mainLayer, () -> viewControl.navigateChannels(dir));
     }
     
+    private void bindDeceleratedHorizontalNav(final McuButton button, final int dir) {
+        button.bindPressed(mainLayer, () -> {
+            if (needsToDecelerate()) {
+                return;
+            }
+            handleNavigationHorizontal(dir);
+            lastNavMessage = System.currentTimeMillis();
+        });
+        button.bindPressed(zoomLayer, () -> {
+            if (needsToDecelerate()) {
+                return;
+            }
+            zoomLeftRight(dir);
+            lastNavMessage = System.currentTimeMillis();
+        });
+    }
+    
     private void bindHorizontalNav(final McuButton button, final int dir, final boolean withHold) {
         if (withHold) {
             button.bindDelayedAction(mainLayer, start -> handleNavigationHorizontal(dir, start), //
@@ -344,6 +383,23 @@ public class MainSection {
             button.bindPressed(mainLayer, () -> handleNavigationHorizontal(dir));
         }
         button.bindRepeatHold(zoomLayer, () -> zoomLeftRight(dir));
+    }
+    
+    private void bindDeceleratedVerticalNav(final McuButton button, final int dir) {
+        button.bindPressed(mainLayer, () -> {
+            if (needsToDecelerate()) {
+                return;
+            }
+            handleNavigationVertical(-dir);
+            lastNavMessage = System.currentTimeMillis();
+        });
+        button.bindPressed(zoomLayer, () -> {
+            if (needsToDecelerate()) {
+                return;
+            }
+            zoomUpDown(-dir);
+            lastNavMessage = System.currentTimeMillis();
+        });
     }
     
     private void bindVerticalNav(final McuButton button, final int dir, final boolean withHold) {
@@ -412,6 +468,9 @@ public class MainSection {
     }
     
     public void handleNavigationVertical(final int dir, final boolean start) {
+        if (needsToDecelerate()) {
+            return;
+        }
         if (states.getClipLaunchingActive().get()) {
             repeatEvent(() -> viewControl.navigateClipVertical(dir), start);
         } else if (states.getPotMode().get() == VPotMode.PAN || states.getPotMode().get() == VPotMode.ALL_SENDS) {
@@ -419,6 +478,17 @@ public class MainSection {
         } else if (start) {
             handleNavigationVertical(dir);
         }
+    }
+    
+    private boolean needsToDecelerate() {
+        final long diff = System.currentTimeMillis() - lastNavMessage;
+        if (diff < DECELERATION_THRESHOLD_MS) {
+            if (diff == 0) {
+                lastNavMessage = System.currentTimeMillis();
+            }
+            return true;
+        }
+        return false;
     }
     
     public void handleNavigationVertical(final int dir) {
@@ -459,7 +529,6 @@ public class MainSection {
     
     private void zoomUpDown(final int dir) {
         final Arranger arranger = viewControl.getArranger();
-        
         if (states.isShiftSet()) {
             if (dir > 0) {
                 arranger.zoomOutLaneHeightsSelected();

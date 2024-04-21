@@ -12,8 +12,8 @@ import com.bitwig.extensions.framework.di.Context;
 public class JogWheelTransportHandler {
     private static final double[] FFWD_SPEEDS_MPLUS = {4.0, 8.0, 16.0, 32.0};
     private static final double[] FFWD_SPEEDS_ALT_MPLUS = {0.25, 1.0, 4.0, 16.0};
-    private static final double[] FFWD_SPEEDS = {0.0625, 0.25, 1.0, 4.0};
-    private static final double[] FFWD_SPEEDS_SHIFT = {0.25, 1.0, 4.0, 16.0};
+    private static final double[] FFWD_SPEEDS = {1.0, 2.0, 4.0, 8.0};
+    private static final double[] FFWD_SPEEDS_SHIFT = {0.0625, 0.25, 1.0, 4.0};
     private static final long[] FFWD_TIMES = {500, 1000, 2000, 3000, 4000};
     private static final int[] STAGE_MULTIPLIER = {1, 2, 4, 8, 8, 16, 32, 64};
     private final MainSection mainSection;
