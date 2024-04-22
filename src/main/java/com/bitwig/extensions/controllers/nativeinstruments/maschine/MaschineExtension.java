@@ -14,6 +14,7 @@ import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.time.TimedEvent;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -961,9 +962,9 @@ public class MaschineExtension extends ControllerExtension implements JogWheelDe
       }
       lastSenGrids[grid] = text;
       displayBuffer[6] = (byte) (Math.min(grid, 3) * 28);
-      final char[] ca = text.toCharArray();
+      final byte[] ca = text.getBytes(StandardCharsets.US_ASCII);
       for (int i = 0; i < 28; i++) {
-         displayBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+         displayBuffer[i + 7] = i < ca.length ? ca[i] : 32;
       }
       midiOut.sendSysex(displayBuffer);
    }
