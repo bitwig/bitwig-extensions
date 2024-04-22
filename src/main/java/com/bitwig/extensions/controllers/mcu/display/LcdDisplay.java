@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.mcu.display;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -19,7 +20,7 @@ import com.bitwig.extensions.framework.values.Midi;
 public class LcdDisplay {
     private static final int DISPLAY_LEN = 55;
     private static final int ROW2_START = 56;
-    
+
     private final byte[] rowDisplayBuffer = { //
         (byte) 0XF0, 0, 0, 0X66, 0x14, 0x12, 0, // z: the grid number Zone number 0-3 * 28
         32, 32, 32, 0, 0, 0, 0, 0, 0, 0, // 7: 10 Chars
@@ -29,7 +30,7 @@ public class LcdDisplay {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 7: 10 Chars
         0, 0, 0, 0, 0, 32, 32, (byte) 247
     };
-    
+
     private final byte[] segBuffer;
     private final byte[] segBufferExp;
     private final DisplayPart part;
@@ -51,7 +52,7 @@ public class LcdDisplay {
     private final boolean hasDedicatedVu;
     private final char[][] lines = new char[2][60];
     public String sysHead;
-    
+
     public LcdDisplay(final Context context, final int sectionIndex, final MidiOut midiOut, final SectionType type,
         final DisplayPart part, final ControllerConfig controllerConfig) {
         this.midiOut = midiOut;
@@ -61,9 +62,9 @@ public class LcdDisplay {
         final HardwareSurface surface = context.getService(HardwareSurface.class);
         final GlobalStates states = context.getService(GlobalStates.class);
         displayRep = surface.createHardwareTextDisplay("DISPLAY_SIMU_" + part + "_" + sectionIndex, 2);
-        
+
         //initSimulation(driver, sectionIndex, part);
-        
+
         if (part == DisplayPart.LOWER) {
             isLowerDisplay = true;
             rowDisplayBuffer[3] = 0X67;
@@ -100,7 +101,7 @@ public class LcdDisplay {
             }
         }
         displayLen = LcdDisplay.DISPLAY_LEN + (part == DisplayPart.LOWER && type != SectionType.XTENDER ? 1 : 0);
-        
+
         if (part == DisplayPart.LOWER) {
             segmentLength = 6;
             segmentOffset = 2;
@@ -110,7 +111,7 @@ public class LcdDisplay {
         }
         setVuMode(states.getVuMode().get());
     }
-    
+
     //    private void initSimulation(final MackieMcuProExtension driver, final int sectionIndex, final DisplayPart
     //    part) {
     //        driver.getControllerConfig().getSimulationLayout().layoutDisplay(part, sectionIndex, displayRep);
@@ -118,21 +119,21 @@ public class LcdDisplay {
     //            Arrays.fill(lines[i], ' ');
     //        }
     //    }
-    
+
     public int getSegmentLength() {
         return segmentLength;
     }
-    
+
     public boolean isLowerDisplay() {
         return isLowerDisplay;
     }
-    
+
     public void setFullTextMode(final int row, final boolean fullTextMode) {
         this.fullTextMode[row] = fullTextMode;
         setDisplayBarGraphEnabled(!isFullModeActive());
         refreshDisplay();
     }
-    
+
     public void setDisplayBarGraphEnabled(final boolean displayBarGraphEnabled) {
         if (this.displayBarGraphEnabled == displayBarGraphEnabled) {
             return;
@@ -146,11 +147,11 @@ public class LcdDisplay {
             switchVuMode(VuMode.LED);
         }
     }
-    
+
     private boolean isFullModeActive() {
         return fullTextMode[0] | fullTextMode[1];
     }
-    
+
     public void setVuMode(final VuMode mode) {
         if (hasDedicatedVu) {
             return;
@@ -161,7 +162,7 @@ public class LcdDisplay {
             refreshDisplay();
         }
     }
-    
+
     private void switchVuMode(final VuMode mode) {
         switch (mode) {
             case LED:
@@ -188,20 +189,20 @@ public class LcdDisplay {
                 break;
         }
     }
-    
+
     private void resetGrids(final int row) {
         Arrays.fill(lastSendGrids[row], "      ");
     }
-    
+
     public void centerText(final int row, final String text) {
         sendToDisplay(row, pad4Center(text));
     }
-    
+
     @Override
     public String toString() {
         return "LcdDisplay " + part;
     }
-    
+
     private String pad4Center(final String text) {
         final int fill = displayLen - text.length();
         if (fill < 0) {
@@ -212,7 +213,7 @@ public class LcdDisplay {
         }
         return StringUtil.padString(text, fill / 2);
     }
-    
+
     public void sendDirect(final String topString, final String bottomString) {
         lastSentRows[0] = topString;
         lastSentRows[1] = bottomString;
@@ -221,14 +222,14 @@ public class LcdDisplay {
         sendFullRow(0, topString);
         sendFullRow(1, bottomString);
     }
-    
+
     public void sendSegmented(final int row, final List<String> texts) {
         for (int i = 0; i < 8; i++) {
             final String text = i < texts.size() ? texts.get(i) : "";
             sendToRowFull(row, i, text);
         }
     }
-    
+
     public void sendToDisplay(final int row, final String text) {
         //        if (text.equals(lastSentRows[row])) {
         //            return;
@@ -237,17 +238,17 @@ public class LcdDisplay {
         resetGrids(row);
         sendFullRow(row, text);
     }
-    
+
     public void sendFullRow(final int row, final String text) {
         rowDisplayBuffer[6] = (byte) (row * LcdDisplay.ROW2_START);
-        final char[] ca = text.toCharArray();
+        final byte[] ca = text.getBytes(StandardCharsets.US_ASCII);
         for (int i = 0; i < displayLen; i++) {
-            rowDisplayBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+            rowDisplayBuffer[i + 7] = i < ca.length ? ca[i] : 32;
         }
         displayRep.line(row).text().setValue(text);
         midiOut.sendSysex(rowDisplayBuffer);
     }
-    
+
     public void sendToRow(final int row, final int segment, final String text) {
         if (row > 1 || row < 0) {
             return;
@@ -257,7 +258,7 @@ public class LcdDisplay {
             sendTextSeg(row, segment, text);
         }
     }
-    
+
     public void sendToRowFull(final int row, final int segment, final String text) {
         if (row > 1 || row < 0) {
             return;
@@ -267,20 +268,20 @@ public class LcdDisplay {
             sendTextSegFull(row, segment, text);
         }
     }
-    
+
     private void sendTextSegFull(final int row, final int segment, final String text) {
         segBuffer[6] = (byte) (row * LcdDisplay.ROW2_START + segment * segmentLength + segmentOffset);
-        final char[] ca = text.toCharArray();
+        final byte[] ca = text.getBytes(StandardCharsets.US_ASCII);
         for (int i = 0; i < segmentLength; i++) {
-            segBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+            segBuffer[i + 7] = i < ca.length ? ca[i] : 32;
             lines[row][segment * 7 + i] = (char) segBuffer[i + 7];
         }
         midiOut.sendSysex(segBuffer);
         displayRep.line(row).text().setValue(String.valueOf(lines[row]));
     }
-    
+
     private void sendTextSeg(final int row, final int segment, final String text) {
-        final char[] ca = text.toCharArray();
+        final byte[] ca = text.getBytes(StandardCharsets.US_ASCII);
         if (segment == 8) {
             if (isLowerDisplay()) {
                 handleLastCell(row, segment, ca);
@@ -298,18 +299,18 @@ public class LcdDisplay {
             displayRep.line(row).text().setValue(String.valueOf(lines[row]));
         }
     }
-    
-    private void handleLastCell(final int row, final int segment, final char[] ca) {
+
+    private void handleLastCell(final int row, final int segment, final byte[] ca) {
         segBufferExp[6] = (byte) (row * LcdDisplay.ROW2_START + segment * segmentLength + segmentOffset);
         for (int i = 0; i < segmentLength; i++) {
-            segBufferExp[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+            segBufferExp[i + 7] = i < ca.length ? ca[i] : 32;
         }
         if (segment < segmentLength + 1) {
             segBufferExp[6 + segmentLength] = ' ';
         }
         midiOut.sendSysex(segBufferExp);
     }
-    
+
     public void refreshDisplay() {
         for (int row = 0; row < 2; row++) {
             if (fullTextMode[row]) {
@@ -321,27 +322,27 @@ public class LcdDisplay {
             }
         }
     }
-    
+
     public void sendChar(final int index, final char cx) {
         midiOut.sendMidi(Midi.CC, 0x30, cx);
     }
-    
+
     public void clearAll() {
         midiOut.sendSysex(sysHead + "62 f7");
         sendToDisplay(0, "");
         sendToDisplay(1, "");
     }
-    
+
     public void exitMessage() {
         midiOut.sendSysex(sysHead + "62 f7");
         centerText(topRowFlipped ? 1 : 0, "Bitwig Studio");
         centerText(topRowFlipped ? 0 : 1, "... not running ...");
     }
-    
+
     public void clearText() {
         sendToDisplay(0, "");
         sendToDisplay(1, "");
     }
-    
-    
+
+
 }

@@ -7,6 +7,7 @@ import com.bitwig.extensions.controllers.mackie.Midi;
 import com.bitwig.extensions.controllers.mackie.StringUtil;
 import com.bitwig.extensions.controllers.mackie.section.SectionType;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /**
@@ -233,9 +234,9 @@ public class LcdDisplay implements DisplaySource {
 
    private void sendFullRow(final int row, final String text) {
       rowDisplayBuffer[6] = (byte) (row * LcdDisplay.ROW2_START);
-      final char[] ca = text.toCharArray();
+      final byte[] ca = text.getBytes(StandardCharsets.US_ASCII);
       for (int i = 0; i < displayLen; i++) {
-         rowDisplayBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+         rowDisplayBuffer[i + 7] = i < ca.length ? ca[i] : 32;
       }
       displayRep.line(row).text().setValue(text);
       midiOut.sendSysex(rowDisplayBuffer);
@@ -263,9 +264,9 @@ public class LcdDisplay implements DisplaySource {
 
    private void sendTextSegFull(final DisplaySource source, final int row, final int segment, final String text) {
       segBuffer[6] = (byte) (row * LcdDisplay.ROW2_START + segment * segmentLength + segmentOffset);
-      final char[] ca = text.toCharArray();
+      final byte[] ca = text.getBytes(StandardCharsets.US_ASCII);
       for (int i = 0; i < segmentLength; i++) {
-         segBuffer[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+         segBuffer[i + 7] = i < ca.length ? ca[i] : 32;
          lines[row][segment * 7 + i] = (char) segBuffer[i + 7];
       }
       midiOut.sendSysex(segBuffer);
@@ -273,7 +274,7 @@ public class LcdDisplay implements DisplaySource {
    }
 
    private void sendTextSeg(final DisplaySource source, final int row, final int segment, final String text) {
-      final char[] ca = text.toCharArray();
+      final byte[] ca = text.getBytes(StandardCharsets.US_ASCII);
       if (segment == 8) {
          if (isLowerDisplay()) {
             handleLastCell(row, segment, ca);
@@ -292,10 +293,10 @@ public class LcdDisplay implements DisplaySource {
       }
    }
 
-   private void handleLastCell(final int row, final int segment, final char[] ca) {
+   private void handleLastCell(final int row, final int segment, final byte[] ca) {
       segBufferExp[6] = (byte) (row * LcdDisplay.ROW2_START + segment * segmentLength + segmentOffset);
       for (int i = 0; i < segmentLength; i++) {
-         segBufferExp[i + 7] = i < ca.length ? (byte) ca[i] : 32;
+         segBufferExp[i + 7] = i < ca.length ? ca[i] : 32;
       }
       if (segment < segmentLength + 1) {
          segBufferExp[6 + segmentLength] = ' ';
