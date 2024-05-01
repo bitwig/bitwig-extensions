@@ -9,7 +9,7 @@ import com.bitwig.extensions.controllers.mcu.definitions.SubType;
 
 public class IconP1NanoExtensionDefinition extends AbstractIconExtensionDefinition {
     private static final UUID DRIVER_ID = UUID.fromString("5cde7e5c-9357-42f9-a984-e24ab3b04a1a");
-    private static final String DEVICE_NAME = "iCon P1-Nano";
+    private static final String DEVICE_NAME = "iCON P1-Nano";
     protected static final String BASE_DEVICE_PORT = "iCON P1-Nano %s"; //
     protected static final String[] VERSIONS = {"V1.21", "V1.22"};
     
