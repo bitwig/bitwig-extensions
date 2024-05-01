@@ -85,6 +85,7 @@ com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mExtensionDefinitio
 com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1NanoExtensionDefinition
 com.bitwig.extensions.controllers.mcu.definitions.icon.IconV1mExtensionDefinition
 com.bitwig.extensions.controllers.mcu.definitions.icon.IconV1mPlus1ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mPlus1ExtenderExtensionDefinition
 
 com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenProMiniExtensionDefinition
 com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro25ExtensionDefinition
