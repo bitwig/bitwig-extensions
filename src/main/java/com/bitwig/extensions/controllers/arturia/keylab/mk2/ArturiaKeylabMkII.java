@@ -97,6 +97,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       mCursorTrack.hasNext().markInterested();
       mCursorTrack.hasPrevious().markInterested();
       mCursorTrack.position().markInterested();
+      mCursorTrack.color().markInterested();
       mDevice = mCursorTrack.createCursorDevice();
       mDevice.exists().markInterested();
       mDevice.hasNext().markInterested();
@@ -206,6 +207,13 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          else
             mBrowserLayer.deactivate();
       });
+
+      host.scheduleTask(this::handlePing, 50);
+   }
+
+   private void handlePing() {
+      final ControllerHost host = getHost();
+      host.scheduleTask(this::handlePing, 50);
    }
 
    private void initHardwareSurface()
@@ -474,10 +482,20 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    private void initMultiLayer()
    {
       final Layer layer = mMultiLayer;
-      layer.bindToggle(ButtonId.PREVIOUS, mTrackBank.scrollBackwardsAction(),
+
+      layer.bindToggle(ButtonId.NEXT, mTrackBank.scrollBackwardsAction(),
          mTrackBank.canScrollBackwards());
 
-      layer.bindToggle(ButtonId.NEXT, mTrackBank.scrollForwardsAction(),
+
+      layer.bindToggle(ButtonId.PREVIOUS, mTrackBank.scrollForwardsAction(),
+         mTrackBank.canScrollForwards());
+
+
+      layer.bindToggle(ButtonId.NEXT_BANK, mTrackBank.scrollPageBackwardsAction(),
+         mTrackBank.canScrollBackwards());
+
+
+      layer.bindToggle(ButtonId.PREVIOUS_BANK, mTrackBank.scrollPageForwardsAction(),
          mTrackBank.canScrollForwards());
 
       for (int i = 0; i < 8; i++)
@@ -488,7 +506,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
          layer.bindPressed(selectId, () -> mCursorTrack.selectChannel(mTrackBank.getItemAt(number)));
          layer.bind(() -> {
-            return isCursor.get() ? WHITE : mTrackBank.getItemAt(number).color().get();
+            return isCursor.get() ? getBlinkColor() : mTrackBank.getItemAt(number).color().get();
          }, selectId);
       }
 
@@ -536,6 +554,11 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
          return sb.toString();
       });
+   }
+
+   private Color getBlinkColor() {
+      final float blend = (float) Math.abs(Math.sin(System.currentTimeMillis() / 250.0)) * 0.8f;
+      return Color.mix(BLACK, mCursorTrack.color().get(), blend);
    }
 
    private void initAdjustingContinuousHardwareControlNotificationLayer()
