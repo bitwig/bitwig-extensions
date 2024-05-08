@@ -64,5 +64,7 @@ public enum McuFunction {
     ZOOM_OUT,
     ZOOM_IN,
     AUTOMATION_LAUNCHER,
-    ARRANGER
+    ARRANGER,
+    DUPLICATE,
+    CLEAR
 }

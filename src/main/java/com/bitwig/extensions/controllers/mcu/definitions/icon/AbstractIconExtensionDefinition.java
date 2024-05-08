@@ -7,6 +7,7 @@ import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extensions.controllers.mcu.McuExtension;
 import com.bitwig.extensions.controllers.mcu.config.ControllerConfig;
+import com.bitwig.extensions.controllers.mcu.config.CustomAssignment;
 import com.bitwig.extensions.controllers.mcu.config.McuAssignments;
 import com.bitwig.extensions.controllers.mcu.config.McuFunction;
 import com.bitwig.extensions.controllers.mcu.definitions.AbstractMcuControllerExtensionDefinition;
@@ -127,8 +128,15 @@ public abstract class AbstractIconExtensionDefinition extends AbstractMcuControl
         controllerConfig.setAssignment(
             McuFunction.RESTORE_AUTOMATION, McuAssignments.SOLO); //McuAssignments.AUTO_READ_OFF
         controllerConfig.setAssignment(McuFunction.ARRANGER, McuAssignments.F1);
+        controllerConfig.setAssignment(McuFunction.DUPLICATE, new CustomAssignment(McuFunction.DUPLICATE, 54, 1));
+        controllerConfig.setAssignment(McuFunction.CLEAR, new CustomAssignment(McuFunction.CLEAR, 55, 1));
         //initSimulationLayout(controllerConfig.getSimulationLayout());
         return new McuExtension(this, host, controllerConfig);
+    }
+    
+    @Override
+    public String getSupportFolderPath() {
+        return "Controllers/iCon/mappings";
     }
     
     @Override
@@ -138,7 +146,7 @@ public abstract class AbstractIconExtensionDefinition extends AbstractMcuControl
     
     @Override
     public String getHardwareVendor() {
-        return "iCON Pro Audio";
+        return "iCON";
     }
     
 }

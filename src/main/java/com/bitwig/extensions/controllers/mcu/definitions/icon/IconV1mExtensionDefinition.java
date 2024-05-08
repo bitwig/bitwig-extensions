@@ -55,6 +55,13 @@ public class IconV1mExtensionDefinition extends AbstractIconExtensionDefinition 
             .setHasMasterVu(true);
     }
     
+    
+    @Override
+    public String getHelpFilePath() {
+        return "Controllers/iCon/V1-M.pdf";
+    }
+    
+    
     @Override
     public String getName() {
         if (nrOfExtenders == 0) {

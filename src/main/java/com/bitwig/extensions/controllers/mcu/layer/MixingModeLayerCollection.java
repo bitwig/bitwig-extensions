@@ -175,7 +175,11 @@ public class MixingModeLayerCollection {
     }
     
     private void handleSelect(final Track track) {
-        if (globalStates.isShiftSet()) {
+        if (globalStates.getClearHeld().get()) {
+            track.deleteObject();
+        } else if (globalStates.getDuplicateHeld().get()) {
+            track.duplicate();
+        } else if (globalStates.isShiftSet()) {
             track.isGroupExpanded().toggle();
         } else {
             track.selectInMixer();

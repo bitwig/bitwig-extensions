@@ -4,6 +4,7 @@ import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extensions.controllers.mcu.GlobalStates;
 import com.bitwig.extensions.controllers.mcu.TimedProcessor;
 import com.bitwig.extensions.controllers.mcu.ViewControl;
 import com.bitwig.extensions.controllers.mcu.config.ControllerConfig;
@@ -22,6 +23,7 @@ public class ClipLaunchingLayer extends Layer {
     private final LayoutType layoutType = LayoutType.LAUNCHER;
     private final TimedProcessor timedProcessor;
     private final int trackOffset;
+    private final GlobalStates gobalStates;
     
     public ClipLaunchingLayer(final Context diContext, final MixerSectionHardware hwElements,
         final MixerSection mixerSection) {
@@ -32,6 +34,7 @@ public class ClipLaunchingLayer extends Layer {
         //arrangerLayer = diContext.createLayer("HORIZONTAL_%d".formatted(mixerSection.getSectionIndex() + 1));
         trackOffset = mixerSection.getSectionIndex() * 8;
         trackBank = diContext.getService(ViewControl.class).getMainTrackBank();
+        this.gobalStates = diContext.getService(GlobalStates.class);
         final boolean use2Lanes = config.getAssignment(McuFunction.CLIP_LAUNCHER_MODE_2) != null;
         final int numberOfScenes = use2Lanes ? 2 : 4;
         
@@ -84,10 +87,20 @@ public class ClipLaunchingLayer extends Layer {
     }
     
     private void handleSlotPressed(final ClipLauncherSlot slot, final boolean pressed) {
-        if (pressed) {
-            slot.launch();
+        if (gobalStates.getClearHeld().get()) {
+            if (pressed) {
+                slot.deleteObject();
+            }
+        } else if (gobalStates.getDuplicateHeld().get()) {
+            if (pressed) {
+                slot.duplicateClip();
+            }
         } else {
-            slot.launchRelease();
+            if (pressed) {
+                slot.launch();
+            } else {
+                slot.launchRelease();
+            }
         }
     }
     

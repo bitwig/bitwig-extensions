@@ -82,10 +82,17 @@ com.bitwig.extensions.controllers.mcu.definitions.ssl.SslUf8Plus1ExtenderExtensi
 com.bitwig.extensions.controllers.mcu.definitions.ssl.SslUf8Plus2ExtenderExtensionDefinition
 com.bitwig.extensions.controllers.mcu.definitions.ssl.SslUf8Plus3ExtenderExtensionDefinition
 com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mPlus1ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mPlus2ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mPlus3ExtenderExtensionDefinition
 com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1NanoExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.Iconp1NanoPlus1ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.Iconp1NanoPlus2ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.Iconp1NanoPlus3ExtenderExtensionDefinition
 com.bitwig.extensions.controllers.mcu.definitions.icon.IconV1mExtensionDefinition
 com.bitwig.extensions.controllers.mcu.definitions.icon.IconV1mPlus1ExtenderExtensionDefinition
-com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mPlus1ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconV1mPlus2ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconV1mPlus3ExtenderExtensionDefinition
 
 com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenProMiniExtensionDefinition
 com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro25ExtensionDefinition

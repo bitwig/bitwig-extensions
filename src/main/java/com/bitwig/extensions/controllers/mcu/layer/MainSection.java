@@ -135,6 +135,10 @@ public class MainSection {
         hwElements.getButton(McuFunction.CLIP_LAUNCHER_MODE_2).ifPresent(button -> {
             button.bindToggle(mainLayer, states.getClipLaunchingActive());
         });
+        hwElements.getButton(McuFunction.CLEAR)
+            .ifPresent(button -> button.bindMomentary(mainLayer, this.states.getClearHeld()));
+        hwElements.getButton(McuFunction.DUPLICATE)
+            .ifPresent(button -> button.bindMomentary(mainLayer, this.states.getDuplicateHeld()));
         hwElements.getButton(McuFunction.CLIP_LAUNCHER_MODE_4).ifPresent(button -> {
             button.bindToggle(mainLayer, states.getClipLaunchingActive());
             button.bindIsPressed(mainLayer, pressed -> McuExtension.println(" >> %s", pressed));
@@ -269,10 +273,10 @@ public class MainSection {
         hwElements.getButton(McuFunction.ZOOM_OUT).ifPresent(button -> bindZoom(button, 1));
         hwElements.getButton(McuFunction.PAGE_LEFT).ifPresent(button -> bindPageNav(button, -1));
         hwElements.getButton(McuFunction.PAGE_RIGHT).ifPresent(button -> bindPageNav(button, 1));
-        hwElements.getButton(McuFunction.CHANNEL_LEFT).ifPresent(button -> bindChannelNav(button, -1));
-        hwElements.getButton(McuFunction.CHANNEL_RIGHT).ifPresent(button -> bindChannelNav(button, 1));
-        hwElements.getButton(McuFunction.BANK_LEFT).ifPresent(button -> bindChannelNav(button, -8));
-        hwElements.getButton(McuFunction.BANK_RIGHT).ifPresent(button -> bindChannelNav(button, 8));
+        hwElements.getButton(McuFunction.CHANNEL_LEFT).ifPresent(button -> bindChannelNav(button, -1, withHold));
+        hwElements.getButton(McuFunction.CHANNEL_RIGHT).ifPresent(button -> bindChannelNav(button, 1, withHold));
+        hwElements.getButton(McuFunction.BANK_LEFT).ifPresent(button -> bindChannelNav(button, -8, withHold));
+        hwElements.getButton(McuFunction.BANK_RIGHT).ifPresent(button -> bindChannelNav(button, 8, withHold));
         
         if (config.isDecelerateJogWheel()) {
             hwElements.getButton(McuFunction.NAV_LEFT).ifPresent(button -> bindDeceleratedHorizontalNav(button, -1));
@@ -352,8 +356,12 @@ public class MainSection {
         button.bindPressed(mainLayer, () -> handlePageNavigation(dir));
     }
     
-    private void bindChannelNav(final McuButton button, final int dir) {
-        button.bindRepeatHold(mainLayer, () -> viewControl.navigateChannels(dir));
+    private void bindChannelNav(final McuButton button, final int dir, final boolean withHoldFunction) {
+        if (withHoldFunction) {
+            button.bindRepeatHold(mainLayer, () -> viewControl.navigateChannels(dir));
+        } else {
+            button.bindPressed(mainLayer, () -> viewControl.navigateChannels(dir));
+        }
     }
     
     private void bindDeceleratedHorizontalNav(final McuButton button, final int dir) {
@@ -452,7 +460,7 @@ public class MainSection {
     private void handleNavigationHorizontal(final int dir) {
         switch (states.getPotMode().get()) {
             case PLUGIN, INSTRUMENT, MIDI_EFFECT, DEVICE -> selectDeviceInChain(dir);
-            case PAN, SEND, TRACK_REMOTE, PROJECT_REMOTE, EQ -> selectTracks(dir);
+            case PAN, SEND, TRACK_REMOTE, PROJECT_REMOTE, EQ, ALL_SENDS -> selectTracks(dir);
         }
     }
     

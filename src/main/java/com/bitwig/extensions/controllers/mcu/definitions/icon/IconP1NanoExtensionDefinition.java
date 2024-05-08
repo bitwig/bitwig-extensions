@@ -36,6 +36,12 @@ public class IconP1NanoExtensionDefinition extends AbstractIconExtensionDefiniti
         return "P1-Nano";
     }
     
+    
+    @Override
+    public String getHelpFilePath() {
+        return "Controllers/iCon/P1-Nano.pdf";
+    }
+    
     @Override
     protected ControllerConfig createControllerConfig() {
         return new ControllerConfig(ManufacturerType.ICON, SubType.V1M) //
@@ -46,6 +52,7 @@ public class IconP1NanoExtensionDefinition extends AbstractIconExtensionDefiniti
             .setHasMasterFader(0x8)//
             .setHasTimeCodeLed(true) //
             .setJogWheelCoding(EncoderBehavior.ACCEL) //
+            .setDecelerateJogWheel(true) //
             .setDisplaySegmented(true) //
             .setHasMasterVu(true);
     }

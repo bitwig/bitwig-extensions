@@ -37,6 +37,11 @@ public class IconP1mExtensionDefinition extends AbstractIconExtensionDefinition 
     }
     
     @Override
+    public String getHelpFilePath() {
+        return "Controllers/iCon/P1-M.pdf";
+    }
+    
+    @Override
     protected ControllerConfig createControllerConfig() {
         return new ControllerConfig(ManufacturerType.ICON, SubType.P1M) //
             .setHasDedicateVu(true)//
