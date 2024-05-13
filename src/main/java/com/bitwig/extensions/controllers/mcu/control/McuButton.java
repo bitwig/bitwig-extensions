@@ -42,20 +42,22 @@ public class McuButton {
         this.noteNr = noteNr;
         light = surface.createOnOffHardwareLight("BL_%s".formatted(name));
         hwButton.setBackgroundLight(light);
-        light.onUpdateHardware(() -> midiProcessor.sendLedLightStatus(noteNr, light.isOn().currentValue() ? 127 : 0));
+        light.onUpdateHardware(
+            () -> midiProcessor.sendLedLightStatus(noteNr, 0, light.isOn().currentValue() ? 127 : 0));
     }
     
     public McuButton(final ButtonAssignment assignment, final int subIndex, final HardwareSurface surface,
         final MidiProcessor midiProcessor, final TimedProcessor timedProcessor) {
         this.timedProcessor = timedProcessor;
         this.channel = assignment.getChannel();
+        //McuExtension.println(" Create button %s %d %d", assignment, assignment.getNoteNo(), assignment.getChannel());
         hwButton = surface.createHardwareButton("B%d_%s_".formatted(subIndex, assignment));
         midiProcessor.attachNoteOnOffMatcher(hwButton, assignment.getChannel(), assignment.getNoteNo());
         this.noteNr = assignment.getNoteNo();
         light = surface.createOnOffHardwareLight("BL%d_%s_".formatted(subIndex, assignment));
         hwButton.setBackgroundLight(light);
         light.onUpdateHardware(
-            () -> midiProcessor.sendLedLightStatus(assignment.getNoteNo(), light.isOn().currentValue() ? 127 : 0));
+            () -> midiProcessor.sendLedLightStatus(this.noteNr, this.channel, light.isOn().currentValue() ? 127 : 0));
     }
     
     public int getNoteNr() {

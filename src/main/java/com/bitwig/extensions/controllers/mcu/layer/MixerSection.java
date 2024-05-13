@@ -113,13 +113,14 @@ public class MixerSection {
         globalStates.getGlobalView().addValueObserver(this::handleGlobalStates);
         globalStates.getPotMode().addValueObserver(this::handlePotMode);
         globalStates.getFlipped().addValueObserver(this::handleFlipped);
+        if (!config.hasLowerDisplay()) {
+            display.getSlidersTouched().addValueObserver(this::handleTouched);
+        }
         globalStates.getNameValue().addValueObserver(this::handleNameValue);
-        display.getSlidersTouched().addValueObserver(this::handleTouched);
         globalStates.getClipLaunchingActive().addValueObserver(this::handleClipLaunchingState);
         
-        hwElements.getBackgroundColoring().ifPresent(
-            backgroundColor -> mainLayer.bindLightState(() -> trackColor.getState(viewControl.getColor(trackOffset)),
-                backgroundColor));
+        hwElements.getBackgroundColoring()
+            .ifPresent(backgroundColor -> mainLayer.bindLightState(() -> getTrackColor(trackOffset), backgroundColor));
         if (isMain && config.hasMasterVu()) {
             setUpMasterVu();
         }
@@ -128,6 +129,13 @@ public class MixerSection {
         });
         mainSection.addDirectNavigationListeners(this::navigateDirect);
         mainSection.addNavigationInfoListener(this::handleInfoInvoked);
+    }
+    
+    TrackColor getTrackColor(final int offset) {
+        if (globalStates.getGlobalView().get()) {
+            return trackColor.getState(viewControl.getColorGlobal(offset));
+        }
+        return trackColor.getState(viewControl.getColorMain(offset));
     }
     
     private void setupDeviceMenu(final Context context, final MixerSectionHardware hwElements) {

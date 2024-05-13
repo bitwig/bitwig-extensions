@@ -121,7 +121,7 @@ public class MixingModeLayerCollection {
             
             final BasicStringValue trackName = setUpTrackNameAggregate(track);
             trackDisplayLayer.addBinding(new StringDisplayBinding(displayManager, ControlMode.VOLUME,
-                DisplayTarget.of(DisplayRow.LABEL, index, sectionIndex), trackName, track.exists(),
+                DisplayTarget.of(DisplayRow.LABEL, index, sectionIndex, trackName), trackName, track.exists(),
                 name -> StringUtil.reduceAscii(name, 7)));
             
             assignButtons(hwElements, i, track);
@@ -175,7 +175,11 @@ public class MixingModeLayerCollection {
     }
     
     private void handleSelect(final Track track) {
-        if (globalStates.isShiftSet()) {
+        if (globalStates.getClearHeld().get()) {
+            track.deleteObject();
+        } else if (globalStates.getDuplicateHeld().get()) {
+            track.duplicate();
+        } else if (globalStates.isShiftSet()) {
             track.isGroupExpanded().toggle();
         } else {
             track.selectInMixer();

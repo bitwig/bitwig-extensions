@@ -102,9 +102,21 @@ public class MidiProcessor implements ControllerDisplay {
         midiOut.sendMidi(status, data1, data2);
     }
     
-    public void sendLedLightStatus(final int noteNr, final int value) {
+    public void sendLedLightStatus(final int noteNr, final int channel, final int value) {
         lightStatusMap[noteNr] = value; // TODO Consider Midi Channels
-        midiOut.sendMidi(Midi.NOTE_ON, noteNr, value);
+        midiOut.sendMidi(Midi.NOTE_ON | channel, noteNr, value);
+    }
+    
+    public void forceUpdate() {
+        for (int i = 0; i < lightStatusMap.length; i++) {
+            if (lightStatusMap[i] != -1) {
+                midiOut.sendMidi(Midi.NOTE_ON, i, lightStatusMap[i]);
+            }
+        }
+        upperDisplay.refreshDisplay();
+        if (lowerDisplay != null) {
+            lowerDisplay.refreshDisplay();
+        }
     }
     
     public void attachNoteOnOffMatcher(final HardwareButton button, final int channel, final int note) {
