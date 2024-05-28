@@ -39,6 +39,10 @@ public class TrackBankView {
         }
         trackBank.canScrollChannelsDown().markInterested();
         trackBank.canScrollChannelsUp().markInterested();
+        trackBank.scrollPosition().addValueObserver(pos -> {
+            this.selectedIndex = pos;
+            globalStates.notifySelectedTrackState("%02d".formatted(selectedIndex + 1), isExtended);
+        });
         for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
             final Track track = trackBank.getItemAt(i);
             configureTrack(track, i);
@@ -49,7 +53,7 @@ public class TrackBankView {
         track.color().addValueObserver((r, g, b) -> trackColors[index] = toColor(r, g, b));
         track.addIsSelectedInMixerObserver(selected -> {
             if (selected) {
-                this.selectedIndex = index + trackBank.scrollPosition().get();
+                this.selectedIndex = trackBank.scrollPosition().get();
                 updateSelectedTrackInfo(track);
             }
         });

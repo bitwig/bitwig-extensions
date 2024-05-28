@@ -14,7 +14,7 @@ import com.bitwig.extensions.controllers.mcu.definitions.AbstractMcuControllerEx
 
 public abstract class AbstractIconExtensionDefinition extends AbstractMcuControllerExtensionDefinition {
     private static final String[] PORT_VARIANTS = new String[] {"Anschluss", "Port"};
-    protected static final String SOFTWARE_VERSION = "0.2";
+    protected static final String SOFTWARE_VERSION = "1.0";
     
     public AbstractIconExtensionDefinition() {
         this(0);

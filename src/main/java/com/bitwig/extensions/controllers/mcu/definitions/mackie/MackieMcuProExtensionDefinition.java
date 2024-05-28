@@ -16,9 +16,9 @@ import com.bitwig.extensions.controllers.mcu.definitions.ManufacturerType;
 import com.bitwig.extensions.controllers.mcu.definitions.SubType;
 
 public class MackieMcuProExtensionDefinition extends AbstractMcuControllerExtensionDefinition {
-    private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-4e19-81ad-1de77ffa2dab");
+    private static final UUID DRIVER_ID = UUID.fromString("fa145533-5f45-45f9-81ad-2de77ffa2dab");
     private static final String DEVICE_NAME = "Mackie Control";
-    protected static final String SOFTWARE_VERSION = "0.2";
+    protected static final String SOFTWARE_VERSION = "0.3";
     
     public MackieMcuProExtensionDefinition() {
         this(0);
