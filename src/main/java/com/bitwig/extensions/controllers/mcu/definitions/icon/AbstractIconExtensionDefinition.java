@@ -27,7 +27,9 @@ public abstract class AbstractIconExtensionDefinition extends AbstractMcuControl
     private String getInPortName(final PlatformType platformType, final String baseDevicePort,
         final String portNameVariant, final int port) {
         return switch (platformType) {
-            case WINDOWS -> port == 1 ? baseDevicePort : "MIDIIN%d (%s%s)".formatted(port, baseDevicePort, getFiller());
+            case WINDOWS -> port == 1
+                ? baseDevicePort + getFiller()
+                : "MIDIIN%d (%s%s)".formatted(port, baseDevicePort, getFiller());
             case LINUX -> "%s MIDI %d".formatted(baseDevicePort, port);
             case MAC -> "%s %s %d".formatted(baseDevicePort, portNameVariant, port);
         };
@@ -36,8 +38,9 @@ public abstract class AbstractIconExtensionDefinition extends AbstractMcuControl
     private String getOutPortName(final PlatformType platformType, final String baseDevicePort,
         final String portNameVariant, final int port) {
         return switch (platformType) {
-            case WINDOWS ->
-                port == 1 ? baseDevicePort : "MIDIOUT%d (%s%s)".formatted(port, baseDevicePort, getFiller());
+            case WINDOWS -> port == 1
+                ? baseDevicePort + getFiller()
+                : "MIDIOUT%d (%s%s)".formatted(port, baseDevicePort, getFiller());
             case LINUX -> "%s MIDI %d".formatted(baseDevicePort, port);
             case MAC -> "%s %s %d".formatted(baseDevicePort, portNameVariant, port);
         };

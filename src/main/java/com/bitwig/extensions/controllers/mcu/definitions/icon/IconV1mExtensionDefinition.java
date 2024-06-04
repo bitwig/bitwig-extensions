@@ -8,7 +8,7 @@ import com.bitwig.extensions.controllers.mcu.definitions.ManufacturerType;
 import com.bitwig.extensions.controllers.mcu.definitions.SubType;
 
 public class IconV1mExtensionDefinition extends AbstractIconExtensionDefinition {
-    private static final UUID DRIVER_ID = UUID.fromString("faa99215-1162-4159-a513-970342d6dd9d");
+    private static final UUID DRIVER_ID = UUID.fromString("ee3903ba-e348-40fc-9e52-45e28fb11703");
     private static final String DEVICE_NAME = "iCON V1-M";
     protected static final String BASE_DEVICE_PORT = "iCON V1-M %s";
     protected static final String[] VERSIONS = {"V1.16", "V1.17", "V1.18"};

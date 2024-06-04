@@ -3,7 +3,7 @@ package com.bitwig.extensions.controllers.mcu.definitions.icon;
 import java.util.UUID;
 
 public class IconP1NanoPlus3ExtenderExtensionDefinition extends IconP1NanoExtensionDefinition {
-    private static final UUID DRIVER_ID = UUID.fromString("8b027591-fc1a-2dbd-9c71-4b8e05b755db");
+    private static final UUID DRIVER_ID = UUID.fromString("a0b39436-f6b6-4662-b535-85de86626ad4");
     
     public IconP1NanoPlus3ExtenderExtensionDefinition() {
         this(3);
