@@ -64,7 +64,7 @@ public class IconP1mExtensionDefinition extends AbstractIconExtensionDefinition 
     @Override
     public String getName() {
         if (nrOfExtenders == 0) {
-            return IconP1mExtensionDefinition.DEVICE_NAME;
+            return IconP1mExtensionDefinition.DEVICE_NAME + getFiller();
         }
         return String.format("%s +%d EXTENDER", IconP1mExtensionDefinition.DEVICE_NAME, nrOfExtenders);
     }
