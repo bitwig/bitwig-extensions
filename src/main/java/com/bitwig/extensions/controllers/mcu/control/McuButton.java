@@ -66,7 +66,7 @@ public class McuButton {
     
     public void bindToggle(final Layer layer, final SettableBooleanValue value) {
         layer.bind(hwButton, hwButton.pressedAction(), () -> value.toggle());
-        layer.addBinding(layer.bind(value, light.isOn()));
+        layer.bind(value, light.isOn());
     }
     
     public void bindIsPressed(final Layer layer, final BooleanValueChangedCallback callback) {
@@ -76,23 +76,23 @@ public class McuButton {
     
     public void bindLight(final Layer layer, final BooleanValue value) {
         value.markInterested();
-        layer.addBinding(layer.bind(value, light.isOn()));
+        layer.bind(value, light.isOn());
     }
     
     public void bindLight(final Layer layer, final BooleanSupplier value) {
-        layer.addBinding(layer.bind(value, light.isOn()));
+        layer.bind(value, light.isOn());
     }
     
     public void bindMomentary(final Layer layer, final BooleanValueObject value) {
         layer.bind(hwButton, hwButton.pressedAction(), () -> value.set(true));
         layer.bind(hwButton, hwButton.releasedAction(), () -> value.set(false));
-        layer.addBinding(layer.bind(value, light.isOn()));
+        layer.bind(value, light.isOn());
     }
     
     public void bindMode(final Layer layer, final Consumer<Boolean> consumer, final BooleanSupplier ledState) {
         layer.bind(hwButton, hwButton.pressedAction(), () -> consumer.accept(true));
         layer.bind(hwButton, hwButton.releasedAction(), () -> consumer.accept(false));
-        layer.addBinding(layer.bind(ledState, light.isOn()));
+        layer.bind(ledState, light.isOn());
     }
     
     public void bindRelease(final Layer layer, final Runnable action) {
@@ -109,7 +109,7 @@ public class McuButton {
     }
     
     public void bindHeldLight(final Layer layer) {
-        layer.addBinding(layer.bind(hwButton.isPressed(), light.isOn()));
+        layer.bind(hwButton.isPressed(), light.isOn());
     }
     
     public void bindPressed(final Layer layer, final HardwareActionBindable action) {
