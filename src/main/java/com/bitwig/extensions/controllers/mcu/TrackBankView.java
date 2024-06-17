@@ -14,6 +14,7 @@ public class TrackBankView {
     private final GlobalStates globalStates;
     private int selectedIndex;
     private int numberOfSendsOverall = 0;
+    private String trackType = "";
     
     public TrackBankView(final TrackBank trackBank, final GlobalStates globalStates, final boolean isExtended,
         final int numberOfSends) {
@@ -23,7 +24,11 @@ public class TrackBankView {
         this.globalStates = globalStates;
         trackColors = new int[trackBank.getSizeOfBank()];
         prepareTrackBank();
-        trackBank.itemCount().addValueObserver(items -> this.itemCount = items);
+        trackBank.itemCount().addValueObserver(items -> {
+            this.itemCount = items;
+            updateSelectedTrackInfo();
+        });
+        this.globalStates.getGlobalView().addValueObserver(globalView -> updateSelectedTrackInfo());
     }
     
     private void prepareTrackBank() {
@@ -32,9 +37,6 @@ public class TrackBankView {
                 final Track track = trackBank.getItemAt(i);
                 track.sendBank().scrollPosition().markInterested();
                 track.sendBank().itemCount().markInterested();
-                if (i == 0) {
-                    track.sendBank().itemCount().addValueObserver(items -> numberOfSendsOverall = items);
-                }
             }
         }
         trackBank.canScrollChannelsDown().markInterested();
@@ -45,15 +47,23 @@ public class TrackBankView {
         }
     }
     
+    public void setCursorTrackPosition(final int trackPosition) {
+        this.selectedIndex = trackPosition;
+        updateSelectedTrackInfo();
+    }
+    
+    public void setTrackType(final String trackType) {
+        this.trackType = trackType;
+        updateSelectedTrackInfo();
+    }
+    
+    public void setNumberOfSends(final int numberOfSends) {
+        this.numberOfSendsOverall = numberOfSends;
+        updateSelectedTrackInfo();
+    }
+    
     private void configureTrack(final Track track, final int index) {
         track.color().addValueObserver((r, g, b) -> trackColors[index] = toColor(r, g, b));
-        track.addIsSelectedInMixerObserver(selected -> {
-            if (selected) {
-                this.selectedIndex = index + trackBank.scrollPosition().get();
-                updateSelectedTrackInfo(track);
-            }
-        });
-        track.trackType().markInterested();
     }
     
     private static int toColor(final double r, final double g, final double b) {
@@ -63,11 +73,16 @@ public class TrackBankView {
         return red << 16 | green << 8 | blue;
     }
     
-    private void updateSelectedTrackInfo(final Track track) {
-        if (track.trackType().get().equals("Master")) {
+    private void updateSelectedTrackInfo() {
+        if (globalStates.getGlobalView().get() != isExtended) {
+            return;
+        }
+        if (trackType.equals("Master")) {
             globalStates.notifySelectedTrackState("MT", isExtended);
-        } else if (track.trackType().get().equals("Effect")) {
-            final int sndPos = numberOfSendsOverall - (itemCount - selectedIndex - 1);
+        } else if (trackType.equals("Effect")) {
+            final int sndPos =
+                isExtended ? numberOfSendsOverall - (itemCount - selectedIndex - 1) : selectedIndex - itemCount;
+            
             globalStates.notifySelectedTrackState("F%01d".formatted(sndPos + 1), isExtended);
         } else {
             globalStates.notifySelectedTrackState("%02d".formatted(selectedIndex + 1), isExtended);

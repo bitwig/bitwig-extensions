@@ -48,7 +48,7 @@ public class MainHardwareSection {
             case STEP -> setUp2Complement(midiProcessor);
             case STEP_1_65 -> setUpStepped(midiProcessor, config.getJogWheelBehavior());
         }
-        timeCodeLed = config.hasTimecodeLed() ? new TimeCodeLed(midiProcessor) : null;
+        timeCodeLed = config.hasTimecodeLed() ? new TimeCodeLed(midiProcessor, config.getDisplayType()) : null;
     }
     
     private void setUpAccelerated(final MidiProcessor midiProcessor) {

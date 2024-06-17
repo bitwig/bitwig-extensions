@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.bitwig.extensions.controllers.mcu.definitions.ManufacturerType;
 import com.bitwig.extensions.controllers.mcu.definitions.SubType;
+import com.bitwig.extensions.controllers.mcu.display.TimeCodeLed;
 
 public class ControllerConfig {
     private boolean hasLowerDisplay;
@@ -28,6 +29,7 @@ public class ControllerConfig {
     private final Map<McuFunction, ButtonAssignment> assignmentMap = new HashMap<>();
     private boolean hasTimeCodeLed;
     private EncoderBehavior jogWheelBehavior = EncoderBehavior.STEP;
+    private TimeCodeLed.DisplayType displayType = TimeCodeLed.DisplayType.MCU;
     
     public ControllerConfig(final ManufacturerType manufacturerType, final SubType subType) {
         this.manufacturerType = manufacturerType;
@@ -157,6 +159,14 @@ public class ControllerConfig {
     
     public boolean isDecelerateJogWheel() {
         return decelerateJogWheel;
+    }
+    
+    public TimeCodeLed.DisplayType getDisplayType() {
+        return displayType;
+    }
+    
+    public void setDisplayType(final TimeCodeLed.DisplayType displayType) {
+        this.displayType = displayType;
     }
     
     public ControllerConfig setDecelerateJogWheel(final boolean decelerateJogWheel) {

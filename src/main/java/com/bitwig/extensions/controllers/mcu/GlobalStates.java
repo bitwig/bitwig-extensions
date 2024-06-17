@@ -18,7 +18,7 @@ public class GlobalStates {
     
     private final BooleanValueObject flipped = new BooleanValueObject();
     private final BooleanValueObject nameValue = new BooleanValueObject();
-    private final BooleanValueObject globalView = new BooleanValueObject();
+    private final BooleanValueObject globalView = new BooleanValueObject(true);
     private final BooleanValueObject clipLaunchingActive = new BooleanValueObject();
     private final BooleanValueObject duplicateHeld = new BooleanValueObject();
     private final BooleanValueObject clearHeld = new BooleanValueObject();

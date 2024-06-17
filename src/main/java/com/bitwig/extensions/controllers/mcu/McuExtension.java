@@ -58,8 +58,8 @@ public class McuExtension extends ControllerExtension {
         final List<MainSection> mainSections = new ArrayList<>();
         final List<MixerSection> mixerSections = new ArrayList<>();
         
-        //        showPortINfos(PlatformType.MAC);
-        //        showPortINfos(PlatformType.WINDOWS);
+        //showPortINfos(PlatformType.MAC);
+        showPortINfos(PlatformType.WINDOWS);
         
         for (int portIndex = 0; portIndex < controllerConfig.getNrOfExtenders() + 1; portIndex++) {
             final MidiProcessor midiProcessor = new MidiProcessor(diContext, portIndex);

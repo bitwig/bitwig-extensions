@@ -344,6 +344,7 @@ public class MainSection {
         hwElements.getButton(McuFunction.DISPLAY_SMPTE).ifPresent(button -> {
             button.bindLight(mainLayer, () -> timeCodeLed.getMode() == TimeCodeLed.Mode.BEATS);
             button.bindPressed(mainLayer, timeCodeLed::toggleMode);
+            button.bindRelease(mainLayer, timeCodeLed::ensureMode);
         });
         states.getTwoSegmentText().addValueObserver(v -> timeCodeLed.setAssignment(v));
     }

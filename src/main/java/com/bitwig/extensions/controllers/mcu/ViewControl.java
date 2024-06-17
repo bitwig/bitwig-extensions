@@ -43,6 +43,19 @@ public class ViewControl {
             new TrackBankView(host.createTrackBank(numberOfHwChannels, numberOfSends, nrOfScenes), globalStates, true,
                 numberOfSends);
         
+        cursorTrack.position().addValueObserver(trackPosition -> {
+            mainTrackBank.setCursorTrackPosition(trackPosition);
+            globalTrackBank.setCursorTrackPosition(trackPosition);
+        });
+        cursorTrack.trackType().addValueObserver(trackType -> {
+            mainTrackBank.setTrackType(trackType);
+            globalTrackBank.setTrackType(trackType);
+        });
+        cursorTrack.sendBank().itemCount().addValueObserver(items -> {
+            mainTrackBank.setNumberOfSends(items);
+            globalTrackBank.setNumberOfSends(items);
+        });
+        
         mainTrackBank.getTrackBank().followCursorTrack(cursorTrack);
         globalTrackBank.getTrackBank().followCursorTrack(cursorTrack);
         
