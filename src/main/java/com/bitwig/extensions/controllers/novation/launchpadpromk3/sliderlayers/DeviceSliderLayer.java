@@ -48,7 +48,8 @@ public class DeviceSliderLayer extends SliderLayer {
         initSceneButtons(hwElements);
         for (int i = 0; i < 8; i++) {
             final RemoteControl parameter = parameterBank.getParameter(i);
-            
+            parameter.setIndication(true);
+
             final SliderBinding binding = new SliderBinding(mode.getCcNr(), parameter, sliders[i], i, midiProcessor);
             addBinding(binding);
             valueBindings.add(binding);
