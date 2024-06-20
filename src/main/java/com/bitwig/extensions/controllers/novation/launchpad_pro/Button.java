@@ -4,20 +4,11 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
-import com.bitwig.extension.controller.api.ObjectHardwareProperty;
 
 final class Button
 {
-   static final int NO_PULSE = 0;
-   static final int PULSE_PLAYING = 88;
-   static final int PULSE_RECORDING = 72;
-   static final int PULSE_PLAYBACK_QUEUED = 89;
-   static final int PULSE_RECORDING_QUEUED = 56;
-   static final int PULSE_STOP_QUEUED = 118;
-
    enum State
    {
       RELEASED, PRESSED, HOLD,
@@ -63,7 +54,8 @@ final class Button
 
       final MultiStateHardwareLight light = hardwareSurface.createMultiStateHardwareLight(id + "-light");
       light.state().setValue(LedState.OFF);
-      light.state().onUpdateHardware(internalHardwareLightState -> mDriver.updateButtonLed(Button.this));
+      light.setColorToStateFunction(color -> new LedState(color));
+      light.state().onUpdateHardware(internalHardwareLightState -> mDriver.updateButtonLed(Button.this, (LedState)internalHardwareLightState));
       bt.setBackgroundLight(light);
 
       mButton = bt;
@@ -100,23 +92,16 @@ final class Button
       return mButtonState == State.PRESSED || mButtonState == State.HOLD;
    }
 
-   public void appendLedUpdate(
+   public void appendLedUpdate(LedState ledState,
       final StringBuilder ledClear, final StringBuilder ledUpdate, final StringBuilder ledPulseUpdate)
    {
-      final ObjectHardwareProperty<InternalHardwareLightState> state = mLight.state();
-      LedState currentState = (LedState)state.currentValue();
-      final LedState lastSent = (LedState)state.lastSentValue();
+      if (ledState == null)
+         ledState = LedState.OFF;
 
-      if (currentState == null)
-         currentState = LedState.OFF;
+      final Color color = ledState.mColor;
+      final int pulse = ledState.mPulse;
 
-      if (lastSent != null && currentState.equals(lastSent))
-         return;
-
-      final Color color = currentState.mColor;
-      final int pulse = currentState.mPulse;
-
-      if (pulse == NO_PULSE)
+      if (pulse == LedState.NO_PULSE)
       {
          if (color.isBlack())
             ledClear.append(String.format(" %02x 00", mIndex));

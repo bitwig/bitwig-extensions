@@ -18,7 +18,6 @@ public class DrumButton extends LaunchPadButton {
         initButtonNote(midiProcessor.getMidiIn(), notevalue);
         light.state().setValue(RgbState.of(0));
         light.state().onUpdateHardware(this::updateState);
-        hwButton.setBackgroundLight(light);
     }
 
     private void updateState(final InternalHardwareLightState state) {

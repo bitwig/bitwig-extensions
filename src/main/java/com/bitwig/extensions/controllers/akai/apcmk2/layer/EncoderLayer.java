@@ -6,8 +6,8 @@ import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.akai.apcmk2.ControlMode;
 import com.bitwig.extensions.controllers.akai.apcmk2.ViewControl;
-import com.bitwig.extensions.controllers.akai.apcmk2.control.Encoder;
-import com.bitwig.extensions.controllers.akai.apcmk2.control.HardwareElementsApc;
+import com.bitwig.extensions.controllers.akai.apc.common.control.Encoder;
+import com.bitwig.extensions.controllers.akai.apcmk2.HardwareElementsApc;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.PostConstruct;
 

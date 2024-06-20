@@ -1,12 +1,12 @@
 package com.bitwig.extensions.controllers.arturia.minilab3;
 
+import java.util.Arrays;
+
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.framework.Layer;
-
-import java.util.Arrays;
 
 public class ClipLaunchingLayer extends Layer {
 
@@ -17,8 +17,6 @@ public class ClipLaunchingLayer extends Layer {
    private final MiniLab3Extension driver;
    private int blinkState;
    private long clipsStopTiming = 800;
-   private final byte[] colorBuffer = new byte[24];
-   private final byte[] currentBuffer = new byte[24];
 
    public ClipLaunchingLayer(final MiniLab3Extension driver) {
       super(driver.getLayers(), "CLIP LAUNCHER");

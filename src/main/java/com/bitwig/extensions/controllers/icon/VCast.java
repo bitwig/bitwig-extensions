@@ -1,7 +1,5 @@
 package com.bitwig.extensions.controllers.icon;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -19,7 +17,6 @@ import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -176,13 +173,8 @@ public class VCast extends ControllerExtension
       mVuMeterLight = mHardwareSurface.createMultiStateHardwareLight("vuMeter");
       mVuMeterLight.state().setValue(new VuMeterState());
       mVuMeterLight.state().onUpdateHardware((state) -> {
-         if (!(state instanceof VuMeterState))
-         {
-            return;
-         }
-
-         final VuMeterState s = (VuMeterState) state;
-         mMidiOut.sendMidi(0xD0, 0x30 + s.value(), 0x00);
+         if (state instanceof final VuMeterState s)
+            mMidiOut.sendMidi(0xD0, 0x30 + s.value(), 0x00);
       });
    }
 
