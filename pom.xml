@@ -26,8 +26,8 @@
 				<configuration>
 					<optimize>true</optimize>
 					<fork>true</fork>
-					<source>16</source>
-					<target>16</target>
+					<source>21</source>
+					<target>21</target>
 					<encoding>UTF-8</encoding>
 					<maxmem>1024m</maxmem>
 				</configuration>
