@@ -44,6 +44,8 @@ com.bitwig.extensions.controllers.icon.VCastDefinition
 com.bitwig.extensions.controllers.icon.VCastProDefinition
 com.bitwig.extensions.controllers.icon.VCastRxDefinition
 
+com.bitwig.extensions.controllers.intuitive_instruments.exquis.ExquisControllerExtensionDefinition
+
 com.bitwig.extensions.controllers.keith_mcmillen.QuNexusDefinition
 
 com.bitwig.extensions.controllers.kenton.KillaMixMiniExtensionDefinition
