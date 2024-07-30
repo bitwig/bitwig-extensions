@@ -6,7 +6,8 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
-import com.bitwig.extensions.controllers.akai.apcmk2.DebugApc;
+import com.bitwig.extensions.controllers.akai.apc.common.MidiProcessor;
+import com.bitwig.extensions.controllers.akai.apcmk2.AbstractAkaiApcExtension;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
 import java.util.Queue;
@@ -52,7 +53,8 @@ public abstract class AbstractMidiProcessor implements MidiProcessor {
     }
 
     protected void onMidi0(final ShortMidiMessage msg) {
-        DebugApc.println("Incoming %02X %02X %02X", msg.getStatusByte(), msg.getData1(), msg.getData2());
+        AbstractAkaiApcExtension.println("Incoming %02X %02X %02X", msg.getStatusByte(), msg.getData1(),
+                msg.getData2());
     }
 
     protected abstract void handleSysEx(final String sysExString);

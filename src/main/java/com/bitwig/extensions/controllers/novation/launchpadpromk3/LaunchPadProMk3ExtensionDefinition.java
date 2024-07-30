@@ -65,13 +65,13 @@ public class LaunchPadProMk3ExtensionDefinition extends ControllerExtensionDefin
       final String[] outputNames = new String[1];
 
       switch (platformType) {
-         case LINUX:
          case WINDOWS:
             inputNames[0] = "MIDIIN3 (LPProMK3 MIDI)";
             inputNames[1] = "LPProMK3 MIDI";
             outputNames[0] = "MIDIOUT3 (LPProMK3 MIDI)";
             break;
          case MAC:
+         case LINUX:
             inputNames[0] = "Launchpad Pro MK3 LPProMK3 DAW";
             inputNames[1] = "Launchpad Pro MK3 LPProMK3 MIDI";
             outputNames[0] = "Launchpad Pro MK3 LPProMK3 DAW";

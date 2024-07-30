@@ -13,7 +13,7 @@ public class SliderBinding extends Binding<Parameter, HardwareSlider> {
    private int currentValue;
    private boolean process = true;
    int currSliderValue;
-   private int index;
+   private final int index;
 
    public SliderBinding(final int ccNr, final Parameter source, final HardwareSlider target, final int index,
                         final MidiProcessor midiProcessor) {
@@ -27,7 +27,7 @@ public class SliderBinding extends Binding<Parameter, HardwareSlider> {
       this.index = index;
    }
 
-   private void handleSliderChange(Parameter parameter, final double sliderValue) {
+   private void handleSliderChange(final Parameter parameter, final double sliderValue) {
       currSliderValue = (int) Math.round(sliderValue * 127);
       if (isActive()) {
          process = false;
@@ -36,13 +36,13 @@ public class SliderBinding extends Binding<Parameter, HardwareSlider> {
    }
 
    private void valueChanged(final int value) {
-      currentValue = value;
-      // This check against the last slider value and the process value seems redundant
-      // but is not.
-      if (isActive() && value != currSliderValue && process) {
-         midiProcessor.sendToSlider(ccNr, value);
+      if (value != currentValue) {
+         currentValue = value;
+         if (isActive() && process) {
+            midiProcessor.sendToSlider(ccNr, value);
+         }
+         process = true;
       }
-      process = true;
    }
 
    public void update() {

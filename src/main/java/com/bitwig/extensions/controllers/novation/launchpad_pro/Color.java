@@ -126,6 +126,11 @@ final class Color
       this(value.red(), value.green(), value.blue());
    }
 
+   public Color(final com.bitwig.extension.api.Color color)
+   {
+      this((float)color.getRed(), (float)color.getGreen(), (float)color.getBlue());
+   }
+
    public Color(final Color color, final float scale)
    {
       mRed = (byte) (color.mRed * scale);

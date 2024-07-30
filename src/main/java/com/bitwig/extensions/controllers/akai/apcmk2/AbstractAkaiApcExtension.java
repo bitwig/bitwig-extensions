@@ -1,16 +1,17 @@
 package com.bitwig.extensions.controllers.akai.apcmk2;
 
+import java.time.LocalDateTime;
+
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.*;
-import com.bitwig.extensions.controllers.akai.apcmk2.control.HardwareElementsApc;
-import com.bitwig.extensions.controllers.akai.apcmk2.control.SingleLedButton;
+import com.bitwig.extensions.controllers.akai.apc.common.control.SingleLedButton;
 import com.bitwig.extensions.controllers.akai.apcmk2.layer.AbstractControlLayer;
 import com.bitwig.extensions.controllers.akai.apcmk2.layer.SessionLayer;
 import com.bitwig.extensions.controllers.akai.apcmk2.layer.TrackControlLayer;
 import com.bitwig.extensions.controllers.akai.apcmk2.layer.TrackMode;
-import com.bitwig.extensions.controllers.akai.apcmk2.led.SingleLedState;
-import com.bitwig.extensions.controllers.akai.apcmk2.midi.MidiProcessor;
+import com.bitwig.extensions.controllers.akai.apc.common.led.SingleLedState;
+import com.bitwig.extensions.controllers.akai.apc.common.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 
@@ -24,16 +25,24 @@ public abstract class AbstractAkaiApcExtension extends ControllerExtension {
    protected final ApcConfiguration configuration;
    protected Class<? extends AbstractControlLayer> controlLayerClass;
    protected ApcPreferences preferences;
+   private static ControllerHost debugHost;
 
    protected AbstractAkaiApcExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
                                       ApcConfiguration configuration) {
       super(definition, host);
       this.configuration = configuration;
    }
+   
+   public static void println(final String format, final Object... args) {
+      if (debugHost != null) {
+         final LocalDateTime now = LocalDateTime.now();
+         debugHost.println(format.formatted(args));
+      }
+   }
 
    @Override
    public void init() {
-      DebugApc.registerHost(getHost());
+      debugHost = getHost();
       final Context diContext = new Context(this);
       surface = diContext.getService(HardwareSurface.class);
       preferences = new ApcPreferences(getHost(), configuration.isHasEncoders());

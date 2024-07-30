@@ -4,6 +4,7 @@ com.bitwig.extensions.controllers.akai.mpk_mini_mk3.MpkMiniMk3ControllerExtensio
 com.bitwig.extensions.controllers.akai.mpkminiplus.MpkMiniPlusControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.apcmk2.AkaiApcKeys25Definition
 com.bitwig.extensions.controllers.akai.apcmk2.AkaiApcMiniDefinition
+com.bitwig.extensions.controllers.akai.apc64.Apc64ExtensionDefinition
 
 com.bitwig.extensions.controllers.arturia.keylab.mk1.ArturiaKeylab25ControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keylab.mk2.ArturiaKeylab49MkIIControllerExtensionDefinition
@@ -43,6 +44,8 @@ com.bitwig.extensions.controllers.icon.VCastDefinition
 com.bitwig.extensions.controllers.icon.VCastProDefinition
 com.bitwig.extensions.controllers.icon.VCastRxDefinition
 
+com.bitwig.extensions.controllers.intuitive_instruments.exquis.ExquisControllerExtensionDefinition
+
 com.bitwig.extensions.controllers.keith_mcmillen.QuNexusDefinition
 
 com.bitwig.extensions.controllers.kenton.KillaMixMiniExtensionDefinition
@@ -75,6 +78,24 @@ com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt1ExtensionDefi
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt2ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconQconProXXt3ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.IconPlatformMExtensionDefinition
+
+com.bitwig.extensions.controllers.mcu.definitions.ssl.SslUf8ExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.ssl.SslUf8Plus1ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.ssl.SslUf8Plus2ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.ssl.SslUf8Plus3ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mPlus1ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mPlus2ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1mPlus3ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1NanoExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1NanoPlus1ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1NanoPlus2ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconP1NanoPlus3ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconV1mExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconV1mPlus1ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconV1mPlus2ExtenderExtensionDefinition
+com.bitwig.extensions.controllers.mcu.definitions.icon.IconV1mPlus3ExtenderExtensionDefinition
+#com.bitwig.extensions.controllers.mcu.definitions.mackie.MackieMcuProExtensionDefinition
 
 com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenProMiniExtensionDefinition
 com.bitwig.extensions.controllers.maudio.oxygenpro.definition.OxygenPro25ExtensionDefinition

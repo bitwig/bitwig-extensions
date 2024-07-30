@@ -11,7 +11,6 @@ public class LabeledButton extends LaunchPadButton {
         this.ccValue = ccValue;
         initButtonCc(midiProcessor.getMidiIn(), ccValue);
         light.state().onUpdateHardware(state -> midiProcessor.updatePadLed(state, ccValue));
-        hwButton.setBackgroundLight(light);
     }
 
     public LabeledButton(final HardwareSurface surface, final MidiProcessor midiProcessor,
@@ -20,7 +19,6 @@ public class LabeledButton extends LaunchPadButton {
         ccValue = ccAssignment.getCcValue();
         initButtonCc(midiProcessor.getMidiIn(), ccAssignment);
         light.state().onUpdateHardware(state -> midiProcessor.updatePadLed(state, ccValue));
-        hwButton.setBackgroundLight(light);
     }
 
     @Override

@@ -97,17 +97,17 @@ final class SessionMode extends Mode
       final int pulse;
 
       if (slot.isStopQueued().get())
-         pulse = Button.PULSE_STOP_QUEUED;
+         pulse = LedState.PULSE_STOP_QUEUED;
       else if (slot.isRecordingQueued().get())
-         pulse = Button.PULSE_RECORDING_QUEUED;
+         pulse = LedState.PULSE_RECORDING_QUEUED;
       else if (slot.isPlaybackQueued().get())
-         pulse = Button.PULSE_PLAYBACK_QUEUED;
+         pulse = LedState.PULSE_PLAYBACK_QUEUED;
       else if (slot.isRecording().get())
-         pulse = Button.PULSE_RECORDING;
+         pulse = LedState.PULSE_RECORDING;
       else if (slot.isPlaying().get())
-         pulse = Button.PULSE_PLAYING;
+         pulse = LedState.PULSE_PLAYING;
       else
-         pulse = Button.NO_PULSE;
+         pulse = LedState.NO_PULSE;
 
       return new LedState(color, pulse);
    }

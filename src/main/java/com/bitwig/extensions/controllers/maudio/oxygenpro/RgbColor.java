@@ -1,9 +1,9 @@
 package com.bitwig.extensions.controllers.maudio.oxygenpro;
 
+import java.awt.Color;
+
 import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
-
-import java.awt.*;
 
 public class RgbColor extends InternalHardwareLightState {
    private static final int BLINK = 64;
@@ -24,15 +24,15 @@ public class RgbColor extends InternalHardwareLightState {
    public static final RgbColor MAGENTA = new RgbColor(51);
    public static final RgbColor ROSE = new RgbColor(35);
 
-   private int stateIndex;
-   private RgbColor blink;
+   private final int stateIndex;
+   private final RgbColor blink;
 
-   private RgbColor(int stateIndex) {
+   private RgbColor(final int stateIndex) {
       this.stateIndex = stateIndex;
       this.blink = new RgbColor(this);
    }
 
-   private RgbColor(RgbColor base) {
+   private RgbColor(final RgbColor base) {
       this.stateIndex = base.stateIndex + BLINK;
       this.blink = this;
    }
@@ -47,32 +47,35 @@ public class RgbColor extends InternalHardwareLightState {
 
    @Override
    public HardwareLightVisualState getVisualState() {
-      return null;
+      if (stateIndex == 0)
+         return null;
+
+      return HardwareLightVisualState.createForColor(com.bitwig.extension.api.Color.fromRGB(1, 1, 1));
    }
 
    @Override
-   public boolean equals(Object obj) {
+   public boolean equals(final Object obj) {
       if (obj instanceof RgbColor) {
-         RgbColor other = (RgbColor) obj;
+         final RgbColor other = (RgbColor) obj;
          return other.stateIndex == stateIndex;
       }
       return false;
    }
 
-   public static RgbColor toColor(double red, double green, double blue) {
+   public static RgbColor toColor(final double red, final double green, final double blue) {
       final int rv = (int) Math.floor(red * 255);
       final int gv = (int) Math.floor(green * 255);
       final int bv = (int) Math.floor(blue * 255);
       if (rv == 0 && gv == 0 && bv == 0) {
          return RgbColor.OFF;
       }
-      Hsb hsb = rgbToHsb(rv, gv, bv);
-      //DebugOutOxy.println("x Color %d %d %d  %s", rv, gv, bv, hsb);
+      final Hsb hsb = rgbToHsb(rv, gv, bv);
+      // DebugOutOxy.println("x Color %d %d %d %s", rv, gv, bv, hsb);
 
       return toColor(hsb);
    }
 
-   private static RgbColor toColor(Hsb hsb) {
+   private static RgbColor toColor(final Hsb hsb) {
       if (hsb.sat < 4) {
          return RgbColor.WHITE;
       }
@@ -109,11 +112,11 @@ public class RgbColor extends InternalHardwareLightState {
    }
 
    private static Hsb rgbToHsb(final int rv, final int gv, final int bv) {
-      float[] hsbValues = new float[3];
+      final float[] hsbValues = new float[3];
       Color.RGBtoHSB(rv, gv, bv, hsbValues);
-      int hr = Math.round(hsbValues[0] * 15) + 1;
-      int hg = Math.round(hsbValues[1] * 15);
-      int hb = Math.round(hsbValues[2] * 15);
+      final int hr = Math.round(hsbValues[0] * 15) + 1;
+      final int hg = Math.round(hsbValues[1] * 15);
+      final int hb = Math.round(hsbValues[2] * 15);
       return new Hsb(hr, hg, hb);
    }
 

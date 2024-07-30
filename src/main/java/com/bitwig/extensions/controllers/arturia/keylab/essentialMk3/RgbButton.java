@@ -1,14 +1,21 @@
 package com.bitwig.extensions.controllers.arturia.keylab.essentialMk3;
 
-import com.bitwig.extension.controller.api.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import com.bitwig.extension.controller.api.Action;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.InternalHardwareLightState;
+import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.MultiStateHardwareLight;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.color.RgbLightState;
 import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.components.SysExHandler;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.time.TimeRepeatEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
-
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class RgbButton {
    private final byte[] rgbCommand = {(byte) 0xF0, 0x00, 0x20, 0x6B, 0x7F, 0x42, 0x04, //
@@ -51,6 +58,7 @@ public class RgbButton {
       }
       hwButton.isPressed().markInterested();
       light = surface.createMultiStateHardwareLight(name + "_LIGHT_" + "_" + value);
+      light.setColorToStateFunction(RgbLightState::forColor);
       hwButton.setBackgroundLight(light);
       light.state().onUpdateHardware(this::updateState);
 //        if (bankId.getIndex() == -1) { // Individual updates handled
@@ -73,8 +81,8 @@ public class RgbButton {
    }
 
    private void updateState(final InternalHardwareLightState state) {
-      if (state instanceof RgbLightState) {
-         ((RgbLightState) state).apply(rgbCommand);
+      if (state instanceof final RgbLightState ligtState) {
+         ligtState.apply(rgbCommand);
          sysExHandler.sendSysex(rgbCommand);
       } else {
          setRgbOff();

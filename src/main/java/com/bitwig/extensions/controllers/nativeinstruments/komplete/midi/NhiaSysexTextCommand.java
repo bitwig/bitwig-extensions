@@ -1,5 +1,8 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete.midi;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 import com.bitwig.extension.controller.api.MidiOut;
 
 /**
@@ -34,8 +37,9 @@ public class NhiaSysexTextCommand extends NhiaSysexCommand {
       dataArray[12] = (byte) track;
       final byte[] sendarray = new byte[dataArray.length + text.length()];
       System.arraycopy(dataArray, 0, sendarray, 0, 13);
-      for (int i = 0; i < text.length(); i++) {
-         sendarray[13 + i] = (byte) text.charAt(i);
+      final byte[] chars = text.getBytes(StandardCharsets.US_ASCII);
+      for (int i = 0; i < chars.length; i++) {
+         sendarray[13 + i] = chars[i];
       }
       sendarray[sendarray.length - 1] = SYSEX_END;
       midiOut.sendSysex(sendarray);
