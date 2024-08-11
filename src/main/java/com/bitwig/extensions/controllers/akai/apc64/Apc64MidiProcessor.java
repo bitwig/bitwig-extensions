@@ -197,7 +197,7 @@ public class Apc64MidiProcessor implements MidiProcessor {
     // 31 00 F7
     
     protected void handleSysEx(final String sysExString) {
-        Apc64Extension.println("SysEx = %s  mode=%s", sysExString, sysExString.startsWith(MODE_CHANGE_MSG));
+        //Apc64Extension.println("SysEx = %s  mode=%s", sysExString, sysExString.startsWith(MODE_CHANGE_MSG));
         if (sysExString.startsWith(DEVICE_VALUE)) {
             Apc64Extension.println("#### Connect to APC #### ");
             initState = false;
@@ -230,7 +230,7 @@ public class Apc64MidiProcessor implements MidiProcessor {
             return;
         }
         currentMode = PadMode.fromId(mode);
-        Apc64Extension.println(" MODE =%d ==> %s", mode, currentMode);
+        //Apc64Extension.println(" MODE =%d ==> %s", mode, currentMode);
         
         if (currentMode.hasLocalControl()) {
             //Apc64Extension.println(" DAW MODE IN %s", sessionModeState);
