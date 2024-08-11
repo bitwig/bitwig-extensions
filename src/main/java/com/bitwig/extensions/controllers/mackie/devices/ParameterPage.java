@@ -10,7 +10,6 @@ import com.bitwig.extension.callback.DoubleValueChangedCallback;
 import com.bitwig.extension.callback.IntegerValueChangedCallback;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding;
-import com.bitwig.extension.controller.api.DoubleValue;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
@@ -285,11 +284,6 @@ public class ParameterPage implements SettableRangedValue {
     
     public double getParamValue() {
         return currentParameter.parameter.value().get();
-    }
-    
-    @Override
-    public DoubleValue getOrigin() {
-        return currentParameter.parameter.value().getOrigin();
     }
     
     public void addDoubleValueObserver(final DoubleConsumer listener) {
