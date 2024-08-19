@@ -124,6 +124,14 @@ public class ViewControl {
         globalTrackBank.navigateSends(dir);
     }
     
+    public void selectSendsTrack(final int dir) {
+        if (dir > 0) {
+            cursorTrack.sendBank().scrollForwards();
+        } else {
+            cursorTrack.sendBank().scrollBackwards();
+        }
+    }
+    
     public void navigateChannels(final int dir) {
         mainTrackBank.navigateChannels(dir);
         globalTrackBank.navigateChannels(dir);

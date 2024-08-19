@@ -12,6 +12,8 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.Preferences;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extensions.controllers.mcu.config.ControllerConfig;
 import com.bitwig.extensions.controllers.mcu.control.MainHardwareSection;
 import com.bitwig.extensions.controllers.mcu.control.MixerSectionHardware;
@@ -57,10 +59,10 @@ public class McuExtension extends ControllerExtension {
         MainSection mainControl = null;
         final List<MainSection> mainSections = new ArrayList<>();
         final List<MixerSection> mixerSections = new ArrayList<>();
+        final boolean xtenderSequenceReversed = determineXtenderOrderReversed(host);
         
         //showPortINfos(PlatformType.MAC);
-        showPortINfos(PlatformType.WINDOWS);
-        
+        //showPortINfos(PlatformType.WINDOWS);
         for (int portIndex = 0; portIndex < controllerConfig.getNrOfExtenders() + 1; portIndex++) {
             final MidiProcessor midiProcessor = new MidiProcessor(diContext, portIndex);
             midiProcessors.add(midiProcessor);
@@ -73,10 +75,14 @@ public class McuExtension extends ControllerExtension {
                 mainSections.add(mainControl);
             }
             
+            final int channelOffsetIndex = xtenderSequenceReversed
+                ? portIndex
+                : (portIndex == 0 ? controllerConfig.getNrOfExtenders() : portIndex - 1);
+            
             final MixerSectionHardware mixerSectionHardware =
-                new MixerSectionHardware(portIndex, diContext, midiProcessor, portIndex * 8);
+                new MixerSectionHardware(portIndex, diContext, midiProcessor, channelOffsetIndex * 8);
             final MixerSection mixerLayer =
-                new MixerSection(diContext, mixerSectionHardware, mainControl, portIndex, portIndex == 0);
+                new MixerSection(diContext, mixerSectionHardware, mainControl, channelOffsetIndex, portIndex == 0);
             mixerHardwareSections.add(mixerSectionHardware);
             mixerSections.add(mixerLayer);
         }
@@ -86,6 +92,19 @@ public class McuExtension extends ControllerExtension {
         if (controllerConfig.getForceUpdateOnStartup() != -1) {
             host.scheduleTask(this::doForceUpdate, controllerConfig.getForceUpdateOnStartup());
         }
+    }
+    
+    private boolean determineXtenderOrderReversed(final ControllerHost host) {
+        boolean xtenderSequenceReversed = false;
+        
+        if (controllerConfig.getNrOfExtenders() > 0) {
+            final Preferences preferences = host.getPreferences();
+            final SettableBooleanValue xtenderOrder = preferences.getBooleanSetting("Main Unit Left", //
+                "Device Position (Restart required)", false);
+            xtenderOrder.markInterested();
+            xtenderSequenceReversed = xtenderOrder.get();
+        }
+        return xtenderSequenceReversed;
     }
     
     private void doForceUpdate() {

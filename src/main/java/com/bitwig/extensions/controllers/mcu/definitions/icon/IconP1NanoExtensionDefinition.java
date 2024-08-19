@@ -11,7 +11,7 @@ public class IconP1NanoExtensionDefinition extends AbstractIconExtensionDefiniti
     private static final UUID DRIVER_ID = UUID.fromString("36b7888b-28fb-4cce-b335-62b832449663");
     private static final String DEVICE_NAME = "iCON P1-Nano";
     protected static final String BASE_DEVICE_PORT = "iCON P1-Nano %s"; //
-    protected static final String[] VERSIONS = {"V1.21", "V1.22"};
+    protected static final String[] VERSIONS = {"V1.21", "V1.22", "V1.23"};
     
     public IconP1NanoExtensionDefinition() {
         this(0);
