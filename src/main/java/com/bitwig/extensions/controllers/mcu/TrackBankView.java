@@ -1,11 +1,16 @@
 package com.bitwig.extensions.controllers.mcu;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extensions.controllers.mcu.value.TrackColor;
 
 public class TrackBankView {
-    private final int[] trackColors;
+    //private final int[] trackColors;
+    private final List<TrackColor> trackColors = new ArrayList<>();
     
     private final TrackBank trackBank;
     private final int numberOfSends;
@@ -22,7 +27,11 @@ public class TrackBankView {
         this.numberOfSends = numberOfSends;
         this.isExtended = isExtended;
         this.globalStates = globalStates;
-        trackColors = new int[trackBank.getSizeOfBank()];
+        final int sections = trackBank.getSizeOfBank() / 8;
+        for (int i = 0; i < sections; i++) {
+            trackColors.add(new TrackColor());
+        }
+        
         prepareTrackBank();
         trackBank.itemCount().addValueObserver(items -> {
             this.itemCount = items;
@@ -63,7 +72,13 @@ public class TrackBankView {
     }
     
     private void configureTrack(final Track track, final int index) {
-        track.color().addValueObserver((r, g, b) -> trackColors[index] = toColor(r, g, b));
+        track.color().addValueObserver((r, g, b) -> setColor(index, toColor(r, g, b)));
+    }
+    
+    private void setColor(final int index, final int colorValue) {
+        final int section = index / 8;
+        final TrackColor c = trackColors.get(section);
+        trackColors.set(section, c.setColor(index % 8, colorValue));
     }
     
     private static int toColor(final double r, final double g, final double b) {
@@ -93,13 +108,8 @@ public class TrackBankView {
         return trackBank;
     }
     
-    public int[] getColor(final int channelOffset) {
-        if (trackColors.length == 8) {
-            return trackColors;
-        }
-        final int[] result = new int[8];
-        System.arraycopy(trackColors, 8, result, 0, 8);
-        return result;
+    public TrackColor getColor(final int channelOffset) {
+        return trackColors.get(channelOffset / 8);
     }
     
     public void navigateChannels(final int dir) {
