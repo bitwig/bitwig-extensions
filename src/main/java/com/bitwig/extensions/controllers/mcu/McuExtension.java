@@ -18,6 +18,7 @@ import com.bitwig.extensions.controllers.mcu.config.ControllerConfig;
 import com.bitwig.extensions.controllers.mcu.control.MainHardwareSection;
 import com.bitwig.extensions.controllers.mcu.control.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mcu.definitions.AbstractMcuControllerExtensionDefinition;
+import com.bitwig.extensions.controllers.mcu.definitions.ManufacturerType;
 import com.bitwig.extensions.controllers.mcu.layer.MainSection;
 import com.bitwig.extensions.controllers.mcu.layer.MixerSection;
 import com.bitwig.extensions.framework.Layer;
@@ -95,6 +96,9 @@ public class McuExtension extends ControllerExtension {
     }
     
     private boolean determineXtenderOrderReversed(final ControllerHost host) {
+        if (controllerConfig.getManufacturerType() == ManufacturerType.SSL) {
+            return true;
+        }
         boolean xtenderSequenceReversed = false;
         
         if (controllerConfig.getNrOfExtenders() > 0) {
@@ -108,7 +112,6 @@ public class McuExtension extends ControllerExtension {
     }
     
     private void doForceUpdate() {
-        println(" FORCE UPDATE ");
         for (final MidiProcessor midiProcessor : midiProcessors) {
             midiProcessor.forceUpdate();
         }
