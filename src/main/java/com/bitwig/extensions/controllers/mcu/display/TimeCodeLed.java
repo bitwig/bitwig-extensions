@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.mcu.display;
 
-import com.bitwig.extensions.controllers.mcu.McuExtension;
 import com.bitwig.extensions.controllers.mcu.MidiProcessor;
 import com.bitwig.extensions.controllers.mcu.config.McuAssignments;
 import com.bitwig.extensions.framework.values.Midi;
@@ -213,7 +212,6 @@ public class TimeCodeLed {
     public void updatePosition(final double pos) {
         position = pos;
         final boolean preCount = pos < 0;
-        McuExtension.println(" POS = %f %s %s", pos, preCount, this.preCountBeats);
         final double positionAbs = Math.abs(pos);
         final int totalBeats = (int) (positionAbs * tsDiv / 4);
         final double rest = positionAbs - (int) positionAbs;

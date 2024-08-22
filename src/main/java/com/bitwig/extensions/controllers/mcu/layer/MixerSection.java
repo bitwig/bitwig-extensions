@@ -133,9 +133,9 @@ public class MixerSection {
     
     TrackColor getTrackColor(final int offset) {
         if (globalStates.getGlobalView().get()) {
-            return trackColor.getState(viewControl.getColorGlobal(offset));
+            return viewControl.getColorGlobal(offset);
         }
-        return trackColor.getState(viewControl.getColorMain(offset));
+        return viewControl.getColorMain(offset);
     }
     
     private void setupDeviceMenu(final Context context, final MixerSectionHardware hwElements) {

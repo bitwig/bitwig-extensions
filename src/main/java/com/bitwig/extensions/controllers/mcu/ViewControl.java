@@ -10,6 +10,7 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.mcu.config.ControllerConfig;
 import com.bitwig.extensions.controllers.mcu.config.McuFunction;
+import com.bitwig.extensions.controllers.mcu.value.TrackColor;
 import com.bitwig.extensions.framework.di.Component;
 
 @Component
@@ -99,11 +100,11 @@ public class ViewControl {
         return cursorDeviceControl;
     }
     
-    public int[] getColorMain(final int channelOffset) {
+    public TrackColor getColorMain(final int channelOffset) {
         return mainTrackBank.getColor(channelOffset);
     }
     
-    public int[] getColorGlobal(final int channelOffset) {
+    public TrackColor getColorGlobal(final int channelOffset) {
         return globalTrackBank.getColor(channelOffset);
     }
     
@@ -122,6 +123,10 @@ public class ViewControl {
     public void navigateSends(final int dir) {
         mainTrackBank.navigateSends(dir);
         globalTrackBank.navigateSends(dir);
+    }
+    
+    public void selectSendsTrack(final int dir) {
+        cursorTrack.sendBank().scrollBy(dir * 8);
     }
     
     public void navigateChannels(final int dir) {

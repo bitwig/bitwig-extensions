@@ -510,7 +510,8 @@ public class MainSection {
                 case EQ -> deviceTypeBank.getEqDevice().navigateDeviceParameters(-dir);
                 case TRACK_REMOTE -> selectRemotes(viewControl.getTrackRemotes(), -dir);
                 case PROJECT_REMOTE -> selectRemotes(viewControl.getProjectRemotes(), -dir);
-                case PAN, ALL_SENDS -> selectTracks(-dir);
+                case PAN -> selectTracks(-dir);
+                case ALL_SENDS -> viewControl.selectSendsTrack(-dir);
                 case SEND -> viewControl.navigateSends(-dir);
             }
         }

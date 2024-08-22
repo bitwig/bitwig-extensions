@@ -11,7 +11,7 @@ public class IconV1mExtensionDefinition extends AbstractIconExtensionDefinition 
     private static final UUID DRIVER_ID = UUID.fromString("ee3903ba-e348-40fc-9e52-45e28fb11703");
     private static final String DEVICE_NAME = "iCON V1-M";
     protected static final String BASE_DEVICE_PORT = "iCON V1-M %s";
-    protected static final String[] VERSIONS = {"V1.16", "V1.17", "V1.18"};
+    protected static final String[] VERSIONS = {"V1.17", "V1.18", "V1.19", "V1.20", "V1.20"};
     
     public IconV1mExtensionDefinition() {
         this(0);

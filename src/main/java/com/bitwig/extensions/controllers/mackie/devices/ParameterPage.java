@@ -286,12 +286,6 @@ public class ParameterPage implements SettableRangedValue {
         return currentParameter.parameter.value().get();
     }
     
-    //   @Override
-    //   public DoubleValue getOrigin()
-    //   {
-    //      return currentParameter.parameter.getOrigin();
-    //   }
-    
     public void addDoubleValueObserver(final DoubleConsumer listener) {
         doulbeValueCallbacks.add(listener);
     }
