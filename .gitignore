@@ -27,3 +27,4 @@ bitwig-extensions.iml
 /bin/
 /.settings/
 .DS_Store
+.idea/codeStyles
