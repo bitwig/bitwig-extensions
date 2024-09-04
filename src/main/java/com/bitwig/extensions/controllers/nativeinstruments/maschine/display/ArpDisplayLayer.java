@@ -51,7 +51,7 @@ public class ArpDisplayLayer extends DisplayLayer {
         final EnumDefinition arpModes = arp.mode().enumDefinition();
         for (int i = 0; i < arpModes.getValueCount(); i++) {
             final EnumValueDefinition valDef = arpModes.valueDefinitionAt(i);
-            arpValueDefinitions.add(valDef.getId().replace('_', '-'));
+            arpValueDefinitions.add(valDef.getId());
         }
         
         arp.rate().markInterested();
@@ -103,7 +103,7 @@ public class ArpDisplayLayer extends DisplayLayer {
     
     private void incMode(final SettableEnumValue mode, final int inc) {
         final EnumDefinition modes = mode.enumDefinition();
-        final String current = mode.get().replace('_', '-');
+        final String current = mode.get();
         final int indexMode = arpValueDefinitions.indexOf(current);
         if (indexMode != -1) {
             final int newIndex = indexMode + inc;
