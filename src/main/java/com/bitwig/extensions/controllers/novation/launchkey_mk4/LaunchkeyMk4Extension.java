@@ -6,8 +6,11 @@ import java.util.concurrent.Executors;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
+import com.bitwig.extension.controller.api.Track;
+import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.LaunchkeyButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.MonoButton;
@@ -62,9 +65,21 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         final GlobalStates globalStates = diContext.getService(GlobalStates.class);
         final LaunchkeyButton shiftButton = hwElements.getShiftButton();
         shiftButton.bindIsPressed(mainLayer, globalStates.getShiftState());
+        
+        final ViewControl viewControl = diContext.getService(ViewControl.class);
+        final TrackBank trackBank = viewControl.getTrackBank();
+        
         mainLayer.bind(hwElements.getMasterSlider(), masterTrack.volume());
         //masterTrack.volume().displayedValue().addValueObserver(v -> lcdDisplay.setValue(v, 88));
         //masterTrack.name().addValueObserver(name -> lcdDisplay.setParameter("Volume - " + name, 88));
+        
+        final HardwareSlider[] trackSliders = hwElements.getSliders();
+        for (int i = 0; i < 8; i++) {
+            final Track track = trackBank.getItemAt(i);
+            final HardwareSlider slider = trackSliders[i];
+            mainLayer.bind(slider, track.volume().value());
+        }
+        
         transport.isPlaying().markInterested();
         transport.isMetronomeEnabled().markInterested();
         transport.isClipLauncherOverdubEnabled().markInterested();
