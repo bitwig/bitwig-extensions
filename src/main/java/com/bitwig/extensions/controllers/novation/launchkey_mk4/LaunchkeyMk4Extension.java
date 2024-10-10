@@ -5,6 +5,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
 import com.bitwig.extension.controller.ControllerExtension;
+import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -26,6 +27,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     private final boolean hasFaders;
     private final boolean isMini;
     private MidiProcessor midiProcessor;
+    private SessionLayer sessionLayer;
     
     public static void println(final String format, final Object... args) {
         if (debugHost != null) {
@@ -50,10 +52,12 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         diContext.registerService(MidiProcessor.class, midiProcessor);
         mainLayer = diContext.createLayer("MAIN");
         shiftLayer = diContext.createLayer("SHIFT");
+        sessionLayer = diContext.getService(SessionLayer.class);
         
         initControl(diContext);
         
         mainLayer.setIsActive(true);
+        sessionLayer.setIsActive(true);
         midiProcessor.init();
     }
     
@@ -63,8 +67,13 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         final ControllerHost host = diContext.getService(ControllerHost.class);
         final MasterTrack masterTrack = host.createMasterTrack(2);
         final GlobalStates globalStates = diContext.getService(GlobalStates.class);
+        
+        final Application application = diContext.getService(Application.class);
+        
         final LaunchkeyButton shiftButton = hwElements.getShiftButton();
         shiftButton.bindIsPressed(mainLayer, globalStates.getShiftState());
+        
+        globalStates.getShiftState().addValueObserver(shiftActive -> shiftLayer.setIsActive(shiftActive));
         
         final ViewControl viewControl = diContext.getService(ViewControl.class);
         final TrackBank trackBank = viewControl.getTrackBank();
@@ -84,11 +93,14 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         transport.isMetronomeEnabled().markInterested();
         transport.isClipLauncherOverdubEnabled().markInterested();
         transport.isArrangerLoopEnabled().markInterested();
+        transport.isMetronomeEnabled().markInterested();
         
         final MonoButton playButton = hwElements.getPlayButton();
         final MonoButton stopButton = hwElements.getStopButton();
         final MonoButton loopButton = hwElements.getLoopButton();
         final MonoButton recButton = hwElements.getRecButton();
+        final MonoButton metroButton = hwElements.getMetroButton();
+        final MonoButton undoButton = hwElements.getUndoButton();
         playButton.bind(mainLayer, transport.playAction());
         playButton.bindLight(mainLayer, transport.isPlaying());
         stopButton.bind(mainLayer, transport.stopAction());
@@ -97,6 +109,13 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         loopButton.bindLight(mainLayer, transport.isArrangerLoopEnabled());
         recButton.bindToggle(mainLayer, transport.isClipLauncherOverdubEnabled());
         recButton.bindLight(mainLayer, transport.isClipLauncherOverdubEnabled());
+        metroButton.bindToggle(mainLayer, transport.isMetronomeEnabled());
+        metroButton.bindLight(mainLayer, transport.isMetronomeEnabled());
+        
+        undoButton.bind(mainLayer, application.undoAction());
+        undoButton.bindLight(mainLayer, application.canUndo());
+        undoButton.bind(shiftLayer, application.redoAction());
+        undoButton.bindLight(shiftLayer, application.canRedo());
     }
     
     @Override

@@ -37,7 +37,8 @@ public class RgbButton extends LaunchkeyButton {
                     midiProcessor.sendMidi(0x90, midiId, rgbState.getColorIndex());
                     break;
                 case FLASHING:
-                    midiProcessor.sendMidi(0x91, midiId, rgbState.getColorIndex());
+                    midiProcessor.sendMidi(0x90, midiId, rgbState.getColorIndex());
+                    midiProcessor.sendMidi(0x91, midiId, rgbState.getAltColor());
                     break;
                 case PULSING:
                     midiProcessor.sendMidi(0x92, midiId, rgbState.getColorIndex());

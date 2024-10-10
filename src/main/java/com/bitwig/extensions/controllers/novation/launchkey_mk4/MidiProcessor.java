@@ -43,7 +43,10 @@ public class MidiProcessor {
     }
     
     private void handleMidiIn(final int statusByte, final int data1, final int data2) {
-        LaunchkeyMk4Extension.println("MIDI-1 %02X %02X %02X", statusByte, data1, data2);
+        final int cmd = statusByte & 0xF0;
+        if (cmd == 0x90 || cmd == 0xB0) {
+            LaunchkeyMk4Extension.println("MIDI-1 %02X %02X %02X", statusByte, data1, data2);
+        }
     }
     
     private void handleMidiIn2(final int statusByte, final int data1, final int data2) {
@@ -70,9 +73,9 @@ public class MidiProcessor {
         return midiIn;
     }
     
-    public void setNoteMatcher(final HardwareButton hwButton, final int noteNr) {
-        hwButton.pressedAction().setPressureActionMatcher(midiIn.createNoteOnVelocityValueMatcher(0xF, noteNr));
-        hwButton.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(0xF, noteNr));
+    public void setNoteMatcher(final HardwareButton hwButton, final int noteNr, final int channel) {
+        hwButton.pressedAction().setPressureActionMatcher(midiIn.createNoteOnVelocityValueMatcher(channel, noteNr));
+        hwButton.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(channel, noteNr));
     }
     
     public void setCcMatcher(final HardwareButton hwButton, final int ccNr, final int channel) {

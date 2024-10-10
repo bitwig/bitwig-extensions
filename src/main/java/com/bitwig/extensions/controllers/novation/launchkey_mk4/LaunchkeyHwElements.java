@@ -26,13 +26,21 @@ public class LaunchkeyHwElements {
     private final MonoButton stopButton;
     private final MonoButton loopButton;
     private final MonoButton recButton;
+    private final MonoButton metroButton;
+    private final MonoButton captureButton;
+    private final MonoButton quantizeButton;
+    private final MonoButton undoButton;
+    
+    private final MonoButton trackLeftButton;
+    private final MonoButton trackRightButton;
+    
     
     public LaunchkeyHwElements(final HardwareSurface surface, final MidiProcessor midiProcessor,
         final ControllerHost host) {
         shiftButton = new LaunchkeyButton(ButtonMidiType.CC, 0x6, 0x3F, "SHIFT", surface, midiProcessor);
         for (int i = 0; i < sessionButtons.length; i++) {
-            sessionButtons[i] =
-                new RgbButton(ButtonMidiType.PAD, 0x60 + (0x10 * (i / 8)) + i % 8, "PAD", surface, midiProcessor);
+            final int noteId = 0x60 + (0x10 * (i / 8)) + i % 8;
+            sessionButtons[i] = new RgbButton(ButtonMidiType.PAD, noteId, "PAD", surface, midiProcessor);
             drumButtons[i] = new RgbButton(ButtonMidiType.PAD, DRUM_MIDI_MAPPING[i], "DRUM", surface, midiProcessor);
         }
         final MidiIn midiIn = midiProcessor.getMidiIn();
@@ -48,6 +56,12 @@ public class LaunchkeyHwElements {
         stopButton = new MonoButton(0x74, "STOP", surface, midiProcessor);
         loopButton = new MonoButton(0x76, "LOOP", surface, midiProcessor);
         recButton = new MonoButton(0x75, "RECORD", surface, midiProcessor);
+        metroButton = new MonoButton(0x4C, "METRO", surface, midiProcessor);
+        captureButton = new MonoButton(0x4A, "CAPTURE", surface, midiProcessor);
+        undoButton = new MonoButton(0x4D, "CAPTURE", surface, midiProcessor);
+        quantizeButton = new MonoButton(0x4B, "CAPTURE", surface, midiProcessor);
+        trackLeftButton = new MonoButton(0x67, "TR_LEFT", surface, midiProcessor);
+        trackRightButton = new MonoButton(0x66, "TR_RIGHT", surface, midiProcessor);
     }
     
     public MonoButton getPlayButton() {
@@ -68,6 +82,30 @@ public class LaunchkeyHwElements {
     
     public MonoButton getRecButton() {
         return recButton;
+    }
+    
+    public MonoButton getTrackLeftButton() {
+        return trackLeftButton;
+    }
+    
+    public MonoButton getTrackRightButton() {
+        return trackRightButton;
+    }
+    
+    public MonoButton getCaptureButton() {
+        return captureButton;
+    }
+    
+    public MonoButton getUndoButton() {
+        return undoButton;
+    }
+    
+    public MonoButton getQuantizeButton() {
+        return quantizeButton;
+    }
+    
+    public MonoButton getMetroButton() {
+        return metroButton;
     }
     
     public RgbButton[] getSessionButtons() {

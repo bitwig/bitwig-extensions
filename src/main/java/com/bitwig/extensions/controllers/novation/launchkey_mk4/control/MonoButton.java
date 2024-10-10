@@ -35,11 +35,24 @@ public class MonoButton extends LaunchkeyButton {
         layer.bindLightState(() -> RgbState.OFF, light);
     }
     
+    public void bindPressedLight(final Layer layer, final BooleanValue value) {
+        value.markInterested();
+        layer.bindLightState(() -> {
+            if (hwButton.isPressed().get()) {
+                return RgbState.MONO_ON;
+            } else if (value.get()) {
+                return RgbState.MONO_MID;
+            }
+            return RgbState.OFF;
+        }, light);
+    }
+    
     public void bindLight(final Layer layer, final Supplier<InternalHardwareLightState> supplier) {
         layer.bindLightState(supplier, light);
     }
     
     public void bindLight(final Layer layer, final BooleanValue value) {
+        value.markInterested();
         layer.bindLightState(() -> value.get() ? RgbState.MONO_ON : RgbState.OFF, light);
     }
     

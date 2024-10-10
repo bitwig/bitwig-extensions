@@ -35,7 +35,7 @@ public class LaunchkeyButton {
         if (type == ButtonMidiType.CC) {
             midiProcessor.setCcMatcher(hwButton, midiId, channel);
         } else {
-            midiProcessor.setNoteMatcher(hwButton, midiId);
+            midiProcessor.setNoteMatcher(hwButton, midiId, channel);
         }
         hwButton.isPressed().markInterested();
     }
