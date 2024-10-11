@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
@@ -77,10 +78,19 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         
         final ViewControl viewControl = diContext.getService(ViewControl.class);
         final TrackBank trackBank = viewControl.getTrackBank();
+        final CursorTrack cursorTrack = viewControl.getCursorTrack();
         
         mainLayer.bind(hwElements.getMasterSlider(), masterTrack.volume());
         //masterTrack.volume().displayedValue().addValueObserver(v -> lcdDisplay.setValue(v, 88));
         //masterTrack.name().addValueObserver(name -> lcdDisplay.setParameter("Volume - " + name, 88));
+        final MonoButton trackLeftButton = hwElements.getTrackLeftButton();
+        final MonoButton trackRightButton = hwElements.getTrackRightButton();
+        
+        trackLeftButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectPrevious(), 500, 100);
+        trackLeftButton.bindLight(mainLayer, cursorTrack.hasPrevious());
+        trackRightButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectNext(), 500, 100);
+        trackRightButton.bindLight(mainLayer, cursorTrack.hasNext());
+        
         
         final HardwareSlider[] trackSliders = hwElements.getSliders();
         for (int i = 0; i < 8; i++) {

@@ -9,6 +9,7 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.novation.commonsmk3.ColorLookup;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.MonoButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -61,9 +62,9 @@ public class SessionLayer extends Layer {
         sceneBank.canScrollBackwards().markInterested();
         sceneBank.canScrollForwards().markInterested();
         
-        //final RgbCcButton row2ModeButton = driver.getHwControl().getModeRow2Button();
-        
-        //row2ModeButton.bindPressed(this, this::advanceLayer, this::getModeColor);
+        final RgbButton row2ModeButton = hwElements.getLaunchModeButton();
+        row2ModeButton.bindPressed(this, this::advanceLayer);
+        row2ModeButton.bindLight(this, this::getModeColor);
         for (int i = 0; i < 8; i++) {
             final Track track = trackBank.getItemAt(i);
             markTrack(track);
@@ -106,23 +107,27 @@ public class SessionLayer extends Layer {
             }
         }
         
-        //        final RgbCcButton sceneLaunchButton = driver.getHwControl().getSceneLaunchButton();
-        //        sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene),
-        //            () -> sceneLaunched && hasPlayQueued() ? RgbState.flash(22, 0) : RgbState.of(0));
-        //        if (driver.isMiniVersion()) {
-        //            driver.getShiftState().addValueObserver(shiftActive -> {
-        //                if (isActive()) {
-        //                    shiftLayer.setIsActive(shiftActive);
-        //                }
-        //            });
-        //            bindUpDownButtons(driver, shiftLayer, trackBank, sceneLaunchButton, row2ModeButton);
-        //        } else {
-        //            final RgbCcButton navUpButton = driver.getHwControl().getNavUpButton();
-        //            final RgbCcButton navDownButton = driver.getHwControl().getNavDownButton();
-        //            bindUpDownButtons(driver, this, trackBank, navUpButton, navDownButton);
-        //        }
+        final RgbButton sceneLaunchButton = hwElements.getSceneLaunchButton();
+        sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene));
+        sceneLaunchButton.bindLight(this, () -> getSceneLight(targetScene));
         
+        final MonoButton navUpButton = hwElements.getNavUpButton();
+        final MonoButton navDownButton = hwElements.getNavDownButton();
+        navUpButton.bindRepeatHold(this, () -> trackBank.sceneBank().scrollBackwards(), 500, 100);
+        navUpButton.bindLight(this, trackBank.sceneBank().canScrollBackwards());
+        navDownButton.bindRepeatHold(this, () -> trackBank.sceneBank().scrollForwards(), 500, 100);
+        navDownButton.bindLight(this, trackBank.sceneBank().canScrollForwards());
         currentModeLayer.activate();
+    }
+    
+    private RgbState getSceneLight(final Scene targetScene) {
+        if (sceneLaunched && hasPlayQueued()) {
+            return RgbState.flash(23, 0);
+        }
+        if (targetScene.clipCount().get() > 0) {
+            return RgbState.DIM_WHITE;
+        }
+        return RgbState.OFF;
     }
     
     private void handleSoloAction(final boolean pressed, final int trackIndex, final Track track) {
@@ -134,38 +139,6 @@ public class SessionLayer extends Layer {
         }
     }
     
-    
-    //    private void bindUpDownButtons(final LaunchkeyMk3Extension driver, final Layer layer, final TrackBank
-    //    trackBank,
-    //        final RgbCcButton upButton, final RgbCcButton downButton) {
-    //        upButton.bindIsPressed(layer, pressed -> {
-    //            if (pressed) {
-    //                driver.startHold(() -> trackBank.sceneBank().scrollBackwards());
-    //            } else {
-    //                driver.stopHold();
-    //            }
-    //        }, pressed -> {
-    //            if (trackBank.sceneBank().canScrollBackwards().get()) {
-    //                return pressed ? RgbState.WHITE : RgbState.LOW_WHITE;
-    //            } else {
-    //                return RgbState.OFF;
-    //            }
-    //        });
-    //        downButton.bindIsPressed(layer, pressed -> {
-    //            if (pressed) {
-    //                driver.startHold(() -> trackBank.sceneBank().scrollForwards());
-    //            } else {
-    //                driver.stopHold();
-    //            }
-    //        }, pressed -> {
-    //            if (trackBank.sceneBank().canScrollForwards().get()) {
-    //                return pressed ? RgbState.WHITE : RgbState.LOW_WHITE;
-    //            } else {
-    //                return RgbState.OFF;
-    //            }
-    //        });
-    //    }
-    //
     private void markTrack(final Track track) {
         track.isStopped().markInterested();
         track.mute().markInterested();
@@ -193,14 +166,6 @@ public class SessionLayer extends Layer {
                 mode = Mode.LAUNCH;
                 currentModeLayer = launchLayer2;
                 break;
-            //         case MUTE:
-            //            mode = Mode.CONTROL;
-            //            currentModeLayer = controlLayer;
-            //            break;
-            //         case CONTROL:
-            //            mode = Mode.LAUNCH;
-            //            currentModeLayer = launchLayer2;
-            //            break;
         }
         heldSoloKeys.clear();
         currentModeLayer.setIsActive(true);
@@ -219,7 +184,7 @@ public class SessionLayer extends Layer {
             case CONTROL:
                 return RgbState.BLUE;
         }
-        return RgbState.OFF;
+        return RgbState.WHITE;
     }
     
     private void doSceneLaunch(final Scene scene) {

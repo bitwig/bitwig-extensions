@@ -33,6 +33,12 @@ public class LaunchkeyHwElements {
     
     private final MonoButton trackLeftButton;
     private final MonoButton trackRightButton;
+    private final MonoButton navUpButton;
+    private final MonoButton navDownButton;
+    private final RgbButton sceneLaunchButton;
+    private final RgbButton launchModeButton;
+    private final RgbButton paramUpButton;
+    private final RgbButton paramDownButton;
     
     
     public LaunchkeyHwElements(final HardwareSurface surface, final MidiProcessor midiProcessor,
@@ -62,6 +68,12 @@ public class LaunchkeyHwElements {
         quantizeButton = new MonoButton(0x4B, "CAPTURE", surface, midiProcessor);
         trackLeftButton = new MonoButton(0x67, "TR_LEFT", surface, midiProcessor);
         trackRightButton = new MonoButton(0x66, "TR_RIGHT", surface, midiProcessor);
+        navUpButton = new MonoButton(0x6A, "NAV_UP", surface, midiProcessor);
+        navDownButton = new MonoButton(0x6B, "NAV_DOWN", surface, midiProcessor);
+        sceneLaunchButton = new RgbButton(ButtonMidiType.CC, 0x68, "SCENE", surface, midiProcessor);
+        launchModeButton = new RgbButton(ButtonMidiType.CC, 0x69, "MODE", surface, midiProcessor);
+        paramUpButton = new RgbButton(ButtonMidiType.CC, 0x33, "PARAM_UP", surface, midiProcessor);
+        paramDownButton = new RgbButton(ButtonMidiType.CC, 0x34, "PARAM_DOWN", surface, midiProcessor);
     }
     
     public MonoButton getPlayButton() {
@@ -80,6 +92,22 @@ public class LaunchkeyHwElements {
         return loopButton;
     }
     
+    public RgbButton getSceneLaunchButton() {
+        return sceneLaunchButton;
+    }
+    
+    public RgbButton getParamDownButton() {
+        return paramDownButton;
+    }
+    
+    public RgbButton getParamUpButton() {
+        return paramUpButton;
+    }
+    
+    public RgbButton getLaunchModeButton() {
+        return launchModeButton;
+    }
+    
     public MonoButton getRecButton() {
         return recButton;
     }
@@ -90,6 +118,14 @@ public class LaunchkeyHwElements {
     
     public MonoButton getTrackRightButton() {
         return trackRightButton;
+    }
+    
+    public MonoButton getNavUpButton() {
+        return navUpButton;
+    }
+    
+    public MonoButton getNavDownButton() {
+        return navDownButton;
     }
     
     public MonoButton getCaptureButton() {

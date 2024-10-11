@@ -38,19 +38,49 @@ public class MidiProcessor {
         noteInput = midiIn2.createNoteInput("MIDI", "8?????", "9?????", "A?????", "B?????", "D?????", "E?????");
         noteInput.setShouldConsumeEvents(false);
         midiIn.setMidiCallback(this::handleMidiIn);
-        //midiIn2.setMidiCallback(this::handleMidiIn2);
+        midiIn2.setMidiCallback(this::handleMidiIn2);
         midiIn.setSysexCallback(this::handleSysEx);
     }
     
     private void handleMidiIn(final int statusByte, final int data1, final int data2) {
         final int cmd = statusByte & 0xF0;
-        if (cmd == 0x90 || cmd == 0xB0) {
+        if (statusByte == 0xB6) {
+            if (data1 == 0x1E) {
+                LaunchkeyMk4Extension.println(" ENCODER MODE = %d", data2);
+            } else if (data1 == 0x1D) {
+                LaunchkeyMk4Extension.println(" PAD MODE = %d", data2);
+            } else if (data1 == 0x1F) {
+                LaunchkeyMk4Extension.println(" SLIDER MODE = %d", data2);
+            }
+        } else if (cmd == 0x90 || cmd == 0xB0) {
             LaunchkeyMk4Extension.println("MIDI-1 %02X %02X %02X", statusByte, data1, data2);
         }
     }
     
+    private int idNrPmMsb = 0;
+    private int idNrPmLsb = 0;
+    private int valNrPmMsb = 0;
+    private int valNrPmLsb = 0;
+    
     private void handleMidiIn2(final int statusByte, final int data1, final int data2) {
-        LaunchkeyMk4Extension.println("MIDI-2 %02X %02X %02X", statusByte, data1, data2);
+        if (statusByte == 0xBA) {
+            //LaunchkeyMk4Extension.println("MIDI-2 %02X %02X %02X", statusByte, data1, data2);
+            if (data1 == 0x63 && data2 != 0x7F) {
+                idNrPmMsb = data2;
+            } else if (data1 == 0x62) {
+                if (data2 == 0x7F) {
+                    final int id = idNrPmMsb << 7 | idNrPmLsb;
+                    final int val = valNrPmMsb << 7 | valNrPmLsb;
+                    LaunchkeyMk4Extension.println(" Received NRPM ID=%d VAL=%d", id, val);
+                } else {
+                    idNrPmLsb = data2;
+                }
+            } else if (data1 == 0x6) {
+                valNrPmMsb = data2;
+            } else if (data1 == 0x26) {
+                valNrPmLsb = data2;
+            }
+        }
     }
     
     public NoteInput getNoteInput() {
