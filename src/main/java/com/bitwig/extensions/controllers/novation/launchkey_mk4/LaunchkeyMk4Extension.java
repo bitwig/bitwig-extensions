@@ -17,6 +17,8 @@ import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.LaunchkeyButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.MonoButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.definition.LaunchkeyMk4ExtensionDefinition;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayControl;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.ScreenTarget;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 
@@ -51,6 +53,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         surface = diContext.getService(HardwareSurface.class);
         midiProcessor = new MidiProcessor(host, isMini);
         diContext.registerService(MidiProcessor.class, midiProcessor);
+        
         mainLayer = diContext.createLayer("MAIN");
         shiftLayer = diContext.createLayer("SHIFT");
         sessionLayer = diContext.getService(SessionLayer.class);
@@ -60,7 +63,10 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         mainLayer.setIsActive(true);
         sessionLayer.setIsActive(true);
         midiProcessor.init();
+        diContext.activate();
     }
+    
+    boolean statSet = false;
     
     public void initControl(final Context diContext) {
         final LaunchkeyHwElements hwElements = diContext.getService(LaunchkeyHwElements.class);
@@ -75,6 +81,20 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         shiftButton.bindIsPressed(mainLayer, globalStates.getShiftState());
         
         globalStates.getShiftState().addValueObserver(shiftActive -> shiftLayer.setIsActive(shiftActive));
+        
+        final MonoButton capButton = hwElements.getCaptureButton();
+        
+        final DisplayControl displayControl = diContext.getService(DisplayControl.class);
+        capButton.bindIsPressed(mainLayer, pressed -> {
+            if (pressed) {
+                if (statSet) {
+                    displayControl.showText(ScreenTarget.PLUGIN, "Other", "xxxx*");
+                } else {
+                    displayControl.showText(ScreenTarget.STATIONARY, "Hello", "Bitwig");
+                    statSet = true;
+                }
+            }
+        });
         
         final ViewControl viewControl = diContext.getService(ViewControl.class);
         final TrackBank trackBank = viewControl.getTrackBank();

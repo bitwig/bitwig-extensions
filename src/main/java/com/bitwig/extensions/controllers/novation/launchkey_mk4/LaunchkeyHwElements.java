@@ -7,6 +7,7 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.ButtonMidiType;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.LaunchkeyButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.MonoButton;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RelAbsEncoder;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
 import com.bitwig.extensions.framework.di.Component;
 
@@ -17,6 +18,7 @@ public class LaunchkeyHwElements {
     private final RgbButton[] sessionButtons = new RgbButton[16];
     private final RgbButton[] drumButtons = new RgbButton[16];
     private final RgbButton[] trackButtons = new RgbButton[8];
+    private final RelAbsEncoder[] valueEncoders = new RelAbsEncoder[8];
     private final RgbButton trackModeButton;
     private final LaunchkeyButton shiftButton;
     private final MonoButton playButton;
@@ -54,6 +56,7 @@ public class LaunchkeyHwElements {
             sliders[i] = surface.createHardwareSlider("SLIDER_" + (i + 1));
             sliders[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0xF, 5 + i));
             trackButtons[i] = new RgbButton(ButtonMidiType.CC, 0x25 + i, "TRACK", surface, midiProcessor);
+            valueEncoders[i] = new RelAbsEncoder(0x15 + i, 0xF, surface, midiProcessor);
         }
         masterSlider = surface.createHardwareSlider("MASTER_SLIDER");
         masterSlider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0xF, 13));
@@ -166,5 +169,9 @@ public class LaunchkeyHwElements {
     
     public RgbButton getTrackModeButton() {
         return trackModeButton;
+    }
+    
+    public RelAbsEncoder[] getValueEncoders() {
+        return valueEncoders;
     }
 }
