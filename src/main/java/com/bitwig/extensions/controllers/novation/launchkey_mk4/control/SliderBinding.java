@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk4.control;
 
+import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding;
 import com.bitwig.extension.controller.api.HardwareBinding;
 import com.bitwig.extension.controller.api.Parameter;
@@ -7,12 +8,10 @@ import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayControl;
 import com.bitwig.extensions.framework.Binding;
 
-public class AbsoluteEncoderBinding extends Binding<Parameter, RelAbsEncoder> {
+public class SliderBinding extends Binding<Parameter, AbsoluteHardwareControl> {
     
-    private int parameterValue;
     private boolean exists;
     private String displayValue;
-    private boolean incoming = false;
     private HardwareBinding hwBinding;
     private final int targetId;
     private final int index;
@@ -21,11 +20,10 @@ public class AbsoluteEncoderBinding extends Binding<Parameter, RelAbsEncoder> {
     private String trackName;
     private boolean init = true;
     
-    public AbsoluteEncoderBinding(final int index, final Parameter parameter, final RelAbsEncoder knob,
+    public SliderBinding(final int index, final Parameter parameter, final AbsoluteHardwareControl knob,
         final DisplayControl displayControl, final StringValue trackName, final StringValue parameterName) {
         super(knob, parameter, knob);
         
-        parameter.value().addValueObserver(128, this::handleParameterValue);
         parameter.exists().addValueObserver(this::handleExists);
         parameterName.addValueObserver(this::handleParameterName);
         parameter.value().displayedValue().addValueObserver(this::handleDisplayValue);
@@ -34,8 +32,7 @@ public class AbsoluteEncoderBinding extends Binding<Parameter, RelAbsEncoder> {
         this.trackName = trackName.get();
         this.parameterName = parameterName.get();
         this.displayControl = displayControl;
-        this.parameterValue = (int) (parameter.value().get() * 127);
-        this.targetId = index + 0x15;
+        this.targetId = index + 0x05;
         this.index = index;
     }
     
@@ -68,17 +65,6 @@ public class AbsoluteEncoderBinding extends Binding<Parameter, RelAbsEncoder> {
         this.exists = exists;
     }
     
-    private void handleParameterValue(final int value) {
-        this.parameterValue = value;
-        if (isActive()) {
-            if (incoming) {
-                incoming = false;
-            } else {
-                getTarget().updateValue(value);
-            }
-        }
-    }
-    
     @Override
     protected void deactivate() {
         if (hwBinding != null) {
@@ -88,7 +74,7 @@ public class AbsoluteEncoderBinding extends Binding<Parameter, RelAbsEncoder> {
     }
     
     protected AbsoluteHardwareControlBinding getHardwareBinding() {
-        return getSource().addBinding(getTarget().getKnob());
+        return getSource().addBinding(getTarget());
     }
     
     @Override
@@ -97,8 +83,6 @@ public class AbsoluteEncoderBinding extends Binding<Parameter, RelAbsEncoder> {
             hwBinding.removeBinding();
         }
         hwBinding = getHardwareBinding();
-        getTarget().updateValue(parameterValue);
-        //        LaunchkeyMk4Extension.println(" CFG Display %d", index);
         displayControl.configureDisplay(targetId, 0x62);
         displayControl.setText(targetId, 0, trackName);
         displayControl.setText(targetId, 1, parameterName);
