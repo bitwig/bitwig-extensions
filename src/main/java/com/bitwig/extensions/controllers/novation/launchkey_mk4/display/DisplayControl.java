@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk4.display;
 
-import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.MidiProcessor;
 import com.bitwig.extensions.framework.di.Component;
 
@@ -8,43 +7,47 @@ import com.bitwig.extensions.framework.di.Component;
 public class DisplayControl {
     private static final byte[] TEXT_CONFIG_COMMAND =
         {(byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x14, 0x04, 0x00, 0x00, (byte) 0xF7};
+    private static final String CONFIG_COMMAND = "F0 00 20 29 02 14 04 %02X %02X F7";
     private static String TEXT_COMMAND;
-    private final MidiOut midiOut;
-    
+    private final MidiProcessor midiProcessor;
+
     public DisplayControl(final MidiProcessor processor) {
-        this.midiOut = processor.getMidiOut();
+        this.midiProcessor = processor;
         if (processor.isMiniVersion()) {
             TEXT_CONFIG_COMMAND[5] = 0x13;
         }
-        TEXT_COMMAND = processor.getSysexHeader() + " 06 ";
+        TEXT_COMMAND = processor.getSysexHeader() + "06 ";
     }
-    
-    public void showText(final ScreenTarget target, final String t1, final String t2) {
-        final byte targetId = target.getId();
-        configureDisplay(targetId, Arrangement.TWO_LINES);
-        setText(targetId, 0, t1);
-        setText(targetId, 1, t2);
-        showDisplay(targetId);
-    }
-    
-    public void configureDisplay(final int targetId, final Arrangement arr) {
+
+    public void configureDisplay(final int targetId, int config) {
         TEXT_CONFIG_COMMAND[7] = (byte) targetId;
-        TEXT_CONFIG_COMMAND[8] = (byte) (arr.getVal() | 0x60);
-        midiOut.sendSysex(TEXT_CONFIG_COMMAND);
+        TEXT_CONFIG_COMMAND[8] = (byte) config;
+        midiProcessor.sendSysExBytes(TEXT_CONFIG_COMMAND);
+        //midiProcessor.sendSysExString(CONFIG_COMMAND.formatted(targetId, config));
     }
-    
+
+    public void fixDisplayUpdate(int lineIndex, String text) {
+        setText(0x20, lineIndex, text);
+        configureDisplay(0x21, 0x61);
+        setText(0x21, lineIndex, text);
+        showDisplay(0x21);
+    }
+
+
     public void showDisplay(final int targetId) {
         TEXT_CONFIG_COMMAND[7] = (byte) targetId;
         TEXT_CONFIG_COMMAND[8] = 0x7F;
-        midiOut.sendSysex(TEXT_CONFIG_COMMAND);
+        //midiProcessor.sendSysExString(CONFIG_COMMAND.formatted(targetId, 0x7F));
+        midiProcessor.sendSysExBytes(TEXT_CONFIG_COMMAND);
     }
-    
+
     public void hideDisplay(final int targetId) {
         TEXT_CONFIG_COMMAND[7] = (byte) targetId;
         TEXT_CONFIG_COMMAND[8] = 0;
-        midiOut.sendSysex(TEXT_CONFIG_COMMAND);
+        //midiProcessor.sendSysExString(CONFIG_COMMAND.formatted(targetId, 0));
+        midiProcessor.sendSysExBytes(TEXT_CONFIG_COMMAND);
     }
-    
+
     public void setText(final int target, final int field, final String text) {
         final StringBuilder msg = new StringBuilder(TEXT_COMMAND);
         msg.append("%02X ".formatted(target));
@@ -54,6 +57,15 @@ public class DisplayControl {
             msg.append("%02X ".formatted((int) validText.charAt(i)));
         }
         msg.append("F7");
-        midiOut.sendSysex(msg.toString());
+        midiProcessor.sendSysExString(msg.toString());
     }
+
+    public void initTemps() {
+        configureDisplay(0x21, 0x61);
+        configureDisplay(0x20, 0x61);
+        for (int i = 0; i < 16; i++) {
+            configureDisplay(0x05 + i, 0x62);
+        }
+    }
+
 }
