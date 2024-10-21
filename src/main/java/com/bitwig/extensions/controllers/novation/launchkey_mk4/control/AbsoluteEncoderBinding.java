@@ -23,7 +23,7 @@ public class AbsoluteEncoderBinding extends Binding<Parameter, RelAbsEncoder> {
     
     public AbsoluteEncoderBinding(final int index, final Parameter parameter, final RelAbsEncoder knob,
         final DisplayControl displayControl, final StringValue trackName, final StringValue parameterName) {
-        super(knob, parameter, knob);
+        super(parameter, parameter, knob);
         
         parameter.value().addValueObserver(128, this::handleParameterValue);
         parameter.exists().addValueObserver(this::handleExists);

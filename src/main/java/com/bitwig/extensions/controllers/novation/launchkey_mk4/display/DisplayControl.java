@@ -32,6 +32,12 @@ public class DisplayControl {
         showDisplay(0x20);
     }
     
+    public void show2Line(final String line1, final String line2) {
+        configureDisplay(0x21, 0x61);
+        setText(0x21, 0, line1);
+        setText(0x21, 1, line2);
+        showDisplay(0x21);
+    }
     
     public void showDisplay(final int targetId) {
         TEXT_CONFIG_COMMAND[7] = (byte) targetId;

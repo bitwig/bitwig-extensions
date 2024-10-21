@@ -20,9 +20,9 @@ public class SliderBinding extends Binding<Parameter, AbsoluteHardwareControl> {
     private String trackName;
     private boolean init = true;
     
-    public SliderBinding(final int index, final Parameter parameter, final AbsoluteHardwareControl knob,
+    public SliderBinding(final int index, final Parameter parameter, final AbsoluteHardwareControl control,
         final DisplayControl displayControl, final StringValue trackName, final StringValue parameterName) {
-        super(knob, parameter, knob);
+        super(control, parameter, control);
         
         parameter.exists().addValueObserver(this::handleExists);
         parameterName.addValueObserver(this::handleParameterName);

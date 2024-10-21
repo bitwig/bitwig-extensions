@@ -30,7 +30,11 @@ public class ViewControl {
     private final CursorRemoteControlsPage trackRemotes;
     private final CursorRemoteControlsPage projectRemotes;
     
+    
     private final BasicStringValue deviceDescriptor = new BasicStringValue("");
+    private final RemotePageName deviceRemotesPages;
+    private final RemotePageName trackRemotesPages;
+    private final RemotePageName projectRemotesPages;
     
     public ViewControl(final ControllerHost host) {
         rootTrack = host.getProject().getRootTrackGroup();
@@ -75,6 +79,9 @@ public class ViewControl {
         primaryRemotes = cursorDevice.createCursorRemoteControlsPage(8);
         trackRemotes = cursorTrack.createCursorRemoteControlsPage(8);
         projectRemotes = rootTrack.createCursorRemoteControlsPage(8);
+        deviceRemotesPages = new RemotePageName(primaryRemotes, cursorDevice.name());
+        trackRemotesPages = new RemotePageName(trackRemotes, new BasicStringValue("Track Remotes"));
+        projectRemotesPages = new RemotePageName(projectRemotes, new BasicStringValue("Project Remotes"));
         
         final DeviceBank deviceBank = cursorTrack.createDeviceBank(16);
         //        for (int i = 0; i < deviceBank.getSizeOfBank(); i++) {
@@ -102,7 +109,7 @@ public class ViewControl {
     //                });
     //            }
     //        }
-    //    }
+    
     
     public IntValueObject getSelectedTrackIndex() {
         return selectedTrackIndex;
@@ -113,6 +120,18 @@ public class ViewControl {
         track.exists().markInterested();
         track.solo().markInterested();
         track.mute().markInterested();
+    }
+    
+    public RemotePageName getDeviceRemotesPages() {
+        return deviceRemotesPages;
+    }
+    
+    public RemotePageName getTrackRemotesPages() {
+        return trackRemotesPages;
+    }
+    
+    public RemotePageName getProjectRemotesPages() {
+        return projectRemotesPages;
     }
     
     public TrackBank getTrackBank() {

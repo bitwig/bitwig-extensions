@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareSlider;
@@ -13,6 +14,7 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.AbsoluteEncoderBinding;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RelAbsEncoder;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.SliderBinding;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayControl;
 import com.bitwig.extensions.framework.Layer;
@@ -59,18 +61,20 @@ public class ControlHandler {
     }
     
     public ControlHandler(final Layers layers, final LaunchkeyHwElements hwElements, final ViewControl viewControl,
-        final MidiProcessor midiProcessor, final DisplayControl displayControl) {
+        final MidiProcessor midiProcessor, final DisplayControl displayControl, final GlobalStates globalStates) {
         sliderLayer = new Layer(layers, "SLIDERS");
+        this.display = displayControl;
         
         Arrays.stream(EncMode.values())
             .forEach(mode -> layerMap.put(mode, new Layer(layers, "END_%s".formatted(mode))));
         final CursorRemoteControlsPage remotes = viewControl.getPrimaryRemotes();
+        final CursorRemoteControlsPage trackRemotes = viewControl.getTrackRemotes();
+        final CursorRemoteControlsPage projectRemotes = viewControl.getProjectRemotes();
         final RelAbsEncoder[] valueEncoders = hwElements.getValueEncoders();
         final HardwareSlider[] trackSliders = hwElements.getSliders();
         
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
-        this.display = displayControl;
         
         cursorTrack.name().addValueObserver(name -> displayControl.fixDisplayUpdate(0, name));
         cursorDevice.name().addValueObserver(name -> displayControl.fixDisplayUpdate(1, name));
@@ -79,26 +83,83 @@ public class ControlHandler {
         for (int i = 0; i < 8; i++) {
             final HardwareSlider slider = trackSliders[i];
             final RelAbsEncoder encoder = valueEncoders[i];
-            final RemoteControl remote = remotes.getParameter(i);
             final Track track = trackBank.getItemAt(i);
+            bindRemote(EncMode.DEVICE, cursorTrack, i, encoder, remotes);
+            bindRemote(EncMode.TRACK_REMOTES, cursorTrack, i, encoder, trackRemotes);
+            bindRemote(EncMode.PROJECT_REMOTES, cursorTrack, i, encoder, projectRemotes);
             sliderLayer.addBinding(
                 new SliderBinding(i, track.volume(), slider, displayControl, track.name(), fixedVolumeLabel));
-            layerMap.get(EncMode.DEVICE).addBinding(
-                new AbsoluteEncoderBinding(i, remote, encoder, displayControl, cursorTrack.name(), remote.name()));
             layerMap.get(EncMode.VOLUME).addBinding(
                 new AbsoluteEncoderBinding(i, track.volume(), encoder, displayControl, track.name(), fixedVolumeLabel));
             layerMap.get(EncMode.PAN).addBinding(
                 new AbsoluteEncoderBinding(i, track.pan(), encoder, displayControl, track.name(), fixedPanLabel));
         }
+        bindRemoteNavigation(EncMode.DEVICE, remotes, hwElements, viewControl.getDeviceRemotesPages(),
+            globalStates.getShiftState(), viewControl.getCursorDevice());
+        bindRemoteNavigation(EncMode.TRACK_REMOTES, trackRemotes, hwElements, viewControl.getTrackRemotesPages());
+        bindRemoteNavigation(EncMode.PROJECT_REMOTES, projectRemotes, hwElements, viewControl.getProjectRemotesPages());
         
         midiProcessor.addModeListener(this::handleModeChange);
         currentLayer = layerMap.get(mode);
     }
     
+    private void bindRemote(final EncMode mode, final CursorTrack cursorTrack, final int i, final RelAbsEncoder encoder,
+        final CursorRemoteControlsPage remotes) {
+        final RemoteControl remote = remotes.getParameter(i);
+        layerMap.get(mode)
+            .addBinding(new AbsoluteEncoderBinding(i, remote, encoder, display, cursorTrack.name(), remote.name()));
+    }
+    
+    private void bindRemoteNavigation(final EncMode mode, final CursorRemoteControlsPage remotes,
+        final LaunchkeyHwElements hwElements, final RemotePageName pageName, final BooleanValue shiftState,
+        final PinnableCursorDevice cursorDevice) {
+        final RgbButton paramUpButton = hwElements.getParamUpButton();
+        final RgbButton paramDownButton = hwElements.getParamDownButton();
+        final Layer layer = layerMap.get(mode);
+        
+        paramUpButton.bindLightPressed(layer, remotes.hasPrevious());
+        paramUpButton.bindRepeatHold(layer, () -> {
+            if (shiftState.get()) {
+                cursorDevice.selectPrevious();
+            } else {
+                remotes.selectPrevious();
+                display.show2Line(pageName.getTitle(), pageName.get(-1));
+            }
+        }, 500, 200);
+        
+        paramDownButton.bindLightPressed(layer, remotes.hasNext());
+        paramDownButton.bindRepeatHold(layer, () -> {
+            if (shiftState.get()) {
+                cursorDevice.selectNext(); // Cursor Track Needed
+            } else {
+                remotes.selectNext();
+                display.show2Line(pageName.getTitle(), pageName.get(1));
+            }
+        }, 500, 200);
+    }
+    
+    private void bindRemoteNavigation(final EncMode mode, final CursorRemoteControlsPage remotes,
+        final LaunchkeyHwElements hwElements, final RemotePageName pageName) {
+        final RgbButton paramUpButton = hwElements.getParamUpButton();
+        final RgbButton paramDownButton = hwElements.getParamDownButton();
+        final Layer layer = layerMap.get(mode);
+        
+        paramUpButton.bindLightPressed(layer, remotes.hasPrevious());
+        paramUpButton.bindRepeatHold(layer, () -> {
+            remotes.selectPrevious();
+            display.show2Line(pageName.getTitle(), pageName.get(-1));
+        }, 500, 200);
+        
+        paramDownButton.bindLightPressed(layer, remotes.hasNext());
+        paramDownButton.bindRepeatHold(layer, () -> {
+            remotes.selectNext();
+            display.show2Line(pageName.getTitle(), pageName.get(1));
+        }, 500, 200);
+    }
+    
     private void handleModeChange(final ModeType modeType, final int id) {
         if (modeType == ModeType.ENCODER) {
             final EncoderMode newEncoderMode = EncoderMode.toMode(id);
-            LaunchkeyMk4Extension.println(" MODE Change => %s %s <= %d", modeType, newEncoderMode, id);
             switch (newEncoderMode) {
                 case PLUGIN -> handlePluginMode();
                 case MIXER -> handleMixerMode();

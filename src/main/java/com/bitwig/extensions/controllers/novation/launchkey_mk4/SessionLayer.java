@@ -9,7 +9,6 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.novation.commonsmk3.ColorLookup;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
-import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.MonoButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -111,12 +110,12 @@ public class SessionLayer extends Layer {
         sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene));
         sceneLaunchButton.bindLight(this, () -> getSceneLight(targetScene));
         
-        final MonoButton navUpButton = hwElements.getNavUpButton();
-        final MonoButton navDownButton = hwElements.getNavDownButton();
+        final RgbButton navUpButton = hwElements.getNavUpButton();
+        final RgbButton navDownButton = hwElements.getNavDownButton();
         navUpButton.bindRepeatHold(this, () -> trackBank.sceneBank().scrollBackwards(), 500, 100);
-        navUpButton.bindLight(this, trackBank.sceneBank().canScrollBackwards());
+        navUpButton.bindLightPressed(this, trackBank.sceneBank().canScrollBackwards());
         navDownButton.bindRepeatHold(this, () -> trackBank.sceneBank().scrollForwards(), 500, 100);
-        navDownButton.bindLight(this, trackBank.sceneBank().canScrollForwards());
+        navDownButton.bindLightPressed(this, trackBank.sceneBank().canScrollForwards());
         currentModeLayer.activate();
     }
     

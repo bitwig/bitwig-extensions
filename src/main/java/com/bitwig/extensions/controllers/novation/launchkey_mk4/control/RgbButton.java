@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.novation.launchkey_mk4.control;
 
 import java.util.function.Supplier;
 
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
@@ -95,5 +96,15 @@ public class RgbButton extends LaunchkeyButton {
         layer.bindLightState(supplier, light);
     }
     
+    public void bindLightPressed(final Layer layer, final BooleanValue value) {
+        hwButton.isPressed().markInterested();
+        value.markInterested();
+        layer.bindLightState(() -> {
+            if (value.get()) {
+                return hwButton.isPressed().get() ? RgbState.MONO_ON : RgbState.MONO_MID;
+            }
+            return RgbState.OFF;
+        }, light);
+    }
     
 }

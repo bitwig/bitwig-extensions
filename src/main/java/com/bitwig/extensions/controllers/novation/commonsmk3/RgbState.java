@@ -49,8 +49,9 @@ public class RgbState extends InternalHardwareLightState {
     public static final RgbState BUTTON_ACTIVE = WHITE;
     
     public static final RgbState TURQUOISE = RgbState.of(29);
-    public static final RgbState MONO_ON = RgbState.of(127);
-    public static final RgbState MONO_MID = RgbState.of(25);
+    public static final RgbState MONO_ON = RgbState.of(3);
+    public static final RgbState MONO_MID = RgbState.of(2);
+    public static final RgbState MONO_LOW = RgbState.of(1);
     
     public static final RgbState ORANGE_PULSE = RgbState.pulse(9);
     

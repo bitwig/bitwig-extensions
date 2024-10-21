@@ -13,6 +13,7 @@ import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.LaunchkeyButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.MonoButton;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.definition.LaunchkeyMk4ExtensionDefinition;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayControl;
 import com.bitwig.extensions.framework.Layer;
@@ -96,13 +97,13 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         
         mainLayer.bind(hwElements.getMasterSlider(), masterTrack.volume());
         
-        final MonoButton trackLeftButton = hwElements.getTrackLeftButton();
-        final MonoButton trackRightButton = hwElements.getTrackRightButton();
+        final RgbButton trackLeftButton = hwElements.getTrackLeftButton();
+        final RgbButton trackRightButton = hwElements.getTrackRightButton();
         
         trackLeftButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectPrevious(), 500, 100);
-        trackLeftButton.bindLight(mainLayer, cursorTrack.hasPrevious());
+        trackLeftButton.bindLightPressed(mainLayer, cursorTrack.hasPrevious());
         trackRightButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectNext(), 500, 100);
-        trackRightButton.bindLight(mainLayer, cursorTrack.hasNext());
+        trackRightButton.bindLightPressed(mainLayer, cursorTrack.hasNext());
         
         
         transport.isPlaying().markInterested();
