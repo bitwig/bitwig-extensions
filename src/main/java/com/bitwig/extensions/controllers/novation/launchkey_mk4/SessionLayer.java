@@ -61,7 +61,7 @@ public class SessionLayer extends Layer {
         sceneBank.canScrollBackwards().markInterested();
         sceneBank.canScrollForwards().markInterested();
         
-        final RgbButton row2ModeButton = hwElements.getLaunchModeButton();
+        final RgbButton row2ModeButton = hwElements.getButton(CcAssignments.LAUNCH_MODE);
         row2ModeButton.bindPressed(this, this::advanceLayer);
         row2ModeButton.bindLight(this, this::getModeColor);
         for (int i = 0; i < 8; i++) {
@@ -106,12 +106,12 @@ public class SessionLayer extends Layer {
             }
         }
         
-        final RgbButton sceneLaunchButton = hwElements.getSceneLaunchButton();
+        final RgbButton sceneLaunchButton = hwElements.getButton(CcAssignments.SCENE_LAUNCH);
         sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene));
         sceneLaunchButton.bindLight(this, () -> getSceneLight(targetScene));
         
-        final RgbButton navUpButton = hwElements.getNavUpButton();
-        final RgbButton navDownButton = hwElements.getNavDownButton();
+        final RgbButton navUpButton = hwElements.getButton(CcAssignments.NAV_UP);
+        final RgbButton navDownButton = hwElements.getButton(CcAssignments.NAV_DOWN);
         navUpButton.bindRepeatHold(this, () -> trackBank.sceneBank().scrollBackwards(), 500, 100);
         navUpButton.bindLightPressed(this, trackBank.sceneBank().canScrollBackwards());
         navDownButton.bindRepeatHold(this, () -> trackBank.sceneBank().scrollForwards(), 500, 100);

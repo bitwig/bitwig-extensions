@@ -12,7 +12,6 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.LaunchkeyButton;
-import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.MonoButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.definition.LaunchkeyMk4ExtensionDefinition;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayControl;
@@ -83,22 +82,13 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         
         globalStates.getShiftState().addValueObserver(shiftActive -> shiftLayer.setIsActive(shiftActive));
         
-        final MonoButton capButton = hwElements.getCaptureButton();
-        
-        capButton.bindPressed(mainLayer, () -> {
-        });
-        
-        final MonoButton quantButton = hwElements.getQuantizeButton();
-        quantButton.bindPressed(mainLayer, () -> {
-        });
-        
         final ViewControl viewControl = diContext.getService(ViewControl.class);
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         
         mainLayer.bind(hwElements.getMasterSlider(), masterTrack.volume());
         
-        final RgbButton trackLeftButton = hwElements.getTrackLeftButton();
-        final RgbButton trackRightButton = hwElements.getTrackRightButton();
+        final RgbButton trackLeftButton = hwElements.getButton(CcAssignments.TRACK_LEFT);
+        final RgbButton trackRightButton = hwElements.getButton(CcAssignments.TRACK_RIGHT);
         
         trackLeftButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectPrevious(), 500, 100);
         trackLeftButton.bindLightPressed(mainLayer, cursorTrack.hasPrevious());
@@ -112,27 +102,22 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         transport.isArrangerLoopEnabled().markInterested();
         transport.isMetronomeEnabled().markInterested();
         
-        final MonoButton playButton = hwElements.getPlayButton();
-        final MonoButton stopButton = hwElements.getStopButton();
-        final MonoButton loopButton = hwElements.getLoopButton();
-        final MonoButton recButton = hwElements.getRecButton();
-        final MonoButton metroButton = hwElements.getMetroButton();
-        final MonoButton undoButton = hwElements.getUndoButton();
-        playButton.bind(mainLayer, transport.playAction());
-        playButton.bindLight(mainLayer, transport.isPlaying());
-        stopButton.bind(mainLayer, transport.stopAction());
-        stopButton.bindLight(mainLayer, transport.isPlaying());
-        loopButton.bindToggle(mainLayer, transport.isArrangerLoopEnabled());
-        loopButton.bindLight(mainLayer, transport.isArrangerLoopEnabled());
-        recButton.bindToggle(mainLayer, transport.isClipLauncherOverdubEnabled());
-        recButton.bindLight(mainLayer, transport.isClipLauncherOverdubEnabled());
-        metroButton.bindToggle(mainLayer, transport.isMetronomeEnabled());
-        metroButton.bindLight(mainLayer, transport.isMetronomeEnabled());
+        hwElements.getButton(CcAssignments.PLAY).bind(mainLayer, transport.playAction());
+        hwElements.getButton(CcAssignments.PLAY).bindLightOnOff(mainLayer, transport.isPlaying());
         
+        hwElements.getButton(CcAssignments.STOP).bind(mainLayer, transport.stopAction());
+        hwElements.getButton(CcAssignments.STOP).bindLightOnOff(mainLayer, transport.isPlaying());
+        hwElements.getButton(CcAssignments.LOOP).bindToggle(mainLayer, transport.isArrangerLoopEnabled());
+        hwElements.getButton(CcAssignments.LOOP).bindLightOnOff(mainLayer, transport.isArrangerLoopEnabled());
+        hwElements.getButton(CcAssignments.REC).bindToggle(mainLayer, transport.isClipLauncherOverdubEnabled());
+        hwElements.getButton(CcAssignments.REC).bindLightOnOff(mainLayer, transport.isClipLauncherOverdubEnabled());
+        hwElements.getButton(CcAssignments.METRO).bindToggle(mainLayer, transport.isMetronomeEnabled());
+        hwElements.getButton(CcAssignments.METRO).bindLightOnOff(mainLayer, transport.isMetronomeEnabled());
+        final RgbButton undoButton = hwElements.getButton(CcAssignments.UNDO);
         undoButton.bind(mainLayer, application.undoAction());
-        undoButton.bindLight(mainLayer, application.canUndo());
+        undoButton.bindLightOnOff(mainLayer, application.canUndo());
         undoButton.bind(shiftLayer, application.redoAction());
-        undoButton.bindLight(shiftLayer, application.canRedo());
+        undoButton.bindLightOnOff(shiftLayer, application.canRedo());
     }
     
     @Override

@@ -1,12 +1,15 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk4;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.ButtonMidiType;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.LaunchRelEncoder;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.LaunchkeyButton;
-import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.MonoButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RelAbsEncoder;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
 import com.bitwig.extensions.framework.di.Component;
@@ -19,29 +22,13 @@ public class LaunchkeyHwElements {
     private final RgbButton[] drumButtons = new RgbButton[16];
     private final RgbButton[] trackButtons = new RgbButton[8];
     private final RelAbsEncoder[] valueEncoders = new RelAbsEncoder[8];
-    private final RgbButton trackModeButton;
+    private final LaunchRelEncoder[] incEncoders = new LaunchRelEncoder[8];
     private final LaunchkeyButton shiftButton;
-    private final MonoButton playButton;
     private final static int[] DRUM_MIDI_MAPPING = {
         0x28, 0x29, 0x2A, 0x2B, 0x30, 0x31, 0x32, 0x33, 0x24, 0x25, 0x26, 0x27, 0x2C, 0x2D, 0x2E, 0x2F
     };
-    private final MonoButton stopButton;
-    private final MonoButton loopButton;
-    private final MonoButton recButton;
-    private final MonoButton metroButton;
-    private final MonoButton captureButton;
-    private final MonoButton quantizeButton;
-    private final MonoButton undoButton;
     
-    private final RgbButton trackLeftButton;
-    private final RgbButton trackRightButton;
-    private final RgbButton navUpButton;
-    private final RgbButton navDownButton;
-    private final RgbButton sceneLaunchButton;
-    private final RgbButton launchModeButton;
-    private final RgbButton paramUpButton;
-    private final RgbButton paramDownButton;
-    
+    private final Map<CcAssignments, RgbButton> buttonMap = new HashMap<>();
     
     public LaunchkeyHwElements(final HardwareSurface surface, final MidiProcessor midiProcessor,
         final ControllerHost host) {
@@ -57,94 +44,21 @@ public class LaunchkeyHwElements {
             sliders[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0xF, 5 + i));
             trackButtons[i] = new RgbButton(ButtonMidiType.CC, 0x25 + i, "TRACK", surface, midiProcessor);
             valueEncoders[i] = new RelAbsEncoder(0x15 + i, 0xF, surface, midiProcessor);
+            incEncoders[i] = new LaunchRelEncoder(surface, midiProcessor, i);
         }
         masterSlider = surface.createHardwareSlider("MASTER_SLIDER");
         masterSlider.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0xF, 13));
-        trackModeButton = new RgbButton(ButtonMidiType.CC, 0x2D, "TRACK_MODE", surface, midiProcessor);
-        playButton = new MonoButton(0x73, "PLAY", surface, midiProcessor);
-        stopButton = new MonoButton(0x74, "STOP", surface, midiProcessor);
-        loopButton = new MonoButton(0x76, "LOOP", surface, midiProcessor);
-        recButton = new MonoButton(0x75, "RECORD", surface, midiProcessor);
-        metroButton = new MonoButton(0x4C, "METRO", surface, midiProcessor);
-        captureButton = new MonoButton(0x4A, "CAPTURE", surface, midiProcessor);
-        undoButton = new MonoButton(0x4D, "CAPTURE", surface, midiProcessor);
-        quantizeButton = new MonoButton(0x4B, "CAPTURE", surface, midiProcessor);
-        trackLeftButton = new RgbButton(ButtonMidiType.CC, 0x67, "TR_LEFT", surface, midiProcessor);
-        trackRightButton = new RgbButton(ButtonMidiType.CC, 0x66, "TR_RIGHT", surface, midiProcessor);
-        navUpButton = new RgbButton(ButtonMidiType.CC, 0x6A, "NAV_UP", surface, midiProcessor);
-        navDownButton = new RgbButton(ButtonMidiType.CC, 0x6B, "NAV_DOWN", surface, midiProcessor);
-        sceneLaunchButton = new RgbButton(ButtonMidiType.CC, 0x68, "SCENE", surface, midiProcessor);
-        launchModeButton = new RgbButton(ButtonMidiType.CC, 0x69, "MODE", surface, midiProcessor);
-        paramUpButton = new RgbButton(ButtonMidiType.CC, 0x33, "PARAM_UP", surface, midiProcessor);
-        paramDownButton = new RgbButton(ButtonMidiType.CC, 0x34, "PARAM_DOWN", surface, midiProcessor);
-    }
-    
-    public MonoButton getPlayButton() {
-        return playButton;
+        
+        for (final CcAssignments assignment : CcAssignments.values()) {
+            buttonMap.put(
+                assignment,
+                new RgbButton(ButtonMidiType.CC, assignment.getCcNr(), assignment.toString(), surface, midiProcessor));
+        }
+        
     }
     
     public LaunchkeyButton getShiftButton() {
         return shiftButton;
-    }
-    
-    public MonoButton getStopButton() {
-        return stopButton;
-    }
-    
-    public MonoButton getLoopButton() {
-        return loopButton;
-    }
-    
-    public RgbButton getSceneLaunchButton() {
-        return sceneLaunchButton;
-    }
-    
-    public RgbButton getParamDownButton() {
-        return paramDownButton;
-    }
-    
-    public RgbButton getParamUpButton() {
-        return paramUpButton;
-    }
-    
-    public RgbButton getLaunchModeButton() {
-        return launchModeButton;
-    }
-    
-    public MonoButton getRecButton() {
-        return recButton;
-    }
-    
-    public RgbButton getTrackLeftButton() {
-        return trackLeftButton;
-    }
-    
-    public RgbButton getTrackRightButton() {
-        return trackRightButton;
-    }
-    
-    public RgbButton getNavUpButton() {
-        return navUpButton;
-    }
-    
-    public RgbButton getNavDownButton() {
-        return navDownButton;
-    }
-    
-    public MonoButton getCaptureButton() {
-        return captureButton;
-    }
-    
-    public MonoButton getUndoButton() {
-        return undoButton;
-    }
-    
-    public MonoButton getQuantizeButton() {
-        return quantizeButton;
-    }
-    
-    public MonoButton getMetroButton() {
-        return metroButton;
     }
     
     public RgbButton[] getSessionButtons() {
@@ -167,11 +81,15 @@ public class LaunchkeyHwElements {
         return masterSlider;
     }
     
-    public RgbButton getTrackModeButton() {
-        return trackModeButton;
-    }
-    
     public RelAbsEncoder[] getValueEncoders() {
         return valueEncoders;
+    }
+    
+    public LaunchRelEncoder[] getIncEncoders() {
+        return incEncoders;
+    }
+    
+    public RgbButton getButton(final CcAssignments assignment) {
+        return buttonMap.get(assignment);
     }
 }

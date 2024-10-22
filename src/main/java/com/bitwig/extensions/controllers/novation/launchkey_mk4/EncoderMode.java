@@ -14,7 +14,7 @@ public enum EncoderMode {
         return switch (id) {
             case 1 -> MIXER;
             case 2 -> PLUGIN;
-            case 3 -> TRANSPORT;
+            case 5 -> TRANSPORT;
             case 4 -> SENDS;
             default -> CUSTOM;
         };

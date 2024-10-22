@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk4.control;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.controller.api.BooleanValue;
@@ -107,4 +108,19 @@ public class RgbButton extends LaunchkeyButton {
         }, light);
     }
     
+    public void bindLightOnOff(final Layer layer, final BooleanValue value) {
+        hwButton.isPressed().markInterested();
+        value.markInterested();
+        layer.bindLightState(() -> value.get() ? RgbState.MONO_ON : RgbState.OFF, light);
+    }
+    
+    public void bindLightPressed(final Layer layer, final BooleanSupplier value) {
+        hwButton.isPressed().markInterested();
+        layer.bindLightState(() -> {
+            if (value.getAsBoolean()) {
+                return hwButton.isPressed().get() ? RgbState.MONO_ON : RgbState.MONO_MID;
+            }
+            return RgbState.OFF;
+        }, light);
+    }
 }
