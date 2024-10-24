@@ -1,6 +1,5 @@
-package com.bitwig.extensions.controllers.novation.launchkey_mk4.control;
+package com.bitwig.extensions.controllers.novation.launchkey_mk4.bindings;
 
-import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding;
 import com.bitwig.extension.controller.api.HardwareBinding;
 import com.bitwig.extension.controller.api.Parameter;
@@ -8,38 +7,38 @@ import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayControl;
 import com.bitwig.extensions.framework.Binding;
 
-public class SliderBinding extends Binding<Parameter, AbsoluteHardwareControl> {
-    
-    private boolean exists;
-    private String displayValue;
-    private HardwareBinding hwBinding;
-    private final int targetId;
-    private final int index;
-    private final DisplayControl displayControl;
-    private String parameterName;
-    private String trackName;
+public abstract class LauncherBinding<T> extends Binding<Parameter, T> {
+    protected final int targetId;
+    protected String displayValue;
+    protected String parameterName;
+    protected String trackName;
+    protected HardwareBinding hwBinding;
+    protected final DisplayControl displayControl;
     private boolean init = true;
     
-    public SliderBinding(final int index, final Parameter parameter, final AbsoluteHardwareControl control,
+    public LauncherBinding(final int targetId, final Parameter parameter, final T target,
         final DisplayControl displayControl, final StringValue trackName, final StringValue parameterName) {
-        super(control, parameter, control);
-        
-        parameter.exists().addValueObserver(this::handleExists);
+        super(parameter, parameter, target);
+        this.targetId = targetId;
+        this.displayControl = displayControl;
         parameterName.addValueObserver(this::handleParameterName);
         parameter.value().displayedValue().addValueObserver(this::handleDisplayValue);
         trackName.addValueObserver(this::handleTrackName);
-        this.exists = parameter.exists().get();
-        this.trackName = trackName.get();
         this.parameterName = parameterName.get();
-        this.displayControl = displayControl;
-        this.targetId = index + 0x05;
-        this.index = index;
+        this.trackName = trackName.get();
     }
     
     private void handleTrackName(final String trackName) {
         this.trackName = trackName;
         if (isActive()) {
             displayControl.setText(targetId, 0, trackName);
+        }
+    }
+    
+    private void handleParameterName(final String parameterName) {
+        this.parameterName = parameterName;
+        if (isActive()) {
+            displayControl.setText(targetId, 1, parameterName);
         }
     }
     
@@ -54,16 +53,9 @@ public class SliderBinding extends Binding<Parameter, AbsoluteHardwareControl> {
         }
     }
     
-    private void handleParameterName(final String parameterName) {
-        this.parameterName = parameterName;
-        if (isActive()) {
-            displayControl.setText(targetId, 1, parameterName);
-        }
-    }
+    protected abstract AbsoluteHardwareControlBinding getHardwareBinding();
     
-    private void handleExists(final boolean exists) {
-        this.exists = exists;
-    }
+    protected abstract void updateValue();
     
     @Override
     protected void deactivate() {
@@ -73,15 +65,12 @@ public class SliderBinding extends Binding<Parameter, AbsoluteHardwareControl> {
         }
     }
     
-    protected AbsoluteHardwareControlBinding getHardwareBinding() {
-        return getSource().addBinding(getTarget());
-    }
-    
     @Override
     protected void activate() {
         if (hwBinding != null) {
             hwBinding.removeBinding();
         }
+        updateValue();
         hwBinding = getHardwareBinding();
         displayControl.configureDisplay(targetId, 0x62);
         displayControl.setText(targetId, 0, trackName);

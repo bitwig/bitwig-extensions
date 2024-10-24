@@ -24,7 +24,6 @@ public class MidiProcessor {
     private static final String NOVATION_HEADER = "F0 00 20 29 02 %02X ";
     private static final byte[] TEXT_CONFIG_COMMAND =
         {(byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x14, 0x04, 0x00, 0x00, (byte) 0xF7};
-    private static String TEXT_COMMAND;
     private final ControllerHost host;
     private final MidiIn midiIn;
     private final MidiOut midiOut;
@@ -34,14 +33,14 @@ public class MidiProcessor {
     private final Queue<TimedEvent> timedEvents = new LinkedList<>();
     private final MidiOut midiOut2;
     private final List<ModeListener> modeListeners = new ArrayList<>();
-    private Runnable connectionCallback;
     private final String header;
+    private final int modelIdCode;
     
     public MidiProcessor(final ControllerHost host, final boolean mini) {
         this.host = host;
         this.miniVersion = mini;
-        this.header = NOVATION_HEADER.formatted(mini ? 0x13 : 0x14);
-        TEXT_COMMAND = this.header + "06 ";
+        this.modelIdCode = mini ? 0x13 : 0x14;
+        this.header = NOVATION_HEADER.formatted(modelIdCode);
         if (mini) {
             TEXT_CONFIG_COMMAND[5] = 0x13;
         }
@@ -124,37 +123,19 @@ public class MidiProcessor {
         LaunchkeyMk4Extension.println(" Incoming Sysex = %s", data);
     }
     
-    private void handleSysEx_(final String data) {
-        if (data.startsWith("f000202902140200f7")) {
-            LaunchkeyMk4Extension.println(" == INIT now Device inquire");
-            midiOut.sendSysex(DEVICE_INQUIRY);
-        } else if (data.startsWith("f07e000602")) {
-            midiOut.sendSysex("F0 00 20 29 02 14 02 7F F7");
-            //midiOut.sendMidi(0x9f, 0xC, 0x7f);
-        } else if (data.startsWith("f00020290214027ff7")) {
-            connectionCallback.run();
-        } else {
-            LaunchkeyMk4Extension.println(" SYSEX = %s", data);
-        }
+    private void dawConnect(final boolean connect) {
+        midiOut.sendSysex(this.header + "02 %02X F7".formatted(connect ? 0x7F : 0x0));
     }
     
-    public void init(final Runnable connectionCallback) {
-        this.connectionCallback = connectionCallback;
-        midiOut.sendSysex("F0 00 20 29 02 14 02 00 F7");
-        midiOut.sendSysex("F0 00 20 29 02 14 02 7F F7");
-        host.scheduleTask(this::processMidi, 50);
-    }
-    
-    public void init_(final Runnable connectionCallback) {
-        this.connectionCallback = connectionCallback;
-        midiOut.sendSysex("F0 00 20 29 02 14 04 20 00 F7");
-        midiOut.sendSysex("F0 00 20 29 02 14 02 00 F7");
+    public void init() {
+        dawConnect(false);
+        dawConnect(true);
         host.scheduleTask(this::processMidi, 50);
     }
     
     public void exitDawMode() {
-        midiOut.sendSysex("F0 00 20 29 02 14 04 20 00 F7");
-        midiOut.sendSysex("F0 00 20 29 02 14 02 00 F7");
+        midiOut.sendSysex(this.header + "04 20 00 F7");
+        dawConnect(false);
     }
     
     public MidiIn getMidiIn() {

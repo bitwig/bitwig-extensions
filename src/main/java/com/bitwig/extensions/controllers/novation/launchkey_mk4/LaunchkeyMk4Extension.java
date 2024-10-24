@@ -56,17 +56,13 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         final DisplayControl display = diContext.getService(DisplayControl.class);
         display.initTemps();
         initControl(diContext);
+        midiProcessor.init();
         
-        midiProcessor.init(() -> {
-            LaunchkeyMk4Extension.println(":: connected ::");
-        });
         display.initTemps();
         mainLayer.setIsActive(true);
         sessionLayer.setIsActive(true);
         diContext.activate();
     }
-    
-    boolean statSet = false;
     
     public void initControl(final Context diContext) {
         final LaunchkeyHwElements hwElements = diContext.getService(LaunchkeyHwElements.class);

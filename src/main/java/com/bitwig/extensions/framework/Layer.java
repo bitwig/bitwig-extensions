@@ -115,7 +115,6 @@ public class Layer {
     public RelativeHardwareControlBinding bind(final RelativeHardwareControl source,
         final RelativeHardwarControlBindable target) {
         final RelativeHardwareControlBinding binding = new RelativeHardwareControlBinding(source, target);
-        
         addBinding(binding);
         
         return binding;
