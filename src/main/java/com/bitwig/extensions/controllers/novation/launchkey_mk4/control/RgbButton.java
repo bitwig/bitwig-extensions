@@ -13,16 +13,16 @@ import com.bitwig.extensions.framework.Layer;
 
 public class RgbButton extends LaunchkeyButton {
     protected MultiStateHardwareLight light;
+    private final int lightMidiStatus;
     
     public RgbButton(final ButtonMidiType type, final int midiId, final String name, final HardwareSurface surface,
         final MidiProcessor midiProcessor) {
-        super(type, midiId, name, surface, midiProcessor);
+        super(type, type == ButtonMidiType.PAD_DRUM ? 0x9 : 0x0, midiId, name, surface, midiProcessor);
+        lightMidiStatus = type == ButtonMidiType.PAD_DRUM ? 0x99 : 0x90;
         light = surface.createMultiStateHardwareLight(name + "_LIGHT_" + midiId);
         light.state().setValue(RgbState.OFF);
-        if (type == ButtonMidiType.PAD) {
+        if (type == ButtonMidiType.PAD || type == ButtonMidiType.PAD_DRUM) {
             light.state().onUpdateHardware(this::updateState);
-        } else if (type == ButtonMidiType.PAD_DRUM) {
-            light.state().onUpdateHardware(this::updateStateDrum);
         } else {
             light.state().onUpdateHardware(this::updateStateCC);
         }
@@ -36,36 +36,18 @@ public class RgbButton extends LaunchkeyButton {
         if (state instanceof final RgbState rgbState) {
             switch (rgbState.getState()) {
                 case NORMAL:
-                    midiProcessor.sendMidi(0x90, midiId, rgbState.getColorIndex());
+                    midiProcessor.sendMidi(lightMidiStatus, midiId, rgbState.getColorIndex());
                     break;
                 case FLASHING:
-                    midiProcessor.sendMidi(0x90, midiId, rgbState.getColorIndex());
-                    midiProcessor.sendMidi(0x91, midiId, rgbState.getAltColor());
+                    midiProcessor.sendMidi(lightMidiStatus, midiId, rgbState.getColorIndex());
+                    midiProcessor.sendMidi(lightMidiStatus + 1, midiId, rgbState.getAltColor());
                     break;
                 case PULSING:
-                    midiProcessor.sendMidi(0x92, midiId, rgbState.getColorIndex());
+                    midiProcessor.sendMidi(lightMidiStatus + 2, midiId, rgbState.getColorIndex());
                     break;
             }
         } else {
-            midiProcessor.sendMidi(0x90, midiId, 0);
-        }
-    }
-    
-    private void updateStateDrum(final InternalHardwareLightState state) {
-        if (state instanceof final RgbState rgbState) {
-            switch (rgbState.getState()) {
-                case NORMAL:
-                    midiProcessor.sendMidi(0x9A, midiId, rgbState.getColorIndex());
-                    break;
-                case FLASHING:
-                    midiProcessor.sendMidi(0x9B, midiId, rgbState.getColorIndex());
-                    break;
-                case PULSING:
-                    midiProcessor.sendMidi(0x9C, midiId, rgbState.getColorIndex());
-                    break;
-            }
-        } else {
-            midiProcessor.sendMidi(0x9A, midiId, 0);
+            midiProcessor.sendMidi(lightMidiStatus, midiId, 0);
         }
     }
     

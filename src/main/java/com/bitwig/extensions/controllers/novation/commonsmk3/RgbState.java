@@ -69,6 +69,20 @@ public class RgbState extends InternalHardwareLightState {
         return of(ColorLookup.toColor(color));
     }
     
+    public RgbState dim() {
+        if (this.colorIndex == 2 || this.colorIndex == 3) {
+            RgbState.of(1);
+        }
+        final int dimIndex = (this.colorIndex - 1) % 4;
+        final int dimAmount = switch (dimIndex) {
+            case 0 -> 2;
+            case 1 -> 1;
+            case 3 -> 3;
+            default -> 0;
+        };
+        return RgbState.of(this.colorIndex + dimAmount);
+    }
+    
     private RgbState(final int colorIndex, final LightState state) {
         super();
         this.colorIndex = colorIndex;
@@ -160,4 +174,6 @@ public class RgbState extends InternalHardwareLightState {
     public int getAltColor() {
         return altColorIndex;
     }
+    
+    
 }

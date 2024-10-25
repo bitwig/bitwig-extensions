@@ -36,7 +36,8 @@ public class LaunchkeyHwElements {
         for (int i = 0; i < sessionButtons.length; i++) {
             final int noteId = 0x60 + (0x10 * (i / 8)) + i % 8;
             sessionButtons[i] = new RgbButton(ButtonMidiType.PAD, noteId, "PAD", surface, midiProcessor);
-            drumButtons[i] = new RgbButton(ButtonMidiType.PAD, DRUM_MIDI_MAPPING[i], "DRUM", surface, midiProcessor);
+            drumButtons[i] =
+                new RgbButton(ButtonMidiType.PAD_DRUM, DRUM_MIDI_MAPPING[i], "DRUM", surface, midiProcessor);
         }
         final MidiIn midiIn = midiProcessor.getMidiIn();
         for (int i = 0; i < 8; i++) {

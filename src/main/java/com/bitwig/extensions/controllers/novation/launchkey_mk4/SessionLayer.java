@@ -10,9 +10,11 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.novation.commonsmk3.ColorLookup;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayControl;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.di.Inject;
 
 @Component
 public class SessionLayer extends Layer {
@@ -26,6 +28,9 @@ public class SessionLayer extends Layer {
     private final Layer stopLayer;
     private final Layer controlLayer;
     private final Layer shiftLayer;
+    
+    @Inject
+    private DisplayControl displayControl;
     
     private Layer currentModeLayer;
     private Mode mode = Mode.LAUNCH;
@@ -41,7 +46,6 @@ public class SessionLayer extends Layer {
     
     public SessionLayer(final Layers layers, final LaunchkeyHwElements hwElements, final ViewControl viewControl) {
         super(layers, "SESSION_LAYER");
-        
         final TrackBank trackBank = viewControl.getTrackBank();
         final SceneBank sceneBank = trackBank.sceneBank();
         final Scene targetScene = trackBank.sceneBank().getScene(0);
@@ -152,18 +156,22 @@ public class SessionLayer extends Layer {
             case LAUNCH:
                 mode = Mode.STOP;
                 currentModeLayer = stopLayer;
+                displayControl.show2Line("Function", "Stop");
                 break;
             case STOP:
                 mode = Mode.SOLO;
                 currentModeLayer = soloLayer;
+                displayControl.show2Line("Function", "Solo");
                 break;
             case SOLO:
                 mode = Mode.MUTE;
                 currentModeLayer = muteLayer;
+                displayControl.show2Line("Function", "Mute");
                 break;
             case MUTE:
                 mode = Mode.LAUNCH;
                 currentModeLayer = launchLayer2;
+                displayControl.show2Line("Function", "Clip Launching");
                 break;
         }
         heldSoloKeys.clear();

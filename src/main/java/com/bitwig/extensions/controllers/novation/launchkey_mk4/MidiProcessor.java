@@ -130,11 +130,13 @@ public class MidiProcessor {
     public void init() {
         dawConnect(false);
         dawConnect(true);
+        midiOut.sendMidi(0xB6, 0x54, 0x01);
         host.scheduleTask(this::processMidi, 50);
     }
     
     public void exitDawMode() {
         midiOut.sendSysex(this.header + "04 20 00 F7");
+        midiOut.sendMidi(0xB6, 0x54, 0x00);
         dawConnect(false);
     }
     

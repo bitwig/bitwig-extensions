@@ -132,7 +132,7 @@ public class ControlHandler {
         bindRemoteNavigation(EncMode.PROJECT_REMOTES, projectRemotes, hwElements, viewControl.getProjectRemotesPages());
         
         setupSendNavigation(hwElements, trackBank);
-        
+        setupMixerNavigation(hwElements);
         midiProcessor.addModeListener(this::handleModeChange);
         currentLayer = layerMap.get(mode);
     }
@@ -240,6 +240,22 @@ public class ControlHandler {
         layer.addBinding(positionControl);
     }
     
+    private void setupMixerNavigation(final LaunchkeyHwElements hwElements) {
+        final RgbButton paramUpButton = hwElements.getButton(CcAssignments.PARAM_UP);
+        final RgbButton paramDownButton = hwElements.getButton(CcAssignments.PARAM_DOWN);
+        final Layer panLayer = layerMap.get(EncMode.PAN);
+        paramUpButton.bindLightPressed(panLayer, () -> false);
+        paramDownButton.bindLightPressed(panLayer, () -> true);
+        paramUpButton.bindPressed(panLayer, () -> {});
+        paramDownButton.bindPressed(panLayer, () -> switchToLayerDirect(EncMode.VOLUME, "Mixer"));
+        
+        final Layer volumeLayer = layerMap.get(EncMode.VOLUME);
+        paramUpButton.bindLightPressed(volumeLayer, () -> true);
+        paramDownButton.bindLightPressed(volumeLayer, () -> false);
+        paramUpButton.bindPressed(volumeLayer, () -> switchToLayerDirect(EncMode.PAN, "Mixer"));
+        paramDownButton.bindPressed(volumeLayer, () -> {});
+    }
+    
     private void setupSendNavigation(final LaunchkeyHwElements hwElements, final TrackBank trackBank) {
         final RgbButton paramUpButton = hwElements.getButton(CcAssignments.PARAM_UP);
         final RgbButton paramDownButton = hwElements.getButton(CcAssignments.PARAM_DOWN);
@@ -339,7 +355,6 @@ public class ControlHandler {
     }
     
     private void handleModeChange(final ModeType modeType, final int id) {
-        LaunchkeyMk4Extension.println(" %s %d %s".formatted(modeType, id, EncoderMode.toMode(id)));
         if (modeType == ModeType.ENCODER) {
             final EncoderMode newEncoderMode = EncoderMode.toMode(id);
             switch (newEncoderMode) {
@@ -381,6 +396,13 @@ public class ControlHandler {
         }
     }
     
+    private void switchToLayerDirect(final EncMode mode, final String title) {
+        this.currentLayer.setIsActive(false);
+        this.mode = mode;
+        this.currentLayer = layerMap.get(mode);
+        display.show2Line(title, mode.getTitle());
+        this.currentLayer.setIsActive(true);
+    }
     
     private void switchToLayer(final EncMode mode) {
         this.currentLayer.setIsActive(false);

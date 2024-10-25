@@ -70,6 +70,10 @@ public class ViewControl {
         cursorClip = host.createLauncherCursorClip(32, 128);
         cursorClip.setStepSize(0.125);
         
+        cursorClip.exists().addValueObserver(exists -> LaunchkeyMk4Extension.println("LNC clip ext=%s", exists));
+        final Clip arrangerClip = host.createArrangerCursorClip(32, 128);
+        arrangerClip.exists().addValueObserver(exists -> LaunchkeyMk4Extension.println("ARR clip ext=%s", exists));
+        
         primaryDevice =
             cursorTrack.createCursorDevice("DrumDetection", "Pad Device", 2, CursorDeviceFollowMode.FIRST_INSTRUMENT);
         cursorDevice = cursorTrack.createCursorDevice("device-control", "Device Control", 0,

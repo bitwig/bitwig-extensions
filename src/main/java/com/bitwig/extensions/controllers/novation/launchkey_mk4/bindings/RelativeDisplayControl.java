@@ -61,6 +61,5 @@ public class RelativeDisplayControl extends Binding<DisplayId, Object> {
         display.setText(targetId, 0, title);
         display.setText(targetId, 1, paramName);
         display.setText(targetId, 2, displayValue);
-        display.showDisplay(targetId);
     }
 }
