@@ -69,6 +69,12 @@ public class DisplayControl {
         for (int i = 0; i < 16; i++) {
             configureDisplay(0x05 + i, 0x62);
         }
+        configureDisplay(0x22, 0x01);
+        configureDisplay(0x23, 0x61);
+        configureDisplay(0x24, 0x01);
+        configureDisplay(0x25, 0x01);
+        configureDisplay(0x26, 0x01);
+        configureDisplay(0x27, 0x01);
     }
     
 }

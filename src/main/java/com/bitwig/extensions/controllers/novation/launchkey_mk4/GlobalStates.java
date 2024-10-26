@@ -9,6 +9,7 @@ public class GlobalStates {
     public static final String ARRANGE_MODE = "ARRANGE";
     
     private final BooleanValueObject shiftState = new BooleanValueObject();
+    private final BooleanValueObject captureState = new BooleanValueObject();
     private String panelLayout = ARRANGE_MODE;
     
     public GlobalStates(final Application application) {
@@ -19,6 +20,10 @@ public class GlobalStates {
     
     public BooleanValueObject getShiftState() {
         return shiftState;
+    }
+    
+    public BooleanValueObject getCaptureState() {
+        return captureState;
     }
     
     public boolean isArrangeMode() {

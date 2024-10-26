@@ -44,6 +44,7 @@ public class ControlHandler {
     private final Map<EncMode, Layer> layerMap = new HashMap<>();
     private Layer currentLayer;
     private EncMode mode = EncMode.DEVICE;
+    private EncMode lastMixMode = EncMode.VOLUME;
     
     private String trackName = "";
     private String deviceName = "";
@@ -244,16 +245,16 @@ public class ControlHandler {
         final RgbButton paramUpButton = hwElements.getButton(CcAssignments.PARAM_UP);
         final RgbButton paramDownButton = hwElements.getButton(CcAssignments.PARAM_DOWN);
         final Layer panLayer = layerMap.get(EncMode.PAN);
-        paramUpButton.bindLightPressed(panLayer, () -> false);
-        paramDownButton.bindLightPressed(panLayer, () -> true);
-        paramUpButton.bindPressed(panLayer, () -> {});
-        paramDownButton.bindPressed(panLayer, () -> switchToLayerDirect(EncMode.VOLUME, "Mixer"));
+        paramUpButton.bindLightPressed(panLayer, () -> true);
+        paramDownButton.bindLightPressed(panLayer, () -> false);
+        paramDownButton.bindPressed(panLayer, () -> {});
+        paramUpButton.bindPressed(panLayer, () -> switchToLayerDirect(EncMode.VOLUME, "Mixer"));
         
         final Layer volumeLayer = layerMap.get(EncMode.VOLUME);
-        paramUpButton.bindLightPressed(volumeLayer, () -> true);
-        paramDownButton.bindLightPressed(volumeLayer, () -> false);
-        paramUpButton.bindPressed(volumeLayer, () -> switchToLayerDirect(EncMode.PAN, "Mixer"));
-        paramDownButton.bindPressed(volumeLayer, () -> {});
+        paramUpButton.bindLightPressed(volumeLayer, () -> false);
+        paramDownButton.bindLightPressed(volumeLayer, () -> true);
+        paramDownButton.bindPressed(volumeLayer, () -> switchToLayerDirect(EncMode.PAN, "Mixer"));
+        paramUpButton.bindPressed(volumeLayer, () -> {});
     }
     
     private void setupSendNavigation(final LaunchkeyHwElements hwElements, final TrackBank trackBank) {
@@ -369,8 +370,12 @@ public class ControlHandler {
     private void handleMixerMode() {
         if (this.mode == EncMode.PAN) {
             switchToLayer(EncMode.VOLUME);
-        } else {
+            lastMixMode = EncMode.VOLUME;
+        } else if (this.mode == EncMode.VOLUME) {
             switchToLayer(EncMode.PAN);
+            lastMixMode = EncMode.PAN;
+        } else {
+            switchToLayer(lastMixMode);
         }
     }
     

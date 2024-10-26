@@ -27,7 +27,6 @@ public class SessionLayer extends Layer {
     private final Layer soloLayer;
     private final Layer stopLayer;
     private final Layer controlLayer;
-    private final Layer shiftLayer;
     
     @Inject
     private DisplayControl displayControl;
@@ -56,7 +55,6 @@ public class SessionLayer extends Layer {
         muteLayer = new Layer(layers, "MUTE_LAYER");
         soloLayer = new Layer(layers, "SOLO_LAYER");
         stopLayer = new Layer(layers, "STOP_LAYER");
-        shiftLayer = new Layer(layers, "LAUNCH_SHIFT_LAYER");
         controlLayer = new Layer(layers, "CONTROL_LAYER");
         currentModeLayer = launchLayer2;
         
@@ -290,11 +288,13 @@ public class SessionLayer extends Layer {
     @Override
     protected void onActivate() {
         super.onActivate();
+        currentModeLayer.setIsActive(true);
     }
     
     @Override
     protected void onDeactivate() {
         super.onDeactivate();
+        currentModeLayer.setIsActive(false);
     }
     
 }

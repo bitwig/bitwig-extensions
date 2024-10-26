@@ -15,8 +15,10 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.Launchke
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.definition.LaunchkeyMk4ExtensionDefinition;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayControl;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.sequencer.SequencerLayer;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
+import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 public class LaunchkeyMk4Extension extends ControllerExtension {
     private static ControllerHost debugHost;
@@ -27,6 +29,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     private final boolean isMini;
     private MidiProcessor midiProcessor;
     private SessionLayer sessionLayer;
+    private Layer currentMainModeLayer;
     
     public static void println(final String format, final Object... args) {
         if (debugHost != null) {
@@ -56,12 +59,51 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         final DisplayControl display = diContext.getService(DisplayControl.class);
         display.initTemps();
         initControl(diContext);
+        initGenerateModeHandling(diContext);
         midiProcessor.init();
         
         display.initTemps();
         mainLayer.setIsActive(true);
         sessionLayer.setIsActive(true);
         diContext.activate();
+    }
+    
+    public void initGenerateModeHandling(final Context diContext) {
+        final SessionLayer sessionLayer = diContext.getService(SessionLayer.class);
+        final DrumPadLayer padLayer = diContext.getService(DrumPadLayer.class);
+        final SequencerLayer sequencerLayer = diContext.getService(SequencerLayer.class);
+        currentMainModeLayer = null;
+        final DisplayControl display = diContext.getService(DisplayControl.class);
+        
+        midiProcessor.addModeListener(((type, id) -> {
+            if (type == ModeType.PAD) {
+                if (id == 2) {
+                    if (currentMainModeLayer != sessionLayer) {
+                        if (currentMainModeLayer != null) {
+                            display.setText(0x22, 0, "Launcher 1/2");
+                            display.showDisplay(0x22);
+                        }
+                        switchToLayer(sessionLayer);
+                    } else {
+                        switchToLayer(sequencerLayer);
+                        display.setText(0x22, 0, "Sequencer 2/2");
+                        display.showDisplay(0x22);
+                    }
+                } else if (id == 15) {
+                    if (currentMainModeLayer != padLayer) {
+                        switchToLayer(padLayer);
+                    }
+                }
+            }
+        }));
+    }
+    
+    private void switchToLayer(final Layer layer) {
+        if (currentMainModeLayer != null) {
+            currentMainModeLayer.setIsActive(false);
+        }
+        currentMainModeLayer = layer;
+        currentMainModeLayer.setIsActive(true);
     }
     
     public void initControl(final Context diContext) {
@@ -75,6 +117,10 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         
         final LaunchkeyButton shiftButton = hwElements.getShiftButton();
         shiftButton.bindIsPressed(mainLayer, globalStates.getShiftState());
+        
+        final RgbButton captureButton = hwElements.getButton(CcAssignments.CAPTURE);
+        captureButton.bindIsPressed(mainLayer, globalStates.getCaptureState());
+        captureButton.bindLightPressed(mainLayer, new BooleanValueObject(true));
         
         globalStates.getShiftState().addValueObserver(shiftActive -> shiftLayer.setIsActive(shiftActive));
         

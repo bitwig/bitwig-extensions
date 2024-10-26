@@ -35,6 +35,7 @@ public class MidiProcessor {
     private final List<ModeListener> modeListeners = new ArrayList<>();
     private final String header;
     private final int modelIdCode;
+    private final NoteInput padNoteInput;
     
     public MidiProcessor(final ControllerHost host, final boolean mini) {
         this.host = host;
@@ -47,6 +48,8 @@ public class MidiProcessor {
         this.midiIn = host.getMidiInPort(0);
         this.midiOut = host.getMidiOutPort(0);
         this.midiOut2 = host.getMidiOutPort(1);
+        
+        padNoteInput = midiIn.createNoteInput("DRUM", "89????", "99????", "A?????");
         
         final MidiIn midiIn2 = host.getMidiInPort(1);
         noteInput = midiIn2.createNoteInput("MIDI", "8?????", "9?????", "A?????", "B?????", "D?????", "E?????");
@@ -117,6 +120,10 @@ public class MidiProcessor {
     
     public NoteInput getNoteInput() {
         return noteInput;
+    }
+    
+    public NoteInput getPadNoteInput() {
+        return padNoteInput;
     }
     
     private void handleSysEx(final String data) {
