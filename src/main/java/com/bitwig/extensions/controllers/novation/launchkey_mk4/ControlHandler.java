@@ -23,6 +23,7 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.bindings.AbsoluteEncoderBinding;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.bindings.RelativeDisplayControl;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.bindings.RelativeEncoderBinding;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.bindings.SliderBinding;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.LaunchRelEncoder;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RelAbsEncoder;
@@ -94,6 +95,7 @@ public class ControlHandler {
         final CursorRemoteControlsPage trackRemotes = viewControl.getTrackRemotes();
         final CursorRemoteControlsPage projectRemotes = viewControl.getProjectRemotes();
         final RelAbsEncoder[] valueEncoders = hwElements.getValueEncoders();
+        final LaunchRelEncoder[] incEncoders = hwElements.getIncEncoders();
         final HardwareSlider[] trackSliders = hwElements.getSliders();
         
         cursorTrack = viewControl.getCursorTrack();
@@ -114,7 +116,8 @@ public class ControlHandler {
             final RelAbsEncoder encoder = valueEncoders[i];
             final Track track = trackBank.getItemAt(i);
             final Send send = track.sendBank().getItemAt(0);
-            bindRemote(EncMode.DEVICE, cursorTrack, i, encoder, remotes);
+            //bindRemote(EncMode.DEVICE, cursorTrack, i, encoder, remotes);
+            bindRemote(EncMode.DEVICE, cursorTrack, i, incEncoders[i], remotes);
             bindRemote(EncMode.TRACK_REMOTES, cursorTrack, i, encoder, trackRemotes);
             bindRemote(EncMode.PROJECT_REMOTES, cursorTrack, i, encoder, projectRemotes);
             sliderLayer.addBinding(
@@ -298,6 +301,16 @@ public class ControlHandler {
         final RemoteControl remote = remotes.getParameter(i);
         layerMap.get(mode)
             .addBinding(new AbsoluteEncoderBinding(i, remote, encoder, display, cursorTrack.name(), remote.name()));
+    }
+    
+    
+    private void bindRemote(final EncMode mode, final CursorTrack cursorTrack, final int i,
+        final LaunchRelEncoder encoder, final CursorRemoteControlsPage remotes) {
+        final RemoteControl remote = remotes.getParameter(i);
+        final Layer layer = layerMap.get(mode);
+        encoder.bind(layer, remote);
+        layerMap.get(mode)
+            .addBinding(new RelativeEncoderBinding(i, remote, encoder, display, cursorTrack.name(), remote.name()));
     }
     
     private void bindRemoteNavigation(final EncMode mode, final CursorRemoteControlsPage remotes,

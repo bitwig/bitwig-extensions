@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk4.bindings;
 
-import com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding;
 import com.bitwig.extension.controller.api.HardwareBinding;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.StringValue;
@@ -53,7 +52,7 @@ public abstract class LauncherBinding<T> extends Binding<Parameter, T> {
         }
     }
     
-    protected abstract AbsoluteHardwareControlBinding getHardwareBinding();
+    protected abstract HardwareBinding getHardwareBinding();
     
     protected abstract void updateValue();
     

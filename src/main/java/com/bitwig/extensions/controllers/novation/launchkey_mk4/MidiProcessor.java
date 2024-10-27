@@ -17,6 +17,7 @@ import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareValueMatcher;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.ModeListener;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.NoteHandler;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
 public class MidiProcessor {
@@ -33,6 +34,7 @@ public class MidiProcessor {
     private final Queue<TimedEvent> timedEvents = new LinkedList<>();
     private final MidiOut midiOut2;
     private final List<ModeListener> modeListeners = new ArrayList<>();
+    private final List<NoteHandler> noteHandlers = new ArrayList<>();
     private final String header;
     private final int modelIdCode;
     private final NoteInput padNoteInput;
@@ -59,6 +61,10 @@ public class MidiProcessor {
         midiIn.setSysexCallback(this::handleSysEx);
     }
     
+    public void addNoteHandler(final NoteHandler handler) {
+        this.noteHandlers.add(handler);
+    }
+    
     public String getSysexHeader() {
         return this.header;
     }
@@ -76,6 +82,7 @@ public class MidiProcessor {
         if (statusByte == 0xB6) {
             if (data1 == 0x1E) {
                 fireMode(ModeType.ENCODER, data2);
+                setEncodersToRelativeMode();
             } else if (data1 == 0x1D) {
                 fireMode(ModeType.PAD, data2);
             } else if (data1 == 0x1F) {
@@ -88,6 +95,10 @@ public class MidiProcessor {
         }
     }
     
+    private void setEncodersToRelativeMode() {
+        midiOut.sendMidi(0xB6, 0x45, 0x7F);
+    }
+    
     private void fireMode(final ModeType type, final int id) {
         this.modeListeners.forEach(mode -> mode.handleModeChange(type, id));
     }
@@ -98,6 +109,10 @@ public class MidiProcessor {
     private int valNrPmLsb = 0;
     
     private void handleMidiIn2(final int statusByte, final int data1, final int data2) {
+        final int code = 0xF0 & statusByte;
+        if (code == 0x80 || code == 0x90) {
+            this.noteHandlers.forEach(noteHandler -> noteHandler.handleNoteAction(data1, data2));
+        }
         if (statusByte == 0xBA) {
             //LaunchkeyMk4Extension.println("MIDI-2 %02X %02X %02X", statusByte, data1, data2);
             if (data1 == 0x63 && data2 != 0x7F) {
@@ -138,6 +153,7 @@ public class MidiProcessor {
         dawConnect(false);
         dawConnect(true);
         midiOut.sendMidi(0xB6, 0x54, 0x01);
+        setEncodersToRelativeMode();
         host.scheduleTask(this::processMidi, 50);
     }
     
