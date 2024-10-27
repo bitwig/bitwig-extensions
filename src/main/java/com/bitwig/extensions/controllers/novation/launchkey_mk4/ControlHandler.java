@@ -37,7 +37,7 @@ import com.bitwig.extensions.framework.values.BasicStringValue;
 
 @Component
 public class ControlHandler {
-    
+
     private final BasicStringValue fixedVolumeLabel = new BasicStringValue("Volume");
     private final BasicStringValue fixedPanLabel = new BasicStringValue("Pan");
     private final DisplayControl display;
@@ -46,7 +46,7 @@ public class ControlHandler {
     private Layer currentLayer;
     private EncMode mode = EncMode.DEVICE;
     private EncMode lastMixMode = EncMode.VOLUME;
-    
+
     private String trackName = "";
     private String deviceName = "";
     private String sendName = "";
@@ -55,7 +55,7 @@ public class ControlHandler {
     private final GlobalStates globalStates;
     private final CursorTrack cursorTrack;
     private boolean markerPositionChangePending = false;
-    
+
     private enum EncMode {
         DEVICE("Plugin", 0x24),
         TRACK_REMOTES("Track Remotes", 0x24),
@@ -66,21 +66,21 @@ public class ControlHandler {
         TRANSPORT("Transport", 0x27);
         private final String title;
         private final int displayId;
-        
+
         EncMode(final String title, final int displayId) {
             this.title = title;
             this.displayId = displayId;
         }
-        
+
         public int getDisplayId() {
             return displayId;
         }
-        
+
         public String getTitle() {
             return title;
         }
     }
-    
+
     public ControlHandler(final Layers layers, final LaunchkeyHwElements hwElements, final ViewControl viewControl,
         final MidiProcessor midiProcessor, final DisplayControl displayControl, final GlobalStates globalStates,
         final Transport transport, final ControllerHost host) {
@@ -88,7 +88,7 @@ public class ControlHandler {
         this.display = displayControl;
         this.globalStates = globalStates;
         this.formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
-        
+
         Arrays.stream(EncMode.values())
             .forEach(mode -> layerMap.put(mode, new Layer(layers, "END_%s".formatted(mode))));
         final CursorRemoteControlsPage remotes = viewControl.getPrimaryRemotes();
@@ -97,76 +97,84 @@ public class ControlHandler {
         final RelAbsEncoder[] valueEncoders = hwElements.getValueEncoders();
         final LaunchRelEncoder[] incEncoders = hwElements.getIncEncoders();
         final HardwareSlider[] trackSliders = hwElements.getSliders();
-        
+
         cursorTrack = viewControl.getCursorTrack();
         final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
-        
+
         cursorTrack.name().addValueObserver(name -> this.trackName = name);
         cursorDevice.name().addValueObserver(name -> this.deviceName = name);
-        
+
         cursorTrack.name().addValueObserver(name -> displayControl.fixDisplayUpdate(0, name));
         cursorDevice.name().addValueObserver(name -> displayControl.fixDisplayUpdate(1, name));
         final TrackBank trackBank = viewControl.getTrackBank();
         final SendBank sendBank = trackBank.getItemAt(0).sendBank();
         final Send focusSend = sendBank.getItemAt(0);
         focusSend.name().addValueObserver(name -> triggerSendsUpdate(name));
-        
+
         for (int i = 0; i < 8; i++) {
             final HardwareSlider slider = trackSliders[i];
             final RelAbsEncoder encoder = valueEncoders[i];
             final Track track = trackBank.getItemAt(i);
             final Send send = track.sendBank().getItemAt(0);
-            //bindRemote(EncMode.DEVICE, cursorTrack, i, encoder, remotes);
             bindRemote(EncMode.DEVICE, cursorTrack, i, incEncoders[i], remotes);
-            bindRemote(EncMode.TRACK_REMOTES, cursorTrack, i, encoder, trackRemotes);
-            bindRemote(EncMode.PROJECT_REMOTES, cursorTrack, i, encoder, projectRemotes);
+            bindRemote(EncMode.TRACK_REMOTES, cursorTrack, i, incEncoders[i], trackRemotes);
+            bindRemote(EncMode.PROJECT_REMOTES, cursorTrack, i, incEncoders[i], projectRemotes);
             sliderLayer.addBinding(
                 new SliderBinding(i, track.volume(), slider, displayControl, track.name(), fixedVolumeLabel));
-            layerMap.get(EncMode.VOLUME).addBinding(
-                new AbsoluteEncoderBinding(i, track.volume(), encoder, displayControl, track.name(), fixedVolumeLabel));
-            layerMap.get(EncMode.PAN).addBinding(
-                new AbsoluteEncoderBinding(i, track.pan(), encoder, displayControl, track.name(), fixedPanLabel));
-            layerMap.get(EncMode.SENDS).addBinding(
-                new AbsoluteEncoderBinding(i, send, encoder, displayControl, track.name(), focusSend.name()));
+            layerMap.get(EncMode.VOLUME)
+                .addBinding(new RelativeEncoderBinding(i, track.volume(), incEncoders[i], displayControl, track.name(),
+                    fixedVolumeLabel
+                ));
+            layerMap.get(EncMode.PAN)
+                .addBinding(new RelativeEncoderBinding(i, track.pan(), incEncoders[i], displayControl, track.name(),
+                    fixedPanLabel
+                ));
+            layerMap.get(EncMode.SENDS)
+                .addBinding(new RelativeEncoderBinding(i, send, incEncoders[i], displayControl, track.name(),
+                    focusSend.name()
+                ));
         }
         bindIncremental(hwElements, transport, host);
         bindRemoteNavigation(EncMode.DEVICE, remotes, hwElements, viewControl.getDeviceRemotesPages(),
-            globalStates.getShiftState(), viewControl.getCursorDevice());
+            globalStates.getShiftState(), viewControl.getCursorDevice()
+        );
         bindRemoteNavigation(EncMode.TRACK_REMOTES, trackRemotes, hwElements, viewControl.getTrackRemotesPages());
         bindRemoteNavigation(EncMode.PROJECT_REMOTES, projectRemotes, hwElements, viewControl.getProjectRemotesPages());
-        
+
         setupSendNavigation(hwElements, trackBank);
         setupMixerNavigation(hwElements);
         midiProcessor.addModeListener(this::handleModeChange);
         currentLayer = layerMap.get(mode);
     }
-    
+
     private void bindIncremental(final LaunchkeyHwElements hwElements, final Transport transport,
         final ControllerHost host) {
         final LaunchRelEncoder[] encoders = hwElements.getIncEncoders();
         final Layer layer = layerMap.get(EncMode.TRANSPORT);
         final Arranger arranger = host.createArranger();
-        
+
         bindPosition(0, layer, transport.getPosition(), encoders[0], "Playback Position");
         bindPosition(3, layer, transport.arrangerLoopStart(), encoders[3], "Loop Start");
         bindPosition(4, layer, transport.arrangerLoopDuration(), encoders[4], "Loop Duration");
-        
+
         final BasicStringValue zoomValue = new BasicStringValue("");
         final RelativeDisplayControl zoomArrangerControl =
             new RelativeDisplayControl(1, display, "Transport", "Zoom Arranger", zoomValue,
-                inc -> handleHorizontalZoom(arranger, zoomValue, inc));
+                inc -> handleHorizontalZoom(arranger, zoomValue, inc)
+            );
         encoders[1].bindIncrementAction(layer, zoomArrangerControl::handleInc);
         encoders[1].setEncoderBehavior(LaunchRelEncoder.EncoderMode.NONACCELERATED, 1);
         layer.addBinding(zoomArrangerControl);
-        
+
         final BasicStringValue zoomVerticalValue = new BasicStringValue("");
         final RelativeDisplayControl zoomVerticalControl =
             new RelativeDisplayControl(2, display, "Transport", "Zoom Tracks", zoomVerticalValue,
-                inc -> handleVerticalZoom(arranger, zoomVerticalValue, inc));
+                inc -> handleVerticalZoom(arranger, zoomVerticalValue, inc)
+            );
         encoders[2].setEncoderBehavior(LaunchRelEncoder.EncoderMode.NONACCELERATED, 1);
         encoders[2].bindIncrementAction(layer, zoomVerticalControl::handleInc);
         layer.addBinding(zoomVerticalControl);
-        
+
         final BasicStringValue cueMarkerValue = new BasicStringValue("");
         final CueMarkerBank cueMarkerBank = arranger.createCueMarkerBank(1);
         final CueMarker marker = cueMarkerBank.getItemAt(0);
@@ -190,18 +198,20 @@ public class ControlHandler {
         encoders[5].bindIncrementAction(layer, cueMarkerControl::handleInc);
         encoders[5].setEncoderBehavior(LaunchRelEncoder.EncoderMode.NONACCELERATED, 1);
         layer.addBinding(cueMarkerControl);
-        
+
         final RelativeDisplayControl emptyControl =
-            new RelativeDisplayControl(6, display, "", "", new BasicStringValue(""), inc -> {});
+            new RelativeDisplayControl(6, display, "", "", new BasicStringValue(""), inc -> {
+            });
         layer.addBinding(emptyControl);
-        
+
         final RelativeDisplayControl tempoControl =
             new RelativeDisplayControl(7, display, "Transport", "Tempo", transport.tempo().displayedValue(),
-                inc -> transport.tempo().incRaw(inc));
+                inc -> transport.tempo().incRaw(inc)
+            );
         encoders[7].bindIncrementAction(layer, tempoControl::handleInc);
         layer.addBinding(tempoControl);
     }
-    
+
     private void handleVerticalZoom(final Arranger arranger, final BasicStringValue zoomVerticalValue, final int inc) {
         if (inc < 0) {
             arranger.zoomInLaneHeightsSelected();
@@ -211,7 +221,7 @@ public class ControlHandler {
             zoomVerticalValue.set("Zoom Out");
         }
     }
-    
+
     private void handleHorizontalZoom(final Arranger arranger, final BasicStringValue zoomValue, final int inc) {
         if (this.globalStates.isArrangeMode()) {
             if (inc < 0) {
@@ -231,35 +241,38 @@ public class ControlHandler {
             }
         }
     }
-    
+
     private void bindPosition(final int index, final Layer layer, final SettableBeatTimeValue position,
         final LaunchRelEncoder encoder, final String label) {
-        
+
         final BasicStringValue transportPosition = new BasicStringValue("");
         position.addValueObserver(value -> transportPosition.set(position.getFormatted(formatter)));
         final RelativeDisplayControl positionControl =
             new RelativeDisplayControl(index, display, "Transport", label, transportPosition,
-                inc -> position.inc(inc * 4.0));
+                inc -> position.inc(inc * 4.0)
+            );
         encoder.bindIncrementAction(layer, positionControl::handleInc);
         layer.addBinding(positionControl);
     }
-    
+
     private void setupMixerNavigation(final LaunchkeyHwElements hwElements) {
         final RgbButton paramUpButton = hwElements.getButton(CcAssignments.PARAM_UP);
         final RgbButton paramDownButton = hwElements.getButton(CcAssignments.PARAM_DOWN);
         final Layer panLayer = layerMap.get(EncMode.PAN);
         paramUpButton.bindLightPressed(panLayer, () -> true);
         paramDownButton.bindLightPressed(panLayer, () -> false);
-        paramDownButton.bindPressed(panLayer, () -> {});
+        paramDownButton.bindPressed(panLayer, () -> {
+        });
         paramUpButton.bindPressed(panLayer, () -> switchToLayerDirect(EncMode.VOLUME, "Mixer"));
-        
+
         final Layer volumeLayer = layerMap.get(EncMode.VOLUME);
         paramUpButton.bindLightPressed(volumeLayer, () -> false);
         paramDownButton.bindLightPressed(volumeLayer, () -> true);
         paramDownButton.bindPressed(volumeLayer, () -> switchToLayerDirect(EncMode.PAN, "Mixer"));
-        paramUpButton.bindPressed(volumeLayer, () -> {});
+        paramUpButton.bindPressed(volumeLayer, () -> {
+        });
     }
-    
+
     private void setupSendNavigation(final LaunchkeyHwElements hwElements, final TrackBank trackBank) {
         final RgbButton paramUpButton = hwElements.getButton(CcAssignments.PARAM_UP);
         final RgbButton paramDownButton = hwElements.getButton(CcAssignments.PARAM_DOWN);
@@ -270,14 +283,14 @@ public class ControlHandler {
             scrollSends(-1, trackBank);
             pendingSendsUpdate = true;
         }, 500, 200);
-        
+
         paramDownButton.bindLightPressed(sendLayer, sendBank.canScrollForwards());
         paramDownButton.bindRepeatHold(sendLayer, () -> {
             scrollSends(1, trackBank);
             pendingSendsUpdate = true;
         }, 500, 200);
     }
-    
+
     private void triggerSendsUpdate(final String name) {
         this.sendName = name;
         if (pendingSendsUpdate) {
@@ -285,25 +298,25 @@ public class ControlHandler {
             pendingSendsUpdate = false;
         }
     }
-    
+
     private void scrollSends(final int dir, final TrackBank trackBank) {
         for (int i = 0; i < 8; i++) {
             trackBank.getItemAt(i).sendBank().scrollBy(dir);
         }
     }
-    
+
     private void updateTrackDeviceInfo() {
         display.show2Line(trackName, deviceName);
     }
-    
+
     private void bindRemote(final EncMode mode, final CursorTrack cursorTrack, final int i, final RelAbsEncoder encoder,
         final CursorRemoteControlsPage remotes) {
         final RemoteControl remote = remotes.getParameter(i);
         layerMap.get(mode)
             .addBinding(new AbsoluteEncoderBinding(i, remote, encoder, display, cursorTrack.name(), remote.name()));
     }
-    
-    
+
+
     private void bindRemote(final EncMode mode, final CursorTrack cursorTrack, final int i,
         final LaunchRelEncoder encoder, final CursorRemoteControlsPage remotes) {
         final RemoteControl remote = remotes.getParameter(i);
@@ -312,7 +325,7 @@ public class ControlHandler {
         layerMap.get(mode)
             .addBinding(new RelativeEncoderBinding(i, remote, encoder, display, cursorTrack.name(), remote.name()));
     }
-    
+
     private void bindRemoteNavigation(final EncMode mode, final CursorRemoteControlsPage remotes,
         final LaunchkeyHwElements hwElements, final RemotePageName pageName, final BooleanValue shiftState,
         final PinnableCursorDevice cursorDevice) {
@@ -323,9 +336,10 @@ public class ControlHandler {
         cursorDevice.hasPrevious().markInterested();
         remotes.hasPrevious().markInterested();
         remotes.hasNext().markInterested();
-        
-        paramUpButton.bindLightPressed(
-            layer, () -> shiftState.get() ? cursorDevice.hasPrevious().get() : remotes.hasPrevious().get());
+
+        paramUpButton.bindLightPressed(layer,
+            () -> shiftState.get() ? cursorDevice.hasPrevious().get() : remotes.hasPrevious().get()
+        );
         paramUpButton.bindRepeatHold(layer, () -> {
             if (shiftState.get()) {
                 cursorDevice.selectPrevious();
@@ -335,9 +349,10 @@ public class ControlHandler {
                 display.show2Line(pageName.getTitle(), pageName.get(-1));
             }
         }, 500, 200);
-        
-        paramDownButton.bindLightPressed(
-            layer, () -> shiftState.get() ? cursorDevice.hasNext().get() : remotes.hasNext().get());
+
+        paramDownButton.bindLightPressed(layer,
+            () -> shiftState.get() ? cursorDevice.hasNext().get() : remotes.hasNext().get()
+        );
         paramDownButton.bindRepeatHold(layer, () -> {
             if (shiftState.get()) {
                 cursorDevice.selectNext(); // Cursor Track Needed
@@ -348,26 +363,26 @@ public class ControlHandler {
             }
         }, 500, 200);
     }
-    
+
     private void bindRemoteNavigation(final EncMode mode, final CursorRemoteControlsPage remotes,
         final LaunchkeyHwElements hwElements, final RemotePageName pageName) {
         final RgbButton paramUpButton = hwElements.getButton(CcAssignments.PARAM_UP);
         final RgbButton paramDownButton = hwElements.getButton(CcAssignments.PARAM_DOWN);
         final Layer layer = layerMap.get(mode);
-        
+
         paramUpButton.bindLightPressed(layer, remotes.hasPrevious());
         paramUpButton.bindRepeatHold(layer, () -> {
             remotes.selectPrevious();
             display.show2Line(pageName.getTitle(), pageName.get(-1));
         }, 500, 200);
-        
+
         paramDownButton.bindLightPressed(layer, remotes.hasNext());
         paramDownButton.bindRepeatHold(layer, () -> {
             remotes.selectNext();
             display.show2Line(pageName.getTitle(), pageName.get(1));
         }, 500, 200);
     }
-    
+
     private void handleModeChange(final ModeType modeType, final int id) {
         if (modeType == ModeType.ENCODER) {
             final EncoderMode newEncoderMode = EncoderMode.toMode(id);
@@ -379,7 +394,7 @@ public class ControlHandler {
             }
         }
     }
-    
+
     private void handleMixerMode() {
         if (this.mode == EncMode.PAN) {
             switchToLayer(EncMode.VOLUME);
@@ -391,7 +406,7 @@ public class ControlHandler {
             switchToLayer(lastMixMode);
         }
     }
-    
+
     private void handlePluginMode() {
         if (this.mode == EncMode.DEVICE) {
             switchToLayer(EncMode.TRACK_REMOTES);
@@ -401,19 +416,19 @@ public class ControlHandler {
             switchToLayer(EncMode.DEVICE);
         }
     }
-    
+
     private void handleSendsMode() {
         if (this.mode != EncMode.SENDS) {
             switchToLayer(EncMode.SENDS);
         }
     }
-    
+
     private void handleTransportMode() {
         if (this.mode != EncMode.TRANSPORT) {
             switchToLayer(EncMode.TRANSPORT);
         }
     }
-    
+
     private void switchToLayerDirect(final EncMode mode, final String title) {
         this.currentLayer.setIsActive(false);
         this.mode = mode;
@@ -421,7 +436,7 @@ public class ControlHandler {
         display.show2Line(title, mode.getTitle());
         this.currentLayer.setIsActive(true);
     }
-    
+
     private void switchToLayer(final EncMode mode) {
         this.currentLayer.setIsActive(false);
         this.mode = mode;
@@ -430,7 +445,7 @@ public class ControlHandler {
         display.showDisplay(mode.getDisplayId());
         this.currentLayer.setIsActive(true);
     }
-    
+
     @Activate
     public void activate() {
         currentLayer.setIsActive(true);
