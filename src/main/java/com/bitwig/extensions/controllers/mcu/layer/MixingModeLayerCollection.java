@@ -169,7 +169,7 @@ public class MixingModeLayerCollection {
     
     private void handleSolo(final boolean pressed, final Track track) {
         if (pressed) {
-            track.solo().toggle(!(globalStates.isSoloHeld() || globalStates.getShift().get()));
+            track.solo().toggleUsingPreferences((globalStates.isSoloHeld() || globalStates.getShift().get()));
         }
         globalStates.soloPressed(pressed);
     }
