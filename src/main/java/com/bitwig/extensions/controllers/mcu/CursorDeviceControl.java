@@ -122,6 +122,10 @@ public class CursorDeviceControl {
         return deviceBank;
     }
     
+    public DeviceBank getTrackDeviceBank() {
+    	return trackDeviceBank;
+    }
+    
     public CursorTrack getCursorTrack() {
         return cursorTrack;
     }

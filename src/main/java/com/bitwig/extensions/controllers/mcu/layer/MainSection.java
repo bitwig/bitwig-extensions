@@ -298,6 +298,8 @@ public class MainSection {
                 case DEVICE, PLUGIN, INSTRUMENT, MIDI_EFFECT -> {
                     if (states.isShiftSet()) {
                         viewControl.getCursorDeviceControl().navigateToPage(index);
+                    } else if (states.isOptionSet()) {
+                    	viewControl.getCursorDeviceControl().getTrackDeviceBank().getItemAt(index).isEnabled().toggle();
                     } else {
                         viewControl.getCursorDeviceControl().navigateToDeviceInChain(index);
                     }
