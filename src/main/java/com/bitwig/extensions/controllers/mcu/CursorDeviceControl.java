@@ -192,7 +192,18 @@ public class CursorDeviceControl {
     }
     
     public void navigateToDeviceInChain(final int index) {
-        if (index < trackDeviceBank.itemCount().get()) {
+    	for (var i = 0; i < trackDeviceBank.getSizeOfBank(); i++) {
+			var device = trackDeviceBank.getDevice(i);
+			if (i != index) {
+				device.isWindowOpen().set(false);	
+			}
+		}
+    	if (cursorDevice.position().get() == index) {
+    		cursorDevice.isWindowOpen().toggle();
+    	} else {
+    		trackDeviceBank.getDevice(index).isWindowOpen().set(true);
+    	}
+    	if (index < trackDeviceBank.itemCount().get()) {
             cursorDevice.selectDevice(trackDeviceBank.getDevice(index));
         }
     }
