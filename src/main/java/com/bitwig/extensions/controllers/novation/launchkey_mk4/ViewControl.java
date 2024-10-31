@@ -1,6 +1,11 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk4;
 
+import java.util.Optional;
+import java.util.function.Predicate;
+
 import com.bitwig.extension.controller.api.Clip;
+import com.bitwig.extension.controller.api.ClipLauncherSlot;
+import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
@@ -43,8 +48,9 @@ public class ViewControl {
         maxTrackBank.sceneBank().scrollPosition().markInterested();
         maxTrackBank.scrollPosition().markInterested();
         
-        cursorTrack = host.createCursorTrack(2, 2);
-        
+        cursorTrack = host.createCursorTrack(2, 16);
+        prepareTrack(cursorTrack);
+        prepareSlots(cursorTrack);
         trackBank.followCursorTrack(cursorTrack);
         cursorTrack.exists().markInterested();
         for (int i = 0; i < 8; i++) {
@@ -66,7 +72,6 @@ public class ViewControl {
             .addValueObserver(scene -> maxTrackBank.sceneBank().scrollPosition().set(scene));
         
         //deviceControl = new DeviceControl(cursorTrack, rootTrack);
-        cursorTrack.name().markInterested();
         cursorClip = host.createLauncherCursorClip(32, 128);
         cursorClip.setStepSize(0.125);
         
@@ -124,6 +129,16 @@ public class ViewControl {
         track.exists().markInterested();
         track.solo().markInterested();
         track.mute().markInterested();
+    }
+    
+    private void prepareSlots(final Track track) {
+        final ClipLauncherSlotBank slots = track.clipLauncherSlotBank();
+        for (int i = 0; i < slots.getSizeOfBank(); i++) {
+            final ClipLauncherSlot slot = slots.getItemAt(i);
+            slot.isPlaying().markInterested();
+            slot.hasContent().markInterested();
+            slot.isSelected().markInterested();
+        }
     }
     
     public RemotePageName getDeviceRemotesPages() {
@@ -196,5 +211,16 @@ public class ViewControl {
     //            .findFirst()//
     //            .ifPresent(device -> device.selectKeyPad(note));
     //    }
+    
+    public static Optional<ClipLauncherSlot> filterSlot(final Track track, final Predicate<ClipLauncherSlot> check) {
+        final ClipLauncherSlotBank slots = track.clipLauncherSlotBank();
+        for (int i = 0; i < slots.getSizeOfBank(); i++) {
+            final ClipLauncherSlot slot = slots.getItemAt(i);
+            if (check.test(slot)) {
+                return Optional.of(slot);
+            }
+        }
+        return Optional.empty();
+    }
     
 }

@@ -9,9 +9,14 @@ public class DisplayControl {
         {(byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x14, 0x04, 0x00, 0x00, (byte) 0xF7};
     private final String textCommandHeader;
     private final MidiProcessor midiProcessor;
+    private final DisplaySegment fixedDisplay;
+    private final DisplaySegment temporaryDisplay;
+    private FixDisplayState fixedState = FixDisplayState.TRACK;
     
     public DisplayControl(final MidiProcessor processor) {
         this.midiProcessor = processor;
+        this.fixedDisplay = new DisplaySegment(0x20, this);
+        this.temporaryDisplay = new DisplaySegment(0x21, this);
         if (processor.isMiniVersion()) {
             TEXT_CONFIG_COMMAND[5] = 0x13;
         }
@@ -24,19 +29,40 @@ public class DisplayControl {
         midiProcessor.sendSysExBytes(TEXT_CONFIG_COMMAND);
     }
     
+    public void displayParamNames(final String... paramNames) {
+        this.fixedState = FixDisplayState.PARAM;
+        this.fixedDisplay.showParamInfo(paramNames);
+    }
+    
+    public void releaseParamState() {
+        if (this.fixedState != FixDisplayState.TRACK) {
+            this.fixedState = FixDisplayState.TRACK;
+            this.fixedDisplay.update2Lines();
+        }
+    }
+    
     public void fixDisplayUpdate(final int lineIndex, final String text) {
-        setText(0x20, lineIndex, text);
+        this.fixedDisplay.setLine(lineIndex, text);
         configureDisplay(0x21, 0x61);
         setText(0x21, lineIndex, text);
         showDisplay(0x21);
-        showDisplay(0x20);
+        if (this.fixedState == FixDisplayState.TRACK) {
+            this.fixedDisplay.update2Lines();
+        }
     }
     
     public void show2Line(final String line1, final String line2) {
-        configureDisplay(0x21, 0x61);
-        setText(0x21, 0, line1);
-        setText(0x21, 1, line2);
-        showDisplay(0x21);
+        temporaryDisplay.setLine(0, line1);
+        temporaryDisplay.setLine(1, line2);
+        temporaryDisplay.update2Lines();
+    }
+    
+    public void showTempParamLines(final String title, final String name, final String value) {
+        temporaryDisplay.showParamValues(title, name, value);
+    }
+    
+    public DisplaySegment getTemporaryDisplay() {
+        return temporaryDisplay;
     }
     
     public void showDisplay(final int targetId) {

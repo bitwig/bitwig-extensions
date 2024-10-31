@@ -83,6 +83,10 @@ public class RgbState extends InternalHardwareLightState {
         return RgbState.of(this.colorIndex + dimAmount);
     }
     
+    public static RgbState get(final float r, final float g, final float b) {
+        return RgbState.of(ColorLookup.toColor(r, g, b));
+    }
+    
     private RgbState(final int colorIndex, final LightState state) {
         super();
         this.colorIndex = colorIndex;

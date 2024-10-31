@@ -32,6 +32,10 @@ public class LaunchRelEncoder {
         setEncoderBehavior(encoderMode, 64);
     }
     
+    public void setEncoderBehavior(final EncoderMode mode) {
+        setEncoderBehavior(mode, mode == EncoderMode.ACCELERATED ? 64 : 1);
+    }
+    
     public void setEncoderBehavior(final EncoderMode mode, final int stepSizeDivisor) {
         if (mode == EncoderMode.ACCELERATED) {
             encoder.setAdjustValueMatcher(acceleratedMatchers);

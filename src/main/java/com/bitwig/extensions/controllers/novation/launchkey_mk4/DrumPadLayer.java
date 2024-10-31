@@ -25,8 +25,6 @@ public class DrumPadLayer extends Layer {
     private final PinnableCursorDevice primaryDevice;
     private final DrumPadBank padBank;
     private final CursorTrack cursorTrack;
-    private RgbState trackColor;
-    private RgbState trackColorOff;
     private final NoteInput noteInput;
     
     private static final int[] IDX_TO_PAD_MAPPING = {8, 9, 10, 11, 0, 1, 2, 3, 12, 13, 14, 15, 4, 5, 6, 7};
@@ -38,23 +36,20 @@ public class DrumPadLayer extends Layer {
     private final Integer[] noteTable = new Integer[128];
     private final boolean[] isPlaying = new boolean[128];
     private final int[] padsToNotes = new int[16];
-    private final PadSlot[] padSlots = new PadSlot[16];
     private final Set<Integer> padNotes = new HashSet<>();
     
     @Inject
     private DisplayControl display;
+    private final GlobalStates globalStates;
     
     public DrumPadLayer(final Layers layers, final LaunchkeyHwElements hwElements, final MidiProcessor midiProcessor,
-        final ViewControl viewControl) {
+        final ViewControl viewControl, final GlobalStates globalStates) {
         super(layers, "DRUM_LAYER");
         Arrays.fill(noteTable, -1);
         Arrays.fill(hangingNotes, -1);
         Arrays.fill(padsToNotes, -1);
+        this.globalStates = globalStates;
         cursorTrack = viewControl.getCursorTrack();
-        cursorTrack.color().addValueObserver((r, g, b) -> {
-            trackColor = RgbState.of(ColorLookup.toColor(r, g, b));
-            trackColorOff = RgbState.of(ColorLookup.toColor(r, g, b)).dim();
-        });
         cursorTrack.playingNotes().addValueObserver(this::handleNotes);
         noteInput = midiProcessor.getPadNoteInput();
         noteInput.setKeyTranslationTable(noteTable);
@@ -79,13 +74,13 @@ public class DrumPadLayer extends Layer {
             final int index = i;
             final RgbButton button = drumButtons[IDX_TO_PAD_MAPPING[i]];
             final DrumPad pad = padBank.getItemAt(i);
-            padSlots[index] = new PadSlot(index, pad);
+            final PadSlot padSlot = new PadSlot(index, pad);
+            globalStates.setPadSlot(index, padSlot);
             padNotes.add(button.getMidiId());
             pad.exists().markInterested();
             pad.name().markInterested();
-            pad.color()
-                .addValueObserver((r, g, b) -> padSlots[index].setColor(RgbState.of(ColorLookup.toColor(r, g, b))));
-            pad.addIsSelectedInEditorObserver(selected -> padSlots[index].setSelected(selected));
+            pad.color().addValueObserver((r, g, b) -> padSlot.setColor(RgbState.of(ColorLookup.toColor(r, g, b))));
+            pad.addIsSelectedInEditorObserver(selected -> padSlot.setSelected(selected));
             button.bindLight(this, () -> getColor(index, pad));
             button.bindPressed(this, () -> handlePadSelection(index, pad));
         }
@@ -142,18 +137,9 @@ public class DrumPadLayer extends Layer {
             if (noteValue % 12 == 0) {
                 return isPlaying[noteValue] ? RgbState.WHITE : RgbState.DIM_WHITE;
             }
-            return isPlaying[noteValue] ? trackColor : trackColorOff;
+            return globalStates.getTrackColor(isPlaying[noteValue]);
         } else if (pad.exists().get()) {
-            final RgbState state;
-            if (padSlots[index].getColor() == RgbState.OFF) {
-                state = isPlaying[noteValue] ? trackColor : trackColorOff;
-            } else {
-                state = isPlaying[noteValue] ? padSlots[index].getColor() : padSlots[index].getColorOff();
-            }
-            if (padSlots[index].isSelected()) {
-                return isPlaying[noteValue] ? state : RgbState.WHITE;
-            }
-            return state;
+            return globalStates.getPadColor(index, isPlaying[noteValue]);
         }
         return RgbState.OFF;
     }

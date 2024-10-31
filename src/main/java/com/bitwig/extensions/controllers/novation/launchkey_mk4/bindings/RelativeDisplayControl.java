@@ -16,9 +16,10 @@ public class RelativeDisplayControl extends Binding<DisplayId, Object> {
     private final int targetId;
     private final DisplayControl display;
     private final IntConsumer incAction;
+    private final Runnable activateAction;
     
     private RelativeDisplayControl(final DisplayId displayId, final String title, final String paramName,
-        final StringValue paramValue, final IntConsumer incAction) {
+        final StringValue paramValue, final IntConsumer incAction, final Runnable activateAction) {
         // This has to become some kind of binding
         super(displayId, displayId, incAction);
         this.targetId = 0x15 + displayId.index();
@@ -28,12 +29,20 @@ public class RelativeDisplayControl extends Binding<DisplayId, Object> {
         this.displayValue = paramValue.get();
         this.display = displayId.display();
         this.incAction = incAction;
+        this.activateAction = activateAction;
+    }
+    
+    public RelativeDisplayControl(final int index, final DisplayControl display, final String title,
+        final String paramName, final StringValue paramValue, final IntConsumer incAction,
+        final Runnable activateAction) {
+        // This has to become some kind of binding
+        this(new DisplayId(index, display), title, paramName, paramValue, incAction, activateAction);
     }
     
     public RelativeDisplayControl(final int index, final DisplayControl display, final String title,
         final String paramName, final StringValue paramValue, final IntConsumer incAction) {
         // This has to become some kind of binding
-        this(new DisplayId(index, display), title, paramName, paramValue, incAction);
+        this(new DisplayId(index, display), title, paramName, paramValue, incAction, null);
     }
     
     private void handleDisplayValue(final String value) {
@@ -61,5 +70,8 @@ public class RelativeDisplayControl extends Binding<DisplayId, Object> {
         display.setText(targetId, 0, title);
         display.setText(targetId, 1, paramName);
         display.setText(targetId, 2, displayValue);
+        if (activateAction != null) {
+            activateAction.run();
+        }
     }
 }
