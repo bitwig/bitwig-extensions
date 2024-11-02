@@ -18,6 +18,11 @@ public class DisplaySegment {
         Arrays.fill(paramLines, "");
     }
     
+    public void set2Lines(final DisplaySegment otherSegment) {
+        stdLines[0] = otherSegment.stdLines[0];
+        stdLines[1] = otherSegment.stdLines[1];
+    }
+    
     public void setLine(final int index, final String text) {
         if (index < stdLines.length) {
             stdLines[index] = text;
@@ -64,4 +69,7 @@ public class DisplaySegment {
     }
     
     
+    public void show() {
+        control.showDisplay(targetId);
+    }
 }

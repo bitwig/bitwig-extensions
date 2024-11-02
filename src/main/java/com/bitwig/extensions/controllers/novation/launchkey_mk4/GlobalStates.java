@@ -12,7 +12,6 @@ public class GlobalStates {
     private RgbState trackColor;
     private RgbState trackColorOff;
     private final BooleanValueObject shiftState = new BooleanValueObject();
-    private final BooleanValueObject captureState = new BooleanValueObject();
     private String panelLayout = ARRANGE_MODE;
     private final PadSlot[] padSlots = new PadSlot[16];
     
@@ -49,10 +48,6 @@ public class GlobalStates {
     
     public BooleanValueObject getShiftState() {
         return shiftState;
-    }
-    
-    public BooleanValueObject getCaptureState() {
-        return captureState;
     }
     
     public boolean isArrangeMode() {

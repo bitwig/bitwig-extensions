@@ -15,6 +15,7 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.Inject;
+import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 @Component
 public class SessionLayer extends Layer {
@@ -27,6 +28,7 @@ public class SessionLayer extends Layer {
     private final Layer soloLayer;
     private final Layer stopLayer;
     private final Layer controlLayer;
+    private final Layer selectLayer;
     
     @Inject
     private DisplayControl displayControl;
@@ -34,6 +36,9 @@ public class SessionLayer extends Layer {
     private Layer currentModeLayer;
     private Mode mode = Mode.LAUNCH;
     private final HashSet<Integer> heldSoloKeys = new HashSet<>();
+    private final LayerPool layerPool;
+    private final BooleanValueObject sequencerControl;
+    private final BooleanValueObject altActive = new BooleanValueObject();
     
     private enum Mode {
         LAUNCH,
@@ -43,19 +48,22 @@ public class SessionLayer extends Layer {
         CONTROL
     }
     
-    public SessionLayer(final Layers layers, final LaunchkeyHwElements hwElements, final ViewControl viewControl) {
+    public SessionLayer(final Layers layers, final LaunchkeyHwElements hwElements, final ViewControl viewControl,
+        final LayerPool layerPool) {
         super(layers, "SESSION_LAYER");
+        this.layerPool = layerPool;
         final TrackBank trackBank = viewControl.getTrackBank();
         final SceneBank sceneBank = trackBank.sceneBank();
         final Scene targetScene = trackBank.sceneBank().getScene(0);
         targetScene.clipCount().markInterested();
         trackBank.setShouldShowClipLauncherFeedback(true);
-        
+        sequencerControl = layerPool.getSequencerControl();
         launchLayer2 = new Layer(layers, "LAUNCH_LAYER2");
         muteLayer = new Layer(layers, "MUTE_LAYER");
         soloLayer = new Layer(layers, "SOLO_LAYER");
         stopLayer = new Layer(layers, "STOP_LAYER");
         controlLayer = new Layer(layers, "CONTROL_LAYER");
+        selectLayer = new Layer(layers, "SELECT_LAYER");
         currentModeLayer = launchLayer2;
         
         final RgbButton[] buttons = hwElements.getSessionButtons();
@@ -63,9 +71,6 @@ public class SessionLayer extends Layer {
         sceneBank.canScrollBackwards().markInterested();
         sceneBank.canScrollForwards().markInterested();
         
-        final RgbButton row2ModeButton = hwElements.getButton(CcAssignments.LAUNCH_MODE);
-        row2ModeButton.bindPressed(this, this::advanceLayer);
-        row2ModeButton.bindLight(this, this::getModeColor);
         for (int i = 0; i < 8; i++) {
             final Track track = trackBank.getItemAt(i);
             markTrack(track);
@@ -88,12 +93,10 @@ public class SessionLayer extends Layer {
                 });
             }
             
-            button.bindIsPressed(triggerLayer, pressed -> {
-                if (pressed) {
-                    handleSlot(track, slot, trackIndex, sceneIndex);
-                }
-            });
+            button.bindIsPressed(triggerLayer, pressed -> handleSlot(pressed, track, slot));
             button.bindLight(triggerLayer, () -> getState(track, slot, trackIndex, sceneIndex));
+            button.bindIsPressed(selectLayer, pressed -> handleSelect(pressed, track, slot));
+            button.bindLight(selectLayer, () -> getSelectState(track, slot, trackIndex, sceneIndex));
             
             if (sceneIndex == 1) {
                 button.bindPressed(stopLayer, track::stop);
@@ -108,9 +111,13 @@ public class SessionLayer extends Layer {
             }
         }
         
+        final Layer sceneLayer = layerPool.getSceneControlSession();
+        final RgbButton row2ModeButton = hwElements.getButton(CcAssignments.LAUNCH_MODE);
+        row2ModeButton.bindPressed(sceneLayer, this::advanceLayer);
+        row2ModeButton.bindLight(sceneLayer, this::getModeColor);
         final RgbButton sceneLaunchButton = hwElements.getButton(CcAssignments.SCENE_LAUNCH);
-        sceneLaunchButton.bindPressed(this, () -> doSceneLaunch(targetScene));
-        sceneLaunchButton.bindLight(this, () -> getSceneLight(targetScene));
+        sceneLaunchButton.bindPressed(sceneLayer, () -> doSceneLaunch(targetScene));
+        sceneLaunchButton.bindLight(sceneLayer, () -> getSceneLight(targetScene));
         
         final RgbButton navUpButton = hwElements.getButton(CcAssignments.NAV_UP);
         final RgbButton navDownButton = hwElements.getButton(CcAssignments.NAV_DOWN);
@@ -119,6 +126,23 @@ public class SessionLayer extends Layer {
         navDownButton.bindRepeatHold(this, () -> trackBank.sceneBank().scrollForwards(), 500, 100);
         navDownButton.bindLightPressed(this, trackBank.sceneBank().canScrollForwards());
         currentModeLayer.activate();
+        
+        final RgbButton altButton = hwElements.getButton(CcAssignments.CAPTURE);
+        altButton.bindLightPressed(this, altActive);
+        altButton.bindIsPressed(this, this::handleAltMode);
+    }
+    
+    private void handleAltMode(final boolean altActive) {
+        this.altActive.set(altActive);
+        if (altActive) {
+            if (sequencerControl.get()) {
+                displayControl.show2Line("Modifier", "Only Select");
+            } else {
+                displayControl.show2Line("Modifier", "ALT Clip Launch");
+            }
+        } else {
+            displayControl.revertToFixed();
+        }
     }
     
     private RgbState getSceneLight(final Scene targetScene) {
@@ -215,12 +239,39 @@ public class SessionLayer extends Layer {
         slot.isRecordingQueued().markInterested();
         slot.isRecording().markInterested();
         slot.isPlaybackQueued().markInterested();
+        slot.isSelected().markInterested();
         slot.color().addValueObserver((r, g, b) -> colorIndex[index] = ColorLookup.toColor(r, g, b));
     }
     
-    private void handleSlot(final Track track, final ClipLauncherSlot slot, final int trackIndex,
-        final int sceneIndex) {
-        slot.launch();
+    
+    private void handleSelect(final boolean pressed, final Track track, final ClipLauncherSlot slot) {
+        if (pressed) {
+            track.selectInEditor();
+            if (!slot.hasContent().get()) {
+                slot.createEmptyClip(4);
+            }
+            slot.select();
+            if (!altActive.get()) {
+                slot.launch();
+            }
+            sequencerControl.set(false);
+        }
+    }
+    
+    private void handleSlot(final boolean pressed, final Track track, final ClipLauncherSlot slot) {
+        if (pressed) {
+            if (altActive.get()) {
+                slot.launchAlt();
+            } else {
+                slot.launch();
+            }
+        } else {
+            if (altActive.get()) {
+                slot.launchReleaseAlt();
+            } else {
+                slot.launchRelease();
+            }
+        }
     }
     
     private RgbState getStopState(final int index, final Track track) {
@@ -252,6 +303,21 @@ public class SessionLayer extends Layer {
                 return RgbState.YELLOW;
             }
             return RgbState.YELLOW_LO;
+        }
+        return RgbState.OFF;
+    }
+    
+    private RgbState getSelectState(final Track track, final ClipLauncherSlot slot, final int trackIndex,
+        final int sceneIndex) {
+        if (slot.hasContent().get()) {
+            final int color = colorIndex[sceneIndex * 8 + trackIndex];
+            if (slot.isSelected().get()) {
+                return RgbState.WHITE;
+            }
+            return RgbState.pulse(color);
+        }
+        if (track.canHoldNoteData().get()) {
+            return RgbState.RED.pulse();
         }
         return RgbState.OFF;
     }
@@ -289,12 +355,21 @@ public class SessionLayer extends Layer {
     protected void onActivate() {
         super.onActivate();
         currentModeLayer.setIsActive(true);
+        if (!sequencerControl.get()) {
+            layerPool.getSceneControlSession().setIsActive(true);
+            selectLayer.setIsActive(false);
+        } else {
+            selectLayer.setIsActive(true);
+        }
     }
     
     @Override
     protected void onDeactivate() {
         super.onDeactivate();
         currentModeLayer.setIsActive(false);
+        layerPool.getSceneControlSession().setIsActive(false);
+        selectLayer.setIsActive(false);
+        altActive.set(false);
     }
     
 }

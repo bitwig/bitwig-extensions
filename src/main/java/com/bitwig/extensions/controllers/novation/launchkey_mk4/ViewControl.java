@@ -35,7 +35,6 @@ public class ViewControl {
     private final CursorRemoteControlsPage trackRemotes;
     private final CursorRemoteControlsPage projectRemotes;
     
-    
     private final BasicStringValue deviceDescriptor = new BasicStringValue("");
     private final RemotePageName deviceRemotesPages;
     private final RemotePageName trackRemotesPages;
@@ -129,6 +128,7 @@ public class ViewControl {
         track.exists().markInterested();
         track.solo().markInterested();
         track.mute().markInterested();
+        track.canHoldNoteData().markInterested();
     }
     
     private void prepareSlots(final Track track) {

@@ -103,11 +103,15 @@ public class ControlHandler {
         cursorTrack = viewControl.getCursorTrack();
         final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
         
-        cursorTrack.name().addValueObserver(name -> this.trackName = name);
-        cursorDevice.name().addValueObserver(name -> this.deviceName = name);
+        cursorTrack.name().addValueObserver(name -> {
+            this.trackName = name;
+            displayControl.fixDisplayUpdate(0, name);
+        });
+        cursorDevice.name().addValueObserver(name -> {
+            this.deviceName = name;
+            displayControl.fixDisplayUpdate(1, name);
+        });
         
-        cursorTrack.name().addValueObserver(name -> displayControl.fixDisplayUpdate(0, name));
-        cursorDevice.name().addValueObserver(name -> displayControl.fixDisplayUpdate(1, name));
         final TrackBank trackBank = viewControl.getTrackBank();
         final SendBank sendBank = trackBank.getItemAt(0).sendBank();
         final Send focusSend = sendBank.getItemAt(0);
@@ -423,7 +427,6 @@ public class ControlHandler {
     public void activateLayer(final OverlayEncoderLayer layer) {
         if (this.currentLayer != layer) {
             this.stashedLayer = this.currentLayer;
-            layer.setCurrentTargetIndex(mode.getDisplayId());
             this.currentLayer.setIsActive(false);
             this.currentLayer = layer;
             this.currentLayer.setIsActive(true);
@@ -464,6 +467,10 @@ public class ControlHandler {
         } else {
             display.releaseParamState();
         }
+    }
+    
+    public String getTrackName() {
+        return trackName;
     }
     
     @Activate

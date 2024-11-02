@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.bitwig.extension.controller.api.Clip;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.IntValue;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.ValueSet;
 import com.bitwig.extensions.framework.values.BasicStringValue;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
@@ -14,7 +15,7 @@ public class StepViewPosition {
     
     public final int gridLength;
     private double loopLength = 0.0;
-    private int pagePosition = 0;
+    private final IntValue pagePosition = new IntValue();
     private int pages = 0;
     private int loopBound = 16;
     private int steps;
@@ -38,11 +39,11 @@ public class StepViewPosition {
         clips.forEach(cl -> cl.setStepSize(gridResolution));
         mainClip.exists().addValueObserver(exist -> updatePagePositionDisplay());
         mainClip.getLoopLength().addValueObserver(this::handleLoopLengthChanged);
-        mainClip.scrollToStep(pagePosition * gridLength);
+        mainClip.scrollToStep(pagePosition.get() * gridLength);
     }
     
     public double lengthWithLastStep(final int index) {
-        return gridResolution * (pagePosition * gridLength + index + 1);
+        return gridResolution * (pagePosition.get() * gridLength + index + 1);
     }
     
     public void addPagesChangedCallback(final PagesChangedCallback callback) {
@@ -54,15 +55,19 @@ public class StepViewPosition {
         steps = (int) (loopLength / gridResolution);
         pages = Math.max(0, steps - 1) / gridLength + 1;
         updateStates();
-        pagesChangedCallbacks.forEach(cb -> cb.notify(pagePosition, pages));
+        pagesChangedCallbacks.forEach(cb -> cb.notify(pagePosition.get(), pages));
     }
     
-    public int getCurrentPage() {
+    public IntValue getPagePosition() {
         return pagePosition;
     }
     
+    public double getLoopLength() {
+        return loopLength;
+    }
+    
     public int getAvailableSteps() {
-        return Math.max(0, steps - pagePosition * gridLength);
+        return Math.max(0, steps - pagePosition.get() * gridLength);
     }
     
     public int getPages() {
@@ -74,12 +79,12 @@ public class StepViewPosition {
         gridResolution = resolution;
         
         clips.forEach(cl -> cl.setStepSize(gridResolution));
-        pagePosition = (int) (pagePosition * quote);
+        pagePosition.set((int) (pagePosition.get() * quote));
         steps = (int) (loopLength / gridResolution);
         pages = Math.max(0, steps - 1) / gridLength + 1;
-        clips.forEach(cl -> cl.scrollToStep(pagePosition * gridLength));
+        clips.forEach(cl -> cl.scrollToStep(pagePosition.get() * gridLength));
         updateStates();
-        pagesChangedCallbacks.forEach(cb -> cb.notify(pagePosition, pages));
+        pagesChangedCallbacks.forEach(cb -> cb.notify(pagePosition.get(), pages));
     }
     
     public BasicStringValue getPagePositionDisplay() {
@@ -87,18 +92,18 @@ public class StepViewPosition {
     }
     
     private void updatePagePositionDisplay() {
-        pagePositionDisplay.set("%02d/%02d".formatted(pagePosition + 1, pages));
+        pagePositionDisplay.set("%02d/%02d".formatted(pagePosition.get() + 1, pages));
     }
     
     private void updateStates() {
-        if (pagePosition < pages) {
-            clips.forEach(cl -> cl.scrollToStep(pagePosition * gridLength));
+        if (pagePosition.get() < pages) {
+            clips.forEach(cl -> cl.scrollToStep(pagePosition.get() * gridLength));
         }
         
         this.loopBound = (int) Math.round(loopLength / gridResolution);
         updatePagePositionDisplay();
-        canScrollLeft.set(pagePosition > 0);
-        canScrollRight.set(pagePosition < pages - 1);
+        canScrollLeft.set(pagePosition.get() > 0);
+        canScrollRight.set(pagePosition.get() < pages - 1);
     }
     
     public BooleanValueObject canScrollLeft() {
@@ -110,17 +115,17 @@ public class StepViewPosition {
     }
     
     public void setPage(final int index) {
-        pagePosition = index;
-        clips.forEach(cl -> cl.scrollToStep(pagePosition * gridLength));
+        pagePosition.set(index);
+        clips.forEach(cl -> cl.scrollToStep(pagePosition.get() * gridLength));
         updateStates();
     }
     
     public int getStepOffset() {
-        return pagePosition * gridLength;
+        return pagePosition.get() * gridLength;
     }
     
     public double getPosition() {
-        return pagePosition * gridResolution;
+        return pagePosition.get() * gridResolution;
     }
     
     public double getGridResolution() {
@@ -128,29 +133,35 @@ public class StepViewPosition {
     }
     
     public void scrollLeft() {
-        if (pagePosition > 0) {
-            pagePosition--;
-            clips.forEach(cl -> cl.scrollToStep(pagePosition * gridLength));
+        if (pagePosition.get() > 0) {
+            pagePosition.inc(-1);
+            clips.forEach(cl -> cl.scrollToStep(pagePosition.get() * gridLength));
             updateStates();
-            pagesChangedCallbacks.forEach(cb -> cb.notify(pagePosition, pages));
+            pagesChangedCallbacks.forEach(cb -> cb.notify(pagePosition.get(), pages));
         }
     }
     
     public void scrollRight() {
-        if (pagePosition < pages - 1) {
-            pagePosition++;
-            clips.forEach(cl -> cl.scrollToStep(pagePosition * gridLength));
-            updateStates();
-            pagesChangedCallbacks.forEach(cb -> cb.notify(pagePosition, pages));
-        }
+        // if (pagePosition.get()) {
+        pagePosition.inc(1);
+        clips.forEach(cl -> cl.scrollToStep(pagePosition.get() * gridLength));
+        updateStates();
+        pagesChangedCallbacks.forEach(cb -> cb.notify(pagePosition.get(), pages));
+        //}
     }
     
     public boolean stepIndexInLoop(final int index) {
-        return (pagePosition * gridLength + index) < loopBound;
+        return (pagePosition.get() * gridLength + index) < loopBound;
     }
     
     public void setClipLengthByIndex(final int stepIndex) {
-        final double newPos = pagePosition * 16 * gridResolution + (stepIndex + 1) * gridResolution;
+        final double newPos = pagePosition.get() * 16 * gridResolution + (stepIndex + 1) * gridResolution;
         clips.get(0).getLoopLength().set(newPos);
+        
+        clips.forEach(cl -> cl.scrollToStep(pagePosition.get() * gridLength));
+    }
+    
+    public void expandClipToPagePosition() {
+        clips.get(0).getLoopLength().set(pagePosition.get() * 16 * gridResolution + (16 * gridResolution));
     }
 }

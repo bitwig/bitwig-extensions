@@ -1,6 +1,8 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk4.sequencer;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.bitwig.extension.controller.api.BeatTimeFormatter;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -13,12 +15,14 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk4.CcAssignments;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.ControlHandler;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.GlobalStates;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.LaunchkeyHwElements;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.LayerPool;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.MidiProcessor;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.SessionLayer;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.ViewControl;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayControl;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayValueTracker;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.StringUtil;
-import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.TempDisplayValue;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.IntValue;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.NoteHandler;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.ObservableValue;
@@ -29,7 +33,6 @@ import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.Inject;
 import com.bitwig.extensions.framework.time.TimedDelayEvent;
 import com.bitwig.extensions.framework.values.BasicStringValue;
-import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 @Component
 public class SequencerLayer extends Layer implements NoteHandler, SequencerSource {
@@ -37,12 +40,9 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
     private final CursorTrack cursorTrack;
     private RgbState focusDrumPadColor;
     private final DisplayControl displayControl;
-    public static final RgbState STEP_ACT_COLOR = RgbState.BLUE.dim();
-    public static final RgbState STEP_CPY_COLOR = RgbState.flash(13, 3);
-    private final int copyIndex = -1;
+    private final LayerPool layerPool;
     private final long[] stepDownTimes = new long[STEPS];
     private final boolean[] justEntered = new boolean[STEPS];
-    private TimedDelayEvent holdDelayEvent = null;
     private final IntValue monoKeyNoteFocus = new IntValue(36, 0, 127);
     private final ValueSet gridValue;
     private final MidiProcessor midiProcessor;
@@ -55,25 +55,31 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
     private boolean hasDrumPads;
     private final ClipState clipState;
     private final ObservableValue<ClipSeqMode> seqMode = new ObservableValue<>(ClipSeqMode.KEYS);
-    private final BooleanValueObject copyState = new BooleanValueObject();
     private final BasicStringValue focusValue = new BasicStringValue();
-    private final TempDisplayValue padDisplay;
+    private final DisplayValueTracker padDisplay;
+    private DisplayValueTracker pageDisplay;
     private final OverlayEncoderLayer encoderLayer;
+    private final Layer functionLayer;
+    private TimedDelayEvent holdDelayEvent = null;
     
     @Inject
     private ControlHandler controlHandler;
+    @Inject
+    private SessionLayer sessionLayer;
     
     public SequencerLayer(final Layers layers, final ViewControl viewControl, final LaunchkeyHwElements hwElements,
         final GlobalStates globalStates, final ControllerHost host, final DisplayControl displayControl,
-        final MidiProcessor midiProcessor) {
+        final MidiProcessor midiProcessor, final LayerPool layerPool) {
         super(layers, "SEQUENCER");
         Arrays.fill(stepDownTimes, -1);
         midiProcessor.addNoteHandler(this);
         this.midiProcessor = midiProcessor;
+        this.layerPool = layerPool;
+        this.functionLayer = new Layer(layers, "FUNCTION_LAYER");
         this.formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
         this.globalStates = globalStates;
         this.displayControl = displayControl;
-        this.padDisplay = new TempDisplayValue(displayControl, "Focus Pad", focusValue);
+        this.padDisplay = new DisplayValueTracker(displayControl, new BasicStringValue("Focus Pad"), focusValue);
         gridValue = new ValueSet().add("1/2", 2.0) //
             .add("1/4", 1.0) //
             .add("1/8", 0.5) //
@@ -100,8 +106,51 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
             button.bindLight(this, () -> getStepLight(index));
             button.bindPressed(this, () -> handleSequencerPressed(index));
             button.bindReleased(this, () -> handleSequencerReleased(index));
+            button.bindPressed(functionLayer, () -> handleCopyPressed(index));
+            button.bindReleased(functionLayer, () -> handleCopyReleased(index));
         }
         initNavigation(hwElements);
+        
+        final Layer sceneLayer = layerPool.getSceneControlSequencer();
+        final RgbButton functionButton = hwElements.getButton(CcAssignments.LAUNCH_MODE);
+        functionButton.bindIsPressed(sceneLayer, pressed -> {
+            if (!layerPool.getSequencerControl().get()) {
+                functionLayer.setIsActive(pressed);
+                if (pressed) {
+                    displayControl.show2Line("Function", "Duplicate");
+                    initCopyState();
+                } else {
+                    displayControl.revertToFixed();
+                }
+            }
+        });
+        functionButton.bindLightPressed(sceneLayer, pressedState -> {
+            if (layerPool.getSequencerControl().get()) {
+                return RgbState.OFF;
+            }
+            return functionLayer.isActive() ? RgbState.WHITE : RgbState.DIM_WHITE;
+        });
+        
+        final RgbButton sceneLaunchButton = hwElements.getButton(CcAssignments.SCENE_LAUNCH);
+        sceneLaunchButton.bindIsPressed(sceneLayer, pressed -> handleSelectMode(pressed));
+        sceneLaunchButton.bindLight(
+            sceneLayer, () -> layerPool.getSequencerControl().get() ? RgbState.WHITE : RgbState.DIM_WHITE);
+        
+        layerPool.getSequencerControl().addValueObserver(v -> {
+            sessionLayer.setIsActive(v);
+            this.setIsActive(!v);
+            if (v) {
+                displayControl.show2Line("Sequencer", "Select Clip");
+            } else {
+                displayControl.revertToFixed();
+            }
+        });
+    }
+    
+    private void handleSelectMode(final boolean pressed) {
+        if (pressed) {
+            layerPool.getSequencerControl().toggle();
+        }
     }
     
     private ClipState createLauncherClipState() {
@@ -142,6 +191,50 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
             .addValueObserver(exists -> this.updateFocusName(focusPadName, exists, monoKeyNoteFocus.get()));
     }
     
+    private final Set<Integer> copiedHeld = new HashSet<>();
+    private final Set<Integer> copySet = new HashSet<>();
+    
+    private enum CopyState {
+        COPY,
+        PASTE
+    }
+    
+    private CopyState copyState = CopyState.COPY;
+    
+    private void initCopyState() {
+        this.copyState = CopyState.COPY;
+        copiedHeld.clear();
+        copySet.clear();
+        clipState.clearCopyNotes();
+    }
+    
+    private void handleCopyPressed(final int index) {
+        copiedHeld.add(index);
+        final INoteStepSlot notes = clipState.getAssignment(index);
+        
+        if (copyState == CopyState.COPY) {
+            if (notes.hasNotes()) {
+                copySet.add(index);
+                clipState.moveToBuffer(index);
+                displayControl.show2Line("Notes", "copied");
+            }
+        } else if (!copySet.isEmpty()) {
+            clipState.doPaste(index);
+            displayControl.show2Line("Notes", "pasted");
+            initCopyState();
+        }
+    }
+    
+    private void handleCopyReleased(final int index) {
+        final int outGoingCopy = copiedHeld.size();
+        copiedHeld.remove(index);
+        if (outGoingCopy > 0 && copiedHeld.isEmpty() && !copySet.isEmpty()) {
+            if (copyState == CopyState.COPY) {
+                copyState = CopyState.PASTE;
+            }
+        }
+    }
+    
     private void handleSequencerPressed(final int index) {
         if (!clipState.getNotesCursorClip().exists().get()) {
             ViewControl.filterSlot(cursorTrack, slot -> !slot.hasContent().get()).ifPresent(slot -> {
@@ -149,22 +242,32 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
                 slot.select();
                 slot.launch();
             });
-        } else if (seqMode.get() == ClipSeqMode.KEYS) {
+            return;
+        }
+        if (!clipState.getPositionHandler().stepIndexInLoop(index)) {
+            clipState.getPositionHandler().expandClipToPagePosition();
+        }
+        
+        final int previousHeldSteps = clipState.heldSteps();
+        if (seqMode.get() == ClipSeqMode.KEYS) {
             stepDownTimes[index] = System.currentTimeMillis();
-            handleSelectionEnter(index);
+            clipState.applySelection(index);
         } else {
             stepDownTimes[index] = System.currentTimeMillis();
             handleSelectionEnterDrum(index);
         }
-        if (clipState.hasHeldSteps() && !encoderLayer.isActive()) {
-            controlHandler.activateLayer(encoderLayer);
+        
+        if (previousHeldSteps > 0 && clipState.heldSteps() == 0) {
+            displayControl.revertToFixed();
         }
-    }
-    
-    private void handleSelectionEnter(final int index) {
-        clipState.applySelection(index);
-        displayControl.getTemporaryDisplay()
-            .showParamInfo("Note Edit", "Vel", "Len", "L.Fine", "RND", "Rpt", "Rcr", "Tim", "AT");
+        
+        if (clipState.hasHeldSteps() && !encoderLayer.isActive()) {
+            launchTimedEvent(() -> {
+                displayControl.getTemporaryDisplay()
+                    .showParamInfo("Note Edit", "Vel", "Len", "L.Fine", "RND", "Rpt", "Rcr", "Tim", "AT");
+                controlHandler.activateLayer(encoderLayer);
+            }, 400);
+        }
     }
     
     private void handleSequencerReleased(final int index) {
@@ -175,17 +278,15 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
             }
             clipState.removeSelection(index);
         } else {
-            if (holdDelayEvent != null) {
-                holdDelayEvent.cancel();
+            if (holdTime < 400 && !justEntered[index]) {
+                clipState.removeDrumStep(index);
             }
-            if (!copyState.get()) {
-                if (holdTime < 400 && !justEntered[index]) {
-                    clipState.removeDrumStep(index);
-                }
-                clipState.removeSelection(index);
-            }
+            clipState.removeSelection(index);
         }
         justEntered[index] = false;
+        if (!clipState.hasHeldSteps()) {
+            holdDelayEvent.cancel();
+        }
         if (!clipState.hasHeldSteps() && encoderLayer.isActive()) {
             controlHandler.releaseLayer(encoderLayer);
         }
@@ -199,10 +300,6 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
             clipState.addDrumStep(index, 100);
             justEntered[index] = true;
         }
-        launchTimedEvent(() -> {
-            clipState.applySelection(index);
-            //controlPages.applySelection(noteSlot);
-        }, 400);
     }
     
     
@@ -246,34 +343,71 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
     }
     
     private void initNavigation(final LaunchkeyHwElements hwElements) {
+        final BasicStringValue pagePosition =
+            new BasicStringValue("Page %d".formatted(clipState.getPositionHandler().getPagePosition().get() + 1));
+        final BasicStringValue loopLength = new BasicStringValue();
+        clipState.getPositionHandler().getPagePosition()
+            .addValueObserver(v -> pagePosition.set("Page %d".formatted(v + 1)));
+        clipState.getNotesCursorClip().getLoopLength().addValueObserver(v -> {
+            final double length = v * gridValue.getValue();
+            loopLength.set("%3.1f Bars".formatted(length));
+        });
+        pageDisplay = new DisplayValueTracker(displayControl, cursorTrack.name(), pagePosition, loopLength);
+        
         final RgbButton navUpButton = hwElements.getButton(CcAssignments.NAV_UP);
         final RgbButton navDownButton = hwElements.getButton(CcAssignments.NAV_DOWN);
         navUpButton.bindRepeatHold(this, () -> navigate(1), 400, 50);
         navUpButton.bindLightPressed(this, this::canScrollUp);
         navDownButton.bindRepeatHold(this, () -> navigate(-1), 400, 50);
         navDownButton.bindLightPressed(this, this::canScrollDown);
+        
+        navUpButton.bindPressed(functionLayer, this::duplicateClip);
+        navUpButton.bindLightPressed(functionLayer, () -> false);
+    }
+    
+    private void duplicateClip() {
+        if (clipState.getPositionHandler().getLoopLength() < 260) {
+            clipState.duplicateContent();
+            pageDisplay.show();
+            pageDisplay.notifyUpdate();
+        }
     }
     
     private boolean canScrollDown() {
-        return false;
+        return clipState.getPositionHandler().canScrollLeft().get();
     }
     
     private boolean canScrollUp() {
-        return false;
+        return true;
     }
     
     private void navigate(final int dir) {
+        final StepViewPosition positionHandler = clipState.getPositionHandler();
+        if (dir < 0) {
+            positionHandler.scrollLeft();
+        } else {
+            positionHandler.scrollRight();
+        }
+        pageDisplay.notifyUpdate();
+        pageDisplay.show();
     }
     
     @Override
     protected void onActivate() {
         super.onActivate();
+        layerPool.getSceneControlSequencer().setIsActive(true);
     }
     
     @Override
     protected void onDeactivate() {
         super.onDeactivate();
         controlHandler.releaseLayer(encoderLayer);
+        if (!layerPool.getSequencerControl().get()) {
+            layerPool.getSceneControlSequencer().setIsActive(false);
+        }
+        functionLayer.setIsActive(false);
+        copySet.clear();
+        copiedHeld.clear();
     }
     
     @Override

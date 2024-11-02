@@ -6,16 +6,6 @@ import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extensions.framework.values.BasicStringValue;
 
 public abstract class NoteValueHandler {
-    protected List<NoteStep> currentSteps;
-    protected final BasicStringValue displayValue = new BasicStringValue("-");
-    protected final NoteGetDouble getFunction;
-    protected final NoteSetDouble setFunction;
-    
-    public NoteValueHandler(final NoteGetDouble getFunction, final NoteSetDouble setFunction) {
-        this.getFunction = getFunction;
-        this.setFunction = setFunction;
-    }
-    
     public BasicStringValue getDisplayValue() {
         return displayValue;
     }
@@ -40,4 +30,7 @@ public abstract class NoteValueHandler {
     }
     
     protected abstract void calcDisplayValue();
+    
+    protected List<NoteStep> currentSteps;
+    protected final BasicStringValue displayValue = new BasicStringValue("-");
 }

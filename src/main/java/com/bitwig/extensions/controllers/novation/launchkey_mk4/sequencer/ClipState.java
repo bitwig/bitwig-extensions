@@ -13,6 +13,7 @@ import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.LaunchkeyMk4Extension;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.IObservableValue;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.IntValue;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.ObservableValue;
@@ -114,8 +115,13 @@ public class ClipState {
     }
     
     private void setMode(final ClipSeqMode mode) {
+        LaunchkeyMk4Extension.println(" => MODE %s", mode);
         this.mode = mode;
         // DO Something
+    }
+    
+    public StepViewPosition getPositionHandler() {
+        return positionHandler;
     }
     
     private static void prepareTrack(final Track track) {
@@ -183,7 +189,7 @@ public class ClipState {
         final int xyIndex = noteStep.x() << 8 | noteStep.y();
         assignments[newStep].updateNote(noteStep);
         
-        if (mode != ClipSeqMode.DRUM) {
+        if (mode != ClipSeqMode.KEYS) {
             return;
         }
         
@@ -191,13 +197,6 @@ public class ClipState {
         if (previousStep != null) {
             expectedNoteChange.remove(xyIndex);
             applyValues(noteStep, previousStep);
-        }
-        for (final Integer heldIndex : heldSteps) {
-            if (assignments[heldIndex].hasNotes()) {
-                applySelection(heldIndex);
-            } else {
-                //removeSelection(heldIndex);
-            }
         }
     }
     
@@ -222,6 +221,10 @@ public class ClipState {
     
     public boolean hasHeldSteps() {
         return !heldSteps.isEmpty();
+    }
+    
+    public int heldSteps() {
+        return heldSteps.size();
     }
     
     public Clip getNotesCursorClip() {
@@ -319,10 +322,11 @@ public class ClipState {
         return mode == ClipSeqMode.KEYS ? notesCursorClip : drumCursorClip;
     }
     
-    public void doCopy(final int index) {
+    public void doPaste(final int index) {
         if (this.copyNotes.isEmpty()) {
             return;
         }
+        final int minOffset = this.copyNotes.stream().mapToInt(step -> step.x()).min().orElse(0);
         for (int i = 0; i < this.copyNotes.size(); i++) {
             final NoteStep copyNote = copyNotes.get(i);
             if (copyNote == null || copyNote.state() == NoteStep.State.Empty) {
@@ -330,9 +334,12 @@ public class ClipState {
             } else {
                 final int vel = (int) Math.round(copyNote.velocity() * 127);
                 final double duration = copyNote.duration();
-                final int xyIndex = index << 8 | copyNote.y();
-                expectedNoteChange.put(xyIndex, copyNote);
-                getClipByMode().setStep(index, copyNote.y(), vel, duration);
+                final int newPos = index + (copyNote.x() - minOffset);
+                if (newPos < 16) { // Problem with clip step size, need to be double actually
+                    final int xyIndex = newPos << 8 | copyNote.y();
+                    expectedNoteChange.put(xyIndex, copyNote);
+                    getClipByMode().setStep(newPos, copyNote.y(), vel, duration);
+                }
             }
         }
     }

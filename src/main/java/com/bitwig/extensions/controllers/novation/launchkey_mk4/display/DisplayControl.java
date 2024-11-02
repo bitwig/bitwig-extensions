@@ -41,11 +41,15 @@ public class DisplayControl {
         }
     }
     
+    public void revertToFixed() {
+        this.temporaryDisplay.set2Lines(this.fixedDisplay);
+        this.temporaryDisplay.update2Lines();
+    }
+    
     public void fixDisplayUpdate(final int lineIndex, final String text) {
         this.fixedDisplay.setLine(lineIndex, text);
-        configureDisplay(0x21, 0x61);
-        setText(0x21, lineIndex, text);
-        showDisplay(0x21);
+        temporaryDisplay.setLine(lineIndex, text);
+        temporaryDisplay.update2Lines();
         if (this.fixedState == FixDisplayState.TRACK) {
             this.fixedDisplay.update2Lines();
         }

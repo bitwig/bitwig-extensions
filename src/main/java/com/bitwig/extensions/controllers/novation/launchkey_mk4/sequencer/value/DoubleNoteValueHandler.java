@@ -2,28 +2,26 @@ package com.bitwig.extensions.controllers.novation.launchkey_mk4.sequencer.value
 
 import com.bitwig.extension.controller.api.NoteStep;
 
-public class DoubleNoteValueHandler extends NoteValueHandler {
-    protected double incAmount = 0.01;
-    protected double minValue = 0;
-    protected double maxValue = 0;
+public abstract class DoubleNoteValueHandler extends NoteValueHandler {
+    protected final NoteGetDouble getFunction;
+    protected final NoteSetDouble setFunction;
+    
+    @FunctionalInterface
+    public interface NoteSetDouble {
+        void set(NoteStep note, double value);
+    }
+    
+    @FunctionalInterface
+    public interface NoteGetDouble {
+        double get(NoteStep note);
+    }
     
     public DoubleNoteValueHandler(final NoteGetDouble getFunction, final NoteSetDouble setFunction) {
-        this(getFunction, setFunction, 0, 1, 0.1);
+        this.getFunction = getFunction;
+        this.setFunction = setFunction;
     }
     
-    public DoubleNoteValueHandler(final NoteGetDouble getFunction, final NoteSetDouble setFunction, final double min,
-        final double max, final double incAmount) {
-        super(getFunction, setFunction);
-        this.minValue = min;
-        this.maxValue = max;
-        this.incAmount = incAmount;
-    }
-    
-    @Override
-    protected void calcDisplayValue() {
-        if (currentSteps.isEmpty()) {
-            displayValue.set("-");
-        }
+    protected double[] determineMinMax() {
         boolean first = true;
         double min = 0;
         double max = 0;
@@ -39,22 +37,8 @@ public class DoubleNoteValueHandler extends NoteValueHandler {
                 min = value;
             }
         }
-        if (min == max) {
-            displayValue.set("%3.0f%%".formatted(min * 100));
-        } else {
-            displayValue.set("%3.0f-%3.0f%%".formatted(min * 100, max * 100));
-        }
+        return new double[] {min, max};
     }
     
-    @Override
-    protected boolean incStep(final NoteStep step, final int incAmount) {
-        final double value = getFunction.get(step);
-        final double newValue = Math.min(this.maxValue, Math.max(this.minValue, value - 0.01 * incAmount));
-        if (newValue != value) {
-            this.setFunction.set(step, newValue);
-            return true;
-        }
-        return false;
-    }
     
 }

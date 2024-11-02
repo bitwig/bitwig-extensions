@@ -18,7 +18,6 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayC
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.sequencer.SequencerLayer;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
-import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 public class LaunchkeyMk4Extension extends ControllerExtension {
     private static ControllerHost debugHost;
@@ -117,10 +116,6 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         
         final LaunchkeyButton shiftButton = hwElements.getShiftButton();
         shiftButton.bindIsPressed(mainLayer, globalStates.getShiftState());
-        
-        final RgbButton captureButton = hwElements.getButton(CcAssignments.CAPTURE);
-        captureButton.bindIsPressed(mainLayer, globalStates.getCaptureState());
-        captureButton.bindLightPressed(mainLayer, new BooleanValueObject(true));
         
         globalStates.getShiftState().addValueObserver(shiftActive -> shiftLayer.setIsActive(shiftActive));
         
