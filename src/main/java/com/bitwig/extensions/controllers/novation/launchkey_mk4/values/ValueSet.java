@@ -58,6 +58,15 @@ public class ValueSet implements ControlValue {
         setSelectedIndex(currentIndex + inc);
     }
     
+    public void incRoundRobin() {
+        final int newValue = currentIndex + 1;
+        if (newValue < values.size()) {
+            setSelectedIndex(newValue);
+        } else {
+            setSelectedIndex(0);
+        }
+    }
+    
     public int size() {
         return values.size();
     }

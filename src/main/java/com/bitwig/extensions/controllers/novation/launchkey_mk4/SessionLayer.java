@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.novation.launchkey_mk4;
 import java.util.HashSet;
 
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
+import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
@@ -32,6 +33,8 @@ public class SessionLayer extends Layer {
     
     @Inject
     private DisplayControl displayControl;
+    @Inject
+    private ControllerHost host;
     
     private Layer currentModeLayer;
     private Mode mode = Mode.LAUNCH;
@@ -250,10 +253,12 @@ public class SessionLayer extends Layer {
             if (!slot.hasContent().get()) {
                 slot.createEmptyClip(4);
             }
-            slot.select();
-            if (!altActive.get()) {
-                slot.launch();
-            }
+            host.scheduleTask(() -> {
+                slot.select();
+                if (!altActive.get()) {
+                    slot.launch();
+                }
+            }, 100);
             sequencerControl.set(false);
         }
     }

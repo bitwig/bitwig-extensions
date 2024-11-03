@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import com.bitwig.extension.controller.api.BeatTimeFormatter;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.SettableBeatTimeValue;
@@ -25,11 +24,9 @@ public class ClipState {
     
     private final double gatePercent = 1.0;
     private boolean exists;
-    private final SequencerSource sequencerSource;
     private final Clip notesCursorClip;
     private final Clip drumCursorClip;
     private final StepViewPosition positionHandler;
-    private final SettableBeatTimeValue loopLength;
     protected final INoteStepSlot[] assignments = new NoteStepSlot[STEPS];
     protected final INoteStepSlot[] drumAssignments = new DrumNoteStepSlot[STEPS];
     
@@ -41,10 +38,13 @@ public class ClipState {
     private final ObservableValue<RgbState> clipColor = new ObservableValue<>(RgbState.OFF);
     private final BasicStringValue clipName = new BasicStringValue();
     private final BasicStringValue clipTrackName = new BasicStringValue();
-    private final BasicStringValue lengthDisplay = new BasicStringValue();
     private ClipSeqMode mode;
     private final Set<NoteValue> currentPlayedNotes = new HashSet<>();
     private final Set<NoteValue> lastEnteredNotes = new HashSet<>();
+    
+    private record NoteOverlap(int newPos, NoteStep copyNote) {
+        //
+    }
     
     private record NoteValue(int key, int velocity) {
         //
@@ -71,7 +71,6 @@ public class ClipState {
         final IObservableValue<ClipSeqMode> clipSeqState) {
         this.notesCursorClip = cursorClip;
         this.drumCursorClip = drumCursorClip;
-        this.sequencerSource = sequencerSource;
         for (int i = 0; i < assignments.length; i++) {
             assignments[i] = new NoteStepSlot();
             drumAssignments[i] = new DrumNoteStepSlot();
@@ -79,7 +78,7 @@ public class ClipState {
         notesCursorClip.addNoteStepObserver(this::handleNoteStep);
         notesCursorClip.playingStep().addValueObserver(this::handlePlayingStep);
         mode = clipSeqState.get();
-        clipSeqState.addValueObserver(mode -> setMode(mode));
+        clipSeqState.addValueObserver(this::setMode);
         lastEnteredNotes.add(new NoteValue(60, 100));
         
         drumCursorClip.addNoteStepObserver(this::handleDrumNoteStep);
@@ -95,17 +94,13 @@ public class ClipState {
             pageIndex.setMax(pages - 1);
             pageIndex.set(index);
         });
-        pageIndex.addValueObserver(val -> positionHandler.setPage(val));
-        final BeatTimeFormatter formatter = sequencerSource.getBeatTimeFormatter();
-        loopLength = cursorClip.getLoopLength();
-        loopLength.addValueObserver(v -> lengthDisplay.set(loopLength.getFormatted(formatter)));
+        pageIndex.addValueObserver(positionHandler::setPage);
         
         prepareTrack(cursorClip.getTrack());
         
-        cursorClip.exists().addValueObserver(exists -> this.updateValueUponExistence(exists));
-        cursorClip.clipLauncherSlot().name().markInterested();
-        cursorClip.clipLauncherSlot().name().addValueObserver(name -> updateClipName(name));
-        cursorClip.getTrack().name().addValueObserver(trackName -> clipTrackName.set(trackName));
+        cursorClip.exists().addValueObserver(this::updateValueUponExistence);
+        cursorClip.clipLauncherSlot().name().addValueObserver(this::updateClipName);
+        cursorClip.getTrack().name().addValueObserver(clipTrackName::set);
         
         cursorClip.color().addValueObserver((r, g, b) -> clipColor.set(RgbState.get(r, g, b)));
     }
@@ -147,18 +142,6 @@ public class ClipState {
         return notesCursorClip.getLoopLength();
     }
     
-    public BasicStringValue getLengthDisplay() {
-        return lengthDisplay;
-    }
-    
-    public BasicStringValue getClipTrackName() {
-        return clipTrackName;
-    }
-    
-    public BasicStringValue getClipName() {
-        return clipName;
-    }
-    
     private void handleDrumNoteStep(final NoteStep noteStep) {
         final int newStep = noteStep.x();
         final int xyIndex = (noteStep.x() << 8) | (mode == ClipSeqMode.DRUM ? 0 : noteStep.y());
@@ -173,15 +156,6 @@ public class ClipState {
             expectedNoteChange.remove(xyIndex);
             applyValues(noteStep, previousStep);
         }
-        
-        //        final int heldIndex = this.sequencerSource.getHeldIndex();
-        //        if (newStep == heldIndex) {
-        //            if (drumAssignments[heldIndex].hasNotes()) {
-        //                applySelection(heldIndex);
-        //            } else {
-        //                removeSelection();
-        //            }
-        //        }
     }
     
     private void handleNoteStep(final NoteStep noteStep) {
@@ -229,14 +203,6 @@ public class ClipState {
     
     public Clip getNotesCursorClip() {
         return notesCursorClip;
-    }
-    
-    public BasicStringValue getPageState() {
-        return this.positionHandler.getPagePositionDisplay();
-    }
-    
-    public ObservableValue<RgbState> getClipColor() {
-        return clipColor;
     }
     
     public void handleNoteAction(final int note, final int velocity) {
@@ -326,22 +292,35 @@ public class ClipState {
         if (this.copyNotes.isEmpty()) {
             return;
         }
-        final int minOffset = this.copyNotes.stream().mapToInt(step -> step.x()).min().orElse(0);
-        for (int i = 0; i < this.copyNotes.size(); i++) {
-            final NoteStep copyNote = copyNotes.get(i);
-            if (copyNote == null || copyNote.state() == NoteStep.State.Empty) {
+        final List<NoteOverlap> copyOverlaps = new ArrayList<>();
+        final int minOffset = this.copyNotes.stream().mapToInt(NoteStep::x).min().orElse(0);
+        for (final NoteStep copyNote : this.copyNotes) {
+            if (copyNote.state() == NoteStep.State.Empty) {
                 getClipByMode().clearStep(copyNote.x(), copyNote.y());
             } else {
-                final int vel = (int) Math.round(copyNote.velocity() * 127);
-                final double duration = copyNote.duration();
                 final int newPos = index + (copyNote.x() - minOffset);
-                if (newPos < 16) { // Problem with clip step size, need to be double actually
-                    final int xyIndex = newPos << 8 | copyNote.y();
-                    expectedNoteChange.put(xyIndex, copyNote);
-                    getClipByMode().setStep(newPos, copyNote.y(), vel, duration);
+                if (newPos < 16) {
+                    pasteNote(newPos, copyNote);
+                } else {
+                    copyOverlaps.add(new NoteOverlap(newPos % 16, copyNote));
                 }
             }
         }
+        if (!copyOverlaps.isEmpty()) {
+            //positionHandler.expandClipIfNecessary();
+            positionHandler.moveRight();
+            copyOverlaps.forEach(v -> pasteNote(v.newPos, v.copyNote));
+            positionHandler.moveLeft();
+        }
+    }
+    
+    private void pasteNote(final int newPos, final NoteStep copyNote) {
+        final int vel = (int) Math.round(copyNote.velocity() * 127);
+        final double duration = copyNote.duration();
+        // Problem with clip step size, need to be double actually
+        final int xyIndex = newPos << 8 | copyNote.y();
+        expectedNoteChange.put(xyIndex, copyNote);
+        getClipByMode().setStep(newPos, copyNote.y(), vel, duration);
     }
     
     public void addDrumStep(final int index, final int velocity) {
@@ -371,14 +350,6 @@ public class ClipState {
     
     public void duplicateContent() {
         notesCursorClip.duplicateContent();
-    }
-    
-    public boolean canScrollPositionLeft() {
-        return positionHandler.canScrollLeft().get();
-    }
-    
-    public boolean canScrollPositionRight() {
-        return positionHandler.canScrollRight().get();
     }
     
     public void scrollPosition(final int byValue) {
@@ -426,10 +397,6 @@ public class ClipState {
         if (src.transpose() != dest.transpose()) {
             dest.setTranspose(src.transpose());
         }
-    }
-    
-    public void setClipLengthByIndex(final int stepIndex) {
-        positionHandler.setClipLengthByIndex(stepIndex);
     }
     
 }

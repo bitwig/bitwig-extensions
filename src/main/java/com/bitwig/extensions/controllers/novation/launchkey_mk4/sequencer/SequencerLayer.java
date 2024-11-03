@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.bitwig.extension.controller.api.BeatTimeFormatter;
+import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DrumPad;
@@ -39,6 +40,7 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
     private static final int STEPS = 16;
     private final CursorTrack cursorTrack;
     private RgbState focusDrumPadColor;
+    private RgbState clipColor = RgbState.WHITE;
     private final DisplayControl displayControl;
     private final LayerPool layerPool;
     private final long[] stepDownTimes = new long[STEPS];
@@ -56,16 +58,27 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
     private final ClipState clipState;
     private final ObservableValue<ClipSeqMode> seqMode = new ObservableValue<>(ClipSeqMode.KEYS);
     private final BasicStringValue focusValue = new BasicStringValue();
-    private final DisplayValueTracker padDisplay;
-    private DisplayValueTracker pageDisplay;
     private final OverlayEncoderLayer encoderLayer;
     private final Layer functionLayer;
     private TimedDelayEvent holdDelayEvent = null;
+    private final Set<Integer> copiedHeld = new HashSet<>();
+    private final Set<Integer> copySet = new HashSet<>();
+    private CopyState copyState = CopyState.COPY;
+    
+    private boolean functionJustPressed;
+    private final DisplayValueTracker padDisplay;
+    private DisplayValueTracker pageDisplay;
+    private final DisplayValueTracker gridDisplay;
     
     @Inject
     private ControlHandler controlHandler;
     @Inject
     private SessionLayer sessionLayer;
+    
+    private enum CopyState {
+        COPY,
+        PASTE
+    }
     
     public SequencerLayer(final Layers layers, final ViewControl viewControl, final LaunchkeyHwElements hwElements,
         final GlobalStates globalStates, final ControllerHost host, final DisplayControl displayControl,
@@ -89,15 +102,19 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
         singlePadBank = viewControl.getPrimaryDevice().createDrumPadBank(1);
         focusDrumPad = singlePadBank.getItemAt(0);
         
+        gridDisplay =
+            new DisplayValueTracker(displayControl, new BasicStringValue("Grid"), gridValue.getDisplayValue());
+        
         cursorTrack = viewControl.getCursorTrack();
         cursorTrack.addNoteSource(midiProcessor.getNoteInput());
         cursorTrack.position().addValueObserver(this::updateFocusClips);
         
         clipState = createLauncherClipState();
+        clipState.getNotesCursorClip().color().addValueObserver((r, g, b) -> clipColor = RgbState.get(r, g, b));
         this.encoderLayer =
             new OverlayEncoderLayer(layers, hwElements.getIncEncoders(), clipState, displayControl, gridValue);
         
-        initPadKeyUpdate(viewControl, globalStates);
+        initPadKeyUpdate(viewControl);
         
         final RgbButton[] buttons = hwElements.getSessionButtons();
         for (int i = 0; i < STEPS; i++) {
@@ -113,17 +130,7 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
         
         final Layer sceneLayer = layerPool.getSceneControlSequencer();
         final RgbButton functionButton = hwElements.getButton(CcAssignments.LAUNCH_MODE);
-        functionButton.bindIsPressed(sceneLayer, pressed -> {
-            if (!layerPool.getSequencerControl().get()) {
-                functionLayer.setIsActive(pressed);
-                if (pressed) {
-                    displayControl.show2Line("Function", "Duplicate");
-                    initCopyState();
-                } else {
-                    displayControl.revertToFixed();
-                }
-            }
-        });
+        functionButton.bindIsPressed(sceneLayer, this::handleFunctionPressed);
         functionButton.bindLightPressed(sceneLayer, pressedState -> {
             if (layerPool.getSequencerControl().get()) {
                 return RgbState.OFF;
@@ -132,7 +139,7 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
         });
         
         final RgbButton sceneLaunchButton = hwElements.getButton(CcAssignments.SCENE_LAUNCH);
-        sceneLaunchButton.bindIsPressed(sceneLayer, pressed -> handleSelectMode(pressed));
+        sceneLaunchButton.bindIsPressed(sceneLayer, this::handleSelectMode);
         sceneLaunchButton.bindLight(
             sceneLayer, () -> layerPool.getSequencerControl().get() ? RgbState.WHITE : RgbState.DIM_WHITE);
         
@@ -145,6 +152,19 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
                 displayControl.revertToFixed();
             }
         });
+    }
+    
+    private void handleFunctionPressed(final boolean pressed) {
+        if (!layerPool.getSequencerControl().get()) {
+            functionLayer.setIsActive(pressed);
+            if (pressed) {
+                displayControl.show2Line("Function", "Duplicate");
+                initCopyState();
+            } else {
+                displayControl.revertToFixed();
+            }
+        }
+        this.functionJustPressed = pressed;
     }
     
     private void handleSelectMode(final boolean pressed) {
@@ -161,7 +181,7 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
     
     private void updateFocusClips(final int trackIndex) {
         if (isActive()) {
-            ViewControl.filterSlot(cursorTrack, slot -> slot.isPlaying().get()).ifPresent(slot -> slot.select());
+            ViewControl.filterSlot(cursorTrack, slot -> slot.isPlaying().get()).ifPresent(ClipLauncherSlot::select);
         }
     }
     
@@ -175,12 +195,12 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
         }
     }
     
-    private void initPadKeyUpdate(final ViewControl viewControl, final GlobalStates globalStates) {
+    private void initPadKeyUpdate(final ViewControl viewControl) {
         viewControl.getPrimaryDevice().hasDrumPads().addValueObserver(hasDrumPads -> {
             this.hasDrumPads = hasDrumPads;
             seqMode.set(hasDrumPads ? ClipSeqMode.DRUM : ClipSeqMode.KEYS);
         });
-        monoKeyNoteFocus.addValueObserver(focusKey -> updateFocusKey(focusKey));
+        monoKeyNoteFocus.addValueObserver(this::updateFocusKey);
         singlePadBank.scrollPosition()
             .addValueObserver(pos -> this.updateFocusName(focusPadName, focusPadExists, monoKeyNoteFocus.get()));
         focusDrumPad.color().addValueObserver((r, g, b) -> this.focusDrumPadColor = RgbState.get(r, g, b));
@@ -190,16 +210,6 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
         focusDrumPad.exists()
             .addValueObserver(exists -> this.updateFocusName(focusPadName, exists, monoKeyNoteFocus.get()));
     }
-    
-    private final Set<Integer> copiedHeld = new HashSet<>();
-    private final Set<Integer> copySet = new HashSet<>();
-    
-    private enum CopyState {
-        COPY,
-        PASTE
-    }
-    
-    private CopyState copyState = CopyState.COPY;
     
     private void initCopyState() {
         this.copyState = CopyState.COPY;
@@ -245,9 +255,8 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
             return;
         }
         if (!clipState.getPositionHandler().stepIndexInLoop(index)) {
-            clipState.getPositionHandler().expandClipToPagePosition();
+            clipState.getPositionHandler().expandClipToPagePosition(index);
         }
-        
         final int previousHeldSteps = clipState.heldSteps();
         if (seqMode.get() == ClipSeqMode.KEYS) {
             stepDownTimes[index] = System.currentTimeMillis();
@@ -285,7 +294,7 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
         }
         justEntered[index] = false;
         if (!clipState.hasHeldSteps()) {
-            holdDelayEvent.cancel();
+            cancelHoldEvent();
         }
         if (!clipState.hasHeldSteps() && encoderLayer.isActive()) {
             controlHandler.releaseLayer(encoderLayer);
@@ -302,15 +311,17 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
         }
     }
     
-    
-    private void launchTimedEvent(final Runnable action, final int delay) {
+    private void cancelHoldEvent() {
         if (holdDelayEvent != null) {
             holdDelayEvent.cancel();
         }
+    }
+    
+    private void launchTimedEvent(final Runnable action, final int delay) {
+        cancelHoldEvent();
         holdDelayEvent = new TimedDelayEvent(action, delay);
         midiProcessor.queueTimedEvent(holdDelayEvent);
     }
-    
     
     private RgbState getStepLight(final int index) {
         if (!clipState.stepIndexInLoop(index)) {
@@ -322,9 +333,8 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
             return RgbState.WHITE;
         }
         if (assignment.hasNotes()) {
-            // TODO Copy index  copyIndex == index  STEP_CPY_COLOR
             if (seqMode.get() == ClipSeqMode.KEYS || focusDrumPadColor == RgbState.OFF) {
-                return globalStates.getTrackColor();
+                return clipColor;
             } else {
                 return focusDrumPadColor;
             }
@@ -344,14 +354,11 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
     
     private void initNavigation(final LaunchkeyHwElements hwElements) {
         final BasicStringValue pagePosition =
-            new BasicStringValue("Page %d".formatted(clipState.getPositionHandler().getPagePosition().get() + 1));
+            new BasicStringValue(getPositionValue(clipState.getPositionHandler().getPagePosition().get()));
         final BasicStringValue loopLength = new BasicStringValue();
-        clipState.getPositionHandler().getPagePosition()
-            .addValueObserver(v -> pagePosition.set("Page %d".formatted(v + 1)));
-        clipState.getNotesCursorClip().getLoopLength().addValueObserver(v -> {
-            final double length = v * gridValue.getValue();
-            loopLength.set("%3.1f Bars".formatted(length));
-        });
+        clipState.getPositionHandler().getPagePosition().addValueObserver(v -> pagePosition.set(getPositionValue(v)));
+        clipState.getNotesCursorClip().getLoopLength()
+            .addValueObserver(v -> loopLength.set("%3.1f Bars".formatted(v / 4)));
         pageDisplay = new DisplayValueTracker(displayControl, cursorTrack.name(), pagePosition, loopLength);
         
         final RgbButton navUpButton = hwElements.getButton(CcAssignments.NAV_UP);
@@ -363,6 +370,13 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
         
         navUpButton.bindPressed(functionLayer, this::duplicateClip);
         navUpButton.bindLightPressed(functionLayer, () -> false);
+        navDownButton.bindPressed(functionLayer, this::changeGrid);
+        navDownButton.bindLightPressed(functionLayer, () -> false);
+    }
+    
+    private String getPositionValue(final int position) {
+        final double bar = (position * (gridValue.getValue() * 4)) + 1.0;
+        return "Pg %d Bar %3.1f".formatted(position + 1, bar);
     }
     
     private void duplicateClip() {
@@ -370,6 +384,17 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
             clipState.duplicateContent();
             pageDisplay.show();
             pageDisplay.notifyUpdate();
+        }
+    }
+    
+    private void changeGrid() {
+        if (functionJustPressed) {
+            functionJustPressed = false;
+            gridDisplay.show();
+        } else {
+            gridValue.incRoundRobin();
+            gridDisplay.show();
+            gridDisplay.notifyUpdate();
         }
     }
     
