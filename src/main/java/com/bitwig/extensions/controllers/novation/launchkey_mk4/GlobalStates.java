@@ -8,13 +8,14 @@ import com.bitwig.extensions.framework.values.BooleanValueObject;
 @Component
 public class GlobalStates {
     public static final String ARRANGE_MODE = "ARRANGE";
-    
+
     private RgbState trackColor;
     private RgbState trackColorOff;
     private final BooleanValueObject shiftState = new BooleanValueObject();
     private String panelLayout = ARRANGE_MODE;
     private final PadSlot[] padSlots = new PadSlot[16];
-    
+    private boolean isMiniVersion;
+
     public GlobalStates(final Application application, final ViewControl viewControl) {
         application.panelLayout().addValueObserver(layout -> {
             this.panelLayout = layout;
@@ -24,15 +25,23 @@ public class GlobalStates {
             trackColorOff = RgbState.get(r, g, b).dim();
         });
     }
-    
+
+    public void setMiniVersion(final boolean miniVersion) {
+        isMiniVersion = miniVersion;
+    }
+
+    public boolean isMiniVersion() {
+        return isMiniVersion;
+    }
+
     public void setPadSlot(final int index, final PadSlot padSlot) {
         this.padSlots[index] = padSlot;
     }
-    
+
     public PadSlot getPadSlot(final int index) {
         return padSlots[index];
     }
-    
+
     public RgbState getPadColor(final int index, final boolean active) {
         final RgbState state;
         if (padSlots[index].getColor() == RgbState.OFF) {
@@ -45,23 +54,23 @@ public class GlobalStates {
         }
         return state;
     }
-    
+
     public BooleanValueObject getShiftState() {
         return shiftState;
     }
-    
+
     public boolean isArrangeMode() {
         return ARRANGE_MODE.equals(this.panelLayout);
     }
-    
+
     public RgbState getTrackColor(final boolean active) {
         return active ? trackColor : trackColorOff;
     }
-    
+
     public RgbState getTrackColor() {
         return trackColor;
     }
-    
+
     public RgbState getTrackColorOff() {
         return trackColorOff;
     }

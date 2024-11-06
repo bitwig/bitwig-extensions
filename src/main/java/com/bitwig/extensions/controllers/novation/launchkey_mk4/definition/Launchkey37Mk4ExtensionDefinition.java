@@ -7,8 +7,8 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.LaunchkeyMk4Extension;
 
-public class Launchkey25Mk4ExtensionDefinition extends LaunchkeyMk4ExtensionDefinition {
-    private static final UUID DRIVER_ID = UUID.fromString("ef68e909-d5f1-4557-8526-2ce6978cabbb");
+public class Launchkey37Mk4ExtensionDefinition extends LaunchkeyMk4ExtensionDefinition {
+    private static final UUID DRIVER_ID = UUID.fromString("ef68ef09-d5f1-4057-8521-2ce6978cabbb");
 
     @Override
     public UUID getId() {

@@ -5,16 +5,14 @@ import com.bitwig.extension.controller.ControllerExtensionDefinition;
 public abstract class LaunchkeyMk4ExtensionDefinition extends ControllerExtensionDefinition {
 
 
-    public abstract int numberOfKeys();
-
     @Override
     public String getName() {
-        return String.format("Launchkey %d Mk4", numberOfKeys());
+        return "Launchkey Mk4";
     }
 
     @Override
     public String getHardwareModel() {
-        return String.format("Launchkey %d Mk4", numberOfKeys());
+        return "Launchkey Mk4";
     }
 
     @Override
@@ -24,7 +22,7 @@ public abstract class LaunchkeyMk4ExtensionDefinition extends ControllerExtensio
 
     @Override
     public String getVersion() {
-        return "0.1";
+        return "0.5";
     }
 
     @Override

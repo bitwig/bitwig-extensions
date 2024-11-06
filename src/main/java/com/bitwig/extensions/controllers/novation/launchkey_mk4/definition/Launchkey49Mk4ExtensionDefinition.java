@@ -16,11 +16,6 @@ public class Launchkey49Mk4ExtensionDefinition extends LaunchkeyMk4ExtensionDefi
     }
 
     @Override
-    public int numberOfKeys() {
-        return 49;
-    }
-
-    @Override
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
         final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) {
@@ -28,14 +23,12 @@ public class Launchkey49Mk4ExtensionDefinition extends LaunchkeyMk4ExtensionDefi
                 new String[] {"MIDIIN2 (Launchkey MK4 49 MIDI)", "Launchkey MK4 49 MIDI"},
                 new String[] {"MIDIOUT2 (Launchkey MK4 49 MIDI", "Launchkey MK4 49 MIDI"}
             );
-        }
-        else if (platformType == PlatformType.MAC) {
+        } else if (platformType == PlatformType.MAC) {
             list.add(
                 new String[] {"Launchkey MK4 49 DAW Out", "Launchkey MK4 49 MIDI Out"},
                 new String[] {"Launchkey MK4 49 DAW In", "Launchkey MK4 49 MIDI In"}
             );
-        }
-        else if (platformType == PlatformType.LINUX) {
+        } else if (platformType == PlatformType.LINUX) {
             list.add(
                 new String[] {"Launchkey MK4 49 Launchkey", "Launchkey MK4 49 Launchkey #2"},
                 new String[] {"Launchkey MK4 49 Launchkey", "Launchkey MK4 49 Launchkey #2"}

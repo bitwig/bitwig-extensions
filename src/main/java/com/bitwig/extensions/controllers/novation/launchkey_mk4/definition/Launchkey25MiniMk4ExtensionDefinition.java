@@ -16,11 +16,6 @@ public class Launchkey25MiniMk4ExtensionDefinition extends LaunchkeyMk4Extension
     }
 
     @Override
-    public int numberOfKeys() {
-        return 25;
-    }
-
-    @Override
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
         final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) {
@@ -28,14 +23,12 @@ public class Launchkey25MiniMk4ExtensionDefinition extends LaunchkeyMk4Extension
                 new String[] {"MIDIIN2 (Launchkey Mini MK4 25 MIDI", "Launchkey Mini MK4 25 MIDI"},
                 new String[] {"MIDIOUT2 (Launchkey Mini MK4 25 MIDI", "Launchkey Mini MK4 25 MIDI"}
             );
-        }
-        else if (platformType == PlatformType.MAC) {
+        } else if (platformType == PlatformType.MAC) {
             list.add(
                 new String[] {"Launchkey Mini MK4 25 DAW Out", "Launchkey Mini MK4 25 MIDI Out"},
                 new String[] {"Launchkey Mini MK4 25 DAW In", "Launchkey Mini MK4 25 MIDI In"}
             );
-        }
-        else if (platformType == PlatformType.LINUX) {
+        } else if (platformType == PlatformType.LINUX) {
             list.add(
                 new String[] {"Launchkey Mini MK4 25 Launchkey", "Launchkey Mini MK4 25 Launchkey #2"},
                 new String[] {"Launchkey Mini MK4 25 Launchkey", "Launchkey Mini MK4 25 Launchkey #2"}

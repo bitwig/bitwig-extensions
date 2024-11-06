@@ -29,20 +29,20 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     private MidiProcessor midiProcessor;
     private SessionLayer sessionLayer;
     private Layer currentMainModeLayer;
-    
+
     public static void println(final String format, final Object... args) {
         if (debugHost != null) {
             debugHost.println(String.format(format, args));
         }
     }
-    
+
     public LaunchkeyMk4Extension(final LaunchkeyMk4ExtensionDefinition definition, final ControllerHost host,
         final boolean hasFaders, final boolean miniVersion) {
         super(definition, host);
         this.hasFaders = hasFaders;
         this.isMini = miniVersion;
     }
-    
+
     @Override
     public void init() {
         final Context diContext = new Context(this);
@@ -51,7 +51,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         surface = diContext.getService(HardwareSurface.class);
         midiProcessor = new MidiProcessor(host, isMini);
         diContext.registerService(MidiProcessor.class, midiProcessor);
-        
+
         mainLayer = diContext.createLayer("MAIN");
         shiftLayer = diContext.createLayer("SHIFT");
         sessionLayer = diContext.getService(SessionLayer.class);
@@ -60,20 +60,20 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         initControl(diContext);
         initGenerateModeHandling(diContext);
         midiProcessor.init();
-        
+
         display.initTemps();
         mainLayer.setIsActive(true);
         sessionLayer.setIsActive(true);
         diContext.activate();
     }
-    
+
     public void initGenerateModeHandling(final Context diContext) {
         final SessionLayer sessionLayer = diContext.getService(SessionLayer.class);
         final DrumPadLayer padLayer = diContext.getService(DrumPadLayer.class);
         final SequencerLayer sequencerLayer = diContext.getService(SequencerLayer.class);
         currentMainModeLayer = null;
         final DisplayControl display = diContext.getService(DisplayControl.class);
-        
+
         midiProcessor.addModeListener(((type, id) -> {
             if (type == ModeType.PAD) {
                 if (id == 2) {
@@ -96,7 +96,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
             }
         }));
     }
-    
+
     private void switchToLayer(final Layer layer) {
         if (currentMainModeLayer != null) {
             currentMainModeLayer.setIsActive(false);
@@ -104,44 +104,52 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         currentMainModeLayer = layer;
         currentMainModeLayer.setIsActive(true);
     }
-    
+
     public void initControl(final Context diContext) {
         final LaunchkeyHwElements hwElements = diContext.getService(LaunchkeyHwElements.class);
         final Transport transport = diContext.getService(Transport.class);
         final ControllerHost host = diContext.getService(ControllerHost.class);
         final MasterTrack masterTrack = host.createMasterTrack(2);
         final GlobalStates globalStates = diContext.getService(GlobalStates.class);
-        
+
+        globalStates.setMiniVersion(isMini);
+
         final Application application = diContext.getService(Application.class);
-        
+
         final LaunchkeyButton shiftButton = hwElements.getShiftButton();
         shiftButton.bindIsPressed(mainLayer, globalStates.getShiftState());
-        
+
         globalStates.getShiftState().addValueObserver(shiftActive -> shiftLayer.setIsActive(shiftActive));
-        
+
         final ViewControl viewControl = diContext.getService(ViewControl.class);
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
-        
+
         mainLayer.bind(hwElements.getMasterSlider(), masterTrack.volume());
-        
+
         final RgbButton trackLeftButton = hwElements.getButton(CcAssignments.TRACK_LEFT);
         final RgbButton trackRightButton = hwElements.getButton(CcAssignments.TRACK_RIGHT);
-        
-        trackLeftButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectPrevious(), 500, 100);
-        trackLeftButton.bindLightPressed(mainLayer, cursorTrack.hasPrevious());
-        trackRightButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectNext(), 500, 100);
-        trackRightButton.bindLightPressed(mainLayer, cursorTrack.hasNext());
-        
-        
+
+        if (isMini) {
+            trackRightButton.bindLightPressed(mainLayer, cursorTrack.hasPrevious());
+            trackLeftButton.bindLightPressed(mainLayer, cursorTrack.hasNext());
+            trackRightButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectPrevious(), 400, 50);
+            trackLeftButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectNext(), 400, 50);
+        } else {
+            trackLeftButton.bindLightPressed(mainLayer, cursorTrack.hasPrevious());
+            trackRightButton.bindLightPressed(mainLayer, cursorTrack.hasNext());
+            trackLeftButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectPrevious(), 400, 50);
+            trackRightButton.bindRepeatHold(mainLayer, () -> cursorTrack.selectNext(), 400, 50);
+        }
+
         transport.isPlaying().markInterested();
         transport.isMetronomeEnabled().markInterested();
         transport.isClipLauncherOverdubEnabled().markInterested();
         transport.isArrangerLoopEnabled().markInterested();
         transport.isMetronomeEnabled().markInterested();
-        
+
         hwElements.getButton(CcAssignments.PLAY).bind(mainLayer, transport.playAction());
         hwElements.getButton(CcAssignments.PLAY).bindLightOnOff(mainLayer, transport.isPlaying());
-        
+
         hwElements.getButton(CcAssignments.STOP).bind(mainLayer, transport.stopAction());
         hwElements.getButton(CcAssignments.STOP).bindLightOnOff(mainLayer, transport.isPlaying());
         hwElements.getButton(CcAssignments.LOOP).bindToggle(mainLayer, transport.isArrangerLoopEnabled());
@@ -156,7 +164,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         undoButton.bind(shiftLayer, application.redoAction());
         undoButton.bindLightOnOff(shiftLayer, application.canRedo());
     }
-    
+
     @Override
     public void exit() {
         final CompletableFuture<Boolean> shutdown = new CompletableFuture<>();
@@ -172,7 +180,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
             println(" >> Exit Daw MOde");
         }
     }
-    
+
     private void pause(final long timeMs) {
         try {
             Thread.sleep(100);
@@ -181,11 +189,11 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
             Thread.currentThread().interrupt();
         }
     }
-    
+
     @Override
     public void flush() {
         surface.updateHardware();
     }
-    
-    
+
+
 }
