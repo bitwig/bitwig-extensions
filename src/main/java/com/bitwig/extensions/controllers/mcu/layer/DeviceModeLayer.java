@@ -184,9 +184,9 @@ public abstract class DeviceModeLayer extends MixerModeLayer {
             }
         } else {
             displayLabelLayer = nameValue
-                ? mixer.getLayerSource(ControlMode.VOLUME).getDisplayLabelLayer()
+                ? mixer.getLayerSource(ControlMode.STD_PLUGIN).getDisplayLabelLayer()
                 : mixer.getTrackDisplayLayer();
-            displayValueLayer = mixer.getLayerSource(displayMode).getDisplayValueLayer();
+            displayValueLayer = mixer.getLayerSource(nameValue ? ControlMode.STD_PLUGIN : displayMode).getDisplayValueLayer();
         }
         if (infoText != null && matchState == State.TYPE_MATCH) {
             topRowInfoText.set(infoText);
