@@ -46,10 +46,13 @@ public class DisplayControl {
         this.temporaryDisplay.update2Lines();
     }
     
-    public void fixDisplayUpdate(final int lineIndex, final String text) {
+    public void fixDisplayUpdate(final int lineIndex, final String text, final long lastBlockTime) {
         this.fixedDisplay.setLine(lineIndex, text);
-        temporaryDisplay.setLine(lineIndex, text);
-        temporaryDisplay.update2Lines();
+        final long diff = System.currentTimeMillis() - lastBlockTime;
+        if (diff > 1000) {
+            temporaryDisplay.setLine(lineIndex, text);
+            temporaryDisplay.update2Lines();
+        }
         if (this.fixedState == FixDisplayState.TRACK) {
             this.fixedDisplay.update2Lines();
         }

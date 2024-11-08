@@ -363,9 +363,9 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
         
         final RgbButton navUpButton = hwElements.getButton(CcAssignments.NAV_UP);
         final RgbButton navDownButton = hwElements.getButton(CcAssignments.NAV_DOWN);
-        navUpButton.bindRepeatHold(this, () -> navigate(1), 400, 50);
+        navUpButton.bindRepeatHold(this, () -> navigate(-1), 400, 50);
         navUpButton.bindLightPressed(this, this::canScrollUp);
-        navDownButton.bindRepeatHold(this, () -> navigate(-1), 400, 50);
+        navDownButton.bindRepeatHold(this, () -> navigate(1), 400, 50);
         navDownButton.bindLightPressed(this, this::canScrollDown);
         
         navUpButton.bindPressed(functionLayer, this::duplicateClip);
@@ -399,11 +399,11 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
     }
     
     private boolean canScrollDown() {
-        return clipState.getPositionHandler().canScrollLeft().get();
+        return true;
     }
     
     private boolean canScrollUp() {
-        return true;
+        return clipState.getPositionHandler().canScrollLeft().get();
     }
     
     private void navigate(final int dir) {
