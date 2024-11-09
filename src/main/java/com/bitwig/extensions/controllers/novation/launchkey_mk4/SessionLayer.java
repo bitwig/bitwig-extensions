@@ -373,6 +373,9 @@ public class SessionLayer extends Layer {
             } else if (track.isQueuedForStop().get()) {
                 return RgbState.flash(color, 0);
             } else if (slot.isPlaying().get()) {
+                if (track.arm().get() && transport.isClipLauncherOverdubEnabled().get()) {
+                    return RgbState.RED.pulse();
+                }
                 return RgbState.pulse(22);
             }
             return RgbState.of(color);

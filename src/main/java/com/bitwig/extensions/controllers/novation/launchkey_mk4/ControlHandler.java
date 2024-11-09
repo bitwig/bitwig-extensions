@@ -14,10 +14,10 @@ import com.bitwig.extension.controller.api.CueMarker;
 import com.bitwig.extension.controller.api.CueMarkerBank;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.DetailEditor;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.RemoteControl;
+import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
@@ -25,20 +25,21 @@ import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.novation.launchkey_mk4.bindings.AbsoluteEncoderBinding;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.bindings.RelativeDisplayControl;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.bindings.RelativeEncoderBinding;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.bindings.SliderBinding;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.LaunchRelEncoder;
-import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RelAbsEncoder;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayControl;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.sequencer.OverlayEncoderLayer;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.IncrementDecelerator;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.values.BasicStringValue;
+import com.bitwig.extensions.framework.values.LayoutType;
+import com.bitwig.extensions.framework.values.ValueObject;
 
 @Component
 public class ControlHandler {
@@ -60,9 +61,11 @@ public class ControlHandler {
     private final CursorTrack cursorTrack;
     private boolean markerPositionChangePending = false;
     private long trackViewBlocked = -1;
-    private final DetailEditor detailEditor;
     private final Clip arrangerClip;
     private final SceneBank sceneBank;
+    private final Arranger arranger;
+    private final ValueObject<LayoutType> panelLayout;
+    private final Scene focusScene;
     
     private enum EncMode {
         DEVICE("Plugin", 0x24),
@@ -98,9 +101,10 @@ public class ControlHandler {
         this.display = displayControl;
         this.globalStates = globalStates;
         this.formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
-        this.detailEditor = host.createDetailEditor();
         arrangerClip = viewControl.getArrangerClip();
         sceneBank = viewControl.getSceneBank();
+        this.arranger = host.createArranger();
+        this.panelLayout = globalStates.getPanelLayout();
         
         Arrays.stream(EncMode.values())
             .forEach(mode -> layerMap.put(mode, new Layer(layers, "END_%s".formatted(mode))));
@@ -111,6 +115,7 @@ public class ControlHandler {
         final HardwareSlider[] trackSliders = hwElements.getSliders();
         
         cursorTrack = viewControl.getCursorTrack();
+        focusScene = viewControl.getFocusScene();
         setUpTrackControlView(viewControl, displayControl);
         
         final TrackBank trackBank = viewControl.getTrackBank();
@@ -139,7 +144,7 @@ public class ControlHandler {
                 new RelativeEncoderBinding(i, send, incEncoders[i], displayControl, track.name(), focusSend.name()));
         }
         
-        bindIncremental(hwElements, transport, host);
+        bindIncremental(hwElements, transport);
         bindRemoteNavigation(remotes, hwElements, viewControl.getDeviceRemotesPages(), globalStates.getShiftState(),
             viewControl.getCursorDevice());
         bindRemoteNavigation(EncMode.TRACK_REMOTES, trackRemotes, hwElements, viewControl.getTrackRemotesPages());
@@ -148,7 +153,7 @@ public class ControlHandler {
         setupSendNavigation(hwElements, trackBank);
         setupMixerNavigation(hwElements);
         initQuantize(hwElements, viewControl);
-        setUpTrackNavigation(hwElements, globalStates.isMiniVersion());
+        setUpTrackNavigation(hwElements, midiProcessor.isMiniVersion());
         midiProcessor.addModeListener(this::handleModeChange);
         currentLayer = layerMap.get(mode);
     }
@@ -227,32 +232,56 @@ public class ControlHandler {
         });
     }
     
-    private void bindIncremental(final LaunchkeyHwElements hwElements, final Transport transport,
-        final ControllerHost host) {
+    private void bindIncremental(final LaunchkeyHwElements hwElements, final Transport transport) {
         final LaunchRelEncoder[] encoders = hwElements.getIncEncoders();
         final Layer layer = layerMap.get(EncMode.TRANSPORT);
-        final Arranger arranger = host.createArranger();
         
         bindPosition(0, layer, transport.getPosition(), encoders[0], "PlaybackPosition", false);
         bindPosition(3, layer, transport.arrangerLoopStart(), encoders[3], "Loop Start", true);
         bindPosition(4, layer, transport.arrangerLoopDuration(), encoders[4], "Loop Duration", true);
         
         final BasicStringValue zoomValue = new BasicStringValue("");
+        final BasicStringValue zoomParamName = new BasicStringValue("Zoom Arranger");
+        final IncrementDecelerator horizontalZoomIncrementor =
+            new IncrementDecelerator(inc -> handleHorizontalZoom(zoomValue, inc), 50);
         final RelativeDisplayControl zoomArrangerControl =
-            new RelativeDisplayControl(1, display, "Transport", "Zoom Arranger", zoomValue,
-                inc -> handleHorizontalZoom(arranger, zoomValue, inc),
+            new RelativeDisplayControl(1, display, "Transport", zoomParamName, zoomValue, horizontalZoomIncrementor,
                 () -> encoders[1].setEncoderBehavior(LaunchRelEncoder.EncoderMode.ACCELERATED, 64));
         encoders[1].bindIncrementAction(layer, zoomArrangerControl::handleInc);
         layer.addBinding(zoomArrangerControl);
         
         final BasicStringValue zoomVerticalValue = new BasicStringValue("");
+        final BasicStringValue zoomVerticalParamName = new BasicStringValue("Zoom Tracks");
+        final IncrementDecelerator verticalZoomIncrementor =
+            new IncrementDecelerator(inc -> handleVerticalZoom(zoomVerticalValue, inc), 60);
         final RelativeDisplayControl zoomVerticalControl =
-            new RelativeDisplayControl(2, display, "Transport", "Zoom Tracks", zoomVerticalValue,
-                inc -> handleVerticalZoom(arranger, zoomVerticalValue, inc),
-                () -> encoders[2].setEncoderBehavior(LaunchRelEncoder.EncoderMode.ACCELERATED, 64));
+            new RelativeDisplayControl(2, display, "Transport", zoomVerticalParamName, zoomVerticalValue,
+                verticalZoomIncrementor,
+                () -> encoders[2].setEncoderBehavior(LaunchRelEncoder.EncoderMode.ACCELERATED, 32));
         
         encoders[2].bindIncrementAction(layer, zoomVerticalControl::handleInc);
         layer.addBinding(zoomVerticalControl);
+        this.panelLayout.addValueObserver((old, newValue) -> {
+            if (newValue == LayoutType.ARRANGER) {
+                zoomParamName.set("Zoom Arranger");
+                zoomVerticalParamName.set("Zoom Tracks");
+            } else {
+                zoomParamName.set("Track Select");
+                zoomVerticalParamName.set("Scene Select");
+                zoomValue.set(cursorTrack.name().get());
+                zoomVerticalValue.set(focusScene.name().get());
+            }
+        });
+        cursorTrack.name().addValueObserver(name -> {
+            if (this.panelLayout.get() != LayoutType.ARRANGER) {
+                zoomValue.set(name);
+            }
+        });
+        focusScene.name().addValueObserver(name -> {
+            if (this.panelLayout.get() != LayoutType.ARRANGER) {
+                zoomVerticalValue.set(name);
+            }
+        });
         
         final BasicStringValue cueMarkerValue = new BasicStringValue("");
         final CueMarkerBank cueMarkerBank = arranger.createCueMarkerBank(1);
@@ -298,8 +327,8 @@ public class ControlHandler {
         }
     }
     
-    private void handleVerticalZoom(final Arranger arranger, final BasicStringValue zoomVerticalValue, final int inc) {
-        if (this.globalStates.isArrangeMode()) {
+    private void handleVerticalZoom(final BasicStringValue zoomVerticalValue, final int inc) {
+        if (this.panelLayout.get() == LayoutType.ARRANGER) {
             if (inc > 0) {
                 zoomVerticalValue.set("Zoom In");
                 arranger.zoomInLaneHeightsSelected();
@@ -309,17 +338,15 @@ public class ControlHandler {
             }
         } else {
             if (inc > 0) {
-                zoomVerticalValue.set("Scene >>");
                 sceneBank.scrollForwards();
             } else {
-                zoomVerticalValue.set("Scene <<");
                 sceneBank.scrollBackwards();
             }
         }
     }
     
-    private void handleHorizontalZoom(final Arranger arranger, final BasicStringValue zoomValue, final int inc) {
-        if (this.globalStates.isArrangeMode()) {
+    private void handleHorizontalZoom(final BasicStringValue zoomValue, final int inc) {
+        if (this.panelLayout.get() == LayoutType.ARRANGER) {
             if (inc > 0) {
                 zoomValue.set("In");
                 arranger.zoomIn();
@@ -330,11 +357,9 @@ public class ControlHandler {
         } else {
             if (inc > 0) {
                 trackViewBlocked = System.currentTimeMillis();
-                zoomValue.set("Track >>");
                 cursorTrack.selectNext();
             } else {
                 trackViewBlocked = System.currentTimeMillis();
-                zoomValue.set("Track <<");
                 cursorTrack.selectPrevious();
             }
         }
@@ -414,14 +439,6 @@ public class ControlHandler {
     private void updateTrackDeviceInfo() {
         display.show2Line(trackName, deviceName);
     }
-    
-    private void bindRemote(final EncMode mode, final CursorTrack cursorTrack, final int i, final RelAbsEncoder encoder,
-        final CursorRemoteControlsPage remotes) {
-        final RemoteControl remote = remotes.getParameter(i);
-        layerMap.get(mode)
-            .addBinding(new AbsoluteEncoderBinding(i, remote, encoder, display, cursorTrack.name(), remote.name()));
-    }
-    
     
     private void bindRemote(final EncMode mode, final CursorTrack cursorTrack, final int i,
         final LaunchRelEncoder encoder, final CursorRemoteControlsPage remotes) {

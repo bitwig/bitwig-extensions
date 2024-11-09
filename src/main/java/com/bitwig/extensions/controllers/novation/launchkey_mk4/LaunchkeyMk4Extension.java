@@ -7,8 +7,10 @@ import java.util.concurrent.Executors;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MasterTrack;
+import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.LaunchkeyButton;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.control.RgbButton;
@@ -17,6 +19,7 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk4.display.DisplayC
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.sequencer.SequencerLayer;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
+import com.bitwig.extensions.framework.values.FocusMode;
 
 public class LaunchkeyMk4Extension extends ControllerExtension {
     private static ControllerHost debugHost;
@@ -31,6 +34,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     private Layer stashedModeLayer;
     private DrumPadLayer padLayer;
     private SequencerLayer sequencerLayer;
+    private FocusMode recordFocusMode = FocusMode.LAUNCHER;
     
     public static void println(final String format, final Object... args) {
         if (debugHost != null) {
@@ -68,6 +72,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         display.initTemps();
         mainLayer.setIsActive(true);
         sessionLayer.setIsActive(true);
+        setUpPreferences();
         diContext.activate();
     }
     
@@ -150,8 +155,6 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         final MasterTrack masterTrack = host.createMasterTrack(2);
         final GlobalStates globalStates = diContext.getService(GlobalStates.class);
         
-        globalStates.setMiniVersion(isMini);
-        
         final Application application = diContext.getService(Application.class);
         
         final LaunchkeyButton shiftButton = hwElements.getShiftButton();
@@ -168,21 +171,21 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         transport.isMetronomeEnabled().markInterested();
         
         hwElements.getButton(CcAssignments.PLAY).bindPressed(mainLayer, () -> handleRestartPlay(transport));
-        hwElements.getButton(CcAssignments.PLAY).bindPressed(mainLayer, () -> transport.play());
         hwElements.getButton(CcAssignments.PLAY).bindLightOnOff(mainLayer, transport.isPlaying());
         
-        hwElements.getButton(CcAssignments.PLAY).bind(shiftLayer, transport.continuePlaybackAction());
+        hwElements.getButton(CcAssignments.PLAY).bind(shiftLayer, transport.playAction());
         hwElements.getButton(CcAssignments.PLAY).bindLightOnOff(shiftLayer, transport.isPlaying());
         
         hwElements.getButton(CcAssignments.STOP).bind(mainLayer, transport.stopAction());
         hwElements.getButton(CcAssignments.STOP).bindLightOnOff(mainLayer, transport.isPlaying());
         hwElements.getButton(CcAssignments.LOOP).bindToggle(mainLayer, transport.isArrangerLoopEnabled());
         hwElements.getButton(CcAssignments.LOOP).bindLightOnOff(mainLayer, transport.isArrangerLoopEnabled());
-        hwElements.getButton(CcAssignments.REC).bindToggle(mainLayer, transport.isClipLauncherOverdubEnabled());
-        hwElements.getButton(CcAssignments.REC).bindLightOnOff(mainLayer, transport.isClipLauncherOverdubEnabled());
+        
+        hwElements.getButton(CcAssignments.REC).bindPressed(mainLayer, () -> handleRecord(transport));
+        hwElements.getButton(CcAssignments.REC).bindLightPressed(mainLayer, () -> getRecordLightState(transport));
+        
         hwElements.getButton(CcAssignments.METRO).bindToggle(mainLayer, transport.isMetronomeEnabled());
         hwElements.getButton(CcAssignments.METRO).bindLightOnOff(mainLayer, transport.isMetronomeEnabled());
-        
         
         final RgbButton undoButton = hwElements.getButton(CcAssignments.UNDO);
         undoButton.bind(mainLayer, application.undoAction());
@@ -191,14 +194,38 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         undoButton.bindLightOnOff(shiftLayer, application.canRedo());
     }
     
+    private void handleRecord(final Transport transport) {
+        if (recordFocusMode == FocusMode.LAUNCHER) {
+            transport.isClipLauncherOverdubEnabled().toggle();
+        } else {
+            transport.record();
+        }
+    }
+    
+    private boolean getRecordLightState(final Transport transport) {
+        if (recordFocusMode == FocusMode.LAUNCHER) {
+            return transport.isClipLauncherOverdubEnabled().get();
+        } else {
+            return transport.isArrangerRecordEnabled().get();
+        }
+    }
     
     private void handleRestartPlay(final Transport transport) {
-        if (!transport.isPlaying().get()) {
+        if (transport.isPlaying().get()) {
             transport.stop();
-            transport.play();
         } else {
             transport.play();
         }
+    }
+    
+    private void setUpPreferences() {
+        final DocumentState documentState = getHost().getDocumentState(); // THIS
+        final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Record Button assignment", //
+            "Transport", new String[] {FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
+            recordFocusMode.getDescriptor());
+        recordButtonAssignment.addValueObserver(value -> {
+            recordFocusMode = FocusMode.toMode(value);
+        });
     }
     
     @Override
