@@ -29,6 +29,12 @@ public class DisplaySegment {
         }
     }
     
+    public void show2Lines(final String line1, final String line2) {
+        stdLines[0] = line1;
+        stdLines[1] = line2;
+        update2Lines();
+    }
+    
     public void update2Lines() {
         if (config != 0x61) {
             config = 0x61;

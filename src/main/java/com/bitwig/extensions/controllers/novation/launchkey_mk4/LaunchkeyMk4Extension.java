@@ -182,12 +182,15 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         hwElements.getButton(CcAssignments.REC).bindLightOnOff(mainLayer, transport.isClipLauncherOverdubEnabled());
         hwElements.getButton(CcAssignments.METRO).bindToggle(mainLayer, transport.isMetronomeEnabled());
         hwElements.getButton(CcAssignments.METRO).bindLightOnOff(mainLayer, transport.isMetronomeEnabled());
+        
+        
         final RgbButton undoButton = hwElements.getButton(CcAssignments.UNDO);
         undoButton.bind(mainLayer, application.undoAction());
         undoButton.bindLightOnOff(mainLayer, application.canUndo());
         undoButton.bind(shiftLayer, application.redoAction());
         undoButton.bindLightOnOff(shiftLayer, application.canRedo());
     }
+    
     
     private void handleRestartPlay(final Transport transport) {
         if (!transport.isPlaying().get()) {

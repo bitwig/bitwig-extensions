@@ -8,6 +8,7 @@ import java.util.function.IntConsumer;
 import com.bitwig.extension.controller.api.Arranger;
 import com.bitwig.extension.controller.api.BeatTimeFormatter;
 import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CueMarker;
 import com.bitwig.extension.controller.api.CueMarkerBank;
@@ -17,6 +18,7 @@ import com.bitwig.extension.controller.api.DetailEditor;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.RemoteControl;
+import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.SettableBeatTimeValue;
@@ -59,6 +61,8 @@ public class ControlHandler {
     private boolean markerPositionChangePending = false;
     private long trackViewBlocked = -1;
     private final DetailEditor detailEditor;
+    private final Clip arrangerClip;
+    private final SceneBank sceneBank;
     
     private enum EncMode {
         DEVICE("Plugin", 0x24),
@@ -95,6 +99,8 @@ public class ControlHandler {
         this.globalStates = globalStates;
         this.formatter = host.createBeatTimeFormatter(":", 2, 1, 1, 0);
         this.detailEditor = host.createDetailEditor();
+        arrangerClip = viewControl.getArrangerClip();
+        sceneBank = viewControl.getSceneBank();
         
         Arrays.stream(EncMode.values())
             .forEach(mode -> layerMap.put(mode, new Layer(layers, "END_%s".formatted(mode))));
@@ -132,6 +138,7 @@ public class ControlHandler {
             layerMap.get(EncMode.SENDS).addBinding(
                 new RelativeEncoderBinding(i, send, incEncoders[i], displayControl, track.name(), focusSend.name()));
         }
+        
         bindIncremental(hwElements, transport, host);
         bindRemoteNavigation(remotes, hwElements, viewControl.getDeviceRemotesPages(), globalStates.getShiftState(),
             viewControl.getCursorDevice());
@@ -140,9 +147,45 @@ public class ControlHandler {
         
         setupSendNavigation(hwElements, trackBank);
         setupMixerNavigation(hwElements);
+        initQuantize(hwElements, viewControl);
         setUpTrackNavigation(hwElements, globalStates.isMiniVersion());
         midiProcessor.addModeListener(this::handleModeChange);
         currentLayer = layerMap.get(mode);
+    }
+    
+    private void initQuantize(final LaunchkeyHwElements hwElements, final ViewControl viewControl) {
+        final RgbButton quantizeButton = hwElements.getButton(CcAssignments.QUANTIZE);
+        
+        final Clip mainClip = viewControl.getCursorClip();
+        mainClip.clipLauncherSlot().name().markInterested();
+        mainClip.exists().markInterested();
+        arrangerClip.clipLauncherSlot().name().markInterested();
+        arrangerClip.exists().markInterested();
+        quantizeButton.bindPressed(mainLayer, () -> this.quantizeClip(mainClip));
+        quantizeButton.bindLightPressed(mainLayer, () -> {
+            if (globalStates.getShiftState().get()) {
+                return arrangerClip.exists().get();
+            }
+            return mainClip.exists().get();
+        });
+    }
+    
+    private void quantizeClip(final Clip clip) {
+        if (globalStates.getShiftState().get()) {
+            arrangerClip.quantize(1.0);
+            if (arrangerClip.exists().get()) {
+                display.getTemporaryDisplay().show2Lines("Quantize", "Arranger Clip");
+            } else {
+                display.getTemporaryDisplay().show2Lines("Quantize", "No Clip");
+            }
+        } else {
+            clip.quantize(1.0);
+            if (clip.exists().get()) {
+                display.getTemporaryDisplay().show2Lines("Quantize", "Clip");
+            } else {
+                display.getTemporaryDisplay().show2Lines("Quantize", "No Clip");
+            }
+        }
     }
     
     private void setUpTrackNavigation(final LaunchkeyHwElements hwElements, final boolean isMini) {
@@ -265,7 +308,13 @@ public class ControlHandler {
                 arranger.zoomOutLaneHeightsSelected();
             }
         } else {
-            
+            if (inc > 0) {
+                zoomVerticalValue.set("Scene >>");
+                sceneBank.scrollForwards();
+            } else {
+                zoomVerticalValue.set("Scene <<");
+                sceneBank.scrollBackwards();
+            }
         }
     }
     
@@ -512,6 +561,9 @@ public class ControlHandler {
         this.currentLayer.setIsActive(false);
         this.mode = mode;
         this.currentLayer = layerMap.get(mode);
+        if (mode == EncMode.VOLUME || mode == EncMode.PAN) {
+            lastMixMode = mode;
+        }
         display.show2Line(title, mode.getTitle());
         this.currentLayer.setIsActive(true);
     }

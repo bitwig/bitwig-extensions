@@ -12,7 +12,6 @@ import com.bitwig.extension.controller.api.NoteStep;
 import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
-import com.bitwig.extensions.controllers.novation.launchkey_mk4.LaunchkeyMk4Extension;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.IObservableValue;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.IntValue;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.ObservableValue;
@@ -110,9 +109,7 @@ public class ClipState {
     }
     
     private void setMode(final ClipSeqMode mode) {
-        LaunchkeyMk4Extension.println(" => MODE %s", mode);
         this.mode = mode;
-        // DO Something
     }
     
     public StepViewPosition getPositionHandler() {

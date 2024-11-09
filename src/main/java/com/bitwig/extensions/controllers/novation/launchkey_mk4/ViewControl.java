@@ -10,8 +10,9 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.Scene;
+import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.framework.di.Component;
@@ -39,6 +40,9 @@ public class ViewControl {
     private final RemotePageName deviceRemotesPages;
     private final RemotePageName trackRemotesPages;
     private final RemotePageName projectRemotesPages;
+    private final Clip arrangerClip;
+    private final Scene focusScene;
+    private final SceneBank sceneBank;
     
     public ViewControl(final ControllerHost host) {
         rootTrack = host.getProject().getRootTrackGroup();
@@ -65,18 +69,16 @@ public class ViewControl {
                 }
             });
         }
-        //setUpFocusScene();
         
-        trackBank.sceneBank().scrollPosition()
-            .addValueObserver(scene -> maxTrackBank.sceneBank().scrollPosition().set(scene));
+        sceneBank = trackBank.sceneBank();
+        sceneBank.scrollPosition().addValueObserver(scene -> maxTrackBank.sceneBank().scrollPosition().set(scene));
         
-        //deviceControl = new DeviceControl(cursorTrack, rootTrack);
-        cursorClip = host.createLauncherCursorClip(32, 128);
+        cursorClip = host.createLauncherCursorClip(16, 128);
         cursorClip.setStepSize(0.125);
         
+        
         cursorClip.exists().addValueObserver(exists -> LaunchkeyMk4Extension.println("LNC clip ext=%s", exists));
-        final Clip arrangerClip = host.createArrangerCursorClip(32, 128);
-        arrangerClip.exists().addValueObserver(exists -> LaunchkeyMk4Extension.println("ARR clip ext=%s", exists));
+        arrangerClip = host.createArrangerCursorClip(16, 128);
         
         primaryDevice =
             cursorTrack.createCursorDevice("DrumDetection", "Pad Device", 2, CursorDeviceFollowMode.FIRST_INSTRUMENT);
@@ -91,33 +93,21 @@ public class ViewControl {
         trackRemotesPages = new RemotePageName(trackRemotes, new BasicStringValue("Track Remotes"));
         projectRemotesPages = new RemotePageName(projectRemotes, new BasicStringValue("Project Remotes"));
         
-        final DeviceBank deviceBank = cursorTrack.createDeviceBank(16);
-        //        for (int i = 0; i < deviceBank.getSizeOfBank(); i++) {
-        //            this.devices.add(new DeviceView(i, deviceBank, cursorDevice));
-        //        }
         cursorDevice.name().addValueObserver(deviceName -> {
             deviceDescriptor.set(deviceName);
         });
         
+        sceneBank.canScrollBackwards().markInterested();
+        sceneBank.canScrollForwards().markInterested();
+        focusScene = sceneBank.getScene(0);
+        focusScene.clipCount().markInterested();
+        focusScene.name().addValueObserver(name -> {
+        
+        });
+        
+        
         prepareTrack(cursorTrack);
     }
-    
-    //    private void setUpFocusScene() {
-    //        for (int i = 0; i < MAX_TRACKS; i++) {
-    //            final int trackIndex = i;
-    //            final Track track = maxTrackBank.getItemAt(trackIndex);
-    //            for (int j = 0; j < MAX_SCENES; j++) {
-    //                final int sceneIndex = j;
-    //                final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
-    //                slot.hasContent().addValueObserver(hasContent -> {
-    //                    overviewGrid.markHasClips(trackIndex, sceneIndex, hasContent);
-    //                });
-    //                slot.isPlaybackQueued().addValueObserver(isQueued -> {
-    //                    overviewGrid.markSceneQueued(sceneIndex, isQueued);
-    //                });
-    //            }
-    //        }
-    
     
     public IntValueObject getSelectedTrackIndex() {
         return selectedTrackIndex;
@@ -169,13 +159,17 @@ public class ViewControl {
         return cursorClip;
     }
     
-    //    public OverviewGrid getOverviewGrid() {
-    //        return overviewGrid;
-    //    }
-    //
-    //    public boolean hasQueuedClips(final int sceneIndex) {
-    //        return overviewGrid.hasQueuedScenes(sceneIndex);
-    //    }
+    public Clip getArrangerClip() {
+        return arrangerClip;
+    }
+    
+    public Scene getFocusScene() {
+        return focusScene;
+    }
+    
+    public SceneBank getSceneBank() {
+        return sceneBank;
+    }
     
     public PinnableCursorDevice getCursorDevice() {
         return cursorDevice;
@@ -193,10 +187,6 @@ public class ViewControl {
         return projectRemotes;
     }
     
-    //    public List<DeviceView> getDevices() {
-    //        return devices;
-    //    }
-    
     public PinnableCursorDevice getPrimaryDevice() {
         return primaryDevice;
     }
@@ -204,13 +194,6 @@ public class ViewControl {
     public BasicStringValue getDeviceDescriptor() {
         return deviceDescriptor;
     }
-    
-    //    public void selectDrumDevice(final int note) {
-    //        devices.stream().filter(device -> device.isDrumDevice()) //
-    //            .filter(device -> device.isSelected()) //
-    //            .findFirst()//
-    //            .ifPresent(device -> device.selectKeyPad(note));
-    //    }
     
     public static Optional<ClipLauncherSlot> filterSlot(final Track track, final Predicate<ClipLauncherSlot> check) {
         final ClipLauncherSlotBank slots = track.clipLauncherSlotBank();
