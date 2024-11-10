@@ -17,9 +17,9 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
 public class OverlayEncoderLayer extends Layer {
-
+    
     private final ClipState clipState;
-
+    
     public OverlayEncoderLayer(final Layers layers, final LaunchRelEncoder[] incEncoders, final ClipState clipState,
         final DisplayControl display, final ValueSet gridValue) {
         super(layers, "NOTE_EDIT_LAYER");
@@ -37,7 +37,7 @@ public class OverlayEncoderLayer extends Layer {
         final DoubleNoteValueHandler rndValue = new StdDoubleNoteValueHandler(NoteStep::chance, NoteStep::setChance);
         addBinding(index, incEncoders[index++], display, "Chance", rndValue);
         final IntNoteValueHandler repeatValue =
-            new IntNoteValueHandler(NoteStep::repeatCount, NoteStep::setRepeatCount, 1, 64);
+            new IntNoteValueHandler(NoteStep::repeatCount, NoteStep::setRepeatCount, 0, 64);
         addBinding(index, incEncoders[index++], display, "Repeat", repeatValue);
         final DoubleNoteValueHandler repeatCurve =
             new StdDoubleNoteValueHandler(NoteStep::repeatCurve, NoteStep::setRepeatCurve, -1, 1, 0.01);
@@ -49,22 +49,21 @@ public class OverlayEncoderLayer extends Layer {
             new StdDoubleNoteValueHandler(NoteStep::pressure, NoteStep::setPressure, 0, 1, 0.01);
         addBinding(index, incEncoders[index], display, "Aftertouch", afterTouch);
     }
-
+    
     private void addBinding(final int index, final LaunchRelEncoder encoder, final DisplayControl display,
         final String paramName, final NoteValueHandler valueHandler) {
         final RelativeDisplayControl control =
             new RelativeDisplayControl(index, display, "Note Edit", paramName, valueHandler.getDisplayValue(),
                 inc -> handleValueInc(inc, valueHandler),
-                () -> encoder.setEncoderBehavior(LaunchRelEncoder.EncoderMode.NONACCELERATED)
-            );
+                () -> encoder.setEncoderBehavior(LaunchRelEncoder.EncoderMode.NONACCELERATED));
         encoder.bindIncrementAction(this, control::handleInc);
         this.addBinding(control);
     }
-
+    
     void handleValueInc(final int inc, final NoteValueHandler velocityValue) {
         final List<NoteStep> notes = clipState.getHeldNotes();
         velocityValue.setSteps(notes);
         velocityValue.doIncrement(inc);
     }
-
+    
 }

@@ -164,11 +164,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         
         mainLayer.bind(hwElements.getMasterSlider(), masterTrack.volume());
         
-        transport.isPlaying().markInterested();
-        transport.isMetronomeEnabled().markInterested();
-        transport.isClipLauncherOverdubEnabled().markInterested();
-        transport.isArrangerLoopEnabled().markInterested();
-        transport.isMetronomeEnabled().markInterested();
+        preapareTransport(transport);
         
         hwElements.getButton(CcAssignments.PLAY).bindPressed(mainLayer, () -> handleRestartPlay(transport));
         hwElements.getButton(CcAssignments.PLAY).bindLightOnOff(mainLayer, transport.isPlaying());
@@ -192,6 +188,16 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         undoButton.bindLightOnOff(mainLayer, application.canUndo());
         undoButton.bind(shiftLayer, application.redoAction());
         undoButton.bindLightOnOff(shiftLayer, application.canRedo());
+    }
+    
+    private static void preapareTransport(final Transport transport) {
+        transport.isPlaying().markInterested();
+        transport.isMetronomeEnabled().markInterested();
+        transport.isClipLauncherOverdubEnabled().markInterested();
+        transport.isArrangerRecordEnabled().markInterested();
+        transport.isArrangerOverdubEnabled().markInterested();
+        transport.isArrangerLoopEnabled().markInterested();
+        transport.isMetronomeEnabled().markInterested();
     }
     
     private void handleRecord(final Transport transport) {

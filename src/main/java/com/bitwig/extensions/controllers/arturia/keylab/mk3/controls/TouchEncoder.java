@@ -19,8 +19,8 @@ public class TouchEncoder extends TouchControl {
         super(surface.createHardwareButton("ENCODER_BUTTON_%d".formatted(id + 1)), id, ccTouchNr, midiProcessor);
         final MidiIn midiIn = midiProcessor.getMidiIn();
         encoder = surface.createRelativeHardwareKnob("ENCODER_%d".formatted(id + 1));
-        encoder.setAdjustValueMatcher(midiIn.createRelativeBinOffsetCCValueMatcher(0, ccNr, 100));
-        encoder.setStepSize(1 / 100.0);
+        encoder.setAdjustValueMatcher(midiIn.createRelativeBinOffsetCCValueMatcher(0, ccNr, 400));
+        encoder.setStepSize(0.01);
     }
     
     public void bindParameter(final Layer layer, final Parameter parameter, final StringValue labelValue) {
