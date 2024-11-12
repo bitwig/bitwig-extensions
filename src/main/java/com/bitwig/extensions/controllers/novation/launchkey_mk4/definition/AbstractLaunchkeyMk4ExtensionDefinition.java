@@ -4,7 +4,6 @@ import com.bitwig.extension.controller.ControllerExtensionDefinition;
 
 public abstract class AbstractLaunchkeyMk4ExtensionDefinition extends ControllerExtensionDefinition {
     
-    
     @Override
     public String getAuthor() {
         return "Bitwig";
@@ -12,7 +11,7 @@ public abstract class AbstractLaunchkeyMk4ExtensionDefinition extends Controller
     
     @Override
     public String getVersion() {
-        return "0.5";
+        return "1.0";
     }
     
     @Override
@@ -23,11 +22,6 @@ public abstract class AbstractLaunchkeyMk4ExtensionDefinition extends Controller
     @Override
     public int getRequiredAPIVersion() {
         return 18;
-    }
-    
-    @Override
-    public String getHelpFilePath() {
-        return "Controllers/Novation/LaunchKey Mk3.pdf";
     }
     
     @Override

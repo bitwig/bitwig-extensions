@@ -22,6 +22,11 @@ public class LaunchkeyMiniMk4ExtensionDefinition extends AbstractLaunchkeyMk4Ext
         return "Launchkey Mini Mk4";
     }
     
+    @Override
+    public String getHelpFilePath() {
+        return "Controllers/Novation/LaunchKey Mini Mk4.pdf";
+    }
+    
     
     @Override
     public UUID getId() {
@@ -33,13 +38,15 @@ public class LaunchkeyMiniMk4ExtensionDefinition extends AbstractLaunchkeyMk4Ext
         final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) {
             for (final int variant : VARIANTS) {
-                list.add(new String[] {
-                    "MIDIIN2 (Launchkey Mini MK4 %d MIDI".formatted(variant),
-                    "Launchkey Mini MK4 %d MIDI".formatted(variant)
-                }, new String[] {
-                    "MIDIOUT2 (Launchkey Mini MK4 %d MIDI".formatted(variant),
-                    "Launchkey Mini MK4 %d MIDI".formatted(variant)
-                });
+                for (int i = 0; i < 4; i++) {
+                    list.add(new String[] {
+                        "MIDIIN2 (Launchkey Mini MK4 %d MIDI%s".formatted(variant, (i & 0x1) != 0 ? ")" : ""),
+                        "Launchkey Mini MK4 %d MIDI".formatted(variant)
+                    }, new String[] {
+                        "MIDIOUT2 (Launchkey Mini MK4 %d MIDI%s".formatted(variant, (i & 0x2) != 0 ? ")" : ""),
+                        "Launchkey Mini MK4 %d MIDI".formatted(variant)
+                    });
+                }
             }
         } else if (platformType == PlatformType.MAC) {
             for (final int variant : VARIANTS) {

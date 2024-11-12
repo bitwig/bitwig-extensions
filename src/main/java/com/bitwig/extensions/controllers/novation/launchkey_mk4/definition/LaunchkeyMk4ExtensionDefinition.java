@@ -28,15 +28,24 @@ public class LaunchkeyMk4ExtensionDefinition extends AbstractLaunchkeyMk4Extensi
     }
     
     @Override
+    public String getHelpFilePath() {
+        return "Controllers/Novation/LaunchKey Mk4.pdf";
+    }
+    
+    @Override
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
         final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) {
             for (final int variant : VARIANTS) {
-                list.add(new String[] {
-                    "MIDIIN2 (Launchkey MK4 %d MIDI)".formatted(variant), "Launchkey MK4 %d MIDI".formatted(variant)
-                }, new String[] {
-                    "MIDIOUT2 (Launchkey MK4 %d MIDI".formatted(variant), "Launchkey MK4 %d MIDI".formatted(variant)
-                });
+                for (int i = 0; i < 4; i++) {
+                    list.add(new String[] {
+                        "MIDIIN2 (Launchkey MK4 %d MIDI%s".formatted(variant, (i & 0x1) != 0 ? ")" : ""),
+                        "Launchkey MK4 %d MIDI".formatted(variant)
+                    }, new String[] {
+                        "MIDIOUT2 (Launchkey MK4 %d MIDI%s".formatted(variant, (i & 0x2) != 0 ? ")" : ""),
+                        "Launchkey MK4 %d MIDI".formatted(variant)
+                    });
+                }
             }
         } else if (platformType == PlatformType.MAC) {
             for (final int variant : VARIANTS) {

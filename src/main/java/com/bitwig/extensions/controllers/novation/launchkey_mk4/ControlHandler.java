@@ -236,9 +236,9 @@ public class ControlHandler {
         final LaunchRelEncoder[] encoders = hwElements.getIncEncoders();
         final Layer layer = layerMap.get(EncMode.TRANSPORT);
         
-        bindPosition(0, layer, transport.getPosition(), encoders[0], "PlaybackPosition", false);
-        bindPosition(3, layer, transport.arrangerLoopStart(), encoders[3], "Loop Start", true);
-        bindPosition(4, layer, transport.arrangerLoopDuration(), encoders[4], "Loop Duration", true);
+        bindPosition(0, layer, transport.getPosition(), encoders[0], "PlaybackPosition", false, true);
+        bindPosition(3, layer, transport.arrangerLoopStart(), encoders[3], "Loop Start", true, false);
+        bindPosition(4, layer, transport.arrangerLoopDuration(), encoders[4], "Loop Duration", true, false);
         
         final BasicStringValue zoomValue = new BasicStringValue("");
         final BasicStringValue zoomParamName = new BasicStringValue("Zoom Arranger");
@@ -366,12 +366,15 @@ public class ControlHandler {
     }
     
     private void bindPosition(final int index, final Layer layer, final SettableBeatTimeValue position,
-        final LaunchRelEncoder encoder, final String label, final boolean hasMinimum) {
+        final LaunchRelEncoder encoder, final String label, final boolean hasMinimum, final boolean deceleration) {
         
         final BasicStringValue transportPosition = new BasicStringValue("");
         position.addValueObserver(value -> transportPosition.set(position.getFormatted(formatter)));
-        final IntConsumer incHandler =
+        
+        final IntConsumer valueModifier =
             hasMinimum ? inc -> incPositionBounded(position, inc * 4.0) : inc -> position.inc(inc * 4.0);
+        final IntConsumer incHandler = deceleration ? new IncrementDecelerator(valueModifier, 0) : valueModifier;
+        
         final RelativeDisplayControl positionControl =
             new RelativeDisplayControl(index, display, "Transport", label, transportPosition, incHandler);
         encoder.bindIncrementAction(layer, positionControl::handleInc);
