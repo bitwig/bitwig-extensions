@@ -28,6 +28,7 @@ public class ViewControl {
     private final Scene sceneTrackItem;
     private final PinnableCursorDevice cursorDevice;
     private final Clip cursorClip;
+    private final Clip arrangerClip;
     private final CursorRemoteControlsPage primaryRemotes;
     private final CursorRemoteControlsPage sliderRemotes;
     private String[] devicePageNames = {};
@@ -56,7 +57,12 @@ public class ViewControl {
         });
         
         sceneTrackItem = viewTrackBank.sceneBank().getScene(0);
-        cursorClip = host.createLauncherCursorClip(32, 127);
+        cursorClip = host.createLauncherCursorClip(32, 128);
+        arrangerClip = host.createArrangerCursorClip(32, 128);
+        
+        cursorClip.exists().markInterested();
+        cursorClip.clipLauncherSlot().name().markInterested();
+        arrangerClip.exists().markInterested();
         
         primaryDevice = cursorTrack.createCursorDevice("DrumDetection", "Pad Device", NUM_PADS_TRACK,
             CursorDeviceFollowMode.FIRST_INSTRUMENT);
@@ -163,10 +169,24 @@ public class ViewControl {
         return controlsAnalogLab;
     }
     
-    public void invokeQuantize() {
+    public void invokeLauncherQuantize() {
         cursorClip.quantize(1.0);
         final ClipLauncherSlot slot = cursorClip.clipLauncherSlot();
         slot.showInEditor();
+    }
+    
+    public void invokeArrangerQuantize() {
+        arrangerClip.quantize(1.0);
+        final ClipLauncherSlot slot = arrangerClip.clipLauncherSlot();
+        slot.showInEditor();
+    }
+    
+    public Clip getArrangerClip() {
+        return arrangerClip;
+    }
+    
+    public Clip getCursorClip() {
+        return cursorClip;
     }
     
     public SceneBank getSceneBank() {

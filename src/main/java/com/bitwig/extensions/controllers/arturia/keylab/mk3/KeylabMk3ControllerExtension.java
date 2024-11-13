@@ -8,6 +8,7 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DocumentState;
@@ -15,11 +16,14 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.Preferences;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.controllers.arturia.keylab.mk3.color.RgbColor;
 import com.bitwig.extensions.controllers.arturia.keylab.mk3.color.RgbLightState;
 import com.bitwig.extensions.controllers.arturia.keylab.mk3.controls.RgbButton;
+import com.bitwig.extensions.controllers.arturia.keylab.mk3.display.ScreenTarget;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 import com.bitwig.extensions.framework.values.FocusMode;
+import com.bitwig.extensions.framework.values.LayoutType;
 
 public class KeylabMk3ControllerExtension extends ControllerExtension {
     
@@ -29,6 +33,8 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
     private HardwareSurface surface;
     private MidiProcessor midiProcessor;
     private FocusMode recordFocusMode = FocusMode.LAUNCHER;
+    private ViewControl viewControl;
+    private LayoutType panelLayout = LayoutType.ARRANGER;
     
     public static void println(final String format, final Object... args) {
         if (debugHost != null) {
@@ -45,7 +51,7 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
     @Override
     public void init() {
         final ControllerHost host = getHost();
-        debugHost = host;
+        //debugHost = host;
         final Context diContext = new Context(this);
         surface = diContext.getService(HardwareSurface.class);
         mainLayer = diContext.createLayer("MAIN_LAYER");
@@ -53,12 +59,12 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
         diContext.registerService(MidiProcessor.class, midiProcessor);
         final AutoDetectionMidiPortNamesList ports =
             getExtensionDefinition().getAutoDetectionMidiPortNamesList(PlatformType.MAC);
-        //        for (int i = 0; i < ports.getCount(); i++) {
-        //            println("Ports %d %s %s", i, Arrays.toString(ports.getPortNames().get(i).getInputNames()),
-        //                Arrays.toString(ports.getPortNames().get(i).getOutputNames()));
-        //        }
+        
         final ClipLaunchingLayer clipLauncher = diContext.getService(ClipLaunchingLayer.class);
         setUpPreferences(clipLauncher);
+        final DrumPadLayer drumPadLayer = diContext.getService(DrumPadLayer.class);
+        viewControl = diContext.getService(ViewControl.class);
+        drumPadLayer.setIsActive(true);
         bindTransport(diContext);
         bindMixer(diContext);
         
@@ -70,7 +76,8 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
     
     private void setUpPreferences(final ClipLaunchingLayer clipLauncher) {
         final DocumentState documentState = getHost().getDocumentState();
-        final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Record Button assignment", //
+        final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Record Button assignment",
+            //
             "Transport", new String[] {FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
             recordFocusMode.getDescriptor());
         recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));
@@ -94,8 +101,9 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
         final KeylabHardwareElements hwElements = context.getService(KeylabHardwareElements.class);
         final Transport transport = context.getService(Transport.class);
         final Application application = context.getService(Application.class);
-        final ViewControl viewControl = context.getService(ViewControl.class);
         prepareTransport(transport);
+        
+        application.panelLayout().addValueObserver(layout -> this.panelLayout = LayoutType.toType(layout));
         final RgbButton playButton = hwElements.getButton(CcAssignment.PLAY);
         playButton.bindPressed(mainLayer, transport::play);
         playButton.bindLight(mainLayer,
@@ -140,14 +148,37 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
         
         final RgbButton quantizeButton = hwElements.getButton(CcAssignment.QUANTIZE);
         quantizeButton.bindLight(mainLayer, RgbLightState.WHITE_DIMMED, RgbLightState.WHITE);
-        quantizeButton.bindPressed(mainLayer, viewControl::invokeQuantize);
+        quantizeButton.bindPressed(mainLayer, () -> invokeQuantize());
         final RgbButton saveButton = hwElements.getButton(CcAssignment.SAVE);
         final Action saveAction = application.getAction("Save");
         saveButton.bindLight(mainLayer, RgbLightState.WHITE_DIMMED, RgbLightState.WHITE);
         saveButton.bindPressed(mainLayer, () -> {
             saveAction.invoke();
-            //lcdDisplay.sendPopup("", "Project Saved", KeylabIcon.COMPUTER);
         });
+    }
+    
+    private void invokeQuantize() {
+        if (panelLayout == LayoutType.ARRANGER) {
+            final Clip clip = viewControl.getArrangerClip();
+            if (clip.exists().get()) {
+                viewControl.invokeArrangerQuantize();
+                midiProcessor.screenLine2(ScreenTarget.POP_SCREEN_2_LINES, "Arrangement", RgbColor.AQUA,
+                    "Clip Quantized", RgbColor.WHITE, null);
+            } else {
+                midiProcessor.screenLine2(ScreenTarget.POP_SCREEN_2_LINES, "Arrangement", RgbColor.AQUA,
+                    "Quantization: No Clip", RgbColor.WHITE, null);
+            }
+        } else {
+            final Clip clip = viewControl.getCursorClip();
+            if (clip.exists().get()) {
+                viewControl.invokeLauncherQuantize();
+                midiProcessor.screenLine2(ScreenTarget.POP_SCREEN_2_LINES, "Launcher", RgbColor.AQUA, "Clip Quantized",
+                    RgbColor.WHITE, null);
+            } else {
+                midiProcessor.screenLine2(ScreenTarget.POP_SCREEN_2_LINES, "Launcher", RgbColor.AQUA,
+                    "Quantization: No Clip", RgbColor.WHITE, null);
+            }
+        }
     }
     
     private static void prepareTransport(final Transport transport) {

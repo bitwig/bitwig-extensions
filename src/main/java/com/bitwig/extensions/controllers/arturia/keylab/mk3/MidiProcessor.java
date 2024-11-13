@@ -37,12 +37,14 @@ public class MidiProcessor {
     private static final String SET_DAW_PAD_BANK = ARTURIA_HEADER + "00 02 06 01 F7";
     private static final String SCREEN_HEADER = ARTURIA_HEADER + "00 02 04 ";
     private final List<Runnable> tickActions = new ArrayList<>();
+    private final NoteInput dawMainInput;
     
     public MidiProcessor(final ControllerHost host) {
         this.host = host;
         this.midiIn = host.getMidiInPort(0);
         this.midiOut = host.getMidiOutPort(0);
-        midiIn.createNoteInput("MIDI", "B00B??");
+        dawMainInput =
+            midiIn.createNoteInput("MIDI", "89????", "99????", "A?????"); //"89????", "99????", "A9????" "B00B??",
         final MidiIn midiIn2 = host.getMidiInPort(1);
         noteInput = midiIn2.createNoteInput("MIDI", "8?????", "9?????", "A?????", "B?????", "D?????", "E?????");
         midiIn.setMidiCallback(this::handleMidiIn);
@@ -83,6 +85,10 @@ public class MidiProcessor {
     
     public void queueTimedEvent(final TimedEvent timedEvent) {
         timedEvents.add(timedEvent);
+    }
+    
+    public NoteInput getDawMainInput() {
+        return dawMainInput;
     }
     
     public void exit() {
@@ -250,4 +256,5 @@ public class MidiProcessor {
                 exists ? 1 : 0);
         midiOut.sendSysex(sysEx);
     }
+    
 }

@@ -18,6 +18,7 @@ public class RgbColor {
     public static final RgbColor GREEN = getColor(0, 127, 0);
     public static final RgbColor GREEN_DIM = getColor(0, 50, 0);
     public static final RgbColor BLUE = getColor(20, 10, 127);
+    public static final RgbColor AQUA = getColor(0, 94, 125);
     public static final RgbColor WHITE = getColor(127, 127, 127);
     public static final RgbColor GRAY = getColor(32, 32, 32);
     public static final RgbColor BLACK = getColor(0, 0, 0);
