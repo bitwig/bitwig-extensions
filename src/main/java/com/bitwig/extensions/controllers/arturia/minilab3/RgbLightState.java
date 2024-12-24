@@ -15,12 +15,15 @@ public class RgbLightState extends InternalHardwareLightState {
     public static final RgbLightState WHITE = new RgbLightState(127, 127, 127);
     public static final RgbLightState OFF = new RgbLightState(0, 0, 0);
     public static final RgbLightState YELLOW = new RgbLightState(127, 127, 0);
+    public static final RgbLightState YELLOW_DIMMED = new RgbLightState(0x14, 0x14, 0);
     public static final RgbLightState ORANGE = new RgbLightState(127, 0x32, 0);
     public static final RgbLightState ORANGE_DIMMED = new RgbLightState(0x14, 0x05, 0);
     public static final RgbLightState GREEN = new RgbLightState(0, 127, 0);
     public static final RgbLightState GREEN_DIMMED = new RgbLightState(0, 0x14, 0);
     public static final RgbLightState RED_DIMMED = new RgbLightState(0x14, 0, 0);
     public static final RgbLightState WHITE_DIMMED = new RgbLightState(0x14, 0x14, 0x14);
+    public static final RgbLightState MAGENTA = new RgbLightState(0xc0, 0x20, 0xa0);
+    public static final RgbLightState MAGENTA_DIMMED = new RgbLightState(0x18, 0x04, 0x12);
 
     private final byte red;
     private final byte green;

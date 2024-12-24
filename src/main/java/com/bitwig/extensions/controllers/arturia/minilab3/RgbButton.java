@@ -4,6 +4,7 @@ import com.bitwig.extension.controller.api.*;
 import com.bitwig.extensions.framework.Layer;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class RgbButton {
@@ -82,6 +83,19 @@ public class RgbButton {
       layer.bind(hwButton, hwButton.pressedAction(), () -> target.accept(true));
       layer.bind(hwButton, hwButton.releasedAction(), () -> target.accept(false));
       layer.bindLightState(lightSource::get, light);
+   }
+
+   public void bind(
+      final Layer layer,
+      final Runnable target,
+      final Function<Boolean, RgbLightState> lightSource,
+      boolean onRelease)
+   {
+      if (onRelease)
+         layer.bind(hwButton, hwButton.releasedAction(), () -> target.run());
+      else
+         layer.bind(hwButton, hwButton.pressedAction(), () -> target.run());
+      layer.bindLightState(() -> lightSource.apply(hwButton.isPressed().get()), light);
    }
 
    public void bind(final Layer layer, final Runnable action, final Supplier<RgbLightState> lightSource) {
