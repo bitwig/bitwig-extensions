@@ -581,6 +581,18 @@ public class MiniLab3Extension extends ControllerExtension {
                 parameter.value().displayedValue().get()));
     }
     
+    private String formatParameterLabel(final String label, final String source) {
+        if (controlsAnalogLab.get()) {
+            if (label.startsWith("P1 ")) {
+                return label.substring(3);
+            }
+            else {
+                return label;
+            }
+        }
+        return String.format("%s : %s", label, source);
+    }
+
     private void bindKnobValue(final int index, final Layer layer, final Parameter parameter,
         final AbsoluteHardwareControl slider, final StringValue nameSource, final StringValue label,
         final String type) {
@@ -592,12 +604,12 @@ public class MiniLab3Extension extends ControllerExtension {
         layer.bind(slider, v -> oled.enableValues(DisplayMode.PARAM));
         value.displayedValue().markInterested();
         label.addValueObserver(
-            v -> oled.sendSliderInfo(DisplayMode.PARAM, value.get(), String.format("%s : %s", v, nameSource.get()),
+            v -> oled.sendSliderInfo(DisplayMode.PARAM, value.get(), formatParameterLabel(v, nameSource.get()),
                 value.displayedValue().get()));
         value.displayedValue().addValueObserver(displayedValue -> oled.sendEncoderInfo(DisplayMode.PARAM, value.get(),
-            String.format("%s : %s", label.get(), nameSource.get()), displayedValue));
+            formatParameterLabel(label.get(), nameSource.get()), displayedValue));
         value.addValueObserver(
-            v -> oled.sendEncoderInfo(DisplayMode.PARAM, v, String.format("%s : %s", label.get(), nameSource.get()),
+            v -> oled.sendEncoderInfo(DisplayMode.PARAM, v, formatParameterLabel(label.get(), nameSource.get()),
                 value.displayedValue().get()));
         if (type.equals("Fader")) {
             slider.value().addValueObserver(v -> {
