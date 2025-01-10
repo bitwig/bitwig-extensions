@@ -127,6 +127,8 @@ com.bitwig.extensions.controllers.presonus.atom.PresonusAtomDefinition
 com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort8Definition
 com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort16Definition
 
+com.bitwig.extensions.controllers.reloop.KeypadProExtensionDefinition
+
 com.bitwig.extensions.controllers.roger_linn_design.LinnStrumentDefinition
 
 com.bitwig.extensions.controllers.roli.SeaboardRISEDefinition
