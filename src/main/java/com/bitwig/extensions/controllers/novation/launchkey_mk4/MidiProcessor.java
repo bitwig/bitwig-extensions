@@ -89,10 +89,6 @@ public class MidiProcessor {
                 fireMode(ModeType.FADER, data2);
             }
         }
-        //             9F 0C 7F
-        else if (cmd == 0x90 || cmd == 0xB0) {
-            LaunchkeyMk4Extension.println("MIDI-1 %02X %02X %02X", statusByte, data1, data2);
-        }
     }
     
     private void setEncodersToRelativeMode() {
@@ -103,14 +99,8 @@ public class MidiProcessor {
         this.modeListeners.forEach(mode -> mode.handleModeChange(type, id));
     }
     
-    private final int idNrPmMsb = 0;
-    private final int idNrPmLsb = 0;
-    private final int valNrPmMsb = 0;
-    private final int valNrPmLsb = 0;
-    
     private void handleMidiIn2(final int statusByte, final int data1, final int data2) {
         final int code = 0xF0 & statusByte;
-        LaunchkeyMk4Extension.println(" In %02X %02X %02X", statusByte, data1, data2);
         if (code == 0x80 || code == 0x90) {
             this.noteHandlers.forEach(noteHandler -> noteHandler.handleNoteAction(data1, data2));
         }

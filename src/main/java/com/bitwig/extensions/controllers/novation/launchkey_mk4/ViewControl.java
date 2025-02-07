@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchkey_mk4;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -43,8 +44,11 @@ public class ViewControl {
     private final Clip arrangerClip;
     private final Scene focusScene;
     private final SceneBank sceneBank;
+    private final String[] trackType = new String[8];
+    private final boolean[] canHoldNoteData = new boolean[8];
     
     public ViewControl(final ControllerHost host) {
+        Arrays.fill(trackType, "");
         rootTrack = host.getProject().getRootTrackGroup();
         trackBank = host.createTrackBank(8, 1, MAX_SCENES, true);
         maxTrackBank = host.createTrackBank(MAX_TRACKS, 1, MAX_SCENES, false);
@@ -52,22 +56,21 @@ public class ViewControl {
         maxTrackBank.scrollPosition().markInterested();
         
         cursorTrack = host.createCursorTrack(2, 16);
-        prepareTrack(cursorTrack);
+        prepareTrack(-1, cursorTrack);
         prepareSlots(cursorTrack);
         trackBank.followCursorTrack(cursorTrack);
         cursorTrack.exists().markInterested();
         for (int i = 0; i < 8; i++) {
             final int index = i;
             final Track track = trackBank.getItemAt(i);
-            prepareTrack(track);
-            track.color().addValueObserver((r, g, b) -> {
-                //trackColors[index] = ColorLookup.toColor(r, g, b);
-            });
+            prepareTrack(i, track);
             track.addIsSelectedInMixerObserver(select -> {
                 if (select) {
                     this.selectedTrackIndex.set(index);
                 }
             });
+            track.trackType().addValueObserver(type -> trackType[index] = type);
+            track.canHoldNoteData().addValueObserver(canHoldNoteData -> this.canHoldNoteData[index] = canHoldNoteData);
         }
         
         sceneBank = trackBank.sceneBank();
@@ -76,8 +79,7 @@ public class ViewControl {
         cursorClip = host.createLauncherCursorClip(16, 128);
         cursorClip.setStepSize(0.125);
         
-        
-        cursorClip.exists().addValueObserver(exists -> LaunchkeyMk4Extension.println("LNC clip ext=%s", exists));
+        cursorClip.exists().markInterested();
         arrangerClip = host.createArrangerCursorClip(16, 128);
         
         primaryDevice =
@@ -101,23 +103,18 @@ public class ViewControl {
         sceneBank.canScrollForwards().markInterested();
         focusScene = sceneBank.getScene(0);
         focusScene.clipCount().markInterested();
-        focusScene.name().addValueObserver(name -> {
-        
-        });
-        
-        
-        prepareTrack(cursorTrack);
     }
     
     public IntValueObject getSelectedTrackIndex() {
         return selectedTrackIndex;
     }
     
-    private void prepareTrack(final Track track) {
+    private void prepareTrack(final int index, final Track track) {
         track.arm().markInterested();
         track.exists().markInterested();
         track.solo().markInterested();
         track.mute().markInterested();
+        track.trackType().markInterested();
         track.canHoldNoteData().markInterested();
     }
     
@@ -129,6 +126,10 @@ public class ViewControl {
             slot.hasContent().markInterested();
             slot.isSelected().markInterested();
         }
+    }
+    
+    public boolean canBeSelectedForSeq(final int index) {
+        return canHoldNoteData[index] && trackType[index].equals("Instrument");
     }
     
     public RemotePageName getDeviceRemotesPages() {
