@@ -17,8 +17,8 @@ import com.bitwig.extensions.controllers.novation.commonsmk3.PanelLayout;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
 import com.bitwig.extensions.controllers.novation.commonsmk3.SliderBinding;
 import com.bitwig.extensions.controllers.novation.commonsmk3.ViewCursorControl;
-import com.bitwig.extensions.controllers.novation.launchpadpromk3.LpProHwElements;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.LpBaseMode;
+import com.bitwig.extensions.controllers.novation.launchpadpromk3.LpProHwElements;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.LppPreferences;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.ModifierStates;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.SysExHandler;
@@ -60,7 +60,7 @@ public class VolumeSliderLayer extends TrackSliderLayer {
         bind(viewCursorControl.getTrackBank());
         bindMaster(masterTrack, effectTrackBank);
         initSceneButtons(hwElements);
-        preferences.getPanelLayout().addValueObserver(((oldValue, newValue) -> {
+        preferences.getPanelLayout().addValueObserver((newValue -> {
             panelLayout = newValue;
             updateFaderState();
         }));

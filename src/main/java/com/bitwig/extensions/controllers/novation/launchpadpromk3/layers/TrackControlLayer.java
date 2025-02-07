@@ -73,7 +73,7 @@ public class TrackControlLayer extends Layer {
             sceneButton.bindLight(horizontalLayer, () -> getTrackColor(trackIndex, track));
             sceneButton.bindPressed(horizontalLayer, pressed -> handleTrack(pressed, trackIndex, track));
         }
-        preferences.getPanelLayout().addValueObserver(((oldValue, newValue) -> setLayout(newValue)));
+        preferences.getPanelLayout().addValueObserver((this::setLayout));
         panelLayout = preferences.getPanelLayout().get();
     }
     
@@ -86,7 +86,7 @@ public class TrackControlLayer extends Layer {
     public void setTrackModes(final TrackModeLayer trackModes) {
         final ValueObject<TrackModeButtonMode> trackButtonMode = trackModes.getButtonsMode();
         trackMode = trackButtonMode.get();
-        trackButtonMode.addValueObserver(((oldValue, newValue) -> {
+        trackButtonMode.addValueObserver((newValue -> {
             trackMode = newValue;
             selectLayers();
         }));

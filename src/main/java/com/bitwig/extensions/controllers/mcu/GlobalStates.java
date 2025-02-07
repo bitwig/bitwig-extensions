@@ -34,7 +34,7 @@ public class GlobalStates {
     public GlobalStates(final ControllerHost host) {
         this.host = host;
         potMode = new ValueObject<>(VPotMode.PAN);
-        potMode.addValueObserver((oldValue, newValue) -> {
+        potMode.addValueObserver(newValue -> {
             if (newValue == VPotMode.ALL_SENDS || newValue == VPotMode.SEND) {
                 this.lastSendsMode = newValue;
             }
