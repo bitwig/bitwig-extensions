@@ -11,7 +11,7 @@ public abstract class AbstractLaunchkeyMk4ExtensionDefinition extends Controller
     
     @Override
     public String getVersion() {
-        return "1.0";
+        return "1.1";
     }
     
     @Override
