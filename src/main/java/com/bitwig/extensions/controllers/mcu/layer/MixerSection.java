@@ -255,7 +255,7 @@ public class MixerSection {
         }
     }
     
-    private void handlePotMode(final VPotMode oldMode, final VPotMode newMode) {
+    private void handlePotMode(final VPotMode newMode) {
         potMode = newMode;
         deviceModeLayer.setPotMode(potMode);
         final ControlMode newControlMode = controlModeByVPotMode();

@@ -103,33 +103,16 @@ public class MidiProcessor {
         this.modeListeners.forEach(mode -> mode.handleModeChange(type, id));
     }
     
-    private int idNrPmMsb = 0;
-    private int idNrPmLsb = 0;
-    private int valNrPmMsb = 0;
-    private int valNrPmLsb = 0;
+    private final int idNrPmMsb = 0;
+    private final int idNrPmLsb = 0;
+    private final int valNrPmMsb = 0;
+    private final int valNrPmLsb = 0;
     
     private void handleMidiIn2(final int statusByte, final int data1, final int data2) {
         final int code = 0xF0 & statusByte;
+        LaunchkeyMk4Extension.println(" In %02X %02X %02X", statusByte, data1, data2);
         if (code == 0x80 || code == 0x90) {
             this.noteHandlers.forEach(noteHandler -> noteHandler.handleNoteAction(data1, data2));
-        }
-        if (statusByte == 0xBA) {
-            //LaunchkeyMk4Extension.println("MIDI-2 %02X %02X %02X", statusByte, data1, data2);
-            if (data1 == 0x63 && data2 != 0x7F) {
-                idNrPmMsb = data2;
-            } else if (data1 == 0x62) {
-                if (data2 == 0x7F) {
-                    final int id = idNrPmMsb << 7 | idNrPmLsb;
-                    final int val = valNrPmMsb << 7 | valNrPmLsb;
-                    LaunchkeyMk4Extension.println(" Received NRPM ID=%d VAL=%d", id, val);
-                } else {
-                    idNrPmLsb = data2;
-                }
-            } else if (data1 == 0x6) {
-                valNrPmMsb = data2;
-            } else if (data1 == 0x26) {
-                valNrPmLsb = data2;
-            }
         }
     }
     

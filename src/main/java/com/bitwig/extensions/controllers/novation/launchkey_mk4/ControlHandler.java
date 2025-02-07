@@ -261,7 +261,7 @@ public class ControlHandler {
         
         encoders[2].bindIncrementAction(layer, zoomVerticalControl::handleInc);
         layer.addBinding(zoomVerticalControl);
-        this.panelLayout.addValueObserver((old, newValue) -> {
+        this.panelLayout.addValueObserver(newValue -> {
             if (newValue == LayoutType.ARRANGER) {
                 zoomParamName.set("Zoom Arranger");
                 zoomVerticalParamName.set("Zoom Tracks");

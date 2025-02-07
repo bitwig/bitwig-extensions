@@ -106,7 +106,6 @@ public class SequencerLayer extends Layer implements NoteHandler, SequencerSourc
             new DisplayValueTracker(displayControl, new BasicStringValue("Grid"), gridValue.getDisplayValue());
         
         cursorTrack = viewControl.getCursorTrack();
-        cursorTrack.addNoteSource(midiProcessor.getNoteInput());
         cursorTrack.position().addValueObserver(this::updateFocusClips);
         
         clipState = createLauncherClipState();

@@ -1,6 +1,12 @@
 package com.bitwig.extensions.controllers.akai.apc64.layer;
 
-import com.bitwig.extension.controller.api.*;
+import com.bitwig.extension.controller.api.Project;
+import com.bitwig.extension.controller.api.Scene;
+import com.bitwig.extension.controller.api.SceneBank;
+import com.bitwig.extension.controller.api.SettableEnumValue;
+import com.bitwig.extension.controller.api.Track;
+import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.akai.apc.common.PanelLayout;
 import com.bitwig.extensions.controllers.akai.apc.common.control.RgbButton;
 import com.bitwig.extensions.controllers.akai.apc.common.led.LedBehavior;
@@ -18,8 +24,9 @@ import com.bitwig.extensions.framework.di.PostConstruct;
 
 public class TrackAndSceneLayer extends Layer {
     private final static String[] LAUNCH_QUANTIZE_VALUES = {"8", "4", "2", "1", "1/4", "1/8", "1/16", "1/2"};
-    private final static String[] LAUNCH_QUANTIZE_DISPLAY_VALUES = {"8 Bars", "4 Bars", "2 Bars", "1 Bar", "1/4", "1" + "/8", "1/16", "1/2"};
-
+    private final static String[] LAUNCH_QUANTIZE_DISPLAY_VALUES =
+        {"8 Bars", "4 Bars", "2 Bars", "1 Bar", "1/4", "1" + "/8", "1/16", "1/2"};
+    
     @Inject
     private ViewControl viewControl;
     @Inject
@@ -28,17 +35,17 @@ public class TrackAndSceneLayer extends Layer {
     private Transport transport;
     @Inject
     private MainDisplay mainDisplay;
-
+    
     private final Layer horizontalLayer;
     private final Layer verticalLayer;
     private final Layer shiftLayer;
-
+    
     private final Track rootTrack;
     private int sceneOffset;
     private TrackBank trackBank;
     private PanelLayout panelLayout;
     private final ApcPreferences preferences;
-
+    
     public TrackAndSceneLayer(final Layers layers, final ApcPreferences preferences, final Project project) {
         super(layers, "TRACKS_AND_SCENES");
         this.horizontalLayer = new Layer(layers, "HORIZONTAL_LAYER");
@@ -47,30 +54,30 @@ public class TrackAndSceneLayer extends Layer {
         rootTrack = project.getRootTrackGroup();
         this.preferences = preferences;
         panelLayout = this.preferences.getPanelLayout().get();
-        this.preferences.getPanelLayout().addValueObserver((layoutOld, layoutNew) -> {
+        this.preferences.getPanelLayout().addValueObserver(layoutNew -> {
             panelLayout = layoutNew;
             horizontalLayer.setIsActive(panelLayout == PanelLayout.HORIZONTAL);
             verticalLayer.setIsActive(panelLayout == PanelLayout.VERTICAL);
         });
     }
-
+    
     @PostConstruct
     public void init(final HardwareElements hwElements) {
         final int numberOfScenes = 8;
         trackBank = viewControl.getTrackBank();
         final SceneBank sceneBank = trackBank.sceneBank();
-
+        
         final Scene targetScene = trackBank.sceneBank().getScene(0);
         targetScene.clipCount().markInterested();
         sceneBank.setIndication(true);
         sceneBank.scrollPosition().addValueObserver(value -> sceneOffset = value);
-
+        
         modifiers.getShiftActive().addValueObserver(shiftActive -> {
             if (!preferences.useShiftForAltMode() || panelLayout == PanelLayout.VERTICAL) {
                 shiftLayer.setIsActive(shiftActive);
             }
         });
-
+        
         for (int sceneIndex = 0; sceneIndex < numberOfScenes; sceneIndex++) {
             final SingleLedButton sceneButton = hwElements.getSceneButton(sceneIndex);
             final int index = sceneIndex;
@@ -83,7 +90,7 @@ public class TrackAndSceneLayer extends Layer {
             sceneButton.bindIsPressed(horizontalLayer, pressed -> handleTrackSelect(pressed, index, track));
             sceneButton.bindLight(horizontalLayer, () -> getTrackState(index, track));
         }
-
+        
         for (int i = 0; i < 8; i++) {
             final int index = i;
             final RgbButton button = hwElements.getTrackSelectButton(i);
@@ -97,7 +104,7 @@ public class TrackAndSceneLayer extends Layer {
         }
         initLaunchQuantizeControl(transport, hwElements);
     }
-
+    
     private void initLaunchQuantizeControl(final Transport transport, final HardwareElements hwElements) {
         transport.defaultLaunchQuantization().markInterested();
         for (int i = 0; i < 8; i++) {
@@ -107,7 +114,7 @@ public class TrackAndSceneLayer extends Layer {
             button.bindIsPressed(shiftLayer, pressed -> selectLaunchQuantize(index, pressed));
         }
     }
-
+    
     private void handleTrackSelect(final boolean pressed, final int index, final Track track) {
         if (!pressed) {
             return;
@@ -120,7 +127,7 @@ public class TrackAndSceneLayer extends Layer {
             track.selectInMixer();
         }
     }
-
+    
     private void handleScenePressed(final Scene scene, final int index) {
         if (modifiers.getAltActive().get() && !modifiers.isShift()) {
             scene.launchAlt();
@@ -134,13 +141,13 @@ public class TrackAndSceneLayer extends Layer {
             scene.launch();
         }
     }
-
+    
     private void handleSpecial(final int index) {
         if (index == 7) {
             rootTrack.stop();
         }
     }
-
+    
     private void handleSceneReleased(final Scene scene) {
         if (modifiers.getAltActive().get() && !modifiers.isShift()) {
             scene.launchReleaseAlt();
@@ -148,7 +155,7 @@ public class TrackAndSceneLayer extends Layer {
             scene.launchRelease();
         }
     }
-
+    
     private VarSingleLedState getSceneState(final int index, final Scene scene) {
         if (scene.clipCount().get() > 0) {
             if (viewControl.hasQueuedClips(sceneOffset + index)) {
@@ -158,7 +165,7 @@ public class TrackAndSceneLayer extends Layer {
         }
         return VarSingleLedState.OFF;
     }
-
+    
     private RgbLightState getSceneColor(final int index, final Scene scene) {
         if (scene.clipCount().get() > 0) {
             if (viewControl.hasQueuedClips(sceneOffset + index)) {
@@ -168,7 +175,7 @@ public class TrackAndSceneLayer extends Layer {
         }
         return RgbLightState.OFF;
     }
-
+    
     private RgbLightState getTrackColor(final int index, final Track track) {
         if (track.exists().get()) {
             if (index == viewControl.getSelectedTrackIndex()) {
@@ -178,7 +185,7 @@ public class TrackAndSceneLayer extends Layer {
         }
         return RgbLightState.OFF;
     }
-
+    
     private VarSingleLedState getTrackState(final int index, final Track track) {
         if (track.exists().get()) {
             if (index == viewControl.getSelectedTrackIndex()) {
@@ -188,7 +195,7 @@ public class TrackAndSceneLayer extends Layer {
         }
         return VarSingleLedState.OFF;
     }
-
+    
     private void selectLaunchQuantize(final int index, final boolean pressed) {
         if (pressed) {
             final SettableEnumValue launchQuantizeValue = transport.defaultLaunchQuantization();
@@ -198,29 +205,29 @@ public class TrackAndSceneLayer extends Layer {
             } else {
                 launchQuantizeValue.set(LAUNCH_QUANTIZE_VALUES[index]);
                 mainDisplay.activatePageDisplay(MainDisplay.ScreenMode.LAUNCH_QUANTIZE, "LaunchQuantize",
-                        LAUNCH_QUANTIZE_DISPLAY_VALUES[index]);
+                    LAUNCH_QUANTIZE_DISPLAY_VALUES[index]);
             }
         } else {
             mainDisplay.notifyRelease();
         }
     }
-
+    
     private RgbLightState quantizeState(final int index) {
         if (transport.defaultLaunchQuantization().get().equals(LAUNCH_QUANTIZE_VALUES[index])) {
             return RgbLightState.WHITE_BRIGHT;
         }
         return RgbLightState.WHITE_DIM;
     }
-
+    
     @Override
     protected void onActivate() {
         super.onActivate();
         horizontalLayer.setIsActive(panelLayout == PanelLayout.HORIZONTAL);
         verticalLayer.setIsActive(panelLayout == PanelLayout.VERTICAL);
         shiftLayer.setIsActive(
-                modifiers.isShift() && (panelLayout == PanelLayout.VERTICAL || !preferences.useShiftForAltMode()));
+            modifiers.isShift() && (panelLayout == PanelLayout.VERTICAL || !preferences.useShiftForAltMode()));
     }
-
+    
     @Override
     protected void onDeactivate() {
         super.onDeactivate();
@@ -228,5 +235,5 @@ public class TrackAndSceneLayer extends Layer {
         verticalLayer.setIsActive(false);
         shiftLayer.setIsActive(false);
     }
-
+    
 }
