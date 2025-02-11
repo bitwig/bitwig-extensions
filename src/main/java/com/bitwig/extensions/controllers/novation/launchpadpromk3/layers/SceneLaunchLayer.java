@@ -43,7 +43,7 @@ public class SceneLaunchLayer extends Layer {
         final SceneBank sceneBank = trackBank.sceneBank();
         sceneBank.scrollPosition().addValueObserver(value -> sceneOffset = value);
         initSceneControl(hwElements, sceneBank);
-        preferences.getPanelLayout().addValueObserver(((oldValue, newValue) -> setLayout(newValue)));
+        preferences.getPanelLayout().addValueObserver((newValue -> setLayout(newValue)));
         panelLayout = preferences.getPanelLayout().get();
     }
     

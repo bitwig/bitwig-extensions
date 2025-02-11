@@ -3,8 +3,16 @@ package com.bitwig.extensions.controllers.novation.launchpadpromk3.sliderlayers;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extensions.controllers.novation.commonsmk3.*;
-import com.bitwig.extensions.controllers.novation.launchpadpromk3.*;
+import com.bitwig.extensions.controllers.novation.commonsmk3.LabeledButton;
+import com.bitwig.extensions.controllers.novation.commonsmk3.MidiProcessor;
+import com.bitwig.extensions.controllers.novation.commonsmk3.PanelLayout;
+import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
+import com.bitwig.extensions.controllers.novation.commonsmk3.SliderBinding;
+import com.bitwig.extensions.controllers.novation.commonsmk3.ViewCursorControl;
+import com.bitwig.extensions.controllers.novation.launchpadpromk3.LpBaseMode;
+import com.bitwig.extensions.controllers.novation.launchpadpromk3.LpProHwElements;
+import com.bitwig.extensions.controllers.novation.launchpadpromk3.LppPreferences;
+import com.bitwig.extensions.controllers.novation.launchpadpromk3.SysExHandler;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.layers.ControlMode;
 import com.bitwig.extensions.framework.Layers;
 
@@ -16,11 +24,11 @@ public class SendsSliderLayer extends TrackSliderLayer {
     
     public SendsSliderLayer(final ViewCursorControl viewCursorControl, final HardwareSurface controlSurface,
         final Layers layers, final MidiProcessor midiProcessor, final SysExHandler sysExHandler,
-        final LpProHwElements hwElements, LppPreferences preferences) {
+        final LpProHwElements hwElements, final LppPreferences preferences) {
         super("SENDS", ControlMode.SENDS, controlSurface, layers, midiProcessor, sysExHandler);
         bind(viewCursorControl.getTrackBank());
         initSceneButtons(hwElements);
-        preferences.getPanelLayout().addValueObserver(((oldValue, newValue) -> {
+        preferences.getPanelLayout().addValueObserver((newValue -> {
             panelLayout = newValue;
             updateFaderState();
         }));
