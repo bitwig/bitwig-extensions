@@ -12,6 +12,7 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding;
 import com.bitwig.extension.controller.api.DoubleValue;
 import com.bitwig.extension.controller.api.HardwareSlider;
+import com.bitwig.extension.controller.api.IntegerValue;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueBinding;
@@ -193,6 +194,12 @@ public class ParameterPage implements SettableRangedValue {
    public DoubleValue getOrigin()
    {
       return currentParameter.parameter.getOrigin();
+   }
+
+   @Override
+   public IntegerValue discreteValueCount()
+   {
+      return currentParameter.parameter.discreteValueCount();
    }
 
    @Override
