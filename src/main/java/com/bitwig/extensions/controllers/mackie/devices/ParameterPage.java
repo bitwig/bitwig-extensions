@@ -18,6 +18,7 @@ import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueBinding;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableRangedValue;
+import com.bitwig.extension.controller.api.StringArrayValue;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderParameterBankBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ResetableAbsoluteValueBinding;
@@ -200,6 +201,12 @@ public class ParameterPage implements SettableRangedValue {
    public IntegerValue discreteValueCount()
    {
       return currentParameter.parameter.discreteValueCount();
+   }
+
+   @Override
+   public StringArrayValue discreteValueNames()
+   {
+      return currentParameter.parameter.discreteValueNames();
    }
 
    @Override
