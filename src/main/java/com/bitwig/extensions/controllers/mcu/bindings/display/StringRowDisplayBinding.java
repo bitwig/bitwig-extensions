@@ -10,7 +10,7 @@ public class StringRowDisplayBinding extends AbstractDisplayBinding<StringValue>
     
     public StringRowDisplayBinding(final DisplayManager target, final ControlMode mode, final DisplayRow row,
         final int sectionIndex, final StringValue stringValue) {
-        super(target, mode, DisplayTarget.of(row.getRowIndex(), -1, sectionIndex), stringValue);
+        super(target, mode, DisplayTarget.of(row.getRowIndex(), -1, sectionIndex, stringValue), stringValue);
         exists = true;
         stringValue.addValueObserver(this::handleValueChange);
         this.lastValue = StringUtil.toAscii(stringValue.get());

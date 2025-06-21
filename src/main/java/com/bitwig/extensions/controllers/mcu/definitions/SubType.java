@@ -5,6 +5,7 @@ public enum SubType {
     PRO_X,
     G2,
     V1M,
+    P1M,
     UF8,
     M_PLUS
 }

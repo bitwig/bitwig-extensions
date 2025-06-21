@@ -101,11 +101,41 @@ public class ParameterPageLayer extends MixerModeLayer {
         faderLayer = mixer.getLayerSource(lowMode).getFaderLayer();
         
         if (mixer.hasLowerDisplay()) {
-            //assignDualDisplay();
+            assignDualDisplay();
         } else {
             assignSingleDisplay(mainMode, lowMode);
         }
         assignIfMenuModeActive();
+    }
+    
+    private void assignDualDisplay() {
+        final boolean nameValue = mixer.isNameValue();
+        final boolean isFlipped = mixer.isFlipped();
+        if (isFlipped) {
+            mixer.setUpperLowerDestination(ControlMode.VOLUME, mode);
+            
+            displayLabelLayer = mixer.getTrackDisplayLayer();
+            displayValueLayer = mixer.getLayerSource(ControlMode.VOLUME).getDisplayValueLayer();
+            displayLowerLabelLayer = mixer.getLayerSource(mode).getDisplayLabelLayer();
+            displayLowerValueLayer = mixer.getLayerSource(mode).getDisplayValueLayer();
+            if (pageCount == 0 || remoteIndex == -1) {
+                displayLowerLabelLayer = topRowValueLayer;
+                displayLowerValueLayer = bottomRowValueLayer;
+            }
+        } else {
+            mixer.setUpperLowerDestination(mode, ControlMode.VOLUME);
+            displayLabelLayer = mixer.getLayerSource(mode).getDisplayLabelLayer();
+            displayValueLayer = mixer.getLayerSource(mode).getDisplayValueLayer();
+            if (nameValue) {
+                displayValueLayer = bottomRowValueLayer;
+            }
+            displayLowerValueLayer = mixer.getLayerSource(ControlMode.VOLUME).getDisplayValueLayer();
+            displayLowerLabelLayer = mixer.getTrackDisplayLayer();
+            if (pageCount == 0 || remoteIndex == -1) {
+                displayLabelLayer = topRowValueLayer;
+                displayValueLayer = bottomRowValueLayer;
+            }
+        }
     }
     
     

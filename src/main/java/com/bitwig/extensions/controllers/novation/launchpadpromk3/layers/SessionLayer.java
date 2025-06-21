@@ -16,8 +16,8 @@ import com.bitwig.extensions.controllers.novation.commonsmk3.PanelLayout;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
 import com.bitwig.extensions.controllers.novation.commonsmk3.ViewCursorControl;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.FocusSlot;
-import com.bitwig.extensions.controllers.novation.launchpadpromk3.LpProHwElements;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.LabelCcAssignments;
+import com.bitwig.extensions.controllers.novation.launchpadpromk3.LpProHwElements;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.LppPreferences;
 import com.bitwig.extensions.controllers.novation.launchpadpromk3.ModifierStates;
 import com.bitwig.extensions.framework.Layer;
@@ -58,7 +58,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
         targetScene.clipCount().markInterested();
         initClipControl(hwElements, trackBank);
         initNavigation(hwElements, trackBank, sceneBank);
-        preferences.getPanelLayout().addValueObserver(((oldValue, newValue) -> setLayout(newValue)));
+        preferences.getPanelLayout().addValueObserver((newValue -> setLayout(newValue)));
         panelLayout = preferences.getPanelLayout().get();
     }
     

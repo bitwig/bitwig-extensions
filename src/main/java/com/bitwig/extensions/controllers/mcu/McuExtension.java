@@ -1,21 +1,31 @@
 package com.bitwig.extensions.controllers.mcu;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
+import com.bitwig.extension.api.PlatformType;
+import com.bitwig.extension.controller.AutoDetectionMidiPortNames;
+import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.Preferences;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extensions.controllers.mcu.config.ControllerConfig;
 import com.bitwig.extensions.controllers.mcu.control.MainHardwareSection;
 import com.bitwig.extensions.controllers.mcu.control.MixerSectionHardware;
 import com.bitwig.extensions.controllers.mcu.definitions.AbstractMcuControllerExtensionDefinition;
+import com.bitwig.extensions.controllers.mcu.definitions.ManufacturerType;
 import com.bitwig.extensions.controllers.mcu.layer.MainSection;
 import com.bitwig.extensions.controllers.mcu.layer.MixerSection;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 
 public class McuExtension extends ControllerExtension {
+    private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
     private static ControllerHost debugHost;
     private Layer mainLayer;
     private HardwareSurface surface;
@@ -26,7 +36,8 @@ public class McuExtension extends ControllerExtension {
     
     public static void println(final String format, final Object... args) {
         if (debugHost != null) {
-            debugHost.println(format.formatted(args));
+            final LocalDateTime now = LocalDateTime.now();
+            debugHost.println(now.format(DF) + " > " + String.format(format, args));
         }
     }
     
@@ -49,7 +60,10 @@ public class McuExtension extends ControllerExtension {
         MainSection mainControl = null;
         final List<MainSection> mainSections = new ArrayList<>();
         final List<MixerSection> mixerSections = new ArrayList<>();
+        final boolean xtenderSequenceReversed = determineXtenderOrderReversed(host);
         
+        //showPortINfos(PlatformType.MAC);
+        //showPortINfos(PlatformType.WINDOWS);
         for (int portIndex = 0; portIndex < controllerConfig.getNrOfExtenders() + 1; portIndex++) {
             final MidiProcessor midiProcessor = new MidiProcessor(diContext, portIndex);
             midiProcessors.add(midiProcessor);
@@ -62,16 +76,64 @@ public class McuExtension extends ControllerExtension {
                 mainSections.add(mainControl);
             }
             
+            final int channelOffsetIndex = xtenderSequenceReversed
+                ? portIndex
+                : (portIndex == 0 ? controllerConfig.getNrOfExtenders() : portIndex - 1);
+            
             final MixerSectionHardware mixerSectionHardware =
-                new MixerSectionHardware(portIndex, diContext, midiProcessor, portIndex * 8);
+                new MixerSectionHardware(portIndex, diContext, midiProcessor, channelOffsetIndex * 8);
             final MixerSection mixerLayer =
-                new MixerSection(diContext, mixerSectionHardware, mainControl, portIndex, portIndex == 0);
+                new MixerSection(diContext, mixerSectionHardware, mainControl, channelOffsetIndex, portIndex == 0);
             mixerHardwareSections.add(mixerSectionHardware);
             mixerSections.add(mixerLayer);
         }
         diContext.activate();
         mainSections.forEach(MainSection::activate);
         mixerSections.forEach(MixerSection::activate);
+        if (controllerConfig.getForceUpdateOnStartup() != -1) {
+            host.scheduleTask(this::doForceUpdate, controllerConfig.getForceUpdateOnStartup());
+        }
+    }
+    
+    private boolean determineXtenderOrderReversed(final ControllerHost host) {
+        if (controllerConfig.getManufacturerType() == ManufacturerType.SSL) {
+            return true;
+        }
+        boolean xtenderSequenceReversed = false;
+        
+        if (controllerConfig.getNrOfExtenders() > 0) {
+            final Preferences preferences = host.getPreferences();
+            final SettableBooleanValue xtenderOrder = preferences.getBooleanSetting("Main Unit Left", //
+                "Device Position (Restart required)", false);
+            xtenderOrder.markInterested();
+            xtenderSequenceReversed = xtenderOrder.get();
+        }
+        return xtenderSequenceReversed;
+    }
+    
+    private void doForceUpdate() {
+        for (final MidiProcessor midiProcessor : midiProcessors) {
+            midiProcessor.forceUpdate();
+        }
+    }
+    
+    private void showPortINfos(final PlatformType platformType) {
+        final AutoDetectionMidiPortNamesList portNames =
+            getExtensionDefinition().getAutoDetectionMidiPortNamesList(platformType);
+        for (int i = 0; i < portNames.getCount(); i++) {
+            println("PORTINFOS - %d LCL=%s", i + 1, Locale.getDefault());
+            final AutoDetectionMidiPortNames adpm = portNames.getPortNamesAt(i);
+            final String[] inputNames = adpm.getInputNames();
+            final String[] outputNames = adpm.getOutputNames();
+            println(" ###### INPUTS #########");
+            for (int j = 0; j < inputNames.length; j++) {
+                println(" [%s]", inputNames[j]);
+            }
+            println(" ###### OUTPUTS #########");
+            for (int j = 0; j < outputNames.length; j++) {
+                println(" [%s]", outputNames[j]);
+            }
+        }
     }
     
     @Override

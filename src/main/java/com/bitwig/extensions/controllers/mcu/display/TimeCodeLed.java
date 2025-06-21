@@ -5,6 +5,7 @@ import com.bitwig.extensions.controllers.mcu.config.McuAssignments;
 import com.bitwig.extensions.framework.values.Midi;
 
 public class TimeCodeLed {
+    private static final int CODE_BLANK_OFFSET = -16;
     private final MidiProcessor midiProcessor;
     private double position;
     private boolean preCountBeats = false;
@@ -13,7 +14,7 @@ public class TimeCodeLed {
     private int subDivision = -1;
     private int ticks = -1;
     
-    private final boolean preCountTime = false;
+    private boolean preCountTime = false;
     private int frames = -1;
     private int seconds = -1;
     private int minutes = -1;
@@ -23,14 +24,31 @@ public class TimeCodeLed {
     private int tsDiv;
     private int tsTicks = 16;
     private Mode mode = Mode.BEATS;
+    private final DisplayType displayType;
     
     public enum Mode {
         BEATS,
         TIME
     }
     
-    public TimeCodeLed(final MidiProcessor midiProcessor) {
+    public enum DisplayType {
+        MCU(-3),
+        ICON(11);
+        private final int minusOffset;
+        
+        DisplayType(final int minusOffset) {
+            this.minusOffset = minusOffset;
+        }
+        
+        public int getMinusOffset() {
+            return minusOffset;
+        }
+        
+    }
+    
+    public TimeCodeLed(final MidiProcessor midiProcessor, final DisplayType displayType) {
         this.midiProcessor = midiProcessor;
+        this.displayType = displayType;
     }
     
     public void toggleMode() {
@@ -52,11 +70,19 @@ public class TimeCodeLed {
         }
     }
     
+    public void ensureMode() {
+        if (mode == Mode.BEATS) {
+            midiProcessor.sendMidi(Midi.NOTE_ON, McuAssignments.DISPLAY_SMPTE.getNoteNo(), 127);
+        } else {
+            midiProcessor.sendMidi(Midi.NOTE_ON, McuAssignments.DISPLAY_SMPTE.getNoteNo(), 0);
+        }
+    }
+    
     private void refreshPosition() {
-        displayTicks(ticks);
-        displaySubdivision(subDivision);
-        displayBeats(beats);
-        displayBars(bars, preCountBeats);
+        displayTicksBeat(ticks);
+        displaySubdivisionBeat(subDivision);
+        displayBeatsBeat(beats);
+        displayBarsBeat(bars, preCountBeats);
     }
     
     private void refreshTime() {
@@ -64,6 +90,25 @@ public class TimeCodeLed {
         displaySubdivision(seconds);
         displayBeats(minutes);
         displayBars(hours, preCountTime);
+    }
+    
+    private void displayTicksBeat(final int v) {
+        final int value = this.preCountBeats ? 99 - v : v;
+        final int seg2 = value / 10 % 10;
+        final int seg3 = value / 100 % 10;
+        final int v1 = value % 10;
+        final int v2 = zeroToBlank(seg2, seg3);
+        final int v3 = zeroToBlank(seg3, 0);
+        midiProcessor.sendMidi(Midi.CC, 64, v1 + 48);
+        midiProcessor.sendMidi(Midi.CC, 65, v2 + 48);
+        midiProcessor.sendMidi(Midi.CC, 66, v3 + 48);
+    }
+    
+    private int zeroToBlank(final int v, final int preDigit) {
+        if (preDigit == 0 && v == 0) {
+            return CODE_BLANK_OFFSET;
+        }
+        return v;
     }
     
     private void displayTicks(final int value) {
@@ -82,6 +127,14 @@ public class TimeCodeLed {
         midiProcessor.sendMidi(Midi.CC, 68, v2 + 48);
     }
     
+    private void displaySubdivisionBeat(final int v) {
+        final int value = this.preCountBeats ? 5 - v : v;
+        final int v1 = value % 10;
+        final int v2 = value / 10 % 10;
+        midiProcessor.sendMidi(Midi.CC, 67, v1 + 48 + 64);
+        midiProcessor.sendMidi(Midi.CC, 68, zeroToBlank(v2, 0) + 48);
+    }
+    
     private void displayBeats(final int value) {
         final int v1 = value % 10;
         final int v2 = value / 10 % 10;
@@ -89,16 +142,37 @@ public class TimeCodeLed {
         midiProcessor.sendMidi(Midi.CC, 70, v2 + 48);
     }
     
+    private void displayBeatsBeat(final int v) {
+        final int value = this.preCountBeats ? 5 - v : v;
+        final int v1 = value % 10;
+        final int v2 = zeroToBlank(value / 10 % 10, 0);
+        midiProcessor.sendMidi(Midi.CC, 69, v1 + 48 + 64);
+        midiProcessor.sendMidi(Midi.CC, 70, v2 + 48);
+    }
+    
     private void displayBars(final int value, final boolean preCount) {
+        final int v1 = value % 10;
+        final int v2 = value / 10 % 10;
+        midiProcessor.sendMidi(Midi.CC, 71, v1 + 48 + 64);
+        midiProcessor.sendMidi(Midi.CC, 72, v2 + 48);
+        if (preCount) {
+            midiProcessor.sendMidi(Midi.CC, 73, 48 + displayType.getMinusOffset());
+        } else {
+            final int v3 = value / 100 % 10;
+            midiProcessor.sendMidi(Midi.CC, 73, v3 + 48);
+        }
+    }
+    
+    private void displayBarsBeat(final int value, final boolean preCount) {
         final int v1 = value % 10;
         final int v2 = value / 10 % 10;
         final int v3 = value / 100 % 10;
         midiProcessor.sendMidi(Midi.CC, 71, v1 + 48 + 64);
-        midiProcessor.sendMidi(Midi.CC, 72, v2 + 48);
+        midiProcessor.sendMidi(Midi.CC, 72, zeroToBlank(v2, v3) + 48);
         if (preCount) {
-            midiProcessor.sendMidi(Midi.CC, 73, 45);
+            midiProcessor.sendMidi(Midi.CC, 73, 48 + displayType.getMinusOffset());
         } else {
-            midiProcessor.sendMidi(Midi.CC, 73, v3 + 48);
+            midiProcessor.sendMidi(Midi.CC, 73, zeroToBlank(v3, 0) + 48);
         }
     }
     
@@ -147,29 +221,37 @@ public class TimeCodeLed {
         final int sub = (int) (rest * 4 * tsTicks / 16) % (int) (16.0 / tsDiv) + 1;
         final int ticks = (int) (rest * 400 * tsTicks / 16) % 100;
         
-        if (ticks != this.ticks) {
+        if (this.preCountBeats != preCount && mode == Mode.BEATS) {
             this.ticks = ticks;
-            if (mode == Mode.BEATS) {
-                displayTicks(ticks);
-            }
-        }
-        if (sub != subDivision) {
             subDivision = sub;
-            if (mode == Mode.BEATS) {
-                displaySubdivision(sub);
-            }
-        }
-        if (beats != this.beats) {
             this.beats = beats;
-            if (mode == Mode.BEATS) {
-                displayBeats(beats);
-            }
-        }
-        if (bars != this.bars || preCount != preCountBeats) {
             this.bars = bars;
-            preCountBeats = preCount;
-            if (mode == Mode.BEATS) {
-                displayBars(bars, preCount);
+            this.preCountBeats = preCount;
+            refreshPosition();
+        } else {
+            if (ticks != this.ticks) {
+                this.ticks = ticks;
+                if (mode == Mode.BEATS) {
+                    displayTicksBeat(ticks);
+                }
+            }
+            if (sub != subDivision) {
+                subDivision = sub;
+                if (mode == Mode.BEATS) {
+                    displaySubdivisionBeat(sub);
+                }
+            }
+            if (beats != this.beats) {
+                this.beats = beats;
+                if (mode == Mode.BEATS) {
+                    displayBeatsBeat(beats);
+                }
+            }
+            if (bars != this.bars) {
+                this.bars = bars;
+                if (mode == Mode.BEATS) {
+                    displayBarsBeat(bars, preCount);
+                }
             }
         }
     }
@@ -203,6 +285,7 @@ public class TimeCodeLed {
         }
         if (hours != this.hours || preCount != preCountTime) {
             this.hours = hours;
+            this.preCountTime = preCount;
             if (mode == Mode.TIME) {
                 displayBars(hours, preCount);
             }
@@ -247,5 +330,6 @@ public class TimeCodeLed {
             midiProcessor.sendMidi(Midi.CC, cc, 0);
         }
     }
+    
     
 }

@@ -66,7 +66,7 @@ public abstract class AbstractLaunchpadMk3Extension extends ControllerExtension 
         hwElements = diContext.getService(LpMiniHwElements.class);
         diContext.registerService(LpHwElements.class, hwElements);
         final LaunchPadPreferences preferences = diContext.getService(LaunchPadPreferences.class);
-        preferences.getPanelLayout().addValueObserver(((oldValue, newValue) -> sessionLayer.setLayout(newValue)));
+        preferences.getPanelLayout().addValueObserver((newValue -> sessionLayer.setLayout(newValue)));
         diContext.create(NotePlayingLayer.class);
         createControlLayers(diContext);
         setUpTracking(diContext);

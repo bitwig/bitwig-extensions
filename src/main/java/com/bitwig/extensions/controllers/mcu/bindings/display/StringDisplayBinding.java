@@ -29,9 +29,12 @@ public class StringDisplayBinding extends AbstractDisplayBinding<StringValue> im
     }
     
     private void handleValueChange(final String newValue) {
-        this.lastValue = stringConversion.convert(newValue);
-        if (isActive()) {
-            updateDisplay();
+        final String sendValue = stringConversion.convert(newValue);
+        if (!sendValue.equals(this.lastValue)) {
+            this.lastValue = sendValue;
+            if (isActive()) {
+                updateDisplay();
+            }
         }
     }
     

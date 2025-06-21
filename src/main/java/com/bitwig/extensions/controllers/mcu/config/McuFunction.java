@@ -14,9 +14,7 @@ public enum McuFunction {
     MODE_TRACK,
     MODE_SEND,
     MODE_PAN,
-    MODE_PLUGIN,
     MODE_EQ,
-    MODE_INSTRUMENT,
     MODE_DEVICE,
     MODE_TRACK_REMOTE,
     MODE_PROJECT_REMOTE,
@@ -32,7 +30,6 @@ public enum McuFunction {
     READ,
     AUTO_READ,
     AUTO_WRITE,
-    MODE_NOTE_FX,
     AUTO_TOUCH,
     AUTO_LATCH,
     GLOBAL_VIEW,
@@ -65,5 +62,9 @@ public enum McuFunction {
     PAGE_LEFT,
     PAGE_RIGHT,
     ZOOM_OUT,
-    ZOOM_IN
+    ZOOM_IN,
+    AUTOMATION_LAUNCHER,
+    ARRANGER,
+    DUPLICATE,
+    CLEAR
 }

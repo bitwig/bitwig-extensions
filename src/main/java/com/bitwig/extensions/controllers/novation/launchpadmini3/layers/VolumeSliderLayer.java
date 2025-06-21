@@ -16,7 +16,7 @@ public class VolumeSliderLayer extends TrackSliderLayer {
         final Layers layers, final MidiProcessor midiProcessor, final LaunchPadPreferences preferences) {
         super("VOL", controlSurface, layers, midiProcessor, 20, 9);
         bind(viewCursorControl.getTrackBank());
-        preferences.getPanelLayout().addValueObserver(((oldValue, newValue) -> {
+        preferences.getPanelLayout().addValueObserver((newValue -> {
             layout = newValue;
             updateFaderState();
         }));

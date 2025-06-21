@@ -18,8 +18,10 @@ public class GlobalStates {
     
     private final BooleanValueObject flipped = new BooleanValueObject();
     private final BooleanValueObject nameValue = new BooleanValueObject();
-    private final BooleanValueObject globalView = new BooleanValueObject();
+    private final BooleanValueObject globalView = new BooleanValueObject(true);
     private final BooleanValueObject clipLaunchingActive = new BooleanValueObject();
+    private final BooleanValueObject duplicateHeld = new BooleanValueObject();
+    private final BooleanValueObject clearHeld = new BooleanValueObject();
     private final BasicStringValue twoSegmentText = new BasicStringValue("  ");
     private final ValueObject<VPotMode> potMode;
     private final ValueObject<VuMode> vuMode = new ValueObject<>(VuMode.LED);
@@ -32,7 +34,7 @@ public class GlobalStates {
     public GlobalStates(final ControllerHost host) {
         this.host = host;
         potMode = new ValueObject<>(VPotMode.PAN);
-        potMode.addValueObserver((oldValue, newValue) -> {
+        potMode.addValueObserver(newValue -> {
             if (newValue == VPotMode.ALL_SENDS || newValue == VPotMode.SEND) {
                 this.lastSendsMode = newValue;
             }
@@ -149,5 +151,13 @@ public class GlobalStates {
     
     public BasicStringValue getTwoSegmentText() {
         return twoSegmentText;
+    }
+    
+    public BooleanValueObject getDuplicateHeld() {
+        return duplicateHeld;
+    }
+    
+    public BooleanValueObject getClearHeld() {
+        return clearHeld;
     }
 }

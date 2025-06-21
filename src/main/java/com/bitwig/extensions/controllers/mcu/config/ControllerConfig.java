@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.bitwig.extensions.controllers.mcu.definitions.ManufacturerType;
 import com.bitwig.extensions.controllers.mcu.definitions.SubType;
+import com.bitwig.extensions.controllers.mcu.display.TimeCodeLed;
 
 public class ControllerConfig {
     private boolean hasLowerDisplay;
@@ -15,6 +16,8 @@ public class ControllerConfig {
     private boolean useClearDuplicateModifiers = false;
     private boolean functionSectionLayered = false;
     private boolean has2ClickResolution;
+    private boolean decelerateJogWheel = false;
+    private boolean noDedicatedZoom = false;
     private boolean topDisplayRowsFlipped = false;
     private boolean navigationWithJogWheel = false;
     private int masterFaderChannel = -1;
@@ -22,9 +25,11 @@ public class ControllerConfig {
     private boolean displaySegmented = false;
     private boolean singleMainUnit = true;
     private int nrOfExtenders;
+    private long forceUpdateOnStartup = -1;
     private final Map<McuFunction, ButtonAssignment> assignmentMap = new HashMap<>();
     private boolean hasTimeCodeLed;
     private EncoderBehavior jogWheelBehavior = EncoderBehavior.STEP;
+    private TimeCodeLed.DisplayType displayType = TimeCodeLed.DisplayType.MCU;
     
     public ControllerConfig(final ManufacturerType manufacturerType, final SubType subType) {
         this.manufacturerType = manufacturerType;
@@ -62,9 +67,7 @@ public class ControllerConfig {
         assignmentMap.put(McuFunction.MODE_ALL_SENDS, McuAssignments.V_TRACK);
         assignmentMap.put(McuFunction.MODE_PAN, McuAssignments.V_PAN);
         assignmentMap.put(McuFunction.MODE_EQ, McuAssignments.V_EQ);
-        assignmentMap.put(McuFunction.MODE_PLUGIN, McuAssignments.V_PLUGIN);
-        assignmentMap.put(McuFunction.MODE_INSTRUMENT, McuAssignments.V_INSTRUMENT);
-        assignmentMap.put(McuFunction.MODE_NOTE_FX, McuAssignments.F1);
+        assignmentMap.put(McuFunction.MODE_DEVICE, McuAssignments.V_PLUGIN);
         assignmentMap.put(McuFunction.MODE_TRACK_REMOTE, McuAssignments.F2);
         assignmentMap.put(McuFunction.MODE_PROJECT_REMOTE, McuAssignments.F3);
         assignmentMap.put(McuFunction.MODE_SEND, McuAssignments.V_SEND);
@@ -92,6 +95,13 @@ public class ControllerConfig {
         assignmentMap.entrySet().stream().filter(entry -> entry.getValue().equals(assignment)).findFirst()
             .ifPresent(entry -> assignmentMap.remove(entry.getKey()));
         assignmentMap.put(function, assignment);
+        return this;
+    }
+    
+    public ControllerConfig setAssignment(final CustomAssignment assignment) {
+        assignmentMap.entrySet().stream().filter(entry -> entry.getValue().equals(assignment)).findFirst()
+            .ifPresent(entry -> assignmentMap.remove(entry.getKey()));
+        assignmentMap.put(assignment.getFunction(), assignment);
         return this;
     }
     
@@ -129,8 +139,47 @@ public class ControllerConfig {
         return this;
     }
     
+    public ControllerConfig setForceUpdateOnStartup(final long forceUpdateOnStartup) {
+        this.forceUpdateOnStartup = forceUpdateOnStartup;
+        return this;
+    }
+    
+    public long getForceUpdateOnStartup() {
+        return forceUpdateOnStartup;
+    }
+    
+    public boolean isNavigationWithJogWheel() {
+        return navigationWithJogWheel;
+    }
+    
     public ControllerConfig setNavigationWithJogWheel(final boolean navigationWithJogWheel) {
         this.navigationWithJogWheel = navigationWithJogWheel;
+        return this;
+    }
+    
+    public boolean isDecelerateJogWheel() {
+        return decelerateJogWheel;
+    }
+    
+    public TimeCodeLed.DisplayType getDisplayType() {
+        return displayType;
+    }
+    
+    public void setDisplayType(final TimeCodeLed.DisplayType displayType) {
+        this.displayType = displayType;
+    }
+    
+    public ControllerConfig setDecelerateJogWheel(final boolean decelerateJogWheel) {
+        this.decelerateJogWheel = decelerateJogWheel;
+        return this;
+    }
+    
+    public boolean isNoDedicatedZoom() {
+        return noDedicatedZoom;
+    }
+    
+    public ControllerConfig setNoDedicatedZoom(final boolean noDedicatedZoom) {
+        this.noDedicatedZoom = noDedicatedZoom;
         return this;
     }
     

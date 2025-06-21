@@ -1,0 +1,5 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.format.settings.url": "code-formatting.xml",
+    "java.project.encoding": "warning"
+}
