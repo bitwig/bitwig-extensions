@@ -47,7 +47,6 @@ public class MixerModeLayer {
     
     public void assign() {
         final boolean flipped = mixer.isFlipped();
-        final boolean touched = mixer.isTouched();
         final boolean nameValue = mixer.isNameValue();
         
         final ControlMode mainMode = !flipped ? mode : ControlMode.VOLUME;
@@ -59,7 +58,6 @@ public class MixerModeLayer {
         if (mixer.hasLowerDisplay()) {
             displayValueLayer = mixer.getLayerSource(mainMode).getDisplayValueLayer();
             displayLowerValueLayer = mixer.getLayerSource(lowMode).getDisplayValueLayer();
-            
             if (flipped) {
                 displayLabelLayer = nameValue
                     ? mixer.getLayerSource(ControlMode.VOLUME).getDisplayLabelLayer()
@@ -72,7 +70,7 @@ public class MixerModeLayer {
                     : mixer.getTrackDisplayLayer();
             }
         } else {
-            final ControlMode displayMode = touched ? lowMode : mainMode;
+            final ControlMode displayMode = mixer.isTouched() ? lowMode : mainMode;
             displayLabelLayer =
                 nameValue ? mixer.getLayerSource(displayMode).getDisplayLabelLayer() : mixer.getTrackDisplayLayer();
             displayValueLayer = mixer.getLayerSource(displayMode).getDisplayValueLayer();

@@ -126,38 +126,38 @@ public class LayerGroup {
     public void bindDisplay(final DisplayManager displayManager, final Parameter parameter, final int index) {
         final BooleanValue exists = parameter.exists();
         final StringValue labelValue = parameter.name();
-        labelLayer.addBinding(
-            new StringDisplayBinding(displayManager, ControlMode.MENU, DisplayTarget.of(DisplayRow.LABEL, index),
-                labelValue, exists, name -> StringUtil.reduceAscii(name, 6)));
-        valueLayer.addBinding(
-            new StringDisplayBinding(displayManager, ControlMode.MENU, DisplayTarget.of(DisplayRow.VALUE, index),
-                parameter.displayedValue(), exists));
+        labelLayer.addBinding(new StringDisplayBinding(displayManager, ControlMode.MENU,
+            DisplayTarget.of(DisplayRow.LABEL, index, parameter), labelValue, exists,
+            name -> StringUtil.reduceAscii(name, 6)));
+        valueLayer.addBinding(new StringDisplayBinding(displayManager, ControlMode.MENU,
+            DisplayTarget.of(DisplayRow.VALUE, index, parameter), parameter.displayedValue(), exists));
     }
     
     public void bindDisplay(final DisplayManager displayManager, final String label, final SettableRangedValue value,
         final int index) {
         final StringValue labelValue = new BasicStringValue(label);
         labelLayer.addBinding(
-            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.LABEL, index), labelValue));
-        valueLayer.addBinding(new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.VALUE, index),
-            value.displayedValue()));
+            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.LABEL, index, value), labelValue));
+        valueLayer.addBinding(
+            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.VALUE, index, value),
+                value.displayedValue()));
     }
     
     public void bindDisplay(final DisplayManager displayManager, final StringValue label, final StringValue value,
         final int index) {
         labelLayer.addBinding(
-            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.LABEL, index), label));
+            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.LABEL, index, value), label));
         valueLayer.addBinding(
-            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.VALUE, index), value));
+            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.VALUE, index, value), value));
     }
     
     public void bindDisplay(final DisplayManager displayManager, final String label, final StringValue value,
         final int index) {
         final StringValue labelValue = new BasicStringValue(label);
         labelLayer.addBinding(
-            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.LABEL, index), labelValue));
+            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.LABEL, index, value), labelValue));
         valueLayer.addBinding(
-            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.VALUE, index), value));
+            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.VALUE, index, value), value));
     }
     
     public void bindDisplay(final DisplayManager displayManager, final String name, final BooleanValue value,
@@ -165,10 +165,11 @@ public class LayerGroup {
         value.markInterested();
         final BasicStringValue onOffValue = new BasicStringValue(value.get() ? " ON" : " OFF");
         value.addValueObserver(val -> onOffValue.set(val ? " ON" : " OFF"));
-        labelLayer.addBinding(new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.LABEL, index),
-            new BasicStringValue(name)));
+        labelLayer.addBinding(
+            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.LABEL, index, value),
+                new BasicStringValue(name)));
         valueLayer.addBinding(
-            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.VALUE, index), onOffValue));
+            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.VALUE, index, value), onOffValue));
     }
     
     public void bindEncoderEmpty(final RingEncoder encoder) {
@@ -177,10 +178,11 @@ public class LayerGroup {
     
     public void bindEmpty(final DisplayManager displayManager, final RingEncoder encoder, final int index) {
         encoder.bindEmpty(encoderLayer);
+        final Object idObject = new Object();
         labelLayer.addBinding(
-            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.LABEL, index), EMPTY));
+            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.LABEL, index, idObject), EMPTY));
         valueLayer.addBinding(
-            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.VALUE, index), EMPTY));
+            new ModelessDisplayBinding(displayManager, DisplayTarget.of(DisplayRow.VALUE, index, idObject), EMPTY));
     }
     
     public void bindRingToIsPressed(final RingEncoder ringEncoder) {

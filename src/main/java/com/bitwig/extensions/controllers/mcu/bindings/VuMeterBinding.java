@@ -22,7 +22,7 @@ public class VuMeterBinding extends Binding<Track, DisplayManager> {
     }
     
     private void updateVuValue(final int value) {
-        if (isActive() && value != lastValue) {
+        if (isActive()) {
             getTarget().sendVuUpdate(index, value);
         }
         lastValue = value;

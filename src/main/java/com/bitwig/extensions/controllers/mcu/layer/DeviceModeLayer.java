@@ -137,6 +137,10 @@ public abstract class DeviceModeLayer extends MixerModeLayer {
                 displayLabelLayer = mixer.getLayerSource(ControlMode.VOLUME).getDisplayLabelLayer();
                 displayLowerValueLayer = bottomRowValueLayer;
             }
+            if (infoText != null && matchState == State.TYPE_MATCH) {
+                topRowInfoText.set(infoText);
+                displayLowerLabelLayer = topRowValueLayer;
+            }
         } else {
             mixer.setUpperLowerDestination(mode, ControlMode.VOLUME);
             if (matchState != State.TYPE_MATCH) {
@@ -150,7 +154,13 @@ public abstract class DeviceModeLayer extends MixerModeLayer {
                 }
             }
             displayLowerValueLayer = mixer.getLayerSource(ControlMode.VOLUME).getDisplayValueLayer();
-            displayLowerLabelLayer = mixer.getTrackDisplayLayer();
+            displayLowerLabelLayer = nameValue
+                ? mixer.getLayerSource(ControlMode.VOLUME).getDisplayLabelLayer()
+                : mixer.getTrackDisplayLayer();
+            if (infoText != null && matchState == State.TYPE_MATCH) {
+                topRowInfoText.set(infoText);
+                displayLabelLayer = topRowValueLayer;
+            }
         }
     }
     
