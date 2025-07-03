@@ -59,6 +59,7 @@ public class DisplayControl {
     }
     
     public void show2Line(final String line1, final String line2) {
+        
         temporaryDisplay.setLine(0, line1);
         temporaryDisplay.setLine(1, line2);
         temporaryDisplay.update2Lines();

@@ -10,12 +10,15 @@ import com.bitwig.extension.callback.DoubleValueChangedCallback;
 import com.bitwig.extension.callback.IntegerValueChangedCallback;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding;
+import com.bitwig.extension.controller.api.DoubleValue;
 import com.bitwig.extension.controller.api.HardwareSlider;
+import com.bitwig.extension.controller.api.IntegerValue;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueBinding;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableRangedValue;
+import com.bitwig.extension.controller.api.StringArrayValue;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.mackie.bindings.FaderParameterBankBinding;
 import com.bitwig.extensions.controllers.mackie.bindings.ResetableAbsoluteValueBinding;
@@ -64,11 +67,12 @@ public class ParameterPage implements SettableRangedValue {
             });
             if (deviceParameter.getCustomValueConverter() != null) {
                 final CustomValueConverter converter = deviceParameter.getCustomValueConverter();
-                param.value().addValueObserver(converter.getIntRange(), v -> {
-                    if (pIndex == device.getCurrentPage()) {
-                        notifyValueChanged(converter.convert(v));
-                    }
-                });
+                param.value().addValueObserver(
+                    converter.getIntRange(), v -> {
+                        if (pIndex == device.getCurrentPage()) {
+                            notifyValueChanged(converter.convert(v));
+                        }
+                    });
             } else {
                 param.value().displayedValue().addValueObserver(v -> {
                     if (pIndex == device.getCurrentPage()) {
@@ -163,6 +167,7 @@ public class ParameterPage implements SettableRangedValue {
     public void setIsSubscribed(final boolean value) {
     }
     
+    
     @Override
     public void subscribe() {
         currentParameter.parameter.subscribe();
@@ -186,6 +191,21 @@ public class ParameterPage implements SettableRangedValue {
     @Override
     public double getRaw() {
         return currentParameter.parameter.getRaw();
+    }
+    
+    @Override
+    public DoubleValue getOrigin() {
+        return null;
+    }
+    
+    @Override
+    public IntegerValue discreteValueCount() {
+        return null;
+    }
+    
+    @Override
+    public StringArrayValue discreteValueNames() {
+        return null;
     }
     
     @Override
@@ -238,7 +258,8 @@ public class ParameterPage implements SettableRangedValue {
     public RelativeHardwareControlToRangedValueBinding addBindingWithRangeAndSensitivity(
         final RelativeHardwareControl hardwareControl, final double minNormalizedValue, final double maxNormalizedValue,
         final double sensitivity) {
-        return currentParameter.parameter.addBindingWithRangeAndSensitivity(hardwareControl, minNormalizedValue,
+        return currentParameter.parameter.addBindingWithRangeAndSensitivity(
+            hardwareControl, minNormalizedValue,
             maxNormalizedValue, currentParameter.getSensitivity());
     }
     

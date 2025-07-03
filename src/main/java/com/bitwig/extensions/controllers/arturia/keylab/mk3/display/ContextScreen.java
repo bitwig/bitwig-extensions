@@ -82,19 +82,21 @@ public class ContextScreen {
         final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
         final TouchEncoder mainEncoder = hwElements.getMainEncoder();
         mainEncoder.bind(mainLayer, this::handleEncoderTurn);
-        mainEncoder.bindPressed(mainLayer, () -> {
-            viewControl.showPlugin(true);
-            cursorTrack.sendMidi(0XB0, 117, 127);
-        });
+        mainEncoder.bindPressed(
+            mainLayer, () -> {
+                viewControl.showPlugin(true);
+                cursorTrack.sendMidi(0XB0, 117, 127);
+            });
         final RgbButton backButton = hwElements.getButton(CcAssignment.BACK);
         backButton.bindPressed(mainLayer, () -> viewControl.showPlugin(false));
         backButton.bindReleased(mainLayer, () -> backButton.refreshLight());
-        backButton.bindLight(mainLayer, () -> {
-            if (cursorDevice.isWindowOpen().get()) {
-                return RgbLightState.WHITE_DIMMED;
-            }
-            return RgbLightState.OFF;
-        });
+        backButton.bindLight(
+            mainLayer, () -> {
+                if (cursorDevice.isWindowOpen().get()) {
+                    return RgbLightState.WHITE_DIMMED;
+                }
+                return RgbLightState.OFF;
+            });
         cursorDevice.isWindowOpen().addValueObserver(open -> {
             backButton.setLightState(open ? RgbLightState.WHITE_DIMMED : RgbLightState.OFF);
         });
@@ -154,7 +156,7 @@ public class ContextScreen {
     }
     
     private void updateSceneState(final InternalHardwareLightState internalHardwareLightState) {
-        if (internalHardwareLightState instanceof SceneState sceneState) {
+        if (internalHardwareLightState instanceof final SceneState sceneState) {
             final ButtonDisplayType type =
                 sceneState.isHeld() ? ButtonDisplayType.TOGGLE_ICON : ButtonDisplayType.SIMPLE_ICON;
             final SmallIcon icon = sceneState.isNoClips() ? SmallIcon.STOP : SmallIcon.ARROW_RIGHT;
@@ -179,10 +181,12 @@ public class ContextScreen {
     
     private void setUpContextButtons(final ViewControl viewControl, final KeylabHardwareElements hwElements) {
         final RgbButton contextButton1 = hwElements.getContextButton(0);
-        contextButton1.bindDelayHold(mainLayer, () -> setControlMode(ControlMode.DEVICE),
+        contextButton1.bindDelayHold(
+            mainLayer, () -> setControlMode(ControlMode.DEVICE),
             () -> encoderMode = EncoderControl.TRACKS, this::toEncoderDeviceControl, 750);
         final RgbButton contextButton2 = hwElements.getContextButton(1);
-        contextButton2.bindDelayHold(mainLayer, () -> setControlMode(ControlMode.MIXER),
+        contextButton2.bindDelayHold(
+            mainLayer, () -> setControlMode(ControlMode.MIXER),
             () -> encoderMode = EncoderControl.TRACKS, this::toEncoderTrackControl, 750);
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         
@@ -209,12 +213,13 @@ public class ContextScreen {
         final RgbButton contextButton7 = hwElements.getContextButton(6);
         contextButton7.bindPressed(mainLayer, () -> cursorTrack.mute().toggle());
         final RgbButton contextButton8 = hwElements.getContextButton(7);
-        contextButton8.bindIsPressed(mainLayer, pressed -> {
-            if (pressed) {
-                viewControl.launchScene();
-            }
-            sceneButtonPressed = pressed;
-        });
+        contextButton8.bindIsPressed(
+            mainLayer, pressed -> {
+                if (pressed) {
+                    viewControl.launchScene();
+                }
+                sceneButtonPressed = pressed;
+            });
     }
     
     private void toEncoderTrackControl() {
@@ -272,7 +277,8 @@ public class ContextScreen {
     private void showTrackAssignment(final boolean initial) {
         if (encoderMode != EncoderControl.MIXER) {
         }
-        midiProcessor.screenLine3(ScreenTarget.POP_SCREEN_3_LINES, "Mixer Control", RgbColor.WHITE,
+        midiProcessor.screenLine3(
+            ScreenTarget.POP_SCREEN_3_LINES, "Mixer Control", RgbColor.WHITE,
             "Track %d - %d".formatted(mixerOffset + 1, mixerOffset + 8), RgbColor.WIDGET, "Main encoder to offset",
             RgbColor.WHITE, null);
     }
@@ -283,15 +289,18 @@ public class ContextScreen {
         }
         if (deviceExists) {
             if (initial) {
-                midiProcessor.screenLine3(ScreenTarget.POP_SCREEN_3_LINES, "Device Control", RgbColor.WHITE, deviceName,
+                midiProcessor.screenLine3(
+                    ScreenTarget.POP_SCREEN_3_LINES, "Device Control", RgbColor.WHITE, deviceName,
                     RgbColor.WIDGET, "Main encoder to control devices", RgbColor.WHITE, null);
             } else {
-                midiProcessor.screenLine2(ScreenTarget.POP_SCREEN_2_LINE_LEFT_ICON, "Device Control", RgbColor.WHITE,
+                midiProcessor.screenLine2(
+                    ScreenTarget.POP_SCREEN_2_LINE_LEFT_ICON, "Device Control", RgbColor.WHITE,
                     deviceName, RgbColor.WIDGET, CenterIcons.MIXER);
             }
         } else {
             if (initial) {
-                midiProcessor.screenLine2(ScreenTarget.POP_SCREEN_2_LINES, "Device Control", RgbColor.WHITE,
+                midiProcessor.screenLine2(
+                    ScreenTarget.POP_SCREEN_2_LINES, "Device Control", RgbColor.WHITE,
                     "No Device", RgbColor.WIDGET, null);
             } else {
                 midiProcessor.screenLine1(
@@ -301,23 +310,27 @@ public class ContextScreen {
     }
     
     private void updateMainScreen() {
-        midiProcessor.screenLine2(ScreenTarget.SCREEN_2_LINES_INVERTED, trackSelectionState.trackName,
+        midiProcessor.screenLine2(
+            ScreenTarget.SCREEN_2_LINES_INVERTED, trackSelectionState.trackName,
             trackSelectionState.trackColor, trackSelectionState.sceneName, RgbColor.WHITE, null);
     }
     
     private void updateArmState() {
-        midiProcessor.screenContextButton(1, //
+        midiProcessor.screenContextButton(
+            1, //
             getToggleIcon(armState), SmallIcon.BUTTON_ARMED_AUDIO_DEFAULT, armState ? RgbColor.RED : RgbColor.WHITE,
             "");
     }
     
     private void updateSoloState() {
-        midiProcessor.screenContextButton(2,  //
+        midiProcessor.screenContextButton(
+            2,  //
             getToggleIcon(soloState), SmallIcon.SOLO, soloState ? RgbColor.YELLOW : RgbColor.WHITE, "S");
     }
     
     private void updateMuteState() {
-        midiProcessor.screenContextButton(3, getToggleIcon(muteState), SmallIcon.MUTE,
+        midiProcessor.screenContextButton(
+            3, getToggleIcon(muteState), SmallIcon.MUTE,
             muteState ? RgbColor.ORANGE : RgbColor.WHITE, "M");
     }
     
@@ -326,7 +339,8 @@ public class ContextScreen {
     }
     
     private void updateControlMode() {
-        midiProcessor.screenContextButton(5, getButtonTab(controlMode == ControlMode.DEVICE),//
+        midiProcessor.screenContextButton(
+            5, getButtonTab(controlMode == ControlMode.DEVICE),//
             SmallIcon.BLUE_HAND, RgbColor.WHITE, "DEVICE");
         midiProcessor.screenContextButton(
             6, getButtonTab(controlMode == ControlMode.MIXER), null, RgbColor.WHITE, "MIXER");
@@ -340,14 +354,16 @@ public class ContextScreen {
         final SmallIcon icon =
             panelLayout == LayoutType.ARRANGER ? SmallIcon.BROWSING_ARROW_LEFT : SmallIcon.BROWSING_ARROW_DEFAULT;
         
-        midiProcessor.screenContextButton(7, ButtonDisplayType.SIMPLE_ICON, icon,
+        midiProcessor.screenContextButton(
+            7, ButtonDisplayType.SIMPLE_ICON, icon,
             hasPreviousScene ? RgbColor.WHITE : RgbColor.GRAY, "");
     }
     
     private void updateNextButton() {
         final SmallIcon icon =
             (panelLayout == LayoutType.ARRANGER ? SmallIcon.BROWSING_ARROW_RIGHT : SmallIcon.BROWSING_ARROW_DOWN);
-        midiProcessor.screenContextButton(8, ButtonDisplayType.SIMPLE_ICON, icon,
+        midiProcessor.screenContextButton(
+            8, ButtonDisplayType.SIMPLE_ICON, icon,
             hasNextScene ? RgbColor.WHITE : RgbColor.GRAY, "");
     }
     
