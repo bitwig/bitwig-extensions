@@ -52,10 +52,10 @@ public class OverlayEncoderLayer extends Layer {
     
     private void addBinding(final int index, final LaunchRelEncoder encoder, final DisplayControl display,
         final String paramName, final NoteValueHandler valueHandler) {
-        final RelativeDisplayControl control =
-            new RelativeDisplayControl(index, display, "Note Edit", paramName, valueHandler.getDisplayValue(),
-                inc -> handleValueInc(inc, valueHandler),
-                () -> encoder.setEncoderBehavior(LaunchRelEncoder.EncoderMode.NONACCELERATED));
+        final RelativeDisplayControl control = new RelativeDisplayControl(
+            index, display, "Note Edit", paramName, valueHandler.getDisplayValue(),
+            inc -> handleValueInc(inc, valueHandler),
+            () -> encoder.setEncoderBehavior(LaunchRelEncoder.EncoderMode.NON_ACCELERATED));
         encoder.bindIncrementAction(this, control::handleInc);
         this.addBinding(control);
     }

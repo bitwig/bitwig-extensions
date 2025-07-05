@@ -15,8 +15,8 @@ public class ClipSceneCursor {
     private final NavigationState navigationState;
     protected TrackBank singleTrackBank;
     protected SceneBank sceneBank;
-
-    public ClipSceneCursor(ControllerHost host, NavigationState navigationState) {
+    
+    public ClipSceneCursor(final ControllerHost host, final NavigationState navigationState) {
         singleTrackBank = host.createTrackBank(1, 0, 1);
         singleTrackBank.scrollPosition().markInterested();
         cursorTrack = host.createCursorTrack(1, 1);
@@ -26,7 +26,7 @@ public class ClipSceneCursor {
         final ClipLauncherSlotBank slotBank = theTrack.clipLauncherSlotBank();
         singleTrackBank.setShouldShowClipLauncherFeedback(true);
         theClip = slotBank.getItemAt(0);
-
+        
         sceneBank = singleTrackBank.sceneBank();
         sceneBank.cursorIndex().markInterested();
         sceneBank.setIndication(false);
@@ -35,12 +35,12 @@ public class ClipSceneCursor {
         sceneBank.canScrollBackwards().addValueObserver(v -> navigationState.setCanScrollSceneUp(v));
         sceneBank.canScrollForwards().addValueObserver(v -> navigationState.setCanScrollSceneDown(v));
     }
-
+    
     public CursorTrack getCursorTrack() {
         return cursorTrack;
     }
-
-    protected void doNavigateDown(LayoutType currentLayoutType) {
+    
+    protected void doNavigateDown(final LayoutType currentLayoutType) {
         switch (currentLayoutType) {
             case LAUNCHER -> {
                 sceneBank.scrollForwards();
@@ -55,14 +55,15 @@ public class ClipSceneCursor {
                     singleTrackBank.scrollBy(1);
                     theClip.select();
                     theTrack.selectInMixer();
+                    theTrack.selectInEditor();
                 }
             }
             default -> {
             }
         }
     }
-
-    protected void doNavigateUp(LayoutType currentLayoutType) {
+    
+    protected void doNavigateUp(final LayoutType currentLayoutType) {
         switch (currentLayoutType) {
             case LAUNCHER -> {
                 sceneBank.scrollBackwards();
@@ -77,14 +78,15 @@ public class ClipSceneCursor {
                     singleTrackBank.scrollBy(-1);
                     theClip.select();
                     theTrack.selectInMixer();
+                    theTrack.selectInEditor();
                 }
             }
             default -> {
             }
         }
     }
-
-    protected void doNavigateLeft(LayoutType currentLayoutType) {
+    
+    protected void doNavigateLeft(final LayoutType currentLayoutType) {
         switch (currentLayoutType) {
             case LAUNCHER -> {
                 if (singleTrackBank.scrollPosition().get() == 0) {
@@ -95,6 +97,7 @@ public class ClipSceneCursor {
                     singleTrackBank.scrollBy(-1);
                     theClip.select();
                     theTrack.selectInMixer();
+                    theTrack.selectInEditor();
                 }
             }
             case ARRANGER -> {
@@ -105,8 +108,8 @@ public class ClipSceneCursor {
             }
         }
     }
-
-    protected void doNavigateRight(LayoutType currentLayoutType) {
+    
+    protected void doNavigateRight(final LayoutType currentLayoutType) {
         switch (currentLayoutType) {
             case LAUNCHER -> {
                 if (navigationState.isSceneNavMode()) {
@@ -118,6 +121,7 @@ public class ClipSceneCursor {
                 }
                 theClip.select();
                 theTrack.selectInMixer();
+                theTrack.selectInEditor();
             }
             case ARRANGER -> {
                 sceneBank.scrollForwards();
@@ -127,7 +131,7 @@ public class ClipSceneCursor {
             }
         }
     }
-
+    
     public void launch() {
         if (navigationState.isSceneNavMode()) {
             sceneBank.getScene(0).launch();
