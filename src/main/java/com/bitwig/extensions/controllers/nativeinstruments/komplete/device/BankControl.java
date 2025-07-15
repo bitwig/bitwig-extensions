@@ -6,8 +6,8 @@ import java.util.List;
 import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
+import com.bitwig.extensions.framework.values.ValueObject;
 
 public class BankControl {
     
@@ -20,10 +20,12 @@ public class BankControl {
     private boolean nested;
     private int currentDeviceIndex = 0;
     private final ParentTab parentNavTab;
-    private final DeviceSlot trackDevice;
     
-    private final boolean usesTrackRemotes = true;
+    private final DeviceSlot trackDevice;
     private final DeviceSlot projectDevice;
+    
+    private boolean usesTrackRemotes = true;
+    private final ValueObject<Focus> currentFocus = new ValueObject<>(Focus.DEVICE);
     
     private class ParentTab implements DeviceSelectionTab {
         private String name;
@@ -52,8 +54,8 @@ public class BankControl {
         this.cursorDevice = cursorDevice;
         this.parentNavTab = new ParentTab();
         cursorDevice.position().addValueObserver(this::handleCursorDevicePosition);
-        this.trackDevice = new DeviceSlot(-1, "Track-Remotes", this);
-        this.projectDevice = new DeviceSlot(-2, "Proj-Remotes", this);
+        this.trackDevice = new DeviceSlot(-1, "Track", this);
+        this.projectDevice = new DeviceSlot(-2, "Project", this);
         for (int i = 0; i < deviceBank.getSizeOfBank(); i++) {
             final Device device = deviceBank.getDevice(i);
             final DeviceSlot slot = new DeviceSlot(i, device, this);
@@ -67,13 +69,30 @@ public class BankControl {
         cursorDevice.isNested().addValueObserver(this::handleNested);
     }
     
+    
+    public ValueObject<Focus> getCurrentFocus() {
+        return currentFocus;
+    }
+    
     private void handleNested(final boolean nested) {
         this.nested = nested;
         deviceControl.triggerUpdateAction();
     }
     
+    public void setUsesTrackRemotes(final boolean usesTrackRemotes) {
+        this.usesTrackRemotes = usesTrackRemotes;
+        if (!usesTrackRemotes) {
+            currentFocus.set(Focus.DEVICE);
+        }
+        deviceControl.triggerUpdateAction();
+    }
+    
     public int getSelectionIndex() {
-        return currentDeviceIndex + getIndexOffset(); //  (nested ? 1 : 0);
+        return switch (currentFocus.get()) {
+            case DEVICE -> currentDeviceIndex + getIndexOffset();
+            case TRACK -> 1;
+            case PROJECT -> 0;
+        };
     }
     
     public List<? extends DeviceSelectionTab> getBankConfig() {
@@ -114,14 +133,20 @@ public class BankControl {
         }
         currentDeviceIndex = position;
         final DeviceSlot slot = devices.get(position);
-        final int index = slot.getIndex() + getIndexOffset();
-        midiProcessor.sendSelectionIndex(index, new int[0]);
         
-        slot.setSelected(true);
+        if (currentFocus.get() == Focus.DEVICE) {
+            final int index = slot.getIndex() + getIndexOffset();
+            midiProcessor.sendSelectionIndex(index, new int[0]);
+            slot.setSelected(true);
+        } else if (currentFocus.get() == Focus.TRACK) {
+            midiProcessor.sendSelectionIndex(1, new int[0]);
+        } else {
+            midiProcessor.sendSelectionIndex(0, new int[0]);
+        }
     }
     
     private int getIndexOffset() {
-        return nested ? 1 : (usesTrackRemotes ? 2 : 1);
+        return nested ? 1 : (usesTrackRemotes ? 2 : 0);
     }
     
     public void select(final int[] selectionPath) {
@@ -136,17 +161,20 @@ public class BankControl {
             index--;
         } else if (usesTrackRemotes) {
             if (index == 0) {
-                KompleteKontrolExtension.println(" Select project remotes");
+                currentFocus.set(Focus.PROJECT);
+                midiProcessor.sendSelectionIndex(0, new int[0]);
                 return;
             }
             if (index == 1) {
-                KompleteKontrolExtension.println(" Select track remotes");
+                currentFocus.set(Focus.TRACK);
+                midiProcessor.sendSelectionIndex(1, new int[0]);
                 return;
             } else {
                 index -= 2;
             }
         }
         
+        currentFocus.set(Focus.DEVICE);
         
         final DeviceSlot slot = devices.get(index);
         if (selectionPath.length == 1) {

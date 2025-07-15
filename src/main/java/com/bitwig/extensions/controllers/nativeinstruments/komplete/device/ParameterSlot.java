@@ -20,6 +20,10 @@ public class ParameterSlot {
         this.binding = binding;
     }
     
+    public RemoteControl getParameter() {
+        return parameter;
+    }
+    
     public int getIndex() {
         return index;
     }

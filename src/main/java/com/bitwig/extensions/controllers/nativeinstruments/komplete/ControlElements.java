@@ -1,9 +1,13 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.OnOffHardwareLight;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
 
@@ -18,6 +22,10 @@ public class ControlElements {
     private final HardwareButton soloSelectedButton;
     private final HardwareButton shiftButton;
     private final BooleanValueObject shiftHeld = new BooleanValueObject();
+    private final List<RelativeHardwareKnob> deviceKnobs;
+    private final List<RelativeHardwareKnob> volumeKnobs;
+    private final List<RelativeHardwareKnob> panKnobs;
+    private final RelativeHardwareKnob fourDKnobMixer;
     
     public ControlElements(final HardwareSurface surface, final MidiProcessor midiProcessor) {
         final MidiIn midiIn = midiProcessor.getMidiIn();
@@ -42,6 +50,43 @@ public class ControlElements {
         
         soloSelectedButton = surface.createHardwareButton("SOLO_SELECTED_BUTTON");
         soloSelectedButton.pressedAction().setActionMatcher(CcAssignment.SOLO_CURRENT.createActionMatcher(midiIn, 1));
+        deviceKnobs = createKnobs(surface, "DEVICE", 0x70);
+        volumeKnobs = createKnobs(surface, "VOLUME", 0x50);
+        panKnobs = createKnobs(surface, "PAN", 0x58);
+        
+        
+        fourDKnobMixer = surface.createRelativeHardwareKnob("4D_WHEEL_MIX_MODE");
+        fourDKnobMixer.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x64, 4096));
+        fourDKnobMixer.setStepSize(1 / 128.0);
+    }
+    
+    protected List<RelativeHardwareKnob> createKnobs(final HardwareSurface surface, final String name,
+        final int baseIndex) {
+        final ArrayList<RelativeHardwareKnob> knobs = new ArrayList<>();
+        final MidiIn midiIn = midiProcessor.getMidiIn();
+        for (int i = 0; i < 8; i++) {
+            final RelativeHardwareKnob knob = surface.createRelativeHardwareKnob("%s_KNOB_%d".formatted(name, i));
+            knob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, baseIndex + i, 128));
+            knob.setStepSize(1);
+            knobs.add(knob);
+        }
+        return knobs;
+    }
+    
+    public RelativeHardwareKnob getFourDKnobMixer() {
+        return fourDKnobMixer;
+    }
+    
+    public List<RelativeHardwareKnob> getDeviceKnobs() {
+        return deviceKnobs;
+    }
+    
+    public List<RelativeHardwareKnob> getVolumeKnobs() {
+        return volumeKnobs;
+    }
+    
+    public List<RelativeHardwareKnob> getPanKnobs() {
+        return panKnobs;
     }
     
     private void updateLeftLight(final boolean on) {

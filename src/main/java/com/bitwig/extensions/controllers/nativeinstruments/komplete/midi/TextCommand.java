@@ -10,6 +10,8 @@ public enum TextCommand {
     DAW_IDENT(0x07),
     PARAMETER_UPDATE(0x72),
     PARAMETER_VALUE(0x73),
+    PRESET_NAME(0x76),
+    TRACK_SECTION(0x75),
     VOLUME(0x46), //
     PAN(0x47), //
     NAME(0x48);

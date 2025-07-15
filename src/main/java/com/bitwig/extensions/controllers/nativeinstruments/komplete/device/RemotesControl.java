@@ -4,41 +4,78 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
-import com.bitwig.extension.controller.api.RelativeHardwareControlBinding;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.RemoteControl;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.ControlElements;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.values.BasicStringValue;
 
-public class RemotesControl {
+public class RemotesControl extends AbstractParameterControl {
     
     private int pageCount;
     private int pageIndex;
+    private String[] pageNames = new String[0];
     final CursorRemoteControlsPage deviceRemotes;
-    private final List<ParameterSlot> deviceParameters = new ArrayList<>();
+    private final List<KnobParameterBinding> bindings = new ArrayList<>();
     final MidiProcessor midiProcessor;
+    private final BasicStringValue pageName = new BasicStringValue();
     
-    public RemotesControl(final Layer layer, final CursorRemoteControlsPage deviceRemotes,
-        final RelativeHardwareKnob[] knobs, final MidiProcessor midiProcessor) {
-        this.deviceRemotes = deviceRemotes;
+    public RemotesControl(final Layer layer, final CursorRemoteControlsPage remotes,
+        final ControlElements controlElements, final MidiProcessor midiProcessor) {
+        super(layer);
+        this.deviceRemotes = remotes;
         this.midiProcessor = midiProcessor;
-        deviceRemotes.selectedPageIndex().addValueObserver(this::handlePageIndex);
-        deviceRemotes.pageCount().addValueObserver(this::handlePageCount);
+        remotes.selectedPageIndex().addValueObserver(this::handlePageIndex);
+        remotes.pageCount().addValueObserver(this::handlePageCount);
         for (int i = 0; i < 8; i++) {
-            final int index = i;
-            final RemoteControl remote = deviceRemotes.getParameter(i);
-            final RelativeHardwareControlBinding binding =
-                knobs[index].addBindingWithSensitivity(remote.value(), 0.125);
-            
-            final ParameterSlot slot = new ParameterSlot(i, remote, binding);
-            deviceParameters.add(slot);
-            remote.name().addValueObserver(name -> updateRemoteName(slot, name));
-            remote.exists().addValueObserver(exists -> updateRemoteExists(slot, exists));
-            remote.displayedValue().addValueObserver(valueName -> updateValueName(index, valueName));
-            remote.discreteValueCount().addValueObserver(values -> updateRemotesValueCount(slot, values));
-            remote.getOrigin().addValueObserver(origin -> updateRemoteOrigin(slot, origin));
-            remote.value().addValueObserver(128, value -> midiProcessor.updateParameterValue(index, value));
+            final RemoteControl remote = remotes.getParameter(i);
+            final RelativeHardwareKnob knob = controlElements.getDeviceKnobs().get(i);
+            final KnobParameterBinding binding = new KnobParameterBinding(i, knob, remote, midiProcessor);
+            layer.addBinding(binding);
+            this.bindings.add(binding);
         }
+        remotes.pageNames().addValueObserver(this::handlePageNames);
+        pageName.addValueObserver(this::handlePageNameChanged);
+    }
+    
+    private void handlePageNameChanged(final String page) {
+        if (isActive()) {
+            midiProcessor.sendSection(0, pageName.get());
+        }
+    }
+    
+    private void handlePageNames(final String[] pageNames) {
+        this.pageNames = pageNames;
+        updatePageDisplay();
+    }
+    
+    @Override
+    public void setActive(final boolean active) {
+        super.setActive(active);
+        updatePageCount();
+    }
+    
+    private void updatePageDisplay() {
+        if (pageIndex < this.pageNames.length) {
+            pageName.set(this.pageNames[pageIndex]);
+        }
+    }
+    
+    public void navigateLeft() {
+        deviceRemotes.selectPreviousPage(false);
+    }
+    
+    public void navigateRight() {
+        deviceRemotes.selectNextPage(false);
+    }
+    
+    public void setFineTune(final boolean fineTune) {
+        bindings.forEach(binding -> binding.setFineTune(fineTune));
+    }
+    
+    public void setOnPlugin(final boolean onPlugin) {
+        bindings.forEach(binding -> binding.setOnPlugin(onPlugin));
     }
     
     private void handlePageCount(final int pageCount) {
@@ -46,7 +83,7 @@ public class RemotesControl {
             return;
         }
         this.pageCount = pageCount;
-        midiProcessor.sendPageCount(pageCount, pageIndex);
+        updatePageCount();
     }
     
     private void handlePageIndex(final int pageIndex) {
@@ -54,31 +91,23 @@ public class RemotesControl {
             return;
         }
         this.pageIndex = pageIndex;
-        midiProcessor.sendPageCount(pageCount, pageIndex);
+        updatePageDisplay();
+        updatePageCount();
     }
     
-    private void updateValueName(final int index, final String value) {
-        midiProcessor.sendParamValue(index, value);
+    private void updatePageCount() {
+        if (isActive()) {
+            midiProcessor.sendPageCount(this.pageCount, this.pageIndex);
+            midiProcessor.sendSection(0, pageName.get());
+        }
     }
     
-    private void updateRemoteOrigin(final ParameterSlot slot, final double origin) {
-        slot.setOrigin(origin);
-        midiProcessor.sendRemoteState(slot);
+    public boolean canScrollRight() {
+        return pageIndex < pageCount - 1;
     }
     
-    private void updateRemotesValueCount(final ParameterSlot slot, final int values) {
-        slot.setValueCount(values);
-        midiProcessor.sendRemoteState(slot);
-    }
-    
-    private void updateRemoteName(final ParameterSlot slot, final String name) {
-        slot.setName(name);
-        midiProcessor.sendRemoteState(slot);
-    }
-    
-    private void updateRemoteExists(final ParameterSlot slot, final boolean exists) {
-        slot.setExists(exists);
-        midiProcessor.sendRemoteState(slot);
+    public boolean canScrollLeft() {
+        return pageIndex > 0;
     }
     
 }

@@ -1,44 +1,48 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete.device;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
-import com.bitwig.extension.controller.api.RelativeHardwareControlBinding;
-import com.bitwig.extension.controller.api.RelativeHardwareKnob;
-import com.bitwig.extension.controller.api.RemoteControl;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.ClipSceneCursor;
+import com.bitwig.extension.controller.api.SettableEnumValue;
+import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.ControlElements;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.ViewControl;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.DeviceMidiListener;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
+import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 public class DeviceControl implements DeviceMidiListener {
     
+    public static final String ONLY_DEVICES = "only Devices";
+    public static final String WITH_TRACK_PROJECT = "with Track/Project";
     private final MidiProcessor midiProcessor;
-    private final RelativeHardwareKnob[] knobs = new RelativeHardwareKnob[8];
     private final BankControl mainBank;
     private final ControllerHost host;
     private Runnable bankUpdateTask = null;
     private final Layer navigationLayer;
     
-    private int pageCount = 0;
-    private int pageIndex = 0;
-    private final List<ParameterSlot> deviceParameters = new ArrayList<>();
     private final PinnableCursorDevice cursorDevice;
     private final ControlElements controlElements;
     private final Layer deviceRemoteLayer;
     private final Layer trackRemoteLayer;
     private final Layer projectRemoteLayer;
+    private final Layer directParamLayer;
     
-    public DeviceControl(final ControllerHost host, final HardwareSurface surface, final MidiProcessor midiProcessor,
-        final ClipSceneCursor clipSceneCursor, final Layers layers, final ControlElements controlElements) {
+    private boolean directActive;
+    private final DirectParameterControl directParameterControl;
+    private final RemotesControl deviceRemotesControl;
+    private final RemotesControl projectRemotesControl;
+    private final RemotesControl trackRemotesControl;
+    private AbstractParameterControl currentRemotesControl;
+    private final BooleanValueObject useRemotes = new BooleanValueObject();
+    private BankControl.Focus deviceFocus = BankControl.Focus.DEVICE;
+    
+    public DeviceControl(final ControllerHost host, final MidiProcessor midiProcessor, final ViewControl viewControl,
+        final Layers layers, final ControlElements controlElements) {
+        initSetting(host);
         this.midiProcessor = midiProcessor;
         this.midiProcessor.addDeviceMidiListener(this);
         this.midiProcessor.addModeListener(this::changeMode);
@@ -46,99 +50,84 @@ public class DeviceControl implements DeviceMidiListener {
         deviceRemoteLayer = new Layer(layers, "DEVICE");
         trackRemoteLayer = new Layer(layers, "TRACK");
         projectRemoteLayer = new Layer(layers, "PROJECT");
-        final CursorTrack cursorTrack = clipSceneCursor.getCursorTrack();
+        directParamLayer = new Layer(layers, "DIRECT_PARAM");
+        final CursorTrack cursorTrack = viewControl.getClipSceneCursor().getCursorTrack();
         this.host = host;
         this.controlElements = controlElements;
         cursorDevice = cursorTrack.createCursorDevice();
-        setUpKnobs(surface);
-        
+        cursorDevice.presetName().addValueObserver(this::handlePresetName);
         this.mainBank = new BankControl(cursorDevice, this.midiProcessor, this);
-        //        devices.add(new DeviceSlot(0, "Proj-Remotes"));
-        //        devices.add(new DeviceSlot(1, "Track Remotes"));
+        this.mainBank.getCurrentFocus().addValueObserver(this::handleFocus);
         
-        //layerBank.itemCount().addValueObserver(items -> KompleteKontrolExtension.println(" LAYER = %d", items));
-        final CursorRemoteControlsPage deviceRemotes = cursorDevice.createCursorRemoteControlsPage(8);
-        deviceRemotes.selectedPageIndex().addValueObserver(this::handlePageIndex);
-        deviceRemotes.pageCount().addValueObserver(this::handlePageCount);
-        for (int i = 0; i < 8; i++) {
-            final int index = i;
-            final RemoteControl remote = deviceRemotes.getParameter(i);
-            final RelativeHardwareControlBinding binding =
-                knobs[index].addBindingWithSensitivity(remote.value(), 0.125);
-            
-            final ParameterSlot slot = new ParameterSlot(i, remote, binding);
-            deviceParameters.add(slot);
-            remote.name().addValueObserver(name -> updateRemoteName(slot, name));
-            remote.exists().addValueObserver(exists -> updateRemoteExists(slot, exists));
-            remote.displayedValue().addValueObserver(valueName -> updateValueName(index, valueName));
-            remote.discreteValueCount().addValueObserver(values -> updateRemotesValueCount(slot, values));
-            remote.getOrigin().addValueObserver(origin -> updateRemoteOrigin(slot, origin));
-            remote.value().addValueObserver(128, value -> midiProcessor.updateParameterValue(index, value));
-        }
-        cursorDevice.isPlugin()
-            .addValueObserver(onPlugin -> deviceParameters.forEach(param -> param.setOnPlugin(onPlugin)));
-        controlElements.getShiftHeld().addValueObserver(this::applyShift);
+        
+        final CursorRemoteControlsPage deviceRemotePages = cursorDevice.createCursorRemoteControlsPage(8);
+        deviceRemotesControl = new RemotesControl(deviceRemoteLayer, deviceRemotePages, controlElements, midiProcessor);
+        directParameterControl =
+            new DirectParameterControl(
+                directParamLayer, cursorDevice, controlElements, midiProcessor, deviceRemotePages.pageCount());
+        directParameterControl.getDirectActive().addValueObserver(this::handleDirectActive);
+        
+        final Track rootTrack = viewControl.getProject().getRootTrackGroup();
+        final CursorRemoteControlsPage projectRemotes = rootTrack.createCursorRemoteControlsPage(8);
+        projectRemotesControl = new RemotesControl(projectRemoteLayer, projectRemotes, controlElements, midiProcessor);
+        
+        final CursorRemoteControlsPage trackRemotes = viewControl.getCursorTrack().createCursorRemoteControlsPage(8);
+        trackRemotesControl = new RemotesControl(trackRemoteLayer, trackRemotes, controlElements, midiProcessor);
+        
+        currentRemotesControl = deviceRemotesControl;
+        cursorDevice.isPlugin().addValueObserver(deviceRemotesControl::setOnPlugin);
+        
+        controlElements.getShiftHeld().addValueObserver(fineTune -> currentRemotesControl.setFineTune(fineTune));
         
         navigationLayer.bindPressed(
-            controlElements.getTrackNavLeftButton(), () -> deviceRemotes.selectPreviousPage(false));
+            controlElements.getTrackNavLeftButton(), () -> currentRemotesControl.navigateLeft());
         navigationLayer.bindPressed(
-            controlElements.getTrackRightNavButton(), () -> deviceRemotes.selectNextPage(false));
+            controlElements.getTrackRightNavButton(), () -> currentRemotesControl.navigateRight());
         
-        navigationLayer.bind(() -> pageIndex < pageCount - 1, controlElements.getTrackNavRightButtonLight());
-        navigationLayer.bind(() -> pageIndex > 0, controlElements.getTrackNavLeftButtonLight());
+        navigationLayer.bind(currentRemotesControl::canScrollRight, controlElements.getTrackNavRightButtonLight());
+        navigationLayer.bind(currentRemotesControl::canScrollLeft, controlElements.getTrackNavLeftButtonLight());
+        useRemotes.addValueObserver(mainBank::setUsesTrackRemotes);
     }
     
-    private void applyShift(final boolean shift) {
-        deviceParameters.forEach(slot -> slot.applyFineAdjust(shift));
+    private void handleDirectActive(final boolean isDirectActive) {
+        this.directActive = isDirectActive;
+        handleFocus(this.deviceFocus);
+    }
+    
+    private void handleFocus(final BankControl.Focus focus) {
+        this.deviceFocus = focus;
+        this.currentRemotesControl.setActive(false);
+        switch (this.deviceFocus) {
+            case DEVICE -> {
+                currentRemotesControl = directActive ? directParameterControl : deviceRemotesControl;
+            }
+            case TRACK -> currentRemotesControl = trackRemotesControl;
+            case PROJECT -> currentRemotesControl = projectRemotesControl;
+        }
+        currentRemotesControl.setActive(true);
+    }
+    
+    private void initSetting(final ControllerHost host) {
+        final SettableEnumValue useTrackRemotes = host.getDocumentState().getEnumSetting(
+            "Remotes", //
+            "Visible", new String[] {WITH_TRACK_PROJECT, ONLY_DEVICES}, WITH_TRACK_PROJECT);
+        useTrackRemotes.addValueObserver(value -> this.useRemotes.set(value.equals(WITH_TRACK_PROJECT)));
+    }
+    
+    private void handlePresetName(final String preseName) {
+        if (currentRemotesControl.isActive()) {
+            midiProcessor.sendPresetName(preseName);
+        }
     }
     
     private void changeMode(final int mode) {
         if (mode == 1) {
             navigationLayer.activate();
+            currentRemotesControl.setActive(true);
             controlElements.updateLights();
         } else {
             navigationLayer.deactivate();
         }
-    }
-    
-    private void handlePageCount(final int pageCount) {
-        if (pageCount == -1) {
-            return;
-        }
-        this.pageCount = pageCount;
-        midiProcessor.sendPageCount(pageCount, pageIndex);
-    }
-    
-    private void handlePageIndex(final int pageIndex) {
-        if (pageIndex == -1) {
-            return;
-        }
-        this.pageIndex = pageIndex;
-        midiProcessor.sendPageCount(pageCount, pageIndex);
-    }
-    
-    private void updateValueName(final int index, final String value) {
-        midiProcessor.sendParamValue(index, value);
-    }
-    
-    private void updateRemoteOrigin(final ParameterSlot slot, final double origin) {
-        slot.setOrigin(origin);
-        midiProcessor.sendRemoteState(slot);
-    }
-    
-    private void updateRemotesValueCount(final ParameterSlot slot, final int values) {
-        slot.setValueCount(values);
-        midiProcessor.sendRemoteState(slot);
-    }
-    
-    private void updateRemoteName(final ParameterSlot slot, final String name) {
-        slot.setName(name);
-        midiProcessor.sendRemoteState(slot);
-    }
-    
-    private void updateRemoteExists(final ParameterSlot slot, final boolean exists) {
-        slot.setExists(exists);
-        midiProcessor.sendRemoteState(slot);
     }
     
     //handleIsNested
@@ -153,16 +142,6 @@ public class DeviceControl implements DeviceMidiListener {
         midiProcessor.sendBankUpdate(mainBank.getBankConfig());
         midiProcessor.sendSelectionIndex(mainBank.getSelectionIndex(), new int[0]);
         bankUpdateTask = null;
-    }
-    
-    protected void setUpKnobs(final HardwareSurface surface) {
-        final MidiIn midiIn = midiProcessor.getMidiIn();
-        for (int i = 0; i < 8; i++) {
-            final RelativeHardwareKnob knob = surface.createRelativeHardwareKnob("DEVICE_KNOB" + i);
-            knobs[i] = knob;
-            knob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x70 + i, 128));
-            knob.setStepSize(1 / 128.0);
-        }
     }
     
     @Override

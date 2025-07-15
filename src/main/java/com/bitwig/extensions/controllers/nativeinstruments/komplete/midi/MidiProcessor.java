@@ -9,15 +9,16 @@ import java.util.stream.Collectors;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.CcAssignment;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.DataStringUtil;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.device.DeviceSelectionTab;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.device.ParameterSlot;
 
 public class MidiProcessor {
     final NhiaSyexLevelsCommand trackLevelMeterCommand = new NhiaSyexLevelsCommand(0x49);
@@ -58,7 +59,6 @@ public class MidiProcessor {
         this.tempoListener.add(listener);
     }
     
-    
     private void handleSysex(final String sysExData) {
         if (sysExData.startsWith(INCOMING_INDEX)) {
             final String data = sysExData.substring(INCOMING_INDEX.length(), sysExData.length() - 2);
@@ -98,7 +98,20 @@ public class MidiProcessor {
                 KompleteKontrolExtension.println(
                     "MIDI => %02X %02X %02X", msg.getStatusByte(), msg.getData1(), msg.getData2());
             }
+        } else {
+            KompleteKontrolExtension.println(
+                "MIDI => %02X %02X %02X", msg.getStatusByte(), msg.getData1(), msg.getData2());
         }
+    }
+    
+    public RelativeHardwarControlBindable createIncDoubleAction(final DoubleConsumer changeAction) {
+        return host.createRelativeHardwareControlAdjustmentTarget(changeAction);
+    }
+    
+    public RelativeHardwarControlBindable createIncAction(final IntConsumer changeAction) {
+        final HardwareActionBindable incAction = host.createAction(() -> changeAction.accept(1), () -> "+");
+        final HardwareActionBindable decAction = host.createAction(() -> changeAction.accept(-1), () -> "-");
+        return host.createRelativeHardwareControlStepTarget(incAction, decAction);
     }
     
     public HardwareButton createButton(final String name, final int ccNr, final int index) {
@@ -109,7 +122,6 @@ public class MidiProcessor {
     
     public void updateKompleteKontrolInstance(final String instanceParamName) {
         if (lastReportedKKInstance == null || !lastReportedKKInstance.equals(instanceParamName)) {
-            KompleteKontrolExtension.println(" KP=%s", instanceParamName);
             sendTextCommand(TextCommand.SELECTED_TRACK, instanceParamName);
             host.scheduleTask(() -> sendTextCommand(TextCommand.SELECTED_TRACK, instanceParamName), 100);
             lastReportedKKInstance = instanceParamName;
@@ -150,8 +162,16 @@ public class MidiProcessor {
         TextCommand.BANK_UPDATE.send(midiOut, expr);
     }
     
-    public void sendRemoteState(final ParameterSlot slot) {
-        TextCommand.PARAMETER_UPDATE.send(midiOut, slot.getType(), slot.getIndex(), slot.getName());
+    public void sendPresetName(final String name) {
+        TextCommand.PRESET_NAME.send(midiOut, name);
+    }
+    
+    public void sendSection(final int index, final String sectionName) {
+        TextCommand.TRACK_SECTION.send(midiOut, index, sectionName);
+    }
+    
+    public void sendRemoteState(final int index, final int type, final String name) {
+        TextCommand.PARAMETER_UPDATE.send(midiOut, type, index, name);
     }
     
     public void sendPageCount(final int pageCount, final int pageIndex) {
@@ -163,7 +183,6 @@ public class MidiProcessor {
     }
     
     public void sendSelectionIndex(final int index, final int[] subindexes) {
-        //KompleteKontrolExtension.println(" FI %d %s", index, subindexes.length > 0 ? subindexes[1] : -1);
         ValueCommand.SELECTION_INDEX.send(midiOut, index, subindexes);
     }
     

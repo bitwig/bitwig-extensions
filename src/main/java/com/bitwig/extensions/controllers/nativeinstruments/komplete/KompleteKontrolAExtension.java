@@ -8,7 +8,6 @@ import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
-import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.TextCommand;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.ValueCommand;
@@ -35,10 +34,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         sessionFocusLayer = new Layer(layers, "SessionFocus");
         navigationLayer = new Layer(layers, "NavigationLayer");
         
-        project = host.getProject();
-        mTransport = host.createTransport();
         
-        setUpSliders();
         final MidiIn midiIn2 = host.getMidiInPort(1);
         final NoteInput noteInput =
             midiIn2.createNoteInput(
@@ -50,7 +46,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         setUpTransport();
         initJogWheel();
         
-        final PinnableCursorDevice cursorDevice = clipSceneCursor.getCursorTrack().createCursorDevice();
+        final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
         bindMacroControl(cursorDevice, midiIn2);
         doHardwareLayout();
         midiProcessor.resetAllLEDs();
@@ -59,31 +55,16 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
     }
     
     @Override
-    protected void setUpSliders() {
-        final MidiIn midiIn = midiProcessor.getMidiIn();
-        for (int i = 0; i < 8; i++) {
-            final RelativeHardwareKnob knob = surface.createRelativeHardwareKnob("VOLUME_KNOB" + i);
-            volumeKnobs[i] = knob;
-            knob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x50 + i, 128));
-            knob.setStepSize(1 / 1024.0);
-            
-            final RelativeHardwareKnob panKnob = surface.createRelativeHardwareKnob("PAN_KNOB" + i);
-            panKnobs[i] = panKnob;
-            panKnob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x58 + i, 128));
-            panKnob.setStepSize(1 / 1024.0);
-        }
-    }
-    
-    @Override
     protected void initNavigation() {
         final Clip cursorClip = getHost().createLauncherCursorClip(8, 128);
         final Clip arrangerClip = getHost().createArrangerCursorClip(8, 128);
         
         arrangerClip.exists().markInterested();
-        final Track rootTrack = project.getRootTrackGroup();
-        final CursorTrack cursorTrack = clipSceneCursor.getCursorTrack();
+        final Track rootTrack = viewControl.getProject().getRootTrackGroup();
+        final CursorTrack cursorTrack = viewControl.getCursorTrack();
+        final ClipSceneCursor clipSceneCursor = viewControl.getClipSceneCursor();
         
-        application.panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
+        viewControl.getApplication().panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
         final MidiIn midiIn = midiProcessor.getMidiIn();
         final HardwareButton leftNavButton = surface.createHardwareButton("LEFT_NAV_BUTTON");
         leftNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 1));
@@ -132,6 +113,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         mainLayer.bindPressed(knobPressed.getHwButton(), () -> clipSceneCursor.launch());
         final ModeButton knobShiftPressed =
             new ModeButton(midiProcessor, "KNOB4D_PRESSED_SHIFT", CcAssignment.PRESS_4D_KNOB_SHIFT);
+        final NavigationState navigationState = viewControl.getNavigationState();
         mainLayer.bindPressed(
             knobShiftPressed.getHwButton(), () -> {
                 if (navigationState.isSceneNavMode()) {
@@ -158,7 +140,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         mainLayer.bindPressed(
             selectButton, () -> {
                 if (!channel.exists().get()) {
-                    application.createInstrumentTrack(-1);
+                    viewControl.insertInstrument();
                 } else {
                     channel.selectInMixer();
                 }
@@ -187,8 +169,8 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
             final TrackType type = TrackType.toType(v);
             midiProcessor.sendValueCommand(ValueCommand.AVAILABLE, index, type.getId());
         });
-        volumeKnobs[index].addBindingWithSensitivity(channel.volume(), 0.025);
-        panKnobs[index].addBindingWithSensitivity(channel.pan(), 0.025);
+        controlElements.getVolumeKnobs().get(index).addBindingWithSensitivity(channel.volume(), 0.025);
+        controlElements.getPanKnobs().get(index).addBindingWithSensitivity(channel.pan(), 0.025);
         
         channel.isActivated().markInterested();
         channel.canHoldAudioData().markInterested();

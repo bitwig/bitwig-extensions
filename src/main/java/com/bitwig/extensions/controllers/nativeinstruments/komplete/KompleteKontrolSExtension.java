@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
+import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.Arranger;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
@@ -7,6 +9,10 @@ import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.ScrollbarModel;
+import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.AbstractKompleteKontrolExtensionDefinition;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.device.DeviceControl;
@@ -17,6 +23,10 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
     
     private static final byte[] levelDbLookup = new byte[201]; // maps level values to align with KK display
     private DeviceControl deviceLayer;
+    private Arranger arranger;
+    private ScrollbarModel horizontalScrollbarModel;
+    private double scrubDistance;
+    private SettableBeatTimeValue playPosition;
     
     public KompleteKontrolSExtension(final AbstractKompleteKontrolExtensionDefinition definition,
         final ControllerHost host, final boolean hasDeviceControl) {
@@ -35,11 +45,9 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
         arrangeFocusLayer = new Layer(layers, "ArrangeFocus");
         sessionFocusLayer = new Layer(layers, "SessionFocus");
         navigationLayer = new Layer(layers, "NavigationLayer");
+        this.arranger = host.createArranger();
+        horizontalScrollbarModel = this.arranger.getHorizontalScrollbarModel();
         
-        project = host.getProject();
-        mTransport = host.createTransport();
-        
-        setUpSliders();
         final MidiIn midiIn2 = host.getMidiInPort(1);
         
         final NoteInput noteInput =
@@ -56,23 +64,70 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
         initJogWheel();
         
         if (hasDeviceControl) {
-            deviceLayer = new DeviceControl(host, surface, midiProcessor, clipSceneCursor, layers, controlElements);
+            deviceLayer = new DeviceControl(host, midiProcessor, viewControl, layers, controlElements);
             initTempoControl();
             midiProcessor.addTempoListener(this::handleTempoIncoming);
+            initSmk3Control();
+            horizontalScrollbarModel.getContentPerPixel().addValueObserver(this::handleZoomLevel);
         } else {
-            final PinnableCursorDevice cursorDevice = clipSceneCursor.getCursorTrack().createCursorDevice();
+            final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
             bindMacroControl(cursorDevice, midiIn2);
         }
         mainLayer.activate();
         navigationLayer.activate();
     }
     
+    private void initSmk3Control() {
+        final RelativeHardwareKnob fourDKnob = controlElements.getFourDKnobMixer();
+        final RelativeHardwarControlBindable binding = midiProcessor.createIncAction(this::handleFourDInc);
+        mainLayer.bind(fourDKnob, binding);
+        playPosition = viewControl.getTransport().getPosition();
+        playPosition.markInterested();
+    }
+    
+    private void handleFourDInc(final int inc) {
+        if (controlElements.getShiftHeld().get()) {
+            final double newPos = playPosition.get();
+            if (inc > 0) {
+                horizontalScrollbarModel.zoomAtPosition(newPos, 0.25);
+            } else {
+                horizontalScrollbarModel.zoomAtPosition(newPos, -0.25);
+            }
+        } else {
+            handlePositionIncrementWithFocus(inc);
+        }
+    }
+    
+    private void handlePositionIncrementWithFocus(final int inc) {
+        final double newPos = playPosition.get() + (inc * scrubDistance);
+        horizontalScrollbarModel.zoomAtPosition(newPos, 0);
+        playPosition.set(newPos);
+    }
+    
+    
+    private void handleZoomLevel(final double v) {
+        if (v <= 0) {
+            return;
+        }
+        this.scrubDistance = roundToNearestPowerOfTwo(80 * v);
+    }
+    
+    public static double roundToNearestPowerOfTwo(final double value) {
+        if (value <= 0) {
+            throw new IllegalArgumentException("Value must be greater than zero.");
+        }
+        final double log2 = Math.log(value) / Math.log(2);
+        final double roundedPower = Math.round(log2);
+        return Math.pow(2, roundedPower);
+    }
+    
+    
     private void handleTempoIncoming(final double v) {
-        mTransport.tempo().value().setRaw(v);
+        viewControl.getTransport().tempo().value().setRaw(v);
     }
     
     private void initTempoControl() {
-        mTransport.tempo().value().addRawValueObserver(tempo -> midiProcessor.sendTempo(tempo));
+        viewControl.getTransport().tempo().value().addRawValueObserver(tempo -> midiProcessor.sendTempo(tempo));
     }
     
     private static void initSliderLookup() {
@@ -131,9 +186,11 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
         final Clip arrangerClip = getHost().createArrangerCursorClip(8, 128);
         
         arrangerClip.exists().markInterested();
-        final Track rootTrack = project.getRootTrackGroup();
+        final Track rootTrack = viewControl.getProject().getRootTrackGroup();
+        final ClipSceneCursor clipSceneCursor = viewControl.getClipSceneCursor();
         final CursorTrack cursorTrack = clipSceneCursor.getCursorTrack();
-        
+        final Application application = viewControl.getApplication();
+        final NavigationState navigationState = viewControl.getNavigationState();
         application.panelLayout().addValueObserver(v -> {
             currentLayoutType = LayoutType.toType(v);
             updateChanelLed();
@@ -209,7 +266,7 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
     
     
     private void updateSceneLed() {
-        final int sceneValue = navigationState.getSceneValue();
+        final int sceneValue = viewControl.getNavigationState().getSceneValue();
         switch (currentLayoutType) {
             case LAUNCHER -> midiProcessor.sendLedUpdate(0x32, sceneValue);
             case ARRANGER -> midiProcessor.sendLedUpdate(0x30, sceneValue);
@@ -220,7 +277,7 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
     
     
     private void updateChanelLed() {
-        final int trackValue = navigationState.getTrackValue();
+        final int trackValue = viewControl.getNavigationState().getTrackValue();
         switch (currentLayoutType) {
             case LAUNCHER -> midiProcessor.sendLedUpdate(0x30, trackValue);
             case ARRANGER -> midiProcessor.sendLedUpdate(0x32, trackValue);
