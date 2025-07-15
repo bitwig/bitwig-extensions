@@ -22,7 +22,7 @@ import com.bitwig.extensions.framework.values.IntValueObject;
 
 @Component
 public class ViewControl {
-    
+
     private static final int MAX_TRACKS = 64;
     private static final int MAX_SCENES = 2;
     private final TrackBank trackBank;
@@ -36,7 +36,7 @@ public class ViewControl {
     private final CursorRemoteControlsPage primaryRemotes;
     private final CursorRemoteControlsPage trackRemotes;
     private final CursorRemoteControlsPage projectRemotes;
-    
+
     private final BasicStringValue deviceDescriptor = new BasicStringValue("");
     private final RemotePageName deviceRemotesPages;
     private final RemotePageName trackRemotesPages;
@@ -54,7 +54,7 @@ public class ViewControl {
         maxTrackBank = host.createTrackBank(MAX_TRACKS, 1, MAX_SCENES, false);
         maxTrackBank.sceneBank().scrollPosition().markInterested();
         maxTrackBank.scrollPosition().markInterested();
-        
+
         cursorTrack = host.createCursorTrack(2, 16);
         prepareTrack(-1, cursorTrack);
         prepareSlots(cursorTrack);
@@ -72,39 +72,40 @@ public class ViewControl {
             track.trackType().addValueObserver(type -> trackType[index] = type);
             track.canHoldNoteData().addValueObserver(canHoldNoteData -> this.canHoldNoteData[index] = canHoldNoteData);
         }
-        
+
         sceneBank = trackBank.sceneBank();
         sceneBank.scrollPosition().addValueObserver(scene -> maxTrackBank.sceneBank().scrollPosition().set(scene));
-        
+
         cursorClip = host.createLauncherCursorClip(16, 128);
         cursorClip.setStepSize(0.125);
         
         cursorClip.exists().markInterested();
         arrangerClip = host.createArrangerCursorClip(16, 128);
-        
+
         primaryDevice =
             cursorTrack.createCursorDevice("DrumDetection", "Pad Device", 2, CursorDeviceFollowMode.FIRST_INSTRUMENT);
         cursorDevice = cursorTrack.createCursorDevice("device-control", "Device Control", 0,
-            CursorDeviceFollowMode.FOLLOW_SELECTION);
+            CursorDeviceFollowMode.FOLLOW_SELECTION
+        );
         cursorDevice.isWindowOpen().markInterested();
-        
+
         primaryRemotes = cursorDevice.createCursorRemoteControlsPage(8);
         trackRemotes = cursorTrack.createCursorRemoteControlsPage(8);
         projectRemotes = rootTrack.createCursorRemoteControlsPage(8);
         deviceRemotesPages = new RemotePageName(primaryRemotes, cursorDevice.name());
         trackRemotesPages = new RemotePageName(trackRemotes, new BasicStringValue("Track Remotes"));
         projectRemotesPages = new RemotePageName(projectRemotes, new BasicStringValue("Project Remotes"));
-        
+
         cursorDevice.name().addValueObserver(deviceName -> {
             deviceDescriptor.set(deviceName);
         });
-        
+
         sceneBank.canScrollBackwards().markInterested();
         sceneBank.canScrollForwards().markInterested();
         focusScene = sceneBank.getScene(0);
         focusScene.clipCount().markInterested();
     }
-    
+
     public IntValueObject getSelectedTrackIndex() {
         return selectedTrackIndex;
     }
@@ -117,7 +118,7 @@ public class ViewControl {
         track.trackType().markInterested();
         track.canHoldNoteData().markInterested();
     }
-    
+
     private void prepareSlots(final Track track) {
         final ClipLauncherSlotBank slots = track.clipLauncherSlotBank();
         for (int i = 0; i < slots.getSizeOfBank(); i++) {
@@ -135,67 +136,67 @@ public class ViewControl {
     public RemotePageName getDeviceRemotesPages() {
         return deviceRemotesPages;
     }
-    
+
     public RemotePageName getTrackRemotesPages() {
         return trackRemotesPages;
     }
-    
+
     public RemotePageName getProjectRemotesPages() {
         return projectRemotesPages;
     }
-    
+
     public TrackBank getTrackBank() {
         return trackBank;
     }
-    
+
     public CursorTrack getCursorTrack() {
         return cursorTrack;
     }
-    
+
     public Track getRootTrack() {
         return rootTrack;
     }
-    
+
     public Clip getCursorClip() {
         return cursorClip;
     }
-    
+
     public Clip getArrangerClip() {
         return arrangerClip;
     }
-    
+
     public Scene getFocusScene() {
         return focusScene;
     }
-    
+
     public SceneBank getSceneBank() {
         return sceneBank;
     }
-    
+
     public PinnableCursorDevice getCursorDevice() {
         return cursorDevice;
     }
-    
+
     public CursorRemoteControlsPage getPrimaryRemotes() {
         return primaryRemotes;
     }
-    
+
     public CursorRemoteControlsPage getTrackRemotes() {
         return trackRemotes;
     }
-    
+
     public CursorRemoteControlsPage getProjectRemotes() {
         return projectRemotes;
     }
-    
+
     public PinnableCursorDevice getPrimaryDevice() {
         return primaryDevice;
     }
-    
+
     public BasicStringValue getDeviceDescriptor() {
         return deviceDescriptor;
     }
-    
+
     public static Optional<ClipLauncherSlot> filterSlot(final Track track, final Predicate<ClipLauncherSlot> check) {
         final ClipLauncherSlotBank slots = track.clipLauncherSlotBank();
         for (int i = 0; i < slots.getSizeOfBank(); i++) {
@@ -206,5 +207,5 @@ public class ViewControl {
         }
         return Optional.empty();
     }
-    
+
 }
