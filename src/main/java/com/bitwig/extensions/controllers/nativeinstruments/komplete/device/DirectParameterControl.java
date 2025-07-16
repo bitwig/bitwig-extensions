@@ -10,19 +10,21 @@ import com.bitwig.extension.controller.api.DirectParameterValueDisplayObserver;
 import com.bitwig.extension.controller.api.IntegerValue;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.ControlElements;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.values.BasicIntegerValue;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 public class DirectParameterControl extends AbstractParameterControl {
+    public static final int MAX_PARAMS = 128;
     private final MidiProcessor midiProcessor;
     private final Device device;
     private final DirectParameterValueDisplayObserver parameterObserver;
     private final List<DirectSlot> allSlots = new ArrayList<>();
-    private final List<DirectSlot> pageSlots = new ArrayList<>();
+    private final List<DirectControlSlot> pageSlots = new ArrayList<>();
     private final HashMap<String, DirectSlot> mapping = new HashMap<>();
-    private final HashMap<String, DirectSlot> activeMapping = new HashMap<>();
+    private final HashMap<String, DirectControlSlot> activeMapping = new HashMap<>();
     private final HashMap<String, Integer> pageIndexMap = new HashMap<>();
     
     private int pageIndex = 0;
@@ -38,12 +40,12 @@ public class DirectParameterControl extends AbstractParameterControl {
         super(layer);
         this.midiProcessor = midiProcessor;
         this.device = device;
-        for (int i = 0; i < 64; i++) {
+        for (int i = 0; i < MAX_PARAMS; i++) {
             allSlots.add(new DirectSlot(i));
         }
         for (int i = 0; i < 8; i++) {
             final int index = i;
-            final DirectSlot pageSlot = new DirectSlot(index);
+            final DirectControlSlot pageSlot = new DirectControlSlot(index);
             pageSlots.add(pageSlot);
             final RelativeHardwareKnob knob = controlElements.getDeviceKnobs().get(i);
             layer.bind(knob, midiProcessor.createIncDoubleAction(inc -> handleKnobChange(index, inc)));
@@ -66,7 +68,7 @@ public class DirectParameterControl extends AbstractParameterControl {
             return;
         }
         for (int i = 0; i < 8; i++) {
-            final DirectSlot directSlot = pageSlots.get(i);
+            final DirectControlSlot directSlot = pageSlots.get(i);
             final DirectSlot mainSlot = allSlots.get(pageIndex * 8 + i);
             directSlot.apply(mainSlot);
             if (directSlot.getParamId() != null) {
@@ -123,21 +125,33 @@ public class DirectParameterControl extends AbstractParameterControl {
         if (!isActive()) {
             return;
         }
-        final DirectSlot directSlot = pageSlots.get(index);
+        final DirectControlSlot directSlot = pageSlots.get(index);
         if (directSlot.getParamId() != null) {
-            if (directSlot.getSteps() == 0) {
+            if (!directSlot.isStepped()) {
                 this.device.incDirectParameterValueNormalized(directSlot.getParamId(), inc, fineTune ? 40.0 : 4.0);
                 directSlot.notifyIncrement(inc);
             } else {
-                final int incInt = (int) (inc / 0.0078);
+                final int incInt = (int) (inc / 0.0078) / 4;
                 directSlot.resetIncrements();
-                final int preValue = directSlot.getValue().get();
-                final int newValue = Math.max(0, Math.min(127, directSlot.getValue().get() + incInt));
+                final int preValue = directSlot.getValue();
+                final int newValue = Math.max(0, Math.min(127, directSlot.getValue() + incInt));
                 if (preValue != newValue) {
-                    //directSlot.setValue(newValue);
-                    this.device.setDirectParameterValueNormalized(directSlot.getParamId(), newValue, 128);
+                    directSlot.setValue(newValue);
+                    this.device.setDirectParameterValueNormalized(directSlot.getParamId(), newValue, MAX_PARAMS);
                 }
             }
+        }
+    }
+    
+    
+    private void handleKnobChange_(final int index, final double inc) {
+        if (!isActive()) {
+            return;
+        }
+        final DirectControlSlot directSlot = pageSlots.get(index);
+        if (directSlot.getParamId() != null) {
+            KompleteKontrolExtension.println(" CHANGE > " + inc);
+            
         }
     }
     
@@ -145,10 +159,10 @@ public class DirectParameterControl extends AbstractParameterControl {
         final DirectSlot slot = mapping.get(paramId);
         if (slot != null) {
             final int value = (int) Math.round(v * 127);
-            slot.getValue().set(value);
+            slot.setValue(value);
         }
-        final DirectSlot directSlot = activeMapping.get(paramId);
-        if (directSlot != null) {
+        final DirectControlSlot directSlot = activeMapping.get(paramId);
+        if (directSlot != null && !directSlot.isStepped()) {
             final int value = (int) Math.round(v * 127);
             directSlot.setValue(value);
         }
@@ -159,7 +173,7 @@ public class DirectParameterControl extends AbstractParameterControl {
         if (slot != null) {
             slot.getParamValue().set(value);
         }
-        final DirectSlot directSlot = activeMapping.get(paramId);
+        final DirectControlSlot directSlot = activeMapping.get(paramId);
         if (directSlot != null) {
             directSlot.setValueString(value);
         }
@@ -167,11 +181,12 @@ public class DirectParameterControl extends AbstractParameterControl {
     
     private void handleParameterIds(final String[] ids) {
         final List<String> observed = new ArrayList<>();
-        parameterObserver.setObservedParameterIds(new String[0]);
         mapping.clear();
+        int assigned = 0;
         for (int i = 0; i < allSlots.size(); i++) {
             final DirectSlot slot = allSlots.get(i);
             if (i < ids.length) {
+                assigned++;
                 slot.setParamId(ids[i]);
                 observed.add(slot.getInParamId());
                 observed.add(slot.getParamId());
@@ -181,9 +196,10 @@ public class DirectParameterControl extends AbstractParameterControl {
                 slot.setParamId(null);
             }
         }
-        pageCount.set((observed.size() / 2 + 7) / 8);
+        pageCount.set((assigned + 7) / 8);
         final String[] idsToObserve = observed.stream().toArray(String[]::new);
-        parameterObserver.setObservedParameterIds(idsToObserve);
+        midiProcessor.delay(() -> parameterObserver.setObservedParameterIds(idsToObserve), 50);
+        //parameterObserver.setObservedParameterIds(idsToObserve);
         applySlotsToIndex();
     }
     

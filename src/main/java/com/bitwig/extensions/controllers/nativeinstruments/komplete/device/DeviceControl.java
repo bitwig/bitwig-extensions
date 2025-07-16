@@ -7,6 +7,7 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.ControlElements;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.ViewControl;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.DeviceMidiListener;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
@@ -64,7 +65,8 @@ public class DeviceControl implements DeviceMidiListener {
         deviceRemotesControl = new RemotesControl(deviceRemoteLayer, deviceRemotePages, controlElements, midiProcessor);
         directParameterControl =
             new DirectParameterControl(
-                directParamLayer, cursorDevice, controlElements, midiProcessor, deviceRemotePages.pageCount());
+                directParamLayer, cursorDevice, controlElements, midiProcessor,
+                deviceRemotePages.pageCount());
         directParameterControl.getDirectActive().addValueObserver(this::handleDirectActive);
         
         final Track rootTrack = viewControl.getProject().getRootTrackGroup();
@@ -79,14 +81,20 @@ public class DeviceControl implements DeviceMidiListener {
         
         controlElements.getShiftHeld().addValueObserver(fineTune -> currentRemotesControl.setFineTune(fineTune));
         
-        navigationLayer.bindPressed(
-            controlElements.getTrackNavLeftButton(), () -> currentRemotesControl.navigateLeft());
-        navigationLayer.bindPressed(
-            controlElements.getTrackRightNavButton(), () -> currentRemotesControl.navigateRight());
+        navigationLayer.bindPressed(controlElements.getTrackNavLeftButton(), this::navigateLeft);
+        navigationLayer.bindPressed(controlElements.getTrackRightNavButton(), this::navigateRight);
         
         navigationLayer.bind(currentRemotesControl::canScrollRight, controlElements.getTrackNavRightButtonLight());
         navigationLayer.bind(currentRemotesControl::canScrollLeft, controlElements.getTrackNavLeftButtonLight());
         useRemotes.addValueObserver(mainBank::setUsesTrackRemotes);
+    }
+    
+    private void navigateLeft() {
+        currentRemotesControl.navigateLeft();
+    }
+    
+    private void navigateRight() {
+        currentRemotesControl.navigateRight();
     }
     
     private void handleDirectActive(final boolean isDirectActive) {
@@ -114,19 +122,21 @@ public class DeviceControl implements DeviceMidiListener {
         useTrackRemotes.addValueObserver(value -> this.useRemotes.set(value.equals(WITH_TRACK_PROJECT)));
     }
     
-    private void handlePresetName(final String preseName) {
+    private void handlePresetName(final String presetName) {
         if (currentRemotesControl.isActive()) {
-            midiProcessor.sendPresetName(preseName);
+            midiProcessor.sendPresetName(presetName);
         }
     }
     
     private void changeMode(final int mode) {
+        KompleteKontrolExtension.println(" MODE = %d".formatted(mode));
         if (mode == 1) {
             navigationLayer.activate();
             currentRemotesControl.setActive(true);
             controlElements.updateLights();
         } else {
             navigationLayer.deactivate();
+            currentRemotesControl.setActive(false);
         }
     }
     

@@ -74,6 +74,10 @@ public class MidiProcessor {
         }
     }
     
+    public void delay(final Runnable action, final int delay) {
+        host.scheduleTask(action, delay);
+    }
+    
     public static int[] getIndexMap(final String data) {
         final int[] result = new int[data.length() / 2];
         for (int i = 0; i < data.length(); i += 2) {

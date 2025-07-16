@@ -54,11 +54,11 @@ public class BankControl {
         this.cursorDevice = cursorDevice;
         this.parentNavTab = new ParentTab();
         cursorDevice.position().addValueObserver(this::handleCursorDevicePosition);
-        this.trackDevice = new DeviceSlot(-1, "Track", this);
-        this.projectDevice = new DeviceSlot(-2, "Project", this);
+        this.trackDevice = new DeviceSlot(-1, "Track");
+        this.projectDevice = new DeviceSlot(-2, "Project");
         for (int i = 0; i < deviceBank.getSizeOfBank(); i++) {
             final Device device = deviceBank.getDevice(i);
-            final DeviceSlot slot = new DeviceSlot(i, device, this);
+            final DeviceSlot slot = new DeviceSlot(i, device);
             devices.add(slot);
             device.name().addValueObserver(name -> handleNameChange(slot, name));
             device.exists().addValueObserver(exists -> handleExistChange(slot, exists));

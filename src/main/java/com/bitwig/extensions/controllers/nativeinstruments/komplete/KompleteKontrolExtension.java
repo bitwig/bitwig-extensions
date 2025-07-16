@@ -155,7 +155,8 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
     }
     
     private void applyShift(final boolean shift) {
-        final double sensitivity = shift ? 0.1 : 0.5;
+        final double sensitivity =
+            shift ? KnobParameterBinding.FINE_SENSITIVITY : KnobParameterBinding.BASE_SENSITIVITY;
         knobBindings.forEach(binding -> binding.setSensitivity(sensitivity));
     }
     

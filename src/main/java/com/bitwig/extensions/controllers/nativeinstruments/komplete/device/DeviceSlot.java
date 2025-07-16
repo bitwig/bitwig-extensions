@@ -8,7 +8,6 @@ import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceLayerBank;
 
 public class DeviceSlot implements DeviceSelectionTab {
-    private final BankControl control;
     private String name;
     private boolean exists;
     private final int index;
@@ -22,9 +21,8 @@ public class DeviceSlot implements DeviceSelectionTab {
     private DeviceLayerBank layerBank;
     private final List<LayerSlot> layerSlots = new ArrayList<>();
     
-    public DeviceSlot(final int index, final Device device, final BankControl control) {
+    public DeviceSlot(final int index, final Device device) {
         this.index = index;
-        this.control = control;
         this.device = device;
         if (this.device != null) {
             this.layerBank = device.createLayerBank(64);
@@ -35,10 +33,9 @@ public class DeviceSlot implements DeviceSelectionTab {
         }
     }
     
-    public DeviceSlot(final int index, final String name, final BankControl control) {
+    public DeviceSlot(final int index, final String name) {
         this.index = index;
         this.name = name;
-        this.control = control;
         this.device = null;
     }
     

@@ -18,9 +18,8 @@ public class KnobDirectBinding extends Binding<RelativeHardwareKnob, DirectSlot>
         this.index = index;
         this.midiProcessor = midiProcessor;
         slot.getParamName().addValueObserver(this::updateRemoteName);
-        //parameter.exists().addValueObserver(this::updateRemoteExists);
         slot.getParamValue().addValueObserver(this::updateValueDisplay);
-        slot.getValue().addValueObserver(this::updateValue);
+        slot.addValueObserver(this::updateValue);
     }
     
     private void updateValue(final int paramValue) {

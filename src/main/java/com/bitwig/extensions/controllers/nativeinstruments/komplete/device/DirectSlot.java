@@ -1,32 +1,23 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete.device;
 
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
+import com.bitwig.extension.callback.IntegerValueChangedCallback;
 import com.bitwig.extensions.framework.values.BasicIntegerValue;
 import com.bitwig.extensions.framework.values.BasicStringValue;
 
 public class DirectSlot {
     private final static String ID_PREFIX = "CONTENTS/";
-    private final BasicStringValue paramName = new BasicStringValue();
-    private final BasicStringValue paramValue = new BasicStringValue();
-    private final BasicIntegerValue value = new BasicIntegerValue();
-    private String paramId;
+    protected final BasicStringValue paramName = new BasicStringValue();
+    protected final BasicStringValue paramValue = new BasicStringValue();
+    protected final BasicIntegerValue value = new BasicIntegerValue();
+    protected String paramId;
     private final int index;
-    private int initial;
-    private double increments = 0;
-    private int steps = 0;
     
     public DirectSlot(final int index) {
         this.index = index;
     }
     
-    public void apply(final DirectSlot otherSlot) {
-        this.paramId = otherSlot.getParamId();
-        this.paramName.set(otherSlot.getParamName().get());
-        this.paramValue.set(otherSlot.getParamValue().get());
-        initial = -1;
-        this.value.set(otherSlot.getValue().get());
-        increments = 0;
-        steps = 0;
+    public void addValueObserver(final IntegerValueChangedCallback callback) {
+        value.addValueObserver(callback);
     }
     
     public BasicStringValue getParamName() {
@@ -45,8 +36,8 @@ public class DirectSlot {
         this.value.set(value);
     }
     
-    public BasicIntegerValue getValue() {
-        return value;
+    public int getValue() {
+        return value.get();
     }
     
     public void setParamId(final String paramId) {
@@ -55,6 +46,11 @@ public class DirectSlot {
     
     public String getParamId() {
         return paramId;
+    }
+    
+    public String getBaseParam() {
+        final int last = paramId.lastIndexOf("/");
+        return paramId.substring(last + 1);
     }
     
     public String getInParamId() {
@@ -72,27 +68,4 @@ public class DirectSlot {
         return index;
     }
     
-    public void notifyIncrement(final double inc) {
-        if (initial == -1) {
-            initial = value.get();
-        } else {
-            this.increments += inc;
-            if (Math.abs(increments) > 3 && initial == value.get()) {
-                KompleteKontrolExtension.println(" IN %f  %d  %d", inc, initial, value.get());
-                steps = 1;
-            }
-        }
-    }
-    
-    public double getIncrements() {
-        return increments;
-    }
-    
-    public void resetIncrements() {
-        increments = 0;
-    }
-    
-    public int getSteps() {
-        return steps;
-    }
 }
