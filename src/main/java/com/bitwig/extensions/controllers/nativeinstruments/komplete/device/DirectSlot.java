@@ -1,14 +1,14 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete.device;
 
-import com.bitwig.extension.callback.IntegerValueChangedCallback;
-import com.bitwig.extensions.framework.values.BasicIntegerValue;
+import com.bitwig.extension.callback.DoubleValueChangedCallback;
+import com.bitwig.extensions.framework.values.BasicDoubleValue;
 import com.bitwig.extensions.framework.values.BasicStringValue;
 
 public class DirectSlot {
     private final static String ID_PREFIX = "CONTENTS/";
     protected final BasicStringValue paramName = new BasicStringValue();
     protected final BasicStringValue paramValue = new BasicStringValue();
-    protected final BasicIntegerValue value = new BasicIntegerValue();
+    protected final BasicDoubleValue value = new BasicDoubleValue();
     protected String paramId;
     private final int index;
     
@@ -16,7 +16,7 @@ public class DirectSlot {
         this.index = index;
     }
     
-    public void addValueObserver(final IntegerValueChangedCallback callback) {
+    public void addValueObserver(final DoubleValueChangedCallback callback) {
         value.addValueObserver(callback);
     }
     
@@ -32,11 +32,11 @@ public class DirectSlot {
         this.paramValue.set(value);
     }
     
-    public void setValue(final int value) {
+    public void setValue(final double value) {
         this.value.set(value);
     }
     
-    public int getValue() {
+    public double getValue() {
         return value.get();
     }
     

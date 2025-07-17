@@ -27,7 +27,7 @@ import com.bitwig.extension.controller.api.SpecificPluginDevice;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.device.KnobParameterBinding;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.binding.KnobParameterBinding;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.TextCommand;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.ValueCommand;

@@ -10,7 +10,7 @@ import com.bitwig.extension.controller.api.DirectParameterValueDisplayObserver;
 import com.bitwig.extension.controller.api.IntegerValue;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.ControlElements;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.binding.KnobDirectBinding;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.values.BasicIntegerValue;
@@ -127,48 +127,30 @@ public class DirectParameterControl extends AbstractParameterControl {
         }
         final DirectControlSlot directSlot = pageSlots.get(index);
         if (directSlot.getParamId() != null) {
-            if (!directSlot.isStepped()) {
-                this.device.incDirectParameterValueNormalized(directSlot.getParamId(), inc, fineTune ? 40.0 : 4.0);
-                directSlot.notifyIncrement(inc);
-            } else {
-                final int incInt = (int) (inc / 0.0078) / 4;
-                directSlot.resetIncrements();
-                final int preValue = directSlot.getValue();
-                final int newValue = Math.max(0, Math.min(127, directSlot.getValue() + incInt));
-                if (preValue != newValue) {
-                    directSlot.setValue(newValue);
-                    this.device.setDirectParameterValueNormalized(directSlot.getParamId(), newValue, MAX_PARAMS);
-                }
+            final double value = directSlot.getValue();
+            final double newValue = Math.max(Math.min(1, value + inc / (fineTune ? 24 : 6)), 0);
+            if (newValue != value) {
+                directSlot.applyValue(newValue);
+                this.device.setDirectParameterValueNormalized(directSlot.getParamId(), newValue, 2);
             }
-        }
-    }
-    
-    
-    private void handleKnobChange_(final int index, final double inc) {
-        if (!isActive()) {
-            return;
-        }
-        final DirectControlSlot directSlot = pageSlots.get(index);
-        if (directSlot.getParamId() != null) {
-            KompleteKontrolExtension.println(" CHANGE > " + inc);
-            
         }
     }
     
     private void handleValueChanged(final String paramId, final double v) {
         final DirectSlot slot = mapping.get(paramId);
         if (slot != null) {
-            final int value = (int) Math.round(v * 127);
-            slot.setValue(value);
+            slot.setValue(v);
         }
         final DirectControlSlot directSlot = activeMapping.get(paramId);
-        if (directSlot != null && !directSlot.isStepped()) {
-            final int value = (int) Math.round(v * 127);
-            directSlot.setValue(value);
+        if (directSlot != null) {
+            directSlot.updateValue(v);
         }
     }
     
     private void handleParameterValueChanged(final String paramId, final String value) {
+        if (value.isBlank()) {
+            return;
+        }
         final DirectSlot slot = mapping.get(paramId);
         if (slot != null) {
             slot.getParamValue().set(value);
@@ -180,6 +162,7 @@ public class DirectParameterControl extends AbstractParameterControl {
     }
     
     private void handleParameterIds(final String[] ids) {
+        parameterObserver.setObservedParameterIds(null);
         final List<String> observed = new ArrayList<>();
         mapping.clear();
         int assigned = 0;
@@ -199,7 +182,6 @@ public class DirectParameterControl extends AbstractParameterControl {
         pageCount.set((assigned + 7) / 8);
         final String[] idsToObserve = observed.stream().toArray(String[]::new);
         midiProcessor.delay(() -> parameterObserver.setObservedParameterIds(idsToObserve), 50);
-        //parameterObserver.setObservedParameterIds(idsToObserve);
         applySlotsToIndex();
     }
     
@@ -224,7 +206,7 @@ public class DirectParameterControl extends AbstractParameterControl {
     private void updatePageCount() {
         if (isActive()) {
             midiProcessor.sendPageCount(this.pageCount.get(), pageIndex);
-            midiProcessor.sendSection(0, "Page %d".formatted(pageIndex + 1));
+            midiProcessor.sendSection(0, "");
         }
     }
     

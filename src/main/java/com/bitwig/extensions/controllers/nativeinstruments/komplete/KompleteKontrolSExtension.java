@@ -55,9 +55,6 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
                 "MIDI", "80????", "90????", "A0????", "D0????", "E0????", "B001??", "B00B??", "B040??", "B042??",
                 "B1????");
         noteInput.setShouldConsumeEvents(true);
-        //        midiIn2.setMidiCallback((status, data1, data2) -> {
-        //            host.println("Midi2 IN => %02X %02X %02X".formatted(status, data1, data2));
-        //        });
         
         initTrackBank();
         setUpTransport();
@@ -249,11 +246,9 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
         
         clearButton.getLed().isOn()
             .setValueSupplier(() -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get());
-        
-        final ModeButton knobPressed = new ModeButton(midiProcessor, "KNOB4D_PRESSED", CcAssignment.PRESS_4D_KNOB);
+        final ModeButton knobPressed = controlElements.getKnobPressed();
+        final ModeButton knobShiftPressed = controlElements.getKnobShiftPressed();
         mainLayer.bindPressed(knobPressed.getHwButton(), () -> clipSceneCursor.launch());
-        final ModeButton knobShiftPressed =
-            new ModeButton(midiProcessor, "KNOB4D_PRESSED_SHIFT", CcAssignment.PRESS_4D_KNOB_SHIFT);
         mainLayer.bindPressed(
             knobShiftPressed.getHwButton(), () -> {
                 if (navigationState.isSceneNavMode()) {

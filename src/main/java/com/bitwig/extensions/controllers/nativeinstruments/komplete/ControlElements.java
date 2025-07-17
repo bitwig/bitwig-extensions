@@ -13,6 +13,12 @@ import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 public class ControlElements {
     
+    private final HardwareButton previousPresetButton;
+    private final HardwareButton nextPresetButtonButton;
+    
+    private final OnOffHardwareLight presetNextButtonLight;
+    private final OnOffHardwareLight presetPreviousButtonLight;
+    
     private final HardwareButton trackNavLeftButton;
     private final HardwareButton trackRightNavButton;
     private final OnOffHardwareLight trackNavLeftButtonLight;
@@ -26,6 +32,8 @@ public class ControlElements {
     private final List<RelativeHardwareKnob> volumeKnobs;
     private final List<RelativeHardwareKnob> panKnobs;
     private final RelativeHardwareKnob fourDKnobMixer;
+    private final ModeButton knobPressed;
+    private final ModeButton knobShiftPressed;
     
     public ControlElements(final HardwareSurface surface, final MidiProcessor midiProcessor) {
         final MidiIn midiIn = midiProcessor.getMidiIn();
@@ -54,6 +62,18 @@ public class ControlElements {
         volumeKnobs = createKnobs(surface, "VOLUME", 0x50);
         panKnobs = createKnobs(surface, "PAN", 0x58);
         
+        previousPresetButton = surface.createHardwareButton("PRESET_PREVIOUS_BUTTON");
+        previousPresetButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x36, 127));
+        presetPreviousButtonLight = surface.createOnOffHardwareLight("PRESET_PREVIOUS_BUTTON_LIGHT");
+        
+        nextPresetButtonButton = surface.createHardwareButton("PRESET_NEXT_BUTTON");
+        nextPresetButtonButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x36, 1));
+        presetNextButtonLight = surface.createOnOffHardwareLight("PRESET_NEXT_BUTTON_LIGHT");
+        presetPreviousButtonLight.isOn().onUpdateHardware(this::updatePresetPreviousLight);
+        presetNextButtonLight.isOn().onUpdateHardware(this::updatePresetNextLight);
+        
+        knobPressed = new ModeButton(midiProcessor, "KNOB4D_PRESSED", CcAssignment.PRESS_4D_KNOB);
+        knobShiftPressed = new ModeButton(midiProcessor, "KNOB4D_PRESSED_SHIFT", CcAssignment.PRESS_4D_KNOB_SHIFT);
         
         fourDKnobMixer = surface.createRelativeHardwareKnob("4D_WHEEL_MIX_MODE");
         fourDKnobMixer.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x64, 4096));
@@ -73,6 +93,14 @@ public class ControlElements {
         return knobs;
     }
     
+    public ModeButton getKnobPressed() {
+        return knobPressed;
+    }
+    
+    public ModeButton getKnobShiftPressed() {
+        return knobShiftPressed;
+    }
+    
     public RelativeHardwareKnob getFourDKnobMixer() {
         return fourDKnobMixer;
     }
@@ -87,6 +115,17 @@ public class ControlElements {
     
     public List<RelativeHardwareKnob> getPanKnobs() {
         return panKnobs;
+    }
+    
+    
+    private void updatePresetPreviousLight(final boolean on) {
+        final int bw = presetNextButtonLight.isOn().currentValue() ? 0x1 : 0x0;
+        midiProcessor.sendLedUpdate(0x36, (on ? 0x2 : 0x0) | bw);
+    }
+    
+    private void updatePresetNextLight(final boolean on) {
+        final int bw = presetPreviousButtonLight.isOn().currentValue() ? 0x2 : 0x0;
+        midiProcessor.sendLedUpdate(0x36, (on ? 0x1 : 0x0) | bw);
     }
     
     private void updateLeftLight(final boolean on) {
@@ -137,5 +176,21 @@ public class ControlElements {
     
     public HardwareButton getSoloSelectedButton() {
         return soloSelectedButton;
+    }
+    
+    public HardwareButton getPreviousPresetButton() {
+        return previousPresetButton;
+    }
+    
+    public HardwareButton getNextPresetButtonButton() {
+        return nextPresetButtonButton;
+    }
+    
+    public OnOffHardwareLight getPresetNextButtonLight() {
+        return presetNextButtonLight;
+    }
+    
+    public OnOffHardwareLight getPresetPreviousButtonLight() {
+        return presetPreviousButtonLight;
     }
 }

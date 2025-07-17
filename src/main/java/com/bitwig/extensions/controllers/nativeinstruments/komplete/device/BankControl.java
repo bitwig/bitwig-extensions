@@ -24,15 +24,12 @@ public class BankControl {
     private final DeviceSlot trackDevice;
     private final DeviceSlot projectDevice;
     
-    private boolean usesTrackRemotes = true;
+    private boolean usesTrackRemotes = false;
     private final ValueObject<Focus> currentFocus = new ValueObject<>(Focus.DEVICE);
+    private boolean trackRemotesPresent;
+    private boolean projectRemotesPresent;
     
     private class ParentTab implements DeviceSelectionTab {
-        private String name;
-        
-        public void setName(final String name) {
-            this.name = name;
-        }
         
         @Override
         public String getLayerCode() {
@@ -69,6 +66,33 @@ public class BankControl {
         cursorDevice.isNested().addValueObserver(this::handleNested);
     }
     
+    protected void setTrackRemotesPresent(final boolean present) {
+        this.trackRemotesPresent = present;
+        if (usesTrackRemotes) {
+            if (!present && currentFocus.get() == Focus.TRACK) {
+                currentFocus.set(Focus.DEVICE);
+            }
+            if (!nested) {
+                select(Math.max(0, currentDeviceIndex + (present ? 1 : -1)));
+            } else {
+                deviceControl.triggerUpdateAction();
+            }
+        }
+    }
+    
+    protected void setProjectRemotesPresent(final boolean present) {
+        this.projectRemotesPresent = present;
+        if (usesTrackRemotes) {
+            if (!present && currentFocus.get() == Focus.PROJECT) {
+                currentFocus.set(Focus.DEVICE);
+            }
+            if (!nested) {
+                select(Math.max(0, currentDeviceIndex + (present ? 1 : -1)));
+            } else {
+                deviceControl.triggerUpdateAction();
+            }
+        }
+    }
     
     public ValueObject<Focus> getCurrentFocus() {
         return currentFocus;
@@ -97,11 +121,16 @@ public class BankControl {
     
     public List<? extends DeviceSelectionTab> getBankConfig() {
         final List<DeviceSelectionTab> elements = new ArrayList<>();
+        
         if (nested) {
             elements.add(parentNavTab);
         } else if (usesTrackRemotes) {
-            elements.add(projectDevice);
-            elements.add(trackDevice);
+            if (projectRemotesPresent) {
+                elements.add(projectDevice);
+            }
+            if (trackRemotesPresent) {
+                elements.add(trackDevice);
+            }
         }
         devices.stream().filter(DeviceSlot::isExists).forEach(elements::add);
         return elements;
@@ -139,17 +168,23 @@ public class BankControl {
             midiProcessor.sendSelectionIndex(index, new int[0]);
             slot.setSelected(true);
         } else if (currentFocus.get() == Focus.TRACK) {
-            midiProcessor.sendSelectionIndex(1, new int[0]);
+            midiProcessor.sendSelectionIndex(projectRemotesPresent ? 1 : 0, new int[0]);
         } else {
             midiProcessor.sendSelectionIndex(0, new int[0]);
         }
     }
     
     private int getIndexOffset() {
-        return nested ? 1 : (usesTrackRemotes ? 2 : 0);
+        if (nested) {
+            return 1;
+        }
+        if (usesTrackRemotes) {
+            return (projectRemotesPresent ? 1 : 0) + (trackRemotesPresent ? 1 : 0);
+        }
+        return 0;
     }
     
-    public void select(final int[] selectionPath) {
+    public void select(final int... selectionPath) {
         if (selectionPath.length == 0) {
             return;
         }
@@ -161,19 +196,23 @@ public class BankControl {
             index--;
         } else if (usesTrackRemotes) {
             if (index == 0) {
-                currentFocus.set(Focus.PROJECT);
-                midiProcessor.sendSelectionIndex(0, new int[0]);
-                return;
+                if (projectRemotesPresent) {
+                    currentFocus.set(Focus.PROJECT);
+                    midiProcessor.sendSelectionIndex(0, new int[0]);
+                    return;
+                } else if (trackRemotesPresent) {
+                    currentFocus.set(Focus.TRACK);
+                    midiProcessor.sendSelectionIndex(0, new int[0]);
+                    return;
+                }
             }
-            if (index == 1) {
+            if (index == 1 && projectRemotesPresent && trackRemotesPresent) {
                 currentFocus.set(Focus.TRACK);
                 midiProcessor.sendSelectionIndex(1, new int[0]);
                 return;
-            } else {
-                index -= 2;
             }
+            index -= getIndexOffset();
         }
-        
         currentFocus.set(Focus.DEVICE);
         
         final DeviceSlot slot = devices.get(index);

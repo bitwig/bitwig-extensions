@@ -4,10 +4,13 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.ControlElements;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.ViewControl;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.DeviceMidiListener;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
@@ -17,6 +20,7 @@ import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 public class DeviceControl implements DeviceMidiListener {
     
+    private final BrowserHandler browserHandler;
     public static final String ONLY_DEVICES = "only Devices";
     public static final String WITH_TRACK_PROJECT = "with Track/Project";
     private final MidiProcessor midiProcessor;
@@ -31,6 +35,7 @@ public class DeviceControl implements DeviceMidiListener {
     private final Layer trackRemoteLayer;
     private final Layer projectRemoteLayer;
     private final Layer directParamLayer;
+    private final Layer browserNavLayer;
     
     private boolean directActive;
     private final DirectParameterControl directParameterControl;
@@ -52,6 +57,7 @@ public class DeviceControl implements DeviceMidiListener {
         trackRemoteLayer = new Layer(layers, "TRACK");
         projectRemoteLayer = new Layer(layers, "PROJECT");
         directParamLayer = new Layer(layers, "DIRECT_PARAM");
+        browserNavLayer = new Layer(layers, "BROWSER_NAV");
         final CursorTrack cursorTrack = viewControl.getClipSceneCursor().getCursorTrack();
         this.host = host;
         this.controlElements = controlElements;
@@ -59,21 +65,25 @@ public class DeviceControl implements DeviceMidiListener {
         cursorDevice.presetName().addValueObserver(this::handlePresetName);
         this.mainBank = new BankControl(cursorDevice, this.midiProcessor, this);
         this.mainBank.getCurrentFocus().addValueObserver(this::handleFocus);
+        browserHandler = new BrowserHandler(host, cursorDevice, controlElements.getShiftHeld());
         
         
         final CursorRemoteControlsPage deviceRemotePages = cursorDevice.createCursorRemoteControlsPage(8);
         deviceRemotesControl = new RemotesControl(deviceRemoteLayer, deviceRemotePages, controlElements, midiProcessor);
         directParameterControl =
             new DirectParameterControl(
-                directParamLayer, cursorDevice, controlElements, midiProcessor,
-                deviceRemotePages.pageCount());
+                directParamLayer, cursorDevice, controlElements, midiProcessor, deviceRemotePages.pageCount());
         directParameterControl.getDirectActive().addValueObserver(this::handleDirectActive);
         
         final Track rootTrack = viewControl.getProject().getRootTrackGroup();
-        final CursorRemoteControlsPage projectRemotes = rootTrack.createCursorRemoteControlsPage(8);
+        //final CursorRemoteControlsPage projectRemotes = rootTrack.createCursorRemoteControlsPage(8);
+        final CursorRemoteControlsPage projectRemotes =
+            rootTrack.createCursorRemoteControlsPage("FIXED_PROJECT", 8, null);
         projectRemotesControl = new RemotesControl(projectRemoteLayer, projectRemotes, controlElements, midiProcessor);
         
-        final CursorRemoteControlsPage trackRemotes = viewControl.getCursorTrack().createCursorRemoteControlsPage(8);
+        //final CursorRemoteControlsPage trackRemotes = viewControl.getCursorTrack().createCursorRemoteControlsPage(8);
+        final CursorRemoteControlsPage trackRemotes =
+            viewControl.getCursorTrack().createCursorRemoteControlsPage("FIXED_TRACK", 8, null);
         trackRemotesControl = new RemotesControl(trackRemoteLayer, trackRemotes, controlElements, midiProcessor);
         
         currentRemotesControl = deviceRemotesControl;
@@ -84,9 +94,42 @@ public class DeviceControl implements DeviceMidiListener {
         navigationLayer.bindPressed(controlElements.getTrackNavLeftButton(), this::navigateLeft);
         navigationLayer.bindPressed(controlElements.getTrackRightNavButton(), this::navigateRight);
         
+        navigationLayer.bindPressed(controlElements.getPreviousPresetButton(), browserHandler::navigatePrevious);
+        navigationLayer.bindPressed(controlElements.getNextPresetButtonButton(), browserHandler::navigateNext);
+        navigationLayer.bind(browserHandler::canNavigatePrevious, controlElements.getPresetPreviousButtonLight());
+        navigationLayer.bind(browserHandler::canNavigateNext, controlElements.getPresetNextButtonLight());
+        
         navigationLayer.bind(currentRemotesControl::canScrollRight, controlElements.getTrackNavRightButtonLight());
         navigationLayer.bind(currentRemotesControl::canScrollLeft, controlElements.getTrackNavLeftButtonLight());
         useRemotes.addValueObserver(mainBank::setUsesTrackRemotes);
+        
+        trackRemotes.pageCount().addValueObserver(this::handleTrackPages);
+        projectRemotes.pageCount().addValueObserver(this::handleProjectPages);
+        
+        browserHandler.isOpen().addValueObserver(browserOpen -> browserNavLayer.setIsActive(browserOpen));
+        final ModeButton knobPressed = controlElements.getKnobPressed();
+        final ModeButton knobShiftPressed = controlElements.getKnobShiftPressed();
+        final RelativeHardwareKnob fourDKnob = controlElements.getFourDKnobMixer();
+        browserNavLayer.bindPressed(knobPressed.getHwButton(), browserHandler::confirm);
+        browserNavLayer.bindPressed(knobShiftPressed.getHwButton(), browserHandler::cancel);
+        final RelativeHardwarControlBindable binding =
+            midiProcessor.createIncAction(browserHandler::incrementSelection);
+        browserNavLayer.bind(fourDKnob, binding);
+        cursorTrack.channelIndex().addValueObserver(this::handleTrackIndexChange);
+    }
+    
+    private void handleTrackIndexChange(final int index) {
+        if (browserNavLayer.isActive()) {
+            browserHandler.forceCancel();
+        }
+    }
+    
+    private void handleTrackPages(final int count) {
+        mainBank.setTrackRemotesPresent(count > 0);
+    }
+    
+    private void handleProjectPages(final int count) {
+        mainBank.setProjectRemotesPresent(count > 0);
     }
     
     private void navigateLeft() {
@@ -118,8 +161,11 @@ public class DeviceControl implements DeviceMidiListener {
     private void initSetting(final ControllerHost host) {
         final SettableEnumValue useTrackRemotes = host.getDocumentState().getEnumSetting(
             "Remotes", //
-            "Visible", new String[] {WITH_TRACK_PROJECT, ONLY_DEVICES}, WITH_TRACK_PROJECT);
+            "Visible", new String[] {ONLY_DEVICES, WITH_TRACK_PROJECT}, ONLY_DEVICES);
         useTrackRemotes.addValueObserver(value -> this.useRemotes.set(value.equals(WITH_TRACK_PROJECT)));
+        KompleteKontrolExtension.println(
+            " INIT %s - %s", useTrackRemotes.get(), useTrackRemotes.get().equals(WITH_TRACK_PROJECT));
+        this.useRemotes.set(useTrackRemotes.get().equals(WITH_TRACK_PROJECT));
     }
     
     private void handlePresetName(final String presetName) {

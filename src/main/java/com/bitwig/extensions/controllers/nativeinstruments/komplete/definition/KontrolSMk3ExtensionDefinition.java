@@ -10,7 +10,7 @@ import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKont
 
 public class KontrolSMk3ExtensionDefinition extends AbstractKompleteKontrolExtensionDefinition {
     private static final UUID DRIVER_ID = UUID.fromString("8b07a8e9-886c-435b-8133-da9210306ce4");
-    private static final String MODEL = "S Mk3";
+    private static final String MODEL = "Kontrol S Mk3";
     private static final List<String> VARIANTS = List.of("49", "61", "88", "Sim");
     private static final String WIN_FORMAT_IN_OUT = "KONTROL S%s MK3";
     private static final String WIN_IN = "MIDIIN2 (KONTROL S%s MK3)";
@@ -20,6 +20,16 @@ public class KontrolSMk3ExtensionDefinition extends AbstractKompleteKontrolExten
     
     public KontrolSMk3ExtensionDefinition() {
         super(MODEL);
+    }
+    
+    @Override
+    public String getName() {
+        return MODEL;
+    }
+    
+    @Override
+    public String getHardwareModel() {
+        return MODEL;
     }
     
     @Override
