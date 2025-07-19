@@ -9,8 +9,8 @@ import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DirectParameterValueDisplayObserver;
 import com.bitwig.extension.controller.api.IntegerValue;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.ControlElements;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.binding.KnobDirectBinding;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ControlElements;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.values.BasicIntegerValue;
@@ -53,9 +53,9 @@ public class DirectParameterControl extends AbstractParameterControl {
         }
         applySlotsToIndex();
         this.device.addDirectParameterIdObserver(this::handleParameterIds);
-        parameterObserver = this.device.addDirectParameterValueDisplayObserver(14, this::handleParameterValueChanged);
+        parameterObserver = this.device.addDirectParameterValueDisplayObserver(20, this::handleParameterValueChanged);
         this.device.addDirectParameterNormalizedValueObserver(this::handleValueChanged);
-        this.device.addDirectParameterNameObserver(15, this::handleParameterNames);
+        this.device.addDirectParameterNameObserver(40, this::handleParameterNames);
         this.device.name().addValueObserver(this::handleDeviceName);
         remotePageCount.addValueObserver(this::handleRemotePageCount);
         pageCount.addValueObserver(this::handlePageCount);

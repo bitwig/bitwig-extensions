@@ -15,7 +15,6 @@ public class BrowserHandler {
     private final InsertionPoint insertionPoint;
     private final ControllerHost host;
     private final BooleanValue shiftHeld;
-    private boolean wasOpenedByDevice = false;
     
     public BrowserHandler(final ControllerHost host, final CursorDevice device, final BooleanValue shiftHeld) {
         this.host = host;
@@ -48,7 +47,6 @@ public class BrowserHandler {
         if (!browserOpen) {
             insertionPoint.browse();
             host.scheduleTask(() -> browser.selectNextFile(), 100);
-            wasOpenedByDevice = true;
         } else {
             browser.selectNextFile();
         }
@@ -58,7 +56,6 @@ public class BrowserHandler {
         if (!browserOpen) {
             insertionPoint.browse();
             host.scheduleTask(() -> browser.selectPreviousFile(), 100);
-            wasOpenedByDevice = false;
         } else {
             browser.selectPreviousFile();
         }
@@ -76,14 +73,12 @@ public class BrowserHandler {
         if (browserOpen) {
             browser.commit();
         }
-        wasOpenedByDevice = false;
     }
     
     public void cancel() {
         if (browserOpen) {
             browser.cancel();
         }
-        wasOpenedByDevice = false;
     }
     
     public void incrementSelection(final int inc) {
@@ -98,9 +93,4 @@ public class BrowserHandler {
         }
     }
     
-    public void forceCancel() {
-        if (wasOpenedByDevice) {
-            browser.cancel();
-        }
-    }
 }

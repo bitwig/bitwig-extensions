@@ -1,24 +1,33 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
 import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.Arranger;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
-import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.ScrollbarModel;
+import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.AbstractKompleteKontrolExtensionDefinition;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.device.DeviceControl;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
-public class KompleteKontrolSExtension extends KompleteKontrolExtension {
+public class KontrolSMk3Extension extends KompleteKontrolExtension {
     
-    public KompleteKontrolSExtension(final AbstractKompleteKontrolExtensionDefinition definition,
+    protected ScrollbarModel horizontalScrollbarModel;
+    protected double scrubDistance;
+    protected Arranger arranger;
+    
+    public KontrolSMk3Extension(final AbstractKompleteKontrolExtensionDefinition definition,
         final ControllerHost host) {
-        super(definition, host, false);
+        super(definition, host, true);
     }
     
     @Override
@@ -26,7 +35,10 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
         super.init();
         final ControllerHost host = getHost();
         
-        midiProcessor.intoDawMode(0x3);
+        this.arranger = host.createArranger();
+        horizontalScrollbarModel = this.arranger.getHorizontalScrollbarModel();
+        horizontalScrollbarModel.getContentPerPixel().addValueObserver(this::handleZoomLevel);
+        midiProcessor.intoDawMode(0x4);
         layers = new Layers(this);
         mainLayer = new Layer(layers, "Main");
         arrangeFocusLayer = new Layer(layers, "ArrangeFocus");
@@ -43,13 +55,69 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
         
         initTrackBank();
         setUpTransport();
-        initJogWheel();
         
-        final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
-        bindMacroControl(cursorDevice, midiIn2);
-        
+        final DeviceControl deviceLayer = new DeviceControl(host, midiProcessor, viewControl, layers, controlElements);
+        initTempoControl();
+        midiProcessor.addTempoListener(this::handleTempoIncoming);
+        initScrubZoomControl();
         mainLayer.activate();
         navigationLayer.activate();
+    }
+    
+    protected void initScrubZoomControl() {
+        final RelativeHardwareKnob fourDKnob = controlElements.getFourDKnobMixer();
+        final RelativeHardwarControlBindable binding = midiProcessor.createIncAction(this::handleFourDInc);
+        mainLayer.bind(fourDKnob, binding);
+        
+        final RelativeHardwareKnob loopKnob = controlElements.getLoopModKnob();
+        mainLayer.bind(loopKnob, midiProcessor.createIncAction(this::handleLoop));
+    }
+    
+    private void handleLoop(final int inc) {
+        final SettableBeatTimeValue position = controlElements.getShiftHeld().get()
+            ? viewControl.getTransport().arrangerLoopDuration()
+            : viewControl.getTransport().arrangerLoopStart();
+        final double newPos = incrementPosition(position, inc);
+        position.set(newPos);
+    }
+    
+    private void handleFourDInc(final int inc) {
+        if (controlElements.getShiftHeld().get()) {
+            final double newPos = viewControl.getTransport().getPosition().get();
+            if (inc > 0) {
+                horizontalScrollbarModel.zoomAtPosition(newPos, 0.25);
+            } else {
+                horizontalScrollbarModel.zoomAtPosition(newPos, -0.25);
+            }
+        } else {
+            handlePositionIncrementWithFocus(inc);
+        }
+    }
+    
+    private void handlePositionIncrementWithFocus(final int inc) {
+        final SettableBeatTimeValue playPosition = viewControl.getTransport().getPosition();
+        final double newPos = incrementPosition(playPosition, inc);
+        horizontalScrollbarModel.zoomAtPosition(newPos, 0);
+        playPosition.set(newPos);
+    }
+    
+    private double incrementPosition(final SettableBeatTimeValue position, final int inc) {
+        return Math.round((position.get() + (inc * scrubDistance)) / scrubDistance) * scrubDistance;
+    }
+    
+    private void handleZoomLevel(final double v) {
+        if (v <= 0) {
+            return;
+        }
+        this.scrubDistance = KontrolUtil.roundToNearestPowerOfTwo(80 * v);
+    }
+    
+    private void handleTempoIncoming(final double v) {
+        viewControl.getTransport().tempo().value().setRaw(v);
+    }
+    
+    private void initTempoControl() {
+        viewControl.getTransport().tempo().value().addRawValueObserver(tempo -> midiProcessor.sendTempo(tempo));
     }
     
     @Override
@@ -106,10 +174,10 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
         final HardwareButton downNavButton = surface.createHardwareButton("DOWN_NAV_BUTTON");
         downNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 1));
         
-        mainLayer.bindPressed(leftNavButton, () -> clipSceneCursor.navigateRight(currentLayoutType));
-        mainLayer.bindPressed(rightNavButton, () -> clipSceneCursor.navigateLeft(currentLayoutType));
-        mainLayer.bindPressed(upNavButton, () -> clipSceneCursor.navigateUp(currentLayoutType));
-        mainLayer.bindPressed(downNavButton, () -> clipSceneCursor.navigateDown(currentLayoutType));
+        mainLayer.bindPressed(leftNavButton, clipSceneCursor::navigateTrackRight);
+        mainLayer.bindPressed(rightNavButton, clipSceneCursor::navigateTrackLeft);
+        mainLayer.bindPressed(upNavButton, clipSceneCursor::navigateSceneUp);
+        mainLayer.bindPressed(downNavButton, clipSceneCursor::navigateSceneDown);
         
         cursorClip.exists().markInterested();
         final ModeButton quantizeButton = new ModeButton(midiProcessor, "QUANTIZE_BUTTON", CcAssignment.QUANTIZE);
@@ -146,26 +214,12 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
         mainLayer.bindPressed(knobShiftPressed.getHwButton(), () -> handle4DShiftPressed(rootTrack, cursorTrack));
     }
     
-    
     private void updateSceneLed() {
-        final int sceneValue = viewControl.getNavigationState().getSceneValue();
-        switch (currentLayoutType) {
-            case LAUNCHER -> midiProcessor.sendLedUpdate(0x32, sceneValue);
-            case ARRANGER -> midiProcessor.sendLedUpdate(0x30, sceneValue);
-            default -> {
-            }
-        }
+        midiProcessor.sendLedUpdate(0x32, viewControl.getNavigationState().getSceneValue());
     }
     
-    
     private void updateChanelLed() {
-        final int trackValue = viewControl.getNavigationState().getTrackValue();
-        switch (currentLayoutType) {
-            case LAUNCHER -> midiProcessor.sendLedUpdate(0x30, trackValue);
-            case ARRANGER -> midiProcessor.sendLedUpdate(0x32, trackValue);
-            default -> {
-            }
-        }
+        midiProcessor.sendLedUpdate(0x30, viewControl.getNavigationState().getTrackValue());
     }
     
     @Override

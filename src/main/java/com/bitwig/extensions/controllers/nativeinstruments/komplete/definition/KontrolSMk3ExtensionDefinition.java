@@ -6,7 +6,7 @@ import java.util.UUID;
 import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.api.ControllerHost;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolSExtension;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.KontrolSMk3Extension;
 
 public class KontrolSMk3ExtensionDefinition extends AbstractKompleteKontrolExtensionDefinition {
     private static final UUID DRIVER_ID = UUID.fromString("8b07a8e9-886c-435b-8133-da9210306ce4");
@@ -74,7 +74,7 @@ public class KontrolSMk3ExtensionDefinition extends AbstractKompleteKontrolExten
     }
     
     @Override
-    public KompleteKontrolSExtension createInstance(final ControllerHost host) {
-        return new KompleteKontrolSExtension(this, host, true);
+    public KontrolSMk3Extension createInstance(final ControllerHost host) {
+        return new KontrolSMk3Extension(this, host);
     }
 }

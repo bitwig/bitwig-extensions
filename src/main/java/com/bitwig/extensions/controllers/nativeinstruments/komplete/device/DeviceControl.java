@@ -8,10 +8,10 @@ import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Track;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.ControlElements;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.ViewControl;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ControlElements;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.DeviceMidiListener;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
 import com.bitwig.extensions.framework.Layer;
@@ -72,7 +72,8 @@ public class DeviceControl implements DeviceMidiListener {
         deviceRemotesControl = new RemotesControl(deviceRemoteLayer, deviceRemotePages, controlElements, midiProcessor);
         directParameterControl =
             new DirectParameterControl(
-                directParamLayer, cursorDevice, controlElements, midiProcessor, deviceRemotePages.pageCount());
+                directParamLayer, cursorDevice, controlElements, midiProcessor,
+                deviceRemotePages.pageCount());
         directParameterControl.getDirectActive().addValueObserver(this::handleDirectActive);
         
         final Track rootTrack = viewControl.getProject().getRootTrackGroup();
@@ -91,16 +92,18 @@ public class DeviceControl implements DeviceMidiListener {
         
         controlElements.getShiftHeld().addValueObserver(fineTune -> currentRemotesControl.setFineTune(fineTune));
         
-        navigationLayer.bindPressed(controlElements.getTrackNavLeftButton(), this::navigateLeft);
-        navigationLayer.bindPressed(controlElements.getTrackRightNavButton(), this::navigateRight);
         
-        navigationLayer.bindPressed(controlElements.getPreviousPresetButton(), browserHandler::navigatePrevious);
-        navigationLayer.bindPressed(controlElements.getNextPresetButtonButton(), browserHandler::navigateNext);
-        navigationLayer.bind(browserHandler::canNavigatePrevious, controlElements.getPresetPreviousButtonLight());
-        navigationLayer.bind(browserHandler::canNavigateNext, controlElements.getPresetNextButtonLight());
+        controlElements.getTrackNavLeftButton()
+            .bind(navigationLayer, this::navigateLeft, currentRemotesControl::canScrollLeft);
+        controlElements.getTrackRightNavButton()
+            .bind(navigationLayer, this::navigateRight, currentRemotesControl::canScrollRight);
         
-        navigationLayer.bind(currentRemotesControl::canScrollRight, controlElements.getTrackNavRightButtonLight());
-        navigationLayer.bind(currentRemotesControl::canScrollLeft, controlElements.getTrackNavLeftButtonLight());
+        controlElements.getPreviousPresetButton()
+            .bind(navigationLayer, browserHandler::navigatePrevious, browserHandler::canNavigatePrevious);
+        controlElements.getNextPresetButtonButton()
+            .bind(navigationLayer, browserHandler::navigateNext, browserHandler::canNavigateNext);
+        
+        
         useRemotes.addValueObserver(mainBank::setUsesTrackRemotes);
         
         trackRemotes.pageCount().addValueObserver(this::handleTrackPages);
@@ -115,12 +118,12 @@ public class DeviceControl implements DeviceMidiListener {
         final RelativeHardwarControlBindable binding =
             midiProcessor.createIncAction(browserHandler::incrementSelection);
         browserNavLayer.bind(fourDKnob, binding);
-        cursorTrack.channelIndex().addValueObserver(this::handleTrackIndexChange);
+        //cursorTrack.channelIndex().addValueObserver(this::handleTrackIndexChange);
     }
     
     private void handleTrackIndexChange(final int index) {
         if (browserNavLayer.isActive()) {
-            browserHandler.forceCancel();
+            //browserHandler.forceCancel();
         }
     }
     
@@ -175,7 +178,6 @@ public class DeviceControl implements DeviceMidiListener {
     }
     
     private void changeMode(final int mode) {
-        KompleteKontrolExtension.println(" MODE = %d".formatted(mode));
         if (mode == 1) {
             navigationLayer.activate();
             currentRemotesControl.setActive(true);

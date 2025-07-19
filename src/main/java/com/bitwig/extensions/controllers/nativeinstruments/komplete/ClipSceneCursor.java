@@ -40,96 +40,72 @@ public class ClipSceneCursor {
         return cursorTrack;
     }
     
-    protected void doNavigateDown(final LayoutType currentLayoutType) {
-        switch (currentLayoutType) {
-            case LAUNCHER -> {
-                sceneBank.scrollForwards();
-                theClip.select();
-            }
-            case ARRANGER -> {
-                if (navigationState.isSceneNavMode()) {
-                    navigationState.setSceneNavMode(false);
-                    sceneBank.setIndication(false);
-                    singleTrackBank.setShouldShowClipLauncherFeedback(true);
-                } else {
-                    singleTrackBank.scrollBy(1);
-                    theClip.select();
-                    theTrack.selectInMixer();
-                    theTrack.selectInEditor();
-                }
-            }
-            default -> {
-            }
+    protected void navigateDown(final LayoutType currentLayoutType) {
+        if (currentLayoutType == LayoutType.LAUNCHER) {
+            navigateSceneDown();
+        } else {
+            navigateTrackRight();
         }
     }
     
-    protected void doNavigateUp(final LayoutType currentLayoutType) {
-        switch (currentLayoutType) {
-            case LAUNCHER -> {
-                sceneBank.scrollBackwards();
-                theClip.select();
-            }
-            case ARRANGER -> {
-                if (singleTrackBank.scrollPosition().get() == 0) {
-                    navigationState.setSceneNavMode(true);
-                    sceneBank.setIndication(true);
-                    singleTrackBank.setShouldShowClipLauncherFeedback(false);
-                } else {
-                    singleTrackBank.scrollBy(-1);
-                    theClip.select();
-                    theTrack.selectInMixer();
-                    theTrack.selectInEditor();
-                }
-            }
-            default -> {
-            }
+    protected void navigateUp(final LayoutType currentLayoutType) {
+        if (currentLayoutType == LayoutType.LAUNCHER) {
+            navigateSceneUp();
+        } else {
+            navigateTrackLeft();
         }
     }
     
-    protected void doNavigateLeft(final LayoutType currentLayoutType) {
-        switch (currentLayoutType) {
-            case LAUNCHER -> {
-                if (singleTrackBank.scrollPosition().get() == 0) {
-                    navigationState.setSceneNavMode(true);
-                    sceneBank.setIndication(true);
-                    singleTrackBank.setShouldShowClipLauncherFeedback(false);
-                } else {
-                    singleTrackBank.scrollBy(-1);
-                    theClip.select();
-                    theTrack.selectInMixer();
-                    theTrack.selectInEditor();
-                }
-            }
-            case ARRANGER -> {
-                sceneBank.scrollBackwards();
-                theClip.select();
-            }
-            default -> {
-            }
+    protected void navigateLeft(final LayoutType currentLayoutType) {
+        if (currentLayoutType == LayoutType.LAUNCHER) {
+            navigateTrackLeft();
+        } else {
+            navigateSceneUp();
         }
     }
     
-    protected void doNavigateRight(final LayoutType currentLayoutType) {
-        switch (currentLayoutType) {
-            case LAUNCHER -> {
-                if (navigationState.isSceneNavMode()) {
-                    navigationState.setSceneNavMode(false);
-                    sceneBank.setIndication(false);
-                    singleTrackBank.setShouldShowClipLauncherFeedback(true);
-                } else {
-                    singleTrackBank.scrollBy(1);
-                }
-                theClip.select();
-                theTrack.selectInMixer();
-                theTrack.selectInEditor();
-            }
-            case ARRANGER -> {
-                sceneBank.scrollForwards();
-                theClip.select();
-            }
-            default -> {
-            }
+    protected void navigateRight(final LayoutType currentLayoutType) {
+        if (currentLayoutType == LayoutType.LAUNCHER) {
+            navigateTrackRight();
+        } else {
+            navigateSceneDown();
         }
+    }
+    
+    protected void navigateSceneUp() {
+        sceneBank.scrollBackwards();
+        theClip.select();
+    }
+    
+    protected void navigateSceneDown() {
+        sceneBank.scrollForwards();
+        theClip.select();
+    }
+    
+    protected void navigateTrackLeft() {
+        if (singleTrackBank.scrollPosition().get() == 0) {
+            navigationState.setSceneNavMode(true);
+            sceneBank.setIndication(true);
+            singleTrackBank.setShouldShowClipLauncherFeedback(false);
+        } else {
+            singleTrackBank.scrollBy(-1);
+            theClip.select();
+            theTrack.selectInMixer();
+            theTrack.selectInEditor();
+        }
+    }
+    
+    protected void navigateTrackRight() {
+        if (navigationState.isSceneNavMode()) {
+            navigationState.setSceneNavMode(false);
+            sceneBank.setIndication(false);
+            singleTrackBank.setShouldShowClipLauncherFeedback(true);
+        } else {
+            singleTrackBank.scrollBy(1);
+        }
+        theClip.select();
+        theTrack.selectInMixer();
+        theTrack.selectInEditor();
     }
     
     public void launch() {

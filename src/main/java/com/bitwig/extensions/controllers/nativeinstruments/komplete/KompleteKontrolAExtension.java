@@ -9,6 +9,7 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Track;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.TextCommand;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.ValueCommand;
 import com.bitwig.extensions.framework.Layer;
@@ -38,8 +39,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         final MidiIn midiIn2 = host.getMidiInPort(1);
         final NoteInput noteInput =
             midiIn2.createNoteInput(
-                "MIDI", "80????", "90????", "D0????", "E0????", "B001??", "B040??", "B042??",
-                "B1????");
+                "MIDI", "80????", "90????", "D0????", "E0????", "B001??", "B040??", "B042??", "B1????");
         noteInput.setShouldConsumeEvents(true);
         
         initTrackBank();
@@ -75,10 +75,10 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         final HardwareButton downNavButton = surface.createHardwareButton("DOWN_NAV_BUTTON");
         downNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 1));
         
-        mainLayer.bindPressed(leftNavButton, () -> clipSceneCursor.doNavigateRight(currentLayoutType));
-        mainLayer.bindPressed(rightNavButton, () -> clipSceneCursor.doNavigateLeft(currentLayoutType));
-        mainLayer.bindPressed(upNavButton, () -> clipSceneCursor.doNavigateUp(currentLayoutType));
-        mainLayer.bindPressed(downNavButton, () -> clipSceneCursor.doNavigateDown(currentLayoutType));
+        mainLayer.bindPressed(leftNavButton, () -> clipSceneCursor.navigateRight(currentLayoutType));
+        mainLayer.bindPressed(rightNavButton, () -> clipSceneCursor.navigateLeft(currentLayoutType));
+        mainLayer.bindPressed(upNavButton, () -> clipSceneCursor.navigateUp(currentLayoutType));
+        mainLayer.bindPressed(downNavButton, () -> clipSceneCursor.navigateDown(currentLayoutType));
         
         cursorClip.exists().markInterested();
         final ModeButton quantizeButton = new ModeButton(midiProcessor, "QUANTIZE_BUTTON", CcAssignment.QUANTIZE);
@@ -109,19 +109,10 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         clearButton.getLed().isOn()
             .setValueSupplier(() -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get());
         
-        final ModeButton knobPressed = new ModeButton(midiProcessor, "KNOB4D_PRESSED", CcAssignment.PRESS_4D_KNOB);
+        final ModeButton knobPressed = controlElements.getKnobPressed();
+        final ModeButton knobShiftPressed = controlElements.getKnobShiftPressed();
         mainLayer.bindPressed(knobPressed.getHwButton(), () -> clipSceneCursor.launch());
-        final ModeButton knobShiftPressed =
-            new ModeButton(midiProcessor, "KNOB4D_PRESSED_SHIFT", CcAssignment.PRESS_4D_KNOB_SHIFT);
-        final NavigationState navigationState = viewControl.getNavigationState();
-        mainLayer.bindPressed(
-            knobShiftPressed.getHwButton(), () -> {
-                if (navigationState.isSceneNavMode()) {
-                    rootTrack.stop();
-                } else {
-                    cursorTrack.stop();
-                }
-            });
+        mainLayer.bindPressed(knobShiftPressed.getHwButton(), () -> handle4DShiftPressed(rootTrack, cursorTrack));
     }
     
     @Override

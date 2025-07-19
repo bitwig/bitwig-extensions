@@ -18,6 +18,7 @@ import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.CcAssignment;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.DataStringUtil;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.LayoutType;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.device.DeviceSelectionTab;
 
 public class MidiProcessor {
@@ -146,6 +147,10 @@ public class MidiProcessor {
     
     public void sendTextCommand(final TextCommand command, final int index, final String text) {
         command.send(midiOut, index, text);
+    }
+    
+    public void sendLayoutCommand(final LayoutType layoutType) {
+        TextCommand.CONFIG.send(midiOut, layoutType == LayoutType.LAUNCHER ? 0 : 1, 0, "track_orientation");
     }
     
     public void sendColor(final int index, final String color) {

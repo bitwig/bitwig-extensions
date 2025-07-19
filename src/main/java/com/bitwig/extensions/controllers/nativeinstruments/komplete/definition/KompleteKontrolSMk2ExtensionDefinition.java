@@ -45,6 +45,6 @@ public class KompleteKontrolSMk2ExtensionDefinition extends AbstractKompleteKont
     
     @Override
     public KompleteKontrolSExtension createInstance(final ControllerHost host) {
-        return new KompleteKontrolSExtension(this, host, false);
+        return new KompleteKontrolSExtension(this, host);
     }
 }

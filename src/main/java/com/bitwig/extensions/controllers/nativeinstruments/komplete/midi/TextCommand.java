@@ -8,6 +8,7 @@ public enum TextCommand {
     TEMPO_UPDATE(0x19), //
     BANK_UPDATE(0x71),
     DAW_IDENT(0x07),
+    CONFIG(0x3), //
     PARAMETER_UPDATE(0x72),
     PARAMETER_VALUE(0x73),
     PRESET_NAME(0x76),

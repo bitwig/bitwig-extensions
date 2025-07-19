@@ -13,7 +13,6 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DocumentState;
-import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
@@ -28,6 +27,8 @@ import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.binding.KnobParameterBinding;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ControlElements;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.TextCommand;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.ValueCommand;
@@ -61,6 +62,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
     protected Layer sessionFocusLayer;
     protected Layer navigationLayer;
     protected final boolean hasDeviceControl;
+    private CursorRemoteControlsPage genericRemotes;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
     private static ControllerHost debugHost;
@@ -143,12 +145,11 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
                 .addBindingWithSensitivity(channel.volume(), KnobParameterBinding.BASE_SENSITIVITY));
             knobBindings.add(
                 panKnobs.get(index).addBindingWithSensitivity(channel.pan(), KnobParameterBinding.BASE_SENSITIVITY));
-            controlElements.getShiftHeld().addValueObserver(shift -> applyShift(shift));
+            controlElements.getShiftHeld().addValueObserver(this::applyShift);
         } else {
             volumeKnobs.get(index).addBindingWithSensitivity(channel.volume(), 0.02);
             panKnobs.get(index).addBindingWithSensitivity(channel.pan(), 0.02);
         }
-        
         channel.isActivated().markInterested();
         channel.canHoldAudioData().markInterested();
         channel.canHoldNoteData().markInterested();
@@ -171,6 +172,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
     
     @Override
     public void exit() {
+        midiProcessor.exit();
     }
     
     @Override
@@ -178,34 +180,48 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         surface.updateHardware();
     }
     
-    public Layers getLayers() {
-        return layers;
-    }
-    
-    public HardwareSurface getSurface() {
-        return surface;
-    }
-    
     protected void initJogWheel() {
-        final MidiIn midiIn = midiProcessor.getMidiIn();
-        final RelativeHardwareKnob fourDKnob = surface.createRelativeHardwareKnob("4D_WHEEL_PLUGIN_MODE");
-        fourDKnob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x34, 128));
-        fourDKnob.setStepSize(1);
-        final Transport transport = viewControl.getTransport();
-        
-        final HardwareActionBindable incAction = getHost().createAction(() -> transport.fastForward(), () -> "+");
-        final HardwareActionBindable decAction = getHost().createAction(() -> transport.rewind(), () -> "-");
-        fourDKnob.addBinding(getHost().createRelativeHardwareControlStepTarget(incAction, decAction));
+        final RelativeHardwareKnob mixer4DKnob = controlElements.getFourDKnobMixer();
+        mainLayer.bind(mixer4DKnob, midiProcessor.createIncAction(this::handleTransportScroll));
+        final RelativeHardwareKnob fourKnob = controlElements.getFourDKnob();
+        mainLayer.bind(fourKnob, midiProcessor.createIncAction(this::navigateRemotes));
+    }
+    
+    protected void handleTransportScroll(final int inc) {
+        if (inc > 0) {
+            viewControl.getTransport().fastForward();
+        } else {
+            viewControl.getTransport().rewind();
+        }
     }
     
     protected void bindMacroControl(final PinnableCursorDevice device, final MidiIn midiIn) {
-        final CursorRemoteControlsPage remote = device.createCursorRemoteControlsPage(8);
+        genericRemotes = device.createCursorRemoteControlsPage(8);
         for (int i = 0; i < 8; i++) {
             final AbsoluteHardwareKnob knob = surface.createAbsoluteHardwareKnob("MACRO_" + i);
             knob.setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(0, 14 + i));
-            final RemoteControl parameter = remote.getParameter(i);
+            final RemoteControl parameter = genericRemotes.getParameter(i);
             parameter.setIndication(true);
             mainLayer.bind(knob, parameter);
+        }
+    }
+    
+    public void navigateRemotes(final int inc) {
+        if (genericRemotes == null) {
+            return;
+        }
+        if (inc > 0) {
+            genericRemotes.selectNextPage(false);
+        } else {
+            genericRemotes.selectPreviousPage(false);
+        }
+    }
+    
+    protected void handle4DShiftPressed(final Track rootTrack, final CursorTrack cursorTrack) {
+        if (viewControl.getNavigationState().isSceneNavMode()) {
+            rootTrack.stop();
+        } else {
+            cursorTrack.stop();
         }
     }
     
@@ -264,11 +280,10 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         mainLayer.bindPressed(controlElements.getMuteSelectedButton(), cursorTrack.mute().toggleAction());
         mainLayer.bindPressed(controlElements.getSoloSelectedButton(), cursorTrack.solo().toggleAction());
         
-        navigationLayer.bindPressed(controlElements.getTrackNavLeftButton(), () -> mixerTrackBank.scrollBy(-8));
-        navigationLayer.bindPressed(controlElements.getTrackRightNavButton(), () -> mixerTrackBank.scrollBy(8));
-        
-        navigationLayer.bind(mixerTrackBank.canScrollChannelsUp(), controlElements.getTrackNavRightButtonLight());
-        navigationLayer.bind(mixerTrackBank.canScrollChannelsDown(), controlElements.getTrackNavLeftButtonLight());
+        controlElements.getTrackNavLeftButton()
+            .bind(navigationLayer, () -> mixerTrackBank.scrollBy(-8), mixerTrackBank.canScrollChannelsUp());
+        controlElements.getTrackRightNavButton()
+            .bind(navigationLayer, () -> mixerTrackBank.scrollBy(8), mixerTrackBank.canScrollChannelsDown());
         
         for (int i = 0; i < 8; i++) {
             setUpChannelControl(i, mixerTrackBank.getItemAt(i));
@@ -283,9 +298,9 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
             "Recording/Automation",
             new String[] {FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
             FocusMode.ARRANGER.getDescriptor());
-        final ModeButton recButton = new ModeButton(midiProcessor, "REC_BUTTON", CcAssignment.REC);
-        final ModeButton autoButton = new ModeButton(midiProcessor, "AUTO_BUTTON", CcAssignment.AUTO);
-        final ModeButton countInButton = new ModeButton(midiProcessor, "COUNTIN_BUTTON", CcAssignment.COUNT_IN);
+        final ModeButton recButton = controlElements.getButton(CcAssignment.REC);
+        final ModeButton autoButton = controlElements.getButton(CcAssignment.AUTO);
+        final ModeButton countInButton = controlElements.getButton(CcAssignment.COUNT_IN);
         focusMode.markInterested();
         
         arrangeFocusLayer.bindToggle(recButton.getHwButton(), transport.isArrangerRecordEnabled());
@@ -296,48 +311,40 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         sessionFocusLayer.bindToggle(autoButton.getHwButton(), transport.isClipLauncherAutomationWriteEnabled());
         sessionFocusLayer.bindToggle(countInButton.getHwButton(), transport.isClipLauncherOverdubEnabled());
         
-        focusMode.addValueObserver(newValue -> {
-            final FocusMode newMode = FocusMode.toMode(newValue);
-            switch (newMode) {
-                case ARRANGER:
-                    sessionFocusLayer.deactivate();
-                    arrangeFocusLayer.activate();
-                    break;
-                case LAUNCHER:
-                    arrangeFocusLayer.deactivate();
-                    sessionFocusLayer.activate();
-                    break;
-                default:
-                    break;
-            }
-        });
+        focusMode.addValueObserver(this::updateFocusMode);
         
-        final ModeButton playButton = new ModeButton(midiProcessor, "PLAY_BUTTON", CcAssignment.PLAY);
+        final ModeButton playButton = controlElements.getButton(CcAssignment.PLAY);
         mainLayer.bindToggle(playButton.getHwButton(), transport.isPlaying());
         mainLayer.bind(transport.isPlaying(), playButton.getLed());
-        final ModeButton restartButton = new ModeButton(midiProcessor, "RESTART_BUTTON", CcAssignment.RESTART);
-        mainLayer.bindPressed(restartButton.getHwButton(), () -> transport.launchFromPlayStartPosition());
-        final ModeButton stopButton = new ModeButton(midiProcessor, "STOP_BUTTON", CcAssignment.STOP);
+        final ModeButton restartButton = controlElements.getButton(CcAssignment.RESTART);
+        mainLayer.bindPressed(restartButton.getHwButton(), transport::launchFromPlayStartPosition);
+        final ModeButton stopButton = controlElements.getButton(CcAssignment.STOP);
         mainLayer.bindPressed(stopButton.getHwButton(), transport.stopAction());
         
-        final ModeButton loopButton = new ModeButton(midiProcessor, "LOOP_BUTTON", CcAssignment.LOOP);
+        final ModeButton loopButton = controlElements.getButton(CcAssignment.LOOP);
         mainLayer.bindToggle(loopButton.getHwButton(), transport.isArrangerLoopEnabled());
         
-        final ModeButton metroButton = new ModeButton(midiProcessor, "METRO_BUTTON", CcAssignment.METRO);
+        final ModeButton metroButton = controlElements.getButton(CcAssignment.METRO);
         mainLayer.bindToggle(metroButton.getHwButton(), transport.isMetronomeEnabled());
-        final ModeButton tapTempoButton = new ModeButton(midiProcessor, "TAP_BUTTON", CcAssignment.TAP_TEMPO);
+        
+        final ModeButton tapTempoButton = controlElements.getButton(CcAssignment.TAP_TEMPO);
         mainLayer.bindPressed(tapTempoButton.getHwButton(), transport::tapTempo);
         tapTempoButton.bindLightToPressed();
         
-        final ModeButton undoButton = new ModeButton(midiProcessor, "UNDO_BUTTON", CcAssignment.UNDO);
+        final ModeButton undoButton = controlElements.getButton(CcAssignment.UNDO);
         final Application application = viewControl.getApplication();
-        mainLayer.bindPressed(undoButton.getHwButton(), () -> application.undo());
+        mainLayer.bindPressed(undoButton.getHwButton(), application::undo);
         undoButton.getLed().isOn().setValue(true); // As long as there is no canUndo
         
-        final ModeButton redoButton = new ModeButton(midiProcessor, "REDO_BUTTON", CcAssignment.REDO);
-        mainLayer.bindPressed(redoButton.getHwButton(), () -> application.redo());
+        final ModeButton redoButton = controlElements.getButton(CcAssignment.REDO);
+        mainLayer.bindPressed(redoButton.getHwButton(), application::redo);
         redoButton.getLed().isOn().setValue(true);
     }
     
+    private void updateFocusMode(final String newValue) {
+        final FocusMode newMode = FocusMode.toMode(newValue);
+        sessionFocusLayer.setIsActive(newMode == FocusMode.LAUNCHER);
+        arrangeFocusLayer.setIsActive(newMode == FocusMode.ARRANGER);
+    }
     
 }

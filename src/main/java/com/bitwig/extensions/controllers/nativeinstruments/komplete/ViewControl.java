@@ -25,6 +25,9 @@ public class ViewControl {
         cursorDevice = cursorTrack.createCursorDevice();
         project = host.getProject();
         transport = host.createTransport();
+        transport.playPosition().markInterested();
+        transport.arrangerLoopStart().markInterested();
+        transport.arrangerLoopDuration().markInterested();
         
         mixerTrackBank = host.createTrackBank(8, 0, 1);
         mixerTrackBank.setSkipDisabledItems(true);
@@ -32,7 +35,6 @@ public class ViewControl {
         mixerTrackBank.canScrollChannelsUp().markInterested();
         mixerTrackBank.followCursorTrack(cursorTrack);
         mixerTrackBank.setChannelScrollStepSize(8);
-        
     }
     
     public Project getProject() {
