@@ -14,9 +14,9 @@ import com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.A
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
-public class KompleteKontrolSExtension extends KompleteKontrolExtension {
+public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
     
-    public KompleteKontrolSExtension(final AbstractKompleteKontrolExtensionDefinition definition,
+    public KompleteKontrolSMk2Extension(final AbstractKompleteKontrolExtensionDefinition definition,
         final ControllerHost host) {
         super(definition, host, false);
     }
@@ -47,7 +47,7 @@ public class KompleteKontrolSExtension extends KompleteKontrolExtension {
         
         final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
         bindMacroControl(cursorDevice, midiIn2);
-        
+        doHardwareLayout();
         mainLayer.activate();
         navigationLayer.activate();
     }

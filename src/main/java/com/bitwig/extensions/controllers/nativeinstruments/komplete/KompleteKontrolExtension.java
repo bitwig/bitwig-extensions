@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
@@ -14,12 +15,14 @@ import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.HardwareButton;
+import com.bitwig.extension.controller.api.HardwareElement;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.RelativeHardwareControlBinding;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.RelativePosition;
 import com.bitwig.extension.controller.api.RemoteControl;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.SpecificPluginDevice;
@@ -345,6 +348,87 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         final FocusMode newMode = FocusMode.toMode(newValue);
         sessionFocusLayer.setIsActive(newMode == FocusMode.LAUNCHER);
         arrangeFocusLayer.setIsActive(newMode == FocusMode.ARRANGER);
+    }
+    
+    protected void doHardwareLayout() {
+        final int colOff = 12;
+        final int colTopOf = 14;
+        final int controlTop = 7;
+        for (int i = 0; i < 8; i++) {
+            configureElement("SELECT_BUTTON_%d".formatted(i), "S%d".formatted(i + 1), 62 + i * colOff, 1, 9.5, 4);
+            final HardwareElement volKnob = surface.hardwareElementWithId("VOLUME_KNOB_%d".formatted(i));
+            volKnob.setLabel("Level %d".formatted(i + 1));
+            volKnob.setBounds(62 + i * colOff, controlTop, 10, 10);
+            volKnob.setLabelPosition(RelativePosition.BELOW);
+            final HardwareElement panKnob = surface.hardwareElementWithId("PAN_KNOB_%d".formatted(i));
+            panKnob.setLabel("Pan %d".formatted(i + 1));
+            panKnob.setBounds(62 + i * colOff, controlTop + colTopOf, 10, 10);
+            panKnob.setLabelPosition(RelativePosition.BELOW);
+            if (!hasDeviceControl) {
+                configureElement(
+                    "MACRO_%d".formatted(i), "Macro %d".formatted(i + 1), 62 + i * colOff,
+                    controlTop + colTopOf * 2, 10).setLabelPosition(RelativePosition.BELOW);
+            }
+        }
+        
+        configureElement("LEFT_NAV_BUTTON", "<<", 160, 20.0, 6.0);
+        configureElement("RIGHT_NAV_BUTTON", ">>", 174, 20.0, 6.0);
+        configureElement("UP_NAV_BUTTON", "up", 167, 13.0, 6.0);
+        configureElement("DOWN_NAV_BUTTON", "dn", 167, 27, 6.0);
+        
+        configureElement("KNOB4D_PRESSED", "4D+P", 167, 20.0, 6.0);
+        configureElement("KNOB4D_PRESSED_SHIFT", "4D+S+P", 181, 20, 6.0);
+        
+        configureElement("4D_WHEEL_PLUGIN_MODE", "4D Plugin", 188, 20.0, 10.0).setLabelPosition(RelativePosition.BELOW);
+        configureElement("4D_WHEEL_MIX_MODE", "4d Mix", 188, 34, 10.0).setLabelPosition(RelativePosition.BELOW);
+        
+        
+        final Color labelColor = Color.fromRGB255(0, 240, 156);
+        configureElement("TRACK_LEFT_NAV_BUTTON", "<<", 40, 20, 6).setLabelColor(labelColor);
+        configureElement("TRACK_RIGHT_NAV_BUTTON", ">>", 48, 20, 6).setLabelColor(labelColor);
+        configureElement("MUTE_SELECTED_BUTTON", "M", 40, 10, 6).setLabelColor(Color.fromHex("ffff00"));
+        configureElement("SOLO_SELECTED_BUTTON", "S", 48, 10, 6).setLabelColor(Color.fromHex("e8eb34"));
+        
+        final int bw = 10;
+        final int bh = 6;
+        final int top = 10;
+        final int left = 1;
+        
+        configureElement("PLAY_BUTTON", ">", left, top + bh + 1, bw, bh / 2);
+        configureElement("RESTART_BUTTON", "Restart", left, top + bh + 1 + bh / 2, bw, bh / 2);
+        configureElement("REC_BUTTON", "Rec", left + (bw + 1), top + bh + 1, bw, bh / 2);
+        configureElement(
+            "COUNTIN_BUTTON", "Count-in", left + (bw + 1), top + bh + 1 + bh / 2, bw, bh / 2).setLabelColor(labelColor);
+        
+        configureElement("STOP_BUTTON", "Stop", left + (bw + 1) * 2, top + bh + 1, bw, bh);
+        configureElement("LOOP_BUTTON", "LOOP", left, top, bw, bh);
+        configureElement("AUTO_BUTTON", "Auto", left + (bw + 1), top, bw, bh);
+        configureElement("METRO_BUTTON", "Metro", left + (bw + 1) * 2, top, bw, bh / 2);
+        configureElement("TAP_BUTTON", "Tap", left + (bw + 1) * 2, top + bh / 2, bw, bh / 2);
+        
+        configureElement("QUANTIZE_BUTTON", "Quant", left, top + (bh + 1) * 3, bw, bh).setLabelColor(labelColor);
+        configureElement("CLEAR_BUTTON", "Clear", left + (bw + 1), top + (bh + 1) * 3, bw, bh).setLabelColor(
+            labelColor);
+        configureElement("UNDO_BUTTON", "Undo", left + (bw + 1) * 3, top + (bh + 1) * 3, bw, bh / 2).setLabelColor(
+            labelColor);
+        configureElement(
+            "REDO_BUTTON", "Redo", left + (bw + 1) * 3, top + (bh + 1) * 3 + bh / 2, bw, bh / 2).setLabelColor(
+            labelColor);
+        
+    }
+    
+    private HardwareElement configureElement(final String id, final String label, final double x, final double y,
+        final double w, final double h) {
+        final HardwareElement element = surface.hardwareElementWithId(id);
+        
+        element.setBounds(x, y, w, h);
+        element.setLabel(label);
+        return element;
+    }
+    
+    private HardwareElement configureElement(final String id, final String label, final double x, final double y,
+        final double size) {
+        return configureElement(id, label, x, y, size, size);
     }
     
 }
