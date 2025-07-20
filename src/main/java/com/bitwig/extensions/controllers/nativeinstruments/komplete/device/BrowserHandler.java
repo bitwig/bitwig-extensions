@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete.device;
 
 import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.BrowserResultsColumn;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.InsertionPoint;
@@ -25,6 +26,7 @@ public class BrowserHandler {
         insertionPoint = device.replaceDeviceInsertionPoint();
         this.shiftHeld = shiftHeld;
         browser.shouldAudition().markInterested();
+        final BrowserResultsColumn resultsColum = browser.resultsColumn();
     }
     
     private void handleDeviceExists(final boolean exists) {
@@ -46,7 +48,7 @@ public class BrowserHandler {
         }
         if (!browserOpen) {
             insertionPoint.browse();
-            host.scheduleTask(() -> browser.selectNextFile(), 100);
+            //host.scheduleTask(() -> browser.selectNextFile(), 100);
         } else {
             browser.selectNextFile();
         }
@@ -55,7 +57,7 @@ public class BrowserHandler {
     public void navigatePrevious() {
         if (!browserOpen) {
             insertionPoint.browse();
-            host.scheduleTask(() -> browser.selectPreviousFile(), 100);
+            //host.scheduleTask(() -> browser.selectPreviousFile(), 100);
         } else {
             browser.selectPreviousFile();
         }
@@ -85,11 +87,13 @@ public class BrowserHandler {
         if (!browserOpen) {
             return;
         }
-        
-        if (inc > 0) {
-            browser.selectNextFile();
-        } else {
-            browser.selectPreviousFile();
+        final int repeats = Math.abs(inc);
+        for (int i = 0; i < repeats; i++) {
+            if (inc > 0) {
+                browser.selectNextFile();
+            } else {
+                browser.selectPreviousFile();
+            }
         }
     }
     

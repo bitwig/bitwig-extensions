@@ -5,7 +5,6 @@ import com.bitwig.extension.controller.api.Arranger;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
@@ -21,13 +20,19 @@ import com.bitwig.extensions.framework.Layers;
 
 public class KontrolSMk3Extension extends KompleteKontrolExtension {
     
+    private ClipSceneCursor clipSceneCursor;
     protected ScrollbarModel horizontalScrollbarModel;
     protected double scrubDistance;
     protected Arranger arranger;
     
     public KontrolSMk3Extension(final AbstractKompleteKontrolExtensionDefinition definition,
         final ControllerHost host) {
-        super(definition, host, true);
+        super(definition, host);
+    }
+    
+    @Override
+    protected boolean hasDeviceControl() {
+        return true;
     }
     
     @Override
@@ -44,9 +49,9 @@ public class KontrolSMk3Extension extends KompleteKontrolExtension {
         arrangeFocusLayer = new Layer(layers, "ArrangeFocus");
         sessionFocusLayer = new Layer(layers, "SessionFocus");
         navigationLayer = new Layer(layers, "NavigationLayer");
+        clipSceneCursor = viewControl.getClipSceneCursor();
         
         final MidiIn midiIn2 = host.getMidiInPort(1);
-        
         final NoteInput noteInput =
             midiIn2.createNoteInput(
                 "MIDI", "80????", "90????", "A0????", "D0????", "E0????", "B001??", "B00B??", "B040??", "B042??",
@@ -56,12 +61,11 @@ public class KontrolSMk3Extension extends KompleteKontrolExtension {
         initTrackBank();
         setUpTransport();
         
-        final DeviceControl deviceLayer = new DeviceControl(host, midiProcessor, viewControl, layers, controlElements);
+        new DeviceControl(host, midiProcessor, viewControl, layers, controlElements);
         initTempoControl();
         midiProcessor.addTempoListener(this::handleTempoIncoming);
         initScrubZoomControl();
-        mainLayer.activate();
-        navigationLayer.activate();
+        activateStandardLayers();
     }
     
     protected void initScrubZoomControl() {
@@ -145,42 +149,21 @@ public class KontrolSMk3Extension extends KompleteKontrolExtension {
         
         arrangerClip.exists().markInterested();
         final Track rootTrack = viewControl.getProject().getRootTrackGroup();
-        final ClipSceneCursor clipSceneCursor = viewControl.getClipSceneCursor();
         final CursorTrack cursorTrack = clipSceneCursor.getCursorTrack();
         final Application application = viewControl.getApplication();
         final NavigationState navigationState = viewControl.getNavigationState();
-        application.panelLayout().addValueObserver(v -> {
-            currentLayoutType = LayoutType.toType(v);
-            midiProcessor.sendLayoutCommand(currentLayoutType);
-            updateChanelLed();
-            updateSceneLed();
-        });
+        application.panelLayout().addValueObserver(this::handleLayoutChange);
         
-        navigationState.setStateChangeListener(() -> {
-            this.updateSceneLed();
-            this.updateChanelLed();
-        });
-        
-        final MidiIn midiIn = midiProcessor.getMidiIn();
-        final HardwareButton leftNavButton = surface.createHardwareButton("LEFT_NAV_BUTTON");
-        leftNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 1));
-        
-        final HardwareButton rightNavButton = surface.createHardwareButton("RIGHT_NAV_BUTTON");
-        rightNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 127));
-        
-        final HardwareButton upNavButton = surface.createHardwareButton("UP_NAV_BUTTON");
-        upNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 127));
-        
-        final HardwareButton downNavButton = surface.createHardwareButton("DOWN_NAV_BUTTON");
-        downNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 1));
-        
-        mainLayer.bindPressed(leftNavButton, clipSceneCursor::navigateTrackRight);
-        mainLayer.bindPressed(rightNavButton, clipSceneCursor::navigateTrackLeft);
-        mainLayer.bindPressed(upNavButton, clipSceneCursor::navigateSceneUp);
-        mainLayer.bindPressed(downNavButton, clipSceneCursor::navigateSceneDown);
+        controlElements.getLeftNavButton()
+            .bind(mainLayer, this::handleLeftNavigation, () -> !navigationState.isSceneNavMode());
+        controlElements.getRightNavButton()
+            .bind(mainLayer, this::handleRightNavigation, navigationState::canGoTrackRight);
+        controlElements.getUpNavButton().bind(mainLayer, this::handleUpNavigation, navigationState::canScrollSceneUp);
+        controlElements.getDownNavButton()
+            .bind(mainLayer, this::handleDownNavigation, navigationState::canScrollSceneDown);
         
         cursorClip.exists().markInterested();
-        final ModeButton quantizeButton = new ModeButton(midiProcessor, "QUANTIZE_BUTTON", CcAssignment.QUANTIZE);
+        final ModeButton quantizeButton = controlElements.getButton(CcAssignment.QUANTIZE);
         sessionFocusLayer.bindPressed(quantizeButton.getHwButton(), () -> cursorClip.quantize(1.0));
         
         sessionFocusLayer.bind(
@@ -195,7 +178,7 @@ public class KontrolSMk3Extension extends KompleteKontrolExtension {
         cursorTrack.canHoldNoteData().markInterested();
         cursorClip.exists().markInterested();
         
-        final ModeButton clearButton = new ModeButton(midiProcessor, "CLEAR_BUTTON", CcAssignment.CLEAR);
+        final ModeButton clearButton = controlElements.getButton(CcAssignment.CLEAR);
         sessionFocusLayer.bindPressed(clearButton.getHwButton(), () -> cursorClip.clearSteps());
         sessionFocusLayer.bind(
             () -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get(),
@@ -214,12 +197,25 @@ public class KontrolSMk3Extension extends KompleteKontrolExtension {
         mainLayer.bindPressed(knobShiftPressed.getHwButton(), () -> handle4DShiftPressed(rootTrack, cursorTrack));
     }
     
-    private void updateSceneLed() {
-        midiProcessor.sendLedUpdate(0x32, viewControl.getNavigationState().getSceneValue());
+    private void handleLeftNavigation() {
+        clipSceneCursor.navigateTrackLeft();
     }
     
-    private void updateChanelLed() {
-        midiProcessor.sendLedUpdate(0x30, viewControl.getNavigationState().getTrackValue());
+    private void handleRightNavigation() {
+        clipSceneCursor.navigateTrackRight();
+    }
+    
+    private void handleUpNavigation() {
+        clipSceneCursor.navigateSceneUp();
+    }
+    
+    private void handleDownNavigation() {
+        clipSceneCursor.navigateSceneDown();
+    }
+    
+    private void handleLayoutChange(final String v) {
+        currentLayoutType = LayoutType.toType(v);
+        midiProcessor.sendLayoutCommand(currentLayoutType);
     }
     
     @Override

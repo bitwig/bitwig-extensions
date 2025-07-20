@@ -12,13 +12,13 @@ public enum CcAssignment {
     REC(0x12, "REC_BUTTON"), //
     COUNT_IN(0x13, "COUNTIN_BUTTON"), //
     STOP(0x14, "STOP_BUTTON"), //
-    CLEAR(0x15), //
+    CLEAR(0x15, "CLEAR_BUTTON"), //
     LOOP(0x16, "LOOP_BUTTON"), //
     METRO(0x17, "METRO_BUTTON"), //
     TAP_TEMPO(0x18, "TAP_BUTTON"), //
     UNDO(0x20, "UNDO_BUTTON"), //
     REDO(0x21, "REDO_BUTTON"), //
-    QUANTIZE(0x22), //
+    QUANTIZE(0x22, "QUANTIZE_BUTTON"), //
     AUTO(0x23, "AUTO_BUTTON"), //
     PRESS_4D_KNOB(0x60), //
     PRESS_4D_KNOB_SHIFT(0x61), //

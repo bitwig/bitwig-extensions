@@ -61,10 +61,10 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
     protected LayoutType currentLayoutType = LayoutType.LAUNCHER;
     protected ControlElements controlElements;
     
+    protected SettableEnumValue focusMode;
     protected Layer arrangeFocusLayer;
     protected Layer sessionFocusLayer;
     protected Layer navigationLayer;
-    protected final boolean hasDeviceControl;
     private CursorRemoteControlsPage genericRemotes;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
@@ -77,10 +77,8 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         }
     }
     
-    protected KompleteKontrolExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
-        final boolean hasDeviceControl) {
+    protected KompleteKontrolExtension(final ControllerExtensionDefinition definition, final ControllerHost host) {
         super(definition, host);
-        this.hasDeviceControl = hasDeviceControl;
     }
     
     @Override
@@ -90,15 +88,29 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         surface = host.createHardwareSurface();
         midiProcessor = new MidiProcessor(host, surface);
         viewControl = new ViewControl(host);
-        controlElements = new ControlElements(surface, midiProcessor);
+        controlElements = new ControlElements(surface, midiProcessor, hasSwitchedNavigationMapping());
         midiProcessor.addModeListener(this::changeMode);
+    }
+    
+    protected boolean hasSwitchedNavigationMapping() {
+        return false;
+    }
+    
+    protected boolean hasDeviceControl() {
+        return false;
+    }
+    
+    protected void activateStandardLayers() {
+        mainLayer.activate();
+        navigationLayer.activate();
+        updateFocusMode(focusMode.get());
     }
     
     protected abstract void initNavigation();
     
     protected void setUpChannelControl(final int index, final Track channel) {
         final HardwareButton selectButton = midiProcessor.createButton("SELECT_BUTTON", 0x42, index);
-        if (hasDeviceControl) {
+        if (hasDeviceControl()) {
             channel.color().addValueObserver((r, g, b) -> midiProcessor.sendColor(index, toColor(r, g, b)));
         }
         
@@ -143,7 +155,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         
         final List<RelativeHardwareKnob> volumeKnobs = controlElements.getVolumeKnobs();
         final List<RelativeHardwareKnob> panKnobs = controlElements.getPanKnobs();
-        if (hasDeviceControl) {
+        if (hasDeviceControl()) {
             knobBindings.add(volumeKnobs.get(index)
                 .addBindingWithSensitivity(channel.volume(), KnobParameterBinding.BASE_SENSITIVITY));
             knobBindings.add(
@@ -198,7 +210,8 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         }
     }
     
-    protected void bindMacroControl(final PinnableCursorDevice device, final MidiIn midiIn) {
+    protected void bindMacroControl(final MidiIn midiIn) {
+        final PinnableCursorDevice device = viewControl.getCursorDevice();
         genericRemotes = device.createCursorRemoteControlsPage(8);
         for (int i = 0; i < 8; i++) {
             final AbsoluteHardwareKnob knob = surface.createAbsoluteHardwareKnob("MACRO_" + i);
@@ -296,7 +309,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
     public void setUpTransport() {
         final Transport transport = viewControl.getTransport();
         final DocumentState documentState = getHost().getDocumentState();
-        final SettableEnumValue focusMode = documentState.getEnumSetting(
+        focusMode = documentState.getEnumSetting(
             "Focus", //
             "Recording/Automation",
             new String[] {FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
@@ -304,7 +317,6 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         final ModeButton recButton = controlElements.getButton(CcAssignment.REC);
         final ModeButton autoButton = controlElements.getButton(CcAssignment.AUTO);
         final ModeButton countInButton = controlElements.getButton(CcAssignment.COUNT_IN);
-        focusMode.markInterested();
         
         arrangeFocusLayer.bindToggle(recButton.getHwButton(), transport.isArrangerRecordEnabled());
         arrangeFocusLayer.bindToggle(autoButton.getHwButton(), transport.isArrangerAutomationWriteEnabled());
@@ -315,6 +327,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         sessionFocusLayer.bindToggle(countInButton.getHwButton(), transport.isClipLauncherOverdubEnabled());
         
         focusMode.addValueObserver(this::updateFocusMode);
+        focusMode.markInterested();
         
         final ModeButton playButton = controlElements.getButton(CcAssignment.PLAY);
         mainLayer.bindToggle(playButton.getHwButton(), transport.isPlaying());
@@ -344,7 +357,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         redoButton.getLed().isOn().setValue(true);
     }
     
-    private void updateFocusMode(final String newValue) {
+    protected void updateFocusMode(final String newValue) {
         final FocusMode newMode = FocusMode.toMode(newValue);
         sessionFocusLayer.setIsActive(newMode == FocusMode.LAUNCHER);
         arrangeFocusLayer.setIsActive(newMode == FocusMode.ARRANGER);
@@ -364,7 +377,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
             panKnob.setLabel("Pan %d".formatted(i + 1));
             panKnob.setBounds(62 + i * colOff, controlTop + colTopOf, 10, 10);
             panKnob.setLabelPosition(RelativePosition.BELOW);
-            if (!hasDeviceControl) {
+            if (!hasDeviceControl()) {
                 configureElement(
                     "MACRO_%d".formatted(i), "Macro %d".formatted(i + 1), 62 + i * colOff,
                     controlTop + colTopOf * 2, 10).setLabelPosition(RelativePosition.BELOW);
@@ -393,28 +406,28 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         final int bh = 6;
         final int top = 10;
         final int left = 1;
+        final int bhHlf = bh / 2;
         
-        configureElement("PLAY_BUTTON", ">", left, top + bh + 1, bw, bh / 2);
-        configureElement("RESTART_BUTTON", "Restart", left, top + bh + 1 + bh / 2, bw, bh / 2);
-        configureElement("REC_BUTTON", "Rec", left + (bw + 1), top + bh + 1, bw, bh / 2);
-        configureElement(
-            "COUNTIN_BUTTON", "Count-in", left + (bw + 1), top + bh + 1 + bh / 2, bw, bh / 2).setLabelColor(labelColor);
+        configureElement("PLAY_BUTTON", ">", left, top + bh + 1, bw, bhHlf);
+        configureElement("RESTART_BUTTON", "Restart", left, top + bh + 1 + bhHlf, bw, bhHlf);
+        configureElement("REC_BUTTON", "Rec", left + (bw + 1), top + bh + 1, bw, bhHlf);
+        configureElement("COUNTIN_BUTTON", "Count-in", left + (bw + 1), top + bh + 1 + bhHlf, bw, bhHlf).setLabelColor(
+            labelColor);
         
         configureElement("STOP_BUTTON", "Stop", left + (bw + 1) * 2, top + bh + 1, bw, bh);
         configureElement("LOOP_BUTTON", "LOOP", left, top, bw, bh);
         configureElement("AUTO_BUTTON", "Auto", left + (bw + 1), top, bw, bh);
-        configureElement("METRO_BUTTON", "Metro", left + (bw + 1) * 2, top, bw, bh / 2);
-        configureElement("TAP_BUTTON", "Tap", left + (bw + 1) * 2, top + bh / 2, bw, bh / 2);
+        configureElement("METRO_BUTTON", "Metro", left + (bw + 1) * 2, top, bw, bhHlf);
+        configureElement("TAP_BUTTON", "Tap", left + (bw + 1) * 2, top + bhHlf, bw, bhHlf);
         
         configureElement("QUANTIZE_BUTTON", "Quant", left, top + (bh + 1) * 3, bw, bh).setLabelColor(labelColor);
         configureElement("CLEAR_BUTTON", "Clear", left + (bw + 1), top + (bh + 1) * 3, bw, bh).setLabelColor(
             labelColor);
-        configureElement("UNDO_BUTTON", "Undo", left + (bw + 1) * 3, top + (bh + 1) * 3, bw, bh / 2).setLabelColor(
+        configureElement("UNDO_BUTTON", "Undo", left + (bw + 1) * 3, top + (bh + 1) * 3, bw, bhHlf).setLabelColor(
             labelColor);
         configureElement(
-            "REDO_BUTTON", "Redo", left + (bw + 1) * 3, top + (bh + 1) * 3 + bh / 2, bw, bh / 2).setLabelColor(
+            "REDO_BUTTON", "Redo", left + (bw + 1) * 3, top + (bh + 1) * 3 + bhHlf, bw, bhHlf).setLabelColor(
             labelColor);
-        
     }
     
     private HardwareElement configureElement(final String id, final String label, final double x, final double y,

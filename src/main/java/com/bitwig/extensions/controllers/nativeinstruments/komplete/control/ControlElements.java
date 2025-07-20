@@ -38,8 +38,13 @@ public class ControlElements {
     private final RelativeHardwareKnob loopModKnob;
     
     private final Map<CcAssignment, ModeButton> modeButtons = new HashMap<>();
+    private final KontrolLightButton leftNavButton;
+    private final KontrolLightButton rightNavButton;
+    private final KontrolLightButton upNavButton;
+    private final KontrolLightButton downNavButton;
     
-    public ControlElements(final HardwareSurface surface, final MidiProcessor midiProcessor) {
+    public ControlElements(final HardwareSurface surface, final MidiProcessor midiProcessor,
+        final boolean switchedNavMapping) {
         final MidiIn midiIn = midiProcessor.getMidiIn();
         this.midiProcessor = midiProcessor;
         this.surface = surface;
@@ -82,7 +87,17 @@ public class ControlElements {
         loopModKnob = surface.createRelativeHardwareKnob("4D_LOOP");
         loopModKnob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x35, 128));
         loopModKnob.setStepSize(1 / 128.0);
+        leftNavButton =
+            new KontrolLightButton("LEFT_NAV", switchedNavMapping ? 0x32 : 0x30, 0x7f, 1, surface, midiProcessor);
+        rightNavButton =
+            new KontrolLightButton("RIGHT_NAV", switchedNavMapping ? 0x32 : 0x30, 0x1, 2, surface, midiProcessor);
+        leftNavButton.linkLights(rightNavButton);
         
+        upNavButton =
+            new KontrolLightButton("UP_NAV", switchedNavMapping ? 0x30 : 0x32, 0x7F, 1, surface, midiProcessor);
+        downNavButton =
+            new KontrolLightButton("DOWN_NAV", switchedNavMapping ? 0x30 : 0x32, 1, 2, surface, midiProcessor);
+        upNavButton.linkLights(downNavButton);
     }
     
     private HardwareButton createOnOffButton(final String name, final int ccNr) {
@@ -103,6 +118,22 @@ public class ControlElements {
             knobs.add(knob);
         }
         return knobs;
+    }
+    
+    public KontrolLightButton getLeftNavButton() {
+        return leftNavButton;
+    }
+    
+    public KontrolLightButton getRightNavButton() {
+        return rightNavButton;
+    }
+    
+    public KontrolLightButton getDownNavButton() {
+        return downNavButton;
+    }
+    
+    public KontrolLightButton getUpNavButton() {
+        return upNavButton;
     }
     
     public ModeButton getButton(final CcAssignment assignment) {

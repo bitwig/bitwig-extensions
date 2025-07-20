@@ -67,13 +67,11 @@ public class DeviceControl implements DeviceMidiListener {
         this.mainBank.getCurrentFocus().addValueObserver(this::handleFocus);
         browserHandler = new BrowserHandler(host, cursorDevice, controlElements.getShiftHeld());
         
-        
         final CursorRemoteControlsPage deviceRemotePages = cursorDevice.createCursorRemoteControlsPage(8);
         deviceRemotesControl = new RemotesControl(deviceRemoteLayer, deviceRemotePages, controlElements, midiProcessor);
         directParameterControl =
             new DirectParameterControl(
-                directParamLayer, cursorDevice, controlElements, midiProcessor,
-                deviceRemotePages.pageCount());
+                directParamLayer, cursorDevice, controlElements, midiProcessor, deviceRemotePages.pageCount());
         directParameterControl.getDirectActive().addValueObserver(this::handleDirectActive);
         
         final Track rootTrack = viewControl.getProject().getRootTrackGroup();
@@ -115,16 +113,35 @@ public class DeviceControl implements DeviceMidiListener {
         final RelativeHardwareKnob fourDKnob = controlElements.getFourDKnobMixer();
         browserNavLayer.bindPressed(knobPressed.getHwButton(), browserHandler::confirm);
         browserNavLayer.bindPressed(knobShiftPressed.getHwButton(), browserHandler::cancel);
-        final RelativeHardwarControlBindable binding =
-            midiProcessor.createIncAction(browserHandler::incrementSelection);
+        final RelativeHardwarControlBindable binding = midiProcessor.createIncAction(
+            new ConditionalIntDecelerator(browserHandler::incrementSelection, 10, controlElements.getShiftHeld(), 10));
         browserNavLayer.bind(fourDKnob, binding);
         //cursorTrack.channelIndex().addValueObserver(this::handleTrackIndexChange);
+        
+        controlElements.getLeftNavButton()
+            .bind(browserNavLayer, this::handleBrowserLeftNavigation, this::browserNavigationState);
+        controlElements.getRightNavButton()
+            .bind(browserNavLayer, this::handleBrowserRightNavigation, this::browserNavigationState);
+        controlElements.getUpNavButton()
+            .bind(browserNavLayer, this::handleBrowserUpNavigation, this::browserNavigationState);
+        controlElements.getDownNavButton()
+            .bind(browserNavLayer, this::handleBrowserDownNavigation, this::browserNavigationState);
     }
     
-    private void handleTrackIndexChange(final int index) {
-        if (browserNavLayer.isActive()) {
-            //browserHandler.forceCancel();
-        }
+    private void handleBrowserLeftNavigation() {
+    }
+    
+    private void handleBrowserRightNavigation() {
+    }
+    
+    private void handleBrowserUpNavigation() {
+    }
+    
+    private void handleBrowserDownNavigation() {
+    }
+    
+    private boolean browserNavigationState() {
+        return false;
     }
     
     private void handleTrackPages(final int count) {

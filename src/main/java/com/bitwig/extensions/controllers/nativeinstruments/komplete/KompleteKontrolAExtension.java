@@ -7,7 +7,7 @@ import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
-import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.TextCommand;
@@ -18,7 +18,16 @@ import com.bitwig.extensions.framework.Layers;
 public class KompleteKontrolAExtension extends KompleteKontrolExtension {
     
     public KompleteKontrolAExtension(final ControllerExtensionDefinition definition, final ControllerHost host) {
-        super(definition, host, false);
+        super(definition, host);
+    }
+    
+    @Override
+    protected boolean hasDeviceControl() {
+        return super.hasDeviceControl();
+    }
+    
+    protected boolean hasSwitchedNavigationMapping() {
+        return true;
     }
     
     @Override
@@ -27,7 +36,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         midiProcessor.intoDawMode(0x3);
         final ControllerHost host = getHost();
         
-        surface.setPhysicalSize(200, 100);
+        surface.setPhysicalSize(300, 200);
         
         layers = new Layers(this);
         mainLayer = new Layer(layers, "Main");
@@ -46,12 +55,10 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         setUpTransport();
         initJogWheel();
         
-        final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
-        bindMacroControl(cursorDevice, midiIn2);
+        bindMacroControl(midiIn2);
         doHardwareLayout();
         midiProcessor.resetAllLEDs();
-        mainLayer.activate();
-        navigationLayer.activate();
+        activateStandardLayers();
     }
     
     @Override
@@ -63,25 +70,22 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         final Track rootTrack = viewControl.getProject().getRootTrackGroup();
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         final ClipSceneCursor clipSceneCursor = viewControl.getClipSceneCursor();
+        final NavigationState navigationState = viewControl.getNavigationState();
         
         viewControl.getApplication().panelLayout().addValueObserver(v -> currentLayoutType = LayoutType.toType(v));
-        final MidiIn midiIn = midiProcessor.getMidiIn();
-        final HardwareButton leftNavButton = surface.createHardwareButton("LEFT_NAV_BUTTON");
-        leftNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 1));
-        final HardwareButton rightNavButton = surface.createHardwareButton("RIGHT_NAV_BUTTON");
-        rightNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x32, 127));
-        final HardwareButton upNavButton = surface.createHardwareButton("UP_NAV_BUTTON");
-        upNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 127));
-        final HardwareButton downNavButton = surface.createHardwareButton("DOWN_NAV_BUTTON");
-        downNavButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(0xF, 0x30, 1));
-        
-        mainLayer.bindPressed(leftNavButton, () -> clipSceneCursor.navigateRight(currentLayoutType));
-        mainLayer.bindPressed(rightNavButton, () -> clipSceneCursor.navigateLeft(currentLayoutType));
-        mainLayer.bindPressed(upNavButton, () -> clipSceneCursor.navigateUp(currentLayoutType));
-        mainLayer.bindPressed(downNavButton, () -> clipSceneCursor.navigateDown(currentLayoutType));
+        controlElements.getLeftNavButton().bind(
+            mainLayer, () -> clipSceneCursor.navigateLeft(currentLayoutType),
+            () -> !navigationState.isSceneNavMode());
+        controlElements.getRightNavButton()
+            .bind(mainLayer, () -> clipSceneCursor.navigateRight(currentLayoutType), navigationState::canGoTrackRight);
+        controlElements.getUpNavButton()
+            .bind(mainLayer, () -> clipSceneCursor.navigateUp(currentLayoutType), navigationState::canScrollSceneUp);
+        controlElements.getDownNavButton().bind(
+            mainLayer, () -> clipSceneCursor.navigateDown(currentLayoutType),
+            navigationState::canScrollSceneDown);
         
         cursorClip.exists().markInterested();
-        final ModeButton quantizeButton = new ModeButton(midiProcessor, "QUANTIZE_BUTTON", CcAssignment.QUANTIZE);
+        final ModeButton quantizeButton = controlElements.getButton(CcAssignment.QUANTIZE);
         sessionFocusLayer.bindPressed(quantizeButton.getHwButton(), () -> cursorClip.quantize(1.0));
         sessionFocusLayer.bind(
             () -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get(),
@@ -95,7 +99,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         cursorTrack.canHoldNoteData().markInterested();
         cursorClip.exists().markInterested();
         
-        final ModeButton clearButton = new ModeButton(midiProcessor, "CLEAR_BUTTON", CcAssignment.CLEAR);
+        final ModeButton clearButton = controlElements.getButton(CcAssignment.CLEAR);
         sessionFocusLayer.bindPressed(clearButton.getHwButton(), () -> cursorClip.clearSteps());
         sessionFocusLayer.bind(
             () -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get(),
@@ -113,6 +117,12 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         final ModeButton knobShiftPressed = controlElements.getKnobShiftPressed();
         mainLayer.bindPressed(knobPressed.getHwButton(), () -> clipSceneCursor.launch());
         mainLayer.bindPressed(knobShiftPressed.getHwButton(), () -> handle4DShiftPressed(rootTrack, cursorTrack));
+    }
+    
+    @Override
+    protected void initJogWheel() {
+        final RelativeHardwareKnob fourKnob = controlElements.getFourDKnob();
+        mainLayer.bind(fourKnob, midiProcessor.createIncAction(this::handleTransportScroll));
     }
     
     @Override

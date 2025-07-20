@@ -18,16 +18,21 @@ public class KontrolLightButton {
     private final int ccNr;
     private final int lightOnValue;
     
-    public KontrolLightButton(final String name, final int ccNr, final int pressValue, final HardwareSurface surface,
-        final MidiProcessor midiProcessor) {
+    public KontrolLightButton(final String name, final int ccNr, final int pressValue, final int lightOnValue,
+        final HardwareSurface surface, final MidiProcessor midiProcessor) {
         this.ccNr = ccNr;
-        this.lightOnValue = pressValue == 0x7F ? 2 : 1;
+        this.lightOnValue = lightOnValue;
         hwButton = surface.createHardwareButton("%s_BUTTON".formatted(name));
         this.midiProcessor = midiProcessor;
         hwButton.pressedAction()
             .setActionMatcher(midiProcessor.getMidiIn().createCCActionMatcher(0xF, ccNr, pressValue));
         hwLight = surface.createOnOffHardwareLight("%s_BUTTON_LIGHT".formatted(name));
         hwLight.isOn().onUpdateHardware(this::updateLight);
+    }
+    
+    public KontrolLightButton(final String name, final int ccNr, final int pressValue, final HardwareSurface surface,
+        final MidiProcessor midiProcessor) {
+        this(name, ccNr, pressValue, pressValue == 0x7F ? 2 : 1, surface, midiProcessor);
     }
     
     public void linkLights(final KontrolLightButton other) {
