@@ -13,6 +13,7 @@ import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.values.IntValueObject;
+import com.bitwig.extensions.framework.values.TrackType;
 
 @Component
 public class TrackControl {
@@ -22,9 +23,10 @@ public class TrackControl {
     private Mode mode = Mode.ARM;
     private Layer currentLayer;
     private final Layer controlLayer;
-    private int armHeld = 0;
+    //private int armHeld = 0;
     private final IntValueObject selectedTrackIndex = new IntValueObject(-1, -1, 100);
     private final RgbState[] trackColors = new RgbState[8];
+    private final TrackType[] trackTypes = new TrackType[8];
     private final Project project;
     private final DisplayControl displayControl;
     
@@ -55,12 +57,13 @@ public class TrackControl {
                     this.selectedTrackIndex.set(index);
                 }
             });
+            track.trackType().addValueObserver(type -> this.trackTypes[index] = TrackType.toType(type));
             track.arm().markInterested();
             track.exists().markInterested();
             track.color()
                 .addValueObserver((r, g, b) -> trackColors[index] = RgbState.of(ColorLookup.toColor(r, g, b)).dim());
-            button.bindLight(armLayer, () -> armColor(track));
-            button.bindIsPressed(armLayer, pressed -> toggleArm(pressed, track));
+            button.bindLight(armLayer, () -> armColor(index, track));
+            button.bindPressed(armLayer, () -> track.arm().toggle());
             button.bindLight(selectLayer, () -> selectColor(track, index));
             button.bindPressed(selectLayer, () -> selectTrack(track));
         }
@@ -72,25 +75,12 @@ public class TrackControl {
         track.selectInMixer();
     }
     
-    private void toggleArm(final boolean pressed, final Track track) {
-        if (pressed) {
-            armHeld++;
-            if (armHeld == 1) {
-                project.unarmAll();
-                track.arm().set(true);
-            } else {
-                track.arm().toggle();
-            }
-        } else {
-            if (armHeld > 0) {
-                armHeld--;
-            }
-        }
-    }
-    
-    private RgbState armColor(final Track track) {
+    private RgbState armColor(final int index, final Track track) {
         if (track.exists().get()) {
-            return track.arm().get() ? RgbState.RED : RgbState.RED_LO;
+            if (trackTypes[index].canBeArmed()) {
+                return track.arm().get() ? RgbState.RED : RgbState.RED_LO;
+            }
+            return RgbState.DIM_WHITE;
         }
         return RgbState.OFF;
     }
