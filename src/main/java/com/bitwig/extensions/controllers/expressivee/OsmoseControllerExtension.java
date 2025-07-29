@@ -8,15 +8,15 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extensions.framework.di.Context;
 
-public class OsmosisControllerExtension extends ControllerExtension {
+public class OsmoseControllerExtension extends ControllerExtension {
     private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
     private HardwareSurface surface;
-
-    protected OsmosisControllerExtension(final OsmosisControllerExtensionDefinition definition,
+    
+    protected OsmoseControllerExtension(final OsmoseControllerExtensionDefinition definition,
         final ControllerHost host) {
         super(definition, host);
     }
-
+    
     public void init() {
         final Context diContext = new Context(this);
         surface = diContext.getService(HardwareSurface.class);
@@ -29,15 +29,15 @@ public class OsmosisControllerExtension extends ControllerExtension {
         // Pitchbend range for Port 2 (Haken Port) uses 96 semitone range as typically used by the EaganMatrix.
         noteInput2.setUseExpressiveMidi(true, 0, 96);
     }
-
+    
     @Override
     public void exit() {
         // Nothing right now
     }
-
+    
     @Override
     public void flush() {
         surface.updateHardware();
     }
-
+    
 }

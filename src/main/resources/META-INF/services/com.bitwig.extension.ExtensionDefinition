@@ -51,7 +51,7 @@ com.bitwig.extensions.controllers.keith_mcmillen.QuNexusDefinition
 
 com.bitwig.extensions.controllers.kenton.KillaMixMiniExtensionDefinition
 
-com.bitwig.extensions.controllers.expressivee.OsmosisControllerExtensionDefinition
+com.bitwig.extensions.controllers.expressivee.OsmoseControllerExtensionDefinition
 
 com.bitwig.extensions.controllers.midiplus.X2MiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X3MiniControllerExtensionDefinition
