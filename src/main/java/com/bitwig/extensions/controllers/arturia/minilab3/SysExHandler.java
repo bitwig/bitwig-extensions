@@ -17,39 +17,43 @@ public class SysExHandler {
     }
 
     final byte[] ARTURIA_MODE_BANK_UPDATE = {//
-            (byte) 0xF0, 0x00, 0x20, 0x6B, 0x7F, 0x42, 0x04, 0x01, 0x16, //
-            0x00, // Bank Id - 9
-            0x00, 0x00, 0x28, // Pad 1 10
-            0x00, 0x00, 0x28, // Pad 2 13
-            0x00, 0x00, 0x28, // Pad 3 16
-            0x00, 0x00, 0x28, // Pad 4 19
-            0x00, 0x00, 0x28, // Pad 5 22
-            0x00, 0x00, 0x28, // Pad 6 25
-            0x00, 0x00, 0x28, // Pad 7 28
-            0x00, 0x00, 0x28, // Pad 8 31
-            (byte) 0xF7};
+        (byte) 0xF0, 0x00, 0x20, 0x6B, 0x7F, 0x42, 0x04, 0x01, 0x16, //
+        0x00, // Bank Id - 9
+        0x00, 0x00, 0x28, // Pad 1 10
+        0x00, 0x00, 0x28, // Pad 2 13
+        0x00, 0x00, 0x28, // Pad 3 16
+        0x00, 0x00, 0x28, // Pad 4 19
+        0x00, 0x00, 0x28, // Pad 5 22
+        0x00, 0x00, 0x28, // Pad 6 25
+        0x00, 0x00, 0x28, // Pad 7 28
+        0x00, 0x00, 0x28, // Pad 8 31
+        (byte) 0xF7
+    };
 
-    private final byte[] RGB_PAD_COMMAND = {(byte) 0xF0, 0x00, 0x20, 0x6B, 0x7F, 0x42, 0x02, //
-            0x02, // 7 - Patch Id
-            0x16, // 8 - Command
-            0x02, // 9 - Pad ID
-            0x00, // 10 - Red
-            0x00, // 11 - Green
-            0x00, // 12 - blue
-            (byte) 0xF7};
+    private final byte[] RGB_PAD_COMMAND = {
+        (byte) 0xF0, 0x00, 0x20, 0x6B, 0x7F, 0x42, 0x02, //
+        0x02, // 7 - Patch Id
+        0x16, // 8 - Command
+        0x02, // 9 - Pad ID
+        0x00, // 10 - Red
+        0x00, // 11 - Green
+        0x00, // 12 - blue
+        (byte) 0xF7
+    };
 
     private final byte[] RGB_BANK_COMMAND = {//
-            (byte) 0xF0, 0x00, 0x20, 0x6B, 0x7F, 0x42, 0x04, 0x02, 0x16, //
-            0x00, // Bank Id - 9
-            0x00, 0x00, 0x00, // Pad 1 10
-            0x00, 0x00, 0x00, // Pad 2 13
-            0x00, 0x00, 0x00, // Pad 3 16
-            0x00, 0x00, 0x00, // Pad 4 19
-            0x00, 0x00, 0x00, // Pad 5 22
-            0x00, 0x00, 0x00, // Pad 6 25
-            0x00, 0x00, 0x00, // Pad 7 28
-            0x00, 0x00, 0x00, // Pad 8 31
-            (byte) 0xF7};
+        (byte) 0xF0, 0x00, 0x20, 0x6B, 0x7F, 0x42, 0x04, 0x02, 0x16, //
+        0x00, // Bank Id - 9
+        0x00, 0x00, 0x00, // Pad 1 10
+        0x00, 0x00, 0x00, // Pad 2 13
+        0x00, 0x00, 0x00, // Pad 3 16
+        0x00, 0x00, 0x00, // Pad 4 19
+        0x00, 0x00, 0x00, // Pad 5 22
+        0x00, 0x00, 0x00, // Pad 6 25
+        0x00, 0x00, 0x00, // Pad 7 28
+        0x00, 0x00, 0x00, // Pad 8 31
+        (byte) 0xF7
+    };
 
     private final MidiOut midiOut;
     private final ControllerHost host;
@@ -83,10 +87,6 @@ public class SysExHandler {
         }
     }
 
-    public void setConsole(final boolean active) {
-        toConsole = active;
-    }
-
     public void deviceInquiry() {
         midiOut.sendSysex("f0 7e 7f 06 01 f7"); // Universal Request
     }
@@ -101,6 +101,7 @@ public class SysExHandler {
     }
 
     public void disconnectState() {
+        preprocessTasks.clear();
         midiOut.sendSysex("f0 00 20 6B 7f 42 02 02 40 6A 20 f7");
         pause(20);
     }
@@ -140,7 +141,8 @@ public class SysExHandler {
         midiOut.sendSysex(command);
         if (toConsole) {
             host.println(String.format("SysEx => PAD Single padId=%d r=%02X g=%02X b=%02X %s", padId, red, green, blue,
-                    byteArrayToHex(command)));
+                byteArrayToHex(command)
+            ));
         }
         pause(2);
     }
@@ -160,7 +162,8 @@ public class SysExHandler {
     private void pause(final int milis) {
         try {
             Thread.sleep(milis);
-        } catch (final InterruptedException e) {
+        }
+        catch (final InterruptedException e) {
             //
         }
     }
@@ -178,8 +181,8 @@ public class SysExHandler {
         if (mode == GeneralMode.DAW_MODE) {
             midiOut.sendSysex(ARTURIA_CLEAR_SCREEN);
         }
-        final String command = String.format("f0 00 20 6B 7f 42 02 02 40 6A %02x f7",
-                mode == GeneralMode.ANALOG_LAB ? 0x11 : 0x10);
+        final String command =
+            String.format("f0 00 20 6B 7f 42 02 02 40 6A %02x f7", mode == GeneralMode.ANALOG_LAB ? 0x11 : 0x10);
         midiOut.sendSysex(command);
         if (mode == GeneralMode.ANALOG_LAB) {
             // Not needed with upcoming FW
@@ -199,5 +202,4 @@ public class SysExHandler {
             sendBankState(lastBankState[index]);
         }
     }
-
 }

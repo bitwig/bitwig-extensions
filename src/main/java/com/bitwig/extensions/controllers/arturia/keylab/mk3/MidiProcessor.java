@@ -137,7 +137,8 @@ public class MidiProcessor {
     }
     
     private void afterConnect() {
-        screenLine2(ScreenTarget.POP_UP_TOP_ICON_2LINES, "Bitwig", RgbColor.WHITE, "Connected", RgbColor.WHITE,
+        screenLine2(
+            ScreenTarget.POP_UP_TOP_ICON_2LINES, "Bitwig", RgbColor.WHITE, "Connected", RgbColor.WHITE,
             CenterIcons.BITWIGSTUDIO);
     }
     
@@ -252,8 +253,8 @@ public class MidiProcessor {
     
     public void submitControl(final int id, final boolean exists) {
         final String sysEx =
-            "F0 00 20 6B 7F 42 00 %02X 00 %02X 00 %02X 00 01 %02X 00 02 %02X 00 F7".formatted(2, id, 1, 0,
-                exists ? 1 : 0);
+            "F0 00 20 6B 7F 42 00 %02X 00 %02X 00 %02X 00 01 %02X 00 02 %02X 00 F7".formatted(
+                2, id, 1, 0, exists ? 1 : 0);
         midiOut.sendSysex(sysEx);
     }
     

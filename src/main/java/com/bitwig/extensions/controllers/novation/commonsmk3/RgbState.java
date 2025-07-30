@@ -71,7 +71,10 @@ public class RgbState extends InternalHardwareLightState {
     
     public RgbState dim() {
         if (this.colorIndex == 2 || this.colorIndex == 3) {
-            RgbState.of(1);
+            return RgbState.DIM_WHITE;
+        }
+        if (colorIndex == 1) {
+            return this;
         }
         final int dimIndex = (this.colorIndex - 1) % 4;
         final int dimAmount = switch (dimIndex) {

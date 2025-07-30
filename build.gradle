@@ -21,7 +21,7 @@ else
     }
 
     dependencies {
-        implementation 'com.bitwig:extension-api:18'
+        implementation 'com.bitwig:extension-api:22'
     }
 }
 

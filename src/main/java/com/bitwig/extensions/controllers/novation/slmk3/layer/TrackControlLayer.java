@@ -21,6 +21,7 @@ import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.Inject;
+import com.bitwig.extensions.framework.values.TrackType;
 
 @Component
 public class TrackControlLayer extends Layer {
@@ -28,6 +29,7 @@ public class TrackControlLayer extends Layer {
     private final SlRgbState[] trackColors = new SlRgbState[8];
     private final SlRgbState[] trackStateColors = new SlRgbState[8];
     private final int[] trackLevels = new int[8];
+    private final TrackType[] trackTypes = new TrackType[8];
     private SoftButtonMode mode = SoftButtonMode.MUTE_SOLO;
     
     private final Layer muteSoloLayer;
@@ -36,7 +38,6 @@ public class TrackControlLayer extends Layer {
     
     private final ScreenHandler screenHandler;
     private int soloHeld = 0;
-    private final String monitorMode = "ON";
     
     @Inject
     GlobalStates globalStates;
@@ -73,20 +74,14 @@ public class TrackControlLayer extends Layer {
         final RgbButton softUp = hwElements.getButton(CcAssignment.SOFT_UP);
         softUp.bindLight(this, () -> mode == SoftButtonMode.MUTE_SOLO ? SlRgbState.OFF : SlRgbState.WHITE);
         softDown.bindLight(this, () -> mode == SoftButtonMode.STOP ? SlRgbState.OFF : SlRgbState.WHITE);
-        softUp.bindPressed(this, () -> this.prevMode());
-        softDown.bindPressed(this, () -> this.nextMode());
+        softUp.bindPressed(this, this::prevMode);
+        softDown.bindPressed(this, this::nextMode);
         
         final List<RgbButton> softButtons = hwElements.getSoftButtons();
         for (int i = 0; i < 8; i++) {
             final int index = i;
             final Track track = trackBank.getItemAt(i);
-            track.mute().markInterested();
-            track.solo().markInterested();
-            track.arm().markInterested();
-            track.isStopped().markInterested();
-            track.isQueuedForStop().markInterested();
-            track.monitorMode().markInterested();
-            track.crossFadeMode().markInterested();
+            prepareTrackProperties(track, index);
             
             final RgbButton buttonRow1 = softButtons.get(i);
             final RgbButton buttonRow2 = softButtons.get(i + 8);
@@ -98,7 +93,7 @@ public class TrackControlLayer extends Layer {
             
             buttonRow1.bindLight(armStopLayer, () -> getMonitorState(track));
             buttonRow1.bindPressed(armStopLayer, () -> toggleMonitorMode(track));
-            buttonRow2.bindLight(armStopLayer, () -> getArmState(track));
+            buttonRow2.bindLight(armStopLayer, () -> getArmState(index, track));
             buttonRow2.bindPressed(armStopLayer, () -> track.arm().toggle());
             
             buttonRow1.bindLight(monitorXFadeLayer, () -> getStopState(track));
@@ -107,16 +102,27 @@ public class TrackControlLayer extends Layer {
         }
     }
     
+    private void prepareTrackProperties(final Track track, final int index) {
+        track.mute().markInterested();
+        track.solo().markInterested();
+        track.arm().markInterested();
+        track.isStopped().markInterested();
+        track.isQueuedForStop().markInterested();
+        track.monitorMode().markInterested();
+        track.crossFadeMode().markInterested();
+        track.trackType().addValueObserver(type -> this.trackTypes[index] = TrackType.toType(type));
+    }
+    
     private void toggleMonitorMode(final Track track) {
         final String monMode = track.monitorMode().get();
-        final String newmode = switch (monMode) {
+        final String newMode = switch (monMode) {
             case "ON" -> "AUTO";
             case "OFF" -> "ON";
             case "AUTO" -> "OFF";
             default -> "";
         };
-        track.monitorMode().set(newmode);
-        screenHandler.notifyMessage(track.name().get(), "Monitor Mode: %s".formatted(newmode));
+        track.monitorMode().set(newMode);
+        screenHandler.notifyMessage(track.name().get(), "Monitor Mode: %s".formatted(newMode));
     }
     
     private SlRgbState getMonitorState(final Track track) {
@@ -134,8 +140,8 @@ public class TrackControlLayer extends Layer {
     
     private SlRgbState getXFadeState(final Track track) {
         if (track.exists().get()) {
-            final String xfadeMode = track.crossFadeMode().get();
-            return switch (xfadeMode) {
+            final String xFadeMode = track.crossFadeMode().get();
+            return switch (xFadeMode) {
                 case "A" -> SlRgbState.ORANGE;
                 case "B" -> SlRgbState.RED;
                 case "AB" -> SlRgbState.BLUE;
@@ -200,9 +206,12 @@ public class TrackControlLayer extends Layer {
         return SlRgbState.OFF;
     }
     
-    private SlRgbState getArmState(final Track track) {
+    private SlRgbState getArmState(final int index, final Track track) {
         if (track.exists().get()) {
-            return track.arm().get() ? SlRgbState.RED : SlRgbState.RED_DIM;
+            if (trackTypes[index].canBeArmed()) {
+                return track.arm().get() ? SlRgbState.RED : SlRgbState.RED_DIM;
+            }
+            return SlRgbState.WHITE_DIM;
         }
         return SlRgbState.OFF;
     }
