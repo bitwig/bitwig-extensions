@@ -3,71 +3,62 @@ package com.bitwig.extensions.framework;
 import com.bitwig.extension.controller.api.AbsoluteHardwarControlBindable;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 
-public class AbsoluteHardwareControlBinding extends
-   HardwareBinding<AbsoluteHardwareControl, AbsoluteHardwarControlBindable, com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding>
-{
-   public AbsoluteHardwareControlBinding(
-      final AbsoluteHardwareControl source,
-      final AbsoluteHardwarControlBindable target)
-   {
-      super(source, source, target);
-   }
+public class AbsoluteHardwareControlBinding extends HardwareBinding<AbsoluteHardwareControl,
+    AbsoluteHardwarControlBindable, com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding> {
+    public AbsoluteHardwareControlBinding(final AbsoluteHardwareControl source,
+        final AbsoluteHardwarControlBindable target) {
+        super(source, source, target);
+    }
 
-   @Override
-   protected com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding addHardwareBinding()
-   {
-      return getSource().addBindingWithRange(getTarget(), mMin, mMax);
-   }
+    @Override
+    protected com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding addHardwareBinding() {
+        return getSource().addBindingWithRange(getTarget(), mMin, mMax);
+    }
 
-   public double getMin()
-   {
-      return mMin;
-   }
+    public double getMin() {
+        return mMin;
+    }
 
-   public AbsoluteHardwareControlBinding setMin(final double min)
-   {
-      if (min != mMin)
-      {
-         mMin = min;
+    public AbsoluteHardwareControlBinding setMin(final double min) {
+        if (min != mMin) {
+            mMin = min;
 
-         if (isActive())
-            getHardwareBinding().setMinNormalizedValue(min);
-      }
+           if (isActive()) {
+              getHardwareBinding().setMinNormalizedValue(min);
+           }
+        }
 
-      return this;
-   }
+        return this;
+    }
 
-   public double getMax()
-   {
-      return mMax;
-   }
+    public double getMax() {
+        return mMax;
+    }
 
-   public AbsoluteHardwareControlBinding setMax(final double max)
-   {
-      if (max != mMax)
-      {
-         mMax = max;
+    public AbsoluteHardwareControlBinding setMax(final double max) {
+        if (max != mMax) {
+            mMax = max;
 
-         if (isActive())
-            getHardwareBinding().setMaxNormalizedValue(max);
-      }
+           if (isActive()) {
+              getHardwareBinding().setMaxNormalizedValue(max);
+           }
+        }
 
-      return this;
-   }
+        return this;
+    }
 
-   public AbsoluteHardwareControlBinding setRange(final double min, final double max)
-   {
-      if (min != mMin || max != mMax)
-      {
-         mMin = min;
-         mMax = max;
+    public AbsoluteHardwareControlBinding setRange(final double min, final double max) {
+        if (min != mMin || max != mMax) {
+            mMin = min;
+            mMax = max;
 
-         if (isActive())
-            getHardwareBinding().setNormalizedRange(min, max);
-      }
+           if (isActive()) {
+              getHardwareBinding().setNormalizedRange(min, max);
+           }
+        }
 
-      return this;
-   }
+        return this;
+    }
 
-   private double mMin = 0, mMax = 1;
+    private double mMin = 0, mMax = 1;
 }

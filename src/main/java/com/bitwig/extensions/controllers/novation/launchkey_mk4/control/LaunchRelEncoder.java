@@ -21,7 +21,7 @@ public class LaunchRelEncoder {
     
     public enum EncoderMode {
         ACCELERATED,
-        NONACCELERATED
+        NON_ACCELERATED
     }
     
     public LaunchRelEncoder(final HardwareSurface surface, final MidiProcessor midiProcessor, final int index) {
@@ -40,7 +40,7 @@ public class LaunchRelEncoder {
         if (mode == EncoderMode.ACCELERATED) {
             encoder.setAdjustValueMatcher(acceleratedMatchers);
             encoder.setStepSize(1.0 / stepSizeDivisor);
-        } else if (mode == EncoderMode.NONACCELERATED) {
+        } else if (mode == EncoderMode.NON_ACCELERATED) {
             encoder.setAdjustValueMatcher(nonAcceleratedMatchers);
             encoder.setStepSize(1);
         }

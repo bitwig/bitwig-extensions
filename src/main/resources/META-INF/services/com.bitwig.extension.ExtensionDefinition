@@ -51,6 +51,8 @@ com.bitwig.extensions.controllers.keith_mcmillen.QuNexusDefinition
 
 com.bitwig.extensions.controllers.kenton.KillaMixMiniExtensionDefinition
 
+com.bitwig.extensions.controllers.expressivee.OsmoseControllerExtensionDefinition
+
 com.bitwig.extensions.controllers.midiplus.X2MiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X3MiniControllerExtensionDefinition
 com.bitwig.extensions.controllers.midiplus.X4MiniControllerExtensionDefinition
@@ -124,6 +126,7 @@ com.bitwig.extensions.controllers.novation.launchpadmini3.LaunchPadMiniMk3Extens
 com.bitwig.extensions.controllers.novation.launchpadmini3.LaunchPadXExtensionDefinition
 
 com.bitwig.extensions.controllers.novation.slmk3.SlMk3ExtensionDefinition
+com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlXlMk3ExtensionDefinition
 
 com.bitwig.extensions.controllers.presonus.atom.PresonusAtomDefinition
 com.bitwig.extensions.controllers.presonus.faderport.PresonusFaderPort8Definition
