@@ -38,37 +38,42 @@ public class LaunchkeyMk4ExtensionDefinition extends AbstractLaunchkeyMk4Extensi
         if (platformType == PlatformType.WINDOWS) {
             for (final int variant : VARIANTS) {
                 for (int i = 0; i < 4; i++) {
-                    list.add(new String[] {
-                        "MIDIIN2 (Launchkey MK4 %d MIDI%s".formatted(variant, (i & 0x1) != 0 ? ")" : ""),
-                        "Launchkey MK4 %d MIDI".formatted(variant)
-                    }, new String[] {
-                        "MIDIOUT2 (Launchkey MK4 %d MIDI%s".formatted(variant, (i & 0x2) != 0 ? ")" : ""),
-                        "Launchkey MK4 %d MIDI".formatted(variant)
-                    });
+                    list.add(
+                        new String[] {
+                            "MIDIIN2 (Launchkey MK4 %d MIDI%s".formatted(variant, (i & 0x1) != 0 ? ")" : ""),
+                            "Launchkey MK4 %d MIDI".formatted(variant)
+                        }, new String[] {
+                            "MIDIOUT2 (Launchkey MK4 %d MIDI%s".formatted(variant, (i & 0x2) != 0 ? ")" : ""),
+                            "Launchkey MK4 %d MIDI".formatted(variant)
+                        });
                 }
             }
         } else if (platformType == PlatformType.MAC) {
             for (final int variant : VARIANTS) {
-                list.add(new String[] {
-                    "Launchkey MK4 %d DAW Out".formatted(variant), "Launchkey MK4 %d MIDI Out".formatted(variant)
-                }, new String[] {
-                    "Launchkey MK4 %d DAW In".formatted(variant), "Launchkey MK4 %d MIDI In".formatted(variant)
-                });
+                list.add(
+                    new String[] {
+                        "Launchkey MK4 %d DAW Out".formatted(variant), "Launchkey MK4 %d MIDI Out".formatted(variant)
+                    }, new String[] {
+                        "Launchkey MK4 %d DAW In".formatted(variant), "Launchkey MK4 %d MIDI In".formatted(variant)
+                    });
             }
         } else if (platformType == PlatformType.LINUX) {
             for (final int variant : VARIANTS) {
-                list.add(new String[] {
-                    "Launchkey MK4 %d Launchkey".formatted(variant), "Launchkey MK4 %d Launchkey #2".formatted(variant)
-                }, new String[] {
-                    "Launchkey MK4 %d Launchkey".formatted(variant), "Launchkey MK4 %d Launchkey #2".formatted(variant)
-                });
+                list.add(
+                    new String[] {
+                        "Launchkey MK4 %d Launchkey".formatted(variant),
+                        "Launchkey MK4 %d Launchkey #2".formatted(variant)
+                    }, new String[] {
+                        "Launchkey MK4 %d Launchkey".formatted(variant),
+                        "Launchkey MK4 %d Launchkey #2".formatted(variant)
+                    });
             }
         }
     }
     
     @Override
     public LaunchkeyMk4Extension createInstance(final ControllerHost host) {
-        return new LaunchkeyMk4Extension(this, host, true, false);
+        return new LaunchkeyMk4Extension(this, host, false);
     }
     
 }

@@ -26,7 +26,6 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     private HardwareSurface surface;
     private Layer mainLayer;
     private Layer shiftLayer;
-    private final boolean hasFaders;
     private final boolean isMini;
     private MidiProcessor midiProcessor;
     private SessionLayer sessionLayer;
@@ -43,9 +42,8 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     }
     
     public LaunchkeyMk4Extension(final AbstractLaunchkeyMk4ExtensionDefinition definition, final ControllerHost host,
-        final boolean hasFaders, final boolean miniVersion) {
+        final boolean miniVersion) {
         super(definition, host);
-        this.hasFaders = hasFaders;
         this.isMini = miniVersion;
     }
     
@@ -77,10 +75,8 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     }
     
     public void initGenerateModeHandling(final Context diContext) {
-        final SessionLayer sessionLayer = diContext.getService(SessionLayer.class);
         currentMainModeLayer = null;
         final DisplayControl display = diContext.getService(DisplayControl.class);
-        
         midiProcessor.addModeListener((type, id) -> this.handleModeChange(type, id, display));
     }
     
@@ -226,12 +222,11 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     
     private void setUpPreferences() {
         final DocumentState documentState = getHost().getDocumentState(); // THIS
-        final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Record Button assignment", //
+        final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting(
+            "Record Button assignment", //
             "Transport", new String[] {FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
             recordFocusMode.getDescriptor());
-        recordButtonAssignment.addValueObserver(value -> {
-            recordFocusMode = FocusMode.toMode(value);
-        });
+        recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));
     }
     
     @Override
@@ -252,7 +247,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     
     private void pause(final long timeMs) {
         try {
-            Thread.sleep(100);
+            Thread.sleep(timeMs);
         }
         catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
