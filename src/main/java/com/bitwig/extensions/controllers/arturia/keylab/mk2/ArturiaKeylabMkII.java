@@ -334,9 +334,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       layer.bindToggle(ButtonId.RECORD, mTransport.recordAction(), mTransport.isArrangerRecordEnabled());
       layer.bindToggle(ButtonId.LOOP, mTransport.isArrangerLoopEnabled());
 
-      layer.bindToggle(ButtonId.SOLO, mCursorTrack.solo());
-      layer.bindToggle(ButtonId.MUTE, mCursorTrack.mute());
-      layer.bindToggle(ButtonId.RECORD_ARM, mCursorTrack.arm());
+      bindTrackButtons(layer);
       layer.bindToggle(ButtonId.READ, mTransport.isClipLauncherOverdubEnabled());
       layer.bindToggle(ButtonId.WRITE, mTransport.isArrangerAutomationWriteEnabled());
 
@@ -345,6 +343,35 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       layer.bindToggle(ButtonId.PUNCH_OUT, mTransport.isPunchOutEnabled());
       layer.bindToggle(ButtonId.METRO, mTransport.isMetronomeEnabled());
       layer.bindPressed(ButtonId.UNDO, mApplication.undoAction());
+   }
+
+   private void bindTrackButtons(final Layer layer) {
+      layer.bindToggle(ButtonId.SOLO1, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO2, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO3, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO4, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO5, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO6, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO7, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO8, mCursorTrack.solo());
+
+      layer.bindToggle(ButtonId.MUTE1, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE2, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE3, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE4, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE5, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE6, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE7, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE8, mCursorTrack.mute());
+
+      layer.bindToggle(ButtonId.RECORD_ARM1, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM2, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM3, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM4, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM5, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM6, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM7, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM8, mCursorTrack.arm());
    }
 
    private void initDAWLayer()
