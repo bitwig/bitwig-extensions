@@ -71,7 +71,8 @@ public class DeviceControl implements DeviceMidiListener {
         deviceRemotesControl = new RemotesControl(deviceRemoteLayer, deviceRemotePages, controlElements, midiProcessor);
         directParameterControl =
             new DirectParameterControl(
-                directParamLayer, cursorDevice, controlElements, midiProcessor, deviceRemotePages.pageCount());
+                directParamLayer, cursorDevice, controlElements, midiProcessor,
+                deviceRemotePages.pageCount());
         directParameterControl.getDirectActive().addValueObserver(this::handleDirectActive);
         
         final Track rootTrack = viewControl.getProject().getRootTrackGroup();
@@ -110,13 +111,12 @@ public class DeviceControl implements DeviceMidiListener {
         browserHandler.isOpen().addValueObserver(browserOpen -> browserNavLayer.setIsActive(browserOpen));
         final ModeButton knobPressed = controlElements.getKnobPressed();
         final ModeButton knobShiftPressed = controlElements.getKnobShiftPressed();
-        final RelativeHardwareKnob fourDKnob = controlElements.getFourDKnobMixer();
+        final RelativeHardwareKnob fourDKnob = controlElements.getFourDKnob();
         browserNavLayer.bindPressed(knobPressed.getHwButton(), browserHandler::confirm);
         browserNavLayer.bindPressed(knobShiftPressed.getHwButton(), browserHandler::cancel);
         final RelativeHardwarControlBindable binding = midiProcessor.createIncAction(
             new ConditionalIntDecelerator(browserHandler::incrementSelection, 10, controlElements.getShiftHeld(), 10));
         browserNavLayer.bind(fourDKnob, binding);
-        //cursorTrack.channelIndex().addValueObserver(this::handleTrackIndexChange);
         
         controlElements.getLeftNavButton()
             .bind(browserNavLayer, this::handleBrowserLeftNavigation, this::browserNavigationState);
@@ -195,6 +195,7 @@ public class DeviceControl implements DeviceMidiListener {
     }
     
     private void changeMode(final int mode) {
+        KompleteKontrolExtension.println(" MODE = %d", mode);
         if (mode == 1) {
             navigationLayer.activate();
             currentRemotesControl.setActive(true);
