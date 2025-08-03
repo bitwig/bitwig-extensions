@@ -114,7 +114,6 @@ public class MidiProcessor {
     }
     
     private void handleHandshakeComplete(final ShortMidiMessage msg) {
-        KompleteKontrolExtension.println(" DAW MODE = %d expected = %d", msg.getData2(), expectedProtocol);
         dawModeConfirmed = true;
         if (msg.getData2() != expectedProtocol && expectedProtocol == 4) {
             if (expectedProtocol == 4) {

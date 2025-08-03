@@ -444,7 +444,4 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         return configureElement(id, label, x, y, size, size);
     }
     
-    public void handleMixerKnob(final int inc) {
-        KompleteKontrolExtension.println(" INC " + inc);
-    }
 }

@@ -8,7 +8,6 @@ import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Track;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.ViewControl;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ControlElements;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ModeButton;
@@ -183,8 +182,6 @@ public class DeviceControl implements DeviceMidiListener {
             "Remotes", //
             "Visible", new String[] {ONLY_DEVICES, WITH_TRACK_PROJECT}, ONLY_DEVICES);
         useTrackRemotes.addValueObserver(value -> this.useRemotes.set(value.equals(WITH_TRACK_PROJECT)));
-        KompleteKontrolExtension.println(
-            " INIT %s - %s", useTrackRemotes.get(), useTrackRemotes.get().equals(WITH_TRACK_PROJECT));
         this.useRemotes.set(useTrackRemotes.get().equals(WITH_TRACK_PROJECT));
     }
     
@@ -195,7 +192,6 @@ public class DeviceControl implements DeviceMidiListener {
     }
     
     private void changeMode(final int mode) {
-        KompleteKontrolExtension.println(" MODE = %d", mode);
         if (mode == 1) {
             navigationLayer.activate();
             currentRemotesControl.setActive(true);

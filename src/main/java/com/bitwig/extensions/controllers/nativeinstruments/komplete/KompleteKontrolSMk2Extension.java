@@ -70,7 +70,6 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
     
     @Override
     protected void initNavigation() {
-        KompleteKontrolExtension.println(" INIT NAVIGATION");
         final Clip cursorClip = getHost().createLauncherCursorClip(8, 128);
         final Clip arrangerClip = getHost().createArrangerCursorClip(8, 128);
         
