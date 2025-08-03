@@ -76,8 +76,9 @@ public class KontrolSMk3Extension extends KompleteKontrolExtension {
         
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         final RelativeHardwareKnob daw4dKnob = controlElements.getFourDKnobMixer();
-        final EncoderParameterBinding volumeBinding = new EncoderParameterBinding(daw4dKnob, cursorTrack.volume());
-        mainLayer.addBinding(volumeBinding);
+        mainLayer.addBinding(new EncoderParameterBinding(daw4dKnob, cursorTrack.volume()));
+        final RelativeHardwareKnob daw4dPan = controlElements.getFourDKnobPan();
+        mainLayer.addBinding(new EncoderParameterBinding(daw4dPan, cursorTrack.pan()));
         
         final RelativeHardwareKnob loopKnob = controlElements.getLoopModKnob();
         mainLayer.bind(loopKnob, midiProcessor.createIncAction(this::handleLoop));

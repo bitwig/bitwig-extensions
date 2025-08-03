@@ -36,6 +36,7 @@ public class ControlElements {
     private final HardwareSurface surface;
     private final RelativeHardwareKnob fourDKnob;
     private final RelativeHardwareKnob loopModKnob;
+    private final RelativeHardwareKnob fourDKnobPan;
     
     private final Map<CcAssignment, ModeButton> modeButtons = new HashMap<>();
     private final KontrolLightButton leftNavButton;
@@ -79,6 +80,10 @@ public class ControlElements {
         fourDKnobMixer = surface.createRelativeHardwareKnob("4D_WHEEL_MIX_MODE");
         fourDKnobMixer.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x64, 4096));
         fourDKnobMixer.setStepSize(1 / 128.0);
+        
+        fourDKnobPan = surface.createRelativeHardwareKnob("4D_WHEEL_MIX_MODE_PAN");
+        fourDKnobPan.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x65, 4096));
+        fourDKnobPan.setStepSize(1 / 128.0);
         
         fourDKnob = surface.createRelativeHardwareKnob("4D_WHEEL_PLUGIN_MODE");
         fourDKnob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x34, 128));
@@ -154,6 +159,10 @@ public class ControlElements {
     
     public RelativeHardwareKnob getFourDKnobMixer() {
         return fourDKnobMixer;
+    }
+    
+    public RelativeHardwareKnob getFourDKnobPan() {
+        return fourDKnobPan;
     }
     
     public RelativeHardwareKnob getLoopModKnob() {
