@@ -57,9 +57,9 @@ public class ControlElements {
         
         Arrays.stream(CcAssignment.values()) //
             .filter(CcAssignment::isMapped)  //
-            .forEach(ccAssignment -> {
-                modeButtons.put(ccAssignment, new ModeButton(midiProcessor, ccAssignment.getName(), ccAssignment));
-            });
+            .forEach(ccAssignment -> modeButtons.put(
+                ccAssignment,
+                new ModeButton(midiProcessor, ccAssignment.getName(), ccAssignment)));
         
         muteSelectedButton = surface.createHardwareButton("MUTE_SELECTED_BUTTON");
         muteSelectedButton.pressedAction().setActionMatcher(CcAssignment.MUTE_CURRENT.createActionMatcher(midiIn, 1));
@@ -106,7 +106,7 @@ public class ControlElements {
     }
     
     private HardwareButton createOnOffButton(final String name, final int ccNr) {
-        final HardwareButton button = surface.createHardwareButton("SHIFT_BUTTON");
+        final HardwareButton button = surface.createHardwareButton(name);
         button.pressedAction().setActionMatcher(midiProcessor.getMidiIn().createCCActionMatcher(0xF, ccNr, 1));
         button.releasedAction().setActionMatcher(midiProcessor.getMidiIn().createCCActionMatcher(0xF, ccNr, 0));
         return button;

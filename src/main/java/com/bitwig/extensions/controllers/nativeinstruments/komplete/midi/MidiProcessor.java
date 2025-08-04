@@ -115,7 +115,7 @@ public class MidiProcessor {
     
     private void handleHandshakeComplete(final ShortMidiMessage msg) {
         dawModeConfirmed = true;
-        if (msg.getData2() != expectedProtocol && expectedProtocol == 4) {
+        if (msg.getData2() != expectedProtocol) {
             if (expectedProtocol == 4) {
                 host.showPopupNotification("Please update Kontrol S Mk3 firmware to version 2.0 or higher");
             } else {

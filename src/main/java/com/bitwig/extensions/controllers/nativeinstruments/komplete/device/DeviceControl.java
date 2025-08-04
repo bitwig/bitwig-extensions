@@ -19,7 +19,6 @@ import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 public class DeviceControl implements DeviceMidiListener {
     
-    private final BrowserHandler browserHandler;
     public static final String ONLY_DEVICES = "only Devices";
     public static final String WITH_TRACK_PROJECT = "with Track/Project";
     private final MidiProcessor midiProcessor;
@@ -28,13 +27,7 @@ public class DeviceControl implements DeviceMidiListener {
     private Runnable bankUpdateTask = null;
     private final Layer navigationLayer;
     
-    private final PinnableCursorDevice cursorDevice;
     private final ControlElements controlElements;
-    private final Layer deviceRemoteLayer;
-    private final Layer trackRemoteLayer;
-    private final Layer projectRemoteLayer;
-    private final Layer directParamLayer;
-    private final Layer browserNavLayer;
     
     private boolean directActive;
     private final DirectParameterControl directParameterControl;
@@ -52,19 +45,19 @@ public class DeviceControl implements DeviceMidiListener {
         this.midiProcessor.addDeviceMidiListener(this);
         this.midiProcessor.addModeListener(this::changeMode);
         navigationLayer = new Layer(layers, "PARAM_NAVIGATION_LAYER");
-        deviceRemoteLayer = new Layer(layers, "DEVICE");
-        trackRemoteLayer = new Layer(layers, "TRACK");
-        projectRemoteLayer = new Layer(layers, "PROJECT");
-        directParamLayer = new Layer(layers, "DIRECT_PARAM");
-        browserNavLayer = new Layer(layers, "BROWSER_NAV");
+        final Layer deviceRemoteLayer = new Layer(layers, "DEVICE");
+        final Layer trackRemoteLayer = new Layer(layers, "TRACK");
+        final Layer projectRemoteLayer = new Layer(layers, "PROJECT");
+        final Layer directParamLayer = new Layer(layers, "DIRECT_PARAM");
+        final Layer browserNavLayer = new Layer(layers, "BROWSER_NAV");
         final CursorTrack cursorTrack = viewControl.getClipSceneCursor().getCursorTrack();
         this.host = host;
         this.controlElements = controlElements;
-        cursorDevice = cursorTrack.createCursorDevice();
+        final PinnableCursorDevice cursorDevice = cursorTrack.createCursorDevice();
         cursorDevice.presetName().addValueObserver(this::handlePresetName);
         this.mainBank = new BankControl(cursorDevice, this.midiProcessor, this);
         this.mainBank.getCurrentFocus().addValueObserver(this::handleFocus);
-        browserHandler = new BrowserHandler(host, cursorDevice, controlElements.getShiftHeld());
+        final BrowserHandler browserHandler = new BrowserHandler(host, cursorDevice, controlElements.getShiftHeld());
         
         final CursorRemoteControlsPage deviceRemotePages = cursorDevice.createCursorRemoteControlsPage(8);
         deviceRemotesControl = new RemotesControl(deviceRemoteLayer, deviceRemotePages, controlElements, midiProcessor);
@@ -107,7 +100,7 @@ public class DeviceControl implements DeviceMidiListener {
         trackRemotes.pageCount().addValueObserver(this::handleTrackPages);
         projectRemotes.pageCount().addValueObserver(this::handleProjectPages);
         
-        browserHandler.isOpen().addValueObserver(browserOpen -> browserNavLayer.setIsActive(browserOpen));
+        browserHandler.isOpen().addValueObserver(browserNavLayer::setIsActive);
         final ModeButton knobPressed = controlElements.getKnobPressed();
         final ModeButton knobShiftPressed = controlElements.getKnobShiftPressed();
         final RelativeHardwareKnob fourDKnob = controlElements.getFourDKnob();
@@ -168,9 +161,7 @@ public class DeviceControl implements DeviceMidiListener {
         this.deviceFocus = focus;
         this.currentRemotesControl.setActive(false);
         switch (this.deviceFocus) {
-            case DEVICE -> {
-                currentRemotesControl = directActive ? directParameterControl : deviceRemotesControl;
-            }
+            case DEVICE -> currentRemotesControl = directActive ? directParameterControl : deviceRemotesControl;
             case TRACK -> currentRemotesControl = trackRemotesControl;
             case PROJECT -> currentRemotesControl = projectRemotesControl;
         }

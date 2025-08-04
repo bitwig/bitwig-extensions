@@ -126,20 +126,13 @@ public class KompleteKontrolSMk2Extension extends KompleteKontrolExtension {
             .setValueSupplier(() -> cursorTrack.canHoldNoteData().get() && cursorClip.exists().get());
         final ModeButton knobPressed = controlElements.getKnobPressed();
         final ModeButton knobShiftPressed = controlElements.getKnobShiftPressed();
-        mainLayer.bindPressed(knobPressed.getHwButton(), () -> clipSceneCursor.launch());
+        mainLayer.bindPressed(knobPressed.getHwButton(), clipSceneCursor::launch);
         mainLayer.bindPressed(knobShiftPressed.getHwButton(), () -> handle4DShiftPressed(rootTrack, cursorTrack));
-    }
-    
-    
-    @Override
-    public void exit() {
-        midiProcessor.exit();
     }
     
     @Override
     public void flush() {
         midiProcessor.doFlush();
     }
-    
     
 }

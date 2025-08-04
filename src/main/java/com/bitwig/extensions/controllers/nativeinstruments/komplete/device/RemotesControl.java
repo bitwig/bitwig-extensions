@@ -17,7 +17,6 @@ public class RemotesControl extends AbstractParameterControl {
     private int pageCount;
     private int pageIndex;
     private String[] pageNames = new String[0];
-    private final String name;
     final CursorRemoteControlsPage deviceRemotes;
     private final List<KnobParameterBinding> bindings = new ArrayList<>();
     final MidiProcessor midiProcessor;
@@ -28,7 +27,6 @@ public class RemotesControl extends AbstractParameterControl {
         super(layer);
         this.deviceRemotes = remotes;
         this.midiProcessor = midiProcessor;
-        this.name = layer.getName();
         remotes.selectedPageIndex().addValueObserver(this::handlePageIndex);
         remotes.pageCount().addValueObserver(this::handlePageCount);
         for (int i = 0; i < 8; i++) {

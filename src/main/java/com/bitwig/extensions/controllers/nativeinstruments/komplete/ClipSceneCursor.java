@@ -30,9 +30,9 @@ public class ClipSceneCursor {
         sceneBank = singleTrackBank.sceneBank();
         sceneBank.cursorIndex().markInterested();
         sceneBank.setIndication(false);
-        singleTrackBank.canScrollChannelsDown().addValueObserver(v -> navigationState.setCanGoTrackRight(v));
-        sceneBank.canScrollBackwards().addValueObserver(v -> navigationState.setCanScrollSceneUp(v));
-        sceneBank.canScrollForwards().addValueObserver(v -> navigationState.setCanScrollSceneDown(v));
+        singleTrackBank.canScrollChannelsDown().addValueObserver(navigationState::setCanGoTrackRight);
+        sceneBank.canScrollBackwards().addValueObserver(navigationState::setCanScrollSceneUp);
+        sceneBank.canScrollForwards().addValueObserver(navigationState::setCanScrollSceneDown);
     }
     
     public CursorTrack getCursorTrack() {

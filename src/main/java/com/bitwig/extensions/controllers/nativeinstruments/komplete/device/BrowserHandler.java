@@ -1,7 +1,6 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete.device;
 
 import com.bitwig.extension.controller.api.BooleanValue;
-import com.bitwig.extension.controller.api.BrowserResultsColumn;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.InsertionPoint;
@@ -11,22 +10,17 @@ public class BrowserHandler {
     
     private final PopupBrowser browser;
     private boolean browserOpen;
-    private final CursorDevice device;
     private boolean deviceExists;
     private final InsertionPoint insertionPoint;
-    private final ControllerHost host;
     private final BooleanValue shiftHeld;
     
     public BrowserHandler(final ControllerHost host, final CursorDevice device, final BooleanValue shiftHeld) {
-        this.host = host;
         this.browser = host.createPopupBrowser();
         this.browser.exists().addValueObserver(this::handleExists);
-        this.device = device;
-        this.device.exists().addValueObserver(this::handleDeviceExists);
+        device.exists().addValueObserver(this::handleDeviceExists);
         insertionPoint = device.replaceDeviceInsertionPoint();
         this.shiftHeld = shiftHeld;
         browser.shouldAudition().markInterested();
-        final BrowserResultsColumn resultsColum = browser.resultsColumn();
     }
     
     private void handleDeviceExists(final boolean exists) {
