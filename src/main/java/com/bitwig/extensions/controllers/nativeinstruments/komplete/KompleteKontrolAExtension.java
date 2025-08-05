@@ -48,7 +48,8 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         final MidiIn midiIn2 = host.getMidiInPort(1);
         final NoteInput noteInput =
             midiIn2.createNoteInput(
-                "MIDI", "80????", "90????", "D0????", "E0????", "B001??", "B040??", "B042??", "B1????");
+                "MIDI", "80????", "90????", "D0????", "E0????", "B001??", "B040??", "B042??",
+                "B1????");
         noteInput.setShouldConsumeEvents(true);
         
         initTrackBank();
@@ -115,7 +116,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         
         final ModeButton knobPressed = controlElements.getKnobPressed();
         final ModeButton knobShiftPressed = controlElements.getKnobShiftPressed();
-        mainLayer.bindPressed(knobPressed.getHwButton(), () -> clipSceneCursor.launch());
+        mainLayer.bindPressed(knobPressed.getHwButton(), clipSceneCursor::launch);
         mainLayer.bindPressed(knobShiftPressed.getHwButton(), () -> handle4DShiftPressed(rootTrack, cursorTrack));
     }
     
@@ -123,11 +124,6 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
     protected void initJogWheel() {
         final RelativeHardwareKnob fourKnob = controlElements.getFourDKnob();
         mainLayer.bind(fourKnob, midiProcessor.createIncAction(this::handleTransportScroll));
-    }
-    
-    @Override
-    public void exit() {
-        midiProcessor.exit();
     }
     
     @Override
@@ -148,9 +144,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
             });
         channel.exists().markInterested();
         
-        channel.addIsSelectedInMixerObserver(v -> {
-            midiProcessor.sendValueCommand(ValueCommand.SELECT, index, v);
-        });
+        channel.addIsSelectedInMixerObserver(v -> midiProcessor.sendValueCommand(ValueCommand.SELECT, index, v));
         channel.mute().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.MUTE, index, v));
         channel.solo().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.SOLO, index, v));
         channel.arm().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.ARM, index, v));

@@ -46,8 +46,6 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
     static final String KONTAKT_8_VST3_ID = "5653544E694B386B6F6E74616B742038";
     static final String MASCHINE_3_VST3_ID = "5653544E694D336D61736368696E6520";
     
-    private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
-    
     protected HardwareSurface surface;
     private final List<RelativeHardwareControlBinding> knobBindings = new ArrayList<>();
     
