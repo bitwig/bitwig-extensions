@@ -34,6 +34,7 @@ public class MidiProcessor {
     private final ControllerHost host;
     private boolean dawModeConfirmed;
     private String lastReportedKKInstance = null;
+    private int expectedProtocol;
     private final HardwareSurface surface;
     private final List<DeviceMidiListener> deviceListeners = new ArrayList<>();
     private final List<IntConsumer> modeListener = new ArrayList<>();
@@ -75,6 +76,11 @@ public class MidiProcessor {
         }
     }
     
+    public void intoDawMode(final int protocol) {
+        this.expectedProtocol = protocol;
+        midiOut.sendMidi(0xBF, 0x1, protocol);
+    }
+    
     public void delay(final Runnable action, final int delay) {
         host.scheduleTask(action, delay);
     }
@@ -94,9 +100,7 @@ public class MidiProcessor {
     protected void onMidi0(final ShortMidiMessage msg) {
         if (msg.getStatusByte() == 0xBF) {
             if (msg.getData1() == 1) {
-                KompleteKontrolExtension.println(" DAW MODE = %d", msg.getData2());
-                dawModeConfirmed = true;
-                sendDawInfo(5, 3);
+                handleHandshakeComplete(msg);
             } else if (msg.getData1() == 5) {
                 modeListener.forEach(listener -> listener.accept(msg.getData2()));
             } else {
@@ -107,6 +111,18 @@ public class MidiProcessor {
             KompleteKontrolExtension.println(
                 "MIDI => %02X %02X %02X", msg.getStatusByte(), msg.getData1(), msg.getData2());
         }
+    }
+    
+    private void handleHandshakeComplete(final ShortMidiMessage msg) {
+        dawModeConfirmed = true;
+        if (msg.getData2() != expectedProtocol) {
+            if (expectedProtocol == 4) {
+                host.showPopupNotification("Please update Kontrol S Mk3 firmware to version 2.0 or higher");
+            } else {
+                host.showPopupNotification("Please update firmware to higher version");
+            }
+        }
+        sendDawInfo(5, 3);
     }
     
     public RelativeHardwarControlBindable createIncDoubleAction(final DoubleConsumer changeAction) {
@@ -193,10 +209,6 @@ public class MidiProcessor {
     
     public void sendSelectionIndex(final int index, final int[] subindexes) {
         ValueCommand.SELECTION_INDEX.send(midiOut, index, subindexes);
-    }
-    
-    public void intoDawMode(final int protocol) {
-        midiOut.sendMidi(0xBF, 0x1, protocol);
     }
     
     public void sendLedUpdate(final CcAssignment assignment, final int value) {

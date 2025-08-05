@@ -180,7 +180,7 @@ public class DirectParameterControl extends AbstractParameterControl {
             }
         }
         pageCount.set((assigned + 7) / 8);
-        final String[] idsToObserve = observed.stream().toArray(String[]::new);
+        final String[] idsToObserve = observed.toArray(String[]::new);
         midiProcessor.delay(() -> parameterObserver.setObservedParameterIds(idsToObserve), 50);
         applySlotsToIndex();
     }

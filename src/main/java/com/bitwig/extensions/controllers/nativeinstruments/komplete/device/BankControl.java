@@ -11,7 +11,6 @@ import com.bitwig.extensions.framework.values.ValueObject;
 
 public class BankControl {
     
-    private final DeviceBank deviceBank;
     private final MidiProcessor midiProcessor;
     private final List<DeviceSlot> devices = new ArrayList<>();
     
@@ -29,8 +28,7 @@ public class BankControl {
     private boolean trackRemotesPresent;
     private boolean projectRemotesPresent;
     
-    private class ParentTab implements DeviceSelectionTab {
-        
+    private static class ParentTab implements DeviceSelectionTab {
         @Override
         public String getLayerCode() {
             return "[<< Parent]";
@@ -45,7 +43,7 @@ public class BankControl {
     
     public BankControl(final PinnableCursorDevice cursorDevice, final MidiProcessor midiProcessor,
         final DeviceControl deviceControl) {
-        this.deviceBank = cursorDevice.deviceChain().createDeviceBank(64);
+        final DeviceBank deviceBank = cursorDevice.deviceChain().createDeviceBank(64);
         this.midiProcessor = midiProcessor;
         this.deviceControl = deviceControl;
         this.cursorDevice = cursorDevice;

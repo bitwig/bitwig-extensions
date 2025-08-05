@@ -48,11 +48,6 @@ public class DirectSlot {
         return paramId;
     }
     
-    public String getBaseParam() {
-        final int last = paramId.lastIndexOf("/");
-        return paramId.substring(last + 1);
-    }
-    
     public String getInParamId() {
         if (paramId != null && paramId.startsWith(ID_PREFIX)) {
             return "%sROOT_GENERIC_MODULE/%s".formatted(ID_PREFIX, paramId.substring(ID_PREFIX.length()));
