@@ -12,7 +12,6 @@ import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.ScrollbarModel;
 import com.bitwig.extension.controller.api.SettableBeatTimeValue;
 import com.bitwig.extension.controller.api.Track;
-import com.bitwig.extensions.controllers.nativeinstruments.komplete.binding.EncoderParameterBinding;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ModeButton;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.AbstractKompleteKontrolExtensionDefinition;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.device.DeviceControl;
@@ -70,15 +69,9 @@ public class KontrolSMk3Extension extends KompleteKontrolExtension {
     }
     
     protected void initScrubZoomControl() {
-        final RelativeHardwareKnob fourDKnob = controlElements.getFourDKnob();
+        final RelativeHardwareKnob fourDKnob = controlElements.getFourDKnobMixer();
         final RelativeHardwarControlBindable binding = midiProcessor.createIncAction(this::handleFourDInc);
         mainLayer.bind(fourDKnob, binding);
-        
-        final CursorTrack cursorTrack = viewControl.getCursorTrack();
-        final RelativeHardwareKnob daw4dKnob = controlElements.getFourDKnobMixer();
-        mainLayer.addBinding(new EncoderParameterBinding(daw4dKnob, cursorTrack.volume()));
-        final RelativeHardwareKnob daw4dPan = controlElements.getFourDKnobPan();
-        mainLayer.addBinding(new EncoderParameterBinding(daw4dPan, cursorTrack.pan()));
         
         final RelativeHardwareKnob loopKnob = controlElements.getLoopModKnob();
         mainLayer.bind(loopKnob, midiProcessor.createIncAction(this::handleLoop));
@@ -226,8 +219,14 @@ public class KontrolSMk3Extension extends KompleteKontrolExtension {
     }
     
     @Override
+    public void exit() {
+        midiProcessor.exit();
+    }
+    
+    @Override
     public void flush() {
         midiProcessor.doFlush();
     }
+    
     
 }

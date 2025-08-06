@@ -57,6 +57,10 @@ public class KontrolLightButton {
         return hwButton;
     }
     
+    public OnOffHardwareLight getHwLight() {
+        return hwLight;
+    }
+    
     public void bindPressed(final Layer layer, final Runnable action) {
         layer.bindPressed(hwButton, action);
     }

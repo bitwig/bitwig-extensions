@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DataStringUtil {
     
@@ -12,7 +13,7 @@ public class DataStringUtil {
         for (final byte d : data) {
             values.add("%02x".formatted(d));
         }
-        return String.join("", values);
+        return values.stream().collect(Collectors.joining());
     }
     
     public static byte[] toTempo10nsData(final double tempo) {
@@ -30,6 +31,7 @@ public class DataStringUtil {
         for (int i = 0; i < 5; i++) {
             nsPerMinute |= (long) data[i] << (i * 7);
         }
-        return TEN_NS_PER_MINUTE / nsPerMinute;
+        final double bpm = TEN_NS_PER_MINUTE / nsPerMinute;
+        return bpm;
     }
 }

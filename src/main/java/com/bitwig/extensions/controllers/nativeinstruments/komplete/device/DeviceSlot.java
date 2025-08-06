@@ -13,17 +13,19 @@ public class DeviceSlot implements DeviceSelectionTab {
     private final int index;
     private boolean hasLayers;
     private boolean hasDrumPads;
+    private boolean isNested;
     
     private boolean isExpanded;
     private final Device device;
     private boolean selected;
+    private DeviceLayerBank layerBank;
     private final List<LayerSlot> layerSlots = new ArrayList<>();
     
     public DeviceSlot(final int index, final Device device) {
         this.index = index;
         this.device = device;
         if (this.device != null) {
-            final DeviceLayerBank layerBank = device.createLayerBank(64);
+            this.layerBank = device.createLayerBank(64);
             for (int i = 0; i < layerBank.getSizeOfBank(); i++) {
                 final LayerSlot layerSlot = new LayerSlot(i, layerBank.getItemAt(i));
                 layerSlots.add(layerSlot);
@@ -75,6 +77,14 @@ public class DeviceSlot implements DeviceSelectionTab {
         this.hasDrumPads = hasDrumPads;
     }
     
+    public void setExpanded(final boolean expanded) {
+        this.isExpanded = expanded;
+    }
+    
+    public boolean isExpanded() {
+        return isExpanded;
+    }
+    
     public boolean isSelected() {
         return selected;
     }
@@ -91,7 +101,7 @@ public class DeviceSlot implements DeviceSelectionTab {
         if (isExpanded) {
             return "{\"n\":\"%s\",\"c\":[%s]}".formatted(
                 name,
-                getLayerList().stream().map("\"%s\""::formatted).collect(Collectors.joining(",")));
+                getLayerList().stream().map(v -> "\"%s\"".formatted(v)).collect(Collectors.joining(",")));
         } else {
             return "{\"n\":\"%s\",\"c\":[]}".formatted(name);
         }

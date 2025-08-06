@@ -36,7 +36,6 @@ public class ControlElements {
     private final HardwareSurface surface;
     private final RelativeHardwareKnob fourDKnob;
     private final RelativeHardwareKnob loopModKnob;
-    private final RelativeHardwareKnob fourDKnobPan;
     
     private final Map<CcAssignment, ModeButton> modeButtons = new HashMap<>();
     private final KontrolLightButton leftNavButton;
@@ -57,9 +56,9 @@ public class ControlElements {
         
         Arrays.stream(CcAssignment.values()) //
             .filter(CcAssignment::isMapped)  //
-            .forEach(ccAssignment -> modeButtons.put(
-                ccAssignment,
-                new ModeButton(midiProcessor, ccAssignment.getName(), ccAssignment)));
+            .forEach(ccAssignment -> {
+                modeButtons.put(ccAssignment, new ModeButton(midiProcessor, ccAssignment.getName(), ccAssignment));
+            });
         
         muteSelectedButton = surface.createHardwareButton("MUTE_SELECTED_BUTTON");
         muteSelectedButton.pressedAction().setActionMatcher(CcAssignment.MUTE_CURRENT.createActionMatcher(midiIn, 1));
@@ -80,10 +79,6 @@ public class ControlElements {
         fourDKnobMixer = surface.createRelativeHardwareKnob("4D_WHEEL_MIX_MODE");
         fourDKnobMixer.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x64, 4096));
         fourDKnobMixer.setStepSize(1 / 128.0);
-        
-        fourDKnobPan = surface.createRelativeHardwareKnob("4D_WHEEL_MIX_MODE_PAN");
-        fourDKnobPan.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x65, 4096));
-        fourDKnobPan.setStepSize(1 / 128.0);
         
         fourDKnob = surface.createRelativeHardwareKnob("4D_WHEEL_PLUGIN_MODE");
         fourDKnob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(0xF, 0x34, 128));
@@ -106,7 +101,7 @@ public class ControlElements {
     }
     
     private HardwareButton createOnOffButton(final String name, final int ccNr) {
-        final HardwareButton button = surface.createHardwareButton(name);
+        final HardwareButton button = surface.createHardwareButton("SHIFT_BUTTON");
         button.pressedAction().setActionMatcher(midiProcessor.getMidiIn().createCCActionMatcher(0xF, ccNr, 1));
         button.releasedAction().setActionMatcher(midiProcessor.getMidiIn().createCCActionMatcher(0xF, ccNr, 0));
         return button;
@@ -159,10 +154,6 @@ public class ControlElements {
     
     public RelativeHardwareKnob getFourDKnobMixer() {
         return fourDKnobMixer;
-    }
-    
-    public RelativeHardwareKnob getFourDKnobPan() {
-        return fourDKnobPan;
     }
     
     public RelativeHardwareKnob getLoopModKnob() {
