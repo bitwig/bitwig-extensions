@@ -12,7 +12,6 @@ import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.display.LcdDisplay;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.PostConstruct;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
@@ -29,8 +28,9 @@ public class ViewControl {
     private final Scene sceneTrackItem;
     private final PinnableCursorDevice cursorDevice;
     private final Clip cursorClip;
+    private final Clip arrangerClip;
     
-    public ViewControl(final ControllerHost host, final LcdDisplay lcdDisplay) {
+    public ViewControl(final ControllerHost host) {
         mixerTrackBank = host.createTrackBank(8, 2, 2);
         cursorTrack = host.createCursorTrack(2, 2);
         
@@ -41,11 +41,17 @@ public class ViewControl {
         sceneTrackItem = viewTrackBank.sceneBank().getScene(0);
         cursorClip = host.createLauncherCursorClip(32, 127);
         
-        primaryDevice = cursorTrack.createCursorDevice("DrumDetection", "Pad Device", NUM_PADS_TRACK,
+        primaryDevice = cursorTrack.createCursorDevice(
+            "DrumDetection", "Pad Device", NUM_PADS_TRACK,
             CursorDeviceFollowMode.FIRST_INSTRUMENT);
-        cursorDevice = cursorTrack.createCursorDevice("device-control", "Device Control", 0,
+        cursorDevice = cursorTrack.createCursorDevice(
+            "device-control", "Device Control", 0,
             CursorDeviceFollowMode.FOLLOW_SELECTION);
-        //cursorDevice = cursorTrack.createCursorDevice();
+        arrangerClip = host.createArrangerCursorClip(32, 128);
+        
+        cursorClip.exists().markInterested();
+        cursorClip.clipLauncherSlot().name().markInterested();
+        arrangerClip.exists().markInterested();
         setUpFollowArturiaDevice(host);
     }
     
@@ -65,12 +71,6 @@ public class ViewControl {
         matcherDevice.exists().markInterested();
         
         controlsAnalogLab = new BooleanValueObject();
-        
-        //        controlsAnalogLab.addValueObserver(controlsLab -> sysExHandler.fireArturiaMode(
-        //                controlsLab ? com.bitwig.extensions.controllers.arturia.minilab3.SysExHandler.GeneralMode
-        //                .ANALOG_LAB : com.bitwig.extensions.controllers.arturia.minilab3.SysExHandler.GeneralMode
-        //                .DAW_MODE,
-        //                arturiaModeLayer.isActive()));
         
         final BooleanValue onArturiaDevice = cursorDevice.createEqualsValue(matcherDevice);
         cursorTrack.arm().addValueObserver(
@@ -105,13 +105,25 @@ public class ViewControl {
         return mixerTrackBank;
     }
     
-    public BooleanValueObject getControlsAnalogLab() {
-        return controlsAnalogLab;
+    public Clip getArrangerClip() {
+        return arrangerClip;
     }
     
-    public void invokeQuantize() {
+    public Clip getCursorClip() {
+        return cursorClip;
+    }
+    
+    public void invokeLauncherQuantize() {
         cursorClip.quantize(1.0);
         final ClipLauncherSlot slot = cursorClip.clipLauncherSlot();
         slot.showInEditor();
     }
+    
+    public void invokeArrangerQuantize() {
+        arrangerClip.quantize(1.0);
+        final ClipLauncherSlot slot = arrangerClip.clipLauncherSlot();
+        slot.showInEditor();
+    }
+    
+    
 }

@@ -3,8 +3,6 @@ package com.bitwig.extensions.controllers.arturia.keylab.mk3;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import com.bitwig.extension.api.PlatformType;
-import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.Action;
 import com.bitwig.extension.controller.api.Application;
@@ -29,6 +27,7 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
     
     private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
     private static ControllerHost debugHost;
+    
     private Layer mainLayer;
     private HardwareSurface surface;
     private MidiProcessor midiProcessor;
@@ -57,8 +56,6 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
         mainLayer = diContext.createLayer("MAIN_LAYER");
         midiProcessor = new MidiProcessor(host);
         diContext.registerService(MidiProcessor.class, midiProcessor);
-        final AutoDetectionMidiPortNamesList ports =
-            getExtensionDefinition().getAutoDetectionMidiPortNamesList(PlatformType.MAC);
         
         final ClipLaunchingLayer clipLauncher = diContext.getService(ClipLaunchingLayer.class);
         setUpPreferences(clipLauncher);
@@ -76,14 +73,16 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
     
     private void setUpPreferences(final ClipLaunchingLayer clipLauncher) {
         final DocumentState documentState = getHost().getDocumentState();
-        final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting("Record Button assignment",
+        final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting(
+            "Record Button assignment",
             //
             "Transport", new String[] {FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
             recordFocusMode.getDescriptor());
         recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));
         
         final Preferences preferences = getHost().getPreferences();
-        final SettableEnumValue clipStopTiming = preferences.getEnumSetting("Long press to stop clip", //
+        final SettableEnumValue clipStopTiming = preferences.getEnumSetting(
+            "Long press to stop clip", //
             "Clip", new String[] {"Fast", "Medium", "Standard"}, "Medium");
         clipStopTiming.addValueObserver(clipLauncher::setClipStopTiming);
     }
@@ -106,7 +105,8 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
         application.panelLayout().addValueObserver(layout -> this.panelLayout = LayoutType.toType(layout));
         final RgbButton playButton = hwElements.getButton(CcAssignment.PLAY);
         playButton.bindPressed(mainLayer, transport::play);
-        playButton.bindLight(mainLayer,
+        playButton.bindLight(
+            mainLayer,
             () -> transport.isPlaying().get() ? RgbLightState.GREEN : RgbLightState.GREEN_DIMMED);
         
         final RgbButton recordButton = hwElements.getButton(CcAssignment.RECORD);
@@ -114,47 +114,49 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
         recordButton.bindLight(mainLayer, () -> getRecordingLightState(transport));
         
         final RgbButton stopButton = hwElements.getButton(CcAssignment.STOP);
-        stopButton.bindPressed(mainLayer, () -> transport.stop());
+        stopButton.bindPressed(mainLayer, transport::stop);
         stopButton.bindLight(mainLayer, RgbLightState.WHITE_DIMMED, RgbLightState.WHITE);
         final RgbButton fastForwardButton = hwElements.getButton(CcAssignment.FAST_FWD);
         final RgbButton rewindButton = hwElements.getButton(CcAssignment.REWIND);
-        fastForwardButton.bindRepeatHold(mainLayer, () -> transport.fastForward(), 400, 100);
+        fastForwardButton.bindRepeatHold(mainLayer, transport::fastForward, 400, 100);
         fastForwardButton.bindLight(mainLayer, RgbLightState.WHITE_DIMMED, RgbLightState.WHITE);
         
-        rewindButton.bindRepeatHold(mainLayer, () -> transport.rewind(), 400, 100);
+        rewindButton.bindRepeatHold(mainLayer, transport::rewind, 400, 100);
         rewindButton.bindLight(mainLayer, RgbLightState.WHITE_DIMMED, RgbLightState.WHITE);
         
         final RgbButton loopButton = hwElements.getButton(CcAssignment.LOOP);
-        loopButton.bindToggle(mainLayer, transport.isArrangerLoopEnabled(), RgbLightState.ORANGE,
+        loopButton.bindToggle(
+            mainLayer, transport.isArrangerLoopEnabled(), RgbLightState.ORANGE,
             RgbLightState.ORANGE_DIMMED);
         
         final RgbButton tapButton = hwElements.getButton(CcAssignment.TAP);
         tapButton.bind(mainLayer, transport.tapTempoAction(), RgbLightState.WHITE, RgbLightState.WHITE_DIMMED);
         final RgbButton metroButton = hwElements.getButton(CcAssignment.METRO);
-        metroButton.bindToggle(mainLayer, transport.isMetronomeEnabled(), RgbLightState.WHITE,
+        metroButton.bindToggle(
+            mainLayer, transport.isMetronomeEnabled(), RgbLightState.WHITE,
             RgbLightState.WHITE_DIMMED);
         
         application.canUndo().markInterested();
         application.canRedo().markInterested();
         final RgbButton undoButton = hwElements.getButton(CcAssignment.UNDO);
         undoButton.bindPressed(mainLayer, application::undo);
-        undoButton.bindLight(mainLayer,
+        undoButton.bindLight(
+            mainLayer,
             () -> application.canUndo().get() ? RgbLightState.WHITE : RgbLightState.WHITE_DIMMED);
         
         final RgbButton redoButton = hwElements.getButton(CcAssignment.REDO);
         redoButton.bindPressed(mainLayer, application::redo);
-        redoButton.bindLight(mainLayer,
+        redoButton.bindLight(
+            mainLayer,
             () -> application.canRedo().get() ? RgbLightState.WHITE : RgbLightState.WHITE_DIMMED);
         
         final RgbButton quantizeButton = hwElements.getButton(CcAssignment.QUANTIZE);
         quantizeButton.bindLight(mainLayer, RgbLightState.WHITE_DIMMED, RgbLightState.WHITE);
-        quantizeButton.bindPressed(mainLayer, () -> invokeQuantize());
+        quantizeButton.bindPressed(mainLayer, this::invokeQuantize);
         final RgbButton saveButton = hwElements.getButton(CcAssignment.SAVE);
         final Action saveAction = application.getAction("Save");
         saveButton.bindLight(mainLayer, RgbLightState.WHITE_DIMMED, RgbLightState.WHITE);
-        saveButton.bindPressed(mainLayer, () -> {
-            saveAction.invoke();
-        });
+        saveButton.bindPressed(mainLayer, saveAction::invoke);
     }
     
     private void invokeQuantize() {
@@ -162,20 +164,24 @@ public class KeylabMk3ControllerExtension extends ControllerExtension {
             final Clip clip = viewControl.getArrangerClip();
             if (clip.exists().get()) {
                 viewControl.invokeArrangerQuantize();
-                midiProcessor.screenLine2(ScreenTarget.POP_SCREEN_2_LINES, "Arrangement", RgbColor.AQUA,
+                midiProcessor.screenLine2(
+                    ScreenTarget.POP_SCREEN_2_LINES, "Arrangement", RgbColor.AQUA,
                     "Clip Quantized", RgbColor.WHITE, null);
             } else {
-                midiProcessor.screenLine2(ScreenTarget.POP_SCREEN_2_LINES, "Arrangement", RgbColor.AQUA,
+                midiProcessor.screenLine2(
+                    ScreenTarget.POP_SCREEN_2_LINES, "Arrangement", RgbColor.AQUA,
                     "Quantization: No Clip", RgbColor.WHITE, null);
             }
         } else {
             final Clip clip = viewControl.getCursorClip();
             if (clip.exists().get()) {
                 viewControl.invokeLauncherQuantize();
-                midiProcessor.screenLine2(ScreenTarget.POP_SCREEN_2_LINES, "Launcher", RgbColor.AQUA, "Clip Quantized",
+                midiProcessor.screenLine2(
+                    ScreenTarget.POP_SCREEN_2_LINES, "Launcher", RgbColor.AQUA, "Clip Quantized",
                     RgbColor.WHITE, null);
             } else {
-                midiProcessor.screenLine2(ScreenTarget.POP_SCREEN_2_LINES, "Launcher", RgbColor.AQUA,
+                midiProcessor.screenLine2(
+                    ScreenTarget.POP_SCREEN_2_LINES, "Launcher", RgbColor.AQUA,
                     "Quantization: No Clip", RgbColor.WHITE, null);
             }
         }

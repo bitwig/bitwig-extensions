@@ -30,9 +30,11 @@ public class SliderEncoderControl extends Layer {
     private TrackBank mixerTrackBank;
     private boolean deviceScrollingOccurred = false;
     private boolean parameterSteppingOccurred = false;
+    private boolean trackBankScrollingOccurred = false;
     
     public enum State {
-        MIXER, DEVICE
+        MIXER,
+        DEVICE
     }
     
     private final ValueObject<State> currentState = new ValueObject<>(State.MIXER);
@@ -59,7 +61,8 @@ public class SliderEncoderControl extends Layer {
         final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
         cursorDevice.name().addValueObserver(name -> {
             if (deviceScrollingOccurred) {
-                lcdDisplay.sendPopup("Device Selected", //
+                lcdDisplay.sendPopup(
+                    "Device Selected", //
                     name, KeylabIcon.SFX_SMALL);
             }
         });
@@ -88,7 +91,8 @@ public class SliderEncoderControl extends Layer {
         mixerTrackBank.itemCount().markInterested();
         mixerTrackBank.scrollPosition().addValueObserver(scrollPosition ->  //
             lcdDisplay.sendPopup(
-                "Tracks", String.format("%d - %d", scrollPosition + 1,
+                "Tracks", String.format(
+                    "%d - %d", scrollPosition + 1,
                     Math.min(scrollPosition + 8, mixerTrackBank.itemCount().get())), KeylabIcon.NONE));
         
         cursorDevice.name().markInterested();
@@ -104,24 +108,26 @@ public class SliderEncoderControl extends Layer {
                 new KeyLabEncoderBinding(knobs[i], track.pan(), track.name(), LcdDisplayMode.PANNING, lcdDisplay));
         }
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
-        addBinding(new KeyLabEncoderBinding(sliders[8], cursorTrack.volume(), cursorTrack.name(), LcdDisplayMode.VOLUME,
+        addBinding(new KeyLabEncoderBinding(
+            sliders[8], cursorTrack.volume(), cursorTrack.name(), LcdDisplayMode.VOLUME,
             lcdDisplay));
-        addBinding(new KeyLabEncoderBinding(knobs[8], cursorTrack.pan(), cursorTrack.name(), LcdDisplayMode.PANNING,
+        addBinding(new KeyLabEncoderBinding(
+            knobs[8], cursorTrack.pan(), cursorTrack.name(), LcdDisplayMode.PANNING,
             lcdDisplay));
         
         for (int i = 0; i < 8; i++) {
             final RemoteControl parameter4Knob = parameterBank1.getParameter(i);
             deviceControlLayer.addBinding(
-                new KeyLabEncoderBinding(knobs[i], parameter4Knob, parameter4Knob.name(), LcdDisplayMode.DEVICE1,
-                    lcdDisplay));
+                new KeyLabEncoderBinding(
+                    knobs[i], parameter4Knob, parameter4Knob.name(), LcdDisplayMode.DEVICE1, lcdDisplay));
             deviceControlLayer2.addBinding(
-                new KeyLabEncoderBinding(sliders[i], parameter4Knob, parameter4Knob.name(), LcdDisplayMode.DEVICE2,
-                    lcdDisplay));
+                new KeyLabEncoderBinding(
+                    sliders[i], parameter4Knob, parameter4Knob.name(), LcdDisplayMode.DEVICE2, lcdDisplay));
             
             final RemoteControl parameter4Slider = parameterBank2.getParameter(i);
             deviceControlLayer.addBinding(
-                new KeyLabEncoderBinding(sliders[i], parameter4Slider, parameter4Slider.name(), LcdDisplayMode.DEVICE2,
-                    lcdDisplay));
+                new KeyLabEncoderBinding(
+                    sliders[i], parameter4Slider, parameter4Slider.name(), LcdDisplayMode.DEVICE2, lcdDisplay));
         }
     }
     
@@ -131,7 +137,8 @@ public class SliderEncoderControl extends Layer {
         }
         parameterBank2.selectedPageIndex().set((index + 1) % devicePageNames.length);
         if (parameterSteppingOccurred && !deviceScrollingOccurred) {
-            lcdDisplay.sendPopup(getParameterPageLabeling(index), //
+            lcdDisplay.sendPopup(
+                getParameterPageLabeling(index), //
                 "Parameter Page " + (index + 1), KeylabIcon.SFX_SMALL);
             parameterSteppingOccurred = false;
         }
@@ -163,9 +170,11 @@ public class SliderEncoderControl extends Layer {
         final RgbButton partButton = hwElements.getButton(CCAssignment.PART);
         partButton.bindPressed(this, this::handlePartDown);
         partButton.bindReleased(this, () -> handlePartRelease(partButton));
-        partButton.bindLight(this,
+        partButton.bindLight(
+            this,
             () -> mixerTrackBank.scrollPosition().get() == 0 ? RgbLightState.WHITE_DIMMED : RgbLightState.WHITE);
-        partButton.bindLight(deviceControlLayer,
+        partButton.bindLight(
+            deviceControlLayer,
             () -> parameterBank1.selectedPageIndex().get() == 0 ? RgbLightState.WHITE_DIMMED : RgbLightState.WHITE);
         final RelativeHardwareKnob encoder = hwElements.getMainEncoder();
         hwElements.bindEncoder(partModifierLayer, encoder, this::handlePartEncoder);
@@ -182,6 +191,7 @@ public class SliderEncoderControl extends Layer {
             deviceScrollingOccurred = true;
         } else {
             mixerTrackBank.scrollBy(increment);
+            trackBankScrollingOccurred = true;
         }
     }
     
@@ -197,7 +207,7 @@ public class SliderEncoderControl extends Layer {
             parameterSteppingOccurred = true;
             if (currentState.get() == State.DEVICE) {
                 parameterBank1.selectNextPage(true);
-            } else {
+            } else if (!trackBankScrollingOccurred) {
                 if (mixerTrackBank.scrollPosition().get() > 0) {
                     mixerTrackBank.scrollPosition().set(0);
                 } else {
@@ -205,6 +215,7 @@ public class SliderEncoderControl extends Layer {
                 }
             }
         }
+        trackBankScrollingOccurred = false;
         button.forceDelayedRefresh();
     }
     
