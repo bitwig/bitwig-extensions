@@ -10,6 +10,7 @@ class LayerSlot {
     private final int index;
     private boolean exists;
     private String name;
+    private boolean active;
     
     public LayerSlot(final int index, final DeviceLayer layer) {
         this.layer = layer;
@@ -18,6 +19,19 @@ class LayerSlot {
         this.device = bank.getDevice(0);
         this.layer.exists().addValueObserver(this::handleExists);
         this.layer.name().addValueObserver(this::handleName);
+        this.layer.isActivated().addValueObserver(this::handleActivated);
+    }
+    
+    private void handleActivated(final boolean activated) {
+        this.active = activated;
+    }
+    
+    public boolean isActive() {
+        return active;
+    }
+    
+    public void toggleActive() {
+        this.layer.isActivated().toggle();
     }
     
     public void select() {
@@ -54,6 +68,10 @@ class LayerSlot {
     
     public void setName(final String name) {
         this.name = name;
+    }
+    
+    public String displayName() {
+        return active ? name : "[x] %s".formatted(name);
     }
     
 }

@@ -55,7 +55,7 @@ public class DeviceControl implements DeviceMidiListener {
         this.controlElements = controlElements;
         final PinnableCursorDevice cursorDevice = cursorTrack.createCursorDevice();
         cursorDevice.presetName().addValueObserver(this::handlePresetName);
-        this.mainBank = new BankControl(cursorDevice, this.midiProcessor, this);
+        this.mainBank = new BankControl(cursorDevice, this.midiProcessor, this, controlElements.getShiftHeld());
         this.mainBank.getCurrentFocus().addValueObserver(this::handleFocus);
         final BrowserHandler browserHandler = new BrowserHandler(host, cursorDevice, controlElements.getShiftHeld());
         
@@ -63,8 +63,7 @@ public class DeviceControl implements DeviceMidiListener {
         deviceRemotesControl = new RemotesControl(deviceRemoteLayer, deviceRemotePages, controlElements, midiProcessor);
         directParameterControl =
             new DirectParameterControl(
-                directParamLayer, cursorDevice, controlElements, midiProcessor,
-                deviceRemotePages.pageCount());
+                directParamLayer, cursorDevice, controlElements, midiProcessor, deviceRemotePages.pageCount());
         directParameterControl.getDirectActive().addValueObserver(this::handleDirectActive);
         
         final Track rootTrack = viewControl.getProject().getRootTrackGroup();

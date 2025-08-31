@@ -7,6 +7,7 @@ import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
+import com.bitwig.extensions.framework.values.BooleanValueObject;
 import com.bitwig.extensions.framework.values.ValueObject;
 
 public class BankControl {
@@ -27,6 +28,7 @@ public class BankControl {
     private final ValueObject<Focus> currentFocus = new ValueObject<>(Focus.DEVICE);
     private boolean trackRemotesPresent;
     private boolean projectRemotesPresent;
+    private final BooleanValueObject shiftHeld;
     
     private static class ParentTab implements DeviceSelectionTab {
         @Override
@@ -42,11 +44,12 @@ public class BankControl {
     }
     
     public BankControl(final PinnableCursorDevice cursorDevice, final MidiProcessor midiProcessor,
-        final DeviceControl deviceControl) {
+        final DeviceControl deviceControl, final BooleanValueObject shiftHeld) {
         final DeviceBank deviceBank = cursorDevice.deviceChain().createDeviceBank(64);
         this.midiProcessor = midiProcessor;
         this.deviceControl = deviceControl;
         this.cursorDevice = cursorDevice;
+        this.shiftHeld = shiftHeld;
         this.parentNavTab = new ParentTab();
         cursorDevice.position().addValueObserver(this::handleCursorDevicePosition);
         this.trackDevice = new DeviceSlot(-1, "Track");
@@ -59,6 +62,7 @@ public class BankControl {
             device.exists().addValueObserver(exists -> handleExistChange(slot, exists));
             device.hasLayers().addValueObserver(hasLayers -> handleHasLayers(slot, hasLayers));
             device.hasDrumPads().addValueObserver(hasPads -> handleHasDrumPads(slot, hasPads));
+            device.isEnabled().addValueObserver(enabled -> handleEnabled(slot, enabled));
         }
         cursorDevice.exists().markInterested();
         cursorDevice.isNested().addValueObserver(this::handleNested);
@@ -139,6 +143,12 @@ public class BankControl {
         deviceControl.triggerUpdateAction();
     }
     
+    
+    private void handleEnabled(final DeviceSlot slot, final boolean enabled) {
+        slot.setEnabled(enabled);
+        deviceControl.triggerUpdateAction();
+    }
+    
     private void handleHasLayers(final DeviceSlot slot, final boolean hasLayers) {
         slot.setHasLayers(hasLayers);
         deviceControl.triggerUpdateAction();
@@ -212,24 +222,33 @@ public class BankControl {
             index -= getIndexOffset();
         }
         currentFocus.set(Focus.DEVICE);
-        
         final DeviceSlot slot = devices.get(index);
+        
+        
         if (selectionPath.length == 1) {
-            slot.select();
-            if (slot.isSelected()) {
-                if (slot.hasLayers()) {
-                    slot.toggleExpanded();
-                }
-                deviceControl.triggerUpdateAction();
+            if (shiftHeld.get()) {
+                slot.toggleEnabled();
             } else {
-                devices.forEach(d -> d.setSelected(false));
-                //devices.forEach(d -> d.setExpanded(false));
-                slot.setSelected(true);
-                deviceControl.triggerUpdateAction();
+                slot.select();
+                if (slot.isSelected()) {
+                    if (slot.hasLayers()) {
+                        slot.toggleExpanded();
+                    }
+                    deviceControl.triggerUpdateAction();
+                } else {
+                    devices.forEach(d -> d.setSelected(false));
+                    //devices.forEach(d -> d.setExpanded(false));
+                    slot.setSelected(true);
+                    deviceControl.triggerUpdateAction();
+                }
             }
         } else {
-            final Device device = slot.selectLayer(selectionPath[1]);
-            cursorDevice.selectDevice(device);
+            if (shiftHeld.get()) {
+                slot.toggleLayerActive(selectionPath[1]);
+                deviceControl.triggerUpdateAction();
+            } else {
+                cursorDevice.selectDevice(slot.selectLayer(selectionPath[1]));
+            }
         }
     }
 }
