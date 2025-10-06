@@ -50,7 +50,7 @@ public class MainScreenSection {
         navigationLayer = new Layer(layers, "SCREEN NAVIGATION");
     }
     
-    ///KeylabIcon selector = KeylabIcon.NONE;
+    /// KeylabIcon selector = KeylabIcon.NONE;
     
     @PostConstruct
     void init() {
@@ -84,7 +84,8 @@ public class MainScreenSection {
                 ? RgbLightState.WHITE
                 : RgbLightState.WHITE_DIMMED);
         
-        context3.bindRepeatHold(navigationLayer, cursorTrack::selectPrevious, BUTTON_WAIT_UTIL_REPEAT,
+        context3.bindRepeatHold(
+            navigationLayer, cursorTrack::selectPrevious, BUTTON_WAIT_UTIL_REPEAT,
             HOLD_REPEAT_FREQUENCY);
         
         context3.bindLight(navigationLayer, () -> canScroll(cursorTrack.hasPrevious()));
@@ -122,17 +123,12 @@ public class MainScreenSection {
     }
     
     public RgbButton getContextButton(final int which) {
-        switch (which) {
-            case 0:
-                return context1;
-            case 1:
-                return context2;
-            case 2:
-                return context3;
-            case 3:
-                return context4;
-        }
-        return context1;
+        return switch (which) {
+            case 1 -> context2;
+            case 2 -> context3;
+            case 3 -> context4;
+            default -> context1; // 0 too
+        };
     }
     
     public Layer getLayer() {

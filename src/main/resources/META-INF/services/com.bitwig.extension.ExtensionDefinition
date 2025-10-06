@@ -68,6 +68,8 @@ com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.Komplete
 com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.KompleteKontrolMSeriesExtensionDefinition
 com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.KontrolSMk3ExtensionDefinition
 
+com.bitwig.extensions.controllers.neuzeitinstruments.DropExtensionDefinition
+
 com.bitwig.extensions.controllers.mackie.definition.MackieMcuProExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.MackieMcuProXt1ExtensionDefinition
 com.bitwig.extensions.controllers.mackie.definition.MackieMcuProXt2ExtensionDefinition

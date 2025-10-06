@@ -41,12 +41,12 @@ public class BrowserLayer extends Layer {
     private PinnableCursorDevice cursorDevice;
     private CursorTrack cursorTrack;
     private boolean enforceDeviceContent = true;
-    
-    private int encoderClickCount = 0;
+    private final ControllerHost host;
     
     public BrowserLayer(final Layers layers, final ControllerHost host) {
         super(layers, "BROWSER_LAYER");
         browser = host.createPopupBrowser();
+        this.host = host;
         browser.exists().addValueObserver(this::handleBrowserOpened);
         browser.contentTypeNames().addValueObserver(contentTypeNames -> this.contentTypeNames = contentTypeNames);
         resultCursorItem = (CursorBrowserResultItem) browser.resultsColumn().createCursorItem();
@@ -97,19 +97,16 @@ public class BrowserLayer extends Layer {
         
         
         this.addBinding(new MainViewDisplayBinding(contextPage, display, resultNameValue, categoryItem.name()));
-        this.bindPressed(encoderPress, () -> {
-            if (resultCursorItem.exists().get()) {
-                if (encoderClickCount == 0) {
-                    display.sendPopup("Click again ", "to load", KeylabIcon.NONE);
-                    encoderClickCount++;
-                } else {
+        this.bindPressed(
+            encoderPress, () -> {
+                if (resultCursorItem.exists().get()) {
                     browser.commit();
-                    encoderClickCount = 0;
+                    final String selected = resultNameValue.get();
+                    host.scheduleTask(() -> display.sendPopup("Preset selected ", selected, KeylabIcon.NONE), 400);
+                } else {
+                    display.sendPopup("Nothing selected ", "", KeylabIcon.NONE);
                 }
-            } else {
-                display.sendPopup("Nothing selected ", "", KeylabIcon.NONE);
-            }
-        });
+            });
     }
     
     private String getResultData(final boolean exists, final String resultName) {
@@ -122,14 +119,16 @@ public class BrowserLayer extends Layer {
         final ContextPageConfiguration contextPage = mainScreenSection.getContextPage();
         context1.bindPressed(navigationLayer, this::toggleBrowserAction);
         final FooterIconDisplayBinding footerIconBinding =
-            new FooterIconDisplayBinding(contextPage, display, browsingInitiated, 0, ContextPart.FrameType.FRAME_SMALL,
+            new FooterIconDisplayBinding(
+                contextPage, display, browsingInitiated, 0, ContextPart.FrameType.FRAME_SMALL,
                 ContextPart.FrameType.BAR);
         navigationLayer.addBinding(footerIconBinding);
         context1.bindLight(navigationLayer, () -> this.isActive() ? RgbLightState.WHITE : RgbLightState.WHITE_DIMMED);
         final RgbButton context3 = mainScreenSection.getContextButton(2);
         final RgbButton context4 = mainScreenSection.getContextButton(3);
         context3.bindRepeatHold(this, categoryItem::selectPrevious, BUTTON_WAIT_UTIL_REPEAT, HOLD_REPEAT_FREQUENCY);
-        context3.bindLight(this,
+        context3.bindLight(
+            this,
             () -> categoryItem.hasPrevious().get() ? RgbLightState.WHITE : RgbLightState.WHITE_DIMMED);
         context4.bindRepeatHold(this, categoryItem::selectNext, BUTTON_WAIT_UTIL_REPEAT, HOLD_REPEAT_FREQUENCY);
         context4.bindLight(this, () -> categoryItem.hasNext().get() ? RgbLightState.WHITE : RgbLightState.WHITE_DIMMED);
@@ -145,10 +144,6 @@ public class BrowserLayer extends Layer {
     }
     
     private void handleBrowserOpened(final boolean exists) {
-        //      if (browsingInitiated.get()) {
-        //         browser.shouldAudition().set(false);
-        //      }
-        // driver.browserDisplayMode(exists);
         if (!exists) {
             browsingInitiated.set(false);
             this.setIsActive(false);
@@ -161,11 +156,9 @@ public class BrowserLayer extends Layer {
         } else {
             resultCursorItem.selectPrevious();
         }
-        encoderClickCount = 0;
     }
     
     private void openBrowser() {
-        encoderClickCount = 0;
         if (cursorDevice.exists().get()) {
             browsingInitiated.set(true);
             enforceDeviceContent = true;
@@ -177,7 +170,6 @@ public class BrowserLayer extends Layer {
     }
     
     private void exitBrowser() {
-        encoderClickCount = 0;
         if (browser.exists().get()) {
             browser.cancel();
         }
