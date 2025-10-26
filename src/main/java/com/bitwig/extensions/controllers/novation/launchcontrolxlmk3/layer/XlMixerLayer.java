@@ -2,7 +2,6 @@ package com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.layer;
 
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
@@ -22,7 +21,6 @@ import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.Sl
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.control.LaunchAbsoluteEncoder;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.control.LaunchButton;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.control.LaunchRelativeEncoder;
-import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.definition.AbstractLaunchControlExtensionDefinition;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.display.DisplayControl;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.display.GradientColor;
 import com.bitwig.extensions.framework.Layer;
@@ -30,34 +28,20 @@ import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.Inject;
-import com.bitwig.extensions.framework.values.BasicIntegerValue;
-import com.bitwig.extensions.framework.values.BasicStringValue;
-import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 @Component(tag = "XLModel")
-public class MixerLayer extends Layer {
+public class XlMixerLayer extends AbstractMixerLayer {
     
     @Inject
     private DawControlLayer dawLayer;
     
-    private final Layer mixerLayer;
     private final Layer selectLayer;
     private final Layer soloLayer;
     private final Layer armLayer;
     private final Layer muteLayer;
     
-    private BaseMode mode = BaseMode.MIXER;
-    private final RgbState[] trackColors = new RgbState[8];
-    private final BasicIntegerValue selectedTrackIndex = new BasicIntegerValue();
     private Row1ButtonMode row1Mode = Row1ButtonMode.SOLO;
     private Row2ButtonMode row2Mode = Row2ButtonMode.SELECT;
-    private final DisplayControl displayControl;
-    private int armHeld = 0;
-    private int soloHeld = 0;
-    private final Project project;
-    private final BooleanValueObject shiftState;
-    private final LaunchViewControl viewControl;
-    private final TransportHandler transportHandler;
     
     private enum Row1ButtonMode {
         SOLO,
@@ -69,31 +53,19 @@ public class MixerLayer extends Layer {
         MUTE
     }
     
-    public MixerLayer(final Layers layers, final LaunchControlXlHwElements hwElements,
+    public XlMixerLayer(final Layers layers, final LaunchControlXlHwElements hwElements,
         final LaunchViewControl viewControl, final DisplayControl displayControl,
         final LaunchControlMidiProcessor midiProcessor, final ControllerHost host,
-        final TransportHandler transportHandler, final AbstractLaunchControlExtensionDefinition definition) {
-        super(layers, "MAIN");
-        this.project = host.getProject();
-        this.viewControl = viewControl;
-        project.hasArmedTracks().markInterested();
-        project.hasSoloedTracks().markInterested();
-        this.displayControl = displayControl;
-        this.transportHandler = transportHandler;
-        this.shiftState = hwElements.getShiftState();
-        midiProcessor.addModeListener(this::handleModeChange);
-        mixerLayer = new Layer(layers, "MIXER_LAYER");
+        final TransportHandler transportHandler) {
+        super(layers, midiProcessor, host, viewControl, hwElements, displayControl, transportHandler);
         selectLayer = new Layer(layers, "SELECT");
         soloLayer = new Layer(layers, "SOLO");
         armLayer = new Layer(layers, "ARM");
         muteLayer = new Layer(layers, "MUTE");
         
-        final BasicStringValue fixedVolumeLabel = new BasicStringValue("Volume");
-        final BasicStringValue fixedPanLabel = new BasicStringValue("Panning");
-        
         final TrackBank trackBank = viewControl.getTrackBank();
         for (int i = 0; i < 8; i++) {
-            bindTrack(hwElements, trackBank, i, fixedPanLabel, fixedVolumeLabel);
+            bindTrack(hwElements, trackBank, i);
         }
         
         bindNavigation(hwElements);
@@ -109,6 +81,12 @@ public class MixerLayer extends Layer {
         muteSelectButton.bindLight(this, () -> row2Mode == Row2ButtonMode.SELECT ? RgbState.WHITE : RgbState.ORANGE);
         soloArmButton.bindPressed(this, this::toggleSoloArmMode);
         muteSelectButton.bindPressed(this, this::toggleSelectMuteMode);
+    }
+    
+    @Activate
+    public void init() {
+        this.setIsActive(true);
+        applyMode();
     }
     
     private void bindNavigation(final LaunchControlXlHwElements hwElements) {
@@ -137,8 +115,7 @@ public class MixerLayer extends Layer {
     }
     
     
-    private void bindTrack(final LaunchControlXlHwElements hwElements, final TrackBank trackBank, final int index,
-        final BasicStringValue fixedPanLabel, final BasicStringValue fixedVolumeLabel) {
+    private void bindTrack(final LaunchControlXlHwElements hwElements, final TrackBank trackBank, final int index) {
         final Track track = trackBank.getItemAt(index);
         final Send send1 = track.sendBank().getItemAt(0);
         final Send send2 = track.sendBank().getItemAt(1);
@@ -164,14 +141,12 @@ public class MixerLayer extends Layer {
         mixerLayer.addBinding(new LightValueBindings(track.pan(), row3Encoder.getLight(), GradientColor.PAN));
         mixerLayer.addBinding(
             new AbsoluteEncoderBinding(
-                send2, hwElements.getAbsoluteEncoder(1, index), displayControl, track.name(),
-                send2.name()));
+                send2, hwElements.getAbsoluteEncoder(1, index), displayControl, track.name(), send2.name()));
         mixerLayer.addBinding(
             new RelativeEncoderBinding(track.pan(), row3Encoder, displayControl, track.name(), fixedPanLabel));
         this.addBinding(
             new SliderBinding(
-                index, track.volume(), hwElements.getSlider(index), displayControl, track.name(),
-                fixedVolumeLabel));
+                index, track.volume(), hwElements.getSlider(index), displayControl, track.name(), fixedVolumeLabel));
         final LaunchButton row2Button = hwElements.getRowButtons(1, index);
         final LaunchButton row1Button = hwElements.getRowButtons(0, index);
         row1Button.bindLight(armLayer, () -> armColor(track));
@@ -207,103 +182,20 @@ public class MixerLayer extends Layer {
         applySelectMuteMode();
     }
     
-    private void changeTrackColor(final int index, final int color) {
-        if (color == 1) {
-            trackColors[index] = RgbState.of(color);
+    protected void applyMode() {
+        if (mode == BaseMode.MIXER) {
+            midiProcessor.setToRelative(0, false);
+            midiProcessor.setToRelative(1, false);
+            midiProcessor.setToRelative(2, true);
         } else {
-            trackColors[index] = RgbState.of(color).dim();
+            midiProcessor.setToRelative(0, true);
+            midiProcessor.setToRelative(1, true);
+            midiProcessor.setToRelative(2, true);
         }
-    }
-    
-    private void selectTrack(final Track track) {
-        track.selectInMixer();
-    }
-    
-    private void toggleArm(final boolean pressed, final Track track) {
-        if (shiftState.get()) {
-            if (pressed) {
-                track.arm().toggle();
-            }
-        } else if (pressed) {
-            armHeld++;
-            if (armHeld == 1) {
-                final boolean armed = track.arm().get();
-                project.unarmAll();
-                if (!armed) {
-                    track.arm().toggle();
-                }
-            } else {
-                track.arm().toggle();
-            }
-        } else {
-            if (armHeld > 0) {
-                armHeld--;
-            }
-        }
-    }
-    
-    private void toggleSolo(final boolean pressed, final Track track) {
-        if (shiftState.get()) {
-            if (pressed) {
-                track.solo().toggle();
-            }
-        } else if (pressed) {
-            soloHeld++;
-            if (soloHeld == 1) {
-                track.solo().toggle(true);
-            } else {
-                track.solo().toggle();
-            }
-        } else {
-            if (soloHeld > 0) {
-                soloHeld--;
-            }
-        }
-    }
-    
-    private RgbState muteColor(final Track track) {
-        if (track.exists().get()) {
-            return track.mute().get() ? RgbState.ORANGE : RgbState.ORANGE_LO;
-        }
-        return RgbState.OFF;
-    }
-    
-    private RgbState selectColor(final Track track, final int index) {
-        if (track.exists().get()) {
-            return index == selectedTrackIndex.get() ? RgbState.WHITE : trackColors[index];
-        }
-        return RgbState.OFF;
-    }
-    
-    private RgbState armColor(final Track track) {
-        if (track.exists().get()) {
-            return track.arm().get() ? RgbState.RED : RgbState.RED_LO;
-        }
-        return RgbState.OFF;
-    }
-    
-    private RgbState soloColor(final Track track) {
-        if (track.exists().get()) {
-            return track.solo().get() ? RgbState.YELLOW : RgbState.YELLOW_LO;
-        }
-        return RgbState.OFF;
-    }
-    
-    
-    private void handleModeChange(final BaseMode baseMode) {
-        this.mode = baseMode;
-        applyMode();
-    }
-    
-    @Activate
-    public void init() {
-        this.setIsActive(true);
-        applyMode();
-    }
-    
-    private void applyMode() {
         this.mixerLayer.setIsActive(mode == BaseMode.MIXER);
         this.dawLayer.setIsActive(mode == BaseMode.DAW);
+        
+        
         applySelectMuteMode();
         applyArmSoloMode();
         selectLayer.setIsActive(true);
@@ -319,13 +211,4 @@ public class MixerLayer extends Layer {
         this.muteLayer.setIsActive(row2Mode == Row2ButtonMode.MUTE);
     }
     
-    @Override
-    protected void onDeactivate() {
-        super.onDeactivate();
-    }
-    
-    @Override
-    protected void onActivate() {
-        super.onActivate();
-    }
 }
