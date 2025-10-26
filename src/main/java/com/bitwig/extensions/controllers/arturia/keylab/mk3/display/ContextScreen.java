@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk3.display;
 
 import com.bitwig.extension.controller.api.Application;
+import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
@@ -25,6 +26,7 @@ import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.di.Inject;
 import com.bitwig.extensions.framework.values.LayoutType;
 
 @Component
@@ -50,6 +52,10 @@ public class ContextScreen {
     private final Layer deviceLayer;
     private LayoutType panelLayout;
     private final SceneFocus sceneFocus;
+    private long sceneLaunchDownTime = -1;
+    
+    @Inject
+    private ControllerHost host;
     
     private enum ControlMode {
         MIXER,
@@ -213,13 +219,25 @@ public class ContextScreen {
         final RgbButton contextButton7 = hwElements.getContextButton(6);
         contextButton7.bindPressed(mainLayer, () -> cursorTrack.mute().toggle());
         final RgbButton contextButton8 = hwElements.getContextButton(7);
-        contextButton8.bindIsPressed(
-            mainLayer, pressed -> {
-                if (pressed) {
-                    viewControl.launchScene();
-                }
-                sceneButtonPressed = pressed;
-            });
+        contextButton8.bindIsPressed(mainLayer, pressed -> sceneLaunching(viewControl, pressed));
+    }
+    
+    private void sceneLaunching(final ViewControl viewControl, final Boolean pressed) {
+        if (pressed) {
+            sceneLaunchDownTime = System.currentTimeMillis();
+            host.scheduleTask(this::delayedStopAll, 500);
+        } else if (sceneLaunchDownTime > 0) {
+            viewControl.launchScene();
+            sceneLaunchDownTime = -1L;
+        }
+        sceneButtonPressed = pressed;
+    }
+    
+    private void delayedStopAll() {
+        if (sceneLaunchDownTime > 0) {
+            viewControl.stopAllClips();
+            sceneLaunchDownTime = -1L;
+        }
     }
     
     private void toEncoderTrackControl() {

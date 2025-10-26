@@ -13,6 +13,7 @@ import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
+import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.PostConstruct;
@@ -37,11 +38,13 @@ public class ViewControl {
     private final SceneBank sceneBank;
     private final SceneFocus sceneFocus;
     private BooleanValueObject controlsAnalogLab;
+    private final Track rootTrack;
     public static final int NUM_PADS_TRACK = 8;
     
     public ViewControl(final ControllerHost host) {
         mixerTrackBank = host.createTrackBank(8, 2, 2);
         cursorTrack = host.createCursorTrack(2, 2);
+        rootTrack = host.getProject().getRootTrackGroup();
         
         viewTrackBank = host.createTrackBank(4, 2, 3);
         viewTrackBank.followCursorTrack(cursorTrack);
@@ -64,9 +67,11 @@ public class ViewControl {
         cursorClip.clipLauncherSlot().name().markInterested();
         arrangerClip.exists().markInterested();
         
-        primaryDevice = cursorTrack.createCursorDevice("DrumDetection", "Pad Device", NUM_PADS_TRACK,
+        primaryDevice = cursorTrack.createCursorDevice(
+            "DrumDetection", "Pad Device", NUM_PADS_TRACK,
             CursorDeviceFollowMode.FIRST_INSTRUMENT);
-        cursorDevice = cursorTrack.createCursorDevice("device-control", "Device Control", 0,
+        cursorDevice = cursorTrack.createCursorDevice(
+            "device-control", "Device Control", 0,
             CursorDeviceFollowMode.FOLLOW_SELECTION);
         cursorDevice.isWindowOpen().markInterested();
         
@@ -101,6 +106,10 @@ public class ViewControl {
         viewTrackBank.canScrollBackwards().markInterested();
         cursorTrack.hasNext().markInterested();
         cursorTrack.hasPrevious().markInterested();
+    }
+    
+    public void stopAllClips() {
+        rootTrack.stop();
     }
     
     private void setUpFollowArturiaDevice(final ControllerHost host) {
