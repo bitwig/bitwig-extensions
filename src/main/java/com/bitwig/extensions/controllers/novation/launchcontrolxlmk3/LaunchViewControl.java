@@ -6,6 +6,7 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.definition.AbstractLaunchControlExtensionDefinition;
 import com.bitwig.extensions.framework.di.Component;
 
 @Component
@@ -19,8 +20,8 @@ public class LaunchViewControl {
     private final TrackBank singleTrackBank;
     private final Track singleTrack;
     
-    public LaunchViewControl(final ControllerHost host) {
-        trackBank = host.createTrackBank(8, 2, 1);
+    public LaunchViewControl(final ControllerHost host, final AbstractLaunchControlExtensionDefinition definition) {
+        trackBank = host.createTrackBank(8, definition.isXlVersion() ? 2 : 1, 1);
         refSendBank = trackBank.getItemAt(0).sendBank();
         for (int i = 0; i < 8; i++) {
             prepareTrack(trackBank.getItemAt(i));

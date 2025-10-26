@@ -7,10 +7,10 @@ import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlXlMk3Extension;
 
-public class LaunchControlMk3ExtensionDefinition extends AbstractLaunchControlExtensionDefinition {
+public class LaunchControlExtensionDefinition extends AbstractLaunchControlExtensionDefinition {
     private static final UUID DRIVER_ID = UUID.fromString("cdee004a-1503-487c-bc13-a8311bf1724c");
     
-    public LaunchControlMk3ExtensionDefinition() {
+    public LaunchControlExtensionDefinition() {
     }
     
     @Override
