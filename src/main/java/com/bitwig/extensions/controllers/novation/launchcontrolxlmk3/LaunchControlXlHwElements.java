@@ -30,7 +30,6 @@ public class LaunchControlXlHwElements {
    private final BooleanValueObject shiftState = new BooleanValueObject();
 
    public LaunchControlXlHwElements(final HardwareSurface surface, final LaunchControlMidiProcessor midiProcessor) {
-
       shiftButton = surface.createHardwareButton("SHIFT_BUTTON");
       midiProcessor.setCcMatcher(shiftButton, 0x3F, 0x6);
       shiftButton.isPressed().addValueObserver(pressed -> shiftState.set(pressed));
