@@ -17,6 +17,11 @@ public class DisplayControl {
     private final DisplaySegment temporaryDisplay;
     private FixDisplayState fixedState = FixDisplayState.TRACK;
     private final Map<Integer, Integer> targetConfigs = new HashMap<>();
+    private QueuedTextMessage waitingMessage = null;
+    
+    private record QueuedTextMessage(int targetId, int config, String line1, String line2) {
+    
+    }
     
     public DisplayControl(final LaunchControlMidiProcessor processor,
         final AbstractLaunchControlExtensionDefinition definition) {
@@ -26,6 +31,17 @@ public class DisplayControl {
         this.temporaryDisplay = new DisplaySegment(0x36, this);
         textCommandHeader = processor.getSysexHeader() + "06 ";
         midiProcessor.addStartListener(this::initTemps);
+        midiProcessor.addTimedListener(this::updateQuedMessages);
+    }
+    
+    private void updateQuedMessages() {
+        if (waitingMessage != null) {
+            configureDisplay(waitingMessage.targetId, waitingMessage.config);
+            setText(waitingMessage.targetId, 0, waitingMessage.line1);
+            setText(waitingMessage.targetId, 1, waitingMessage.line2);
+            showDisplay(waitingMessage.targetId);
+            waitingMessage = null;
+        }
     }
     
     public void configureDisplay(final int targetId, final int config) {
@@ -57,14 +73,18 @@ public class DisplayControl {
         }
     }
     
-    public void show2Line(final String line1, final String line2) {
+    public void show2LineTemporary(final String line1, final String line2) {
         temporaryDisplay.setLine(0, line1);
         temporaryDisplay.setLine(1, line2);
         temporaryDisplay.update2Lines();
     }
     
-    public void showTempParamLines(final String title, final String name, final String value) {
-        temporaryDisplay.showParamValues(title, name, value);
+    public void cancelTemporary() {
+        hideDisplay(0x36);
+    }
+    
+    public void updateStatic() {
+        showDisplay(0x35);
     }
     
     public DisplaySegment getTemporaryDisplay() {
@@ -113,4 +133,7 @@ public class DisplayControl {
         configureDisplay(0x27, 0x01);
     }
     
+    public void queue2LineMessage(final int targetId, final int config, final String line1, final String line2) {
+        waitingMessage = new QueuedTextMessage(targetId, config, line1, line2);
+    }
 }

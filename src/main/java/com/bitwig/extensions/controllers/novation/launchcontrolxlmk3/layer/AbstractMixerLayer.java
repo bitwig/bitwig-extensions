@@ -15,6 +15,7 @@ import com.bitwig.extensions.framework.values.BasicStringValue;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
 
 public abstract class AbstractMixerLayer extends Layer {
+    protected final ButtonLayers buttonLayers;
     protected final LaunchControlMidiProcessor midiProcessor;
     protected final TransportHandler transportHandler;
     protected final Project project;
@@ -35,7 +36,7 @@ public abstract class AbstractMixerLayer extends Layer {
     
     public AbstractMixerLayer(final Layers layers, final LaunchControlMidiProcessor midiProcessor,
         final ControllerHost host, final LaunchViewControl viewControl, final LaunchControlXlHwElements hwElements,
-        final DisplayControl displayControl, final TransportHandler transportHandler) {
+        final DisplayControl displayControl, final TransportHandler transportHandler, final ButtonLayers buttonLayers) {
         super(layers, "MIXER");
         mixerLayer = new Layer(layers, "MIXER_LAYER");
         this.project = host.getProject();
@@ -46,6 +47,7 @@ public abstract class AbstractMixerLayer extends Layer {
         this.displayControl = displayControl;
         this.viewControl = viewControl;
         this.shiftState = hwElements.getShiftState();
+        this.buttonLayers = buttonLayers;
         midiProcessor.addModeListener(this::handleModeChange);
     }
     

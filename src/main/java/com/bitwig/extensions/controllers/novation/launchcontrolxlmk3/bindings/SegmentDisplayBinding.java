@@ -34,14 +34,14 @@ public class SegmentDisplayBinding extends Binding<StringValue, DisplaySegment> 
     private void handleNameUpdate(final String name) {
         this.name = name;
         if (isActive() && !isBlocked()) {
-            getTarget().show2Lines(title, name);
+            getTarget().show2LinesBuffered(title, name);
         }
     }
     
     private void handleTitleUpdate(final String name) {
         this.title = name;
         if (isActive() && !isBlocked()) {
-            getTarget().show2Lines(title, name);
+            getTarget().show2LinesBuffered(title, name);
         }
     }
     
@@ -51,6 +51,6 @@ public class SegmentDisplayBinding extends Binding<StringValue, DisplaySegment> 
     
     @Override
     protected void activate() {
-        getTarget().show2Lines(title, name);
+    
     }
 }

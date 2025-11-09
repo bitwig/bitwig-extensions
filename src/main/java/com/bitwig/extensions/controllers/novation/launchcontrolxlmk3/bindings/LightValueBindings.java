@@ -14,7 +14,7 @@ public class LightValueBindings extends Binding<Parameter, LaunchLight> implemen
     protected boolean disabled;
     
     public LightValueBindings(final Parameter parameter, final LaunchLight target, final GradientColor gradient) {
-        super(parameter, parameter, target);
+        super(target.getLightId(), parameter, target);
         this.gradient = gradient;
         
         parameter.value().addValueObserver(gradient.length(), this::handleValue);
