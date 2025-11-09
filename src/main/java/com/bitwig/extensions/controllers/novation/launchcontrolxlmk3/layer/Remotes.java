@@ -8,7 +8,9 @@ import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlXlHwElements;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.DisableBinding;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.DisplayId;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.LightValueBindings;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.ParameterDisplayBinding;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.RelativeEncoderBinding;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.control.LaunchRelativeEncoder;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.display.DisplayControl;
@@ -54,18 +56,24 @@ class Remotes {
             final LaunchRelativeEncoder row1Encoder = hwElements.getRelativeEncoder(0, i);
             final LaunchRelativeEncoder row2Encoder = hwElements.getRelativeEncoder(1, i);
             final Parameter parameter = this.getParameter(i);
-            layer.addBinding(
-                new RelativeEncoderBinding(parameter, row1Encoder, displayControl, deviceName, parameter.name()));
+            final ParameterDisplayBinding parameterRow1DisplayBinding =
+                new ParameterDisplayBinding(
+                    new DisplayId(row1Encoder.getTargetId(), displayControl), deviceName, parameter);
+            layer.addBinding(parameterRow1DisplayBinding);
+            layer.addBinding(new RelativeEncoderBinding(parameter, row1Encoder));
             layer.addBinding(new LightValueBindings(parameter, row1Encoder.getLight(), DEVICE_COLORS.get(i)));
             final Parameter parameter2 = getParameter2(i);
             
-            final RelativeEncoderBinding row2Binding =
-                new RelativeEncoderBinding(parameter2, row2Encoder, displayControl, deviceName, parameter2.name());
+            final ParameterDisplayBinding parameterRow2DisplayBinding =
+                new ParameterDisplayBinding(
+                    new DisplayId(row2Encoder.getTargetId(), displayControl), deviceName, parameter2);
+            layer.addBinding(parameterRow2DisplayBinding);
+            final RelativeEncoderBinding row2Binding = new RelativeEncoderBinding(parameter2, row2Encoder);
             layer.addBinding(row2Binding);
             final LightValueBindings row2LightBinding =
                 new LightValueBindings(parameter2, row2Encoder.getLight(), DEVICE_COLORS.get(i));
             layer.addBinding(row2LightBinding);
-            disableBindings.add(row2Binding);
+            disableBindings.add(parameterRow2DisplayBinding);
             disableBindings.add(row2LightBinding);
         }
     }

@@ -36,6 +36,12 @@ public class DisplaySegment {
         update2Lines();
     }
     
+    public void show2LinesBuffered(final String line1, final String line2) {
+        stdLines[0] = line1;
+        stdLines[1] = line2;
+        control.queue2LineMessage(targetId, config, line1, line2);
+    }
+    
     public void update2Lines() {
         control.configureDisplay(targetId, config);
         control.setText(targetId, 0, stdLines[0]);

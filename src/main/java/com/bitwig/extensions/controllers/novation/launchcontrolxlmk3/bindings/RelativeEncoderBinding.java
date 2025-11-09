@@ -2,16 +2,17 @@ package com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings;
 
 import com.bitwig.extension.controller.api.HardwareBinding;
 import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extension.controller.api.StringValue;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.control.LaunchRelativeEncoder;
-import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.display.DisplayControl;
 
-public class RelativeEncoderBinding extends LauncherBinding<LaunchRelativeEncoder> {
+public class RelativeEncoderBinding extends LauncherBinding<RelativeHardwareKnob> {
     
-    public RelativeEncoderBinding(final Parameter parameter, final LaunchRelativeEncoder knob,
-        final DisplayControl displayControl, final StringValue trackName, final StringValue parameterName) {
-        super(knob.getTargetId(), parameter, knob, displayControl, trackName, parameterName);
+    private final LaunchRelativeEncoder encoder;
+    
+    public RelativeEncoderBinding(final Parameter parameter, final LaunchRelativeEncoder encoder) {
+        super(encoder.getEncoder(), parameter);
         parameter.discreteValueCount().addValueObserver(this::handleSteps);
+        this.encoder = encoder;
     }
     
     private void handleSteps(final int discreteSteps) {
@@ -22,7 +23,7 @@ public class RelativeEncoderBinding extends LauncherBinding<LaunchRelativeEncode
     
     @Override
     protected HardwareBinding getHardwareBinding() {
-        return getSource().addBinding(getTarget().getEncoder());
+        return getTarget().addBinding(getSource());
     }
     
     @Override
@@ -32,6 +33,6 @@ public class RelativeEncoderBinding extends LauncherBinding<LaunchRelativeEncode
     @Override
     protected void activate() {
         super.activate();
-        getTarget().setEncoderBehavior(LaunchRelativeEncoder.EncoderMode.ACCELERATED, 64);
+        encoder.setEncoderBehavior(LaunchRelativeEncoder.EncoderMode.ACCELERATED, 64);
     }
 }

@@ -1,19 +1,20 @@
 package com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings;
 
 import com.bitwig.extension.controller.api.HardwareBinding;
-import com.bitwig.extension.controller.api.Parameter;
+import com.bitwig.extension.controller.api.RelativeHardwarControlBindable;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.control.LaunchRelativeEncoder;
 import com.bitwig.extensions.framework.Binding;
 
-public abstract class LauncherBinding<S> extends Binding<S, Parameter> {
+public class SteppedEncoderBinding extends Binding<LaunchRelativeEncoder, RelativeHardwarControlBindable> {
     protected HardwareBinding hwBinding;
     
-    public LauncherBinding(final S control, final Parameter parameter) {
-        super(control, control, parameter);
+    public SteppedEncoderBinding(final LaunchRelativeEncoder encoder, final RelativeHardwarControlBindable incHandler) {
+        super(new TargetId(encoder.getTargetId()), encoder, incHandler);
     }
     
-    protected abstract HardwareBinding getHardwareBinding();
-    
-    protected abstract void updateValue();
+    public HardwareBinding getHardwareBinding() {
+        return null;
+    }
     
     @Override
     protected void deactivate() {
@@ -28,9 +29,6 @@ public abstract class LauncherBinding<S> extends Binding<S, Parameter> {
         if (hwBinding != null) {
             hwBinding.removeBinding();
         }
-        updateValue();
         hwBinding = getHardwareBinding();
     }
-    
-    
 }
