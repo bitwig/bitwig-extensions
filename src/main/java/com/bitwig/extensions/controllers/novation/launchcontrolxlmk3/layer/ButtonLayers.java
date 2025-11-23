@@ -11,14 +11,12 @@ public class ButtonLayers {
     private final Layer soloLayer;
     private final Layer muteLayer;
     private final Layer armLayer;
-    private final Layer buttonOverlayLayer;
     
     public ButtonLayers(final Layers layers) {
         selectLayer = new Layer(layers, "SELECT");
         soloLayer = new Layer(layers, "SOLO");
         armLayer = new Layer(layers, "ARM");
         muteLayer = new Layer(layers, "MUTE");
-        buttonOverlayLayer = new Layer(layers, "BUTTON_OVERLAY");
     }
     
     public Layer getSelectLayer() {
@@ -35,9 +33,5 @@ public class ButtonLayers {
     
     public Layer getArmLayer() {
         return armLayer;
-    }
-    
-    public Layer getButtonOverlayLayer() {
-        return buttonOverlayLayer;
     }
 }

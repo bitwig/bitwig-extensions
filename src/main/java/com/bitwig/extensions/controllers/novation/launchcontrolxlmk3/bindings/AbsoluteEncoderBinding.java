@@ -12,7 +12,7 @@ public class AbsoluteEncoderBinding extends LauncherBinding<AbsoluteHardwareCont
     private final LaunchAbsoluteEncoder knob;
     
     public AbsoluteEncoderBinding(final Parameter parameter, final LaunchAbsoluteEncoder knob) {
-        super(knob.getKnob(), parameter);
+        super(knob.getId(), knob.getKnob(), parameter);
         
         this.knob = knob;
         

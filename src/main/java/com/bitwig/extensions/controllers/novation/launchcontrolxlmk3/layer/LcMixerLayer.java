@@ -39,10 +39,10 @@ public class LcMixerLayer extends AbstractMixerLayer {
     private final Layer panLayer;
     private final Layer sendLayer;
     
-    
     private boolean panFocus = true;
     private boolean updateFxText = false;
     private String fxTextName = "";
+    private SpecControl specControl;
     
     private enum ButtonMode {
         SELECT,
@@ -65,18 +65,28 @@ public class LcMixerLayer extends AbstractMixerLayer {
             bindTrack(hwElements, trackBank, i);
         }
         bindNavigation(hwElements);
+        final LaunchButton lcButton = hwElements.getButtons(CcConstValues.DAW_SPEC);
+        lcButton.bindIsPressed(this, this::handleSpecButton);
     }
     
     @Activate
     public void init() {
         this.setIsActive(true);
-        this.dawLayer.initButtonOverlay(buttonLayers.getButtonOverlayLayer());
         applyMode();
     }
     
+    public void setSpecOverlay(final SpecControl specControl) {
+        this.specControl = specControl;
+    }
+    
+    private void handleSpecButton(final Boolean pressed) {
+        specControl.setActive(pressed);
+        midiProcessor.setToRelative(1, pressed);
+    }
+    
     private void bindNavigation(final LaunchControlXlHwElements hwElements) {
-        final LaunchButton trackLeftButton = hwElements.getButton(CcConstValues.TRACK_LEFT);
-        final LaunchButton trackRightButton = hwElements.getButton(CcConstValues.TRACK_RIGHT);
+        final LaunchButton trackLeftButton = hwElements.getButtons(CcConstValues.TRACK_LEFT);
+        final LaunchButton trackRightButton = hwElements.getButtons(CcConstValues.TRACK_RIGHT);
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         
         trackLeftButton.bindLight(mixerLayer, () -> viewControl.canNavLeft() ? RgbState.WHITE : RgbState.OFF);
@@ -86,7 +96,7 @@ public class LcMixerLayer extends AbstractMixerLayer {
         trackRightButton.bindRepeatHold(mixerLayer, this::navTrackRight);
         trackLeftButton.bindRepeatHold(mixerLayer, this::navTrackLeft);
         
-        final LaunchButton functionButton = hwElements.getButton(CcConstValues.MUTE_SELECT_MODE);
+        final LaunchButton functionButton = hwElements.getButtons(CcConstValues.MUTE_SELECT_MODE);
         functionButton.bindIsPressed(this, this::buttonModePressed);
         functionButton.bindLight(this, this::functionButtonColor);
         final SegmentDisplayBinding trackDisplayBinding =
@@ -97,8 +107,8 @@ public class LcMixerLayer extends AbstractMixerLayer {
         refBank.canScrollBackwards().markInterested();
         refBank.canScrollForwards().markInterested();
         refBank.getItemAt(0).name().addValueObserver(this::updateFxSendName);
-        final LaunchButton pageUpButton = hwElements.getButton(CcConstValues.PAGE_DOWN);
-        final LaunchButton pageDownButton = hwElements.getButton(CcConstValues.PAGE_UP);
+        final LaunchButton pageUpButton = hwElements.getButtons(CcConstValues.PAGE_DOWN);
+        final LaunchButton pageDownButton = hwElements.getButtons(CcConstValues.PAGE_UP);
         pageUpButton.bindLight(
             mixerLayer, () -> panFocus || refBank.canScrollForwards().get() ? RgbState.WHITE : RgbState.OFF);
         pageDownButton.bindLight(
@@ -187,6 +197,7 @@ public class LcMixerLayer extends AbstractMixerLayer {
         button.bindIsPressed(this.buttonLayers.getArmLayer(), pressed -> toggleArm(pressed, track));
         button.bindLight(this.buttonLayers.getMuteLayer(), () -> muteColor(track));
         button.bindPressed(this.buttonLayers.getMuteLayer(), () -> track.mute().toggle());
+        transportHandler.assignTransportButtons(hwElements.getButtons(1), this.buttonLayers.getMuteLayer());
     }
     
     private void buttonModePressed(final boolean pressed) {
@@ -250,6 +261,17 @@ public class LcMixerLayer extends AbstractMixerLayer {
         this.buttonLayers.getSoloLayer().setIsActive(buttonMode == ButtonMode.SOLO);
         this.buttonLayers.getMuteLayer().setIsActive(buttonMode == ButtonMode.MUTE);
         this.buttonLayers.getArmLayer().setIsActive(buttonMode == ButtonMode.ARM);
+    }
+    
+    private void activateButtonModes(final boolean active) {
+        if (active) {
+            applyButtonMode();
+        } else {
+            this.buttonLayers.getSelectLayer().setIsActive(active);
+            this.buttonLayers.getMuteLayer().setIsActive(active);
+            this.buttonLayers.getSoloLayer().setIsActive(active);
+            this.buttonLayers.getArmLayer().setIsActive(active);
+        }
     }
     
     public void navTrackRight() {
