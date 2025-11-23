@@ -15,7 +15,6 @@ import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.novation.launchpadpromk3.FocusSlot;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.di.Inject;
 

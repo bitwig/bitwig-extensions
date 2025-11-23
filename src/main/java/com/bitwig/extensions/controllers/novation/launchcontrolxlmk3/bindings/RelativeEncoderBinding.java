@@ -10,7 +10,7 @@ public class RelativeEncoderBinding extends LauncherBinding<RelativeHardwareKnob
     private final LaunchRelativeEncoder encoder;
     
     public RelativeEncoderBinding(final Parameter parameter, final LaunchRelativeEncoder encoder) {
-        super(encoder.getEncoder(), parameter);
+        super(encoder.getId(), encoder.getEncoder(), parameter);
         parameter.discreteValueCount().addValueObserver(this::handleSteps);
         this.encoder = encoder;
     }

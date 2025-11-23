@@ -1,14 +1,12 @@
 package com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.control;
 
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
-import com.bitwig.extension.controller.api.HardwareBinding;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlMidiProcessor;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.ControlTargetId;
 
 public class LaunchAbsoluteEncoder extends LaunchKnob {
     private final AbsoluteHardwareKnob knob;
-    private HardwareBinding hwBinding;
-    
     
     public LaunchAbsoluteEncoder(final int index, final HardwareSurface surface,
         final LaunchControlMidiProcessor midiProcessor, final LaunchLight light) {
@@ -23,6 +21,10 @@ public class LaunchAbsoluteEncoder extends LaunchKnob {
     
     public int getCcNr() {
         return ccNr;
+    }
+    
+    public ControlTargetId getId() {
+        return new ControlTargetId(index + 0xD);
     }
     
     public void updateValue(final int value) {

@@ -6,8 +6,9 @@ import com.bitwig.extension.controller.api.Parameter;
 
 public class SliderBinding extends LauncherBinding<AbsoluteHardwareControl> {
     
-    public SliderBinding(final Parameter parameter, final AbsoluteHardwareControl control) {
-        super(control, parameter); //index + 0x05
+    public SliderBinding(final ControlTargetId targetId, final Parameter parameter,
+        final AbsoluteHardwareControl control) {
+        super(targetId, control, parameter); //index + 0x05
     }
     
     protected AbsoluteHardwareControlBinding getHardwareBinding() {

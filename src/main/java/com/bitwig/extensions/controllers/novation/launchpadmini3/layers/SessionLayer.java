@@ -15,6 +15,7 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.novation.commonsmk3.AbstractLpSessionLayer;
 import com.bitwig.extensions.controllers.novation.commonsmk3.ColorLookup;
+import com.bitwig.extensions.controllers.novation.commonsmk3.FocusSlot;
 import com.bitwig.extensions.controllers.novation.commonsmk3.GridButton;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LabeledButton;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LaunchPadButton;
@@ -23,11 +24,10 @@ import com.bitwig.extensions.controllers.novation.commonsmk3.MidiProcessor;
 import com.bitwig.extensions.controllers.novation.commonsmk3.PanelLayout;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
 import com.bitwig.extensions.controllers.novation.commonsmk3.ViewCursorControl;
-import com.bitwig.extensions.controllers.novation.launchpadmini3.LpMiniHwElements;
 import com.bitwig.extensions.controllers.novation.launchpadmini3.LabelCcAssignmentsMini;
+import com.bitwig.extensions.controllers.novation.launchpadmini3.LpMiniHwElements;
 import com.bitwig.extensions.controllers.novation.launchpadmini3.LpMode;
 import com.bitwig.extensions.controllers.novation.launchpadmini3.TrackMode;
-import com.bitwig.extensions.controllers.novation.launchpadpromk3.FocusSlot;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
@@ -372,69 +372,84 @@ public class SessionLayer extends AbstractLpSessionLayer {
     
     private void initVolumeControl(final LpMiniHwElements hwElements, final Layer layer, final int index) {
         final LabeledButton volumeButton = hwElements.getSceneLaunchButtons().get(index);
-        volumeButton.bindPressReleaseAfter(this, () -> intoControlMode(ControlMode.VOLUME), this::returnToPreviousMode,
+        volumeButton.bindPressReleaseAfter(
+            this, () -> intoControlMode(ControlMode.VOLUME), this::returnToPreviousMode,
             MOMENTARY_TIME);
-        volumeButton.bindLight(layer,
+        volumeButton.bindLight(
+            layer,
             () -> controlMode == ControlMode.VOLUME ? RgbState.of(9) : RgbState.of(MODE_INACTIVE_COLOR));
     }
     
     private void initPanControl(final LpMiniHwElements hwElements, final Layer layer, final int index) {
         final LabeledButton panButton = hwElements.getSceneLaunchButtons().get(index);
-        panButton.bindPressReleaseAfter(this, () -> intoControlMode(ControlMode.PAN), this::returnToPreviousMode,
+        panButton.bindPressReleaseAfter(
+            this, () -> intoControlMode(ControlMode.PAN), this::returnToPreviousMode,
             MOMENTARY_TIME);
-        panButton.bindLight(layer,
+        panButton.bindLight(
+            layer,
             () -> controlMode == ControlMode.PAN ? RgbState.of(9) : RgbState.of(MODE_INACTIVE_COLOR));
     }
     
     private void initSendsAControl(final LpMiniHwElements hwElements, final Layer layer, final int index) {
         final LabeledButton sendsAButton = hwElements.getSceneLaunchButtons().get(index);
-        sendsAButton.bindPressReleaseAfter(this, () -> intoControlMode(ControlMode.SENDS_A), this::returnToPreviousMode,
+        sendsAButton.bindPressReleaseAfter(
+            this, () -> intoControlMode(ControlMode.SENDS_A), this::returnToPreviousMode,
             MOMENTARY_TIME);
         sendsAButton.bindLight(layer, () -> getSendsState(ControlMode.SENDS_A));
     }
     
     private void initSendsBControl(final LpMiniHwElements hwElements, final Layer layer, final int index) {
         final LabeledButton sendsBButton = hwElements.getSceneLaunchButtons().get(index);
-        sendsBButton.bindPressReleaseAfter(this, () -> intoControlMode(ControlMode.SENDS_B), this::returnToPreviousMode,
+        sendsBButton.bindPressReleaseAfter(
+            this, () -> intoControlMode(ControlMode.SENDS_B), this::returnToPreviousMode,
             MOMENTARY_TIME);
         sendsBButton.bindLight(layer, () -> getSendsState(ControlMode.SENDS_B));
     }
     
     private void initDeviceControl(final LpMiniHwElements hwElements, final Layer layer, final int index) {
         final LabeledButton deviceButton = hwElements.getSceneLaunchButtons().get(index);
-        deviceButton.bindPressReleaseAfter(this, () -> intoControlMode(ControlMode.DEVICE), this::returnToPreviousMode,
+        deviceButton.bindPressReleaseAfter(
+            this, () -> intoControlMode(ControlMode.DEVICE), this::returnToPreviousMode,
             MOMENTARY_TIME);
-        deviceButton.bindLight(layer,
+        deviceButton.bindLight(
+            layer,
             () -> controlMode == ControlMode.DEVICE ? RgbState.of(33) : RgbState.of(MODE_INACTIVE_COLOR));
     }
     
     private void initStopControl(final LpMiniHwElements hwElements, final Layer layer, final int index) {
         final LabeledButton stopButton = hwElements.getSceneLaunchButtons().get(index);
-        stopButton.bindPressReleaseAfter(this, () -> intoTrackMode(TrackMode.STOP), this::returnToPreviousMode,
+        stopButton.bindPressReleaseAfter(
+            this, () -> intoTrackMode(TrackMode.STOP), this::returnToPreviousMode,
             MOMENTARY_TIME);
-        stopButton.bindLight(layer,
+        stopButton.bindLight(
+            layer,
             () -> trackMode == TrackMode.STOP ? RgbState.of(5) : RgbState.of(MODE_INACTIVE_COLOR));
     }
     
     private void initMuteControl(final LpMiniHwElements hwElements, final Layer layer, final int index) {
         final LabeledButton muteButton = hwElements.getSceneLaunchButtons().get(index);
-        muteButton.bindPressReleaseAfter(this, () -> intoTrackMode(TrackMode.MUTE), this::returnToPreviousMode,
+        muteButton.bindPressReleaseAfter(
+            this, () -> intoTrackMode(TrackMode.MUTE), this::returnToPreviousMode,
             MOMENTARY_TIME);
-        muteButton.bindLight(layer,
+        muteButton.bindLight(
+            layer,
             () -> trackMode == TrackMode.MUTE ? RgbState.of(9) : RgbState.of(MODE_INACTIVE_COLOR));
     }
     
     private void initSoloControl(final LpMiniHwElements hwElements, final Layer layer, final int index) {
         final LabeledButton soloButton = hwElements.getSceneLaunchButtons().get(index);
-        soloButton.bindPressReleaseAfter(this, () -> intoTrackMode(TrackMode.SOLO), this::returnToPreviousMode,
+        soloButton.bindPressReleaseAfter(
+            this, () -> intoTrackMode(TrackMode.SOLO), this::returnToPreviousMode,
             MOMENTARY_TIME);
-        soloButton.bindLight(layer,
+        soloButton.bindLight(
+            layer,
             () -> trackMode == TrackMode.SOLO ? RgbState.of(13) : RgbState.of(MODE_INACTIVE_COLOR));
     }
     
     private void initArmControl(final LpMiniHwElements hwElements, final Layer layer, final int index) {
         final LabeledButton soloButton = hwElements.getSceneLaunchButtons().get(index);
-        soloButton.bindPressReleaseAfter(this, () -> intoTrackMode(TrackMode.ARM), this::returnToPreviousMode,
+        soloButton.bindPressReleaseAfter(
+            this, () -> intoTrackMode(TrackMode.ARM), this::returnToPreviousMode,
             MOMENTARY_TIME);
         soloButton.bindLight(
             layer, () -> trackMode == TrackMode.ARM ? RgbState.of(5) : RgbState.of(MODE_INACTIVE_COLOR));
@@ -486,7 +501,7 @@ public class SessionLayer extends AbstractLpSessionLayer {
             controlMode = mode;
             if (modeLayer != null) {
                 modeLayer.setIsActive(true);
-                if (modeLayer instanceof SendsSliderLayer sendsSliderLayer) {
+                if (modeLayer instanceof final SendsSliderLayer sendsSliderLayer) {
                     sendsSliderLayer.setControl(mode);
                 }
             }

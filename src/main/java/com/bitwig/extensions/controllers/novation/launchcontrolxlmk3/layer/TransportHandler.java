@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.layer;
 
+import java.util.List;
 import java.util.function.IntConsumer;
 
 import com.bitwig.extension.controller.api.Application;
@@ -108,8 +109,8 @@ public class TransportHandler {
     }
     
     public void bindTransport(final Layer layer) {
-        final LaunchButton playButton = hwElements.getButton(CcConstValues.PLAY);
-        final LaunchButton recButton = hwElements.getButton(CcConstValues.RECORD);
+        final LaunchButton playButton = hwElements.getButtons(CcConstValues.PLAY);
+        final LaunchButton recButton = hwElements.getButtons(CcConstValues.RECORD);
         transport.isPlaying().markInterested();
         transport.isClipLauncherOverdubEnabled().markInterested();
         transport.isArrangerRecordEnabled().markInterested();
@@ -118,7 +119,6 @@ public class TransportHandler {
         recButton.bindLight(layer, this::getRecordState);
         recButton.bindPressed(layer, this::handleRecordPressed);
     }
-    
     
     public void bindControl(final Layer specLayer, final LaunchControlXlHwElements hwElements, final int rowIndex) {
         final LaunchRelativeEncoder playbackPosEncoder = hwElements.getRelativeEncoder(rowIndex, 0);
@@ -209,8 +209,8 @@ public class TransportHandler {
     }
     
     public void bindTrackNavigation(final Layer layer) {
-        final LaunchButton trackLeftButton = hwElements.getButton(CcConstValues.TRACK_LEFT);
-        final LaunchButton trackRightButton = hwElements.getButton(CcConstValues.TRACK_RIGHT);
+        final LaunchButton trackLeftButton = hwElements.getButtons(CcConstValues.TRACK_LEFT);
+        final LaunchButton trackRightButton = hwElements.getButtons(CcConstValues.TRACK_RIGHT);
         
         trackLeftButton.bindLight(layer, () -> canNavLeft(cursorTrack) ? RgbState.WHITE : RgbState.OFF);
         trackRightButton.bindLight(layer, () -> canNavRight(cursorTrack) ? RgbState.WHITE : RgbState.OFF);
@@ -450,6 +450,96 @@ public class TransportHandler {
         } else {
             sceneBank.scrollBackwards();
             focusScene.selectInEditor();
+        }
+    }
+    
+    public void assignTransportButtons(final List<LaunchButton> buttons, final Layer layer) {
+        final LaunchButton playButton = buttons.get(0);
+        transport.isPlaying().markInterested();
+        playButton.bindLight(layer, () -> transport.isPlaying().get() ? RgbState.GREEN : RgbState.DIM_GREEN);
+        playButton.bindPressed(layer, this::handlePlay);
+        
+        final LaunchButton stopButton = buttons.get(1);
+        stopButton.bindLight(layer, () -> transport.isPlaying().get() ? RgbState.WHITE : RgbState.DIM_WHITE);
+        stopButton.bindPressed(layer, this::handleStop);
+        
+        final LaunchButton recButton = buttons.get(2);
+        transport.isArrangerRecordEnabled().markInterested();
+        recButton.bindLight(layer, () -> transport.isArrangerRecordEnabled().get() ? RgbState.RED : RgbState.RED_LO);
+        recButton.bindPressed(layer, this::handleRec);
+        
+        final LaunchButton overdubButton = buttons.get(3);
+        transport.isArrangerOverdubEnabled().markInterested();
+        overdubButton.bindLight(
+            layer, () -> transport.isArrangerOverdubEnabled().get() ? RgbState.ORANGE : RgbState.ORANGE_LO);
+        overdubButton.bindPressed(layer, this::overdubArranger);
+        
+        final LaunchButton overdubLauncherButton = buttons.get(4);
+        transport.isClipLauncherOverdubEnabled().markInterested();
+        overdubLauncherButton.bindLight(
+            layer, () -> transport.isClipLauncherOverdubEnabled().get() ? RgbState.RED : RgbState.RED_LO);
+        overdubLauncherButton.bindPressed(layer, this::overdubLauncher);
+        
+        for (int i = 5; i < 7; i++) {
+            final LaunchButton button = buttons.get(i);
+            button.bindLight(layer, () -> RgbState.OFF);
+            button.bindPressed(layer, () -> {});
+        }
+        
+        final LaunchButton sceneButton = buttons.get(7);
+        sceneButton.bindLight(layer, () -> RgbState.BLUE);
+        sceneButton.bindIsPressed(layer, this::handleSceneLaunch);
+    }
+    
+    private void overdubLauncher() {
+        if (shiftState.get()) {
+            displayControl.show2LineTemporary("Button", "Launcher Overdub");
+        } else {
+            transport.isClipLauncherOverdubEnabled().toggle();
+        }
+    }
+    
+    private void handleSceneLaunch(final boolean pressed) {
+        if (shiftState.get()) {
+            displayControl.show2LineTemporary("Button", "Scene %s".formatted(focusScene.name().get()));
+        } else {
+            if (pressed) {
+                focusScene.launch();
+            } else {
+                focusScene.launchRelease();
+            }
+        }
+    }
+    
+    private void handlePlay() {
+        if (shiftState.get()) {
+            displayControl.show2LineTemporary("Button", "Play");
+        } else {
+            transport.play();
+        }
+    }
+    
+    private void handleRec() {
+        if (shiftState.get()) {
+            displayControl.show2LineTemporary("Button", "Rec");
+        } else {
+            transport.record();
+        }
+    }
+    
+    private void handleStop() {
+        if (shiftState.get()) {
+            displayControl.show2LineTemporary("Button", "Stop");
+        } else {
+            transport.stop();
+        }
+    }
+    
+    private void overdubArranger() {
+        if (shiftState.get()) {
+            displayControl.show2LineTemporary("Button", "Arranger Overdub");
+        } else {
+            transport.isArrangerOverdubEnabled().toggle();
         }
     }
     

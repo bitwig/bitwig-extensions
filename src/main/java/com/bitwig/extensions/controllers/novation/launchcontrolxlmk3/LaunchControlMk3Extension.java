@@ -8,6 +8,9 @@ import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.definition.AbstractLaunchControlExtensionDefinition;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.layer.LcDawControlLayer;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.layer.LcMixerLayer;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.layer.SpecControl;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Context;
@@ -49,6 +52,13 @@ public class LaunchControlMk3Extension extends ControllerExtension {
         diContext = new Context(this, Set.of(definition.isXlVersion() ? "XLModel" : "LCModel"));
         diContext.registerService(AbstractLaunchControlExtensionDefinition.class, definition);
         surface = diContext.getService(HardwareSurface.class);
+        if (!definition.isXlVersion()) {
+            final SpecControl specControl = diContext.create(SpecControl.class);
+            final LcDawControlLayer dawControlLayer = diContext.getService(LcDawControlLayer.class);
+            final LcMixerLayer mixerLayer = diContext.getService(LcMixerLayer.class);
+            dawControlLayer.setSpecOverlay(specControl);
+            mixerLayer.setSpecOverlay(specControl);
+        }
         diContext.activate();
         final Layers layers = diContext.getService(Layers.class);
         for (final Layer l : layers.getLayers()) {

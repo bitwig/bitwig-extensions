@@ -63,10 +63,10 @@ public class XlMixerLayer extends AbstractMixerLayer {
         
         bindNavigation(hwElements);
         transportHandler.bindTransport(this);
-        final LaunchButton soloArmButton = hwElements.getButton(CcConstValues.SOLO_ARM_MODE);
-        final LaunchButton muteSelectButton = hwElements.getButton(CcConstValues.MUTE_SELECT_MODE);
+        final LaunchButton soloArmButton = hwElements.getButtons(CcConstValues.SOLO_ARM_MODE);
+        final LaunchButton muteSelectButton = hwElements.getButtons(CcConstValues.MUTE_SELECT_MODE);
         
-        final LaunchButton specModeButton = hwElements.getButton(CcConstValues.DAW_SPEC);
+        final LaunchButton specModeButton = hwElements.getButtons(CcConstValues.DAW_SPEC);
         specModeButton.bindLight(this, () -> RgbState.BLUE);
         //specModeButton.bindPressed(this, () -> LaunchControlXlMk3Extension.println(" > PRESS SPEC >"));
         
@@ -83,8 +83,8 @@ public class XlMixerLayer extends AbstractMixerLayer {
     }
     
     private void bindNavigation(final LaunchControlXlHwElements hwElements) {
-        final LaunchButton pageUpButton = hwElements.getButton(CcConstValues.PAGE_UP);
-        final LaunchButton pageDownButton = hwElements.getButton(CcConstValues.PAGE_DOWN);
+        final LaunchButton pageUpButton = hwElements.getButtons(CcConstValues.PAGE_UP);
+        final LaunchButton pageDownButton = hwElements.getButtons(CcConstValues.PAGE_DOWN);
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         transportHandler.bindTrackNavigation(mixerLayer);
         
@@ -143,8 +143,7 @@ public class XlMixerLayer extends AbstractMixerLayer {
         // fixedPanLabel
         final ParameterDisplayBinding panDisplayBinding =
             new ParameterDisplayBinding(
-                new DisplayId(row3Encoder.getTargetId(), displayControl), track.name(),
-                track.pan());
+                new DisplayId(row3Encoder.getTargetId(), displayControl), track.name(), track.pan());
         mixerLayer.addBinding(panDisplayBinding);
         mixerLayer.addBinding(new LightValueBindings(track.pan(), row3Encoder.getLight(), GradientColor.PAN));
         mixerLayer.addBinding(new RelativeEncoderBinding(track.pan(), row3Encoder));
@@ -152,10 +151,9 @@ public class XlMixerLayer extends AbstractMixerLayer {
         // fixedVolumeLabel
         final ParameterDisplayBinding volumeDisplayBinding =
             new ParameterDisplayBinding(
-                new DisplayId(row2Encoder.getTargetId(), displayControl), track.name(),
-                track.volume());
+                new DisplayId(row2Encoder.getTargetId(), displayControl), track.name(), track.volume());
         mixerLayer.addBinding(volumeDisplayBinding);
-        this.addBinding(new SliderBinding(track.volume(), hwElements.getSlider(index)));
+        this.addBinding(new SliderBinding(row2Encoder.getId(), track.volume(), hwElements.getSlider(index)));
         
         final LaunchButton row2Button = hwElements.getRowButtons(1, index);
         final LaunchButton row1Button = hwElements.getRowButtons(0, index);

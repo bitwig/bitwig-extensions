@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.control;
 
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlMidiProcessor;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.ControlTargetId;
 
 public abstract class LaunchKnob {
     
@@ -20,6 +21,10 @@ public abstract class LaunchKnob {
     
     public int getTargetId() {
         return 0xD + index;
+    }
+    
+    public ControlTargetId getId() {
+        return new ControlTargetId(getTargetId());
     }
     
     public LaunchLight getLight() {

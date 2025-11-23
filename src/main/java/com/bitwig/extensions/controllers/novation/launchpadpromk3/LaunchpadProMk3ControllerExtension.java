@@ -19,6 +19,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.controllers.novation.commonsmk3.FocusSlot;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LabeledButton;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LaunchpadDeviceConfig;
 import com.bitwig.extensions.controllers.novation.commonsmk3.LpHwElements;
@@ -93,7 +94,8 @@ public class LaunchpadProMk3ControllerExtension extends ControllerExtension impl
         midiIn2.setMidiCallback((ShortMidiMessageReceivedCallback) this::onMidi1);
         
         final MidiOut midiOut = host.getMidiOutPort(0);
-        final MidiProcessor midiProcessor = new MidiProcessor(host, midiIn, midiOut,
+        final MidiProcessor midiProcessor = new MidiProcessor(
+            host, midiIn, midiOut,
             new LaunchpadDeviceConfig("LaunchPadProMk3", 0x0E, 0xB4, 0xB5, false));
         diContext.registerService(MidiProcessor.class, midiProcessor);
         
@@ -170,10 +172,11 @@ public class LaunchpadProMk3ControllerExtension extends ControllerExtension impl
     
     private void assignModifiers(final Application application) {
         final LabeledButton shiftButton = hwElements.getLabeledButton(LabelCcAssignments.SHIFT);
-        shiftButton.bindPressed(mainLayer, pressed -> {
-            shiftLayer.setIsActive(pressed);
-            modifierStates.setShift(pressed);
-        }, RgbState.BLUE, RgbState.WHITE);
+        shiftButton.bindPressed(
+            mainLayer, pressed -> {
+                shiftLayer.setIsActive(pressed);
+                modifierStates.setShift(pressed);
+            }, RgbState.BLUE, RgbState.WHITE);
         
         final LabeledButton clearButton = hwElements.getLabeledButton(LabelCcAssignments.CLEAR);
         clearButton.bindPressed(mainLayer, this::handleClear);
@@ -191,7 +194,8 @@ public class LaunchpadProMk3ControllerExtension extends ControllerExtension impl
         final SettableEnumValue recordQuantizeValue = application.recordQuantizationGrid();
         recordQuantizeValue.markInterested();
         quantizeButton.bindPressed(shiftLayer, pressed -> toggleRecordQuantize(recordQuantizeValue, pressed));
-        quantizeButton.bindLight(shiftLayer,
+        quantizeButton.bindLight(
+            shiftLayer,
             () -> recordQuantizeValue.get().equals("OFF") ? RgbState.RED_LO : RgbState.TURQUOISE);
     }
     
@@ -230,29 +234,34 @@ public class LaunchpadProMk3ControllerExtension extends ControllerExtension impl
     
     private void assignModeButtons() {
         final LabeledButton sessionButton = hwElements.getLabeledButton(LabelCcAssignments.SESSION);
-        sessionButton.bindRelease(mainLayer, () -> {
-            if (overviewLayer.isActive()) {
-                overviewLayer.setIsActive(false);
-            }
-        });
-        sessionButton.bindPressed(mainLayer, () -> {
-            if (mainMode == LpBaseMode.SESSION) {
-                overviewLayer.setIsActive(true);
-            } else {
-                sysExHandler.changeMode(LpBaseMode.SESSION, 0);
-            }
-        });
-        sessionButton.bindLight(mainLayer,
+        sessionButton.bindRelease(
+            mainLayer, () -> {
+                if (overviewLayer.isActive()) {
+                    overviewLayer.setIsActive(false);
+                }
+            });
+        sessionButton.bindPressed(
+            mainLayer, () -> {
+                if (mainMode == LpBaseMode.SESSION) {
+                    overviewLayer.setIsActive(true);
+                } else {
+                    sysExHandler.changeMode(LpBaseMode.SESSION, 0);
+                }
+            });
+        sessionButton.bindLight(
+            mainLayer,
             () -> sysExHandler.getMode() == LpBaseMode.SESSION ? RgbState.BLUE : RgbState.DIM_WHITE);
         
         final LabeledButton noteButton = hwElements.getLabeledButton(LabelCcAssignments.NOTE);
-        noteButton.bind(mainLayer, () -> {
-            sysExHandler.changeMode(LpBaseMode.NOTE, 0);
-        }, () -> sysExHandler.getMode() == LpBaseMode.NOTE ? RgbState.ORANGE : RgbState.DIM_WHITE);
+        noteButton.bind(
+            mainLayer, () -> {
+                sysExHandler.changeMode(LpBaseMode.NOTE, 0);
+            }, () -> sysExHandler.getMode() == LpBaseMode.NOTE ? RgbState.ORANGE : RgbState.DIM_WHITE);
         final LabeledButton chordButton = hwElements.getLabeledButton(LabelCcAssignments.CHORD);
-        chordButton.bind(mainLayer, () -> {
-            sysExHandler.changeMode(LpBaseMode.CHORD, 0);
-        }, () -> sysExHandler.getMode() == LpBaseMode.CHORD ? RgbState.ORANGE : RgbState.DIM_WHITE);
+        chordButton.bind(
+            mainLayer, () -> {
+                sysExHandler.changeMode(LpBaseMode.CHORD, 0);
+            }, () -> sysExHandler.getMode() == LpBaseMode.CHORD ? RgbState.ORANGE : RgbState.DIM_WHITE);
     }
     
     private void initTransportSection() {
@@ -263,14 +272,16 @@ public class LaunchpadProMk3ControllerExtension extends ControllerExtension impl
         
         final LabeledButton playButton = hwElements.getLabeledButton(LabelCcAssignments.PLAY);
         playButton.bind(mainLayer, this::togglePlay, this::getPlayColor);
-        playButton.bind(shiftLayer, () -> transport.continuePlayback(),
+        playButton.bind(
+            shiftLayer, () -> transport.continuePlayback(),
             () -> transport.isPlaying().get() ? RgbState.TURQUOISE : RgbState.SHIFT_INACTIVE);
         
         final LabeledButton recButton = hwElements.getLabeledButton(LabelCcAssignments.REC);
         recButton.bind(mainLayer, this::toggleRecord, this::getRecordButtonColorRegular);
         recButton.bindPressed(shiftLayer, () -> transport.isClipLauncherOverdubEnabled().toggle());
-        recButton.bindLight(shiftLayer, pressed -> transport.isClipLauncherOverdubEnabled().get() ? //
-            (pressed ? RgbState.pulse(60) : RgbState.of(60)) : RgbState.DIM_WHITE);
+        recButton.bindLight(
+            shiftLayer, pressed -> transport.isClipLauncherOverdubEnabled().get() ? //
+                (pressed ? RgbState.pulse(60) : RgbState.of(60)) : RgbState.DIM_WHITE);
     }
     
     private RgbState getPlayColor() {

@@ -46,14 +46,13 @@ public class XlDawControlLayer extends AbstractDawControlLayer {
     }
     
     private void bindNavigation(final LaunchControlXlHwElements hwElements) {
-        final LaunchButton pageUpButton = hwElements.getButton(CcConstValues.PAGE_UP);
-        final LaunchButton pageDownButton = hwElements.getButton(CcConstValues.PAGE_DOWN);
+        final LaunchButton pageUpButton = hwElements.getButtons(CcConstValues.PAGE_UP);
+        final LaunchButton pageDownButton = hwElements.getButtons(CcConstValues.PAGE_DOWN);
         pageUpButton.bindLight(this, this::canPageNavigateBackward);
         pageDownButton.bindLight(this, this::canPageNavigateForward);
         pageUpButton.bindRepeatHold(this, this::navigateBackward);
         pageDownButton.bindRepeatHold(this, this::navigateForward);
     }
-    
     
     private RgbState canPageNavigateBackward() {
         if (shiftState.get()) {
@@ -75,6 +74,7 @@ public class XlDawControlLayer extends AbstractDawControlLayer {
         } else {
             deviceRemotes.selectPreviousPage();
         }
+        displayControl.cancelTemporary();
     }
     
     private void navigateForward() {
@@ -83,6 +83,7 @@ public class XlDawControlLayer extends AbstractDawControlLayer {
         } else {
             deviceRemotes.selectNextPage();
         }
+        displayControl.cancelTemporary();
     }
     
     @Override

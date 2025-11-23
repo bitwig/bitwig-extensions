@@ -7,8 +7,8 @@ import com.bitwig.extensions.framework.Binding;
 public abstract class LauncherBinding<S> extends Binding<S, Parameter> {
     protected HardwareBinding hwBinding;
     
-    public LauncherBinding(final S control, final Parameter parameter) {
-        super(control, control, parameter);
+    public LauncherBinding(final ControlTargetId targetId, final S control, final Parameter parameter) {
+        super(targetId, control, parameter);
     }
     
     protected abstract HardwareBinding getHardwareBinding();
