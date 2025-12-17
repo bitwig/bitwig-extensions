@@ -5,10 +5,20 @@ import java.time.format.DateTimeFormatter;
 
 import com.bitwig.extension.controller.ControllerExtension;
 import com.bitwig.extension.controller.ControllerExtensionDefinition;
+import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.SettableEnumValue;
+import com.bitwig.extension.controller.api.Track;
+import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.controllers.akai.mpkmk4.controls.Encoder;
+import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkCcAssignment;
+import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkOnOffButton;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
+import com.bitwig.extensions.framework.values.FocusMode;
 
 public class MpkMk4ControllerExtension extends ControllerExtension {
     
@@ -19,6 +29,8 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
     private HardwareSurface surface;
     private Layer mainLayer;
     private MpkMidiProcessor midiProcessor;
+    private GlobalStates globalStates;
+    private FocusMode recordFocusMode = FocusMode.LAUNCHER;
     
     public static void println(final String format, final Object... args) {
         if (debugHost != null) {
@@ -42,10 +54,108 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         this.host = getHost();
         debugHost = host;
         final Context diContext = new Context(this);
-        mainLayer = diContext.createLayer("MAIN_LAYER");
+        globalStates = new GlobalStates(this.variant);
+        final LayerCollection layerCollection = diContext.getService(LayerCollection.class);
+        diContext.registerService(GlobalStates.class, globalStates);
+        mainLayer = layerCollection.get(LayerCollection.LayerId.MAIN);
         surface = diContext.getService(HardwareSurface.class);
         midiProcessor = diContext.getService(MpkMidiProcessor.class);
+        initTransport(diContext);
+        
+        final MpkViewControl viewControl = diContext.getService(MpkViewControl.class);
+        final Track track = viewControl.getTrackBank().getItemAt(0);
+        final Encoder encoder = diContext.getService(MpkHwElements.class).getEncoders().get(0);
+        encoder.bindValue(mainLayer, track.volume().value());
+        
         midiProcessor.init();
+        diContext.activate();
+        mainLayer.activate();
+    }
+    
+    private void initTransport(final Context diContext) {
+        final Transport transport = diContext.getService(Transport.class);
+        final MpkHwElements hwElements = diContext.getService(MpkHwElements.class);
+        final MpkButton shiftButton = hwElements.getShiftButton();
+        final LayerCollection layerCollection = diContext.getService(LayerCollection.class);
+        final Application application = diContext.getService(Application.class);
+        final DocumentState documentState = getHost().getDocumentState();
+        final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting(
+            "Record Button assignment", //
+            "Transport", new String[] {FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
+            recordFocusMode.getDescriptor());
+        recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));
+        transport.isClipLauncherAutomationWriteEnabled().markInterested();
+        transport.isArrangerAutomationWriteEnabled().markInterested();
+        transport.isClipLauncherOverdubEnabled().markInterested();
+        transport.isArrangerOverdubEnabled().markInterested();
+        
+        final Layer shiftLayer = layerCollection.get(LayerCollection.LayerId.SHIFT);
+        shiftButton.bindIsPressed(
+            mainLayer, pressed -> {
+                shiftLayer.setIsActive(pressed);
+                globalStates.getShiftHeld().set(pressed);
+            });
+        
+        final MpkOnOffButton playButton = hwElements.getButton(MpkCcAssignment.PLAY);
+        playButton.bindLight(mainLayer, transport.isPlaying());
+        playButton.bindPressed(mainLayer, transport.playAction());
+        playButton.bindLight(shiftLayer, transport.isPlaying());
+        playButton.bindPressed(shiftLayer, transport.restartAction());
+        
+        final MpkOnOffButton recordButton = hwElements.getButton(MpkCcAssignment.REC);
+        recordButton.bindLight(mainLayer, transport.isArrangerRecordEnabled());
+        recordButton.bindPressed(mainLayer, transport.recordAction());
+        
+        final MpkOnOffButton loopButton = hwElements.getButton(MpkCcAssignment.LOOP);
+        loopButton.bindLight(mainLayer, transport.isArrangerLoopEnabled());
+        loopButton.bindPressed(mainLayer, () -> transport.isArrangerLoopEnabled().toggle());
+        
+        final MpkOnOffButton overdubButton = hwElements.getButton(MpkCcAssignment.OVER);
+        overdubButton.bindLight(mainLayer, () -> isOverdubActive(transport));
+        overdubButton.bindPressed(mainLayer, () -> handleOverdubPressed(transport));
+        overdubButton.bindLight(shiftLayer, () -> isAutomationOverdubActive(transport));
+        overdubButton.bindPressed(shiftLayer, () -> handleAutomationOverdubPressed(transport));
+        
+        
+        final MpkOnOffButton undoButton = hwElements.getButton(MpkCcAssignment.UNDO);
+        undoButton.bindLight(mainLayer, application.canUndo());
+        undoButton.bindPressed(mainLayer, application.undoAction());
+        undoButton.bindLight(shiftLayer, application.canRedo());
+        undoButton.bindPressed(shiftLayer, application.redoAction());
+    }
+    
+    private boolean isOverdubActive(final Transport transport) {
+        if (recordFocusMode == FocusMode.LAUNCHER) {
+            return transport.isClipLauncherOverdubEnabled().get();
+        } else {
+            return transport.isArrangerOverdubEnabled().get();
+        }
+        
+    }
+    
+    private void handleOverdubPressed(final Transport transport) {
+        if (recordFocusMode == FocusMode.LAUNCHER) {
+            transport.isClipLauncherOverdubEnabled().toggle();
+        } else {
+            transport.isArrangerOverdubEnabled().toggle();
+        }
+    }
+    
+    private boolean isAutomationOverdubActive(final Transport transport) {
+        if (recordFocusMode == FocusMode.LAUNCHER) {
+            return transport.isClipLauncherAutomationWriteEnabled().get();
+        } else {
+            return transport.isArrangerAutomationWriteEnabled().get();
+        }
+        
+    }
+    
+    private void handleAutomationOverdubPressed(final Transport transport) {
+        if (recordFocusMode == FocusMode.LAUNCHER) {
+            transport.isClipLauncherAutomationWriteEnabled().toggle();
+        } else {
+            transport.isArrangerAutomationWriteEnabled().toggle();
+        }
     }
     
     
