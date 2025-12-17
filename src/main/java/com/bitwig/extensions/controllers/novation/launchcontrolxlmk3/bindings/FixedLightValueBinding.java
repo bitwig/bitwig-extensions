@@ -9,7 +9,7 @@ public class FixedLightValueBinding extends Binding<RgbColor, LaunchLight> {
     private final RgbColor color;
     
     public FixedLightValueBinding(final LaunchLight target, final RgbColor color) {
-        super(color, color, target);
+        super(target.getLightId(), color, target);
         this.color = color;
     }
     

@@ -5,6 +5,7 @@ import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlMidiProcessor;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.LightId;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.display.RgbColor;
 
 public class LaunchLight {
@@ -13,12 +14,14 @@ public class LaunchLight {
     private final int midiId;
     private final LaunchControlMidiProcessor midiProcessor;
     private RgbColor lastValue = RgbColor.OFF;
+    private final LightId lightId;
     
     public LaunchLight(final String name, final int index, final int midiId, final HardwareSurface surface,
         final LaunchControlMidiProcessor midiProcessor) {
         this.midiId = midiId;
         this.index = index;
         this.midiProcessor = midiProcessor;
+        this.lightId = new LightId(index);
         final MultiStateHardwareLight light = surface.createMultiStateHardwareLight(name + "_LIGHT_" + index);
         light.state().onUpdateHardware(this::updateStateCC);
     }
@@ -40,6 +43,10 @@ public class LaunchLight {
         } else {
             midiProcessor.sendMidi(0xB0, midiId, 0);
         }
+    }
+    
+    public LightId getLightId() {
+        return lightId;
     }
     
     public void sendRgbColor(final RgbColor color) {

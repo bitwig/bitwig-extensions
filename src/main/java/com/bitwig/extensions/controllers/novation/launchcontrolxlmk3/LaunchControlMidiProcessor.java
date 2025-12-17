@@ -31,11 +31,9 @@ public class LaunchControlMidiProcessor {
     private static String NOVATION_HEADER;
     private String LAUNCH_CONFIRM_CODE = "f000202902%s027ff7";
     private static final byte[] COLOR_SYSEX = {
-        (byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x15, 0x04, 0x53, 0x00, 0x00, 0x00, 0x00, (byte) 0xF7
+        (byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x15, 0x01, 0x53, 0x00, 0x00, 0x00, 0x00, (byte) 0xF7
     };
-    
     private static final int[] ROW_CC_IDS = {0x45, 0x48, 0x49};
-    
     
     private final ControllerHost host;
     private final MidiIn midiIn;
@@ -44,12 +42,13 @@ public class LaunchControlMidiProcessor {
     protected final Queue<TimedEvent> timedEvents = new ConcurrentLinkedQueue<>();
     private final List<Consumer<BaseMode>> modeListeners = new ArrayList<>();
     private final List<Runnable> startListeners = new ArrayList<>();
+    private final List<Runnable> timedListeners = new ArrayList<>();
     private boolean init = false;
     
     public LaunchControlMidiProcessor(final ControllerHost host,
         final AbstractLaunchControlExtensionDefinition definition) {
         final String productId = definition.isXlVersion() ? "15" : "16";
-        LaunchControlXlMk3Extension.println(" IS XL = %s", definition.isXlVersion());
+        LaunchControlMk3Extension.println(" IS XL = %s", definition.isXlVersion());
         LAUNCH_CONFIRM_CODE = LAUNCH_CONFIRM_CODE.formatted(productId);
         NOVATION_HEADER = "F0 00 20 29 02 %s ".formatted(productId);
         COLOR_SYSEX[5] = (byte) (definition.isXlVersion() ? 0x15 : 0x16);
@@ -90,6 +89,10 @@ public class LaunchControlMidiProcessor {
         timedEvents.add(event);
     }
     
+    public void addTimedListener(final Runnable listener) {
+        timedListeners.add(listener);
+    }
+    
     public void setCcMatcher(final HardwareButton hwButton, final int ccNr, final int channel) {
         hwButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(channel, ccNr, 127));
         hwButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(channel, ccNr, 0));
@@ -126,6 +129,18 @@ public class LaunchControlMidiProcessor {
         }
     }
     
+    public void sendRgb(final int index, final RgbColor color) {
+        if (!init) {
+            return;
+        }
+        COLOR_SYSEX[8] = (byte) (0x7F & index);
+        COLOR_SYSEX[9] = (byte) (0x7F & color.red());
+        COLOR_SYSEX[10] = (byte) (0x7F & color.green());
+        COLOR_SYSEX[11] = (byte) (0x7F & color.blue());
+        
+        midiOut.sendSysex(COLOR_SYSEX);
+    }
+    
     public void addModeListener(final Consumer<BaseMode> listener) {
         this.modeListeners.add(listener);
     }
@@ -136,18 +151,18 @@ public class LaunchControlMidiProcessor {
     
     private void handleSysEx(final String data) {
         if (!data.endsWith("f7")) {
-            LaunchControlXlMk3Extension.println("Illegal Sysex Received : %s", data);
+            LaunchControlMk3Extension.println("Illegal Sysex Received : %s", data);
             return;
         }
         if (data.startsWith(DEVICE_RESPONSE_HEADER)) {
             final String[] values = extractValues(data, DEVICE_RESPONSE_HEADER.length(), 8);
-            LaunchControlXlMk3Extension.println("Device response : %s", Arrays.toString(values));
+            LaunchControlMk3Extension.println("Device response : %s", Arrays.toString(values));
             startMidi();
         } else {
             if (data.startsWith(LAUNCH_CONFIRM_CODE)) {
                 hwUpdater.run();
             } else {
-                LaunchControlXlMk3Extension.println(" SYSEX %s", data);
+                LaunchControlMk3Extension.println(" SYSEX %s", data);
             }
         }
     }
@@ -169,6 +184,9 @@ public class LaunchControlMidiProcessor {
                     timedEvents.remove(event);
                 }
             }
+        }
+        for (final Runnable timedHandler : timedListeners) {
+            timedHandler.run();
         }
         host.scheduleTask(this::handlePing, 100);
     }
@@ -211,14 +229,4 @@ public class LaunchControlMidiProcessor {
         this.hwUpdater = hwUpdater;
     }
     
-    public void sendRgb(final int index, final RgbColor color) {
-        if (!init) {
-            return;
-        }
-        COLOR_SYSEX[8] = (byte) (0x7F & index);
-        COLOR_SYSEX[9] = (byte) (0x7F & color.red());
-        COLOR_SYSEX[10] = (byte) (0x7F & color.green());
-        COLOR_SYSEX[11] = (byte) (0x7F & color.blue());
-        midiOut.sendSysex(COLOR_SYSEX);
-    }
 }

@@ -1,19 +1,20 @@
 package com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings;
 
+import com.bitwig.extension.controller.api.AbsoluteHardwareControl;
 import com.bitwig.extension.controller.api.AbsoluteHardwareControlBinding;
 import com.bitwig.extension.controller.api.Parameter;
-import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.control.LaunchAbsoluteEncoder;
-import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.display.DisplayControl;
 
-public class AbsoluteEncoderBinding extends LauncherBinding<LaunchAbsoluteEncoder> {
+public class AbsoluteEncoderBinding extends LauncherBinding<AbsoluteHardwareControl> {
     
     private int parameterValue;
     private boolean incoming = false;
+    private final LaunchAbsoluteEncoder knob;
     
-    public AbsoluteEncoderBinding(final Parameter parameter, final LaunchAbsoluteEncoder knob,
-        final DisplayControl displayControl, final StringValue trackName, final StringValue parameterName) {
-        super(knob.getTargetId(), parameter, knob, displayControl, trackName, parameterName);
+    public AbsoluteEncoderBinding(final Parameter parameter, final LaunchAbsoluteEncoder knob) {
+        super(knob.getId(), knob.getKnob(), parameter);
+        
+        this.knob = knob;
         
         parameter.value().addValueObserver(128, this::handleParameterValue);
         this.parameterValue = (int) (parameter.value().get() * 127);
@@ -25,18 +26,18 @@ public class AbsoluteEncoderBinding extends LauncherBinding<LaunchAbsoluteEncode
             if (incoming) {
                 incoming = false;
             } else {
-                getTarget().updateValue(value);
+                knob.updateValue(value);
             }
         }
     }
     
     protected AbsoluteHardwareControlBinding getHardwareBinding() {
-        return getSource().addBinding(getTarget().getKnob());
+        return getSource().addBinding(getTarget());
     }
     
     @Override
     protected void updateValue() {
-        getTarget().updateValue(parameterValue);
+        knob.updateValue(parameterValue);
     }
     
 }

@@ -89,4 +89,16 @@ public class LaunchViewControl {
         final int index = singleTrackBank.cursorIndex().get() + inc;
         return index >= 0 && index < singleTrackBank.itemCount().get();
     }
+    
+    public boolean canNavLeft() {
+        return cursorTrack.hasPrevious().get();
+    }
+    
+    public boolean canNavRight(final boolean shiftState) {
+        if (shiftState) {
+            return canScrollBy(8);
+        }
+        return cursorTrack.hasNext().get();
+    }
+    
 }

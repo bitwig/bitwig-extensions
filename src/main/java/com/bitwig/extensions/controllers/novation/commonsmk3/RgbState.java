@@ -34,6 +34,7 @@ public class RgbState extends InternalHardwareLightState {
     
     public static final RgbState BLUE = RgbState.of(41);
     
+    public static final RgbState DIM_GREEN = RgbState.of(23);
     public static final RgbState GREEN = RgbState.of(21);
     
     public static final RgbState BLUE_LO = RgbState.of(43);
