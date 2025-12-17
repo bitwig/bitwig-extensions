@@ -1,49 +1,47 @@
-package com.bitwig.extensions.controllers.akai.apc.common.control;
+package com.bitwig.extensions.controllers.akai.mpkmk4.controls;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MidiIn;
-import com.bitwig.extension.controller.api.MultiStateHardwareLight;
-import com.bitwig.extensions.controllers.akai.apc.common.MidiProcessor;
-import com.bitwig.extensions.controllers.akai.apc.common.led.RgbLightState;
+import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.time.TimeRepeatEvent;
 import com.bitwig.extensions.framework.time.TimedDelayEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
-public abstract class ApcButton {
+public class MpkButton {
     public static final int STD_REPEAT_DELAY = 400;
     public static final int STD_REPEAT_FREQUENCY = 50;
     
-    protected MultiStateHardwareLight light;
     protected HardwareButton hwButton;
-    protected MidiProcessor midiProcessor;
+    protected MpkMidiProcessor midiProcessor;
     private TimedEvent currentTimer;
     private long recordedDownTime;
     protected final int midiId;
+    protected final int channel;
     
-    protected ApcButton(final int channel, final int midiId, final String name, final HardwareSurface surface,
-        final MidiProcessor midiProcessor) {
-        this.midiProcessor = midiProcessor;
-        final MidiIn midiIn = midiProcessor.getMidiIn();
+    public MpkButton(final int channel, final int midiId, final boolean isCc, final String name,
+        final HardwareSurface surface, final MpkMidiProcessor midiProcessor) {
         this.midiId = midiId;
-        hwButton = surface.createHardwareButton(name + "_" + midiId);
-        hwButton.pressedAction().setPressureActionMatcher(midiIn.createNoteOnVelocityValueMatcher(channel, midiId));
-        hwButton.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(channel, midiId));
-        light = surface.createMultiStateHardwareLight(name + "_LIGHT_" + midiId);
-        light.state().setValue(RgbLightState.OFF);
-        hwButton.setBackgroundLight(light);
+        this.channel = channel;
+        this.midiProcessor = midiProcessor;
+        final MidiIn midiIn = midiProcessor.getDawMidiIn();
+        hwButton = surface.createHardwareButton(name);
+        if (isCc) {
+            hwButton.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(channel, midiId, 0x7F));
+            hwButton.releasedAction().setActionMatcher(midiIn.createCCActionMatcher(channel, midiId, 0x00));
+        } else {
+            hwButton.pressedAction().setPressureActionMatcher(midiIn.createNoteOnVelocityValueMatcher(channel, midiId));
+            hwButton.releasedAction().setActionMatcher(midiIn.createNoteOffActionMatcher(channel, midiId));
+        }
         hwButton.isPressed().markInterested();
     }
     
-    public void refresh() {
-        light.state().setValue(null);
+    public void forceUpdate() {
+    
     }
     
     public void bindIsPressed(final Layer layer, final Consumer<Boolean> handler) {
@@ -63,22 +61,6 @@ public abstract class ApcButton {
         layer.bind(hwButton, hwButton.releasedAction(), action);
     }
     
-    public void bindLight(final Layer layer, final Supplier<InternalHardwareLightState> supplier) {
-        layer.bindLightState(supplier, light);
-    }
-    
-    public void bindLightPressed(final Layer layer, final Function<Boolean, InternalHardwareLightState> supplier) {
-        layer.bindLightState(() -> supplier.apply(hwButton.isPressed().get()), light);
-    }
-    
-    public void bindLight(final Layer layer, final Function<Boolean, InternalHardwareLightState> pressedCombine) {
-        layer.bindLightState(() -> pressedCombine.apply(hwButton.isPressed().get()), light);
-    }
-    
-    public void bindLightPressed(final Layer layer, final InternalHardwareLightState state,
-        final InternalHardwareLightState holdState) {
-        layer.bindLightState(() -> hwButton.isPressed().get() ? holdState : state, light);
-    }
     
     /**
      * Models following behavior. Pressing and Releasing the button within the given delay time executes the click

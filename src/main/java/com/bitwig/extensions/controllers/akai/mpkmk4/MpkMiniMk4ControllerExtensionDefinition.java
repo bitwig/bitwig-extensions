@@ -41,8 +41,8 @@ public class MpkMiniMk4ControllerExtensionDefinition extends ControllerExtension
                 new String[] {"MIDIOUT2 (MPK mini IV)", "MPK mini IV"});
         } else if (platformType == PlatformType.MAC) {
             list.add(
-                new String[] {"MIDIIN2 (MPK mini IV)", "MPK mini IV"},
-                new String[] {"MIDIOUT2 (MPK mini IV)", "MPK mini IV"});
+                new String[] {"MPK mini IV DAW Port", "MPK mini IV MIDI Port"},
+                new String[] {"MPK mini IV DAW Port", "MPK mini IV MIDI Port"});
         } else if (platformType == PlatformType.LINUX) {
             list.add(
                 new String[] {"MIDIIN2 (MPK mini IV)", "MPK mini IV"},
