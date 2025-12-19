@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.akai.apc64;
+package com.bitwig.extensions.controllers.akai.mpkmk4.display;
 
 public class StringUtil {
     private static final char[] SPECIALS = {
@@ -6,29 +6,29 @@ public class StringUtil {
         'û', 'ú', 'ù', 'ô', 'ó', 'ò'
     };
     private static final String[] REPLACE = {
-        "a", "u", "o", "A", "U", "O", "s", "e", "e", "e", "a", "a", "a", //
+        "a", "u", "o", "A", "U", "O", "ss", "e", "e", "e", "a", "a", "a", //
         "u", "u", "u", "o", "o", "o"
     };
     
-    public static String nextValue(final String currentValue, final String[] list, final int inc, final boolean wrap) {
-        int index = -1;
-        for (int i = 0; i < list.length; i++) {
-            if (currentValue.equals(list[i])) {
-                index = i;
-                break;
+    public static String toAsciiDisplayFill(final String name, final int len) {
+        final StringBuilder b = new StringBuilder();
+        for (int i = 0; i < name.length() && b.length() < len; i++) {
+            final char c = name.charAt(i);
+            //            if (c == 32) {
+            //                continue;
+            //            }
+            if (c < 128) {
+                b.append(c);
+            } else {
+                final int replacement = getReplace(c);
+                if (replacement >= 0) {
+                    b.append(REPLACE[replacement]);
+                }
             }
         }
-        if (index != -1) {
-            final int next = index + inc;
-            if (next >= 0 && next < list.length) {
-                return list[next];
-            } else if (wrap) {
-                index = next < 0 ? list.length - 1 : next >= list.length ? 0 : next;
-            }
-            return list[index];
-        }
-        return list[0];
+        return b.toString();
     }
+    
     
     public static String toAsciiDisplay(final String name, final int maxLen) {
         final StringBuilder b = new StringBuilder();
@@ -57,6 +57,5 @@ public class StringUtil {
         }
         return -1;
     }
-    
     
 }
