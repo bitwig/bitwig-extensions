@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extensions.controllers.akai.apc.common.control.ClickEncoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.Encoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
@@ -33,6 +34,7 @@ public class MpkHwElements {
             final String name = "GRID %d %d".formatted(rowIndex + 1, columnIndex + 1);
             gridButtons.add(new MpkRgbButton(9, 0x24 + i, name, surface, midiProcessor));
         }
+        final HardwareTextDisplay hwDisplay = surface.createHardwareTextDisplay("Main Display", 5);
         mainEncoder = new ClickEncoder(0xE, host, surface, midiProcessor.getDawMidiIn());
         mainEncoderPressButton = new MpkButton(0, 0xD, true, "ENCODER_PRESS", surface, midiProcessor);
         shiftButton = new MpkButton(0, 0x11, true, "SHIFT", surface, midiProcessor);

@@ -6,8 +6,8 @@ import java.util.function.Supplier;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
-import com.bitwig.extensions.controllers.akai.mpkmk4.MpkColor;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColor;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.values.Midi;
 

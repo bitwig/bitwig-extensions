@@ -1,4 +1,4 @@
-package com.bitwig.extensions.controllers.akai.mpkmk4;
+package com.bitwig.extensions.controllers.akai.mpkmk4.display;
 
 import java.util.HashMap;
 import java.util.Map;
