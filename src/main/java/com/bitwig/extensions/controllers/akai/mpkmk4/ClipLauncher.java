@@ -9,9 +9,12 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.akai.apc.common.control.ClickEncoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkRgbButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColor;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkDisplayFont;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
+import com.bitwig.extensions.framework.values.BasicIntegerValue;
 
 @Component
 public class ClipLauncher {
@@ -45,10 +48,20 @@ public class ClipLauncher {
                 prepareClipSlot(clipSlot, trackIndex, sceneIndex);
             }
         }
+        final BasicIntegerValue v = new BasicIntegerValue();
         final ClickEncoder encoder = hwElements.getMainEncoder();
         encoder.bind(
             mainLayer, inc -> {
-                MpkMk4ControllerExtension.println(" > " + inc);
+                midiProcessor.setDisplayColor(0, v.get());
+                midiProcessor.setDisplayColor(1, 20);
+                midiProcessor.setText(MpkDisplayFont.PT16_BOLD, 0, "Title To you");
+                midiProcessor.setText(MpkDisplayFont.PT16, 1, "Color = " + v.get());
+                v.inc(inc);
+                if (v.get() < 0) {
+                    v.set(0);
+                } else if (v.get() > 127) {
+                    v.set(127);
+                }
             });
     }
     

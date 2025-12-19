@@ -5,6 +5,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColor;
 import com.bitwig.extensions.framework.di.Component;
 
 @Component
