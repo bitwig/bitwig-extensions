@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.akai.mpkmk4;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -9,10 +10,10 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
-import com.bitwig.extensions.controllers.akai.apc64.StringUtil;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkDisplayFont;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.ParameterValues;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.ScreenRowState;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.StringUtil;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
@@ -86,7 +87,6 @@ public class MpkMidiProcessor {
         return data;
     }
     
-    
     public void init() {
         dawMidiOut.sendSysex(DEVICE_INQUIRY);
     }
@@ -149,6 +149,13 @@ public class MpkMidiProcessor {
         }
     }
     
+    public void displayInit(int len, MpkDisplayFont font) {
+        for(int i=0;i<len;i++) {
+            setDisplayColor(i, 0);
+            setText(i,font, "");
+        }
+    }
+    
     public void setPadNotesEnabled(final boolean enabled) {
         dawMidiOut.sendSysex(SET_PAD_NOTES_ENABLED.formatted(enabled ? "00" : "01"));
     }
@@ -160,6 +167,7 @@ public class MpkMidiProcessor {
         dawMidiOut.sendSysex(AKAI_HEADER + "2B 00 00 F7");
         dawMidiOut.sendSysex(AKAI_HEADER + "3A 00 00 F7");
         setPadNotesEnabled(false);
+        displayInit(3, MpkDisplayFont.PT24);
         host.scheduleTask(this::handlePing, 50);
     }
     
@@ -171,7 +179,7 @@ public class MpkMidiProcessor {
         dawMidiOut.sendMidi(status, val1, val2);
     }
     
-    public void setText(final MpkDisplayFont font, final int line, final String text) {
+    public void setText(final int line, final MpkDisplayFont font, final String text) {
         final StringBuilder sb = new StringBuilder(SET_DISPLAY_STRING);
         final String asciiText = StringUtil.toAsciiDisplay(text, 31);
         sb.append("%02X ".formatted(0));
@@ -196,8 +204,9 @@ public class MpkMidiProcessor {
     
     }
     
-    public void updateParameterValues(final ParameterValues parameterValues) {
-        dawMidiOut.sendSysex(parameterValues.getData());
+    public void sendSysEx(byte[] data) {
+        //MpkMk4ControllerExtension.println(" :: %s", StringUtil.sysExString(data));
+        dawMidiOut.sendSysex(data);
     }
     
     public void setDisplayColor(final int line, final int color) {

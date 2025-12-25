@@ -30,4 +30,8 @@ public class Encoder {
         final RelativeValueBinding binding = new RelativeValueBinding(encoder, value);
         layer.addBinding(binding);
     }
+    
+    public RelativeHardwareKnob getEncoder() {
+        return encoder;
+    }
 }

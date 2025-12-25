@@ -3,6 +3,7 @@ package com.bitwig.extensions.controllers.akai.mpkmk4;
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColor;
@@ -16,6 +17,7 @@ public class MpkViewControl {
     private final Clip cursorClip;
     private int selectedTrackIndex;
     private final MpkColor[] trackColors = new MpkColor[8];
+    private final PinnableCursorDevice cursorDevice;
     
     public MpkViewControl(final ControllerHost host) {
         rootTrack = host.getProject().getRootTrackGroup();
@@ -37,6 +39,8 @@ public class MpkViewControl {
                 }
             });
         }
+        
+        cursorDevice = cursorTrack.createCursorDevice();
     }
     
     private void prepareTrack(final Track track) {
@@ -54,6 +58,10 @@ public class MpkViewControl {
     
     public CursorTrack getCursorTrack() {
         return cursorTrack;
+    }
+    
+    public PinnableCursorDevice getCursorDevice() {
+        return cursorDevice;
     }
     
     public Track getRootTrack() {

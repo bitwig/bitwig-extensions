@@ -14,6 +14,7 @@ import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkCcAssignment;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkOnOffButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkRgbButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
 import com.bitwig.extensions.framework.di.Component;
 
 @Component
@@ -25,6 +26,7 @@ public class MpkHwElements {
     private final ClickEncoder mainEncoder;
     private final MpkButton mainEncoderPressButton;
     private final MpkButton shiftButton;
+    private final LineDisplay mainLineDisplay;
     
     public MpkHwElements(final ControllerHost host, final HardwareSurface surface, final MpkMidiProcessor midiProcessor,
         final GlobalStates globalStates) {
@@ -34,7 +36,9 @@ public class MpkHwElements {
             final String name = "GRID %d %d".formatted(rowIndex + 1, columnIndex + 1);
             gridButtons.add(new MpkRgbButton(9, 0x24 + i, name, surface, midiProcessor));
         }
-        final HardwareTextDisplay hwDisplay = surface.createHardwareTextDisplay("Main Display", 5);
+
+        mainLineDisplay = new LineDisplay(midiProcessor, 3);
+        
         mainEncoder = new ClickEncoder(0xE, host, surface, midiProcessor.getDawMidiIn());
         mainEncoderPressButton = new MpkButton(0, 0xD, true, "ENCODER_PRESS", surface, midiProcessor);
         shiftButton = new MpkButton(0, 0x11, true, "SHIFT", surface, midiProcessor);
@@ -47,6 +51,11 @@ public class MpkHwElements {
             final Encoder encoder = new Encoder(i, 0x18 + i, surface, midiProcessor.getDawMidiIn());
             encoders.add(encoder);
         }
+        mainLineDisplay.setActive(true);
+    }
+    
+    public LineDisplay getMainLineDisplay() {
+        return mainLineDisplay;
     }
     
     public List<MpkRgbButton> getGridButtons() {
