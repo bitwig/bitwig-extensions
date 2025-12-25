@@ -10,12 +10,11 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.SettableEnumValue;
-import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.akai.mpkmk4.controls.Encoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkCcAssignment;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkOnOffButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.layers.LayerCollection;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
 import com.bitwig.extensions.framework.values.FocusMode;
@@ -55,21 +54,17 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         debugHost = host;
         final Context diContext = new Context(this);
         globalStates = new GlobalStates(this.variant);
-        final LayerCollection layerCollection = diContext.getService(LayerCollection.class);
         diContext.registerService(GlobalStates.class, globalStates);
+        
+        final LayerCollection layerCollection = diContext.getService(LayerCollection.class);
+  
         mainLayer = layerCollection.get(LayerCollection.LayerId.MAIN);
         surface = diContext.getService(HardwareSurface.class);
         midiProcessor = diContext.getService(MpkMidiProcessor.class);
         initTransport(diContext);
         
-        final MpkViewControl viewControl = diContext.getService(MpkViewControl.class);
-        final Track track = viewControl.getTrackBank().getItemAt(0);
-        final Encoder encoder = diContext.getService(MpkHwElements.class).getEncoders().get(0);
-        encoder.bindValue(mainLayer, track.volume().value());
-        
         midiProcessor.init();
         diContext.activate();
-        mainLayer.activate();
     }
     
     private void initTransport(final Context diContext) {

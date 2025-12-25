@@ -1,16 +1,22 @@
-package com.bitwig.extensions.controllers.akai.mpkmk4;
+package com.bitwig.extensions.controllers.akai.mpkmk4.layers;
 
 import java.util.List;
 
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.akai.apc.common.control.ClickEncoder;
+import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
+import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
+import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMk4ControllerExtension;
+import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkRgbButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColor;
-import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkDisplayFont;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColorLookup;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
@@ -52,17 +58,17 @@ public class ClipLauncher {
         final ClickEncoder encoder = hwElements.getMainEncoder();
         encoder.bind(
             mainLayer, inc -> {
-                midiProcessor.setDisplayColor(0, v.get());
-                midiProcessor.setDisplayColor(1, 20);
-                midiProcessor.setText(MpkDisplayFont.PT16_BOLD, 0, "Title To you");
-                midiProcessor.setText(MpkDisplayFont.PT16, 1, "Color = " + v.get());
-                v.inc(inc);
-                if (v.get() < 0) {
-                    v.set(0);
-                } else if (v.get() > 127) {
-                    v.set(127);
-                }
             });
+        final CursorTrack cursorTrack = viewControl.getCursorTrack();
+        final LineDisplay mainDisplay = hwElements.getMainLineDisplay();
+        cursorTrack.name().addValueObserver(name -> {
+            mainDisplay.setText(0, name);
+        });
+        cursorTrack.color().addValueObserver((r,g,b) -> {
+            final int index = MpkColorLookup.rgbToIndex(r, g, b);
+            mainDisplay.setColorIndex(0, index);
+        });
+        
     }
     
     private void handleUpdateNeeded() {

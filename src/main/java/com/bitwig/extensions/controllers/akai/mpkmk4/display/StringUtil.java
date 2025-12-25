@@ -1,5 +1,9 @@
 package com.bitwig.extensions.controllers.akai.mpkmk4.display;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class StringUtil {
     private static final char[] SPECIALS = {
         'ä', 'ü', 'ö', 'Ä', 'Ü', 'Ö', 'ß', 'é', 'è', 'ê', 'â', 'á', 'à', //
@@ -56,6 +60,14 @@ public class StringUtil {
             }
         }
         return -1;
+    }
+    
+    public static String sysExString(byte[] data) {
+        List<String> dataString = new ArrayList<>();
+        for(byte b : data) {
+            dataString.add("%02X".formatted(b));
+        }
+        return dataString.stream().collect(Collectors.joining(" "));
     }
     
 }
