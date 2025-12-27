@@ -32,4 +32,10 @@ public class MpkOnOffButton extends MpkButton {
         layer.bind(state, light);
     }
     
+    public void bindLightPressed(final Layer layer) {
+        hwButton.isPressed().markInterested();
+        layer.bind(hwButton.isPressed(), light);
+    }
+    
+    
 }

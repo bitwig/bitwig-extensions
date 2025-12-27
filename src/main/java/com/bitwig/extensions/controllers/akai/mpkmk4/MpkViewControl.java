@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.akai.mpkmk4;
 
 import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ControllerHost;
+import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Track;
@@ -18,10 +19,13 @@ public class MpkViewControl {
     private int selectedTrackIndex;
     private final MpkColor[] trackColors = new MpkColor[8];
     private final PinnableCursorDevice cursorDevice;
+    private final TrackBank focusTrackBank;
+    private final PinnableCursorDevice primaryDevice;
     
     public MpkViewControl(final ControllerHost host) {
         rootTrack = host.getProject().getRootTrackGroup();
         trackBank = host.createTrackBank(4, 2, 4, true);
+        focusTrackBank = host.createTrackBank(1, 1, 1);
         cursorTrack = host.createCursorTrack(6, 128);
         trackBank.followCursorTrack(cursorTrack);
         cursorClip = host.createLauncherCursorClip(32, 128);
@@ -41,6 +45,10 @@ public class MpkViewControl {
         }
         
         cursorDevice = cursorTrack.createCursorDevice();
+        cursorDevice.hasNext().markInterested();
+        cursorDevice.hasPrevious().markInterested();
+        primaryDevice =
+            cursorTrack.createCursorDevice("DrumDetection", "Pad Device", 16, CursorDeviceFollowMode.FIRST_INSTRUMENT);
     }
     
     private void prepareTrack(final Track track) {
@@ -60,8 +68,16 @@ public class MpkViewControl {
         return cursorTrack;
     }
     
+    public TrackBank getFocusTrackBank() {
+        return focusTrackBank;
+    }
+    
     public PinnableCursorDevice getCursorDevice() {
         return cursorDevice;
+    }
+    
+    public PinnableCursorDevice getPrimaryDevice() {
+        return primaryDevice;
     }
     
     public Track getRootTrack() {
