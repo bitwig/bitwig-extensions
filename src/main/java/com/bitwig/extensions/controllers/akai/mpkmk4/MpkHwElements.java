@@ -7,7 +7,6 @@ import java.util.Map;
 
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extensions.controllers.akai.apc.common.control.ClickEncoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.Encoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
@@ -15,6 +14,7 @@ import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkCcAssignment;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkOnOffButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkRgbButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkDisplayFont;
 import com.bitwig.extensions.framework.di.Component;
 
 @Component
@@ -27,6 +27,7 @@ public class MpkHwElements {
     private final MpkButton mainEncoderPressButton;
     private final MpkButton shiftButton;
     private final LineDisplay mainLineDisplay;
+    private final LineDisplay menuLineDisplay;
     
     public MpkHwElements(final ControllerHost host, final HardwareSurface surface, final MpkMidiProcessor midiProcessor,
         final GlobalStates globalStates) {
@@ -36,8 +37,9 @@ public class MpkHwElements {
             final String name = "GRID %d %d".formatted(rowIndex + 1, columnIndex + 1);
             gridButtons.add(new MpkRgbButton(9, 0x24 + i, name, surface, midiProcessor));
         }
-
-        mainLineDisplay = new LineDisplay(midiProcessor, 3);
+        
+        mainLineDisplay = new LineDisplay(midiProcessor, MpkDisplayFont.PT24, 3);
+        menuLineDisplay = new LineDisplay(midiProcessor, MpkDisplayFont.PT16, 5);
         
         mainEncoder = new ClickEncoder(0xE, host, surface, midiProcessor.getDawMidiIn());
         mainEncoderPressButton = new MpkButton(0, 0xD, true, "ENCODER_PRESS", surface, midiProcessor);
@@ -56,6 +58,10 @@ public class MpkHwElements {
     
     public LineDisplay getMainLineDisplay() {
         return mainLineDisplay;
+    }
+    
+    public LineDisplay getMenuLineDisplay() {
+        return menuLineDisplay;
     }
     
     public List<MpkRgbButton> getGridButtons() {
@@ -80,5 +86,12 @@ public class MpkHwElements {
     
     public List<Encoder> getEncoders() {
         return encoders;
+    }
+    
+    public void applyShiftToEncoders(final boolean shiftHeld) {
+        for (final Encoder encoder : encoders) {
+            //encoder.getEncoder().setStepSize(shiftHeld ? 0.1 : 0.01);
+            encoder.getEncoder().setSensitivity(shiftHeld ? 0.5 : 1.0);
+        }
     }
 }

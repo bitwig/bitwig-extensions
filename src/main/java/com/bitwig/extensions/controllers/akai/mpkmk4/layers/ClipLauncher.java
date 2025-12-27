@@ -8,19 +8,15 @@ import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
-import com.bitwig.extensions.controllers.akai.apc.common.control.ClickEncoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
-import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMk4ControllerExtension;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkRgbButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColor;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColorLookup;
 import com.bitwig.extensions.framework.Layer;
-import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
-import com.bitwig.extensions.framework.values.BasicIntegerValue;
 
 @Component
 public class ClipLauncher {
@@ -32,13 +28,12 @@ public class ClipLauncher {
     
     public ClipLauncher(final MpkHwElements hwElements, final LayerCollection layerCollection,
         final MpkViewControl viewControl, final Transport transport, final MpkMidiProcessor midiProcessor) {
-        mainLayer = layerCollection.get(LayerCollection.LayerId.CLIP_LAUNCHER);
+        mainLayer = layerCollection.get(LayerId.CLIP_LAUNCHER);
         gridButtons = hwElements.getGridButtons();
         final TrackBank trackBank = viewControl.getTrackBank();
         final SceneBank sceneBank = trackBank.sceneBank();
         this.transport = transport;
         clipColors = new MpkColor[trackBank.getSizeOfBank()][sceneBank.getSizeOfBank()];
-        midiProcessor.addUpdateListeners(this::handleUpdateNeeded);
         trackBank.setShouldShowClipLauncherFeedback(true);
         for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
             final int trackIndex = i;
@@ -54,29 +49,16 @@ public class ClipLauncher {
                 prepareClipSlot(clipSlot, trackIndex, sceneIndex);
             }
         }
-        final BasicIntegerValue v = new BasicIntegerValue();
-        final ClickEncoder encoder = hwElements.getMainEncoder();
-        encoder.bind(
-            mainLayer, inc -> {
-            });
+        
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         final LineDisplay mainDisplay = hwElements.getMainLineDisplay();
         cursorTrack.name().addValueObserver(name -> {
-            mainDisplay.setText(0, name);
+            mainDisplay.setText(0, 0, name);
         });
-        cursorTrack.color().addValueObserver((r,g,b) -> {
+        cursorTrack.color().addValueObserver((r, g, b) -> {
             final int index = MpkColorLookup.rgbToIndex(r, g, b);
-            mainDisplay.setColorIndex(0, index);
+            mainDisplay.setColorIndex(0, 0, index);
         });
-        
-    }
-    
-    private void handleUpdateNeeded() {
-        if (mainLayer.isActive()) {
-            for (final MpkRgbButton button : gridButtons) {
-                button.forceUpdate();
-            }
-        }
     }
     
     private void handleClipPress(final Boolean pressed, final ClipLauncherSlot clipSlot) {
@@ -131,10 +113,5 @@ public class ClipLauncher {
         slot.color().addValueObserver((r, g, b) -> clipColors[trackIndex][sceneIndex] = MpkColor.getColor(r, g, b));
     }
     
-    @Activate
-    public void init() {
-        MpkMk4ControllerExtension.println(" >> ACTIVATE Clip Luancher");
-        mainLayer.setIsActive(true);
-    }
     
 }
