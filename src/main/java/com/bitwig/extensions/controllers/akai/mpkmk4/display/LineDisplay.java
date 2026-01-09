@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.akai.mpkmk4.display;
 
+import com.bitwig.extension.api.Color;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
 import com.bitwig.extensions.framework.time.TimedDelayEvent;
 
@@ -25,6 +26,29 @@ public class LineDisplay {
         for (int i = 0; i < lines; i++) {
             this.lines[i] = new Line();
             this.lines[i].fontStyle = fontStyle;
+        }
+    }
+    
+    public void setText(final int rowIndex, final String text, final int colorIndex) {
+        this.lines[rowIndex].text = text;
+        this.lines[rowIndex].colorIndex = colorIndex;
+        if (active) {
+            midiProcessor.setText(rowIndex, this.lines[rowIndex].fontStyle, text);
+            midiProcessor.setDisplayColor(rowIndex, colorIndex);
+        }
+    }
+    
+    public void setText(final int rowIndex, final String text) {
+        this.lines[rowIndex].text = text;
+        if (active) {
+            midiProcessor.setText(rowIndex, this.lines[rowIndex].fontStyle, text);
+        }
+    }
+    
+    public void setMenuLine(final int rowIndex, final MpkDisplayFont font, final int justification, final Color foreGround,
+        final Color background) {
+        if (active) {
+            midiProcessor.configureLine(font, rowIndex, justification, foreGround, background);
         }
     }
     
@@ -91,5 +115,13 @@ public class LineDisplay {
         this.currentLayer = 0;
         this.updateCurrent();
         this.fallbackEvent = null;
+    }
+    
+    public void temporaryInfo(final int layerIndex, final String line1, final String line2) {
+        activateTemporary(layerIndex);
+        setText(layerIndex, 1, line1);
+        setColorIndex(layerIndex, 1, 0);
+        setText(layerIndex, 2, line2);
+        setColorIndex(layerIndex, 2, 0);
     }
 }

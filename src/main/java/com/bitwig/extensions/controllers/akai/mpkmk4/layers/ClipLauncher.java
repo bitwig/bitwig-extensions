@@ -11,10 +11,11 @@ import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
-import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkRgbButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColor;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColorLookup;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkMonoState;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Component;
 
@@ -24,7 +25,7 @@ public class ClipLauncher {
     private final Layer mainLayer;
     private final MpkColor[][] clipColors;
     private final Transport transport;
-    private final List<MpkRgbButton> gridButtons;
+    private final List<MpkMultiStateButton> gridButtons;
     
     public ClipLauncher(final MpkHwElements hwElements, final LayerCollection layerCollection,
         final MpkViewControl viewControl, final Transport transport, final MpkMidiProcessor midiProcessor) {
@@ -43,7 +44,7 @@ public class ClipLauncher {
                 clipColors[i][j] = MpkColor.OFF;
                 final ClipLauncherSlot clipSlot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
                 final int rowIndex = sceneBank.getSizeOfBank() - sceneIndex - 1;
-                final MpkRgbButton button = gridButtons.get(rowIndex * 4 + trackIndex);
+                final MpkMultiStateButton button = gridButtons.get(rowIndex * 4 + trackIndex);
                 button.bindLight(mainLayer, () -> getState(track, clipSlot, trackIndex, sceneIndex));
                 button.bindIsPressed(mainLayer, pressed -> handleClipPress(pressed, clipSlot));
                 prepareClipSlot(clipSlot, trackIndex, sceneIndex);
@@ -72,17 +73,17 @@ public class ClipLauncher {
         if (slot.hasContent().get()) {
             final MpkColor color = clipColors[trackIndex][sceneIndex];
             if (slot.isRecordingQueued().get()) {
-                return MpkColor.RED.variant(MpkColor.BLINK1_4);
+                return MpkColor.RED.variant(MpkMonoState.BLINK1_4);
             } else if (slot.isRecording().get()) {
-                return MpkColor.RED.variant(MpkColor.PULSE1_2);
+                return MpkColor.RED.variant(MpkMonoState.PULSE1_2);
             } else if (slot.isPlaybackQueued().get()) {
-                return color.variant(MpkColor.BLINK1_4);
+                return color.variant(MpkMonoState.BLINK1_4);
             } else if (slot.isStopQueued().get()) {
-                return MpkColor.GREEN.variant(MpkColor.BLINK1_8);
+                return MpkColor.GREEN.variant(MpkMonoState.BLINK1_8);
             } else if (slot.isPlaying().get() && track.isQueuedForStop().get()) {
-                return MpkColor.GREEN.variant(MpkColor.BLINK1_8);
+                return MpkColor.GREEN.variant(MpkMonoState.BLINK1_8);
             } else if (slot.isPlaying().get()) {
-                return MpkColor.GREEN.variant(MpkColor.PULSE1_4);
+                return MpkColor.GREEN.variant(MpkMonoState.PULSE1_4);
                 //                if (clipLauncherOverdub.get() && track.arm().get()) {
                 //                    return RgbLightState.RED.behavior(LedBehavior.PULSE_2);
                 //                } else {
@@ -95,9 +96,9 @@ public class ClipLauncher {
             return color;
         }
         if (slot.isRecordingQueued().get()) {
-            return MpkColor.RED.variant(MpkColor.BLINK1_8);
+            return MpkColor.RED.variant(MpkMonoState.BLINK1_8);
         } else if (track.arm().get()) {
-            return MpkColor.RED.variant(MpkColor.SOLID_25);
+            return MpkColor.RED.variant(MpkMonoState.SOLID_25);
         }
         return MpkColor.OFF;
     }

@@ -11,7 +11,8 @@ public enum LayerId {
     TRACK_REMOTES(true),
     TRACK_CONTROL,
     MIX_CONTROL,
-    NAVIGATION;
+    NAVIGATION,
+    PAD_MENU_LAYER;
     
     private final boolean controlsDevice;
     

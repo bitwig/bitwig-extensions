@@ -18,14 +18,21 @@ public class MpkOnOffButton extends MpkButton {
         final MpkMidiProcessor midiProcessor) {
         super(channel, midiId, true, name, surface, midiProcessor);
         light = surface.createOnOffHardwareLight(name + "_LIGHT");
-        light.onUpdateHardware(
-            () -> midiProcessor.sendMidi(Midi.NOTE_ON | channel, midiId, light.isOn().currentValue() ? 0x7F : 0x0));
+        light.onUpdateHardware(() -> updateState(light.isOn().currentValue()));
         hwButton.setBackgroundLight(light);
+    }
+    
+    private void updateState(final boolean on) {
+        if (on) {
+            midiProcessor.sendMidi(Midi.NOTE_ON | 6, midiId, 0x7F);
+        } else {
+            midiProcessor.sendMidi(Midi.NOTE_ON | 0, midiId, 0x7f);
+        }
     }
     
     @Override
     public void forceUpdate() {
-        midiProcessor.sendMidi(Midi.NOTE_ON | channel, midiId, light.isOn().currentValue() ? 0x7F : 0x0);
+        updateState(light.isOn().currentValue());
     }
     
     public void bindLight(final Layer layer, final BooleanSupplier state) {

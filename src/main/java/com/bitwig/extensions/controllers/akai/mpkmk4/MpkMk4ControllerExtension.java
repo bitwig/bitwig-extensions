@@ -13,7 +13,8 @@ import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkCcAssignment;
-import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkOnOffButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkMonoState;
 import com.bitwig.extensions.controllers.akai.mpkmk4.layers.LayerCollection;
 import com.bitwig.extensions.controllers.akai.mpkmk4.layers.LayerId;
 import com.bitwig.extensions.framework.Layer;
@@ -77,17 +78,18 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         final DocumentState documentState = getHost().getDocumentState();
         final MpkFocusClip focusClip = diContext.getService(MpkFocusClip.class);
         
-        println(" FOCUS CLIP = " + focusClip);
-        
         final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting(
             "Record Button assignment", //
             "Transport", new String[] {FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
             recordFocusMode.getDescriptor());
+        
         recordButtonAssignment.addValueObserver(value -> recordFocusMode = FocusMode.toMode(value));
+        
         transport.isClipLauncherAutomationWriteEnabled().markInterested();
-        transport.isArrangerAutomationWriteEnabled().markInterested();
         transport.isClipLauncherOverdubEnabled().markInterested();
+        transport.isArrangerAutomationWriteEnabled().markInterested();
         transport.isArrangerOverdubEnabled().markInterested();
+        transport.isArrangerRecordEnabled().markInterested();
         
         final Layer shiftLayer = layerCollection.get(LayerId.SHIFT);
         shiftButton.bindIsPressed(
@@ -97,48 +99,48 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
                 hwElements.applyShiftToEncoders(pressed);
             });
         
-        final MpkOnOffButton playButton = hwElements.getButton(MpkCcAssignment.PLAY);
-        playButton.bindLight(mainLayer, transport.isPlaying());
-        playButton.bindPressed(mainLayer, transport.playAction());
-        playButton.bindLight(shiftLayer, transport.isPlaying());
-        playButton.bindPressed(shiftLayer, transport.restartAction());
+        final MpkMultiStateButton playButton = hwElements.getButton(MpkCcAssignment.PLAY);
+        playButton.bindLightDimmed(mainLayer, transport.isPlaying());
+        playButton.bindPressed(mainLayer, transport.restartAction());
+        playButton.bindLightDimmed(shiftLayer, transport.isPlaying());
+        playButton.bindPressed(shiftLayer, transport.playAction());
         
-        final MpkOnOffButton recordButton = hwElements.getButton(MpkCcAssignment.REC);
+        final MpkMultiStateButton recordButton = hwElements.getButton(MpkCcAssignment.REC);
         recordButton.bindLight(mainLayer, () -> recordButtonState(transport, focusClip));
         recordButton.bindPressed(mainLayer, () -> handleRecordPressed(transport, focusClip));
-        recordButton.bindLight(shiftLayer, () -> false);
+        recordButton.bindLightOff(shiftLayer);
         recordButton.bindPressed(shiftLayer, () -> focusClip.quantize(1.0));
         
-        final MpkOnOffButton loopButton = hwElements.getButton(MpkCcAssignment.LOOP);
-        loopButton.bindLight(mainLayer, transport.isArrangerLoopEnabled());
+        final MpkMultiStateButton loopButton = hwElements.getButton(MpkCcAssignment.LOOP);
+        loopButton.bindLightDimmed(mainLayer, transport.isArrangerLoopEnabled());
         loopButton.bindPressed(mainLayer, () -> transport.isArrangerLoopEnabled().toggle());
         
-        final MpkOnOffButton overdubButton = hwElements.getButton(MpkCcAssignment.OVER);
-        overdubButton.bindLight(mainLayer, () -> isOverdubActive(transport));
+        final MpkMultiStateButton overdubButton = hwElements.getButton(MpkCcAssignment.OVER);
+        overdubButton.bindLightDimmed(mainLayer, () -> isOverdubActive(transport));
         overdubButton.bindPressed(mainLayer, () -> handleOverdubPressed(transport));
-        overdubButton.bindLight(shiftLayer, () -> isAutomationOverdubActive(transport));
+        overdubButton.bindLightDimmed(shiftLayer, () -> isAutomationOverdubActive(transport));
         overdubButton.bindPressed(shiftLayer, () -> handleAutomationOverdubPressed(transport));
         
         
-        final MpkOnOffButton undoButton = hwElements.getButton(MpkCcAssignment.UNDO);
-        undoButton.bindLight(mainLayer, application.canUndo());
+        final MpkMultiStateButton undoButton = hwElements.getButton(MpkCcAssignment.UNDO);
+        undoButton.bindLightDimmed(mainLayer, application.canUndo());
         undoButton.bindPressed(mainLayer, application.undoAction());
-        undoButton.bindLight(shiftLayer, application.canRedo());
+        undoButton.bindLightDimmed(shiftLayer, application.canRedo());
         undoButton.bindPressed(shiftLayer, application.redoAction());
         
-        final MpkOnOffButton tempoButton = hwElements.getButton(MpkCcAssignment.TAP_TEMPO);
-        tempoButton.bindLightPressed(mainLayer);
+        final MpkMultiStateButton tempoButton = hwElements.getButton(MpkCcAssignment.TAP_TEMPO);
+        tempoButton.bindLightPressedOnDimmed(mainLayer);
         tempoButton.bindPressed(mainLayer, transport.tapTempoAction());
         
-        tempoButton.bindLight(shiftLayer, transport.isMetronomeEnabled());
+        tempoButton.bindLightOnOff(shiftLayer, transport.isMetronomeEnabled());
         tempoButton.bindPressed(shiftLayer, () -> transport.isMetronomeEnabled().toggle());
     }
     
-    private boolean recordButtonState(final Transport transport, final MpkFocusClip focusClip) {
+    private MpkMonoState recordButtonState(final Transport transport, final MpkFocusClip focusClip) {
         if (recordFocusMode == FocusMode.LAUNCHER) {
-            return transport.isClipLauncherOverdubEnabled().get();
+            return transport.isClipLauncherOverdubEnabled().get() ? MpkMonoState.FULL_ON : MpkMonoState.DIMMED;
         } else {
-            return transport.isArrangerRecordEnabled().get();
+            return transport.isArrangerRecordEnabled().get() ? MpkMonoState.FULL_ON : MpkMonoState.DIMMED;
         }
     }
     
@@ -167,20 +169,14 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
     }
     
     private boolean isAutomationOverdubActive(final Transport transport) {
-        if (recordFocusMode == FocusMode.LAUNCHER) {
-            return transport.isClipLauncherAutomationWriteEnabled().get();
-        } else {
-            return transport.isArrangerAutomationWriteEnabled().get();
-        }
-        
+        return transport.isArrangerAutomationWriteEnabled().get();
     }
     
     private void handleAutomationOverdubPressed(final Transport transport) {
-        if (recordFocusMode == FocusMode.LAUNCHER) {
-            transport.isClipLauncherAutomationWriteEnabled().toggle();
-        } else {
-            transport.isArrangerAutomationWriteEnabled().toggle();
-        }
+        //        if (recordFocusMode == FocusMode.LAUNCHER) {
+        //            transport.isClipLauncherAutomationWriteEnabled().toggle();
+        //        }
+        transport.isArrangerAutomationWriteEnabled().toggle();
     }
     
     

@@ -6,6 +6,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.IntConsumer;
 
+import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
@@ -16,6 +17,7 @@ import com.bitwig.extensions.controllers.akai.mpkmk4.display.ScreenRowState;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.StringUtil;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.time.TimedEvent;
+import com.bitwig.extensions.framework.values.Midi;
 
 @Component
 public class MpkMidiProcessor {
@@ -40,6 +42,7 @@ public class MpkMidiProcessor {
     private static final String SET_MODE_CLIP = AKAI_HEADER + "2A 00 01 01 F7";
     private static final String SET_DISPLAY_STRING = AKAI_HEADER + "10 ";
     private static final String SET_DISPLAY_COLOR = AKAI_HEADER + "11 00 02 %02X %02X F7";
+    private static final String SET_DISPLAY_ROW = AKAI_HEADER + "14 ";
     private static final String SET_PAD_NOTES_ENABLED = AKAI_HEADER + "2E 00 01 %s F7";
     private static final String DISABLE_PADS = AKAI_HEADER + "2B 00 01 01 F7";
     private static final byte[] ROW_DISPLAY_COLOR = prepareFixedData(0x14, 9);
@@ -56,13 +59,19 @@ public class MpkMidiProcessor {
     private final List<Runnable> updateListeners = new ArrayList<>();
     private final List<IntConsumer> modeChangeListeners = new ArrayList<>();
     private long lastScreenRequest = System.currentTimeMillis();
+    private final List<NoteListener> noteListeners = new ArrayList<>();
+    
+    @FunctionalInterface
+    public interface NoteListener {
+        void playNote(int note, int vel);
+    }
     
     public MpkMidiProcessor(final ControllerHost host, final GlobalStates globalStates) {
         this.host = host;
         this.globalStates = globalStates;
         this.dawMidiIn = host.getMidiInPort(0);
         noteInput = dawMidiIn.createNoteInput("MIDI", "89????", "99????", "A9????");
-        
+        noteInput.setShouldConsumeEvents(false);
         this.dawMidiOut = host.getMidiOutPort(0);
         this.playMidiIn = host.getMidiInPort(1);
         
@@ -98,6 +107,10 @@ public class MpkMidiProcessor {
     
     public void addUpdateListeners(final Runnable updateListener) {
         this.updateListeners.add(updateListener);
+    }
+    
+    public void addNoteListener(final NoteListener listener) {
+        noteListeners.add(listener);
     }
     
     private void handlePing() {
@@ -173,11 +186,30 @@ public class MpkMidiProcessor {
     }
     
     private void handleMidiIn(final int status, final int data1, final int data2) {
-        MpkMk4ControllerExtension.println(" MIDI in %02X %02X %02X", status, data1, data2);
+        //MpkMk4ControllerExtension.println(" MIDI in %02X %02X %02X", status, data1, data2);
+        if (status == (Midi.NOTE_ON | 9) || status == (Midi.NOTE_OFF | 9)) {
+            noteListeners.forEach(l -> l.playNote(data1, data2));
+        }
     }
     
     public void sendMidi(final int status, final int val1, final int val2) {
         dawMidiOut.sendMidi(status, val1, val2);
+    }
+    
+    public void configureLine(final MpkDisplayFont font, final int lineIndex, final int justification,
+        final Color foreGround, final Color background) {
+        final String sb = SET_DISPLAY_ROW + "00 09 " //
+            + "%02X ".formatted(font.getValue()) //
+            + "%02X ".formatted(lineIndex) //
+            + "%02X ".formatted(justification) //
+            + "%02X ".formatted(foreGround.getRed255() >> 3) //
+            + "%02X ".formatted(foreGround.getGreen255() >> 2) //
+            + "%02X ".formatted(foreGround.getBlue255() >> 3) //
+            + "%02X ".formatted(background.getRed255() >> 3) //
+            + "%02X ".formatted(background.getGreen255() >> 2) //
+            + "%02X ".formatted(background.getBlue255() >> 3) //
+            + "F7";
+        dawMidiOut.sendSysex(sb);
     }
     
     public void setText(final int line, final MpkDisplayFont font, final String text) {
