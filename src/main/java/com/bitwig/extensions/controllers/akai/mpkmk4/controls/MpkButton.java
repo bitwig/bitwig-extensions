@@ -13,8 +13,8 @@ import com.bitwig.extensions.framework.time.TimedDelayEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
 public class MpkButton {
-    public static final int STD_REPEAT_DELAY = 400;
-    public static final int STD_REPEAT_FREQUENCY = 50;
+    public static final int STD_REPEAT_DELAY = 1000;
+    public static final int STD_REPEAT_FREQUENCY = 200;
     
     protected HardwareButton hwButton;
     protected MpkMidiProcessor midiProcessor;

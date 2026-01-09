@@ -11,8 +11,7 @@ import com.bitwig.extensions.controllers.akai.apc.common.control.ClickEncoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.Encoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkCcAssignment;
-import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkOnOffButton;
-import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkRgbButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkDisplayFont;
 import com.bitwig.extensions.framework.di.Component;
@@ -20,9 +19,9 @@ import com.bitwig.extensions.framework.di.Component;
 @Component
 public class MpkHwElements {
     
-    private final List<MpkRgbButton> gridButtons = new ArrayList<>();
+    private final List<MpkMultiStateButton> gridButtons = new ArrayList<>();
     private final List<Encoder> encoders = new ArrayList<>();
-    private final Map<MpkCcAssignment, MpkOnOffButton> onOffButtons = new HashMap<>();
+    private final Map<MpkCcAssignment, MpkMultiStateButton> onOffButtons = new HashMap<>();
     private final ClickEncoder mainEncoder;
     private final MpkButton mainEncoderPressButton;
     private final MpkButton shiftButton;
@@ -35,18 +34,18 @@ public class MpkHwElements {
             final int rowIndex = i / 4;
             final int columnIndex = i % 4;
             final String name = "GRID %d %d".formatted(rowIndex + 1, columnIndex + 1);
-            gridButtons.add(new MpkRgbButton(9, 0x24 + i, name, surface, midiProcessor));
+            gridButtons.add(new MpkMultiStateButton(9, 0x24 + i, false, name, surface, midiProcessor));
         }
         
         mainLineDisplay = new LineDisplay(midiProcessor, MpkDisplayFont.PT24, 3);
-        menuLineDisplay = new LineDisplay(midiProcessor, MpkDisplayFont.PT16, 5);
+        menuLineDisplay = new LineDisplay(midiProcessor, MpkDisplayFont.PT24, 3);
         
         mainEncoder = new ClickEncoder(0xE, host, surface, midiProcessor.getDawMidiIn());
         mainEncoderPressButton = new MpkButton(0, 0xD, true, "ENCODER_PRESS", surface, midiProcessor);
         shiftButton = new MpkButton(0, 0x11, true, "SHIFT", surface, midiProcessor);
         for (final MpkCcAssignment assignment : MpkCcAssignment.values()) {
-            final MpkOnOffButton button =
-                new MpkOnOffButton(0, assignment.getCcNr(), assignment.toString(), surface, midiProcessor);
+            final MpkMultiStateButton button =
+                new MpkMultiStateButton(0, assignment.getCcNr(), true, assignment.toString(), surface, midiProcessor);
             onOffButtons.put(assignment, button);
         }
         for (int i = 0; i < 8; i++) {
@@ -64,7 +63,7 @@ public class MpkHwElements {
         return menuLineDisplay;
     }
     
-    public List<MpkRgbButton> getGridButtons() {
+    public List<MpkMultiStateButton> getGridButtons() {
         return gridButtons;
     }
     
@@ -80,7 +79,7 @@ public class MpkHwElements {
         return mainEncoderPressButton;
     }
     
-    public MpkOnOffButton getButton(final MpkCcAssignment assignment) {
+    public MpkMultiStateButton getButton(final MpkCcAssignment assignment) {
         return onOffButtons.get(assignment);
     }
     
@@ -94,4 +93,5 @@ public class MpkHwElements {
             encoder.getEncoder().setSensitivity(shiftHeld ? 0.5 : 1.0);
         }
     }
+    
 }

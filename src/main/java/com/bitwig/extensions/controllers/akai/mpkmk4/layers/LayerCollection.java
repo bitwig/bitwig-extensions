@@ -10,9 +10,8 @@ import com.bitwig.extensions.controllers.akai.mpkmk4.GlobalStates;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkFocusClip;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
-import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMk4ControllerExtension;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
-import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkRgbButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.RemotesDisplayControl;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -23,6 +22,7 @@ import com.bitwig.extensions.framework.values.BasicStringValue;
 @Component
 public class LayerCollection {
     
+    public static final int BASIC_ENCODER_MODE_NO = 3;
     private LayerId encoderLayerMode = LayerId.DEVICE_REMOTES;
     
     private final Map<LayerId, Layer> layerMap = new HashMap();
@@ -31,8 +31,13 @@ public class LayerCollection {
     private EncoderLayer remotesControlLayer;
     private final PinnableCursorDevice cursorDevice;
     private LayerId lastControlDeviceMode = LayerId.DEVICE_REMOTES;
-    private final List<MpkRgbButton> gridButtons;
+    private final List<MpkMultiStateButton> gridButtons;
     private int currentPadMode = 1;
+    private final MixEncoderLayer mixerLayer;
+    private final DrumPadLayer drumPadLayer;
+    private final BasicStringValue encoderModeValue = new BasicStringValue();
+    private int selectedEncoderMode = 0;
+    
     
     public LayerCollection(final Layers layers, final MpkHwElements hwElements, final MpkMidiProcessor midiProcessor,
         final MpkViewControl viewControl, final GlobalStates globalStates, final MpkFocusClip focusClip) {
@@ -60,11 +65,13 @@ public class LayerCollection {
         midiProcessor.registerMainDisplay(hwElements.getMainLineDisplay());
         final CursorTrackMixLayer cursorTrackMixerLayer =
             new CursorTrackMixLayer(layers, hwElements, midiProcessor, viewControl);
-        final MixEncoderLayer mixerLayer = new MixEncoderLayer(layers, hwElements, midiProcessor, viewControl);
+        mixerLayer = new MixEncoderLayer(layers, hwElements, midiProcessor, viewControl);
         midiProcessor.addModeChangeListener(this::handlePadModeChange);
         midiProcessor.addUpdateListeners(this::handleUpdateNeeded);
-        final DrumPadLayer drumPadLayer = new DrumPadLayer(layers, hwElements, this, viewControl, midiProcessor);
+        drumPadLayer = new DrumPadLayer(layers, hwElements, this, viewControl, midiProcessor);
         drumPadLayer.init();
+        final PadMenuLayer padMenuLayer = new PadMenuLayer(layers, hwElements, this, globalStates);
+        encoderModeValue.set(encoderModeToString());
         
         for (final LayerId layerId : LayerId.values()) {
             switch (layerId) {
@@ -75,6 +82,7 @@ public class LayerCollection {
                 case MIX_CONTROL -> layerMap.put(layerId, mixerLayer);
                 case NAVIGATION -> layerMap.put(layerId, navigationLayer);
                 case DRUM_PAD_CONTROL -> layerMap.put(layerId, drumPadLayer);
+                case PAD_MENU_LAYER -> layerMap.put(layerId, padMenuLayer);
                 default -> layerMap.put(layerId, new Layer(layers, layerId.toString()));
             }
         }
@@ -85,11 +93,14 @@ public class LayerCollection {
             return;
         }
         final Layer currentLayer = get(padModeToLayerId(currentPadMode));
-        MpkMk4ControllerExtension.println(" MODE = %s", padModeToLayerId(mode));
         currentLayer.setIsActive(false);
         final Layer newLayer = get(padModeToLayerId(mode));
         newLayer.setIsActive(true);
         this.currentPadMode = mode;
+    }
+    
+    public int getCurrentPadMode() {
+        return currentPadMode;
     }
     
     private LayerId padModeToLayerId(final int mode) {
@@ -101,11 +112,10 @@ public class LayerCollection {
     }
     
     private void handleUpdateNeeded() {
-        for (final MpkRgbButton button : gridButtons) {
+        for (final MpkMultiStateButton button : gridButtons) {
             button.forceUpdate();
         }
     }
-    
     
     public Layer get(final LayerId layerId) {
         final Layer layer = layerMap.get(layerId);
@@ -126,6 +136,10 @@ public class LayerCollection {
         return this.remotesControlLayer.canScrollLeft();
     }
     
+    public DrumPadLayer getDrumPadLayer() {
+        return drumPadLayer;
+    }
+    
     public boolean canNavigateRight() {
         return this.remotesControlLayer.canScrollRight();
     }
@@ -136,6 +150,20 @@ public class LayerCollection {
     
     public void navigateRight() {
         this.remotesControlLayer.navigateRight();
+    }
+    
+    public void handleShiftEncoderTurn(final int inc) {
+        if (encoderLayerMode == LayerId.MIX_CONTROL) {
+            mixerLayer.toggleSends();
+        } else if (encoderLayerMode == LayerId.TRACK_CONTROL) {
+            if (inc > 0) {
+                this.cursorDevice.selectNext();
+            } else {
+                this.cursorDevice.selectPrevious();
+            }
+        } else {
+            selectDevice(inc);
+        }
     }
     
     public void selectDevice(final int inc) {
@@ -162,6 +190,41 @@ public class LayerCollection {
         }
     }
     
+    private String encoderModeToString() {
+        return switch (encoderLayerMode) {
+            case TRACK_REMOTES, PROJECT_REMOTES, DEVICE_REMOTES -> "Remotes";
+            case MIX_CONTROL -> "Mix Grid";
+            case TRACK_CONTROL -> "Mix Track";
+            default -> "";
+        };
+    }
+    
+    public void incrementEncoderMode(final int inc, final boolean roundRobin) {
+        final int previousMode = selectedEncoderMode;
+        int nextMode = selectedEncoderMode + inc;
+        if (roundRobin) {
+            nextMode = nextMode % BASIC_ENCODER_MODE_NO;
+        } else {
+            nextMode = Math.max(0, Math.min(BASIC_ENCODER_MODE_NO - 1, nextMode));
+        }
+        if (nextMode != previousMode) {
+            selectedEncoderMode = nextMode;
+            if (selectedEncoderMode == 0) {
+                backToDeviceControl();
+            } else if (selectedEncoderMode == 1) {
+                setEncoderLayerMode(LayerId.TRACK_CONTROL);
+            } else if (selectedEncoderMode == 2) {
+                setEncoderLayerMode(LayerId.MIX_CONTROL);
+            }
+            
+        }
+        
+    }
+    
+    public BasicStringValue getEncoderModeValue() {
+        return encoderModeValue;
+    }
+    
     public void setEncoderLayerMode(final LayerId id) {
         if (id == encoderLayerMode) {
             return;
@@ -170,6 +233,7 @@ public class LayerCollection {
             lastControlDeviceMode = this.encoderLayerMode;
         }
         this.encoderLayerMode = id;
+        encoderModeValue.set(encoderModeToString());
         final RemotesDisplayControl previous = this.remotesControlLayer.getDisplayControl().orElse(null);
         this.remotesControlLayer.setIsActive(false);
         this.remotesControlLayer = (EncoderLayer) get(id);

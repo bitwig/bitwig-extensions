@@ -4,6 +4,8 @@ import com.bitwig.extension.controller.api.Clip;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.DrumPad;
+import com.bitwig.extension.controller.api.DrumPadBank;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
@@ -21,6 +23,10 @@ public class MpkViewControl {
     private final PinnableCursorDevice cursorDevice;
     private final TrackBank focusTrackBank;
     private final PinnableCursorDevice primaryDevice;
+    private final DrumPadBank focusDrumPad;
+    private final DrumPad cursorPad;
+    private final DrumPadBank padBank;
+    private int padBankScrollPosition;
     
     public MpkViewControl(final ControllerHost host) {
         rootTrack = host.getProject().getRootTrackGroup();
@@ -49,6 +55,21 @@ public class MpkViewControl {
         cursorDevice.hasPrevious().markInterested();
         primaryDevice =
             cursorTrack.createCursorDevice("DrumDetection", "Pad Device", 16, CursorDeviceFollowMode.FIRST_INSTRUMENT);
+        padBank = primaryDevice.createDrumPadBank(16);
+        for (int i = 0; i < padBank.getSizeOfBank(); i++) {
+            final int index = i;
+            final DrumPad pad = padBank.getItemAt(i);
+            pad.addIsSelectedInMixerObserver(selectedInMixer -> handleSelectedInMixer(index, selectedInMixer));
+        }
+        padBank.scrollPosition().addValueObserver(scrollPosition -> this.padBankScrollPosition = scrollPosition);
+        focusDrumPad = primaryDevice.createDrumPadBank(1);
+        cursorPad = focusDrumPad.getItemAt(0);
+    }
+    
+    private void handleSelectedInMixer(final int index, final boolean selectedInMixer) {
+        if (selectedInMixer) {
+            focusDrumPad.scrollPosition().set(padBankScrollPosition + index);
+        }
     }
     
     private void prepareTrack(final Track track) {
@@ -58,6 +79,10 @@ public class MpkViewControl {
         track.mute().markInterested();
         track.isQueuedForStop().markInterested();
         track.isStopped().markInterested();
+    }
+    
+    public DrumPadBank getPadBank() {
+        return padBank;
     }
     
     public TrackBank getTrackBank() {
@@ -86,5 +111,9 @@ public class MpkViewControl {
     
     public int getSelectedTrackIndex() {
         return selectedTrackIndex;
+    }
+    
+    public DrumPadBank getFocusDrumPad() {
+        return focusDrumPad;
     }
 }

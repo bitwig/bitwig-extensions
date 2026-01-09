@@ -11,17 +11,15 @@ import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkCcAssignment;
-import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkOnOffButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColorLookup;
-import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkDisplayFont;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
 
 public class NavigationLayer extends Layer {
     
     private final Layer shiftLayer;
-    private final Layer menuLayer;
     private final LayerCollection layerCollection;
     private final SceneBank scenesBank;
     private final TrackBank trackBank;
@@ -29,11 +27,6 @@ public class NavigationLayer extends Layer {
     private final LineDisplay display;
     private final LineDisplay menuDisplay;
     private int sceneColor = 0;
-    
-    private int selectedMenu = 0;
-    private int currentSelection = 0;
-    private final String[] entries = {"Remote Control", "Track Mixer", "Grid Mixer"};
-    
     
     private final MpkFocusClip focusClip;
     
@@ -45,7 +38,6 @@ public class NavigationLayer extends Layer {
         this.focusClip = focusClip;
         this.trackBank.sceneBank().scrollPosition().markInterested();
         shiftLayer = new Layer(layers, "NAVIGATION_SHIFT_LAYER");
-        menuLayer = new Layer(layers, "MENU");
         globalStates.getShiftHeld().addValueObserver(shift -> {
             if (isActive()) {
                 shiftLayer.setIsActive(shift);
@@ -53,7 +45,6 @@ public class NavigationLayer extends Layer {
         });
         display = hwElements.getMainLineDisplay();
         menuDisplay = hwElements.getMenuLineDisplay();
-        updateMenu();
         scenesBank = viewControl.getFocusTrackBank().sceneBank();
         scenesBank.setIndication(true);
         scenesBank.scrollPosition().addValueObserver(this::handleSceneScrollPosition);
@@ -61,60 +52,25 @@ public class NavigationLayer extends Layer {
         focusScene.color().addValueObserver((r, g, b) -> this.updateSceneColor(MpkColorLookup.rgbToIndex(r, g, b)));
         focusScene.name().addValueObserver(this::handleSceneNameChanged);
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
-        final MpkOnOffButton leftButton = hwElements.getButton(MpkCcAssignment.BANK_LEFT);
-        final MpkOnOffButton rightButton = hwElements.getButton(MpkCcAssignment.BANK_RIGHT);
-        leftButton.bindLight(this, cursorTrack.hasPrevious());
+        final MpkMultiStateButton leftButton = hwElements.getButton(MpkCcAssignment.BANK_LEFT);
+        final MpkMultiStateButton rightButton = hwElements.getButton(MpkCcAssignment.BANK_RIGHT);
+        leftButton.bindLightOnOff(this, cursorTrack.hasPrevious());
         leftButton.bindRepeatHold(this, () -> cursorTrack.selectPrevious());
-        rightButton.bindLight(this, cursorTrack.hasNext());
+        rightButton.bindLightOnOff(this, cursorTrack.hasNext());
         rightButton.bindRepeatHold(this, () -> cursorTrack.selectNext());
         
-        leftButton.bindLight(shiftLayer, () -> layerCollection.canNavigateLeft());
+        leftButton.bindLightOnOff(shiftLayer, () -> layerCollection.canNavigateLeft());
         leftButton.bindRepeatHold(shiftLayer, () -> layerCollection.navigateLeft());
-        rightButton.bindLight(shiftLayer, () -> layerCollection.canNavigateRight());
+        rightButton.bindLightOnOff(shiftLayer, () -> layerCollection.canNavigateRight());
         rightButton.bindRepeatHold(shiftLayer, () -> layerCollection.navigateRight());
         
         final ClickEncoder encoder = hwElements.getMainEncoder();
         final MpkButton encoderButton = hwElements.getMainEncoderPressButton();
         encoder.bind(this, this::sceneSelection);
         encoderButton.bindIsPressed(this, this::handleEncoderPressed);
-        encoder.bind(shiftLayer, this::deviceSelection);
-        encoderButton.bindIsPressed(shiftLayer, this::handleIntoMenu);
+        encoder.bind(shiftLayer, layerCollection::handleShiftEncoderTurn);
+        encoderButton.bindIsPressed(shiftLayer, this::changeMode);
         
-        encoder.bind(menuLayer, this::handleMenuScroll);
-        encoderButton.bindIsPressed(menuLayer, this::handleMenuSelect);
-    }
-    
-    private void updateMenu() {
-        for (int i = 0; i < entries.length; i++) {
-            menuDisplay.setText(
-                i, entries[i], i == selectedMenu ? MpkDisplayFont.PT16_BOLD : MpkDisplayFont.PT16,
-                i == selectedMenu ? 69 : (i == currentSelection ? 2 : 0));
-        }
-    }
-    
-    private void handleMenuSelect(final Boolean pressed) {
-        if (pressed) {
-            menuDisplay.setActive(false);
-            display.setActive(true);
-            menuLayer.setIsActive(false);
-            currentSelection = selectedMenu;
-            if (currentSelection == 0) {
-                layerCollection.backToDeviceControl();
-            } else if (currentSelection == 1) {
-                layerCollection.setEncoderLayerMode(LayerId.TRACK_CONTROL);
-            } else if (currentSelection == 2) {
-                layerCollection.setEncoderLayerMode(LayerId.MIX_CONTROL);
-            }
-            updateMenu();
-        }
-    }
-    
-    private void handleMenuScroll(final int inc) {
-        final int next = selectedMenu + inc;
-        if (next >= 0 && next < entries.length) {
-            selectedMenu = next;
-            updateMenu();
-        }
     }
     
     private void updateSceneColor(final int colorIndex) {
@@ -128,23 +84,23 @@ public class NavigationLayer extends Layer {
     
     private void handleSceneScrollPosition(final int pos) {
         final int trackBankPosition = trackBank.sceneBank().scrollPosition().get();
-        trackBank.sceneBank().scrollPosition().set(pos);
-        if (pos < trackBankPosition || pos >= (trackBankPosition + 4)) {
+        if (pos < trackBankPosition) {
             trackBank.sceneBank().scrollPosition().set(pos);
+        } else if (pos >= (trackBankPosition + 4)) {
+            trackBank.sceneBank().scrollPosition().set(pos - 3);
         }
         focusClip.setSelectedSlotIndex(pos);
     }
     
-    private void handleIntoMenu(final Boolean pressed) {
+    private void changeMode(final Boolean pressed) {
         if (pressed) {
-            if (menuLayer.isActive()) {
-                menuDisplay.setActive(false);
-                display.setActive(true);
+            if (layerCollection.getCurrentPadMode() == 0) {
+                final Layer menuLayer = layerCollection.get(LayerId.PAD_MENU_LAYER);
+                menuLayer.setIsActive(true);
             } else {
-                display.setActive(false);
-                menuDisplay.setActive(true);
+                layerCollection.incrementEncoderMode(1, true);
+                display.temporaryInfo(1, "Knob Mode", layerCollection.getEncoderModeValue().get());
             }
-            menuLayer.setIsActive(!menuLayer.isActive());
         }
     }
     
@@ -153,10 +109,6 @@ public class NavigationLayer extends Layer {
             return;
         }
         scenesBank.getScene(0).launch();
-    }
-    
-    private void deviceSelection(final int inc) {
-        layerCollection.selectDevice(inc);
     }
     
     private void sceneSelection(final int inc) {
@@ -170,5 +122,6 @@ public class NavigationLayer extends Layer {
     @Override
     protected void onDeactivate() {
         this.shiftLayer.setIsActive(false);
+        layerCollection.get(LayerId.PAD_MENU_LAYER).setIsActive(false);
     }
 }

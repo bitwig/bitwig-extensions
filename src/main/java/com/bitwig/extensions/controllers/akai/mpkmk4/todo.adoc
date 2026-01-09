@@ -1,0 +1,6 @@
+== Akai MPK Mini IV Todos
+
+- [ ] Drum Pad: Select sets focus on the drum device
+- [ ] Drum Pad: Implement Scales
+- [x] Mixer Modes select Sends and show
+- [ ] ??

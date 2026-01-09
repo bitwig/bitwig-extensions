@@ -9,8 +9,9 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
-import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkRgbButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColor;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkMonoState;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Component;
 
@@ -24,38 +25,38 @@ public class TrackPadControl {
     public TrackPadControl(final MpkHwElements hwElements, final LayerCollection layerCollection,
         final MpkViewControl viewControl, final Project project, final MpkMidiProcessor midiProcessor) {
         final Layer mainLayer = layerCollection.get(LayerId.TRACK_PAD_CONTROL);
-        final List<MpkRgbButton> gridButtons = hwElements.getGridButtons();
+        final List<MpkMultiStateButton> gridButtons = hwElements.getGridButtons();
         final TrackBank trackBank = viewControl.getTrackBank();
         this.project = project;
         trackBank.setShouldShowClipLauncherFeedback(true);
         for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
             final int trackIndex = i;
             final Track track = trackBank.getItemAt(trackIndex);
-            final MpkRgbButton armButton = gridButtons.get(trackIndex);
+            final MpkMultiStateButton armButton = gridButtons.get(trackIndex);
             armButton.bindLight(mainLayer, () -> getArmState(track));
             armButton.bindIsPressed(mainLayer, pressed -> handleArmPressed(pressed, track));
-            final MpkRgbButton stopButton = gridButtons.get(trackIndex + 4);
+            final MpkMultiStateButton stopButton = gridButtons.get(trackIndex + 4);
             stopButton.bindLight(mainLayer, () -> getStopState(track));
             stopButton.bindPressed(mainLayer, () -> track.stop());
-            final MpkRgbButton muteButton = gridButtons.get(8 + trackIndex);
+            final MpkMultiStateButton muteButton = gridButtons.get(8 + trackIndex);
             muteButton.bindLight(mainLayer, () -> getMuteState(track));
             muteButton.bindPressed(mainLayer, () -> track.mute().toggle());
-            final MpkRgbButton soloButton = gridButtons.get(12 + trackIndex);
+            final MpkMultiStateButton soloButton = gridButtons.get(12 + trackIndex);
             soloButton.bindLight(mainLayer, () -> getSoloState(track));
             soloButton.bindIsPressed(mainLayer, pressed -> handleSoloPressed(pressed, track));
         }
     }
     
     private InternalHardwareLightState getMuteState(final Track track) {
-        return track.mute().get() ? MpkColor.ORANGE : MpkColor.ORANGE.variant(MpkColor.SOLID_10);
+        return track.mute().get() ? MpkColor.ORANGE : MpkColor.ORANGE.variant(MpkMonoState.SOLID_10);
     }
     
     private InternalHardwareLightState getStopState(final Track track) {
         if (track.exists().get()) {
             if (track.isQueuedForStop().get()) {
-                return MpkColor.GREEN.variant(MpkColor.BLINK1_4);
+                return MpkColor.GREEN.variant(MpkMonoState.BLINK1_4);
             } else if (track.isStopped().get()) {
-                return MpkColor.GREEN.variant(MpkColor.SOLID_10);
+                return MpkColor.GREEN.variant(MpkMonoState.SOLID_10);
             }
             return MpkColor.GREEN;
         }
@@ -63,7 +64,7 @@ public class TrackPadControl {
     }
     
     private InternalHardwareLightState getSoloState(final Track track) {
-        return track.solo().get() ? MpkColor.YELLOW : MpkColor.YELLOW.variant(MpkColor.SOLID_10);
+        return track.solo().get() ? MpkColor.YELLOW : MpkColor.YELLOW.variant(MpkMonoState.SOLID_10);
     }
     
     private void handleArmPressed(final boolean pressed, final Track track) {
@@ -98,7 +99,7 @@ public class TrackPadControl {
     }
     
     private InternalHardwareLightState getArmState(final Track track) {
-        return track.arm().get() ? MpkColor.RED : MpkColor.RED.variant(MpkColor.SOLID_10);
+        return track.arm().get() ? MpkColor.RED : MpkColor.RED.variant(MpkMonoState.SOLID_10);
     }
     
 }
