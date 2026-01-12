@@ -71,6 +71,7 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
     
     private void initTransport(final Context diContext) {
         final Transport transport = diContext.getService(Transport.class);
+        final MpkViewControl viewControl = diContext.getService(MpkViewControl.class);
         final MpkHwElements hwElements = diContext.getService(MpkHwElements.class);
         final MpkButton shiftButton = hwElements.getShiftButton();
         final LayerCollection layerCollection = diContext.getService(LayerCollection.class);
@@ -101,15 +102,29 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         
         final MpkMultiStateButton playButton = hwElements.getButton(MpkCcAssignment.PLAY);
         playButton.bindLightDimmed(mainLayer, transport.isPlaying());
-        playButton.bindPressed(mainLayer, transport.restartAction());
+        playButton.bindPressed(
+            mainLayer, () -> {
+                final boolean wasRecording = transport.isArrangerRecordEnabled().get();
+                transport.restart();
+                if (wasRecording) {
+                    transport.isArrangerRecordEnabled().set(true);
+                }
+            });
         playButton.bindLightDimmed(shiftLayer, transport.isPlaying());
-        playButton.bindPressed(shiftLayer, transport.playAction());
+        playButton.bindPressed(shiftLayer, transport.continuePlaybackAction());
         
         final MpkMultiStateButton recordButton = hwElements.getButton(MpkCcAssignment.REC);
         recordButton.bindLight(mainLayer, () -> recordButtonState(transport, focusClip));
         recordButton.bindPressed(mainLayer, () -> handleRecordPressed(transport, focusClip));
         recordButton.bindLightOff(shiftLayer);
-        recordButton.bindPressed(shiftLayer, () -> focusClip.quantize(1.0));
+        recordButton.bindPressed(
+            shiftLayer, () -> {
+                if (recordFocusMode == FocusMode.LAUNCHER) {
+                    focusClip.quantize(1.0);
+                } else {
+                    viewControl.invokeArrangerQuantize();
+                }
+            });
         
         final MpkMultiStateButton loopButton = hwElements.getButton(MpkCcAssignment.LOOP);
         loopButton.bindLightDimmed(mainLayer, transport.isArrangerLoopEnabled());

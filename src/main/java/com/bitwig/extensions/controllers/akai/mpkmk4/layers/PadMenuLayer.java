@@ -24,10 +24,10 @@ import com.bitwig.extensions.framework.values.ValueObject;
 
 public class PadMenuLayer extends Layer {
     
-    private final Color SELECT_BG = Color.fromRGB255(0 << 3, 0 << 2, 0 << 3);
+    private final Color SELECT_BG = Color.fromRGB255(9 << 3, 3 << 2, 0 << 3);
     private final Color SELECT_BG_PARAM = Color.fromRGB255(0 << 3, 0, 0x15 << 3);
     private final Color SELECT_FG = Color.fromRGB255(255, 255, 255);
-    private final Color BACKGROUND = Color.fromRGB255(200, 200, 200);
+    private final Color BACKGROUND = Color.fromRGB255(255, 255, 220);
     private final Color FOREGROUND = Color.fromRGB255(0, 0, 0);
     
     
@@ -114,6 +114,13 @@ public class PadMenuLayer extends Layer {
         leftButton.bindRepeatHold(this, () -> incrementValue(-1));
         rightButton.bindLightPressedOnDimmed(this);
         rightButton.bindRepeatHold(this, () -> incrementValue(1));
+        layerCollection.getPadMode().addValueObserver(this::handlePadModChange);
+    }
+    
+    private void handlePadModChange(final LayerId layerId) {
+        if (isActive() && layerId != LayerId.DRUM_PAD_CONTROL) {
+            setIsActive(false);
+        }
     }
     
     private void incrementEncoder(final int inc) {

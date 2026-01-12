@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.akai.mpkmk4;
 
 import com.bitwig.extension.controller.api.Clip;
+import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDeviceFollowMode;
 import com.bitwig.extension.controller.api.CursorTrack;
@@ -27,6 +28,7 @@ public class MpkViewControl {
     private final DrumPad cursorPad;
     private final DrumPadBank padBank;
     private int padBankScrollPosition;
+    private final Clip arrangerCursorClip;
     
     public MpkViewControl(final ControllerHost host) {
         rootTrack = host.getProject().getRootTrackGroup();
@@ -35,6 +37,8 @@ public class MpkViewControl {
         cursorTrack = host.createCursorTrack(6, 128);
         trackBank.followCursorTrack(cursorTrack);
         cursorClip = host.createLauncherCursorClip(32, 128);
+        arrangerCursorClip = host.createArrangerCursorClip(32, 128);
+        
         cursorClip.setStepSize(0.125);
         for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
             final int index = i;
@@ -115,5 +119,15 @@ public class MpkViewControl {
     
     public DrumPadBank getFocusDrumPad() {
         return focusDrumPad;
+    }
+    
+    public Clip getCursorClip() {
+        return cursorClip;
+    }
+    
+    public void invokeArrangerQuantize() {
+        arrangerCursorClip.quantize(1.0);
+        final ClipLauncherSlot slot = arrangerCursorClip.clipLauncherSlot();
+        slot.showInEditor();
     }
 }

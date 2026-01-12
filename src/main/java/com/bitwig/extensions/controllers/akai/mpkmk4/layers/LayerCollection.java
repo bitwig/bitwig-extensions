@@ -18,6 +18,7 @@ import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Activate;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.values.BasicStringValue;
+import com.bitwig.extensions.framework.values.ValueObject;
 
 @Component
 public class LayerCollection {
@@ -37,6 +38,7 @@ public class LayerCollection {
     private final DrumPadLayer drumPadLayer;
     private final BasicStringValue encoderModeValue = new BasicStringValue();
     private int selectedEncoderMode = 0;
+    private final ValueObject<LayerId> padMode = new ValueObject<>(LayerId.CLIP_LAUNCHER);
     
     
     public LayerCollection(final Layers layers, final MpkHwElements hwElements, final MpkMidiProcessor midiProcessor,
@@ -94,13 +96,15 @@ public class LayerCollection {
         }
         final Layer currentLayer = get(padModeToLayerId(currentPadMode));
         currentLayer.setIsActive(false);
-        final Layer newLayer = get(padModeToLayerId(mode));
+        final LayerId padModeLayerId = padModeToLayerId(mode);
+        padMode.set(padModeLayerId);
+        final Layer newLayer = get(padModeLayerId);
         newLayer.setIsActive(true);
         this.currentPadMode = mode;
     }
     
-    public int getCurrentPadMode() {
-        return currentPadMode;
+    public ValueObject<LayerId> getPadMode() {
+        return padMode;
     }
     
     private LayerId padModeToLayerId(final int mode) {
@@ -193,8 +197,8 @@ public class LayerCollection {
     private String encoderModeToString() {
         return switch (encoderLayerMode) {
             case TRACK_REMOTES, PROJECT_REMOTES, DEVICE_REMOTES -> "Remotes";
-            case MIX_CONTROL -> "Mix Grid";
-            case TRACK_CONTROL -> "Mix Track";
+            case MIX_CONTROL -> "Mixer";
+            case TRACK_CONTROL -> "Track";
             default -> "";
         };
     }
