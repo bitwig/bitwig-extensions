@@ -13,13 +13,12 @@ import com.bitwig.extensions.framework.time.TimedDelayEvent;
 import com.bitwig.extensions.framework.time.TimedEvent;
 
 public class MpkButton {
-    public static final int STD_REPEAT_DELAY = 1000;
+    public static final int STD_REPEAT_DELAY = 600;
     public static final int STD_REPEAT_FREQUENCY = 200;
     
     protected HardwareButton hwButton;
     protected MpkMidiProcessor midiProcessor;
     private TimedEvent currentTimer;
-    private long recordedDownTime;
     protected final int midiId;
     protected final int channel;
     
@@ -80,11 +79,7 @@ public class MpkButton {
     }
     
     private void initiateHold(final Consumer<Boolean> holdAction, final long delayTime) {
-        recordedDownTime = System.currentTimeMillis();
-        currentTimer = new TimedDelayEvent(
-            () -> {
-                holdAction.accept(true);
-            }, delayTime);
+        currentTimer = new TimedDelayEvent(() -> holdAction.accept(true), delayTime);
         midiProcessor.queueEvent(currentTimer);
     }
     

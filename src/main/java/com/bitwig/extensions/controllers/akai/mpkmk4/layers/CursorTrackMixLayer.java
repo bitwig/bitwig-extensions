@@ -46,7 +46,7 @@ public class CursorTrackMixLayer extends EncoderLayer {
     
     private void handleScrollPosition(final int pos) {
         this.sendsScrollPosition = pos;
-        display.temporaryInfo(1, "Sends", "%d-%d".formatted(sendsScrollPosition + 1, sendsScrollPosition + 7));
+        display.temporaryInfo(1, "Sends", "%d-%d".formatted(sendsScrollPosition + 1, sendsScrollPosition + 6));
     }
     
     @Override

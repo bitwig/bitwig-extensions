@@ -94,7 +94,7 @@ public class NavigationLayer extends Layer {
     
     private void changeMode(final Boolean pressed) {
         if (pressed) {
-            if (layerCollection.getCurrentPadMode() == 0) {
+            if (layerCollection.getPadMode().get() == LayerId.DRUM_PAD_CONTROL) {
                 final Layer menuLayer = layerCollection.get(LayerId.PAD_MENU_LAYER);
                 menuLayer.setIsActive(true);
             } else {

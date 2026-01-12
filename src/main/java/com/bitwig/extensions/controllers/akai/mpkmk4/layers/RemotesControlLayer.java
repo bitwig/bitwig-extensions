@@ -1,5 +1,6 @@
 package com.bitwig.extensions.controllers.akai.mpkmk4.layers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ public class RemotesControlLayer extends EncoderLayer {
     
     private final CursorRemoteControlsPage deviceRemotes;
     private final RemotesDisplayControl displayControl;
+    private final List<ParameterDisplayBinding> bindings = new ArrayList<>();
     
     public RemotesControlLayer(final String name, final Layers layers, final StringValue deviceNameValue,
         final CursorRemoteControlsPage deviceRemotes, final MpkHwElements hwElements,
@@ -30,8 +32,16 @@ public class RemotesControlLayer extends EncoderLayer {
             final RemoteControl remote = deviceRemotes.getParameter(i);
             final Encoder encoder = encoders.get(i);
             encoder.bindValue(this, remote.value());
-            this.addBinding(new ParameterDisplayBinding(remote, encoder, parameterValues, i));
+            final ParameterDisplayBinding binding = new ParameterDisplayBinding(remote, encoder, parameterValues, i);
+            this.bindings.add(binding);
+            this.addBinding(binding);
         }
+        deviceRemotes.selectedPageIndex().addValueObserver(this::handlePageChange);
+    }
+    
+    private void handlePageChange(final int pageIndex) {
+        bindings.forEach(b -> b.update());
+        parameterValues.update();
     }
     
     public Optional<RemotesDisplayControl> getDisplayControl() {
@@ -40,12 +50,10 @@ public class RemotesControlLayer extends EncoderLayer {
     
     public void navigateLeft() {
         deviceRemotes.selectPreviousPage(false);
-        parameterValues.update();
     }
     
     public void navigateRight() {
         deviceRemotes.selectNextPage(false);
-        parameterValues.update();
     }
     
     public boolean canScrollRight() {
