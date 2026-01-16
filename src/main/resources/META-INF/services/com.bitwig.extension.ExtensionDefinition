@@ -59,6 +59,7 @@ com.bitwig.extensions.controllers.kenton.KillaMixMiniExtensionDefinition
 com.bitwig.extensions.controllers.embodme.Erae2ExtensionDefinition
 
 com.bitwig.extensions.controllers.expressivee.osmose49.Osmose49ExtensionDefinition
+com.bitwig.extensions.controllers.expressivee.osmose61.Osmose61ExtensionDefinition
 com.bitwig.extensions.controllers.expressivee.osmoseCE49.OsmoseCE49ExtensionDefinition
 com.bitwig.extensions.controllers.expressivee.osmoseCE61.OsmoseCE61ExtensionDefinition
 
