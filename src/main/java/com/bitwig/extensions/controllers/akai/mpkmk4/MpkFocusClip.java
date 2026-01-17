@@ -26,21 +26,27 @@ public class MpkFocusClip {
         slotBank = cursorTrack.clipLauncherSlotBank();
         slotRange = slotBank.getSizeOfBank();
         for (int i = 0; i < slotBank.getSizeOfBank(); i++) {
+            final int index = i;
             final ClipLauncherSlot slot = slotBank.getItemAt(i);
             slot.isRecording().markInterested();
             slot.isPlaying().markInterested();
             slot.hasContent().markInterested();
             slot.exists().markInterested();
+            slot.isSelected().addValueObserver(selected -> this.handleSelection(selected, index));
         }
-        slotBank.addIsSelectedObserver((index, selected) -> {
-            if (selected) {
-                selectedSlotIndex = index;
-            }
-        });
     }
     
-    public void setSelectedSlotIndex(final int selectedSlotIndex) {
-        this.selectedSlotIndex = selectedSlotIndex;
+    private void handleSelection(final boolean selected, final int index) {
+        if (selected) {
+            this.selectedSlotIndex = index;
+        }
+    }
+    
+    public void setSelectedSlotIndex(final int pos) {
+        this.selectedSlotIndex = pos;
+        if (selectedSlotIndex < slotBank.getSizeOfBank()) {
+            slotBank.getItemAt(selectedSlotIndex).select();
+        }
     }
     
     public void invokeRecord() {
@@ -63,7 +69,6 @@ public class MpkFocusClip {
                 slot.launch();
                 transport.isClipLauncherOverdubEnabled().set(true);
             });
-            
         }
     }
     

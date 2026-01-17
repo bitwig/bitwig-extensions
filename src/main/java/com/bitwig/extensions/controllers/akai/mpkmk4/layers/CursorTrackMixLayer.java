@@ -18,6 +18,7 @@ public class CursorTrackMixLayer extends EncoderLayer {
     private final SendBank sendBank;
     private int sendsScrollPosition = 0;
     private final LineDisplay display;
+    private boolean sendsChangedAction = false;
     
     public CursorTrackMixLayer(final Layers layers, final MpkHwElements hwElements,
         final MpkMidiProcessor midiProcessor, final MpkViewControl viewControl) {
@@ -35,6 +36,7 @@ public class CursorTrackMixLayer extends EncoderLayer {
         sendBank.canScrollForwards().markInterested();
         sendBank.canScrollBackwards().markInterested();
         sendBank.scrollPosition().addValueObserver(this::handleScrollPosition);
+        sendBank.itemCount().addValueObserver(this::sendCountChanged);
         for (int i = 0; i < 6; i++) {
             final Send send = sendBank.getItemAt(i);
             final int index = i + (i / 3 + 1);
@@ -44,18 +46,30 @@ public class CursorTrackMixLayer extends EncoderLayer {
         }
     }
     
+    private void sendCountChanged(final int sends) {
+        if (isActive()) {
+            updateDisplay(sends);
+        }
+    }
+    
     private void handleScrollPosition(final int pos) {
         this.sendsScrollPosition = pos;
-        display.temporaryInfo(1, "Sends", "%d-%d".formatted(sendsScrollPosition + 1, sendsScrollPosition + 6));
+        if (sendsChangedAction) {
+            display.temporaryInfo(1, "Sends", "%d-%d".formatted(sendsScrollPosition + 1, sendsScrollPosition + 6));
+            sendsChangedAction = false;
+        }
+        updateDisplay(sendBank.itemCount().get());
     }
     
     @Override
     public void navigateLeft() {
+        sendsChangedAction = true;
         sendBank.scrollBackwards();
     }
     
     @Override
     public void navigateRight() {
+        sendsChangedAction = true;
         sendBank.scrollForwards();
     }
     
@@ -68,4 +82,22 @@ public class CursorTrackMixLayer extends EncoderLayer {
     public boolean canScrollLeft() {
         return sendBank.canScrollBackwards().get();
     }
+    
+    @Override
+    protected void onActivate() {
+        updateDisplay(sendBank.itemCount().get());
+    }
+    
+    private void updateDisplay(final int sendsCount) {
+        display.setText(1, "Track");
+        if (sendsCount == 0) {
+            display.setText(2, "No Sends");
+        } else if (sendsCount == 1) {
+            display.setText(2, "Send %d".formatted(sendsScrollPosition + 1));
+        } else if (sendsCount > 1) {
+            display.setText(
+                2, "Sends %d-%d".formatted(sendsScrollPosition + 1, Math.min(sendsScrollPosition + 6, sendsCount)));
+        }
+    }
+    
 }

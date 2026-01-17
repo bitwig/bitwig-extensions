@@ -19,7 +19,7 @@ public class MpkMiniMk4ControllerExtensionDefinition extends ControllerExtension
     
     @Override
     public String getHardwareModel() {
-        return "MPK mini mk4";
+        return "MPK Mini IV";
     }
     
     @Override
@@ -45,8 +45,8 @@ public class MpkMiniMk4ControllerExtensionDefinition extends ControllerExtension
                 new String[] {"MPK mini IV DAW Port", "MPK mini IV MIDI Port"});
         } else if (platformType == PlatformType.LINUX) {
             list.add(
-                new String[] {"MIDIIN2 (MPK mini IV)", "MPK mini IV"},
-                new String[] {"MIDIOUT2 (MPK mini IV)", "MPK mini IV"});
+                new String[] {"MPK mini IV MPK mini IV DAW Por", "MPK mini IV MPK mini IV MIDI Po"},
+                new String[] {"MPK mini IV DAW Port", "MPK mini IV MIDI Port"});
         }
     }
     
@@ -56,8 +56,13 @@ public class MpkMiniMk4ControllerExtensionDefinition extends ControllerExtension
     }
     
     @Override
+    public String getHelpFilePath() {
+        return "Controllers/Akai/MPK Mini Mk4.pdf";
+    }
+    
+    @Override
     public String getName() {
-        return "MPK mini mk4";
+        return "MPK Mini IV";
     }
     
     @Override
@@ -67,7 +72,7 @@ public class MpkMiniMk4ControllerExtensionDefinition extends ControllerExtension
     
     @Override
     public String getVersion() {
-        return "0.1";
+        return "0.8";
     }
     
     @Override

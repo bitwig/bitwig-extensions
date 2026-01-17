@@ -45,8 +45,8 @@ public class LineDisplay {
         }
     }
     
-    public void setMenuLine(final int rowIndex, final MpkDisplayFont font, final int justification, final Color foreGround,
-        final Color background) {
+    public void setMenuLine(final int rowIndex, final MpkDisplayFont font, final int justification,
+        final Color foreGround, final Color background) {
         if (active) {
             midiProcessor.configureLine(font, rowIndex, justification, foreGround, background);
         }
@@ -119,9 +119,16 @@ public class LineDisplay {
     
     public void temporaryInfo(final int layerIndex, final String line1, final String line2) {
         activateTemporary(layerIndex);
-        setText(layerIndex, 1, line1);
-        setColorIndex(layerIndex, 1, 0);
-        setText(layerIndex, 2, line2);
-        setColorIndex(layerIndex, 2, 0);
+        showTemporary(layerIndex, line1, line2);
     }
+    
+    public void showTemporary(final int layerIndex, final String line1, final String line2) {
+        if (currentLayer == layerIndex) {
+            setText(layerIndex, 1, line1);
+            setColorIndex(layerIndex, 1, 0);
+            setText(layerIndex, 2, line2);
+            setColorIndex(layerIndex, 2, 0);
+        }
+    }
+    
 }

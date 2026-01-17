@@ -1,6 +1,14 @@
 == Akai MPK Mini IV Todos
 
-- [ ] Drum Pad: Select sets focus on the drum device
-- [ ] Drum Pad: Implement Scales
-- [x] Mixer Modes select Sends and show
-- [ ] ??
+- [x] Quantize = Record Quantize
+- [x] Parameter Artefakte Bug
+- [x] Mixer / Track Modes show the mode statically
+- [x] Pad Offset in Menu only when Drum Device / etc.
+- [x] Quantize change with Encoder while holding
+- [x] In Menu SHIFT +/- Still need to move tracks
+- [x] Changing Device in Mixer Mode -> Temporary Info
+- [x] Mixer shows Sends
+- [x] Fix Focus Rec/Launch Function
+- [ ] Improved Clip Colors
+
+- [ ] Introduce a timed variable

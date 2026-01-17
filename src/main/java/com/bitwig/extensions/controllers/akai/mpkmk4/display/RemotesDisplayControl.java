@@ -33,6 +33,11 @@ public class RemotesDisplayControl {
         updateDisplay();
     }
     
+    public void updateTemporary() {
+        //mainDisplay.activateTemporary(1);
+        mainDisplay.temporaryInfo(1, deviceName.get(), pageName.get().isBlank() ? BLANK_STRING : pageName.get());
+    }
+    
     public boolean isActive() {
         return active;
     }
@@ -52,12 +57,17 @@ public class RemotesDisplayControl {
     private void handleDeviceNameChanged(final String name) {
         if (isActive()) {
             mainDisplay.setText(0, 1, name.isBlank() ? BLANK_STRING : name);
+        } else {
+            mainDisplay.showTemporary(
+                1, name.isBlank() ? BLANK_STRING : name, pageName.get().isBlank() ? BLANK_STRING : pageName.get());
         }
     }
     
     private void handlePageNameChanged(final String page) {
         if (isActive()) {
             mainDisplay.setText(0, 2, page);
+        } else {
+            mainDisplay.showTemporary(1, deviceName.get(), page.isBlank() ? BLANK_STRING : pageName.get());
         }
     }
     
@@ -96,6 +106,5 @@ public class RemotesDisplayControl {
     public boolean canScrollLeft() {
         return pageIndex > 0;
     }
-    
     
 }

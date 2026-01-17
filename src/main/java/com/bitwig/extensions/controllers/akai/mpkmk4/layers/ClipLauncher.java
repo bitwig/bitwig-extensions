@@ -5,11 +5,11 @@ import java.util.List;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.SceneBank;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
-import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
@@ -22,15 +22,14 @@ import com.bitwig.extensions.framework.di.Component;
 @Component
 public class ClipLauncher {
     
-    private final Layer mainLayer;
     private final MpkColor[][] clipColors;
     private final Transport transport;
-    private final List<MpkMultiStateButton> gridButtons;
+    private final SettableBooleanValue clipLauncherOverdub;
     
     public ClipLauncher(final MpkHwElements hwElements, final LayerCollection layerCollection,
-        final MpkViewControl viewControl, final Transport transport, final MpkMidiProcessor midiProcessor) {
-        mainLayer = layerCollection.get(LayerId.CLIP_LAUNCHER);
-        gridButtons = hwElements.getGridButtons();
+        final MpkViewControl viewControl, final Transport transport) {
+        final Layer mainLayer = layerCollection.get(LayerId.CLIP_LAUNCHER);
+        final List<MpkMultiStateButton> gridButtons = hwElements.getGridButtons();
         final TrackBank trackBank = viewControl.getTrackBank();
         final SceneBank sceneBank = trackBank.sceneBank();
         this.transport = transport;
@@ -50,12 +49,10 @@ public class ClipLauncher {
                 prepareClipSlot(clipSlot, trackIndex, sceneIndex);
             }
         }
-        
+        clipLauncherOverdub = transport.isClipLauncherOverdubEnabled();
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         final LineDisplay mainDisplay = hwElements.getMainLineDisplay();
-        cursorTrack.name().addValueObserver(name -> {
-            mainDisplay.setText(0, 0, name);
-        });
+        cursorTrack.name().addValueObserver(name -> mainDisplay.setText(0, 0, name));
         cursorTrack.color().addValueObserver((r, g, b) -> {
             final int index = MpkColorLookup.rgbToIndex(r, g, b);
             mainDisplay.setColorIndex(0, 0, index);
@@ -65,6 +62,9 @@ public class ClipLauncher {
     private void handleClipPress(final Boolean pressed, final ClipLauncherSlot clipSlot) {
         if (pressed) {
             clipSlot.launch();
+            clipSlot.select();
+        } else {
+            clipSlot.launchRelease();
         }
     }
     
@@ -73,9 +73,9 @@ public class ClipLauncher {
         if (slot.hasContent().get()) {
             final MpkColor color = clipColors[trackIndex][sceneIndex];
             if (slot.isRecordingQueued().get()) {
-                return MpkColor.RED.variant(MpkMonoState.BLINK1_4);
+                return MpkColor.RED.variant(MpkMonoState.BLINK1_8);
             } else if (slot.isRecording().get()) {
-                return MpkColor.RED.variant(MpkMonoState.PULSE1_2);
+                return MpkColor.RED.variant(MpkMonoState.PULSE1_4);
             } else if (slot.isPlaybackQueued().get()) {
                 return color.variant(MpkMonoState.BLINK1_4);
             } else if (slot.isStopQueued().get()) {
@@ -83,22 +83,23 @@ public class ClipLauncher {
             } else if (slot.isPlaying().get() && track.isQueuedForStop().get()) {
                 return MpkColor.GREEN.variant(MpkMonoState.BLINK1_8);
             } else if (slot.isPlaying().get()) {
-                return MpkColor.GREEN.variant(MpkMonoState.PULSE1_4);
-                //                if (clipLauncherOverdub.get() && track.arm().get()) {
-                //                    return RgbLightState.RED.behavior(LedBehavior.PULSE_2);
-                //                } else {
-                //                    if (isPlaying()) {
-                //                        return RgbLightState.GREEN_PLAY;
-                //                    }
-                //                    return RgbLightState.GREEN;
-                //                }
+                if (clipLauncherOverdub.get() && track.arm().get()) {
+                    return MpkColor.RED.variant(MpkMonoState.PULSE1_4);
+                } else {
+                    if (transport.isPlaying().get()) {
+                        return MpkColor.GREEN.variant(MpkMonoState.PULSE1_4);
+                    }
+                    return MpkColor.GREEN;
+                }
             }
             return color;
         }
         if (slot.isRecordingQueued().get()) {
-            return MpkColor.RED.variant(MpkMonoState.BLINK1_8);
+            return MpkColor.RED.variant(MpkMonoState.PULSE1_8);
         } else if (track.arm().get()) {
             return MpkColor.RED.variant(MpkMonoState.SOLID_25);
+        } else if (slot.isPlaybackQueued().get()) {
+            return clipColors[trackIndex][sceneIndex].variant(MpkMonoState.BLINK1_16);
         }
         return MpkColor.OFF;
     }

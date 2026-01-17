@@ -25,7 +25,6 @@ public class MpkViewControl {
     private final TrackBank focusTrackBank;
     private final PinnableCursorDevice primaryDevice;
     private final DrumPadBank focusDrumPad;
-    private final DrumPad cursorPad;
     private final DrumPadBank padBank;
     private int padBankScrollPosition;
     private final Clip arrangerCursorClip;
@@ -67,7 +66,6 @@ public class MpkViewControl {
         }
         padBank.scrollPosition().addValueObserver(scrollPosition -> this.padBankScrollPosition = scrollPosition);
         focusDrumPad = primaryDevice.createDrumPadBank(1);
-        cursorPad = focusDrumPad.getItemAt(0);
     }
     
     private void handleSelectedInMixer(final int index, final boolean selectedInMixer) {
