@@ -11,7 +11,7 @@ public class ParameterValues {
     private final String[] names = new String[8];
     private final byte[] data = new byte[136];
     
-    public ParameterValues(MpkMidiProcessor midiProcessor) {
+    public ParameterValues(final MpkMidiProcessor midiProcessor) {
         this.midiProcessor = midiProcessor;
         Arrays.fill(this.data, (byte) 0x20);
         data[0] = (byte) 0xF0;
@@ -26,10 +26,10 @@ public class ParameterValues {
     
     public void setValue(final int index, final String value) {
         values[index] = StringUtil.toAsciiDisplay(value, 8);
-        String strVal = values[index];
+        final String strVal = values[index];
         for (int i = 0; i < 8; i++) {
             if (i < strVal.length()) {
-                data[index * 8 + 71+ i] = (byte) strVal.charAt(i);
+                data[index * 8 + 71 + i] = (byte) strVal.charAt(i);
             } else {
                 data[index * 8 + 71 + i] = 0x20;
             }
@@ -37,7 +37,7 @@ public class ParameterValues {
     }
     
     public void setNames(final int index, final String name) {
-        String strVal = StringUtil.toAsciiDisplay(name, 8);
+        final String strVal = StringUtil.toAsciiDisplay(name, 8);
         names[index] = strVal;
         for (int i = 0; i < 8; i++) {
             if (i < strVal.length()) {

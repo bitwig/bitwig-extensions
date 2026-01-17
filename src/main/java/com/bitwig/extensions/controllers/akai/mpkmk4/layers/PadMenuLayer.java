@@ -1,19 +1,17 @@
 package com.bitwig.extensions.controllers.akai.mpkmk4.layers;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.IntConsumer;
-
-import com.bitwig.extension.api.Color;
-import com.bitwig.extension.controller.api.StringValue;
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extensions.controllers.akai.apc.common.control.ClickEncoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.GlobalStates;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
+import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
 import com.bitwig.extensions.controllers.akai.mpkmk4.ScaleSetup;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkCcAssignment;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MenuEntry;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.MenuList;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkDisplayFont;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.Layers;
@@ -24,62 +22,35 @@ import com.bitwig.extensions.framework.values.ValueObject;
 
 public class PadMenuLayer extends Layer {
     
-    private final Color SELECT_BG = Color.fromRGB255(9 << 3, 3 << 2, 0 << 3);
-    private final Color SELECT_BG_PARAM = Color.fromRGB255(0 << 3, 0, 0x15 << 3);
-    private final Color SELECT_FG = Color.fromRGB255(255, 255, 255);
-    private final Color BACKGROUND = Color.fromRGB255(255, 255, 220);
-    private final Color FOREGROUND = Color.fromRGB255(0, 0, 0);
-    
-    
     private final LineDisplay display;
     private final LineDisplay menuDisplay;
-    private final List<MenuEntry> menuEntries = new ArrayList<>();
-    private int menuEntryPosition = 0;
-    private boolean valueFocus = false;
+    
+    private final Layer internalShiftLayer;
+    
+    private final MenuList noteMenuList = new MenuList();
+    private final MenuList padMenuList = new MenuList();
+    private MenuList currentMenuList = padMenuList;
+    
     private final GlobalStates states;
-    private final LayerCollection layerCollection;
     private MenuEntry currentMenu;
     private final DrumPadLayer padLayer;
+    private boolean hasDrumPads;
     
-    private static class MenuEntry {
-        private final int index;
-        private final String title;
-        private final StringValue value;
-        private IntConsumer incrementHandler;
-        private Runnable clickHandler;
-        
-        public MenuEntry(final int index, final String title, final StringValue value,
-            final IntConsumer incrementHandler) {
-            this.index = index;
-            this.title = title;
-            this.value = value;
-            this.incrementHandler = incrementHandler;
-        }
-        
-        public MenuEntry(final int index, final String title, final Runnable clickHandler) {
-            this.index = index;
-            this.title = title;
-            this.value = null;
-            this.clickHandler = clickHandler;
-        }
-        
-        public int getIndex() {
-            return index;
-        }
-    }
     
     public PadMenuLayer(final Layers layers, final MpkHwElements hwElements, final LayerCollection layerCollection,
-        final GlobalStates states) {
+        final MpkViewControl viewControl, final GlobalStates states) {
         super(layers, "PAD_MENU_LAYER");
         display = hwElements.getMainLineDisplay();
         menuDisplay = hwElements.getMenuLineDisplay();
         padLayer = layerCollection.getDrumPadLayer();
-        this.layerCollection = layerCollection;
+        internalShiftLayer = new Layer(layers, "MENU_SHIFT");
         this.states = states;
         final ScaleSetup scaleSetup = padLayer.getScaleSetup();
         final IntValueObject baseNote = scaleSetup.getBaseNote();
         final BasicStringValue baseNoteString = new BasicStringValue(ScaleSetup.toNote(baseNote.get()));
         baseNote.addValueObserver((o, v) -> baseNoteString.set(ScaleSetup.toNote(v)));
+        
+        viewControl.getPrimaryDevice().hasDrumPads().addValueObserver(this::handleHasDrumPadsChanged);
         
         final ValueObject<Scale> scaleValue = scaleSetup.getScale();
         final BasicStringValue scaleString = new BasicStringValue(scaleValue.get().getShortName());
@@ -93,17 +64,23 @@ public class PadMenuLayer extends Layer {
         final BasicStringValue padOffsetString = new BasicStringValue(Integer.toString(padOffsetValue.get()));
         padOffsetValue.addValueObserver((o, v) -> padOffsetString.set(Integer.toString(v)));
         
-        int index = 0;
-        menuEntries.add(new MenuEntry(index++, "Exit", () -> setIsActive(false)));
-        menuEntries.add(new MenuEntry(index++, "Scale", scaleString, scaleValue::increment));
-        menuEntries.add(new MenuEntry(index++, "B.Note", baseNoteString, baseNote::increment));
-        menuEntries.add(new MenuEntry(index++, "Oct", octaveString, octaveValue::increment));
-        menuEntries.add(new MenuEntry(index++, "Pad Off", padOffsetString, inc -> padOffsetValue.increment(inc * 4)));
-        menuEntries.add(new MenuEntry(
-            index, "Enc.M", layerCollection.getEncoderModeValue(),
-            inc -> layerCollection.incrementEncoderMode(inc, false)));
+        final RemotesControlHandler remotesHandler = layerCollection.getRemotesHandler();
         
-        currentMenu = menuEntries.get(0);
+        noteMenuList.add("Exit", () -> setIsActive(false));
+        noteMenuList.add("Scale", scaleString, scaleValue::increment);
+        noteMenuList.add("Root", baseNoteString, baseNote::increment);
+        noteMenuList.add("Oct", octaveString, octaveValue::increment);
+        noteMenuList.add(
+            "Enc.M", remotesHandler.getEncoderModeValue(),
+            inc -> remotesHandler.incrementEncoderMode(inc, false));
+        
+        padMenuList.add("Exit", () -> setIsActive(false));
+        padMenuList.add("Pad Off", padOffsetString, inc -> padOffsetValue.increment(inc * 4));
+        padMenuList.add(
+            "Enc.M", remotesHandler.getEncoderModeValue(),
+            inc -> remotesHandler.incrementEncoderMode(inc, false));
+        
+        currentMenu = currentMenuList.get(0);
         final ClickEncoder encoder = hwElements.getMainEncoder();
         final MpkButton encoderButton = hwElements.getMainEncoderPressButton();
         encoder.bind(this, this::incrementEncoder);
@@ -114,7 +91,32 @@ public class PadMenuLayer extends Layer {
         leftButton.bindRepeatHold(this, () -> incrementValue(-1));
         rightButton.bindLightPressedOnDimmed(this);
         rightButton.bindRepeatHold(this, () -> incrementValue(1));
+        
+        final CursorTrack cursorTrack = viewControl.getCursorTrack();
+        leftButton.bindLightOnOff(internalShiftLayer, cursorTrack.hasPrevious());
+        leftButton.bindRepeatHold(internalShiftLayer, () -> cursorTrack.selectPrevious());
+        rightButton.bindLightOnOff(internalShiftLayer, cursorTrack.hasNext());
+        rightButton.bindRepeatHold(internalShiftLayer, () -> cursorTrack.selectNext());
+        
+        states.getShiftHeld().addValueObserver(shift -> {
+            if (isActive()) {
+                internalShiftLayer.setIsActive(shift);
+            }
+        });
         layerCollection.getPadMode().addValueObserver(this::handlePadModChange);
+    }
+    
+    private void handleHasDrumPadsChanged(final boolean hasDrumPads) {
+        this.hasDrumPads = hasDrumPads;
+        if (isActive()) {
+            updateCurrentMenuList();
+        }
+    }
+    
+    private void updateCurrentMenuList() {
+        currentMenuList.resetValueFocus();
+        currentMenuList = hasDrumPads ? padMenuList : noteMenuList;
+        currentMenuList.updateDisplay(menuDisplay);
     }
     
     private void handlePadModChange(final LayerId layerId) {
@@ -124,22 +126,20 @@ public class PadMenuLayer extends Layer {
     }
     
     private void incrementEncoder(final int inc) {
-        if (valueFocus) {
+        if (currentMenuList.onValue()) {
             incrementValue(inc);
         } else {
-            final int nextEntry = menuEntryPosition + inc;
-            if (nextEntry >= 0 && nextEntry < menuEntries.size()) {
-                menuEntryPosition = nextEntry;
-                currentMenu = menuEntries.get(menuEntryPosition);
-                updateDisplay();
+            if (currentMenuList.increment(inc)) {
+                currentMenu = currentMenuList.getCurrent();
+                currentMenuList.updateDisplay(menuDisplay);
             }
         }
     }
     
     private void incrementValue(final int inc) {
-        if (currentMenu.incrementHandler != null) {
-            currentMenu.incrementHandler.accept(inc);
-            updateMenuEntry(currentMenu);  // Maybe update only on change
+        if (currentMenu.getIncrementHandler() != null) {
+            currentMenu.getIncrementHandler().accept(inc);
+            currentMenuList.updateMenuEntry(currentMenu, menuDisplay);  // Maybe update only on change
         }
     }
     
@@ -150,45 +150,15 @@ public class PadMenuLayer extends Layer {
         if (states.getShiftHeld().get()) {
             this.setIsActive(false);
         } else {
-            if (currentMenu.clickHandler != null) {
-                currentMenu.clickHandler.run();
+            if (currentMenu.getClickHandler() != null) {
+                currentMenu.getClickHandler().run();
             } else {
-                valueFocus = !valueFocus;
-                updateDisplay();
+                currentMenuList.toggleValueFocus();
+                currentMenuList.updateDisplay(menuDisplay);
             }
         }
     }
     
-    
-    private void updateDisplay() {
-        final int scrollOffset = Math.max(0, menuEntryPosition - 2);
-        for (int i = 0; i < 3; i++) {
-            final int index = i + scrollOffset;
-            if (index < menuEntries.size()) {
-                updateMenuEntry(menuEntries.get(index));
-            }
-        }
-    }
-    
-    private void updateMenuEntry(final MenuEntry entry) {
-        final int i = entry.getIndex() - Math.max(0, menuEntryPosition - 2);
-        final String value = entry.value != null ? entry.value.get() : "";
-        if (entry.getIndex() == menuEntryPosition) {
-            menuDisplay.setMenuLine(i, MpkDisplayFont.PT24, 0, SELECT_FG, valueFocus ? SELECT_BG_PARAM : SELECT_BG);
-            if (entry.value == null) {
-                menuDisplay.setText(i, "%s".formatted(entry.title));
-            } else {
-                menuDisplay.setText(i, "%s%s: %s".formatted(valueFocus ? ">" : "", entry.title, value));
-            }
-        } else {
-            menuDisplay.setMenuLine(i, MpkDisplayFont.PT24, 0, FOREGROUND, BACKGROUND);
-            if (entry.value == null) {
-                menuDisplay.setText(i, "%s".formatted(entry.title));
-            } else {
-                menuDisplay.setText(i, "%s: %s".formatted(entry.title, value));
-            }
-        }
-    }
     
     @Override
     protected void onActivate() {
@@ -196,9 +166,9 @@ public class PadMenuLayer extends Layer {
         display.setActive(false);
         menuDisplay.setActive(true);
         for (int i = 0; i < 3; i++) {
-            menuDisplay.setMenuLine(i, MpkDisplayFont.PT24_BOLD, 0, FOREGROUND, BACKGROUND);
+            menuDisplay.setMenuLine(i, MpkDisplayFont.PT24_BOLD, 0, MenuList.FOREGROUND, MenuList.BACKGROUND);
         }
-        updateDisplay();
+        updateCurrentMenuList();
     }
     
     @Override
@@ -206,5 +176,6 @@ public class PadMenuLayer extends Layer {
         super.onDeactivate();
         menuDisplay.setActive(false);
         display.setActive(true);
+        internalShiftLayer.setIsActive(false);
     }
 }

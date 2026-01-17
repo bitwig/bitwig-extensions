@@ -51,9 +51,10 @@ public class MixEncoderLayer extends EncoderLayer {
             encoderPan.bindValue(sendsLayer, sendsBank.getItemAt(0));
             sendsLayer.addBinding(
                 new ParameterDisplayBinding(sendsBank.getItemAt(0), encoderPan, sendParameterValues, i));
+            
             encoderVolume.bindValue(sendsLayer, sendsBank.getItemAt(1));
             sendsLayer.addBinding(
-                new ParameterDisplayBinding(sendsBank.getItemAt(1), encoderVolume, sendParameterValues, i));
+                new ParameterDisplayBinding(sendsBank.getItemAt(1), encoderVolume, sendParameterValues, i + 4));
         }
     }
     
@@ -65,16 +66,20 @@ public class MixEncoderLayer extends EncoderLayer {
     }
     
     public String getSendScrollInfo() {
-        //return "Sends %d-%d".formatted(sendScrollPos + 1, sendScrollPos + 2);
         final String name1 = sendBank.getItemAt(0).name().get();
         final String name2 = sendBank.getItemAt(1).name().get();
-        return "%s/%s".formatted(name1, name2);
+        return "%s/%s".formatted(name1.substring(0, 4), name2.substring(0, 4));
+    }
+    
+    public String getSendInfo() {
+        return "Sends %d-%d".formatted(sendScrollPos + 1, sendScrollPos + 2);
     }
     
     public void toggleSends() {
         sendsLayer.toggleIsActive();
+        updateDisplay();
         if (sendsLayer.isActive()) {
-            display.temporaryInfo(1, "Mixer Sends", getSendScrollInfo());
+            display.temporaryInfo(1, "Mixer Sends", getSendInfo());
         } else {
             display.temporaryInfo(1, "Mixer", "Pan/Volume");
         }
@@ -87,8 +92,12 @@ public class MixEncoderLayer extends EncoderLayer {
     @Override
     public void navigateLeft() {
         if (sendsLayer.isActive()) {
-            for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
-                trackBank.getItemAt(i).sendBank().scrollBackwards();
+            if (sendScrollPos == 0) {
+                toggleSends();
+            } else {
+                for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+                    trackBank.getItemAt(i).sendBank().scrollBackwards();
+                }
             }
         }
     }
@@ -99,6 +108,8 @@ public class MixEncoderLayer extends EncoderLayer {
             for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
                 trackBank.getItemAt(i).sendBank().scrollForwards();
             }
+        } else {
+            toggleSends();
         }
     }
     
@@ -107,16 +118,23 @@ public class MixEncoderLayer extends EncoderLayer {
         if (sendsLayer.isActive()) {
             return sendBank.canScrollForwards().get();
         }
-        
-        return false;
+        return true;
     }
     
     @Override
     public boolean canScrollLeft() {
-        if (sendsLayer.isActive()) {
-            return sendBank.canScrollBackwards().get();
-        }
-        return false;
+        return sendsLayer.isActive();
+    }
+    
+    @Override
+    protected void onActivate() {
+        updateDisplay();
+    }
+    
+    private void updateDisplay() {
+        display.setText(1, "Mixer");
+        display.setText(
+            2, sendsLayer.isActive() ? "Sends %d/%d".formatted(sendScrollPos + 1, sendScrollPos + 2) : "Volume/Pan");
     }
     
     @Override

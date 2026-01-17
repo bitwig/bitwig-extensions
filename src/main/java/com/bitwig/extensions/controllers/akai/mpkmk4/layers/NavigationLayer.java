@@ -29,11 +29,14 @@ public class NavigationLayer extends Layer {
     private int sceneColor = 0;
     
     private final MpkFocusClip focusClip;
+    private boolean encoderSceneAction;
+    private final RemotesControlHandler remotesControlHandler;
     
     public NavigationLayer(final Layers layers, final MpkHwElements hwElements, final GlobalStates globalStates,
         final LayerCollection layerCollection, final MpkViewControl viewControl, final MpkFocusClip focusClip) {
         super(layers, "NAVIGATION");
         this.layerCollection = layerCollection;
+        remotesControlHandler = layerCollection.getRemotesHandler();
         this.trackBank = viewControl.getTrackBank();
         this.focusClip = focusClip;
         this.trackBank.sceneBank().scrollPosition().markInterested();
@@ -59,18 +62,17 @@ public class NavigationLayer extends Layer {
         rightButton.bindLightOnOff(this, cursorTrack.hasNext());
         rightButton.bindRepeatHold(this, () -> cursorTrack.selectNext());
         
-        leftButton.bindLightOnOff(shiftLayer, () -> layerCollection.canNavigateLeft());
-        leftButton.bindRepeatHold(shiftLayer, () -> layerCollection.navigateLeft());
-        rightButton.bindLightOnOff(shiftLayer, () -> layerCollection.canNavigateRight());
-        rightButton.bindRepeatHold(shiftLayer, () -> layerCollection.navigateRight());
+        leftButton.bindLightOnOff(shiftLayer, () -> remotesControlHandler.canNavigateLeft());
+        leftButton.bindRepeatHold(shiftLayer, () -> remotesControlHandler.navigateLeft());
+        rightButton.bindLightOnOff(shiftLayer, () -> remotesControlHandler.canNavigateRight());
+        rightButton.bindRepeatHold(shiftLayer, () -> remotesControlHandler.navigateRight());
         
         final ClickEncoder encoder = hwElements.getMainEncoder();
         final MpkButton encoderButton = hwElements.getMainEncoderPressButton();
         encoder.bind(this, this::sceneSelection);
         encoderButton.bindIsPressed(this, this::handleEncoderPressed);
-        encoder.bind(shiftLayer, layerCollection::handleShiftEncoderTurn);
+        encoder.bind(shiftLayer, remotesControlHandler::handleShiftEncoderTurn);
         encoderButton.bindIsPressed(shiftLayer, this::changeMode);
-        
     }
     
     private void updateSceneColor(final int colorIndex) {
@@ -79,7 +81,10 @@ public class NavigationLayer extends Layer {
     }
     
     private void handleSceneNameChanged(final String sceneName) {
-        display.setText(1, 1, focusScene.name().get());
+        if (encoderSceneAction) {
+            display.setText(1, 1, focusScene.name().get());
+            encoderSceneAction = false;
+        }
     }
     
     private void handleSceneScrollPosition(final int pos) {
@@ -98,8 +103,8 @@ public class NavigationLayer extends Layer {
                 final Layer menuLayer = layerCollection.get(LayerId.PAD_MENU_LAYER);
                 menuLayer.setIsActive(true);
             } else {
-                layerCollection.incrementEncoderMode(1, true);
-                display.temporaryInfo(1, "Knob Mode", layerCollection.getEncoderModeValue().get());
+                remotesControlHandler.incrementEncoderMode(1, true);
+                display.temporaryInfo(1, "Knob Mode", remotesControlHandler.getEncoderModeValue().get());
             }
         }
     }
@@ -117,6 +122,7 @@ public class NavigationLayer extends Layer {
         display.setText(1, 1, focusScene.name().get());
         display.setColorIndex(1, 1, sceneColor);
         display.setText(1, 2, "");
+        encoderSceneAction = true;
     }
     
     @Override

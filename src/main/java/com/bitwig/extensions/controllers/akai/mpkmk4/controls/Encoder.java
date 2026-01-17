@@ -5,7 +5,6 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.SettableRangedValue;
-import com.bitwig.extensions.controllers.akai.mpkminiplus.RelativeValueBinding;
 import com.bitwig.extensions.framework.Layer;
 
 public class Encoder {

@@ -36,12 +36,10 @@ public class RemotesControlLayer extends EncoderLayer {
             this.bindings.add(binding);
             this.addBinding(binding);
         }
-        deviceRemotes.selectedPageIndex().addValueObserver(this::handlePageChange);
     }
     
-    private void handlePageChange(final int pageIndex) {
-        bindings.forEach(b -> b.update());
-        parameterValues.update();
+    public void updateTemporary() {
+        displayControl.updateTemporary();
     }
     
     public Optional<RemotesDisplayControl> getDisplayControl() {
@@ -65,8 +63,15 @@ public class RemotesControlLayer extends EncoderLayer {
     }
     
     @Override
+    protected void onDeactivate() {
+        super.onDeactivate();
+        this.displayControl.setActive(false);
+    }
+    
+    @Override
     protected void onActivate() {
         super.onActivate();
+        displayControl.setActive(true);
         this.displayControl.updateDisplay();
     }
 }

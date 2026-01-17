@@ -11,9 +11,11 @@ import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.SettableEnumValue;
 import com.bitwig.extension.controller.api.Transport;
+import com.bitwig.extensions.controllers.akai.apc.common.control.ClickEncoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkCcAssignment;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
+import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkMonoState;
 import com.bitwig.extensions.controllers.akai.mpkmk4.layers.LayerCollection;
 import com.bitwig.extensions.controllers.akai.mpkmk4.layers.LayerId;
@@ -23,15 +25,25 @@ import com.bitwig.extensions.framework.values.FocusMode;
 
 public class MpkMk4ControllerExtension extends ControllerExtension {
     
+    private final String[] RECORD_QUANTIZE = {"OFF", "1/32", "1/16", "1/8", "1/4"};
     private static ControllerHost debugHost;
     private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
     private ControllerHost host;
     private final Variant variant;
     private HardwareSurface surface;
+    
     private Layer mainLayer;
+    private Layer topEncoderLayer;
+    
     private MpkMidiProcessor midiProcessor;
     private GlobalStates globalStates;
     private FocusMode recordFocusMode = FocusMode.LAUNCHER;
+    
+    private String recQuant;
+    private boolean notifyQuant;
+    private int quantIndex = 2;
+    
+    private LineDisplay mainDisplay;
     
     public static void println(final String format, final Object... args) {
         if (debugHost != null) {
@@ -61,8 +73,10 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         final LayerCollection layerCollection = diContext.getService(LayerCollection.class);
         
         mainLayer = layerCollection.get(LayerId.MAIN);
+        topEncoderLayer = layerCollection.get(LayerId.OVER_LAYER);
         surface = diContext.getService(HardwareSurface.class);
         midiProcessor = diContext.getService(MpkMidiProcessor.class);
+        mainDisplay = diContext.getService(MpkHwElements.class).getMainLineDisplay();
         initTransport(diContext);
         
         midiProcessor.init();
@@ -71,7 +85,6 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
     
     private void initTransport(final Context diContext) {
         final Transport transport = diContext.getService(Transport.class);
-        final MpkViewControl viewControl = diContext.getService(MpkViewControl.class);
         final MpkHwElements hwElements = diContext.getService(MpkHwElements.class);
         final MpkButton shiftButton = hwElements.getShiftButton();
         final LayerCollection layerCollection = diContext.getService(LayerCollection.class);
@@ -79,6 +92,7 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         final DocumentState documentState = getHost().getDocumentState();
         final MpkFocusClip focusClip = diContext.getService(MpkFocusClip.class);
         
+        application.recordQuantizationGrid().addValueObserver(this::handleRecordQuant);
         final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting(
             "Record Button assignment", //
             "Transport", new String[] {FocusMode.LAUNCHER.getDescriptor(), FocusMode.ARRANGER.getDescriptor()},
@@ -93,12 +107,7 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         transport.isArrangerRecordEnabled().markInterested();
         
         final Layer shiftLayer = layerCollection.get(LayerId.SHIFT);
-        shiftButton.bindIsPressed(
-            mainLayer, pressed -> {
-                shiftLayer.setIsActive(pressed);
-                globalStates.getShiftHeld().set(pressed);
-                hwElements.applyShiftToEncoders(pressed);
-            });
+        shiftButton.bindIsPressed(mainLayer, pressed -> handleShift(pressed, shiftLayer, hwElements));
         
         final MpkMultiStateButton playButton = hwElements.getButton(MpkCcAssignment.PLAY);
         playButton.bindLightDimmed(mainLayer, transport.isPlaying());
@@ -114,18 +123,8 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         playButton.bindPressed(shiftLayer, transport.continuePlaybackAction());
         
         final MpkMultiStateButton recordButton = hwElements.getButton(MpkCcAssignment.REC);
-        recordButton.bindLight(mainLayer, () -> recordButtonState(transport, focusClip));
+        recordButton.bindLight(mainLayer, () -> recordButtonState(transport));
         recordButton.bindPressed(mainLayer, () -> handleRecordPressed(transport, focusClip));
-        recordButton.bindLightOff(shiftLayer);
-        recordButton.bindPressed(
-            shiftLayer, () -> {
-                if (recordFocusMode == FocusMode.LAUNCHER) {
-                    focusClip.quantize(1.0);
-                } else {
-                    viewControl.invokeArrangerQuantize();
-                }
-            });
-        
         final MpkMultiStateButton loopButton = hwElements.getButton(MpkCcAssignment.LOOP);
         loopButton.bindLightDimmed(mainLayer, transport.isArrangerLoopEnabled());
         loopButton.bindPressed(mainLayer, () -> transport.isArrangerLoopEnabled().toggle());
@@ -149,9 +148,55 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         
         tempoButton.bindLightOnOff(shiftLayer, transport.isMetronomeEnabled());
         tempoButton.bindPressed(shiftLayer, () -> transport.isMetronomeEnabled().toggle());
+        
+        final ClickEncoder encoder = hwElements.getMainEncoder();
+        encoder.bind(topEncoderLayer, inc -> incrementQuantize(inc, application.recordQuantizationGrid()));
+        recordButton.bindLight(shiftLayer, () -> "OFF".equals(recQuant) ? MpkMonoState.OFF : MpkMonoState.FULL_ON);
+        recordButton.bindIsPressed(shiftLayer, pressed -> toggleRecMode(pressed, application.recordQuantizationGrid()));
+        
     }
     
-    private MpkMonoState recordButtonState(final Transport transport, final MpkFocusClip focusClip) {
+    private void handleShift(final Boolean pressed, final Layer shiftLayer, final MpkHwElements hwElements) {
+        shiftLayer.setIsActive(pressed);
+        globalStates.getShiftHeld().set(pressed);
+        hwElements.applyShiftToEncoders(pressed);
+        if (!pressed) {
+            topEncoderLayer.setIsActive(false);
+        }
+    }
+    
+    private void incrementQuantize(final int inc, final SettableEnumValue quantValue) {
+        final int newIndex = Math.max(1, Math.min(RECORD_QUANTIZE.length - 1, quantIndex + inc));
+        if (newIndex != quantIndex) {
+            quantIndex = newIndex;
+            quantValue.set(RECORD_QUANTIZE[quantIndex]);
+            notifyQuant = true;
+        }
+    }
+    
+    private void toggleRecMode(final boolean pressed, final SettableEnumValue quantValue) {
+        if (pressed) {
+            if ("OFF".equals(recQuant)) {
+                quantValue.set(RECORD_QUANTIZE[quantIndex]);
+            } else {
+                quantValue.set("OFF");
+            }
+            mainDisplay.temporaryInfo(1, "Rec Quantize", recQuant);
+            notifyQuant = true;
+        }
+        topEncoderLayer.setIsActive(pressed);
+    }
+    
+    private void handleRecordQuant(final String recQuant) {
+        this.recQuant = recQuant.toUpperCase();
+        if (notifyQuant) {
+            mainDisplay.temporaryInfo(1, "Rec Quantize", recQuant);
+            notifyQuant = false;
+        }
+        
+    }
+    
+    private MpkMonoState recordButtonState(final Transport transport) {
         if (recordFocusMode == FocusMode.LAUNCHER) {
             return transport.isClipLauncherOverdubEnabled().get() ? MpkMonoState.FULL_ON : MpkMonoState.DIMMED;
         } else {

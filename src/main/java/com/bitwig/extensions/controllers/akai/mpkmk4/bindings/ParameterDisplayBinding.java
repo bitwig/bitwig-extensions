@@ -27,20 +27,24 @@ public class ParameterDisplayBinding extends Binding<Parameter, ParameterValues>
     
     private void handleName(final String name) {
         this.name = name;
-        if (isActive()) {
-            paramValues.setNames(index, name);
-        }
+        paramValues.setNames(index, name);
+        invokeUpdate();
     }
     
     private void handleDisplayValue(final String value) {
         this.displayValue = value;
-        if (isActive()) {
-            paramValues.setValue(index, displayValue);
-        }
+        paramValues.setValue(index, displayValue);
+        invokeUpdate();
     }
     
     private void handleIsUpdating(final boolean updating) {
-        if (updating && isActive()) {
+        if (updating) {
+            invokeUpdate();
+        }
+    }
+    
+    private void invokeUpdate() {
+        if (isActive()) {
             paramValues.update();
         }
     }
@@ -51,11 +55,8 @@ public class ParameterDisplayBinding extends Binding<Parameter, ParameterValues>
     
     @Override
     protected void activate() {
-        update();
     }
     
     public void update() {
-        paramValues.setNames(index, name);
-        paramValues.setValue(index, displayValue);
     }
 }
