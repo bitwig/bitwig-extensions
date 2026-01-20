@@ -72,7 +72,7 @@ public class DrumPadLayer extends Layer {
             }
         }
         scaleSetup.addChangeListener(this::handleScaleChanged);
-        padOffset.addValueObserver((o, v) -> drumPadBank.scrollPosition().set(v));
+        padOffset.addValueObserver(v -> drumPadBank.scrollPosition().set(v));
     }
     
     private void handleScaleChanged() {

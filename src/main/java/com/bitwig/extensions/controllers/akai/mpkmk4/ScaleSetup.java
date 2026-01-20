@@ -17,8 +17,8 @@ public class ScaleSetup {
     private final List<Runnable> changeListeners = new ArrayList<>();
     
     public ScaleSetup() {
-        baseNote.addValueObserver((o, v) -> fireChange());
-        octaveOffset.addValueObserver((o, v) -> fireChange());
+        baseNote.addValueObserver(v -> fireChange());
+        octaveOffset.addValueObserver(v -> fireChange());
         scale.addValueObserver(v -> fireChange());
     }
     

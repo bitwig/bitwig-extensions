@@ -11,7 +11,7 @@ public class RingDisplayIntValueBinding extends RingDisplayBinding<IntValueObjec
         source.addValueObserver(this::valueChanged);
     }
     
-    private void valueChanged(final int oldValue, final int newValue) {
+    private void valueChanged(final int newValue) {
         if (isActive()) {
             getTarget().sendValue(calcValue(), false);
         }
