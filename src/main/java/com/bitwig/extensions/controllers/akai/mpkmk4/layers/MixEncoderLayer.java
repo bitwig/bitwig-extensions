@@ -68,7 +68,11 @@ public class MixEncoderLayer extends EncoderLayer {
     public String getSendScrollInfo() {
         final String name1 = sendBank.getItemAt(0).name().get();
         final String name2 = sendBank.getItemAt(1).name().get();
-        return "%s/%s".formatted(name1.substring(0, 4), name2.substring(0, 4));
+        return "%s/%s".formatted(reduce(name1, 4), reduce(name2, 4));
+    }
+    
+    private static String reduce(final String name, final int len) {
+        return name.substring(0, Math.min(name.length(), len));
     }
     
     public String getSendInfo() {

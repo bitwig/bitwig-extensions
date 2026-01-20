@@ -48,7 +48,7 @@ public class PadMenuLayer extends Layer {
         final ScaleSetup scaleSetup = padLayer.getScaleSetup();
         final IntValueObject baseNote = scaleSetup.getBaseNote();
         final BasicStringValue baseNoteString = new BasicStringValue(ScaleSetup.toNote(baseNote.get()));
-        baseNote.addValueObserver((o, v) -> baseNoteString.set(ScaleSetup.toNote(v)));
+        baseNote.addValueObserver(v -> baseNoteString.set(ScaleSetup.toNote(v)));
         
         viewControl.getPrimaryDevice().hasDrumPads().addValueObserver(this::handleHasDrumPadsChanged);
         
@@ -58,11 +58,11 @@ public class PadMenuLayer extends Layer {
         
         final IntValueObject octaveValue = scaleSetup.getOctaveOffset();
         final BasicStringValue octaveString = new BasicStringValue(scaleSetup.getStartInfo());
-        octaveValue.addValueObserver((o, v) -> octaveString.set(scaleSetup.getStartInfo()));
+        octaveValue.addValueObserver(v -> octaveString.set(scaleSetup.getStartInfo()));
         
         final IntValueObject padOffsetValue = padLayer.getPadOffset();
         final BasicStringValue padOffsetString = new BasicStringValue(Integer.toString(padOffsetValue.get()));
-        padOffsetValue.addValueObserver((o, v) -> padOffsetString.set(Integer.toString(v)));
+        padOffsetValue.addValueObserver(v -> padOffsetString.set(Integer.toString(v)));
         
         final RemotesControlHandler remotesHandler = layerCollection.getRemotesHandler();
         

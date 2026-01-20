@@ -54,14 +54,8 @@ import com.bitwig.extensions.framework.values.ValueObject;
 @Component
 public class EncoderSelectionLayer {
     private final SlRgbState[] DEVICE_COLORS = {
-        SlRgbState.RED,
-        SlRgbState.ORANGE,
-        SlRgbState.YELLOW,
-        SlRgbState.GREEN,
-        SlRgbState.DARK_GREEN,
-        SlRgbState.BLUE,
-        SlRgbState.PURPLE,
-        SlRgbState.PINK
+        SlRgbState.RED, SlRgbState.ORANGE, SlRgbState.YELLOW, SlRgbState.GREEN, SlRgbState.DARK_GREEN, SlRgbState.BLUE,
+        SlRgbState.PURPLE, SlRgbState.PINK
     };
     private final SlRgbState[] trackColors = new SlRgbState[8];
     private final ViewControl viewControl;
@@ -118,11 +112,14 @@ public class EncoderSelectionLayer {
             selectButton.bindPressed(trackButtonSelectionLayer, () -> handleTrackPressed(track));
         }
         
-        bindRemotes(layerRepo.getKnobLayer(KnobMode.DEVICE), screenHandler.getScreen(KnobMode.DEVICE),
+        bindRemotes(
+            layerRepo.getKnobLayer(KnobMode.DEVICE), screenHandler.getScreen(KnobMode.DEVICE),
             viewControl.getPrimaryRemotes(), i -> DEVICE_COLORS[i]);
-        bindRemotes(layerRepo.getKnobLayer(KnobMode.TRACK), screenHandler.getScreen(KnobMode.TRACK),
+        bindRemotes(
+            layerRepo.getKnobLayer(KnobMode.TRACK), screenHandler.getScreen(KnobMode.TRACK),
             viewControl.getTrackRemotes(), i -> DEVICE_COLORS[i]);
-        bindRemotes(layerRepo.getKnobLayer(KnobMode.PROJECT), screenHandler.getScreen(KnobMode.PROJECT),
+        bindRemotes(
+            layerRepo.getKnobLayer(KnobMode.PROJECT), screenHandler.getScreen(KnobMode.PROJECT),
             viewControl.getProjectRemotes(), i -> DEVICE_COLORS[i]);
         bindPanControl(trackBank, encoders);
         bindSendControl(trackBank, encoders);
@@ -165,27 +162,33 @@ public class EncoderSelectionLayer {
         transport.clipLauncherPostRecordingAction().addValueObserver(v -> postRecordingValues.setToValue(v));
         final SlRgbState frameColor = SlRgbState.ORANGE;
         final SettableRangedValue metroVolume = transport.metronomeVolume();
-        encoderLayer.addBinding(new BoxPanelBinding(transport.tempo().displayedValue(), screen.getPanel(index),
+        encoderLayer.addBinding(new BoxPanelBinding(
+            transport.tempo().displayedValue(), screen.getPanel(index),
             new BasicStringValue("Tempo"), frameColor));
-        encoders.get(index++).bindIncrementAction(encoderLayer,
+        encoders.get(index++).bindIncrementAction(
+            encoderLayer,
             inc -> incrementBy(transport.tempo(), inc, globalStates.getShiftState().get()));
         
-        encoderLayer.addBinding(new BoxPanelBinding(quantizeValues.getDisplayValue(), screen.getPanel(index),
+        encoderLayer.addBinding(new BoxPanelBinding(
+            quantizeValues.getDisplayValue(), screen.getPanel(index),
             new BasicStringValue("Rec.Qu"), frameColor));
         encoders.get(index++).bindIncrementAction(encoderLayer, new IncrementHandler(quantizeValues::incrementBy, 10));
         
-        encoderLayer.addBinding(new BoxPanelBinding(preRollValues.getDisplayValue(), screen.getPanel(index),
+        encoderLayer.addBinding(new BoxPanelBinding(
+            preRollValues.getDisplayValue(), screen.getPanel(index),
             new BasicStringValue("PreRoll"), frameColor));
         encoders.get(index++).bindIncrementAction(encoderLayer, new IncrementHandler(preRollValues::incrementBy, 10));
         
-        encoderLayer.addBinding(new BoxPanelBinding(postRecordingValues.getDisplayValue(), screen.getPanel(index),
-            new BasicStringValue("PstRecAc"), frameColor));
+        encoderLayer.addBinding(
+            new BoxPanelBinding(
+                postRecordingValues.getDisplayValue(), screen.getPanel(index), new BasicStringValue("PstRecAc"),
+                frameColor));
         encoders.get(index++)
             .bindIncrementAction(encoderLayer, new IncrementHandler(postRecordingValues::incrementBy, 10));
         
         encoderLayer.addBinding(
-            new BoxPanelBinding(metroVolume.displayedValue(), screen.getPanel(index), new BasicStringValue("Metr.Vol"),
-                frameColor));
+            new BoxPanelBinding(
+                metroVolume.displayedValue(), screen.getPanel(index), new BasicStringValue("Metr.Vol"), frameColor));
         encoders.get(index++).bindParameter(encoderLayer, metroVolume);
     }
     
@@ -387,13 +390,13 @@ public class EncoderSelectionLayer {
             encoder.bind(drumSendsLayer, sendItem);
             
             drumVolumeLayer.addBinding(
-                new ParameterPanelBinding(pad.volume(), volumeScreen.getPanel(i), pad.name(), SlRgbState.WHITE,
-                    trackColor));
+                new ParameterPanelBinding(
+                    pad.volume(), volumeScreen.getPanel(i), pad.name(), SlRgbState.WHITE, trackColor));
             drumPanLayer.addBinding(
                 new ParameterPanelBinding(pad.pan(), panScreen.getPanel(i), pad.name(), SlRgbState.ORANGE, trackColor));
             drumSendsLayer.addBinding(
-                new ParameterPanelBinding(sendItem, sendsScreen.getPanel(i), pad.name(), SlRgbState.YELLOW,
-                    trackColor));
+                new ParameterPanelBinding(
+                    sendItem, sendsScreen.getPanel(i), pad.name(), SlRgbState.YELLOW, trackColor));
         }
     }
     
@@ -415,8 +418,8 @@ public class EncoderSelectionLayer {
             encoder.bind(layer, parameter);
             encoder.bindEmpty(layer);
             layer.addBinding(
-                new ParameterPanelBinding(parameter, knobScreen.getPanel(i), parameter.name(), colorProvider.apply(i),
-                    trackColor));
+                new ParameterPanelBinding(
+                    parameter, knobScreen.getPanel(i), parameter.name(), colorProvider.apply(i), trackColor));
         }
     }
     
@@ -508,24 +511,33 @@ public class EncoderSelectionLayer {
             final SelectionSubPanel panel = shiftPanels.get(i);
             if (action != null) {
                 switch (action) {
-                    case UNDO -> assignAction(i, action, selectButton, application.canUndo(), application::undo,
+                    case UNDO -> assignAction(
+                        i, action, selectButton, application.canUndo(), application::undo,
                         SlRgbState.BITWIG_ORANGE);
-                    case REDO -> assignAction(i, action, selectButton, application.canRedo(), application::redo,
+                    case REDO -> assignAction(
+                        i, action, selectButton, application.canRedo(), application::redo,
                         SlRgbState.BITWIG_ORANGE);
-                    case CLICK -> assignToggleValue(i, action, selectButton, transport.isMetronomeEnabled(),
+                    case CLICK -> assignToggleValue(
+                        i, action, selectButton, transport.isMetronomeEnabled(),
                         SlRgbState.BITWIG_ORANGE);
                     case CL_OVERDUB ->
-                        assignToggleValue(i, action, selectButton, transport.isClipLauncherOverdubEnabled(),
+                        assignToggleValue(
+                            i, action, selectButton, transport.isClipLauncherOverdubEnabled(),
                             SlRgbState.BITWIG_ORANGE);
                     case CL_AUTO ->
-                        assignToggleValue(i, action, selectButton, transport.isClipLauncherAutomationWriteEnabled(),
+                        assignToggleValue(
+                            i, action, selectButton, transport.isClipLauncherAutomationWriteEnabled(),
                             SlRgbState.BITWIG_ORANGE);
                     case AR_AUTO ->
-                        assignToggleValue(i, action, selectButton, transport.isArrangerAutomationWriteEnabled(),
+                        assignToggleValue(
+                            i, action, selectButton, transport.isArrangerAutomationWriteEnabled(),
                             SlRgbState.BITWIG_ORANGE);
-                    case AUTO_OVERRIDE -> assignAction(i, action, selectButton, transport.isAutomationOverrideActive(),
-                        transport::resetAutomationOverrides, SlRgbState.BITWIG_ORANGE);
-                    case FILL -> assignToggleValue(i, action, selectButton, transport.isFillModeActive(),
+                    case AUTO_OVERRIDE ->
+                        assignAction(
+                            i, action, selectButton, transport.isAutomationOverrideActive(),
+                            transport::resetAutomationOverrides, SlRgbState.BITWIG_ORANGE);
+                    case FILL -> assignToggleValue(
+                        i, action, selectButton, transport.isFillModeActive(),
                         SlRgbState.BITWIG_ORANGE);
                 }
             } else {
@@ -559,7 +571,7 @@ public class EncoderSelectionLayer {
         selectButton.bindLightOnPressed(layer, color, value);
     }
     
-    private void handleTrackSelectionChanged(final int old, final int value) {
+    private void handleTrackSelectionChanged(final int value) {
         final ButtonSubPanel trackPanel = screenHandler.getSubPanel(ButtonMode.TRACK);
         for (int i = 0; i < 8; i++) {
             trackPanel.get(i).setSelected(value == i);
