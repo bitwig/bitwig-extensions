@@ -1,3 +1,6 @@
+com.bitwig.extensions.controllers.allenheath.xonek3.XoneK3ExtensionDefinition
+com.bitwig.extensions.controllers.allenheath.xonek3.XoneK3ExtensionX2Definition
+
 com.bitwig.extensions.controllers.akai.advance.AdvanceControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.apc40_mkii.APC40MKIIControllerExtensionDefinition
 com.bitwig.extensions.controllers.akai.mpk_mini_mk3.MpkMiniMk3ControllerExtensionDefinition
