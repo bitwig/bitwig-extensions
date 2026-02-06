@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings;
 
 import com.bitwig.extension.controller.api.StringValue;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlMk3Extension;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.display.DisplaySegment;
 import com.bitwig.extensions.framework.Binding;
 import com.bitwig.extensions.framework.values.BasicStringValue;
@@ -34,6 +35,7 @@ public class SegmentDisplayBinding extends Binding<StringValue, DisplaySegment> 
     private void handleNameUpdate(final String name) {
         this.name = name;
         if (isActive() && !isBlocked()) {
+            LaunchControlMk3Extension.println(" NAME UPDATE " + name);
             getTarget().show2LinesBuffered(title, name);
         }
     }
@@ -51,6 +53,5 @@ public class SegmentDisplayBinding extends Binding<StringValue, DisplaySegment> 
     
     @Override
     protected void activate() {
-    
     }
 }

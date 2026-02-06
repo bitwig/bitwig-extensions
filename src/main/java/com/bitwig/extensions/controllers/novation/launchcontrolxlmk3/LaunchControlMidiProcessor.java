@@ -127,6 +127,7 @@ public class LaunchControlMidiProcessor {
                 this.modeListeners.forEach(listener -> listener.accept(mode));
             }
         }
+        LaunchControlMk3Extension.println(" MIDI %02X %02X %02X", status, data1, data2);
     }
     
     public void sendRgb(final int index, final RgbColor color) {

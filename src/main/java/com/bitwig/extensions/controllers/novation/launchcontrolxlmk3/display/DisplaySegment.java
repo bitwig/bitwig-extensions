@@ -13,7 +13,7 @@ public class DisplaySegment {
     
     public DisplaySegment(final int id, final DisplayControl control) {
         targetId = id;
-        this.config = 0x61;
+        this.config = 0x41;
         this.control = control;
         Arrays.fill(stdLines, "");
         Arrays.fill(paramLines, "");

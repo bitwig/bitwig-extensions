@@ -58,9 +58,6 @@ public class RelativeDisplayControl extends Binding<DisplayId, Object> {
         if (isActive()) {
             display.setText(targetId, 1, paramName);
             final long diff = System.currentTimeMillis() - incTime;
-            if (diff < 200) {
-                display.showDisplay(targetId);
-            }
         }
     }
     
@@ -68,10 +65,6 @@ public class RelativeDisplayControl extends Binding<DisplayId, Object> {
         this.displayValue = value;
         if (isActive()) {
             display.setText(targetId, 2, displayValue);
-            final long diff = System.currentTimeMillis() - incTime;
-            if (diff < 200) {
-                display.showDisplay(targetId);
-            }
         }
     }
     
@@ -89,6 +82,7 @@ public class RelativeDisplayControl extends Binding<DisplayId, Object> {
     
     @Override
     protected void activate() {
+        display.configureDisplay(targetId, 0x62);
         display.setText(targetId, 0, title);
         display.setText(targetId, 1, paramName);
         display.setText(targetId, 2, displayValue);

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlMidiProcessor;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlMk3Extension;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.definition.AbstractLaunchControlExtensionDefinition;
 import com.bitwig.extensions.framework.di.Component;
 
@@ -36,6 +37,9 @@ public class DisplayControl {
     
     private void updateQuedMessages() {
         if (waitingMessage != null) {
+            LaunchControlMk3Extension.println(
+                " SHOW MESSAGE %02X %02X L1=%s L2=%s", waitingMessage.targetId, waitingMessage.config,
+                waitingMessage.line1, waitingMessage.line2);
             configureDisplay(waitingMessage.targetId, waitingMessage.config);
             setText(waitingMessage.targetId, 0, waitingMessage.line1);
             setText(waitingMessage.targetId, 1, waitingMessage.line2);
@@ -97,7 +101,7 @@ public class DisplayControl {
     
     public void showDisplay(final int targetId) {
         TEXT_CONFIG_COMMAND[7] = (byte) targetId;
-        TEXT_CONFIG_COMMAND[8] = 0x7F;
+        TEXT_CONFIG_COMMAND[8] = 62;
         midiProcessor.sendSysExBytes(TEXT_CONFIG_COMMAND);
     }
     
