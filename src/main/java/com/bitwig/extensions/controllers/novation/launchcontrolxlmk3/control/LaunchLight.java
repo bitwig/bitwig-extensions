@@ -41,7 +41,7 @@ public class LaunchLight {
             //                    break;
             //            }
         } else {
-            midiProcessor.sendMidi(0xB0, midiId, 0);
+            //midiProcessor.sendMidi(0xB0, midiId, 0);
         }
     }
     

@@ -13,7 +13,7 @@ public class BooleanLightValueBinding extends Binding<BooleanValue, LaunchLight>
     
     public BooleanLightValueBinding(final LaunchLight light, final BooleanValue value, final RgbColor onColor,
         final RgbColor offColor) {
-        super(light, value, light);
+        super(light.getLightId(), value, light);
         this.onColor = onColor;
         this.offColor = offColor;
         value.addValueObserver(this::handleValue);

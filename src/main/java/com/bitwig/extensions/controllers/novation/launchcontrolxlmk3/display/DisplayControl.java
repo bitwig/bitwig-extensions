@@ -101,7 +101,7 @@ public class DisplayControl {
     
     public void showDisplay(final int targetId) {
         TEXT_CONFIG_COMMAND[7] = (byte) targetId;
-        TEXT_CONFIG_COMMAND[8] = 62;
+        TEXT_CONFIG_COMMAND[8] = 0x7F;
         midiProcessor.sendSysExBytes(TEXT_CONFIG_COMMAND);
     }
     

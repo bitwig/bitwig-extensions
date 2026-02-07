@@ -207,16 +207,16 @@ public class LcMixerLayer extends AbstractMixerLayer {
         }
         switch (this.buttonMode) {
             case SELECT -> {
-                buttonMode = ButtonMode.SOLO;
-                displayControl.show2LineTemporary("Button Function", "Solo");
-            }
-            case SOLO -> {
                 buttonMode = ButtonMode.MUTE;
                 displayControl.show2LineTemporary("Button Function", "Mute");
             }
-            case MUTE -> {
+            case SOLO -> {
                 buttonMode = ButtonMode.ARM;
                 displayControl.show2LineTemporary("Button Function", "Arm");
+            }
+            case MUTE -> {
+                buttonMode = ButtonMode.SOLO;
+                displayControl.show2LineTemporary("Button Function", "Solo");
             }
             case ARM -> {
                 buttonMode = ButtonMode.SELECT;
