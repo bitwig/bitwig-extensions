@@ -9,10 +9,6 @@ import com.bitwig.extension.controller.api.ControllerHost;
 public class MiniLab37ExtensionDefinition extends MiniLabExtensionDefinition {
     private static final UUID DRIVER_ID = UUID.fromString("00d0f8ae-0f13-482f-b96b-8fb016025fcd");
     
-    private static final String PORT_NAME_MIDI = "Minilab37 MIDI";
-    private static final String PORT_NAME = "Minilab37";
-    private static final String PORT_NAME_LINUX = "Minilab37 Minilab37 MIDI";
-    
     public MiniLab37ExtensionDefinition() {
         super();
     }
@@ -47,10 +43,8 @@ public class MiniLab37ExtensionDefinition extends MiniLabExtensionDefinition {
         final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) {
             list.add(new String[] {"MIDIIN2 (Minilab37)", "Minilab"}, new String[] {"MIDIOUT2 (Minilab37)", "Minilab"});
-        } else if (platformType == PlatformType.MAC) {
-            list.add(new String[] {PORT_NAME_MIDI, "Minilab"}, new String[] {PORT_NAME_MIDI, "Minilab"});
-        } else if (platformType == PlatformType.LINUX) {
-            list.add(new String[] {PORT_NAME_LINUX, "Minilab"}, new String[] {PORT_NAME_LINUX, "Minilab"});
+        } else if (platformType == PlatformType.MAC || platformType == PlatformType.LINUX) {
+            list.add(new String[] {"Minilab37 DAW", "Minilab37 MIDI"}, new String[] {"Minilab37 DAW", "Minilab37 MIDI"});
         }
     }
     
