@@ -9,7 +9,6 @@ import com.bitwig.extension.controller.api.ControllerHost;
 public class MiniLab37ExtensionDefinition extends MiniLabExtensionDefinition {
     private static final UUID DRIVER_ID = UUID.fromString("00d0f8ae-0f13-482f-b96b-8fb016025fcd");
     
-    private static final String PORT_NAME_MIDI = "Minilab37 MIDI";
     private static final String PORT_NAME = "Minilab37";
     private static final String PORT_NAME_LINUX = "Minilab37 Minilab37 MIDI";
     
@@ -46,12 +45,32 @@ public class MiniLab37ExtensionDefinition extends MiniLabExtensionDefinition {
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
         final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) {
-            list.add(new String[] {"MIDIIN2 (Minilab37)", "Minilab"}, new String[] {"MIDIOUT2 (Minilab37)", "Minilab"});
+            for (int i = 1; i < 5; i++) {
+                appendWin10Prefix(list, i);
+                appendWin11Prefix(list, i);
+            }
         } else if (platformType == PlatformType.MAC) {
-            list.add(new String[] {PORT_NAME_MIDI, "Minilab"}, new String[] {PORT_NAME_MIDI, "Minilab"});
+            for (int i = 1; i < 5; i++) {
+                appendWin11Prefix(list, i);
+            }
         } else if (platformType == PlatformType.LINUX) {
             list.add(new String[] {PORT_NAME_LINUX, "Minilab"}, new String[] {PORT_NAME_LINUX, "Minilab"});
         }
+    }
+    
+    
+    private void appendWin10Prefix(final AutoDetectionMidiPortNamesList list, final int index) {
+        final String prefix = index > 1 ? "%d- ".formatted(index) : "";
+        list.add(
+            new String[] {"%sMIDIIN2 (%s)".formatted(prefix, PORT_NAME), "%s%s".formatted(prefix, PORT_NAME)},
+            new String[] {"%sMIDIOUT2 (%s)".formatted(prefix, PORT_NAME), "%s%s".formatted(prefix, PORT_NAME)});
+    }
+    
+    private void appendWin11Prefix(final AutoDetectionMidiPortNamesList list, final int index) {
+        final String prefix = index > 1 ? "%d- ".formatted(index) : "";
+        list.add(
+            new String[] {"%s%s DAW".formatted(prefix, PORT_NAME), "%s%s MIDI".formatted(prefix, PORT_NAME)},
+            new String[] {"%s%s DAW".formatted(prefix, PORT_NAME), "%s%s MIDI".formatted(prefix, PORT_NAME)});
     }
     
     @Override

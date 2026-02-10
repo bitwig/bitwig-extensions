@@ -207,13 +207,13 @@ public class MiniLab3Extension extends ControllerExtension {
                 drumPadLayer.deactivate();
                 clipLaunchingLayer.deactivate();
                 arturiaModeLayer.activate();
-                host.showPopupNotification("MiniLab 3 Initialized");
+                //host.showPopupNotification("MiniLab 3 Initialized");
                 break;
             case "f000206b7f420200400101f7": // Confirm Connected to BW Studio
                 sysExHandler.enableProcessing();
                 oled.notifyInit();
                 arturiaModeLayer.resetNotes();
-                host.showPopupNotification("MiniLab 3 Initialized");
+                //host.showPopupNotification("MiniLab 3 Initialized");
                 break;
             default:
                 if (sysEx.startsWith("f07e7f060200206b0200040")) {
@@ -421,8 +421,7 @@ public class MiniLab3Extension extends ControllerExtension {
                 parameter.value().displayedValue().get()));
         parameter.value().displayedValue().addValueObserver(
             displayedValue -> oled.sendSliderInfo(
-                DisplayMode.PARAM, parameter.value().get(),
-                label.get() + " : " + nameSource.get(), displayedValue));
+                DisplayMode.PARAM, parameter.value().get(), label.get() + " : " + nameSource.get(), displayedValue));
         parameter.value().addValueObserver(
             v -> oled.sendSliderInfo(
                 DisplayMode.PARAM, v, label.get() + " : " + nameSource.get(),

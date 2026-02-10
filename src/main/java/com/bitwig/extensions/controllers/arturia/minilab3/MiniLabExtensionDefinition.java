@@ -29,7 +29,7 @@ public abstract class MiniLabExtensionDefinition extends ControllerExtensionDefi
     
     @Override
     public int getRequiredAPIVersion() {
-        return 24;
+        return 22;
     }
     
     @Override
