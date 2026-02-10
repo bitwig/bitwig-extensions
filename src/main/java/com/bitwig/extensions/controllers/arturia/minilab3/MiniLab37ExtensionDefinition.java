@@ -10,7 +10,6 @@ public class MiniLab37ExtensionDefinition extends MiniLabExtensionDefinition {
     private static final UUID DRIVER_ID = UUID.fromString("00d0f8ae-0f13-482f-b96b-8fb016025fcd");
     
     private static final String PORT_NAME = "Minilab37";
-    private static final String PORT_NAME_LINUX = "Minilab37 Minilab37 MIDI";
     
     public MiniLab37ExtensionDefinition() {
         super();
@@ -54,7 +53,7 @@ public class MiniLab37ExtensionDefinition extends MiniLabExtensionDefinition {
                 appendWin11Prefix(list, i);
             }
         } else if (platformType == PlatformType.LINUX) {
-            list.add(new String[] {PORT_NAME_LINUX, "Minilab"}, new String[] {PORT_NAME_LINUX, "Minilab"});
+            appendLinuxPrefix(list, 0);
         }
     }
     
@@ -68,6 +67,13 @@ public class MiniLab37ExtensionDefinition extends MiniLabExtensionDefinition {
     
     private void appendWin11Prefix(final AutoDetectionMidiPortNamesList list, final int index) {
         final String prefix = index > 1 ? "%d- ".formatted(index) : "";
+        list.add(
+            new String[] {"%s%s DAW".formatted(prefix, PORT_NAME), "%s%s MIDI".formatted(prefix, PORT_NAME)},
+            new String[] {"%s%s DAW".formatted(prefix, PORT_NAME), "%s%s MIDI".formatted(prefix, PORT_NAME)});
+    }
+    
+    private void appendLinuxPrefix(final AutoDetectionMidiPortNamesList list, final int index) {
+        final String prefix = "%s ".formatted(PORT_NAME);
         list.add(
             new String[] {"%s%s DAW".formatted(prefix, PORT_NAME), "%s%s MIDI".formatted(prefix, PORT_NAME)},
             new String[] {"%s%s DAW".formatted(prefix, PORT_NAME), "%s%s MIDI".formatted(prefix, PORT_NAME)});
