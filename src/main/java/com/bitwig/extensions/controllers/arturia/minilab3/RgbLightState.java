@@ -18,8 +18,8 @@ public class RgbLightState extends InternalHardwareLightState {
     public static final RgbLightState ORANGE = new RgbLightState(127, 0x32, 0);
     public static final RgbLightState ORANGE_DIMMED = new RgbLightState(0x14, 0x05, 0);
     public static final RgbLightState GREEN = new RgbLightState(0, 127, 0);
-    public static final RgbLightState GREEN_DIMMED = new RgbLightState(0, 0x14, 0);
-    public static final RgbLightState RED_DIMMED = new RgbLightState(0x14, 0, 0);
+    public static final RgbLightState GREEN_DIMMED = new RgbLightState(0, 0x8, 0);
+    public static final RgbLightState RED_DIMMED = new RgbLightState(0x8, 0, 0);
     public static final RgbLightState WHITE_DIMMED = new RgbLightState(0x14, 0x14, 0x14);
     
     private final byte red;
@@ -47,7 +47,7 @@ public class RgbLightState extends InternalHardwareLightState {
         this.green = convert(green, 1);
         this.blue = convert(blue, 1);
         brighter = new RgbLightState(red * 1.50, green * 1.50, blue * 1.50);
-        darker = new RgbLightState(red * 0.35, green * 0.3, blue * 0.3);
+        darker = new RgbLightState(red * 0.2, green * 0.2, blue * 0.2);
         visualState =
             HardwareLightVisualState.createForColor(Color.fromRGB(this.red << 1, this.green << 1, this.blue << 1));
     }
@@ -67,7 +67,7 @@ public class RgbLightState extends InternalHardwareLightState {
         this.green = convert(green);
         this.blue = convert(blue);
         brighter = new RgbLightState(Math.round(red * 1.10), green + 10, blue + 10);
-        darker = new RgbLightState(red * 0.3, green * 0.3, blue * 0.3);
+        darker = new RgbLightState(red * 0.05, green * 0.05, blue * 0.05);
         visualState = HardwareLightVisualState.createForColor(Color.fromRGB(red << 1, green << 1, blue << 1));
     }
     

@@ -45,7 +45,6 @@ public class MiniLab37ExtensionDefinition extends MiniLabExtensionDefinition {
         final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) {
             for (int i = 1; i < 5; i++) {
-                appendWin10Prefix(list, i);
                 appendWin11Prefix(list, i);
             }
         } else if (platformType == PlatformType.MAC) {
@@ -57,13 +56,6 @@ public class MiniLab37ExtensionDefinition extends MiniLabExtensionDefinition {
         }
     }
     
-    
-    private void appendWin10Prefix(final AutoDetectionMidiPortNamesList list, final int index) {
-        final String prefix = index > 1 ? "%d- ".formatted(index) : "";
-        list.add(
-            new String[] {"%sMIDIIN2 (%s)".formatted(prefix, PORT_NAME), "%s%s".formatted(prefix, PORT_NAME)},
-            new String[] {"%sMIDIOUT2 (%s)".formatted(prefix, PORT_NAME), "%s%s".formatted(prefix, PORT_NAME)});
-    }
     
     private void appendWin11Prefix(final AutoDetectionMidiPortNamesList list, final int index) {
         final String prefix = index > 1 ? "%d- ".formatted(index) : "";

@@ -106,9 +106,9 @@ public class ClipLaunchingLayer extends Layer {
     public void notifyBlink(final int blinkState) {
         this.blinkState = blinkState;
         final long time = System.currentTimeMillis();
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
             if (downTime[i] != -1 && (time - downTime[i]) > clipsStopTiming) {
-                final Track track = driver.getViewTrackBank().getItemAt(i);
+                final Track track = trackBank.getItemAt(i);
                 track.stop();
             }
         }
@@ -166,9 +166,11 @@ public class ClipLaunchingLayer extends Layer {
         if (slot.isRecordingQueued().get()) {
             return blinkFast(color.getDarker(), RgbLightState.RED);
         } else if (track.arm().get()) {
-            return RgbLightState.RED.getDarker();
+            return RgbLightState.RED_DIMMED;
         } else if (slot.isPlaybackQueued().get()) {
             return blinkFast(RgbLightState.GREEN, RgbLightState.WHITE);
+        } else if (track.isQueuedForStop().get()) {
+            return blinkFast(RgbLightState.WHITE, RgbLightState.WHITE_DIMMED);
         }
         return RgbLightState.OFF;
     }

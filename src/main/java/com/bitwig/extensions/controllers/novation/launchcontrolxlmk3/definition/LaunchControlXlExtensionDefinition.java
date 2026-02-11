@@ -20,7 +20,7 @@ public class LaunchControlXlExtensionDefinition extends AbstractLaunchControlExt
     
     @Override
     public String getName() {
-        return "Launch Control XL Mk3";
+        return "Launch Control XL 3";
     }
     
     @Override
