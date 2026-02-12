@@ -9,35 +9,35 @@ import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchContr
 
 public class LaunchControlXlExtensionDefinition extends AbstractLaunchControlExtensionDefinition {
     private static final UUID DRIVER_ID = UUID.fromString("cdee004a-1503-487c-bc13-a8311bf1724b");
-    
+
     public LaunchControlXlExtensionDefinition() {
     }
-    
+
     @Override
     public boolean isXlVersion() {
         return true;
     }
-    
+
     @Override
     public String getName() {
         return "Launch Control XL 3";
     }
-    
+
     @Override
     public UUID getId() {
         return DRIVER_ID;
     }
-    
+
     @Override
     public String getHardwareModel() {
-        return "Launch Control XL Mk3";
+        return "Launch Control XL 3";
     }
-    
+
     @Override
     public String getHelpFilePath() {
-        return "Controllers/Novation/Launch Control XL Mk3.pdf";
+        return "Controllers/Novation/Launch Control XL 3.pdf";
     }
-    
+
     @Override
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
         final PlatformType platformType) {
@@ -49,7 +49,7 @@ public class LaunchControlXlExtensionDefinition extends AbstractLaunchControlExt
             list.add(new String[] {"LCXL3 1 LCXL3 1 DAW Out"}, new String[] {"LCXL3 1 LCXL3 1 DAW In"});
         }
     }
-    
+
     @Override
     public LaunchControlMk3Extension createInstance(final ControllerHost host) {
         return new LaunchControlMk3Extension(this, host);
