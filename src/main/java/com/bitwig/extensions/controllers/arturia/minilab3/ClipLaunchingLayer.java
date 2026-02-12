@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.arturia.minilab3;
 
 import java.util.Arrays;
 
+import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.Track;
@@ -10,24 +11,25 @@ import com.bitwig.extensions.framework.Layer;
 
 public class ClipLaunchingLayer extends Layer {
     
-    private final RgbLightState[] sceneSlotColors = new RgbLightState[8];
+    private final RgbLightState[] slotColors = new RgbLightState[8];
+    private final BooleanValue clipLauncherOverdub;
     private final long[] downTime = new long[8];
-    private final Layer sceneLaunchingLayer; // clips in selected scene
     private final TrackBank trackBank;
     private final MiniLab3Extension driver;
     private int blinkState;
     private long clipsStopTiming = 800;
+    private final BooleanValue transportPlaying;
     
     public ClipLaunchingLayer(final MiniLab3Extension driver) {
         super(driver.getLayers(), "CLIP LAUNCHER");
         this.driver = driver;
+        clipLauncherOverdub = driver.getTransport().isClipLauncherOverdubEnabled();
+        transportPlaying = driver.getTransport().isPlaying();
+        clipLauncherOverdub.markInterested();
+        transportPlaying.markInterested();
         
-        sceneLaunchingLayer = new Layer(driver.getLayers(), "PER_SCENE_LAUNCHER");
-        
-        Arrays.fill(sceneSlotColors, RgbLightState.OFF);
+        Arrays.fill(slotColors, RgbLightState.OFF);
         Arrays.fill(downTime, -1);
-        
-        final RgbButton[] buttons = driver.getPadBankAButtons();
         
         trackBank = driver.getViewTrackBank();
         
@@ -35,10 +37,12 @@ public class ClipLaunchingLayer extends Layer {
         final MultiStateHardwareLight bankLight =
             driver.getSurface().createMultiStateHardwareLight("CLIP_LAUNCH_LIGHTS");
         bankLight.state().onUpdateHardware(driver::updateBankState);
-        final RgbBankLightState.Handler bankLightHandler = new RgbBankLightState.Handler(PadBank.BANK_A, buttons);
-        sceneLaunchingLayer.bindLightState(bankLightHandler::getBankLightState, bankLight);
+        final MinilabRgbButton[] buttons = driver.getPadBankAButtons();
         
-        setupHorizontalLaunching(driver, buttons);
+        final RgbBankLightState.Handler bankLightHandler = new RgbBankLightState.Handler(PadBank.BANK_A, buttons);
+        this.bindLightState(bankLightHandler::getBankLightState, bankLight);
+        
+        setupHorizontalLaunching(driver);
         
         driver.getPadBank().addValueObserver((this::changePadBank));
     }
@@ -64,31 +68,31 @@ public class ClipLaunchingLayer extends Layer {
         trackBank.setShouldShowClipLauncherFeedback(newValue == PadBank.BANK_A);
     }
     
-    private void setupHorizontalLaunching(final MiniLab3Extension driver, final RgbButton[] buttons) {
-        driver.getViewTrackBank().setShouldShowClipLauncherFeedback(driver.getPadBank().get() == PadBank.BANK_A);
-        for (int i = 0; i < MiniLab3Extension.NUM_PADS_TRACK; i++) {
-            final int index = i;
-            final Track track = driver.getViewTrackBank().getItemAt(i);
-            final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(0);
-            prepareSlot(slot);
+    private void setupHorizontalLaunching(final MiniLab3Extension driver) {
+        final MinilabRgbButton[] buttons = driver.getPadBankAButtons();
+        final TrackBank trackBank = driver.getViewTrackBank();
+        trackBank.setShouldShowClipLauncherFeedback(driver.getPadBank().get() == PadBank.BANK_A);
+        for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+            final Track track = trackBank.getItemAt(i);
+            track.arm().markInterested();
+            for (int j = 0; j < trackBank.sceneBank().getSizeOfBank(); j++) {
+                final int buttonIndex = j * 4 + i;
+                final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(j);
+                prepareSlot(slot, buttonIndex);
+                final MinilabRgbButton button = buttons[buttonIndex];
+                button.bindPressed(this, pressed -> handleSlotSelected(buttonIndex, track, slot, pressed));
+                button.bindLightState(this, () -> getLightState(buttonIndex, track, slot));
+            }
             track.isQueuedForStop().markInterested();
-            
-            slot.color().addValueObserver((r, g, b) -> sceneSlotColors[index] = RgbLightState.getColor(r, g, b));
-            final RgbButton button = buttons[i];
-            button.bindPressed(sceneLaunchingLayer, pressed -> handleSlotSelected(index, track, slot, pressed),
-                () -> getLightState(index, track, slot));
         }
-    }
-    
-    public void navigateScenes(final int direction) {
-        trackBank.sceneBank().scrollBy(direction);
     }
     
     public void launchScene() {
         trackBank.sceneBank().getScene(0).launch();
     }
     
-    private void prepareSlot(final ClipLauncherSlot cs) {
+    private void prepareSlot(final ClipLauncherSlot cs, final int index) {
+        cs.color().addValueObserver((r, g, b) -> slotColors[index] = RgbLightState.getColor(r, g, b));
         cs.exists().markInterested();
         cs.hasContent().markInterested();
         cs.isPlaybackQueued().markInterested();
@@ -102,9 +106,9 @@ public class ClipLaunchingLayer extends Layer {
     public void notifyBlink(final int blinkState) {
         this.blinkState = blinkState;
         final long time = System.currentTimeMillis();
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
             if (downTime[i] != -1 && (time - downTime[i]) > clipsStopTiming) {
-                final Track track = driver.getViewTrackBank().getItemAt(i);
+                final Track track = trackBank.getItemAt(i);
                 track.stop();
             }
         }
@@ -126,7 +130,10 @@ public class ClipLaunchingLayer extends Layer {
     }
     
     RgbLightState getLightState(final int index, final Track track, final ClipLauncherSlot slot) {
-        final RgbLightState color = sceneSlotColors[index];
+        final RgbLightState color = slotColors[index];
+        if (!slot.exists().get()) {
+            return RgbLightState.OFF;
+        }
         if (slot.hasContent().get()) {
             if (slot.isPlaybackQueued().get()) {
                 return blinkFast(color.getDarker(), color.getBrighter());
@@ -140,13 +147,30 @@ public class ClipLaunchingLayer extends Layer {
             if (slot.isRecording().get()) {
                 return blinkSlow(color, RgbLightState.RED);
             }
+            if (slot.isPlaying().get() && track.isQueuedForStop().get()) {
+                return blinkSlow(RgbLightState.GREEN, color.getDarker());
+            }
             if (slot.isPlaying().get()) {
-                return color.getBrighter();
+                if (clipLauncherOverdub.get() && track.arm().get()) {
+                    return blinkSlow(RgbLightState.RED, color.getDarker());
+                } else {
+                    if (transportPlaying.get()) {
+                        return blinkSlow(RgbLightState.GREEN, color.getBrighter());
+                    }
+                    return color.getBrighter();
+                    //return RgbLightState.GREEN;
+                }
             }
             return color.getDarker();
         }
         if (slot.isRecordingQueued().get()) {
             return blinkFast(color.getDarker(), RgbLightState.RED);
+        } else if (track.arm().get()) {
+            return RgbLightState.RED_DIMMED;
+        } else if (slot.isPlaybackQueued().get()) {
+            return blinkFast(RgbLightState.GREEN, RgbLightState.WHITE);
+        } else if (track.isQueuedForStop().get()) {
+            return blinkFast(RgbLightState.WHITE, RgbLightState.WHITE_DIMMED);
         }
         return RgbLightState.OFF;
     }
@@ -168,14 +192,12 @@ public class ClipLaunchingLayer extends Layer {
     @Override
     protected void onActivate() {
         super.onActivate();
-        sceneLaunchingLayer.activate();
         trackBank.setShouldShowClipLauncherFeedback(driver.getPadBank().get() == PadBank.BANK_A);
     }
     
     @Override
     protected void onDeactivate() {
         super.onDeactivate();
-        sceneLaunchingLayer.deactivate();
         trackBank.setShouldShowClipLauncherFeedback(false);
     }
     

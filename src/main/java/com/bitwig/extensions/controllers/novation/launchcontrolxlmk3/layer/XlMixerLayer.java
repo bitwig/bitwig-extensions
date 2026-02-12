@@ -2,6 +2,7 @@ package com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.layer;
 
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.Send;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Track;
@@ -10,9 +11,11 @@ import com.bitwig.extensions.controllers.novation.commonsmk3.ColorLookup;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.CcConstValues;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlMidiProcessor;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlMk3Extension;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlXlHwElements;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchViewControl;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.AbsoluteEncoderBinding;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.ControlTargetId;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.DisplayId;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.LightSendValueBindings;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.LightValueBindings;
@@ -55,6 +58,7 @@ public class XlMixerLayer extends AbstractMixerLayer {
         final LaunchControlMidiProcessor midiProcessor, final ControllerHost host,
         final TransportHandler transportHandler, final ButtonLayers buttonLayers) {
         super(layers, midiProcessor, host, viewControl, hwElements, displayControl, transportHandler, buttonLayers);
+        LaunchControlMk3Extension.println(" XL MIXER LAYER");
         
         final TrackBank trackBank = viewControl.getTrackBank();
         for (int i = 0; i < 8; i++) {
@@ -149,11 +153,12 @@ public class XlMixerLayer extends AbstractMixerLayer {
         mixerLayer.addBinding(new RelativeEncoderBinding(track.pan(), row3Encoder));
         
         // fixedVolumeLabel
+        final ControlTargetId sliderId = new ControlTargetId(index);
         final ParameterDisplayBinding volumeDisplayBinding =
-            new ParameterDisplayBinding(
-                new DisplayId(row2Encoder.getTargetId(), displayControl), track.name(), track.volume());
+            new ParameterDisplayBinding(new DisplayId(index + 5, displayControl), track.name(), track.volume());
         mixerLayer.addBinding(volumeDisplayBinding);
-        this.addBinding(new SliderBinding(row2Encoder.getId(), track.volume(), hwElements.getSlider(index)));
+        final HardwareSlider slider = hwElements.getSlider(index);
+        this.addBinding(new SliderBinding(sliderId, track.volume(), slider));
         
         final LaunchButton row2Button = hwElements.getRowButtons(1, index);
         final LaunchButton row1Button = hwElements.getRowButtons(0, index);

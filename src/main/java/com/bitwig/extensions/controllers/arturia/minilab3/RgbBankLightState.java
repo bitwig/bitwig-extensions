@@ -6,17 +6,17 @@ import com.bitwig.extension.controller.api.HardwareLightVisualState;
 import com.bitwig.extension.controller.api.InternalHardwareLightState;
 
 public class RgbBankLightState extends InternalHardwareLightState {
-
+    
     private final byte[] colors;
     private final PadBank bank;
-
+    
     public static class Handler {
         private final byte[] buffer = new byte[24];
-        private final RgbButton[] buttons;
+        private final MinilabRgbButton[] buttons;
         private final PadBank bank;
         private RgbBankLightState lastState;
-
-        public Handler(final PadBank bank, final RgbButton[] buttons) {
+        
+        public Handler(final PadBank bank, final MinilabRgbButton[] buttons) {
             this.buttons = buttons;
             this.bank = bank;
             final byte[] colors = new byte[24];
@@ -24,7 +24,7 @@ public class RgbBankLightState extends InternalHardwareLightState {
             System.arraycopy(colors, 0, buffer, 0, 24);
             lastState = new RgbBankLightState(bank, colors);
         }
-
+        
         public InternalHardwareLightState getBankLightState() {
             calcColors(buffer);
             if (!lastState.equalsColorData(buffer)) {
@@ -32,12 +32,11 @@ public class RgbBankLightState extends InternalHardwareLightState {
             }
             return lastState;
         }
-
+        
         private void calcColors(final byte[] colorArray) {
             for (int i = 0; i < buttons.length; i++) {
                 final InternalHardwareLightState state = buttons[i].getLight().state().currentValue();
-                if (state instanceof RgbLightState) {
-                    final RgbLightState colorState = (RgbLightState) state;
+                if (state instanceof final RgbLightState colorState) {
                     colorArray[i * 3] = colorState.getRed();
                     colorArray[i * 3 + 1] = colorState.getGreen();
                     colorArray[i * 3 + 2] = colorState.getBlue();
@@ -45,30 +44,30 @@ public class RgbBankLightState extends InternalHardwareLightState {
             }
         }
     }
-
+    
     RgbBankLightState(final PadBank bank, final byte[] colors) {
         this.bank = bank;
         this.colors = new byte[24];
         System.arraycopy(colors, 0, this.colors, 0, 24);
     }
-
+    
     public PadBank getBank() {
         return bank;
     }
-
+    
     public byte[] getColors() {
         return colors;
     }
-
+    
     boolean equalsColorData(final byte[] colors) {
         return Arrays.equals(this.colors, colors);
     }
-
+    
     @Override
     public HardwareLightVisualState getVisualState() {
         return null;
     }
-
+    
     @Override
     public boolean equals(final Object obj) {
         if (obj instanceof final RgbBankLightState other) {

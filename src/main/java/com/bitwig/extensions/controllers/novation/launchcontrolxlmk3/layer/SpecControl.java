@@ -37,7 +37,7 @@ public class SpecControl {
     public void setActive(final boolean active) {
         specLayer.setIsActive(active);
         if (active) {
-            displayControl.show2LineTemporary("Button Row 2", "Transport Control");
+            displayControl.show2LineTemporary("Mode", "Transport");
             specLauncherLayer.setIsActive(transportHandler.getPanelLayout().get() == LayoutType.LAUNCHER);
         } else {
             specLauncherLayer.setIsActive(false);

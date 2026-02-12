@@ -10,6 +10,7 @@ import com.bitwig.extensions.controllers.novation.commonsmk3.ColorLookup;
 import com.bitwig.extensions.controllers.novation.commonsmk3.RgbState;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.CcConstValues;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlMidiProcessor;
+import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlMk3Extension;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchControlXlHwElements;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.LaunchViewControl;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.bindings.AbsoluteEncoderBinding;
@@ -57,6 +58,7 @@ public class LcMixerLayer extends AbstractMixerLayer {
         final LaunchViewControl viewControl, final LaunchControlXlHwElements hwElements,
         final DisplayControl displayControl, final TransportHandler transportHandler, final ButtonLayers buttonLayers) {
         super(layers, midiProcessor, host, viewControl, hwElements, displayControl, transportHandler, buttonLayers);
+        LaunchControlMk3Extension.println(" LC MIXER LAYER");
         panLayer = new Layer(layers, "PAN");
         sendLayer = new Layer(layers, "SEND");
         
@@ -184,9 +186,8 @@ public class LcMixerLayer extends AbstractMixerLayer {
             new ParameterDisplayBinding(
                 new DisplayId(relativeRow2Encoder.getTargetId(), displayControl), track.name(), track.pan());
         panLayer.addBinding(panDisplayBinding);
-        panLayer.addBinding(
-            new LightValueBindings(track.pan(), hwElements.getRelativeEncoder(0, index).getLight(), GradientColor.PAN));
-        panLayer.addBinding(new RelativeEncoderBinding(track.pan(), hwElements.getRelativeEncoder(0, index)));
+        panLayer.addBinding(new LightValueBindings(track.pan(), relativeRow2Encoder.getLight(), GradientColor.PAN));
+        panLayer.addBinding(new RelativeEncoderBinding(track.pan(), relativeRow2Encoder));
         
         final LaunchButton button = hwElements.getRowButtons(0, index);
         button.bindLight(this.buttonLayers.getSelectLayer(), () -> selectColor(track, index));
@@ -206,16 +207,16 @@ public class LcMixerLayer extends AbstractMixerLayer {
         }
         switch (this.buttonMode) {
             case SELECT -> {
-                buttonMode = ButtonMode.SOLO;
-                displayControl.show2LineTemporary("Button Function", "Solo");
-            }
-            case SOLO -> {
                 buttonMode = ButtonMode.MUTE;
                 displayControl.show2LineTemporary("Button Function", "Mute");
             }
-            case MUTE -> {
+            case SOLO -> {
                 buttonMode = ButtonMode.ARM;
                 displayControl.show2LineTemporary("Button Function", "Arm");
+            }
+            case MUTE -> {
+                buttonMode = ButtonMode.SOLO;
+                displayControl.show2LineTemporary("Button Function", "Solo");
             }
             case ARM -> {
                 buttonMode = ButtonMode.SELECT;

@@ -20,7 +20,7 @@ public class LaunchControlExtensionDefinition extends AbstractLaunchControlExten
     
     @Override
     public String getName() {
-        return "Launch Control Mk3";
+        return "Launch Control 3";
     }
     
     @Override
@@ -30,12 +30,12 @@ public class LaunchControlExtensionDefinition extends AbstractLaunchControlExten
     
     @Override
     public String getHardwareModel() {
-        return "Launch Control Mk3";
+        return "Launch Control 3";
     }
     
     @Override
     public String getHelpFilePath() {
-        return "Controllers/Novation/Launch Control XL Mk3.pdf";
+        return "Controllers/Novation/Launch Control 3.pdf";
     }
     
     @Override

@@ -10,7 +10,6 @@ public class ParameterDisplayBinding extends Binding<Parameter, DisplayId> imple
     
     private final DisplayControl display;
     private final int targetId;
-    private long incTime = 0;
     private String titleName;
     private String parameterName;
     private String displayValue;
@@ -28,10 +27,6 @@ public class ParameterDisplayBinding extends Binding<Parameter, DisplayId> imple
         this.parameterName = parameter.name().get();
     }
     
-    public void notifyInc() {
-        incTime = System.currentTimeMillis();
-    }
-    
     private void handleTrackName(final String trackName) {
         this.titleName = trackName;
         if (isActive() && !disabled) {
@@ -40,15 +35,10 @@ public class ParameterDisplayBinding extends Binding<Parameter, DisplayId> imple
         }
     }
     
-    
     private void handleParamNameChanged(final String value) {
         this.parameterName = value;
         if (isActive() && !disabled) {
             display.setText(targetId, 1, parameterName);
-            final long diff = System.currentTimeMillis() - incTime;
-            if (diff < 200) {
-                display.showDisplay(targetId);
-            }
         }
     }
     
@@ -56,10 +46,6 @@ public class ParameterDisplayBinding extends Binding<Parameter, DisplayId> imple
         this.displayValue = value;
         if (isActive() && !disabled) {
             display.setText(targetId, 2, displayValue);
-            final long diff = System.currentTimeMillis() - incTime;
-            if (diff < 200) {
-                display.showDisplay(targetId);
-            }
         }
     }
     
@@ -87,6 +73,7 @@ public class ParameterDisplayBinding extends Binding<Parameter, DisplayId> imple
         if (disabled) {
             return;
         }
+        display.configureDisplay(targetId, 0x62);
         display.setText(targetId, 0, titleName);
         display.setText(targetId, 1, parameterName);
         display.setText(targetId, 2, displayValue);

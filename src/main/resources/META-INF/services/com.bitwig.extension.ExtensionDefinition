@@ -23,6 +23,7 @@ com.bitwig.extensions.controllers.arturia.keylab.essential.ArturiaKeylabEssentia
 com.bitwig.extensions.controllers.arturia.keylab.essentialMk3.KeyLabEssential3ExtensionDefinition
 com.bitwig.extensions.controllers.arturia.microlab.ArturiaMicroLabControllerExtensionDefinition
 com.bitwig.extensions.controllers.arturia.minilab3.MiniLab3ExtensionDefinition
+#com.bitwig.extensions.controllers.arturia.minilab3.MiniLab37ExtensionDefinition
 com.bitwig.extensions.controllers.arturia.beatsteppro.BeatStepProExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keystep.KeyStepProExtensionDefinition
 com.bitwig.extensions.controllers.arturia.keystep.KeyStepExtensionDefinition
