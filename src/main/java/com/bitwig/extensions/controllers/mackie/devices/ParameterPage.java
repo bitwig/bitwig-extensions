@@ -14,6 +14,7 @@ import com.bitwig.extension.controller.api.DoubleValue;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.IntegerValue;
 import com.bitwig.extension.controller.api.Parameter;
+import com.bitwig.extension.controller.api.RangedValue;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
 import com.bitwig.extension.controller.api.RelativeHardwareControlToRangedValueBinding;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
@@ -200,7 +201,7 @@ public class ParameterPage implements SettableRangedValue {
     }
 
     @Override
-    public IntegerValue discreteValueIndex() {
+    public SettableIntegerValue discreteValueIndex() {
         return null;
     }
 
