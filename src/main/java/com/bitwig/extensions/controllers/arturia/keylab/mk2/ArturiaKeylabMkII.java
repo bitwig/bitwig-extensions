@@ -97,6 +97,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       mCursorTrack.hasNext().markInterested();
       mCursorTrack.hasPrevious().markInterested();
       mCursorTrack.position().markInterested();
+      mCursorTrack.color().markInterested();
       mDevice = mCursorTrack.createCursorDevice();
       mDevice.exists().markInterested();
       mDevice.hasNext().markInterested();
@@ -206,6 +207,13 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          else
             mBrowserLayer.deactivate();
       });
+
+      host.scheduleTask(this::handlePing, 50);
+   }
+
+   private void handlePing() {
+      final ControllerHost host = getHost();
+      host.scheduleTask(this::handlePing, 50);
    }
 
    private void initHardwareSurface()
@@ -334,9 +342,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       layer.bindToggle(ButtonId.RECORD, mTransport.recordAction(), mTransport.isArrangerRecordEnabled());
       layer.bindToggle(ButtonId.LOOP, mTransport.isArrangerLoopEnabled());
 
-      layer.bindToggle(ButtonId.SOLO, mCursorTrack.solo());
-      layer.bindToggle(ButtonId.MUTE, mCursorTrack.mute());
-      layer.bindToggle(ButtonId.RECORD_ARM, mCursorTrack.arm());
+      bindTrackButtons(layer);
       layer.bindToggle(ButtonId.READ, mTransport.isClipLauncherOverdubEnabled());
       layer.bindToggle(ButtonId.WRITE, mTransport.isArrangerAutomationWriteEnabled());
 
@@ -345,6 +351,35 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       layer.bindToggle(ButtonId.PUNCH_OUT, mTransport.isPunchOutEnabled());
       layer.bindToggle(ButtonId.METRO, mTransport.isMetronomeEnabled());
       layer.bindPressed(ButtonId.UNDO, mApplication.undoAction());
+   }
+
+   private void bindTrackButtons(final Layer layer) {
+      layer.bindToggle(ButtonId.SOLO1, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO2, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO3, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO4, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO5, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO6, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO7, mCursorTrack.solo());
+      layer.bindToggle(ButtonId.SOLO8, mCursorTrack.solo());
+
+      layer.bindToggle(ButtonId.MUTE1, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE2, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE3, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE4, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE5, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE6, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE7, mCursorTrack.mute());
+      layer.bindToggle(ButtonId.MUTE8, mCursorTrack.mute());
+
+      layer.bindToggle(ButtonId.RECORD_ARM1, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM2, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM3, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM4, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM5, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM6, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM7, mCursorTrack.arm());
+      layer.bindToggle(ButtonId.RECORD_ARM8, mCursorTrack.arm());
    }
 
    private void initDAWLayer()
@@ -447,10 +482,20 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    private void initMultiLayer()
    {
       final Layer layer = mMultiLayer;
-      layer.bindToggle(ButtonId.PREVIOUS, mTrackBank.scrollBackwardsAction(),
+
+      layer.bindToggle(ButtonId.NEXT, mTrackBank.scrollBackwardsAction(),
          mTrackBank.canScrollBackwards());
 
-      layer.bindToggle(ButtonId.NEXT, mTrackBank.scrollForwardsAction(),
+
+      layer.bindToggle(ButtonId.PREVIOUS, mTrackBank.scrollForwardsAction(),
+         mTrackBank.canScrollForwards());
+
+
+      layer.bindToggle(ButtonId.NEXT_BANK, mTrackBank.scrollPageBackwardsAction(),
+         mTrackBank.canScrollBackwards());
+
+
+      layer.bindToggle(ButtonId.PREVIOUS_BANK, mTrackBank.scrollPageForwardsAction(),
          mTrackBank.canScrollForwards());
 
       for (int i = 0; i < 8; i++)
@@ -461,7 +506,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
          layer.bindPressed(selectId, () -> mCursorTrack.selectChannel(mTrackBank.getItemAt(number)));
          layer.bind(() -> {
-            return isCursor.get() ? WHITE : mTrackBank.getItemAt(number).color().get();
+            return isCursor.get() ? getBlinkColor() : mTrackBank.getItemAt(number).color().get();
          }, selectId);
       }
 
@@ -509,6 +554,11 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
          return sb.toString();
       });
+   }
+
+   private Color getBlinkColor() {
+      final float blend = (float) Math.abs(Math.sin(System.currentTimeMillis() / 250.0)) * 0.8f;
+      return Color.mix(BLACK, mCursorTrack.color().get(), blend);
    }
 
    private void initAdjustingContinuousHardwareControlNotificationLayer()
