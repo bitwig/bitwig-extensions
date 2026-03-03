@@ -146,6 +146,11 @@ com.bitwig.extensions.controllers.roger_linn_design.LinnStrumentDefinition
 
 com.bitwig.extensions.controllers.roli.SeaboardRISEDefinition
 
+com.bitwig.extensions.controllers.softube.console1.definition.Console1ChannelExtensionDefinition
+com.bitwig.extensions.controllers.softube.console1.definition.Console1Multi2ExtensionDefinition
+com.bitwig.extensions.controllers.softube.console1.definition.Console1Multi3ExtensionDefinition
+com.bitwig.extensions.controllers.softube.console1.definition.Console1Multi4ExtensionDefinition
+
 com.bitwig.extensions.controllers.vault.Apex25ControllerDefinition
 com.bitwig.extensions.controllers.vault.Apex49ControllerDefinition
 com.bitwig.extensions.controllers.vault.Apex61ControllerDefinition
