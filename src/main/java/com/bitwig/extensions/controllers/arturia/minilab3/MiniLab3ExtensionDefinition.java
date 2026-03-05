@@ -36,9 +36,10 @@ public class MiniLab3ExtensionDefinition extends MiniLabExtensionDefinition {
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
         final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) {
-            list.add(new String[] {PORT_NAME_MIDI}, new String[] {PORT_NAME_MIDI});
             list.add(new String[] {PORT_NAME}, new String[] {PORT_NAME});
-            appendRenamedPorts(4, list);
+            for (int i = 1; i < 5; i++) {
+                appendWinPrefix(list, i);
+            }
         } else if (platformType == PlatformType.MAC) {
             list.add(new String[] {PORT_NAME_MIDI}, new String[] {PORT_NAME_MIDI});
         } else if (platformType == PlatformType.LINUX) {
@@ -46,14 +47,11 @@ public class MiniLab3ExtensionDefinition extends MiniLabExtensionDefinition {
         }
     }
     
-    private void appendRenamedPorts(final int count, final AutoDetectionMidiPortNamesList list) {
-        for (int i = 2; i < count + 2; i++) {
-            list.add(getRenamedPorts(i), getRenamedPorts(i));
-        }
-    }
-    
-    private String[] getRenamedPorts(final int index) {
-        return new String[] {"%d- %s".formatted(index, PORT_NAME_MIDI)};
+    private void appendWinPrefix(final AutoDetectionMidiPortNamesList list, final int index) {
+        final String prefix = index > 1 ? "%d- ".formatted(index) : "";
+        list.add(
+            new String[] {"%s%s MIDI".formatted(prefix, PORT_NAME)},
+            new String[] {"%s%s MIDI".formatted(prefix, PORT_NAME)});
     }
     
     @Override
