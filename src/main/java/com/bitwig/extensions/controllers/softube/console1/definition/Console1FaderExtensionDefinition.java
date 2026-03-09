@@ -6,24 +6,24 @@ import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 
 public class Console1FaderExtensionDefinition extends Console1ExtensionDefinition {
-    
+
     private static final UUID DRIVER_ID = UUID.fromString("98630b94-ed23-4a11-9981-05d3995b4965");
-    
+
     @Override
     public String getName() {
         return "Console 1 Fader Mk III";
     }
-    
+
     @Override
     public UUID getId() {
         return DRIVER_ID;
     }
-    
+
     @Override
     public String getHardwareModel() {
-        return "Console 1 Fader Mk III";
+        return "Console 1 Mk III";
     }
-    
+
     @Override
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
         final PlatformType platformType) {
@@ -36,5 +36,5 @@ public class Console1FaderExtensionDefinition extends Console1ExtensionDefinitio
                 new String[] {"Console 1 Channel Mk III DAW FA0000000073"});
         }
     }
-    
+
 }
