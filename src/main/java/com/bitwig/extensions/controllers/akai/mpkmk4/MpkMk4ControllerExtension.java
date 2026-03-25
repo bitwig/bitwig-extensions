@@ -53,6 +53,7 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
     }
     
     public enum Variant {
+        MINI_PLUS,
         MINI
     }
     
