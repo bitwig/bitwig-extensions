@@ -16,7 +16,7 @@ public class Console1Multi2ExtensionDefinition extends Console1ExtensionDefiniti
     
     @Override
     public String getName() {
-        return "Console 1 Mk III x 2";
+        return "Softube Direct DAW Control x 2";
     }
     
     @Override
@@ -26,7 +26,7 @@ public class Console1Multi2ExtensionDefinition extends Console1ExtensionDefiniti
     
     @Override
     public String getHardwareModel() {
-        return "Console 1 Mk III x 2";
+        return "Softube Direct DAW Control x 2";
     }
     
     @Override

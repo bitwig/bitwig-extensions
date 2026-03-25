@@ -17,6 +17,7 @@ public class TrackSlot {
     private long lastReleased;
     public static final String NEG_INFINITY = "\"-Infinity\"";
     private static final String CONSOLE_1 = "2FF966F3A2DA4112BBB38DC29B336457";
+    private static final String FLOW_MIXING_SUITE = "74D14512EBBF4BBA9F0E508E4A0EAEC6";
     
     private String trackId;
     private final Channel track;
@@ -363,9 +364,14 @@ public class TrackSlot {
     }
     
     private void loadPlugin(final String plugin) {
+        control.println(" LOAD <%s>", plugin);
         final long diff = System.currentTimeMillis() - lastConsoleLoadInvocation;
         if (diff > 10000) {
-            track.endOfDeviceChainInsertionPoint().insertVST3Device(CONSOLE_1);
+            switch (plugin) {
+                case "Console 1" -> track.endOfDeviceChainInsertionPoint().insertVST3Device(CONSOLE_1);
+                case "Flow Mixing Suite" -> track.endOfDeviceChainInsertionPoint().insertVST3Device(FLOW_MIXING_SUITE);
+            }
+            
             lastConsoleLoadInvocation = System.currentTimeMillis();
         }
     }
