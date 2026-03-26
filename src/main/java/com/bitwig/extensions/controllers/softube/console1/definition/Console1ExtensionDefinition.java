@@ -17,7 +17,7 @@ public abstract class Console1ExtensionDefinition extends ControllerExtensionDef
     
     @Override
     public String getVersion() {
-        return "0.9";
+        return "1.0";
     }
     
     @Override
@@ -42,7 +42,7 @@ public abstract class Console1ExtensionDefinition extends ControllerExtensionDef
     
     @Override
     public String getHelpFilePath() {
-        return "Controllers/Softube/Console 1 MkIII.pdf";
+        return "Controllers/Softube/Direct DAW Control.pdf";
     }
     
     @Override

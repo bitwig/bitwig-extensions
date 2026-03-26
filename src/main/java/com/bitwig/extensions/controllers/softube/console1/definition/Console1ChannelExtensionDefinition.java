@@ -16,7 +16,7 @@ public class Console1ChannelExtensionDefinition extends Console1ExtensionDefinit
     
     @Override
     public String getName() {
-        return "Softube Direct DAW Control";
+        return "Direct DAW Control (1 unit)";
     }
     
     @Override
@@ -26,7 +26,7 @@ public class Console1ChannelExtensionDefinition extends Console1ExtensionDefinit
     
     @Override
     public String getHardwareModel() {
-        return "Softube Direct DAW Control";
+        return "Direct DAW Control (1 unit)";
     }
     
     @Override
