@@ -35,7 +35,6 @@ public class SegmentDisplayBinding extends Binding<StringValue, DisplaySegment> 
     private void handleNameUpdate(final String name) {
         this.name = name;
         if (isActive() && !isBlocked()) {
-            LaunchControlMk3Extension.println(" NAME UPDATE " + name);
             getTarget().show2LinesBuffered(title, name);
         }
     }

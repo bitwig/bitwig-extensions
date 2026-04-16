@@ -58,7 +58,6 @@ public class LcMixerLayer extends AbstractMixerLayer {
         final LaunchViewControl viewControl, final LaunchControlXlHwElements hwElements,
         final DisplayControl displayControl, final TransportHandler transportHandler, final ButtonLayers buttonLayers) {
         super(layers, midiProcessor, host, viewControl, hwElements, displayControl, transportHandler, buttonLayers);
-        LaunchControlMk3Extension.println(" LC MIXER LAYER");
         panLayer = new Layer(layers, "PAN");
         sendLayer = new Layer(layers, "SEND");
         

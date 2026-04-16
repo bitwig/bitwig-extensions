@@ -58,7 +58,6 @@ public class XlMixerLayer extends AbstractMixerLayer {
         final LaunchControlMidiProcessor midiProcessor, final ControllerHost host,
         final TransportHandler transportHandler, final ButtonLayers buttonLayers) {
         super(layers, midiProcessor, host, viewControl, hwElements, displayControl, transportHandler, buttonLayers);
-        LaunchControlMk3Extension.println(" XL MIXER LAYER");
         
         final TrackBank trackBank = viewControl.getTrackBank();
         for (int i = 0; i < 8; i++) {
