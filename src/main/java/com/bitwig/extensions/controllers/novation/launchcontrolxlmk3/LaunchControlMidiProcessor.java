@@ -48,7 +48,7 @@ public class LaunchControlMidiProcessor {
     public LaunchControlMidiProcessor(final ControllerHost host,
         final AbstractLaunchControlExtensionDefinition definition) {
         final String productId = definition.isXlVersion() ? "15" : "16";
-        LaunchControlMk3Extension.println(" IS XL = %s", definition.isXlVersion());
+        host.println(" IS XL = " + definition.isXlVersion());
         LAUNCH_CONFIRM_CODE = LAUNCH_CONFIRM_CODE.formatted(productId);
         NOVATION_HEADER = "F0 00 20 29 02 %s ".formatted(productId);
         COLOR_SYSEX[5] = (byte) (definition.isXlVersion() ? 0x15 : 0x16);
@@ -127,7 +127,7 @@ public class LaunchControlMidiProcessor {
                 this.modeListeners.forEach(listener -> listener.accept(mode));
             }
         }
-        LaunchControlMk3Extension.println(" MIDI %02X %02X %02X", status, data1, data2);
+        //host.println(" MIDI %02X %02X %02X".formatted(status, data1, data2));
     }
     
     public void sendRgb(final int index, final RgbColor color) {
@@ -152,18 +152,18 @@ public class LaunchControlMidiProcessor {
     
     private void handleSysEx(final String data) {
         if (!data.endsWith("f7")) {
-            LaunchControlMk3Extension.println("Illegal Sysex Received : %s", data);
+            host.println("Illegal Sysex Received : " + data);
             return;
         }
         if (data.startsWith(DEVICE_RESPONSE_HEADER)) {
             final String[] values = extractValues(data, DEVICE_RESPONSE_HEADER.length(), 8);
-            LaunchControlMk3Extension.println("Device response : %s", Arrays.toString(values));
+            host.println("Device response : " + Arrays.toString(values));
             startMidi();
         } else {
             if (data.startsWith(LAUNCH_CONFIRM_CODE)) {
                 hwUpdater.run();
             } else {
-                LaunchControlMk3Extension.println(" SYSEX %s", data);
+                host.println(" SYSEX " + data);
             }
         }
     }

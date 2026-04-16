@@ -17,29 +17,10 @@ import com.bitwig.extensions.framework.di.Context;
 
 public class LaunchControlMk3Extension extends ControllerExtension {
     
-    private static ControllerHost debugHost;
-    private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
     
     private final AbstractLaunchControlExtensionDefinition definition;
     private HardwareSurface surface;
     private Context diContext;
-    
-    public static void println(final String format, final Object... args) {
-        if (debugHost != null) {
-            final LocalDateTime now = LocalDateTime.now();
-            debugHost.println(now.format(DF) + " > " + String.format(format, args));
-        }
-    }
-    
-    public static void showCallLocation(final String message) {
-        println("MSG: %s", message);
-        for (final StackTraceElement element : Thread.currentThread().getStackTrace()) {
-            final String s = element.toString();
-            if (s.startsWith("com.bitwig.extensions") && !s.contains("showCallLocation")) {
-                println("  | %s ", s.replace("com.bitwig.extensions.controllers.novation.launchcontrolxlmk3", ""));
-            }
-        }
-    }
     
     public LaunchControlMk3Extension(final AbstractLaunchControlExtensionDefinition definition,
         final ControllerHost host) {
@@ -48,7 +29,6 @@ public class LaunchControlMk3Extension extends ControllerExtension {
     }
     
     public void init() {
-        debugHost = getHost();
         diContext = new Context(this, Set.of(definition.isXlVersion() ? "XLModel" : "LCModel"));
         diContext.registerService(AbstractLaunchControlExtensionDefinition.class, definition);
         surface = diContext.getService(HardwareSurface.class);
@@ -60,10 +40,6 @@ public class LaunchControlMk3Extension extends ControllerExtension {
             mixerLayer.setSpecOverlay(specControl);
         }
         diContext.activate();
-        final Layers layers = diContext.getService(Layers.class);
-        for (final Layer l : layers.getLayers()) {
-            LaunchControlMk3Extension.println(" > " + l.getName());
-        }
     }
     
     @Override
