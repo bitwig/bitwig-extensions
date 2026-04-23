@@ -538,7 +538,7 @@ public class TrackManager extends Manager {
                                 mHost.createRelativeHardwareControlStepTarget(
                                                 mSelectedDeviceCursor.selectNextAction(),
                                                 mSelectedDeviceCursor.selectPreviousAction()),
-                                128.0);
+                                12.8);
 
                 final HardwareActionBindable launchClip = mHost.createAction(() -> {
                         mSelectedTrackClipLauncher.launch(mSelectedClipIndex);
