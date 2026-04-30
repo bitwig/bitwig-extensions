@@ -59,6 +59,12 @@ public class OsmoseCE61ExtensionDefinition extends ControllerExtensionDefinition
    }
 
    @Override
+   public String getHelpFilePath()
+   {
+      return "Controllers/Expressive-e/OsmoseCE.pdf";
+   }
+
+   @Override
    public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
          final PlatformType platformType) {
       if (platformType == PlatformType.WINDOWS) {
