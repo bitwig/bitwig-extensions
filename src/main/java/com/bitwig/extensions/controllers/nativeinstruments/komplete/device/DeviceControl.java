@@ -63,7 +63,8 @@ public class DeviceControl implements DeviceMidiListener {
         deviceRemotesControl = new RemotesControl(deviceRemoteLayer, deviceRemotePages, controlElements, midiProcessor);
         directParameterControl =
             new DirectParameterControl(
-                directParamLayer, cursorDevice, controlElements, midiProcessor, deviceRemotePages.pageCount());
+                directParamLayer, cursorDevice, controlElements, midiProcessor,
+                deviceRemotePages.pageCount());
         directParameterControl.getDirectActive().addValueObserver(this::handleDirectActive);
         
         final Track rootTrack = viewControl.getProject().getRootTrackGroup();
@@ -74,7 +75,7 @@ public class DeviceControl implements DeviceMidiListener {
         
         //final CursorRemoteControlsPage trackRemotes = viewControl.getCursorTrack().createCursorRemoteControlsPage(8);
         final CursorRemoteControlsPage trackRemotes =
-            viewControl.getCursorTrack().createCursorRemoteControlsPage("FIXED_TRACK", 8, null);
+            cursorTrack.createCursorRemoteControlsPage("FIXED_TRACK", 8, null);
         trackRemotesControl = new RemotesControl(trackRemoteLayer, trackRemotes, controlElements, midiProcessor);
         
         currentRemotesControl = deviceRemotesControl;

@@ -48,8 +48,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
         final MidiIn midiIn2 = host.getMidiInPort(1);
         final NoteInput noteInput =
             midiIn2.createNoteInput(
-                "MIDI", "80????", "90????", "D0????", "E0????", "B001??", "B040??", "B042??",
-                "B1????");
+                "MIDI", "80????", "90????", "D0????", "E0????", "B001??", "B040??", "B042??", "B1????");
         noteInput.setShouldConsumeEvents(true);
         
         initTrackBank();
@@ -144,7 +143,7 @@ public class KompleteKontrolAExtension extends KompleteKontrolExtension {
             });
         channel.exists().markInterested();
         
-        channel.addIsSelectedInMixerObserver(v -> midiProcessor.sendValueCommand(ValueCommand.SELECT, index, v));
+        channel.addIsSelectedInMixerObserver(v -> midiProcessor.sendSelectCommand(index, v));
         channel.mute().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.MUTE, index, v));
         channel.solo().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.SOLO, index, v));
         channel.arm().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.ARM, index, v));

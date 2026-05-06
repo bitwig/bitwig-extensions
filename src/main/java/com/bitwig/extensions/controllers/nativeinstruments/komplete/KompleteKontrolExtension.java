@@ -133,7 +133,7 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         mainLayer.bindReleased(shiftButton, () -> controlElements.getShiftHeld().set(false));
         channel.exists().markInterested();
         
-        channel.addIsSelectedInMixerObserver(v -> midiProcessor.sendValueCommand(ValueCommand.SELECT, index, v));
+        channel.addIsSelectedInMixerObserver(v -> midiProcessor.sendSelectCommand(index, v));
         channel.mute().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.MUTE, index, v));
         channel.solo().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.SOLO, index, v));
         channel.arm().addValueObserver(v -> midiProcessor.sendValueCommand(ValueCommand.ARM, index, v));
@@ -291,6 +291,10 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         createKontakt8DeviceKompleteKontrol(cursorDevice);
         createMaschineDeviceKompleteKontrol(cursorDevice);
         
+        if (hasDeviceControl()) {
+            mixerTrackBank.scrollPosition().addValueObserver(this::handleTrackScrollChanged);
+        }
+        
         mainLayer.bindPressed(controlElements.getMuteSelectedButton(), cursorTrack.mute().toggleAction());
         mainLayer.bindPressed(controlElements.getSoloSelectedButton(), cursorTrack.solo().toggleAction());
         
@@ -302,6 +306,10 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         for (int i = 0; i < 8; i++) {
             setUpChannelControl(i, mixerTrackBank.getItemAt(i));
         }
+    }
+    
+    private void handleTrackScrollChanged(final int pos) {
+        midiProcessor.refreshSelectedColor();
     }
     
     public void setUpTransport() {
