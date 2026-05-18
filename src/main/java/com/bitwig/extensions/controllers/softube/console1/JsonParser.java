@@ -43,7 +43,7 @@ public class JsonParser {
                  "test": "funnx"
                 }
             """;
-        
+         
         final JsonParser parser = new JsonParser(arrayTest);
         final JsonObject json = parser.parse();
         

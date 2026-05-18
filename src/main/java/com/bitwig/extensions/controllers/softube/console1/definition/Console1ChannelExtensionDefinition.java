@@ -40,7 +40,10 @@ public class Console1ChannelExtensionDefinition extends Console1ExtensionDefinit
         } else {
             list.add(
                 new String[] {"Console 1 Channel Mk III DAW FA0000000073"},
-                new String[] {"Console 1 Channel Mk III DAW FA0000000073"});
+                new String[] {"Console 1 Channel Mk III DAW FA0000000073"}); //
+            list.add(
+                new String[] {"Softube Flow Studio DAW FA0000010427"},
+                new String[] {"Softube Flow Studio DAW FA0000010427"}); //
             list.add(new String[] {"Console 1 Fader Mk III"}, new String[] {"Console 1 Fader Mk III"});
             list.add(new String[] {"Softube Flow Studio"}, new String[] {"Softube Flow Studio"});
             list.add(new String[] {"Softube Console 1 Compact"}, new String[] {"Softube Console 1 Compact"});
