@@ -19,6 +19,7 @@ import com.bitwig.extensions.controllers.nativeinstruments.komplete.CcAssignment
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.DataStringUtil;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.LayoutType;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.NksDevice;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.device.DeviceSelectionTab;
 
 public class MidiProcessor {
@@ -142,7 +143,22 @@ public class MidiProcessor {
         return hwButton;
     }
     
+    private String currentNksDeviceName = "";
+    
+    public void registerNksDevice(final String name) {
+        currentNksDeviceName = name;
+    }
+    
+    public void registerNksParam(final NksDevice deviceTyp, final String paramId) {
+        if (!paramId.isBlank()) {
+            updateKompleteKontrolInstance(paramId);
+        }
+    }
+    
     public void updateKompleteKontrolInstance(final String instanceParamName) {
+        if (instanceParamName.isBlank()) {
+            return;
+        }
         if (lastReportedKKInstance == null || !lastReportedKKInstance.equals(instanceParamName)) {
             sendTextCommand(TextCommand.SELECTED_TRACK, instanceParamName);
             host.scheduleTask(() -> sendTextCommand(TextCommand.SELECTED_TRACK, instanceParamName), 100);
@@ -184,7 +200,6 @@ public class MidiProcessor {
         if (selectedState[index] == selected) {
             return;
         }
-        final int nowSelected = getSelectedIndex();
         selectedState[index] = selected;
         ValueCommand.SELECT.send(midiOut, index, selected);
     }
@@ -292,6 +307,5 @@ public class MidiProcessor {
     public void updateParameterValue(final int index, final int value) {
         midiOut.sendMidi(0xBF, 0x70 + index, value);
     }
-    
     
 }
