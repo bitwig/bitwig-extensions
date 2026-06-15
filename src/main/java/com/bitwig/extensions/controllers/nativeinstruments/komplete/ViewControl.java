@@ -1,8 +1,11 @@
 package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 
+import java.util.Arrays;
+
 import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extension.controller.api.PinnableCursorDevice;
 import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extension.controller.api.TrackBank;
@@ -14,6 +17,7 @@ public class ViewControl {
     private final NavigationState navigationState = new NavigationState();
     private final CursorTrack cursorTrack;
     private final PinnableCursorDevice cursorDevice;
+    private final DeviceMatcher nksDeviceMatcher;
     protected TrackBank mixerTrackBank;
     protected Transport transport;
     protected Project project;
@@ -35,10 +39,19 @@ public class ViewControl {
         mixerTrackBank.canScrollChannelsUp().markInterested();
         mixerTrackBank.followCursorTrack(cursorTrack);
         mixerTrackBank.setChannelScrollStepSize(8);
+        
+        nksDeviceMatcher = host.createOrDeviceMatcher(Arrays.stream(NksDevice.values()) //
+            .map(type -> type.createMatcher(host))  //
+            .toArray(DeviceMatcher[]::new));
+        
     }
     
     public Project getProject() {
         return project;
+    }
+    
+    public DeviceMatcher getNksDeviceMatcher() {
+        return nksDeviceMatcher;
     }
     
     public NavigationState getNavigationState() {
