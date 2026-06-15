@@ -263,7 +263,6 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
                 instId.name().addValueObserver(id -> midiProcessor.registerNksParam(deviceType, id));
             }
         }
-        //initNksDiscovery(viewControl);
         
         mainLayer.bindPressed(controlElements.getMuteSelectedButton(), cursorTrack.mute().toggleAction());
         mainLayer.bindPressed(controlElements.getSoloSelectedButton(), cursorTrack.solo().toggleAction());
