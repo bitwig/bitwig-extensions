@@ -26,7 +26,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     private HardwareSurface surface;
     private Layer mainLayer;
     private Layer shiftLayer;
-    private final boolean isMini;
+    private final LaunchkeyMk4Type type;
     private MidiProcessor midiProcessor;
     private SessionLayer sessionLayer;
     private Layer currentMainModeLayer;
@@ -42,9 +42,9 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
     }
     
     public LaunchkeyMk4Extension(final AbstractLaunchkeyMk4ExtensionDefinition definition, final ControllerHost host,
-        final boolean miniVersion) {
+        final LaunchkeyMk4Type type) {
         super(definition, host);
-        this.isMini = miniVersion;
+        this.type = type;
     }
     
     @Override
@@ -53,7 +53,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         final ControllerHost host = diContext.getService(ControllerHost.class);
         debugHost = host;
         surface = diContext.getService(HardwareSurface.class);
-        midiProcessor = new MidiProcessor(host, isMini);
+        midiProcessor = new MidiProcessor(host, type);
         diContext.registerService(MidiProcessor.class, midiProcessor);
         
         mainLayer = diContext.createLayer("MAIN");
@@ -160,7 +160,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         
         mainLayer.bind(hwElements.getMasterSlider(), masterTrack.volume());
         
-        preapareTransport(transport);
+        prepareTransport(transport);
         
         hwElements.getButton(CcAssignments.PLAY).bindPressed(mainLayer, () -> handleRestartPlay(transport));
         hwElements.getButton(CcAssignments.PLAY).bindLightOnOff(mainLayer, transport.isPlaying());
@@ -186,7 +186,7 @@ public class LaunchkeyMk4Extension extends ControllerExtension {
         undoButton.bindLightOnOff(shiftLayer, application.canRedo());
     }
     
-    private static void preapareTransport(final Transport transport) {
+    private static void prepareTransport(final Transport transport) {
         transport.isPlaying().markInterested();
         transport.isMetronomeEnabled().markInterested();
         transport.isClipLauncherOverdubEnabled().markInterested();
