@@ -97,11 +97,11 @@ public class TrackControl {
         if (this.mode == Mode.ARM) {
             this.currentLayer = selectLayer;
             this.mode = Mode.SELECT;
-            displayControl.show2Line("Fader Mode", "Arm");
+            displayControl.show2Line("Fader Mode", "Select");
         } else {
             this.currentLayer = armLayer;
             this.mode = Mode.ARM;
-            displayControl.show2Line("Fader Mode", "Select");
+            displayControl.show2Line("Fader Mode", "Arm");
         }
         this.currentLayer.setIsActive(true);
     }
