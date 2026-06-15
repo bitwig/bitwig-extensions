@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.nativeinstruments.komplete;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.bitwig.extension.api.Color;
@@ -14,9 +13,6 @@ import com.bitwig.extension.controller.api.Application;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.Device;
-import com.bitwig.extension.controller.api.DeviceBank;
-import com.bitwig.extension.controller.api.DeviceMatcher;
 import com.bitwig.extension.controller.api.DocumentState;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareElement;
@@ -260,15 +256,14 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         
         if (hasDeviceControl()) {
             mixerTrackBank.scrollPosition().addValueObserver(this::handleTrackScrollChanged);
+        } else {
+            for (final NksDevice deviceType : NksDevice.values()) {
+                final SpecificPluginDevice specDevice = deviceType.createSpecDevice(cursorDevice);
+                final Parameter instId = specDevice.createParameter(deviceType.getParamOffset());
+                instId.name().addValueObserver(id -> midiProcessor.registerNksParam(deviceType, id));
+            }
         }
-        //        else {
-        //            for (final NksDevice deviceType : NksDevice.values()) {
-        //                final SpecificPluginDevice specDevice = deviceType.createSpecDevice(cursorDevice);
-        //                final Parameter instId = specDevice.createParameter(deviceType.getParamOffset());
-        //                instId.name().addValueObserver(midiProcessor::updateKompleteKontrolInstance);
-        //            }
-        //        }
-        initNksDiscovery(cursorTrack);
+        //initNksDiscovery(viewControl);
         
         mainLayer.bindPressed(controlElements.getMuteSelectedButton(), cursorTrack.mute().toggleAction());
         mainLayer.bindPressed(controlElements.getSoloSelectedButton(), cursorTrack.solo().toggleAction());
@@ -281,22 +276,6 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         for (int i = 0; i < 8; i++) {
             setUpChannelControl(i, mixerTrackBank.getItemAt(i));
         }
-    }
-    
-    private void initNksDiscovery(final CursorTrack cursorTrack) {
-        final DeviceBank nksDiscoverBank = cursorTrack.createDeviceBank(1);
-        final DeviceMatcher matcher = getHost().createOrDeviceMatcher(Arrays.stream(NksDevice.values()) //
-            .map(type -> type.createMatcher(getHost()))  //
-            .toArray(DeviceMatcher[]::new));
-        
-        nksDiscoverBank.setDeviceMatcher(matcher);
-        final Device nksDevice = nksDiscoverBank.getDevice(0);
-        for (final NksDevice deviceType : NksDevice.values()) {
-            final SpecificPluginDevice specDevice = deviceType.createSpecDevice(nksDevice);
-            final Parameter instId = specDevice.createParameter(deviceType.getParamOffset());
-            instId.name().addValueObserver(name -> midiProcessor.registerNksParam(deviceType, name));
-        }
-        nksDevice.name().addValueObserver(name -> midiProcessor.registerNksDevice(name));
     }
     
     private void handleTrackScrollChanged(final int pos) {
