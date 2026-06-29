@@ -17,7 +17,7 @@ public abstract class Console1ExtensionDefinition extends ControllerExtensionDef
     
     @Override
     public String getVersion() {
-        return "1.01";
+        return "1.02";
     }
     
     @Override

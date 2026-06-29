@@ -1,5 +1,7 @@
 package com.bitwig.extensions.controllers.softube.console1.definition;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.bitwig.extension.api.PlatformType;
@@ -13,11 +15,17 @@ public class SoftubeDawControlMultiExtensionDefinition extends Console1Extension
     
     private final int portCount;
     
+    private static final String WIN_PORT_CHANNEL = "Console 1 Fader Mk III";
+    private static final String WIN_PORT_FADER = "Console 1 Channel Mk III";
+    private static final String WIN_PORT_FLOW = "Softube Flow Studio";
+    private static final List<String> DEVICE_POOL =
+        List.of(WIN_PORT_CHANNEL, WIN_PORT_FADER, WIN_PORT_FLOW, "Softube Console 1 Compact");
+    
     public SoftubeDawControlMultiExtensionDefinition() {
         this(2);
     }
     
-    public SoftubeDawControlMultiExtensionDefinition(int ports) {
+    public SoftubeDawControlMultiExtensionDefinition(final int ports) {
         this.portCount = ports;
     }
     
@@ -50,26 +58,53 @@ public class SoftubeDawControlMultiExtensionDefinition extends Console1Extension
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
         final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) { //
-            final String[] winPortList = getWinPortList();
-            list.add(winPortList, winPortList);
+            final List<String[]> portSelection = getWinPortList();
+            for (final String[] winPortList : portSelection) {
+                list.add(winPortList, winPortList);
+            }
         } else {
             final String[] macPortList = getMacPortList();
             list.add(macPortList, macPortList);
         }
     }
     
-    private String[] getWinPortList() {
-        String[] ports = new String[portCount];
-        ports[0] = "Console 1 Fader Mk III";
-        ports[1] = "Console 1 Channel Mk III";
-        for (int i = 2; i < ports.length; i++) {
-            ports[i] = "Console 1 Channel Mk 0%d".formatted(i - 2);
+    protected List<String[]> getWinPortList() {
+        final List<String[]> selection = new ArrayList<>();
+        final int poolSize = DEVICE_POOL.size();
+        final int comboSize = Math.min(portCount, poolSize);
+        
+        // Generate all combinations of size comboSize from DEVICE_POOL
+        generateCombinations(DEVICE_POOL, comboSize, 0, new ArrayList<>(), selection, portCount);
+        
+        return selection;
+    }
+    
+    private void generateCombinations(final List<String> pool, final int comboSize, final int start,
+        final List<String> current, final List<String[]> result, final int totalPorts) {
+        
+        if (current.size() == comboSize) {
+            // Build full array: chosen pool entries + overflow slots
+            final String[] ports = new String[totalPorts];
+            for (int i = 0; i < current.size(); i++) {
+                ports[i] = current.get(i);
+            }
+            // Fill overflow beyond pool size
+            for (int i = comboSize; i < totalPorts; i++) {
+                ports[i] = "Console 1 Channel Mk 0%d".formatted(i - comboSize);
+            }
+            result.add(ports);
+            return;
         }
-        return ports;
+        
+        for (int i = start; i < pool.size(); i++) {
+            current.add(pool.get(i));
+            generateCombinations(pool, comboSize, i + 1, current, result, totalPorts);
+            current.remove(current.size() - 1);
+        }
     }
     
     private String[] getMacPortList() {
-        String[] ports = new String[portCount];
+        final String[] ports = new String[portCount];
         ports[0] = "Console 1 Channel Mk III DAW FA0000000073";
         ports[1] = "Console 1 Channel Mk III DAW FA0000000073";
         for (int i = 2; i < ports.length; i++) {
