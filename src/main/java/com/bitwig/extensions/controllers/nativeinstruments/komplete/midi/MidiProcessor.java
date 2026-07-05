@@ -88,7 +88,7 @@ public class MidiProcessor {
     
     private void initProcess() {
         final long diff = System.currentTimeMillis() - initStartTime;
-        KompleteKontrolExtension.println(" Running Init Process %d   kk=%s", diff, lastReportedKKInstance);
+        //KompleteKontrolExtension.println(" Running Init Process %d   kk=%s", diff, lastReportedKKInstance);
         if (diff < 20000) {
             host.scheduleTask(this::initProcess, 1000);
         }

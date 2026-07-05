@@ -74,6 +74,7 @@ com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.Komplete
 com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.KompleteKontrolASeriesExtensionDefinition
 com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.KompleteKontrolMSeriesExtensionDefinition
 com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.KontrolSMk3ExtensionDefinition
+com.bitwig.extensions.controllers.nativeinstruments.komplete.definition.NksConnectExtensionDefinition
 
 com.bitwig.extensions.controllers.neuzeitinstruments.DropExtensionDefinition
 
