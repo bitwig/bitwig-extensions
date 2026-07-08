@@ -37,8 +37,8 @@ public class ArturiaKeylab49MkII extends ArturiaKeylabMkII
       surface.hardwareElementWithId("PAD14").setBounds(108.75, 111.0, 24.0, 21.5);
       surface.hardwareElementWithId("PAD15").setBounds(143.0, 111.0, 24.0, 21.5);
       surface.hardwareElementWithId("PAD16").setBounds(175.25, 111.0, 24.0, 21.5);
-      surface.hardwareElementWithId("SOLO").setBounds(217.75, 47.25, 12.5, 6.0);
-      surface.hardwareElementWithId("MUTE").setBounds(242.0, 47.25, 12.5, 6.0);
+      surface.hardwareElementWithId("SOLO1").setBounds(217.75, 47.25, 12.5, 6.0);
+      surface.hardwareElementWithId("MUTE1").setBounds(242.0, 47.25, 12.5, 6.0);
       surface.hardwareElementWithId("READ").setBounds(292.0, 47.25, 12.5, 6.0);
       surface.hardwareElementWithId("WRITE").setBounds(315.25, 47.25, 12.5, 6.0);
       surface.hardwareElementWithId("SAVE").setBounds(217.0, 76.0, 12.5, 6.0);
