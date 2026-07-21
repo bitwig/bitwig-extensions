@@ -22,6 +22,8 @@ public class ConsoleMidiProcessor {
     
     private boolean engineActiveState = false;
     private final String name;
+    private long connectTime = -1L;
+    private boolean enableState = false;
     
     public ConsoleMidiProcessor(final ControllerHost host, final int ports, final String name) {
         this.host = host;
@@ -91,8 +93,11 @@ public class ConsoleMidiProcessor {
                 handleResetReceived();
             } else if ("ENABLE".equals(cmdValue)) {
                 println(" ENABLE <%s>", name);
+                enableState = true;
+                connectionListeners.forEach(listener -> listener.isConnected(true));
             } else if ("DISABLE".equals(cmdValue)) {
                 println(" DISABLE <%s>", name);
+                enableState = false;
                 connectionListeners.forEach(listener -> listener.isConnected(false));
             } else {
                 println(" Unknown COMMAND %s", cmdValue);
@@ -105,9 +110,13 @@ public class ConsoleMidiProcessor {
     }
     
     private void handleResetReceived() {
-        println(" RESET received INIT=%s", connectionInit);
-        if (!connectionInit) {
+        final long upTime = System.currentTimeMillis() - connectTime;
+        println(" RESET received INIT=%s  uptime=%d enabled=%s", connectionInit, upTime, enableState);
+        if (!connectionInit || upTime < 2000) {
+            println(" >>> Restart Handshake");
+            connectionInit = false;
             trackSlotControl.setBlockMidi(false);
+            connectionListeners.forEach(listener -> listener.isConnected(false));
             startHandshake();
         } else {
             trackSlotControl.updateAllTracks();
@@ -120,26 +129,30 @@ public class ConsoleMidiProcessor {
         if (acknowledged) {
             connectToDevice(port);
         } else {
-            if (connectionInit) {
-                println(" Let us ignore this ");
-            } else {
-                connectionInit = false;
-                host.getMidiOutPort(port).sendSysex(SysexUtil.toJsonSysEx(SysexUtil.RESET_CMD));
-                connectionListeners.forEach(listener -> listener.isConnected(false));
+            if (!connectionInit) {
+                host.scheduleTask(() -> invokeRetry(port), 30);
             }
         }
     }
     
+    private void invokeRetry(final int port) {
+        if (!connectionInit) {
+            println(" INVOKE RETRY %d", port);
+            host.getMidiOutPort(port).sendSysex(SysexUtil.toJsonSysEx(SysexUtil.RESET_CMD));
+            connectionListeners.forEach(listener -> listener.isConnected(false));
+        }
+    }
+    
     private void connectToDevice(final int port) {
-        // println(" ####### Connect to Device %d  ########### ", port);
+        println(" ####### Connect to Device %d  ########### ", port);
+        enableState = true;
         midiOut = host.getMidiOutPort(port);
-        
+        connectTime = System.currentTimeMillis();
         host.scheduleTask(this::launchTrackUpdate, 500);
         if (!connectionInit) {
             connectionInit = true;
             connectionListeners.forEach(listener -> listener.isConnected(true));
         }
-        
     }
     
     private void launchTrackUpdate() {

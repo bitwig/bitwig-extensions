@@ -21,7 +21,6 @@ import com.bitwig.extensions.controllers.novation.launchkey_mk4.values.NoteHandl
 import com.bitwig.extensions.framework.time.TimedEvent;
 
 public class MidiProcessor {
-    private static final String DEVICE_INQUIRY = "F0 7E 7F 06 01 F7";
     private static final String NOVATION_HEADER = "F0 00 20 29 02 %02X ";
     private static final byte[] TEXT_CONFIG_COMMAND =
         {(byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x14, 0x04, 0x00, 0x00, (byte) 0xF7};
@@ -30,26 +29,20 @@ public class MidiProcessor {
     private final MidiOut midiOut;
     private final NoteInput noteInput;
     private int blinkCounter = 0;
-    private final boolean miniVersion;
+    private final LaunchkeyMk4Type launchkeyType;
     private final Queue<TimedEvent> timedEvents = new LinkedList<>();
-    private final MidiOut midiOut2;
     private final List<ModeListener> modeListeners = new ArrayList<>();
     private final List<NoteHandler> noteHandlers = new ArrayList<>();
     private final String header;
-    private final int modelIdCode;
     private final NoteInput padNoteInput;
     
-    public MidiProcessor(final ControllerHost host, final boolean mini) {
+    public MidiProcessor(final ControllerHost host, final LaunchkeyMk4Type type) {
         this.host = host;
-        this.miniVersion = mini;
-        this.modelIdCode = mini ? 0x13 : 0x14;
-        this.header = NOVATION_HEADER.formatted(modelIdCode);
-        if (mini) {
-            TEXT_CONFIG_COMMAND[5] = 0x13;
-        }
+        this.launchkeyType = type;
+        this.header = NOVATION_HEADER.formatted(type.getSysExCode());
+        TEXT_CONFIG_COMMAND[5] = type.getSysExCode();
         this.midiIn = host.getMidiInPort(0);
         this.midiOut = host.getMidiOutPort(0);
-        this.midiOut2 = host.getMidiOutPort(1);
         
         padNoteInput = midiIn.createNoteInput("DRUM", "89????", "99????", "A?????");
         
@@ -70,7 +63,7 @@ public class MidiProcessor {
     }
     
     public boolean isMiniVersion() {
-        return miniVersion;
+        return launchkeyType == LaunchkeyMk4Type.MINI;
     }
     
     public void addModeListener(final ModeListener listener) {
@@ -78,7 +71,6 @@ public class MidiProcessor {
     }
     
     private void handleMidiIn(final int statusByte, final int data1, final int data2) {
-        final int cmd = statusByte & 0xF0;
         if (statusByte == 0xB6) {
             if (data1 == 0x1E) {
                 fireMode(ModeType.ENCODER, data2);

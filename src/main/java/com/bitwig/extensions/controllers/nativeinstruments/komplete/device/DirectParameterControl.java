@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DirectParameterValueDisplayObserver;
 import com.bitwig.extension.controller.api.IntegerValue;
+import com.bitwig.extension.controller.api.Parameter;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.SpecificPluginDevice;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.NksDevice;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.ViewControl;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.binding.KnobDirectBinding;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.control.ControlElements;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.midi.MidiProcessor;
@@ -35,11 +38,17 @@ public class DirectParameterControl extends AbstractParameterControl {
     private String deviceName;
     private boolean fineTune;
     
-    public DirectParameterControl(final Layer layer, final CursorDevice device, final ControlElements controlElements,
-        final MidiProcessor midiProcessor, final IntegerValue remotePageCount) {
+    public DirectParameterControl(final Layer layer, final ViewControl viewControl,
+        final ControlElements controlElements, final MidiProcessor midiProcessor, final IntegerValue remotePageCount) {
         super(layer);
+        this.device = viewControl.getCursorDevice();
         this.midiProcessor = midiProcessor;
-        this.device = device;
+        for (final NksDevice deviceType : NksDevice.values()) {
+            final SpecificPluginDevice specDevice = deviceType.createSpecDevice(device);
+            final Parameter instId = specDevice.createParameter(deviceType.getParamOffset());
+            instId.name().addValueObserver(name -> midiProcessor.registerNksParam(deviceType, name));
+        }
+        
         for (int i = 0; i < MAX_PARAMS; i++) {
             allSlots.add(new DirectSlot(i));
         }

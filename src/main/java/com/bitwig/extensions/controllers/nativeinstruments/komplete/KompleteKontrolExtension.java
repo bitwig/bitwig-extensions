@@ -239,39 +239,6 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         }
     }
     
-    protected void createKompleteKontrolDeviceKompleteKontrol(final PinnableCursorDevice cursorDevice) {
-        final SpecificPluginDevice kompleteKontrolVst3Id =
-            cursorDevice.createSpecificVst3Device(KOMPLETE_KONTROL_VST3_ID);
-        final Parameter kompleteKontrolVst3InstId = kompleteKontrolVst3Id.createParameter(0);
-        kompleteKontrolVst3InstId.name().addValueObserver(midiProcessor::updateKompleteKontrolInstance);
-        
-        final SpecificPluginDevice kompleteKontrolPluginVst2 =
-            cursorDevice.createSpecificVst2Device(KOMPLETE_KONTROL_DEVICE_ID);
-        final Parameter kompleteKontrolVst2InstId = kompleteKontrolPluginVst2.createParameter(0);
-        kompleteKontrolVst2InstId.markInterested();
-        kompleteKontrolVst2InstId.name().markInterested();
-        kompleteKontrolVst2InstId.exists().markInterested();
-        kompleteKontrolVst2InstId.name().addValueObserver(midiProcessor::updateKompleteKontrolInstance);
-    }
-    
-    protected void createKontaktDeviceKompleteKontrol(final PinnableCursorDevice cursorDevice) {
-        final SpecificPluginDevice kontaktVst3Id = cursorDevice.createSpecificVst3Device(KONTAKT_7_VST3_ID);
-        final Parameter instId = kontaktVst3Id.createParameter(2048);
-        instId.name().addValueObserver(midiProcessor::updateKompleteKontrolInstance);
-    }
-    
-    protected void createKontakt8DeviceKompleteKontrol(final PinnableCursorDevice cursorDevice) {
-        final SpecificPluginDevice kontaktVst3Id = cursorDevice.createSpecificVst3Device(KONTAKT_8_VST3_ID);
-        final Parameter instId = kontaktVst3Id.createParameter(2048);
-        instId.name().addValueObserver(midiProcessor::updateKompleteKontrolInstance);
-    }
-    
-    protected void createMaschineDeviceKompleteKontrol(final PinnableCursorDevice cursorDevice) {
-        final SpecificPluginDevice kontaktVst3Id = cursorDevice.createSpecificVst3Device(MASCHINE_3_VST3_ID);
-        final Parameter instId = kontaktVst3Id.createParameter(128);
-        instId.name().addValueObserver(midiProcessor::updateKompleteKontrolInstance);
-    }
-    
     private void changeMode(final int mode) {
         if (mode == 0) {
             navigationLayer.activate();
@@ -286,13 +253,15 @@ public abstract class KompleteKontrolExtension extends ControllerExtension {
         final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         final TrackBank mixerTrackBank = viewControl.getMixerTrackBank();
-        createKompleteKontrolDeviceKompleteKontrol(cursorDevice);
-        createKontaktDeviceKompleteKontrol(cursorDevice);
-        createKontakt8DeviceKompleteKontrol(cursorDevice);
-        createMaschineDeviceKompleteKontrol(cursorDevice);
         
         if (hasDeviceControl()) {
             mixerTrackBank.scrollPosition().addValueObserver(this::handleTrackScrollChanged);
+        } else {
+            for (final NksDevice deviceType : NksDevice.values()) {
+                final SpecificPluginDevice specDevice = deviceType.createSpecDevice(cursorDevice);
+                final Parameter instId = specDevice.createParameter(deviceType.getParamOffset());
+                instId.name().addValueObserver(id -> midiProcessor.registerNksParam(deviceType, id));
+            }
         }
         
         mainLayer.bindPressed(controlElements.getMuteSelectedButton(), cursorTrack.mute().toggleAction());

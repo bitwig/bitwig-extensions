@@ -16,6 +16,8 @@ public class TrackControl {
     private final ConsoleMidiProcessor midiProcessor;
     private final List<TrackSlot> slots = new ArrayList<>();
     private final DeviceMatcher console1Matcher;
+    private final DeviceMatcher flowMixingSuiteMatcher;
+    
     private Object updateTask = null;
     private final Map<String, TrackSlot> trackIdLookup = new HashMap<>();
     private final Map<String, TrackId> existingTrackIds = new HashMap<>();
@@ -39,6 +41,7 @@ public class TrackControl {
         this.host = host;
         this.midiProcessor = midiProcessor;
         console1Matcher = createDeviceMatcherC1(host);
+        flowMixingSuiteMatcher = createDeviceMatcherFlow(host);
         this.trackTouchAutomationActive = false;
         this.transport = transport;
         transport.isArrangerAutomationWriteEnabled().markInterested();
@@ -93,15 +96,21 @@ public class TrackControl {
     }
     
     private DeviceMatcher createDeviceMatcherC1(final ControllerHost host) {
-        final DeviceMatcher console1Matcher;
-        final DeviceMatcher vst3Matcher = host.createVST3DeviceMatcher("2FF966F3A2DA4112BBB38DC29B336457");
+        final DeviceMatcher vst3Matcher = host.createVST3DeviceMatcher(TrackSlot.CONSOLE_1);
         final DeviceMatcher vst2Matcher = host.createVST2DeviceMatcher(1399017577);
-        console1Matcher = host.createOrDeviceMatcher(vst2Matcher, vst3Matcher);
-        return console1Matcher;
+        return host.createOrDeviceMatcher(vst2Matcher, vst3Matcher);
+    }
+    
+    private DeviceMatcher createDeviceMatcherFlow(final ControllerHost host) {
+        return host.createVST3DeviceMatcher(TrackSlot.FLOW_MIXING_SUITE);
     }
     
     public DeviceMatcher getConsole1Matcher() {
         return console1Matcher;
+    }
+    
+    public DeviceMatcher getFlowMixingSuiteMatcher() {
+        return flowMixingSuiteMatcher;
     }
     
     public void setBlockMidi(final boolean blockMidi) {

@@ -75,6 +75,6 @@ public class KontrolSMk3ExtensionDefinition extends AbstractKompleteKontrolExten
     
     @Override
     public KontrolSMk3Extension createInstance(final ControllerHost host) {
-        return new KontrolSMk3Extension(this, host);
+        return new KontrolSMk3Extension(this, host, false);
     }
 }

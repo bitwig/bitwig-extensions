@@ -7,6 +7,7 @@ import com.bitwig.extension.api.PlatformType;
 import com.bitwig.extension.controller.AutoDetectionMidiPortNamesList;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extensions.controllers.novation.launchkey_mk4.LaunchkeyMk4Extension;
+import com.bitwig.extensions.controllers.novation.launchkey_mk4.LaunchkeyMk4Type;
 
 public class LaunchkeyMk4ExtensionDefinition extends AbstractLaunchkeyMk4ExtensionDefinition {
     private static final UUID DRIVER_ID = UUID.fromString("ef68e909-d5f1-4557-8526-2ce6978cabaa");
@@ -73,7 +74,7 @@ public class LaunchkeyMk4ExtensionDefinition extends AbstractLaunchkeyMk4Extensi
     
     @Override
     public LaunchkeyMk4Extension createInstance(final ControllerHost host) {
-        return new LaunchkeyMk4Extension(this, host, false);
+        return new LaunchkeyMk4Extension(this, host, LaunchkeyMk4Type.STANDARD);
     }
     
 }

@@ -16,8 +16,8 @@ public class TrackSlot {
     private final int channelIndex;
     private long lastReleased;
     public static final String NEG_INFINITY = "\"-Infinity\"";
-    private static final String CONSOLE_1 = "2FF966F3A2DA4112BBB38DC29B336457";
-    private static final String FLOW_MIXING_SUITE = "74D14512EBBF4BBA9F0E508E4A0EAEC6";
+    public static final String CONSOLE_1 = "2FF966F3A2DA4112BBB38DC29B336457";
+    public static final String FLOW_MIXING_SUITE = "74D14512EBBF4BBA9F0E508E4A0EAEC6";
     
     private String trackId;
     private final Channel track;
@@ -41,6 +41,7 @@ public class TrackSlot {
     private final String maxSendValue = "0";
     private final String meterType = "VU";
     private boolean containsConsole1 = false;
+    private boolean containsFlowSuite = false;
     private boolean meteringActive = true;
     private long lastConsoleLoadInvocation = 0;
     
@@ -98,15 +99,11 @@ public class TrackSlot {
         track.solo().addValueObserver(this::handleSoloChanged);
         track.mute().addValueObserver(this::handleMuteChanged);
         
-        //track.channelIndex().addValueObserver(this::handleChannelIndex);
-        
         track.addIsSelectedInMixerObserver(this::handleSelectedChanged);
         track.addVuMeterObserver(100, 0, false, this::handleMeterLeft);
         track.addVuMeterObserver(100, 1, false, this::handleMeterRight);
-        final DeviceBank deviceBank = track.createDeviceBank(1);
-        deviceBank.setDeviceMatcher(control.getConsole1Matcher());
-        final Device device = deviceBank.getDevice(0);
-        device.exists().addValueObserver(this::handleConsole1Appeared);
+        linkConsole1Observer(track);
+        linkConsoleFlowObserver(track);
         final SendBank bank = track.sendBank();
         for (int j = 0; j < bank.getSizeOfBank(); j++) {
             final int sendIndex = j;
@@ -116,12 +113,20 @@ public class TrackSlot {
         }
     }
     
-    private void handleConsole1Appeared(final boolean exists) {
-        //Console1Extension.println(" Console1 %d %s".formatted(this.slotIndex, exists));
-        containsConsole1 = exists;
-        // control.launchUpdateTask();
-        //control.updateTrackJson(this.trackId, "plugin", exists);
-        //control.activate(this);
+    private void linkConsole1Observer(final Channel track) {
+        final DeviceBank deviceBank = track.createDeviceBank(1);
+        deviceBank.setDeviceMatcher(control.getConsole1Matcher());
+        final Device device = deviceBank.getDevice(0);
+        device.exists().addValueObserver(exists -> containsConsole1 = exists);
+    }
+    
+    private void linkConsoleFlowObserver(final Channel track) {
+        final DeviceBank deviceBank = track.createDeviceBank(1);
+        deviceBank.setDeviceMatcher(control.getFlowMixingSuiteMatcher());
+        final Device device = deviceBank.getDevice(0);
+        device.exists().addValueObserver(exists -> {
+            containsFlowSuite = exists;
+        });
     }
     
     private void handleMeterLeft(final int value) {
@@ -364,14 +369,16 @@ public class TrackSlot {
     }
     
     private void loadPlugin(final String plugin) {
-        control.println(" LOAD <%s>", plugin);
+        switch (plugin) {
+            case "Console 1" -> load(CONSOLE_1, containsConsole1);
+            case "Flow Mixing Suite" -> load(FLOW_MIXING_SUITE, containsFlowSuite);
+        }
+    }
+    
+    private void load(String pluginId, boolean containmentMarker) {
         final long diff = System.currentTimeMillis() - lastConsoleLoadInvocation;
-        if (diff > 10000) {
-            switch (plugin) {
-                case "Console 1" -> track.endOfDeviceChainInsertionPoint().insertVST3Device(CONSOLE_1);
-                case "Flow Mixing Suite" -> track.endOfDeviceChainInsertionPoint().insertVST3Device(FLOW_MIXING_SUITE);
-            }
-            
+        if (!containmentMarker && diff > 10000) {
+            track.endOfDeviceChainInsertionPoint().insertVST3Device(pluginId);
             lastConsoleLoadInvocation = System.currentTimeMillis();
         }
     }

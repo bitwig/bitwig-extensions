@@ -19,9 +19,11 @@ import com.bitwig.extensions.controllers.nativeinstruments.komplete.CcAssignment
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.DataStringUtil;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.KompleteKontrolExtension;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.LayoutType;
+import com.bitwig.extensions.controllers.nativeinstruments.komplete.NksDevice;
 import com.bitwig.extensions.controllers.nativeinstruments.komplete.device.DeviceSelectionTab;
 
 public class MidiProcessor {
+    private long initStartTime;
     final NhiaSyexLevelsCommand trackLevelMeterCommand = new NhiaSyexLevelsCommand(0x49);
     private final static String INCOMING_HEADER = "f0002109000044430100";
     private final static String INCOMING_INDEX = INCOMING_HEADER + "7000";
@@ -80,6 +82,19 @@ public class MidiProcessor {
     public void intoDawMode(final int protocol) {
         this.expectedProtocol = protocol;
         midiOut.sendMidi(0xBF, 0x1, protocol);
+        host.scheduleTask(this::initProcess, 1000);
+        initStartTime = System.currentTimeMillis();
+    }
+    
+    private void initProcess() {
+        final long diff = System.currentTimeMillis() - initStartTime;
+        //KompleteKontrolExtension.println(" Running Init Process %d   kk=%s", diff, lastReportedKKInstance);
+        if (diff < 20000) {
+            host.scheduleTask(this::initProcess, 1000);
+        }
+        if (lastReportedKKInstance != null) {
+            sendTextCommand(TextCommand.SELECTED_TRACK, lastReportedKKInstance);
+        }
     }
     
     public void delay(final Runnable action, final int delay) {
@@ -142,11 +157,12 @@ public class MidiProcessor {
         return hwButton;
     }
     
-    public void updateKompleteKontrolInstance(final String instanceParamName) {
-        if (lastReportedKKInstance == null || !lastReportedKKInstance.equals(instanceParamName)) {
-            sendTextCommand(TextCommand.SELECTED_TRACK, instanceParamName);
-            host.scheduleTask(() -> sendTextCommand(TextCommand.SELECTED_TRACK, instanceParamName), 100);
-            lastReportedKKInstance = instanceParamName;
+    public void registerNksParam(final NksDevice deviceTyp, final String paramId) {
+        // KompleteKontrolExtension.println(" REG NKS %s : %s ", lastReportedKKInstance, paramId);
+        if (lastReportedKKInstance == null || !lastReportedKKInstance.equals(paramId)) {
+            sendTextCommand(TextCommand.SELECTED_TRACK, paramId);
+            host.scheduleTask(() -> sendTextCommand(TextCommand.SELECTED_TRACK, paramId), 100);
+            lastReportedKKInstance = paramId;
         }
     }
     
@@ -184,7 +200,6 @@ public class MidiProcessor {
         if (selectedState[index] == selected) {
             return;
         }
-        final int nowSelected = getSelectedIndex();
         selectedState[index] = selected;
         ValueCommand.SELECT.send(midiOut, index, selected);
     }
@@ -292,6 +307,5 @@ public class MidiProcessor {
     public void updateParameterValue(final int index, final int value) {
         midiOut.sendMidi(0xBF, 0x70 + index, value);
     }
-    
     
 }
