@@ -33,5 +33,6 @@ java {
 
     jar {
         archiveFileName = 'BitwigControllers.bwextension'
+        destinationDirectory = file("C:/Users/danil/Documents/Bitwig Studio/Extensions")
     }
 }

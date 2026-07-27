@@ -15,16 +15,16 @@ import com.bitwig.extensions.framework.values.LayoutType;
 
 @Component(tag = "XLModel")
 public class XlDawControlLayer extends AbstractDawControlLayer {
-    
+
     private final Layer specLauncherLayer;
-    
+
     public XlDawControlLayer(final Layers layers, final ControllerHost host, final LaunchControlXlHwElements hwElements,
         final LaunchViewControl viewControl, final DisplayControl displayControl,
         final TransportHandler transportHandler) {
         super(layers, hwElements, viewControl, displayControl, transportHandler, host);
         this.specLauncherLayer = new Layer(layers, "SPEC_LAUNCHER");
         deviceRemotes.bind(this, hwElements, displayControl);
-        
+
         bindNavigation(hwElements);
         transportHandler.bindTrackNavigation(this);
         transportHandler.bindControl(this, hwElements, 2);
@@ -32,19 +32,19 @@ public class XlDawControlLayer extends AbstractDawControlLayer {
         transportHandler.bindLauncherLayoutControl(specLauncherLayer, hwElements, 2);
         transportHandler.getPanelLayout().addValueObserver(this::handlePanelLayoutUpdate);
         transportHandler.setTrackNavigation(this::navigateTracks);
-        
+
         selectTrackBinding =
             new SegmentDisplayBinding("Select Track", cursorTrack.name(), displayControl.getTemporaryDisplay());
         this.addBinding(selectTrackBinding);
     }
-    
-    
+
+
     protected void handlePanelLayoutUpdate(final LayoutType newValue) {
         if (isActive()) {
             specLauncherLayer.setIsActive(newValue == LayoutType.LAUNCHER);
         }
     }
-    
+
     private void bindNavigation(final LaunchControlXlHwElements hwElements) {
         final LaunchButton pageUpButton = hwElements.getButtons(CcConstValues.PAGE_UP);
         final LaunchButton pageDownButton = hwElements.getButtons(CcConstValues.PAGE_DOWN);
@@ -53,21 +53,21 @@ public class XlDawControlLayer extends AbstractDawControlLayer {
         pageUpButton.bindRepeatHold(this, this::navigateBackward);
         pageDownButton.bindRepeatHold(this, this::navigateForward);
     }
-    
+
     private RgbState canPageNavigateBackward() {
         if (shiftState.get()) {
             return cursorDevice.hasPrevious().get() ? RgbState.DIM_WHITE : RgbState.OFF;
         }
         return deviceRemotes.canGoBack() ? RgbState.DIM_WHITE : RgbState.OFF;
     }
-    
+
     private RgbState canPageNavigateForward() {
         if (shiftState.get()) {
             return cursorDevice.hasNext().get() ? RgbState.DIM_WHITE : RgbState.OFF;
         }
         return deviceRemotes.canGoForward() ? RgbState.DIM_WHITE : RgbState.OFF;
     }
-    
+
     private void navigateBackward() {
         if (shiftState.get()) {
             cursorDevice.selectPrevious();
@@ -76,7 +76,7 @@ public class XlDawControlLayer extends AbstractDawControlLayer {
         }
         displayControl.cancelTemporary();
     }
-    
+
     private void navigateForward() {
         if (shiftState.get()) {
             cursorDevice.selectNext();
@@ -85,14 +85,14 @@ public class XlDawControlLayer extends AbstractDawControlLayer {
         }
         displayControl.cancelTemporary();
     }
-    
+
     @Override
     protected void onActivate() {
         super.onActivate();
         specLauncherLayer.setIsActive(transportHandler.getPanelLayout().get() == LayoutType.LAUNCHER);
         deviceRemotes.setActive(true);
     }
-    
+
     @Override
     protected void onDeactivate() {
         super.onDeactivate();
