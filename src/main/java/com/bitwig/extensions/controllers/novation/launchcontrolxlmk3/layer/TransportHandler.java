@@ -11,6 +11,8 @@ import com.bitwig.extension.controller.api.CueMarker;
 import com.bitwig.extension.controller.api.CueMarkerBank;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.DocumentState;
+import com.bitwig.extension.controller.api.PinnableCursorDevice;
+import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.ScrollbarModel;
@@ -31,6 +33,7 @@ import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.display.Dis
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.display.RgbColor;
 import com.bitwig.extensions.controllers.novation.launchcontrolxlmk3.display.RgbColorState;
 import com.bitwig.extensions.framework.Layer;
+import com.bitwig.extensions.framework.Layers;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.values.BasicStringValue;
 import com.bitwig.extensions.framework.values.BooleanValueObject;
@@ -64,11 +67,12 @@ public class TransportHandler {
     protected BasicStringValue zoomVerticalValue = new BasicStringValue("");
     protected BasicStringValue cueMarkerValue = new BasicStringValue("");
     protected CueMarkerBank cueMarkerBank;
+    private final Layer trackDeviceNavLayer;
     
     
     public TransportHandler(final ControllerHost host, final LaunchControlXlHwElements hwElements,
         final LaunchViewControl viewControl, final Transport transport, final DisplayControl displayControl,
-        final Application application) {
+        final Application application, final Layers layers) {
         this.transport = transport;
         this.shiftState = hwElements.getShiftState();
         this.viewControl = viewControl;
@@ -102,6 +106,8 @@ public class TransportHandler {
         focusMode.addValueObserver(mode -> this.focusMode = FocusMode.toMode(mode));
         configureZoomAndMarkers();
         application.panelLayout().addValueObserver(layout -> this.panelLayout.set(LayoutType.toType(layout)));
+        
+        this.trackDeviceNavLayer = new Layer(layers, "TRACK_DEVICE_NAV");
     }
     
     public Transport getTransport() {
@@ -217,6 +223,98 @@ public class TransportHandler {
         
         trackRightButton.bindRepeatHold(layer, this::navRight);
         trackLeftButton.bindRepeatHold(layer, this::navLeft);
+    }
+    
+    public void bindTrackDeviceNav(final Layer layer, final LaunchControlXlHwElements hwElements,
+        final LaunchViewControl viewControl, final Remotes remotes) {
+        final LaunchButton trackLeftButton = hwElements.getButtons(CcConstValues.TRACK_LEFT);
+        final LaunchButton trackRightButton = hwElements.getButtons(CcConstValues.TRACK_RIGHT);
+        final LaunchButton pageUpButton = hwElements.getButtons(CcConstValues.PAGE_UP);
+        final LaunchButton pageDownButton = hwElements.getButtons(CcConstValues.PAGE_DOWN);
+        
+        final PinnableCursorDevice cursorDevice = viewControl.getCursorDevice();
+        final SendBank refBank = viewControl.getRefSendBank();
+        refBank.canScrollBackwards().markInterested();
+        refBank.canScrollForwards().markInterested();
+        cursorDevice.hasPrevious().markInterested();
+        cursorDevice.hasNext().markInterested();
+        
+        // TRACK_LEFT button
+        trackLeftButton.bindLight(layer, () -> {
+            if (getPanelLayout().get() == LayoutType.ARRANGER) {
+                return cursorDevice.hasPrevious().get() ? RgbState.WHITE : RgbState.OFF;
+            } else {
+                return canNavLeft(cursorTrack) ? RgbState.WHITE : RgbState.OFF;
+            }
+        });
+        trackLeftButton.bindRepeatHold(layer, () -> {
+            if (getPanelLayout().get() == LayoutType.ARRANGER) {
+                cursorDevice.selectPrevious();
+            } else {
+                navLeft();
+            }
+        });
+        
+        // TRACK_RIGHT button
+        trackRightButton.bindLight(layer, () -> {
+            if (getPanelLayout().get() == LayoutType.ARRANGER) {
+                return cursorDevice.hasNext().get() ? RgbState.WHITE : RgbState.OFF;
+            } else {
+                return canNavRight(cursorTrack) ? RgbState.WHITE : RgbState.OFF;
+            }
+        });
+        trackRightButton.bindRepeatHold(layer, () -> {
+            if (getPanelLayout().get() == LayoutType.ARRANGER) {
+                cursorDevice.selectNext();
+            } else {
+                navRight();
+            }
+        });
+        
+        // PAGE_UP button
+        pageUpButton.bindLight(layer, () -> {
+            if (shiftState.get() && getPanelLayout().get() == LayoutType.LAUNCHER) {
+                return refBank.canScrollBackwards().get() ? RgbState.WHITE : RgbState.OFF;
+            } else if (getPanelLayout().get() == LayoutType.ARRANGER) {
+                return canNavLeft(cursorTrack) ? RgbState.WHITE : RgbState.OFF;
+            } else {
+                return cursorDevice.hasPrevious().get() ? RgbState.WHITE : RgbState.OFF;
+            }
+        });
+        pageUpButton.bindRepeatHold(layer, () -> {
+            if (shiftState.get() && getPanelLayout().get() == LayoutType.LAUNCHER) {
+                viewControl.navigateSends(-1);
+            } else if (getPanelLayout().get() == LayoutType.ARRANGER) {
+                navLeft();
+            } else {
+                cursorDevice.selectPrevious();
+            }
+        });
+        
+        // PAGE_DOWN button
+        pageDownButton.bindLight(layer, () -> {
+            if (shiftState.get() && getPanelLayout().get() == LayoutType.LAUNCHER) {
+                return refBank.canScrollForwards().get() ? RgbState.WHITE : RgbState.OFF;
+            } else if (getPanelLayout().get() == LayoutType.ARRANGER) {
+                return canNavRight(cursorTrack) ? RgbState.WHITE : RgbState.OFF;
+            } else {
+                return cursorDevice.hasNext().get() ? RgbState.WHITE : RgbState.OFF;
+            }
+        });
+        pageDownButton.bindRepeatHold(layer, () -> {
+            if (shiftState.get() && getPanelLayout().get() == LayoutType.LAUNCHER) {
+                viewControl.navigateSends(1);
+            } else if (getPanelLayout().get() == LayoutType.ARRANGER) {
+                navRight();
+            } else {
+                cursorDevice.selectNext();
+            }
+        });
+    }
+    
+    public void activateTrackDeviceNavLayer(final Remotes remotes) {
+        bindTrackDeviceNav(trackDeviceNavLayer, hwElements, viewControl, remotes);
+        trackDeviceNavLayer.setIsActive(true);
     }
     
     private void handlePlayPressed() {

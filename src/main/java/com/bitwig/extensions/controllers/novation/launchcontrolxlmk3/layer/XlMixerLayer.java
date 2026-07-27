@@ -86,29 +86,10 @@ public class XlMixerLayer extends AbstractMixerLayer {
     }
     
     private void bindNavigation(final LaunchControlXlHwElements hwElements) {
-        final LaunchButton pageUpButton = hwElements.getButtons(CcConstValues.PAGE_UP);
-        final LaunchButton pageDownButton = hwElements.getButtons(CcConstValues.PAGE_DOWN);
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
-        transportHandler.bindTrackNavigation(mixerLayer);
         
         mixerLayer.addBinding(
             new SegmentDisplayBinding("Select Track", cursorTrack.name(), displayControl.getFixedDisplay()));
-        
-        final SendBank refBank = viewControl.getRefSendBank();
-        final Send send1 = refBank.getItemAt(0);
-        final Send send2 = refBank.getItemAt(1);
-        send1.name().markInterested();
-        send2.name().markInterested();
-        refBank.canScrollBackwards().markInterested();
-        refBank.canScrollForwards().markInterested();
-        
-        pageUpButton.bindLight(mixerLayer, () -> refBank.canScrollBackwards().get() ? RgbState.WHITE : RgbState.OFF);
-        pageDownButton.bindLight(mixerLayer, () -> refBank.canScrollForwards().get() ? RgbState.WHITE : RgbState.OFF);
-        pageUpButton.bindRepeatHold(mixerLayer, () -> viewControl.navigateSends(-1));
-        pageDownButton.bindRepeatHold(mixerLayer, () -> viewControl.navigateSends(1));
-        refBank.scrollPosition().addValueObserver(pos -> displayControl.show2LineTemporary(
-            "Sends",
-            "%s - %s".formatted(send1.name().get(), send2.name().get())));
     }
     
     

@@ -28,11 +28,31 @@ else
 group = 'com.bitwig.extensions'
 description = 'Bitwig Studio Extensions (Github)'
 
+// Set default version from version file
+def versionFile = file('version.txt')
+if (versionFile.exists()) {
+    project.version = versionFile.text.trim().toInteger()
+} else {
+    project.version = 0
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_21
 
     jar {
-        archiveFileName = 'BitwigControllers.bwextension'
+        archiveFileName = "jetaitry${project.version}.bwextension"
         destinationDirectory = file("C:/Users/danil/Documents/Bitwig Studio/Extensions")
     }
 }
+
+task incrementVersion {
+    doLast {
+        def version = versionFile.exists() ? versionFile.text.trim().toInteger() : 0
+        version++
+        versionFile.text = version.toString()
+        project.version = version
+        println "Version incremented to: ${version}"
+    }
+}
+
+jar.dependsOn incrementVersion
