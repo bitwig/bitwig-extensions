@@ -184,11 +184,11 @@ public class MiniLab3Extension extends ControllerExtension {
     private void handleSysExData(final String sysEx) {
         switch (sysEx) {
             case "f000206b7f420200406300f7":
-                MiniLab3Extension.println(" ==> BANK A");
+                //MiniLab3Extension.println(" ==> BANK A");
                 toBankMode(PadBank.BANK_A);
                 break;
             case "f000206b7f420200406301f7":
-                MiniLab3Extension.println(" ==> BANK B");
+                //MiniLab3Extension.println(" ==> BANK B");
                 toBankMode(PadBank.BANK_B);
                 break;
             case "f000206b7f420200406201f7": // Arturia Mode
@@ -652,8 +652,10 @@ public class MiniLab3Extension extends ControllerExtension {
         encoderStateMaschine.notifyTurn(false);
         oled.disableValues();
         switch (encoderStateMaschine.getState()) {
-            case INITIAL -> navigateScenesOrPads(dir);
-            case HOLD -> navigateParametersBanks(dir);
+            // Since the Encoder sends different CCs when SHIFT is held (see mainEncoderShiftAction)
+            // There is no conflict here. 
+            case SHIFT, INITIAL -> navigateScenesOrPads(dir); // SHIFT State active when in Transport Lock
+            case SHIFT_HOLD, HOLD -> navigateParametersBanks(dir); // SHIFT State active when in Transport Lock
         }
     }
     
