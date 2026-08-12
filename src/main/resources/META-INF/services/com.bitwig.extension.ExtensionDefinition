@@ -56,6 +56,8 @@ com.bitwig.extensions.controllers.keith_mcmillen.QuNexusDefinition
 
 com.bitwig.extensions.controllers.kenton.KillaMixMiniExtensionDefinition
 
+com.bitwig.extensions.controllers.embodme.Erae2ExtensionDefinition
+
 com.bitwig.extensions.controllers.expressivee.OsmoseControllerExtensionDefinition
 com.bitwig.extensions.controllers.expressivee.osmoseCE49.OsmoseCE49ExtensionDefinition
 com.bitwig.extensions.controllers.expressivee.osmoseCE61.OsmoseCE61ExtensionDefinition
