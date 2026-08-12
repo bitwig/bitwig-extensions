@@ -1,5 +1,8 @@
 package com.bitwig.extensions.framework.view;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.Track;
@@ -21,6 +24,12 @@ public class OverviewGrid {
     private final int size;
     
     private final TrackBank maxTrackBank;
+    private final List<QueueChangeListener> queueChangeListeners = new ArrayList<>();
+    
+    @FunctionalInterface
+    public interface QueueChangeListener {
+        void notifySceneHasQueued(int index, boolean queued);
+    }
     
     public OverviewGrid(final TrackBank maxTrackBank) {
         this.size = maxTrackBank.getSizeOfBank();
@@ -29,6 +38,19 @@ public class OverviewGrid {
         playingClips = new int[size];
         clipCount = new int[size];
         prepare(maxTrackBank);
+    }
+    
+    public void initMaxBank() {
+        for (int i = 0; i < size; i++) {
+            final int trackIndex = i;
+            final Track track = maxTrackBank.getItemAt(trackIndex);
+            for (int j = 0; j < track.clipLauncherSlotBank().getSizeOfBank(); j++) {
+                final int sceneIndex = j;
+                final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
+                slot.isPlaybackQueued().addValueObserver(isQueued -> markSceneQueued(sceneIndex, isQueued));
+                slot.isPlaying().addValueObserver(isQueued -> markScenePlaying(sceneIndex, isQueued));
+            }
+        }
     }
     
     public void setUpFocusScene(final TrackBank mainBank) {
@@ -47,19 +69,11 @@ public class OverviewGrid {
                 maxTrackBank.sceneBank().scrollPosition().set(getSceneOffset());
             }
         });
-        for (int i = 0; i < size; i++) {
-            final int trackIndex = i;
-            final Track track = maxTrackBank.getItemAt(trackIndex);
-            
-            final Scene scene = maxTrackBank.sceneBank().getScene(i);
-            scene.clipCount().addValueObserver(count -> this.clipCount[trackIndex] = count);
-            for (int j = 0; j < size; j++) {
-                final int sceneIndex = j;
-                final ClipLauncherSlot slot = track.clipLauncherSlotBank().getItemAt(sceneIndex);
-                slot.isPlaybackQueued().addValueObserver(isQueued -> markSceneQueued(sceneIndex, isQueued));
-                slot.isPlaying().addValueObserver(isQueued -> markScenePlaying(sceneIndex, isQueued));
-            }
-        }
+        initMaxBank();
+    }
+    
+    public void addQueuedSceneListener(final QueueChangeListener listener) {
+        queueChangeListeners.add(listener);
     }
     
     public int getNumberOfScenes() {
@@ -105,10 +119,16 @@ public class OverviewGrid {
     }
     
     private void markSceneQueued(final int sceneIndex, final boolean isQueued) {
+        final int previous = sceneQueuedClips[sceneIndex];
         if (isQueued) {
             sceneQueuedClips[sceneIndex]++;
         } else if (sceneQueuedClips[sceneIndex] > 0) {
             sceneQueuedClips[sceneIndex]--;
+        }
+        if (sceneQueuedClips[sceneIndex] > 0 && previous == 0) {
+            queueChangeListeners.forEach(l -> l.notifySceneHasQueued(sceneIndex, true));
+        } else if (sceneQueuedClips[sceneIndex] <= 0 && previous > 0) {
+            queueChangeListeners.forEach(l -> l.notifySceneHasQueued(sceneIndex, false));
         }
     }
     
