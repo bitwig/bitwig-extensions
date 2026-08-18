@@ -64,15 +64,18 @@ class Remotes {
             layer.addBinding(new LightValueBindings(parameter, row1Encoder.getLight(), DEVICE_COLORS.get(i)));
             final Parameter parameter2 = getParameter2(i);
             
+            final RelativeEncoderBinding row2EncoderBinding = new RelativeEncoderBinding(parameter2, row2Encoder);
             final ParameterDisplayBinding parameterRow2DisplayBinding =
                 new ParameterDisplayBinding(
                     new DisplayId(row2Encoder.getTargetId(), displayControl), deviceName, parameter2);
-            layer.addBinding(parameterRow2DisplayBinding);
-            final RelativeEncoderBinding row2Binding = new RelativeEncoderBinding(parameter2, row2Encoder);
-            layer.addBinding(row2Binding);
             final LightValueBindings row2LightBinding =
                 new LightValueBindings(parameter2, row2Encoder.getLight(), DEVICE_COLORS.get(i));
+            
+            layer.addBinding(row2EncoderBinding);
+            layer.addBinding(parameterRow2DisplayBinding);
             layer.addBinding(row2LightBinding);
+            
+            disableBindings.add(row2EncoderBinding);
             disableBindings.add(parameterRow2DisplayBinding);
             disableBindings.add(row2LightBinding);
         }
@@ -128,6 +131,9 @@ class Remotes {
     
     public void setActive(final boolean active) {
         this.active = active;
+        if (active) {
+            updateRow2Layer();
+        }
     }
     
     public Parameter getParameter(final int index) {
