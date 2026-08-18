@@ -66,7 +66,11 @@ public class Erae2ExtensionDefinition extends ControllerExtensionDefinition {
     @Override
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
         final PlatformType platformType) {
-        list.add(new String[] {"Erae 2", "MIDIIN2 (Erae 2)"}, new String[] {"Erae 2"});
+        if (platformType == PlatformType.WINDOWS) {
+            list.add(new String[] {"Erae 2", "MIDIIN2 (Erae 2)"}, new String[] {"Erae 2"});
+        } else {
+            list.add(new String[] {"Erae 2 MIDI", "Erae 2 MIDI (MPE)"}, new String[] {"Erae 2 MIDI"});
+        }
     }
     
     @Override
