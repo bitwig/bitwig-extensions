@@ -51,18 +51,23 @@ public class ParameterDisplayBinding extends Binding<Parameter, DisplayId> imple
     
     public void setDisabled(final boolean disabled) {
         this.disabled = disabled;
+        if (disabled) {
+            clearText();
+        }
         if (isActive()) {
             if (disabled) {
                 deactivate();
-                display.setText(targetId, 0, titleName);
-                display.setText(targetId, 1, "");
-                display.setText(targetId, 2, "");
             } else {
                 activate();
             }
         }
     }
     
+    private void clearText() {
+        display.setText(targetId, 0, titleName);
+        display.setText(targetId, 1, "");
+        display.setText(targetId, 2, "");
+    }
     
     @Override
     protected void deactivate() {
