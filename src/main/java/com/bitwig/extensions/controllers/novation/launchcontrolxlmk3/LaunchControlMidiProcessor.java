@@ -73,13 +73,6 @@ public class LaunchControlMidiProcessor {
         return NOVATION_HEADER;
     }
     
-    private void setMixLayout() {
-        midiOut.sendMidi(0xB6, 0x1E, 0x01);
-    }
-    
-    private void setControlLayout() {
-        midiOut.sendMidi(0xB6, 0x1E, 0x02);
-    }
     
     public void setToRelative(final int row, final boolean on) {
         midiOut.sendMidi(0xB6, ROW_CC_IDS[row], on ? 0x7F : 0x00);
@@ -171,8 +164,6 @@ public class LaunchControlMidiProcessor {
     private void startMidi() {
         init = true;
         startDawMode();
-        setControlLayout();
-        setMixLayout();
         startListeners.forEach(Runnable::run);
         host.scheduleTask(this::handlePing, 50);
     }
