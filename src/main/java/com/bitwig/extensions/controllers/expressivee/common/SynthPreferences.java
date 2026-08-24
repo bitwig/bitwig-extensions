@@ -5,13 +5,13 @@ import com.bitwig.extension.controller.api.SettableBooleanValue;
 
 public class SynthPreferences {
 
-    private SettableBooleanValue mhakenInAllInputs;
+    private SettableBooleanValue mSoundEngineInAllInputs;
 
     public SynthPreferences(ControllerHost host) {
-        mhakenInAllInputs = host.getPreferences().getBooleanSetting("Include in all inputs", "Osmose Haken", false);
+        mSoundEngineInAllInputs = host.getPreferences().getBooleanSetting("Include in all inputs", "Osmose Sound Engine", false);
     }
 
-    public boolean hakenInAllInputs() {
-        return mhakenInAllInputs.get();
+    public boolean soundEngineInAllInputs() {
+        return mSoundEngineInAllInputs.get();
     }
 }
