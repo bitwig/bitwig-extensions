@@ -61,7 +61,7 @@ public class ApplicationManager extends Manager {
         mLauncherClip.exists().markInterested();
 
         mButtonUndo.pressedAction().addBinding(mApplication.undoAction());
-        mButtonRedo.pressedAction().addBinding(mApplication.undoAction());
+        mButtonRedo.pressedAction().addBinding(mApplication.redoAction());
 
         final HardwareActionBindable quantizeAction = mHost.createAction(() -> {
             this.quantizeCurrentClip();
