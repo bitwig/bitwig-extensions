@@ -38,7 +38,7 @@ public class TrackManager extends Manager {
         // *=============================================*//
 
         private static final int TRACK_SENDS_COUNT = 2;
-        private static final int TRACK_SCENES_COUNT = 8;
+        private static final int TRACK_SCENES_COUNT = 128;
 
         private static final String CTRL_E_ID = "ABCDEF019182FAEB4578707243747265";
         private static final String INSTRUMENT_LAYER_ID = "5024be2e-65d6-4d40-bbfe-8b2ea993c445";
