@@ -446,8 +446,6 @@ public class ControlHandler {
     private void bindRemote(final EncMode mode, final CursorTrack cursorTrack, final int i,
         final LaunchRelEncoder encoder, final CursorRemoteControlsPage remotes) {
         final RemoteControl remote = remotes.getParameter(i);
-        final Layer layer = layerMap.get(mode);
-        encoder.bind(layer, remote);
         layerMap.get(mode)
             .addBinding(new RelativeEncoderBinding(i, remote, encoder, display, cursorTrack.name(), remote.name()));
     }
