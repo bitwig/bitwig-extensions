@@ -33,6 +33,10 @@ public class MenuEntry {
         return title;
     }
     
+    public boolean hasMod() {
+        return incrementHandler != null;
+    }
+    
     public StringValue getValue() {
         return value;
     }

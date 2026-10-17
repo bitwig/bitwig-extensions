@@ -6,8 +6,9 @@ import com.bitwig.extension.controller.api.InternalHardwareLightState;
 import com.bitwig.extension.controller.api.Project;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extensions.controllers.akai.mpkmk4.GlobalStates;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
-import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
+import com.bitwig.extensions.controllers.akai.mpkmk4.MpkVariant;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColor;
@@ -23,28 +24,80 @@ public class TrackPadControl {
     private final Project project;
     
     public TrackPadControl(final MpkHwElements hwElements, final LayerCollection layerCollection,
-        final MpkViewControl viewControl, final Project project, final MpkMidiProcessor midiProcessor) {
-        final Layer mainLayer = layerCollection.get(LayerId.TRACK_PAD_CONTROL);
+        final MpkViewControl viewControl, final Project project, final GlobalStates globalStates) {
+        
+        
         final List<MpkMultiStateButton> gridButtons = hwElements.getGridButtons();
         final TrackBank trackBank = viewControl.getTrackBank();
         this.project = project;
         trackBank.setShouldShowClipLauncherFeedback(true);
+        if (globalStates.getVariant().getLayoutStyle() == MpkVariant.LayoutStyle.STANDARD) {
+            bindCombinedLayer(layerCollection, trackBank, gridButtons);
+        } else {
+            bindSeparateLayer(layerCollection, trackBank, gridButtons);
+        }
+    }
+    
+    private void bindCombinedLayer(final LayerCollection layerCollection, final TrackBank trackBank,
+        final List<MpkMultiStateButton> gridButtons) {
+        final Layer combinedLayer = layerCollection.get(LayerId.TRACK_PAD_CONTROL);
         for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
             final int trackIndex = i;
             final Track track = trackBank.getItemAt(trackIndex);
-            final MpkMultiStateButton armButton = gridButtons.get(trackIndex);
-            armButton.bindLight(mainLayer, () -> getArmState(track));
-            armButton.bindIsPressed(mainLayer, pressed -> handleArmPressed(pressed, track));
-            final MpkMultiStateButton stopButton = gridButtons.get(trackIndex + 4);
-            stopButton.bindLight(mainLayer, () -> getStopState(track));
-            stopButton.bindPressed(mainLayer, () -> track.stop());
-            final MpkMultiStateButton muteButton = gridButtons.get(8 + trackIndex);
-            muteButton.bindLight(mainLayer, () -> getMuteState(track));
-            muteButton.bindPressed(mainLayer, () -> track.mute().toggle());
-            final MpkMultiStateButton soloButton = gridButtons.get(12 + trackIndex);
-            soloButton.bindLight(mainLayer, () -> getSoloState(track));
-            soloButton.bindIsPressed(mainLayer, pressed -> handleSoloPressed(pressed, track));
+            bindMute(gridButtons, 8 + trackIndex, combinedLayer, track);
+            bindSoloButton(gridButtons, trackIndex + 12, combinedLayer, track);
+            
+            bindArmButton(gridButtons, trackIndex, combinedLayer, track);
+            bindStopButton(gridButtons, trackIndex + 4, combinedLayer, track);
         }
+    }
+    
+    private void bindSeparateLayer(final LayerCollection layerCollection, final TrackBank trackBank,
+        final List<MpkMultiStateButton> gridButtons) {
+        final Layer muteSoloLayer = layerCollection.get(LayerId.MUTE_SOLO_CONTROL);
+        final Layer mixerLayer = layerCollection.get(LayerId.MIXER_PAD_CONTROL);
+        for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+            final int trackIndex = i;
+            final Track track = trackBank.getItemAt(trackIndex);
+            bindMute(gridButtons, trackIndex, muteSoloLayer, track);
+            bindMute(gridButtons, trackIndex + 8, muteSoloLayer, track);
+            bindSoloButton(gridButtons, trackIndex + 4, muteSoloLayer, track);
+            bindSoloButton(gridButtons, trackIndex + 12, muteSoloLayer, track);
+            
+            bindArmButton(gridButtons, trackIndex, mixerLayer, track);
+            bindArmButton(gridButtons, trackIndex + 8, mixerLayer, track);
+            bindStopButton(gridButtons, trackIndex + 4, mixerLayer, track);
+            bindStopButton(gridButtons, trackIndex + 12, mixerLayer, track);
+        }
+    }
+    
+    private void bindMute(final List<MpkMultiStateButton> gridButtons, final int index, final Layer layer,
+        final Track track) {
+        final MpkMultiStateButton muteButton = gridButtons.get(index);
+        muteButton.bindLight(layer, () -> getMuteState(track));
+        muteButton.bindPressed(layer, () -> track.mute().toggle());
+    }
+    
+    
+    private void bindSoloButton(final List<MpkMultiStateButton> gridButtons, final int index, final Layer combinedLayer,
+        final Track track) {
+        final MpkMultiStateButton soloButton = gridButtons.get(index);
+        soloButton.bindLight(combinedLayer, () -> getSoloState(track));
+        soloButton.bindIsPressed(combinedLayer, pressed -> handleSoloPressed(pressed, track));
+    }
+    
+    private void bindStopButton(final List<MpkMultiStateButton> gridButtons, final int index, final Layer layer,
+        final Track track) {
+        final MpkMultiStateButton stopButton = gridButtons.get(index);
+        stopButton.bindLight(layer, () -> getStopState(track));
+        stopButton.bindPressed(layer, () -> track.stop());
+    }
+    
+    private void bindArmButton(final List<MpkMultiStateButton> gridButtons, final int buttonIndex, final Layer layer,
+        final Track track) {
+        final MpkMultiStateButton armButton = gridButtons.get(buttonIndex);
+        armButton.bindLight(layer, () -> getArmState(track));
+        armButton.bindIsPressed(layer, pressed -> handleArmPressed(pressed, track));
     }
     
     private InternalHardwareLightState getMuteState(final Track track) {

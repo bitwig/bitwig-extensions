@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.akai.mpkmk4.display;
 import java.util.Arrays;
 
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMidiProcessor;
-import com.bitwig.extensions.controllers.akai.mpkmk4.MpkMk4ControllerExtension;
 
 public class ParameterValues {
     
@@ -14,16 +13,19 @@ public class ParameterValues {
     
     public ParameterValues(final MpkMidiProcessor midiProcessor) {
         this.midiProcessor = midiProcessor;
-        MpkMk4ControllerExtension.println(" PID = %s", midiProcessor.getProductId());
         Arrays.fill(this.data, (byte) 0x20);
         data[0] = (byte) 0xF0;
         data[1] = (byte) 0x47;
-        data[2] = (byte) 0x7F;
+        data[2] = (byte) 0x00;
         data[3] = midiProcessor.getProductId();
         data[4] = (byte) 0x1D;
         data[5] = (byte) 0x01;
         data[6] = (byte) 0x00;
         data[135] = (byte) 0xF7;
+    }
+    
+    public String get(int index) {
+        return names[index] + " " + values[index];
     }
     
     public void setValue(final int index, final String value) {

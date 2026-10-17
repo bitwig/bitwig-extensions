@@ -21,9 +21,9 @@ public class MpkMonoState extends InternalHardwareLightState {
     public static final int BLINK1_4 = 14;
     public static final int BLINK1_2 = 15;
     
-    public static MpkMonoState FULL_ON = new MpkMonoState(6, true);
-    public static MpkMonoState OFF = new MpkMonoState(6, false);
-    public static MpkMonoState DIMMED = new MpkMonoState(0, true);
+    public static MpkMonoState FULL_ON = new MpkMonoState(SOLID_STATE, true);
+    public static MpkMonoState OFF = new MpkMonoState(SOLID_STATE, false);
+    public static MpkMonoState DIMMED = new MpkMonoState(SOLID_10, true);
     
     private final int state;
     private final boolean on;

@@ -21,15 +21,17 @@ import com.bitwig.extensions.controllers.akai.mpkmk4.layers.LayerCollection;
 import com.bitwig.extensions.controllers.akai.mpkmk4.layers.LayerId;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Context;
+import com.bitwig.extensions.framework.time.TimedDelayEvent;
 import com.bitwig.extensions.framework.values.FocusMode;
 
 public class MpkMk4ControllerExtension extends ControllerExtension {
     
     private final String[] RECORD_QUANTIZE = {"OFF", "1/32", "1/16", "1/8", "1/4"};
+    private final int TAP_LIGHT_TIME = 50;
     private static ControllerHost debugHost;
     private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("hh:mm:ss SSS");
     private ControllerHost host;
-    private final Variant variant;
+    private final MpkVariant variant;
     private HardwareSurface surface;
     
     private Layer mainLayer;
@@ -42,6 +44,7 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
     private String recQuant;
     private boolean notifyQuant;
     private int quantIndex = 2;
+    private TimedDelayEvent tapHoldEvent = null;
     
     private LineDisplay mainDisplay;
     
@@ -52,13 +55,8 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         }
     }
     
-    public enum Variant {
-        MINI_PLUS,
-        MINI
-    }
-    
     public MpkMk4ControllerExtension(final ControllerExtensionDefinition definition, final ControllerHost host,
-        final Variant variant) {
+        final MpkVariant variant) {
         super(definition, host);
         this.variant = variant;
     }
@@ -92,6 +90,7 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         final Application application = diContext.getService(Application.class);
         final DocumentState documentState = getHost().getDocumentState();
         final MpkFocusClip focusClip = diContext.getService(MpkFocusClip.class);
+        final MpkViewControl viewControl = diContext.getService(MpkViewControl.class);
         
         application.recordQuantizationGrid().addValueObserver(this::handleRecordQuant);
         final SettableEnumValue recordButtonAssignment = documentState.getEnumSetting(
@@ -112,29 +111,13 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         
         final MpkMultiStateButton playButton = hwElements.getButton(MpkCcAssignment.PLAY);
         playButton.bindLightDimmed(mainLayer, transport.isPlaying());
-        playButton.bindPressed(
-            mainLayer, () -> {
-                final boolean wasRecording = transport.isArrangerRecordEnabled().get();
-                transport.restart();
-                if (wasRecording) {
-                    transport.isArrangerRecordEnabled().set(true);
-                }
-            });
+        playButton.bindPressed(mainLayer, () -> handlePlay(transport));
         playButton.bindLightDimmed(shiftLayer, transport.isPlaying());
         playButton.bindPressed(shiftLayer, transport.continuePlaybackAction());
         
-        final MpkMultiStateButton recordButton = hwElements.getButton(MpkCcAssignment.REC);
-        recordButton.bindLight(mainLayer, () -> recordButtonState(transport));
-        recordButton.bindPressed(mainLayer, () -> handleRecordPressed(transport, focusClip));
         final MpkMultiStateButton loopButton = hwElements.getButton(MpkCcAssignment.LOOP);
         loopButton.bindLightDimmed(mainLayer, transport.isArrangerLoopEnabled());
         loopButton.bindPressed(mainLayer, () -> transport.isArrangerLoopEnabled().toggle());
-        
-        final MpkMultiStateButton overdubButton = hwElements.getButton(MpkCcAssignment.OVER);
-        overdubButton.bindLightDimmed(mainLayer, () -> isOverdubActive(transport));
-        overdubButton.bindPressed(mainLayer, () -> handleOverdubPressed(transport));
-        overdubButton.bindLightDimmed(shiftLayer, () -> isAutomationOverdubActive(transport));
-        overdubButton.bindPressed(shiftLayer, () -> handleAutomationOverdubPressed(transport));
         
         
         final MpkMultiStateButton undoButton = hwElements.getButton(MpkCcAssignment.UNDO);
@@ -144,17 +127,76 @@ public class MpkMk4ControllerExtension extends ControllerExtension {
         undoButton.bindPressed(shiftLayer, application.redoAction());
         
         final MpkMultiStateButton tempoButton = hwElements.getButton(MpkCcAssignment.TAP_TEMPO);
-        tempoButton.bindLightPressedOnDimmed(mainLayer);
-        tempoButton.bindPressed(mainLayer, transport.tapTempoAction());
+        if (variant == MpkVariant.MINI) {
+            tempoButton.bindLightPressedOnDimmed(mainLayer);
+            tempoButton.bindPressed(mainLayer, transport.tapTempoAction());
+        } else {
+            tempoButton.bindPressed(mainLayer, () -> this.tapAction(tempoButton, transport));
+        }
+        
+        final ClickEncoder encoder = hwElements.getMainEncoder();
+        final Layer bpmEditLayer = layerCollection.get(LayerId.BPM_LAYER);
+        final MpkMultiStateButton bpmAction = hwElements.getButton(MpkCcAssignment.BPM_EDIT);
+        transport.tempo().displayedValue().markInterested();
+        bpmAction.bindIsPressed(mainLayer, pressed -> handleBpmLayer(pressed, bpmEditLayer, transport));
+        encoder.bind(bpmEditLayer, inc -> incrementTempo(inc, transport));
         
         tempoButton.bindLightOnOff(shiftLayer, transport.isMetronomeEnabled());
         tempoButton.bindPressed(shiftLayer, () -> transport.isMetronomeEnabled().toggle());
         
-        final ClickEncoder encoder = hwElements.getMainEncoder();
         encoder.bind(topEncoderLayer, inc -> incrementQuantize(inc, application.recordQuantizationGrid()));
-        recordButton.bindLight(shiftLayer, () -> "OFF".equals(recQuant) ? MpkMonoState.OFF : MpkMonoState.FULL_ON);
-        recordButton.bindIsPressed(shiftLayer, pressed -> toggleRecMode(pressed, application.recordQuantizationGrid()));
         
+        final MpkMultiStateButton recordButton = hwElements.getButton(MpkCcAssignment.REC);
+        final MpkMultiStateButton overdubButton = hwElements.getButton(MpkCcAssignment.OVER);
+        recordButton.bindLight(mainLayer, () -> recordButtonState(transport));
+        recordButton.bindPressed(mainLayer, () -> handleRecordPressed(transport, focusClip));
+        overdubButton.bindLightDimmed(mainLayer, () -> isOverdubActive(transport));
+        overdubButton.bindPressed(mainLayer, () -> handleOverdubPressed(transport));
+        
+        if (variant.getLayoutStyle() == MpkVariant.LayoutStyle.NEW_STYLE) {
+            overdubButton.bindLight(shiftLayer, () -> "OFF".equals(recQuant) ? MpkMonoState.OFF : MpkMonoState.FULL_ON);
+            overdubButton.bindIsPressed(
+                shiftLayer, pressed -> toggleRecMode(pressed, application.recordQuantizationGrid()));
+            
+            loopButton.bindPressed(shiftLayer, () -> viewControl.getRootTrack().stop());
+            loopButton.bindLight(shiftLayer, () -> MpkMonoState.OFF);
+            
+        } else {
+            recordButton.bindLight(shiftLayer, () -> "OFF".equals(recQuant) ? MpkMonoState.OFF : MpkMonoState.FULL_ON);
+            recordButton.bindIsPressed(
+                shiftLayer, pressed -> toggleRecMode(pressed, application.recordQuantizationGrid()));
+            
+            overdubButton.bindLightDimmed(shiftLayer, () -> isAutomationOverdubActive(transport));
+            overdubButton.bindPressed(shiftLayer, () -> handleAutomationOverdubPressed(transport));
+        }
+        
+    }
+    
+    private void tapAction(final MpkMultiStateButton tempoButton, final Transport transport) {
+        transport.tapTempo();
+        final long time = System.currentTimeMillis();
+        tempoButton.updateState(MpkMonoState.FULL_ON);
+        host.scheduleTask(() -> tempoButton.updateState(MpkMonoState.DIMMED), TAP_LIGHT_TIME);
+    }
+    
+    private static void handlePlay(final Transport transport) {
+        final boolean wasRecording = transport.isArrangerRecordEnabled().get();
+        if (transport.isPlaying().get()) {
+            transport.stop();
+        } else {
+            transport.play();
+        }
+        if (wasRecording) {
+            transport.isArrangerRecordEnabled().set(true);
+        }
+    }
+    
+    private void handleBpmLayer(final boolean pressed, final Layer bpmEditLayer, Transport transport) {
+        // Needs FW Update
+    }
+    
+    private void incrementTempo(final int inc, final Transport transport) {
+        transport.tempo().incRaw(inc);
     }
     
     private void handleShift(final Boolean pressed, final Layer shiftLayer, final MpkHwElements hwElements) {

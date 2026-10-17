@@ -30,11 +30,13 @@ public class MpkHwElements {
     
     public MpkHwElements(final ControllerHost host, final HardwareSurface surface, final MpkMidiProcessor midiProcessor,
         final GlobalStates globalStates) {
+        final MpkVariant variant = globalStates.getVariant();
         for (int i = 0; i < 16; i++) {
             final int rowIndex = i / 4;
             final int columnIndex = i % 4;
             final String name = "GRID %d %d".formatted(rowIndex + 1, columnIndex + 1);
-            gridButtons.add(new MpkMultiStateButton(9, 0x24 + i, false, name, surface, midiProcessor));
+            int offset = variant.isPadReverse() ? (1 - (i / 8)) * 8 + (i % 8) : i;
+            gridButtons.add(new MpkMultiStateButton(9, 0x24 + offset, false, name, surface, midiProcessor));
         }
         
         mainLineDisplay = new LineDisplay(midiProcessor, MpkDisplayFont.PT24, 3);
@@ -53,6 +55,15 @@ public class MpkHwElements {
             encoders.add(encoder);
         }
         mainLineDisplay.setActive(true);
+    }
+    
+    public void displayTemp(String line1, String line2) {
+        if (mainLineDisplay.isActive()) {
+            mainLineDisplay.temporaryInfo(1, line1, line2);
+        }
+        if (menuLineDisplay.isActive()) {
+            mainLineDisplay.temporaryInfo(1, line1, line2);
+        }
     }
     
     public LineDisplay getMainLineDisplay() {

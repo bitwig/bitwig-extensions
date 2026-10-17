@@ -29,35 +29,36 @@ public class MpkMiniMk4ControllerExtensionDefinition extends ControllerExtension
     
     @Override
     public int getNumMidiOutPorts() {
-        return 2;
+        return 1;
     }
     
     @Override
     public void listAutoDetectionMidiPortNames(final AutoDetectionMidiPortNamesList list,
         final PlatformType platformType) {
         if (platformType == PlatformType.WINDOWS) {
+            list.add(new String[] {"MIDIIN2 (MPK mini IV)", "MPK mini IV"}, new String[] {"MIDIOUT2 (MPK mini IV)"});
             list.add(
-                new String[] {"MIDIIN2 (MPK mini IV)", "MPK mini IV"},
-                new String[] {"MIDIOUT2 (MPK mini IV)", "MPK mini IV"});
+                new String[] {"MPK mini IV DAW Port", "MPK mini IV MIDI Port"},
+                new String[] {"MPK mini IV DAW Port"});
         } else if (platformType == PlatformType.MAC) {
             list.add(
                 new String[] {"MPK mini IV DAW Port", "MPK mini IV MIDI Port"},
-                new String[] {"MPK mini IV DAW Port", "MPK mini IV MIDI Port"});
+                new String[] {"MPK mini IV DAW Port"});
         } else if (platformType == PlatformType.LINUX) {
             list.add(
                 new String[] {"MPK mini IV MPK mini IV DAW Por", "MPK mini IV MPK mini IV MIDI Po"},
-                new String[] {"MPK mini IV DAW Port", "MPK mini IV MIDI Port"});
+                new String[] {"MPK mini IV DAW Port"});
         }
     }
     
     @Override
     public ControllerExtension createInstance(final ControllerHost host) {
-        return new MpkMk4ControllerExtension(this, host, MpkMk4ControllerExtension.Variant.MINI);
+        return new MpkMk4ControllerExtension(this, host, MpkVariant.MINI);
     }
     
     @Override
     public String getHelpFilePath() {
-        return "Controllers/Akai/MPK Mini Mk4.pdf";
+        return "Controllers/Akai/MPK Mini IV.pdf";
     }
     
     @Override

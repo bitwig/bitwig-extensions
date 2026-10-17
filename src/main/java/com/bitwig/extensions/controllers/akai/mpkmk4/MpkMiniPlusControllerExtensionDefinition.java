@@ -19,7 +19,12 @@ public class MpkMiniPlusControllerExtensionDefinition extends ControllerExtensio
     
     @Override
     public String getHardwareModel() {
-        return "MPK Mini Plus";
+        return "MPK Mini Plus II";
+    }
+    
+    @Override
+    public String getName() {
+        return "MPK Mini Plus II";
     }
     
     @Override
@@ -29,7 +34,7 @@ public class MpkMiniPlusControllerExtensionDefinition extends ControllerExtensio
     
     @Override
     public int getNumMidiOutPorts() {
-        return 2;
+        return 1;
     }
     
     @Override
@@ -38,31 +43,27 @@ public class MpkMiniPlusControllerExtensionDefinition extends ControllerExtensio
         if (platformType == PlatformType.WINDOWS) {
             list.add(
                 new String[] {"MIDIIN2 (MPK mini Plus II)", "MPK mini Plus II"},
-                new String[] {"MIDIOUT2 (MPK mini Plus II)", "MPK mini Plus II"});
-        } else if (platformType == PlatformType.MAC) {
+                new String[] {"MIDIOUT2 (MPK mini Plus II)"});
             list.add(
                 new String[] {"MPK mini Plus II DAW Port", "MPK mini Plus II MIDI Port"},
-                new String[] {"MPK mini Plus II DAW Port", "MPK mini Plus II MIDI Port"});
-        } else if (platformType == PlatformType.LINUX) {
-            list.add(
-                new String[] {"MPK mini Plus II MPK mini Plus II DAW Por", "MPK mini IV MPK mini IV MIDI Po"},
-                new String[] {"MPK mini Plus II DAW Port", "MPK mini Plus II MIDI Port"});
+                new String[] {"MPK mini Plus II DAW Port"});
         }
+        list.add(
+            new String[] {"MIDIIN2 (MPK mini Plus II)", "MPK mini Plus II"},
+            new String[] {"MIDIOUT2 (MPK mini Plus II)"});
+        list.add(
+            new String[] {"MPK mini Plus II DAW Port", "MPK mini Plus II MIDI Port"},
+            new String[] {"MPK mini Plus II DAW Port"});
     }
     
     @Override
     public ControllerExtension createInstance(final ControllerHost host) {
-        return new MpkMk4ControllerExtension(this, host, MpkMk4ControllerExtension.Variant.MINI_PLUS);
+        return new MpkMk4ControllerExtension(this, host, MpkVariant.MINI_PLUS);
     }
     
     @Override
     public String getHelpFilePath() {
-        return "Controllers/Akai/MPK Mini Mk4.pdf";
-    }
-    
-    @Override
-    public String getName() {
-        return "MPK Mini IV";
+        return "Controllers/Akai/MPK Mini Plus II.pdf";
     }
     
     @Override
@@ -72,7 +73,7 @@ public class MpkMiniPlusControllerExtensionDefinition extends ControllerExtensio
     
     @Override
     public String getVersion() {
-        return "1.0";
+        return "0.9";
     }
     
     @Override
@@ -82,7 +83,7 @@ public class MpkMiniPlusControllerExtensionDefinition extends ControllerExtensio
     
     @Override
     public int getRequiredAPIVersion() {
-        return 24;
+        return 25;
     }
     
     

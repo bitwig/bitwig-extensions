@@ -19,6 +19,7 @@ public class RemotesControlHandler {
     private LayerId focusDeviceControl = LayerId.DEVICE_REMOTES;
     private LayerId encoderLayerMode = LayerId.DEVICE_REMOTES;
     private final BasicStringValue encoderModeValue = new BasicStringValue();
+    
     private final MixEncoderLayer mixerLayer;
     private final CursorTrackMixLayer cursorTrackMixerLayer;
     private int selectedEncoderMode = 0;
@@ -54,6 +55,16 @@ public class RemotesControlHandler {
         };
     }
     
+    public void updateDisplayState() {
+        switch (encoderLayerMode) {
+            case MIX_CONTROL -> mixerLayer.updateDisplay();
+            case TRACK_CONTROL -> cursorTrackMixerLayer.updateDisplay();
+            default -> {
+            }
+        }
+    }
+    
+    
     public CursorTrackMixLayer getCursorTrackMixerLayer() {
         return cursorTrackMixerLayer;
     }
@@ -86,6 +97,32 @@ public class RemotesControlHandler {
             selectDevice(inc);
         }
     }
+    
+    public void selectNextDevice() {
+        selectDevice(1);
+    }
+    
+    public void selectPreviousDevice() {
+        selectDevice(-1);
+    }
+    
+    
+    public boolean canSelectNextDevice() {
+        if (encoderLayerMode == LayerId.DEVICE_REMOTES) {
+            return this.cursorDevice.hasNext().get();
+        } else if (encoderLayerMode == LayerId.PROJECT_REMOTES || encoderLayerMode == LayerId.TRACK_REMOTES) {
+            return true;
+        }
+        return false;
+    }
+    
+    public boolean canSelectPreviousDevice() {
+        if (encoderLayerMode == LayerId.DEVICE_REMOTES || encoderLayerMode == LayerId.TRACK_REMOTES) {
+            return true;
+        }
+        return false;
+    }
+    
     
     public void selectDevice(final int inc) {
         if (encoderLayerMode == LayerId.DEVICE_REMOTES) {
@@ -186,4 +223,9 @@ public class RemotesControlHandler {
             focusDeviceControl = this.encoderLayerMode;
         }
     }
+    
+    public void setActive(boolean active) {
+        this.remotesControlLayer.setIsActive(active);
+    }
+    
 }

@@ -1,6 +1,7 @@
 package com.bitwig.extensions.controllers.akai.mpkmk4;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -13,7 +14,6 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkDisplayFont;
-import com.bitwig.extensions.controllers.akai.mpkmk4.display.ScreenRowState;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.StringUtil;
 import com.bitwig.extensions.framework.di.Component;
 import com.bitwig.extensions.framework.time.TimedEvent;
@@ -22,91 +22,115 @@ import com.bitwig.extensions.framework.values.Midi;
 @Component
 public class MpkMidiProcessor {
     
-    private static final String DEVICE_INQUIRY = "F0 7E 7F 06 01 F7";
-    private static String DEVICE_RESPONSE_HEADER;
+    private static final byte[] DEVICE_INQUIRY = {(byte) 0xF0, 0x7E, 0x7F, 0x06, 0x01, (byte) 0xF7};
+    // Product ID 03 hard coded, payload is ASCII "120.00"
+    private static final byte[] HELLO_MESSAGE = {
+        (byte) 0xF0, 0x47, 0x00, 0x03, 0x49, 0x00, 0x07, 0x31, 0x32, 0x30, 0x2E, 0x30, 0x30, 0x00, (byte) 0xF7
+    };
     
-    private static String IN_MODE_SYSEX;
-    private static String IN_SCREEN_OWNER_SHIP;
-    private static String IN_DAW_MODE_SYSEX;
-    private static String IN_SCREEN_STATUS;
-    
-    private static byte productId;
-    private static String akaiHeader;
-    private static String set_preset_daw;
-    private static String set_screen_owner;
-    private static String set_screen_fw;
-    private static String set_mode_clip;
-    private static String set_display_string;
-    private static String set_display_color;
-    private static String set_display_row;
-    private static String set_pad_notes_enabled;
-    private static String IN_SYSEX_HEADER;
-    private static String disable_pads;
-    private static final byte[] ROW_DISPLAY_COLOR = prepareFixedData(0x14, 9);
-    private static final byte[] CLEAR_LINE_TEXT = prepareFixedData(0x15, 4);
+    private static final int CMD_SCREEN_STATUS_X19 = 0x19;
+    private static final int CMD_PAD_MODE_X2A = 0x2A;
+    private static final int CMD_PLUGIN_DAW_X2D = 0x2D;
     
     private final ControllerHost host;
     private final MidiIn dawMidiIn;
     private final MidiOut dawMidiOut;
     private final MidiIn playMidiIn;
     private final GlobalStates globalStates;
+    private final MpkSysExCommands cmds;
     private LineDisplay mainDisplay;
     private final NoteInput noteInput;
-    protected final Queue<TimedEvent> timedEvents = new ConcurrentLinkedQueue<>();
     private final List<Runnable> updateListeners = new ArrayList<>();
     private final List<IntConsumer> modeChangeListeners = new ArrayList<>();
     private long lastScreenRequest = System.currentTimeMillis();
     private final List<NoteListener> noteListeners = new ArrayList<>();
-    
-    @FunctionalInterface
-    public interface NoteListener {
-        void playNote(int note, int vel);
-    }
-    
-    public void setHeader(final byte productId) {
-        MpkMidiProcessor.productId = productId;
-        akaiHeader = "F0 47 7F %02X ".formatted(productId);
-        set_preset_daw = akaiHeader + "2D 00 00 F7";
-        set_screen_owner = akaiHeader + "1C 00 01 02 F7";
-        set_screen_fw = akaiHeader + "1C 00 01 00 F7";
-        set_mode_clip = akaiHeader + "2A 00 01 01 F7";
-        set_display_string = akaiHeader + "10 ";
-        set_display_color = akaiHeader + "11 00 02 %02X %02X F7";
-        set_display_row = akaiHeader + "14 ";
-        set_pad_notes_enabled = akaiHeader + "2E 00 01 %s F7";
-        disable_pads = akaiHeader + "2B 00 01 01 F7";
-        DEVICE_RESPONSE_HEADER = "f07e7f060247%02x0019".formatted(productId);
-        IN_SYSEX_HEADER = "f0477f%02x".formatted(productId);
-        IN_MODE_SYSEX = IN_SYSEX_HEADER + "2a00";
-        IN_SCREEN_OWNER_SHIP = IN_SYSEX_HEADER + "19000100f7";
-        IN_DAW_MODE_SYSEX = IN_SYSEX_HEADER + "190000f7";
-        IN_SCREEN_STATUS = IN_SYSEX_HEADER + "190011";
-    }
+    private final LineState[] lineStates = new LineState[4];
+    protected final Queue<TimedEvent> timedEvents = new ConcurrentLinkedQueue<>();
     
     public MpkMidiProcessor(final ControllerHost host, final GlobalStates globalStates) {
         this.host = host;
         this.globalStates = globalStates;
+        this.cmds = globalStates.getVariant().buildCommands();  // ← single clean line
+        for (int i = 0; i < lineStates.length; i++) {
+            lineStates[i] = new LineState(i);
+        }
         this.dawMidiIn = host.getMidiInPort(0);
         noteInput = dawMidiIn.createNoteInput("MIDI", "89????", "99????", "A9????");
         noteInput.setShouldConsumeEvents(false);
         this.dawMidiOut = host.getMidiOutPort(0);
         this.playMidiIn = host.getMidiInPort(1);
-        switch (globalStates.getVariant()) {
-            case MINI -> setHeader((byte) 0x5D);
-            case MINI_PLUS -> setHeader((byte) 0x03);
-        }
         
         playMidiIn.createNoteInput("IN", "??????");
         this.dawMidiIn.setSysexCallback(this::handleSysEx);
         this.dawMidiIn.setMidiCallback(this::handleMidiIn);
     }
     
-    private static byte[] prepareFixedData(final int commandId, final int fixedPayLoad) {
+    private class LineState {
+        private String value;
+        private String tempValue;
+        private int tempColor;
+        
+        private MpkDisplayFont font;
+        private final int index;
+        public int color;
+        public long overrideTime;
+        
+        public LineState(int index) {
+            this.index = index;
+        }
+        
+        public void restore() {
+            sendText(index, font, value);
+            setDisplayColor(index, color);
+            resetState();
+        }
+        
+        
+        public void resetState() {
+            overrideTime = -1L;
+            this.tempValue = "";
+            this.tempColor = -1;
+        }
+        
+        public int getTempColor() {
+            return tempColor;
+        }
+        
+        public void setTempColor(final int tempColor) {
+            this.tempColor = tempColor;
+        }
+        
+        public String getTempValue() {
+            return tempValue;
+        }
+        
+        public void setTempValue(String value) {
+            this.tempValue = value;
+        }
+        
+        public boolean tempOverride() {
+            boolean isOverridden = overrideTime != -1;
+            overrideTime = System.currentTimeMillis();
+            return isOverridden;
+        }
+        
+        public boolean needsRestore(long timeNow) {
+            return overrideTime != -1 && (timeNow - overrideTime) > 1000;
+        }
+        
+    }
+    
+    @FunctionalInterface
+    public interface NoteListener {
+        void playNote(int note, int vel);
+    }
+    
+    private byte[] prepareFixedData(final int commandId, final int fixedPayLoad) {
         final byte[] data = new byte[8 + fixedPayLoad];
         data[0] = (byte) 0xF0;
         data[1] = (byte) 0x47;
         data[2] = (byte) 0x7F;
-        data[3] = productId;
+        data[3] = this.cmds.productId;
         data[4] = (byte) commandId;
         data[5] = (byte) 0x00;
         data[6] = (byte) fixedPayLoad;
@@ -115,11 +139,20 @@ public class MpkMidiProcessor {
     }
     
     public byte getProductId() {
-        return productId;
+        return cmds.productId;
     }
     
     public void init() {
-        dawMidiOut.sendSysex(DEVICE_INQUIRY);
+        sendSysEx(DEVICE_INQUIRY);
+    }
+    
+    /**
+     * Single exit point for all SysEx sent to the device. Block or log here.
+     */
+    public void sendSysEx(final byte[] data) {
+        dawMidiOut.sendSysex(data);
+        //        if (globalStates.getMpkBaseMode().get() == MpkBaseMode.DAW) {
+        //        }
     }
     
     public MidiIn getDawMidiIn() {
@@ -149,9 +182,14 @@ public class MpkMidiProcessor {
             }
         }
         final long diff = System.currentTimeMillis() - lastScreenRequest;
-        if (diff > 5800) {
-            dawMidiOut.sendSysex(set_screen_owner);
+        if (diff > 5800 && globalStates.getMpkBaseMode().get() == MpkBaseMode.DAW) {
+            sendSysEx(cmds.setScreenOwner);
             lastScreenRequest = now;
+        }
+        if (lineStates[0].needsRestore(now)) {
+            lineStates[0].restore();
+            lineStates[1].restore();
+            lineStates[2].restore();
         }
         host.scheduleTask(this::handlePing, 50);
     }
@@ -161,34 +199,46 @@ public class MpkMidiProcessor {
     }
     
     private void handleSysEx(final String data) {
-        if (data.startsWith(DEVICE_RESPONSE_HEADER)) {
+        final SysExMessage msg = SysExMessage.parse(data);
+        if (msg.isDeviceInquiryResponse(cmds.productId)) {
             MpkMk4ControllerExtension.println(" Connected !");
             startConnection();
-        } else if (data.startsWith(IN_SCREEN_OWNER_SHIP)) {
-            //MpkMk4ControllerExtension.println(" IN OWNERSHIP ");
-            //dawMidiOut.sendSysex(SET_SCREEN_OWNER);
-        } else if (data.startsWith(IN_SCREEN_STATUS)) {
-            updateListeners.forEach(l -> l.run());
-        } else if (data.startsWith(IN_MODE_SYSEX)) {
-            final int padMode = getValue(data, 7);
-            modeChangeListeners.forEach(l -> l.accept(padMode));
-        } else if (data.startsWith(IN_DAW_MODE_SYSEX)) {
-            //            final int modeValue = getValue(data, 6);
-            //            if (modeValue == 0) {
-            //                updateListeners.forEach(l -> l.run());
-            //            }
-        } else if (data.startsWith(IN_SYSEX_HEADER)) {
-            final int command = getValue(data, 4);
-            final int payload = getPayload(data);
-            final int value = getValue(data, 7);
-            MpkMk4ControllerExtension.println(" IN Command = %02X PL=%d v=%d", command, payload, value);
-        } else {
-            MpkMk4ControllerExtension.println(" SYSEX = %s", data);
+            return;
+        }
+        if (!msg.isAkai(cmds.productId)) {
+            MpkMk4ControllerExtension.println("  Non Akai SYSEX = %s", msg);
+            return;
+        }
+        
+        switch (msg.command()) {
+            case CMD_SCREEN_STATUS_X19 -> handleScreenMessage(msg);
+            
+            // TODO Restore MINI iv 0x2B command
+            case CMD_PAD_MODE_X2A -> {
+                final int padMode = msg.payload(0);  // TODO We need to Enum this
+                modeChangeListeners.forEach(l -> l.accept(padMode));
+            }
+            case CMD_PLUGIN_DAW_X2D -> {
+                final MpkBaseMode value = msg.payload(0) == 0 ? MpkBaseMode.DAW : MpkBaseMode.PLUGIN;
+                globalStates.getMpkBaseMode().set(value);
+                lastScreenRequest = 0;
+            }
+            default -> {
+                MpkMk4ControllerExtension.println("  Not Handled SYSEX cmd=%02X %s", msg.command(), msg);
+            }
         }
     }
     
-    public void setPadNotesEnabled(final boolean enabled) {
-        dawMidiOut.sendSysex(set_pad_notes_enabled.formatted(enabled ? "00" : "01"));
+    private void handleScreenMessage(final SysExMessage msg) {
+        if (msg.payloadLength() == 0) {
+            if (globalStates.getMpkBaseMode().get() == MpkBaseMode.DAW) {
+                sendSysEx(cmds.setScreenOwner);
+            }
+        }
+    }
+    
+    public void setPadMode(int mode) {
+        sendSysEx(cmds.setPadMode(mode));
     }
     
     public void addModeChangeListener(final IntConsumer listener) {
@@ -200,18 +250,20 @@ public class MpkMidiProcessor {
     }
     
     private void startConnection() {
-        dawMidiOut.sendSysex(set_preset_daw);
-        dawMidiOut.sendSysex(set_mode_clip);
-        dawMidiOut.sendSysex(set_screen_owner);
-        dawMidiOut.sendSysex(akaiHeader + "2B 00 00 F7");
-        dawMidiOut.sendSysex(akaiHeader + "3A 00 00 F7");
+        sendSysEx(cmds.setScreenOwner);
+        sendSysEx(HELLO_MESSAGE);
+        setPadMode(01);
+        sendSysEx(cmds.command(MpkSysExCommands.CMD_PADS_DISABLED));
+        // Request MODE
+        sendSysEx(cmds.command(MpkSysExCommands.CMD_PLUGIN_DAW));
+        sendSysEx(cmds.command(0x3A));
         setPadNotesEnabled(false);
         mainDisplay.updateCurrent();
         host.scheduleTask(this::handlePing, 50);
     }
     
     private void handleMidiIn(final int status, final int data1, final int data2) {
-        //MpkMk4ControllerExtension.println(" MIDI in %02X %02X %02X", status, data1, data2);
+        MpkMk4ControllerExtension.println(" MIDI in %02X %02X %02X", status, data1, data2);
         if (status == (Midi.NOTE_ON | 9) || status == (Midi.NOTE_OFF | 9)) {
             noteListeners.forEach(l -> l.playNote(data1, data2));
         }
@@ -223,53 +275,77 @@ public class MpkMidiProcessor {
     
     public void configureLine(final MpkDisplayFont font, final int lineIndex, final int justification,
         final Color foreGround, final Color background) {
-        final String sb = set_display_row + "00 09 " //
-            + "%02X ".formatted(font.getValue()) //
-            + "%02X ".formatted(lineIndex) //
-            + "%02X ".formatted(justification) //
-            + "%02X ".formatted(foreGround.getRed255() >> 3) //
-            + "%02X ".formatted(foreGround.getGreen255() >> 2) //
-            + "%02X ".formatted(foreGround.getBlue255() >> 3) //
-            + "%02X ".formatted(background.getRed255() >> 3) //
-            + "%02X ".formatted(background.getGreen255() >> 2) //
-            + "%02X ".formatted(background.getBlue255() >> 3) //
-            + "F7";
-        dawMidiOut.sendSysex(sb);
+        sendSysEx(cmds.configureLine(font, lineIndex, justification, foreGround, background));
     }
     
     public void setText(final int line, final MpkDisplayFont font, final String text) {
-        final StringBuilder sb = new StringBuilder(set_display_string);
-        final String asciiText = StringUtil.toAsciiDisplay(text, 31);
-        sb.append("%02X ".formatted(0));
-        final int length = asciiText.length();
-        sb.append("%02X ".formatted(length + 3));
-        sb.append("%02X ".formatted(font.getValue()));
-        sb.append("%02X ".formatted(line));
-        for (int i = 0; i < length; i++) {
-            sb.append("%02X ".formatted((int) asciiText.charAt(i)));
+        lineStates[line].font = font;
+        lineStates[line].value = text;
+        lineStates[line].resetState();
+        sendText(line, font, text);
+    }
+    
+    private void sendText(final int line, final MpkDisplayFont font, final String text) {
+        sendSysEx(cmds.setDisplayString(line, font, StringUtil.toAsciiDisplay(text, 31)));
+    }
+    
+    private static byte[] hexToBytes(final String hex) {
+        final int len = hex.length();
+        final byte[] buffer = new byte[len / 2 + 1];
+        int count = 0;
+        int i = 0;
+        while (i + 1 < len) {
+            final int hi = Character.digit(hex.charAt(i), 16);
+            if (hi < 0) { // skip spaces
+                i++;
+                continue;
+            }
+            final int lo = Character.digit(hex.charAt(i + 1), 16);
+            buffer[count++] = (byte) (hi << 4 | lo);
+            i += 2;
         }
-        sb.append("00 ");
-        sb.append("F7");
-        dawMidiOut.sendSysex(sb.toString());
-    }
-    
-    public void setRowDisplayColor(final ScreenRowState rowState) {
-    }
-    
-    public void clearLineText(final int lineIndex, final int red, final int green, final int blue) {
-    }
-    
-    public void sendSysEx(final byte[] data) {
-        dawMidiOut.sendSysex(data);
+        return Arrays.copyOf(buffer, count);
     }
     
     public void setDisplayColor(final int line, final int color) {
-        dawMidiOut.sendSysex(set_display_color.formatted(line, color));
+        lineStates[line].color = color;
+        sendSysEx(cmds.setDisplayColor(line, color));
+    }
+    
+    public void temporaryUpdate(final int lineIndex, final String value, final int colorIndex) {
+        LineState lineState = lineStates[lineIndex];
+        final boolean isOverridden = lineState.tempOverride();
+        if (!lineState.getTempValue().equals(value) || !isOverridden) {
+            sendText(lineIndex, MpkDisplayFont.PT24, value);
+            lineState.setTempValue(value);
+        }
+        if (lineState.getTempColor() != colorIndex || !isOverridden) {
+            sendSysEx(cmds.setDisplayColor(lineIndex, colorIndex));
+            lineState.setTempColor(colorIndex);
+        }
+    }
+    
+    public void resetTemps(int index) {
+        for (int i = 0; i < lineStates.length; i++) {
+            if (i != index) {
+                lineStates[i].resetState();
+            }
+        }
     }
     
     public void exit() {
-        dawMidiOut.sendSysex(set_screen_fw);
+        sendSysEx(cmds.setScreenFw);
         setPadNotesEnabled(true);
+    }
+    
+    public void setPadNotesEnabled(final boolean enabled) {
+        sendSysEx(cmds.setPadNotesEnabled(enabled));
+    }
+    
+    private static int getPayload(final String data) {
+        final int high = getValue(data, 5);
+        final int low = getValue(data, 6);
+        return high << 7 | low;
     }
     
     private static int getValue(final String data, final int byteOffset) {
@@ -282,12 +358,6 @@ public class MpkMidiProcessor {
             return Integer.parseInt(stringValue, 16);
         }
         return -1;
-    }
-    
-    private static int getPayload(final String data) {
-        final int high = getValue(data, 5);
-        final int low = getValue(data, 6);
-        return high << 7 | low;
     }
     
 }

@@ -15,7 +15,10 @@ public class LineDisplay {
         private String text = "";
         private int colorIndex = 0;
         private MpkDisplayFont fontStyle = MpkDisplayFont.PT24;
+        private boolean centered = true;
     }
+    
+    private Runnable resetCallback;
     
     private final Line[] lines;
     private boolean active;
@@ -27,6 +30,7 @@ public class LineDisplay {
             this.lines[i] = new Line();
             this.lines[i].fontStyle = fontStyle;
         }
+        this.resetCallback = this::updateCurrent;
     }
     
     public void setText(final int rowIndex, final String text, final int colorIndex) {
@@ -88,8 +92,21 @@ public class LineDisplay {
         this.active = active;
         if (active) {
             updateCurrent();
+        } else {
+            cancelTemporary();
         }
     }
+    
+    private void cancelTemporary() {
+        if (fallbackEvent != null) {
+            fallbackEvent.cancel();
+        }
+    }
+    
+    public void setResetCallback(final Runnable resetCallback) {
+        this.resetCallback = resetCallback;
+    }
+    
     
     public void updateCurrent() {
         for (int i = 0; i < lines.length; i++) {
@@ -111,15 +128,32 @@ public class LineDisplay {
         midiProcessor.queueEvent(fallbackEvent);
     }
     
+    public void switchTemporary(final LineDisplay display) {
+        if (fallbackEvent != null) {
+            fallbackEvent.cancel();
+        }
+        this.setActive(false);
+        display.setActive(true);
+        fallbackEvent = new TimedDelayEvent(
+            () -> {
+                this.setActive(true);
+                display.setActive(false);
+                this.resetCallback.run();
+            }, 1000);
+        midiProcessor.queueEvent(fallbackEvent);
+    }
+    
     private void resetLayer() {
         this.currentLayer = 0;
-        this.updateCurrent();
+        this.resetCallback.run();
         this.fallbackEvent = null;
     }
     
     public void temporaryInfo(final int layerIndex, final String line1, final String line2) {
-        activateTemporary(layerIndex);
-        showTemporary(layerIndex, line1, line2);
+        if (active) {
+            activateTemporary(layerIndex);
+            showTemporary(layerIndex, line1, line2);
+        }
     }
     
     public void showTemporary(final int layerIndex, final String line1, final String line2) {

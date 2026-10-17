@@ -27,7 +27,7 @@ public class MpkMultiStateButton extends MpkButton {
         hwButton.setBackgroundLight(light);
     }
     
-    private void updateState(final InternalHardwareLightState internalHardwareLightState) {
+    public void updateState(final InternalHardwareLightState internalHardwareLightState) {
         if (internalHardwareLightState instanceof final MpkColor state) {
             midiProcessor.sendMidi(Midi.NOTE_ON | state.getState(), midiId, state.getColorIndex());
         } else if (internalHardwareLightState instanceof final MpkMonoState state) {

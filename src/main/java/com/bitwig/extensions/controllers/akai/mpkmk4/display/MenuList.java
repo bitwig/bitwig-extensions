@@ -68,7 +68,11 @@ public class MenuList {
             if (entry.getTitle() == null) {
                 menuDisplay.setText(i, "%s".formatted(entry.getTitle()));
             } else {
-                menuDisplay.setText(i, "%s: %s".formatted(entry.getTitle(), value));
+                if (entry.hasMod()) {
+                    menuDisplay.setText(i, "%s: %s".formatted(entry.getTitle(), value));
+                } else {
+                    menuDisplay.setText(i, "%s".formatted(entry.getTitle()));
+                }
             }
         }
     }

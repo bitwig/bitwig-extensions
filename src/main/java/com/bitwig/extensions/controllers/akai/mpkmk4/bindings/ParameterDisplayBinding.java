@@ -9,8 +9,8 @@ public class ParameterDisplayBinding extends Binding<Parameter, ParameterValues>
     
     private final ParameterValues paramValues;
     private final int index;
-    private String name = "";
     private String displayValue = "";
+    private String name = "";
     
     public ParameterDisplayBinding(final Parameter source, final Encoder encoder, final ParameterValues target,
         final int index) {
@@ -22,39 +22,41 @@ public class ParameterDisplayBinding extends Binding<Parameter, ParameterValues>
         source.value().displayedValue().addValueObserver(this::handleDisplayValue);
         source.name().addValueObserver(this::handleName);
         this.displayValue = source.displayedValue().get();
-        this.name = source.name().get();
     }
     
     private void handleName(final String name) {
         this.name = name;
-        paramValues.setNames(index, name);
-        invokeUpdate();
+        if (isActive()) {
+            paramValues.setNames(index, name);
+            paramValues.update();
+        }
     }
     
     private void handleDisplayValue(final String value) {
         this.displayValue = value;
-        paramValues.setValue(index, displayValue);
-        invokeUpdate();
-    }
-    
-    private void handleIsUpdating(final boolean updating) {
-        if (updating) {
-            invokeUpdate();
+        if (isActive()) {
+            paramValues.setValue(index, displayValue);
+            paramValues.update();
         }
     }
     
-    private void invokeUpdate() {
-        if (isActive()) {
+    private void handleIsUpdating(final boolean updating) {
+        if (updating && isActive()) {
             paramValues.update();
         }
     }
     
     @Override
     protected void deactivate() {
+        paramValues.setValue(index, "");
+        paramValues.setNames(index, "");
     }
     
     @Override
     protected void activate() {
+        paramValues.setValue(index, displayValue);
+        paramValues.setNames(index, name);
+        paramValues.update();
     }
     
     public void update() {

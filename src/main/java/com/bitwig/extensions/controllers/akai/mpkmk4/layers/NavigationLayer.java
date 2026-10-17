@@ -8,6 +8,7 @@ import com.bitwig.extensions.controllers.akai.apc.common.control.ClickEncoder;
 import com.bitwig.extensions.controllers.akai.mpkmk4.GlobalStates;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkFocusClip;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
+import com.bitwig.extensions.controllers.akai.mpkmk4.MpkVariant;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkButton;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkCcAssignment;
@@ -25,7 +26,6 @@ public class NavigationLayer extends Layer {
     private final TrackBank trackBank;
     private final Scene focusScene;
     private final LineDisplay display;
-    private final LineDisplay menuDisplay;
     private int sceneColor = 0;
     
     private final MpkFocusClip focusClip;
@@ -47,7 +47,6 @@ public class NavigationLayer extends Layer {
             }
         });
         display = hwElements.getMainLineDisplay();
-        menuDisplay = hwElements.getMenuLineDisplay();
         scenesBank = viewControl.getFocusTrackBank().sceneBank();
         scenesBank.setIndication(true);
         scenesBank.scrollPosition().addValueObserver(this::handleSceneScrollPosition);
@@ -55,24 +54,66 @@ public class NavigationLayer extends Layer {
         focusScene.color().addValueObserver((r, g, b) -> this.updateSceneColor(MpkColorLookup.rgbToIndex(r, g, b)));
         focusScene.name().addValueObserver(this::handleSceneNameChanged);
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
-        final MpkMultiStateButton leftButton = hwElements.getButton(MpkCcAssignment.BANK_LEFT);
-        final MpkMultiStateButton rightButton = hwElements.getButton(MpkCcAssignment.BANK_RIGHT);
-        leftButton.bindLightOnOff(this, cursorTrack.hasPrevious());
-        leftButton.bindRepeatHold(this, () -> cursorTrack.selectPrevious());
-        rightButton.bindLightOnOff(this, cursorTrack.hasNext());
-        rightButton.bindRepeatHold(this, () -> cursorTrack.selectNext());
         
-        leftButton.bindLightOnOff(shiftLayer, () -> remotesControlHandler.canNavigateLeft());
-        leftButton.bindRepeatHold(shiftLayer, () -> remotesControlHandler.navigateLeft());
-        rightButton.bindLightOnOff(shiftLayer, () -> remotesControlHandler.canNavigateRight());
-        rightButton.bindRepeatHold(shiftLayer, () -> remotesControlHandler.navigateRight());
-        
+        if (globalStates.getVariant().getLayoutStyle() == MpkVariant.LayoutStyle.STANDARD) {
+            bindStandard(hwElements, cursorTrack);
+        } else {
+            bindMiniPlus(hwElements, cursorTrack);
+        }
+    }
+    
+    private void bindStandard(MpkHwElements hwElements, final CursorTrack cursorTrack) {
         final ClickEncoder encoder = hwElements.getMainEncoder();
         final MpkButton encoderButton = hwElements.getMainEncoderPressButton();
+        final MpkMultiStateButton leftButton = hwElements.getButton(MpkCcAssignment.BANK_LEFT);
+        final MpkMultiStateButton rightButton = hwElements.getButton(MpkCcAssignment.BANK_RIGHT);
+        
         encoder.bind(this, this::sceneSelection);
-        encoderButton.bindIsPressed(this, this::handleEncoderPressed);
+        encoderButton.bindIsPressed(this, this::handleSceneLaunch);
         encoder.bind(shiftLayer, remotesControlHandler::handleShiftEncoderTurn);
-        encoderButton.bindIsPressed(shiftLayer, this::changeMode);
+        encoderButton.bindIsPressed(shiftLayer, this::changeModeMini);
+        leftButton.bindLightOnOff(this, cursorTrack.hasPrevious());
+        leftButton.bindRepeatHold(this, cursorTrack::selectPrevious);
+        rightButton.bindLightOnOff(this, cursorTrack.hasNext());
+        rightButton.bindRepeatHold(this, cursorTrack::selectNext);
+        
+        leftButton.bindLightOnOff(shiftLayer, remotesControlHandler::canNavigateLeft);
+        leftButton.bindRepeatHold(shiftLayer, remotesControlHandler::navigateLeft);
+        rightButton.bindLightOnOff(shiftLayer, remotesControlHandler::canNavigateRight);
+        rightButton.bindRepeatHold(shiftLayer, remotesControlHandler::navigateRight);
+    }
+    
+    private void bindMiniPlus(MpkHwElements hwElements, final CursorTrack cursorTrack) {
+        final ClickEncoder encoder = hwElements.getMainEncoder();
+        final MpkButton encoderButton = hwElements.getMainEncoderPressButton();
+        final MpkMultiStateButton leftButton = hwElements.getButton(MpkCcAssignment.BANK_LEFT);
+        final MpkMultiStateButton rightButton = hwElements.getButton(MpkCcAssignment.BANK_RIGHT);
+        final MpkMultiStateButton abChangeButton = hwElements.getButton(MpkCcAssignment.BANK_AB_PLUS);
+        
+        encoder.bind(this, inc -> moveTrack(cursorTrack, inc));
+        encoder.bind(shiftLayer, this::sceneSelection);
+        
+        abChangeButton.bindIsPressed(shiftLayer, this::changeMode);
+        
+        rightButton.bindRepeatHold(this, remotesControlHandler::selectNextDevice);
+        rightButton.bindLightOnOff(this, remotesControlHandler::canSelectNextDevice);
+        leftButton.bindRepeatHold(this, remotesControlHandler::selectPreviousDevice);
+        leftButton.bindLightOnOff(this, remotesControlHandler::canSelectPreviousDevice);
+        
+        leftButton.bindRepeatHold(shiftLayer, remotesControlHandler::navigateLeft);
+        rightButton.bindRepeatHold(shiftLayer, remotesControlHandler::navigateRight);
+        leftButton.bindLightOnOff(shiftLayer, remotesControlHandler::canNavigateLeft);
+        rightButton.bindLightOnOff(shiftLayer, remotesControlHandler::canNavigateRight);
+        encoderButton.bindIsPressed(this, this::handleSceneLaunch);
+        encoderButton.bindIsPressed(shiftLayer, this::changeModeDrum);
+    }
+    
+    private void moveTrack(final CursorTrack cursorTrack, final int inc) {
+        if (inc < 0) {
+            cursorTrack.selectPrevious();
+        } else {
+            cursorTrack.selectNext();
+        }
     }
     
     private void updateSceneColor(final int colorIndex) {
@@ -97,19 +138,40 @@ public class NavigationLayer extends Layer {
         focusClip.setSelectedSlotIndex(pos);
     }
     
-    private void changeMode(final Boolean pressed) {
+    private void changeModeDrum(final Boolean pressed) {
         if (pressed) {
             if (layerCollection.getPadMode().get() == LayerId.DRUM_PAD_CONTROL) {
                 final Layer menuLayer = layerCollection.get(LayerId.PAD_MENU_LAYER);
                 menuLayer.setIsActive(true);
-            } else {
-                remotesControlHandler.incrementEncoderMode(1, true);
-                display.temporaryInfo(1, "Knob Mode", remotesControlHandler.getEncoderModeValue().get());
             }
         }
     }
     
-    private void handleEncoderPressed(final Boolean pressed) {
+    private void changeModeMini(final boolean pressed) {
+        if (!pressed) {
+            return;
+        }
+        if (layerCollection.getPadMode().get() == LayerId.DRUM_PAD_CONTROL) {
+            final Layer menuLayer = layerCollection.get(LayerId.PAD_MENU_LAYER);
+            menuLayer.setIsActive(true);
+        } else {
+            changeMode(true);
+        }
+    }
+    
+    private void changeMode(final Boolean pressed) {
+        if (!pressed) {
+            return;
+        }
+        remotesControlHandler.incrementEncoderMode(1, true);
+        final PadMenuLayer padMenuLayer = (PadMenuLayer) layerCollection.get(LayerId.PAD_MENU_LAYER);
+        if (padMenuLayer.isActive()) {
+            padMenuLayer.switchModeTemporary();
+        }
+        display.temporaryInfo(1, "Knob Mode", remotesControlHandler.getEncoderModeValue().get());
+    }
+    
+    private void handleSceneLaunch(final Boolean pressed) {
         if (!pressed) {
             return;
         }
@@ -129,5 +191,10 @@ public class NavigationLayer extends Layer {
     protected void onDeactivate() {
         this.shiftLayer.setIsActive(false);
         layerCollection.get(LayerId.PAD_MENU_LAYER).setIsActive(false);
+    }
+    
+    @Override
+    protected void onActivate() {
+        super.onActivate();
     }
 }

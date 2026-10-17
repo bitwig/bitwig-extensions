@@ -19,6 +19,7 @@ public class CursorTrackMixLayer extends EncoderLayer {
     private int sendsScrollPosition = 0;
     private final LineDisplay display;
     private boolean sendsChangedAction = false;
+    private int sendsCount;
     
     public CursorTrackMixLayer(final Layers layers, final MpkHwElements hwElements,
         final MpkMidiProcessor midiProcessor, final MpkViewControl viewControl) {
@@ -88,7 +89,15 @@ public class CursorTrackMixLayer extends EncoderLayer {
         updateDisplay(sendBank.itemCount().get());
     }
     
+    public void updateDisplay() {
+        updateDisplay(this.sendsCount);
+    }
+    
     private void updateDisplay(final int sendsCount) {
+        if (!isActive()) {
+            return;
+        }
+        this.sendsCount = sendsCount;
         display.setText(1, "Track");
         if (sendsCount == 0) {
             display.setText(2, "No Sends");

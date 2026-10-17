@@ -3,7 +3,6 @@ package com.bitwig.extensions.controllers.akai.mpkmk4.layers;
 import java.util.List;
 
 import com.bitwig.extension.controller.api.ClipLauncherSlot;
-import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.SettableBooleanValue;
 import com.bitwig.extension.controller.api.Track;
@@ -12,9 +11,7 @@ import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkHwElements;
 import com.bitwig.extensions.controllers.akai.mpkmk4.MpkViewControl;
 import com.bitwig.extensions.controllers.akai.mpkmk4.controls.MpkMultiStateButton;
-import com.bitwig.extensions.controllers.akai.mpkmk4.display.LineDisplay;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColor;
-import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkColorLookup;
 import com.bitwig.extensions.controllers.akai.mpkmk4.display.MpkMonoState;
 import com.bitwig.extensions.framework.Layer;
 import com.bitwig.extensions.framework.di.Component;
@@ -50,13 +47,6 @@ public class ClipLauncher {
             }
         }
         clipLauncherOverdub = transport.isClipLauncherOverdubEnabled();
-        final CursorTrack cursorTrack = viewControl.getCursorTrack();
-        final LineDisplay mainDisplay = hwElements.getMainLineDisplay();
-        cursorTrack.name().addValueObserver(name -> mainDisplay.setText(0, 0, name));
-        cursorTrack.color().addValueObserver((r, g, b) -> {
-            final int index = MpkColorLookup.rgbToIndex(r, g, b);
-            mainDisplay.setColorIndex(0, 0, index);
-        });
     }
     
     private void handleClipPress(final Boolean pressed, final ClipLauncherSlot clipSlot) {

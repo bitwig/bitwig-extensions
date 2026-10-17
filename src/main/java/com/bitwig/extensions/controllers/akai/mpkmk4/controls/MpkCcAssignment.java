@@ -11,7 +11,9 @@ public enum MpkCcAssignment {
     BANK_RIGHT(0x51), //
     BANK_AB(0xC), //
     TAP_TEMPO(0x52), //
-    NOTE_REPEAT(0x52);
+    BANK_AB_PLUS(0x53), //
+    NOTE_REPEAT(0x52),
+    BPM_EDIT(0x78);
     
     private final int ccNr;
     

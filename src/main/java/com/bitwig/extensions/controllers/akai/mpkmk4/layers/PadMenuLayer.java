@@ -94,9 +94,11 @@ public class PadMenuLayer extends Layer {
         
         final CursorTrack cursorTrack = viewControl.getCursorTrack();
         leftButton.bindLightOnOff(internalShiftLayer, cursorTrack.hasPrevious());
-        leftButton.bindRepeatHold(internalShiftLayer, () -> cursorTrack.selectPrevious());
+        leftButton.bindRepeatHold(internalShiftLayer, () -> this.navigateTracks(-1, cursorTrack));
         rightButton.bindLightOnOff(internalShiftLayer, cursorTrack.hasNext());
-        rightButton.bindRepeatHold(internalShiftLayer, () -> cursorTrack.selectNext());
+        rightButton.bindRepeatHold(internalShiftLayer, () -> this.navigateTracks(1, cursorTrack));
+        
+        menuDisplay.setResetCallback(this::restoreMenuDisplay);
         
         states.getShiftHeld().addValueObserver(shift -> {
             if (isActive()) {
@@ -104,6 +106,21 @@ public class PadMenuLayer extends Layer {
             }
         });
         layerCollection.getPadMode().addValueObserver(this::handlePadModChange);
+    }
+    
+    private void navigateTracks(int dir, CursorTrack cursorTrack) {
+        if (dir > 0) {
+            cursorTrack.selectNext();
+        } else {
+            cursorTrack.selectPrevious();
+        }
+        menuDisplay.switchTemporary(display);
+    }
+    
+    private void restoreMenuDisplay() {
+        if (isActive()) {
+            currentMenuList.updateDisplay(menuDisplay);
+        }
     }
     
     private void handleHasDrumPadsChanged(final boolean hasDrumPads) {
@@ -143,6 +160,10 @@ public class PadMenuLayer extends Layer {
         }
     }
     
+    public void switchModeTemporary() {
+        menuDisplay.switchTemporary(display);
+    }
+    
     private void handleEncoderButton(final boolean pressed) {
         if (!pressed) {
             return;
@@ -158,7 +179,6 @@ public class PadMenuLayer extends Layer {
             }
         }
     }
-    
     
     @Override
     protected void onActivate() {
@@ -178,4 +198,5 @@ public class PadMenuLayer extends Layer {
         display.setActive(true);
         internalShiftLayer.setIsActive(false);
     }
+    
 }

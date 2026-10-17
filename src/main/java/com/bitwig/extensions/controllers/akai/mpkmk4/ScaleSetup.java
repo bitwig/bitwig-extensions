@@ -83,9 +83,20 @@ public class ScaleSetup {
             final int note = baseNote.get() + octave * 12 + intervals[i % intervals.length];
             if (note < 128) {
                 result.add(note);
+            } else {
+                result.add(-1);
             }
         }
         return result;
+    }
+    
+    public void adjustToRange(int len) {
+        final int[] intervals = scale.get().getIntervals();
+        final int octave = octaveOffset.get() + len / intervals.length;
+        final int note = baseNote.get() + (octave + 1) * 12 + intervals[(len - 1) % intervals.length];
+        if (note > 127) {
+            octaveOffset.increment(-1);
+        }
     }
     
     public boolean[] getBaseNotes(final int len) {

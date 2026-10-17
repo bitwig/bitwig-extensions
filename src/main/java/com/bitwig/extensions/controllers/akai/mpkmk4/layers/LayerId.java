@@ -4,6 +4,8 @@ public enum LayerId {
     MAIN,
     CLIP_LAUNCHER,
     TRACK_PAD_CONTROL,
+    MUTE_SOLO_CONTROL,
+    MIXER_PAD_CONTROL,
     DRUM_PAD_CONTROL,
     DEVICE_REMOTES(true),
     PROJECT_REMOTES(true),
@@ -11,9 +13,11 @@ public enum LayerId {
     TRACK_CONTROL,
     MIX_CONTROL,
     NAVIGATION,
+    PLUGIN_NAVIGATION,
     PAD_MENU_LAYER,
     SHIFT,
-    OVER_LAYER;
+    OVER_LAYER,
+    BPM_LAYER;
     
     private final boolean controlsDevice;
     
