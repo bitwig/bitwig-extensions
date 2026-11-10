@@ -471,7 +471,7 @@ public class ArturiaKeylabEssentialControllerExtension extends ControllerExtensi
          int channel = data.getChannel();
          int value = data.getData2() << 7 | data.getData1();
 
-         if (channel <= 9)
+         if (channel < mDeviceEnvelopes.getParameterCount())
          {
             mDeviceEnvelopes.getParameter(channel).set(value, 16384);
          }
