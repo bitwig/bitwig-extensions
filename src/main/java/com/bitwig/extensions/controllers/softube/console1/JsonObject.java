@@ -8,8 +8,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class JsonObject {
-    public static final Pattern DIGIT = Pattern.compile("^-?\\d+$");
-    public static final Pattern FLOAT = Pattern.compile("^[-+]?[0-9]*\\.?[0-9]*$");
+    /** At most nine digits, so that it fits an int; a longer one is read as a double. */
+    public static final Pattern DIGIT = Pattern.compile("^-?\\d{1,9}$");
+    public static final Pattern FLOAT = Pattern.compile("^[-+]?([0-9]+\\.?[0-9]*|\\.[0-9]+)$");
     private final Map<String, Object> data = new HashMap<>();
     
     public Object getValue(final String key) {

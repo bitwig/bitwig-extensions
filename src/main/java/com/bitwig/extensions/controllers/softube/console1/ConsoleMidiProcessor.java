@@ -81,6 +81,10 @@ public class ConsoleMidiProcessor {
     private void handleJson(final int port, final String json) {
         final JsonParser parser = new JsonParser(json);
         final JsonObject obj = parser.parse();
+        if (obj == null) {
+            println("MALFORMED JSON : \n%s", json);
+            return;
+        }
         //host.println(" JSON " + json);
         if (obj.contains("trackId")) {
             trackSlotControl.update(obj);

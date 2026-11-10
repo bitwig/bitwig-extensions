@@ -3,11 +3,17 @@ package com.bitwig.extensions.controllers.softube.console1;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import java.util.regex.Pattern;
 
 public class JsonParser {
     
+    /** Not JSON, but the console sends -Infinity for a level that is off. */
+    private static final Pattern NON_FINITE = Pattern.compile("^-?Infinity$|^NaN$");
+    
     private final String input;
     private int pos = 0;
+    private int depth = 0;
+    private boolean malformed = false;
     
     private Token token = Token.NONE;
     private JsonObject current;
@@ -68,11 +74,12 @@ public class JsonParser {
         this.input = input;
     }
     
+    /** The root object, or null when the input has none or is cut short or corrupted. */
     public JsonObject parse() {
         final JsonObject root = new JsonObject();
         stack.push(root);
         current = root;
-        while (pos < input.length()) {
+        while (pos < input.length() && !malformed) {
             final char c = input.charAt(pos);
             switch (token) {
                 case NONE -> handleNone(c);
@@ -83,16 +90,26 @@ public class JsonParser {
             }
             //System.out.println(" <%c> %s".formatted(c,token));
             pos++;
+            if (token != Token.NONE && depth == 0) {
+                return malformed ? null : root;
+            }
         }
-        return root;
+        return null;
     }
     
     private void readValue(final char c) {
         if (c == ',') {
+            if (!valueIsScalar()) {
+                return;
+            }
             current.set(key.toString().trim(), value.toString().trim());
             token = Token.OBJECT;
         } else if (c == '}') {
+            if (!valueIsScalar()) {
+                return;
+            }
             current.set(key.toString().trim(), value.toString().trim());
+            depth--;
             if (!keyStack.isEmpty()) {
                 current.set(key.toString().trim(), value.toString().trim());
                 final String keyPrev = keyStack.pop();
@@ -102,13 +119,25 @@ public class JsonParser {
             }
             token = Token.OBJECT;
         } else if (c == '{') {
+            if (!value.toString().isBlank()) {
+                malformed = true;
+                return;
+            }
+            depth++;
             keyStack.push(key.toString().trim());
             stack.push(current);
             current = new JsonObject();
             token = Token.OBJECT;
         } else if (c == '[') {
+            if (!value.toString().isBlank()) {
+                malformed = true;
+                return;
+            }
             final Extract extract = extractArrayContent();
             final List<Object> list = extract.elements().stream().map(this::readElement).toList();
+            if (malformed) {
+                return;
+            }
             current.set(key.toString().trim(), list);
             pos = extract.nextPos;
             token = Token.OBJECT;
@@ -117,8 +146,33 @@ public class JsonParser {
         }
     }
     
+    /** Marks the input malformed unless the value read so far is a string, a literal or a number. */
+    private boolean valueIsScalar() {
+        if (isScalar(value.toString().trim())) {
+            return true;
+        }
+        malformed = true;
+        return false;
+    }
+    
+    private static boolean isScalar(final String strValue) {
+        return strValue.length() >= 2 && strValue.startsWith("\"") && strValue.endsWith("\"") //
+            || "true".equals(strValue) || "false".equals(strValue) || "null".equals(strValue) //
+            || JsonObject.DIGIT.matcher(strValue).matches() || JsonObject.FLOAT.matcher(strValue).matches() //
+            || NON_FINITE.matcher(strValue).matches();
+    }
+    
     private Object readElement(final String strValue) {
-        if (strValue.startsWith("\"") && strValue.endsWith("\"")) {
+        if (strValue.startsWith("{")) {
+            final JsonObject object = new JsonParser(strValue).parse();
+            if (object == null) {
+                malformed = true;
+            }
+            return object;
+        } else if (!isScalar(strValue)) {
+            malformed = true;
+            return strValue;
+        } else if (strValue.startsWith("\"") && strValue.endsWith("\"")) {
             return strValue.substring(1, strValue.length() - 1);
         } else if ("true".equals(strValue)) {
             return Boolean.TRUE;
@@ -128,9 +182,6 @@ public class JsonParser {
             return Integer.parseInt(strValue);
         } else if (JsonObject.FLOAT.matcher(strValue).matches()) {
             return Double.parseDouble(strValue);
-        } else if (strValue.startsWith("{")) {
-            final JsonParser parser = new JsonParser(strValue);
-            return parser.parse();
         }
         return strValue;
     }
@@ -200,6 +251,8 @@ public class JsonParser {
         if (c == ':') {
             token = Token.VALUE;
             value = new StringBuilder();
+        } else if (!isWhitespace(c)) {
+            malformed = true;
         }
     }
     
@@ -215,13 +268,22 @@ public class JsonParser {
         if (c == '\"') {
             token = Token.START_KEY;
             key = new StringBuilder();
+        } else if (c == '}') {
+            depth--;
+        } else if (c != ',' && !isWhitespace(c)) {
+            malformed = true;
         }
     }
     
     private void handleNone(final char c) {
         if (c == '{') {
             token = Token.OBJECT;
+            depth = 1;
         }
+    }
+    
+    private static boolean isWhitespace(final char c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r';
     }
     
 }
