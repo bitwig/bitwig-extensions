@@ -1,7 +1,7 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk3.display;
 
 import com.bitwig.extensions.controllers.arturia.keylab.mk3.MidiProcessor;
-import com.bitwig.extensions.controllers.arturia.keylab.mk3.SysExUtil;
+import com.bitwig.extensions.controllers.arturia.common.SysExUtil;
 import com.bitwig.extensions.controllers.arturia.keylab.mk3.color.RgbColor;
 
 public class SysExBuilder {
