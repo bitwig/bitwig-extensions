@@ -119,6 +119,21 @@ public enum ButtonId
       return values()[SELECT1.ordinal() + index];
    }
 
+   public static ButtonId solo(final int index)
+   {
+      return values()[SOLO1.ordinal() + index];
+   }
+
+   public static ButtonId mute(final int index)
+   {
+      return values()[MUTE1.ordinal() + index];
+   }
+
+   public static ButtonId recordArm(final int index)
+   {
+      return values()[RECORD_ARM1.ordinal() + index];
+   }
+
    public int getSysexID()
    {
       return mSysexId;

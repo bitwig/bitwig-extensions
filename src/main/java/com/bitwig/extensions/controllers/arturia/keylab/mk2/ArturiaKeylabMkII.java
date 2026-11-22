@@ -314,33 +314,14 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       layer.bindPressed(ButtonId.UNDO, mApplication.undoAction());
    }
 
-   private void bindTrackButtons(final Layer layer) {
-      layer.bindToggle(ButtonId.SOLO1, mCursorTrack.solo());
-      layer.bindToggle(ButtonId.SOLO2, mCursorTrack.solo());
-      layer.bindToggle(ButtonId.SOLO3, mCursorTrack.solo());
-      layer.bindToggle(ButtonId.SOLO4, mCursorTrack.solo());
-      layer.bindToggle(ButtonId.SOLO5, mCursorTrack.solo());
-      layer.bindToggle(ButtonId.SOLO6, mCursorTrack.solo());
-      layer.bindToggle(ButtonId.SOLO7, mCursorTrack.solo());
-      layer.bindToggle(ButtonId.SOLO8, mCursorTrack.solo());
-
-      layer.bindToggle(ButtonId.MUTE1, mCursorTrack.mute());
-      layer.bindToggle(ButtonId.MUTE2, mCursorTrack.mute());
-      layer.bindToggle(ButtonId.MUTE3, mCursorTrack.mute());
-      layer.bindToggle(ButtonId.MUTE4, mCursorTrack.mute());
-      layer.bindToggle(ButtonId.MUTE5, mCursorTrack.mute());
-      layer.bindToggle(ButtonId.MUTE6, mCursorTrack.mute());
-      layer.bindToggle(ButtonId.MUTE7, mCursorTrack.mute());
-      layer.bindToggle(ButtonId.MUTE8, mCursorTrack.mute());
-
-      layer.bindToggle(ButtonId.RECORD_ARM1, mCursorTrack.arm());
-      layer.bindToggle(ButtonId.RECORD_ARM2, mCursorTrack.arm());
-      layer.bindToggle(ButtonId.RECORD_ARM3, mCursorTrack.arm());
-      layer.bindToggle(ButtonId.RECORD_ARM4, mCursorTrack.arm());
-      layer.bindToggle(ButtonId.RECORD_ARM5, mCursorTrack.arm());
-      layer.bindToggle(ButtonId.RECORD_ARM6, mCursorTrack.arm());
-      layer.bindToggle(ButtonId.RECORD_ARM7, mCursorTrack.arm());
-      layer.bindToggle(ButtonId.RECORD_ARM8, mCursorTrack.arm());
+   private void bindTrackButtons(final Layer layer)
+   {
+      for (int i = 0; i < 8; i++)
+      {
+         layer.bindToggle(ButtonId.solo(i), mCursorTrack.solo());
+         layer.bindToggle(ButtonId.mute(i), mCursorTrack.mute());
+         layer.bindToggle(ButtonId.recordArm(i), mCursorTrack.arm());
+      }
    }
 
    private void initDAWLayer()
