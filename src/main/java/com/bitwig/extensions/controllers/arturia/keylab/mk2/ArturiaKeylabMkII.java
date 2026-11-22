@@ -318,9 +318,9 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    {
       for (int i = 0; i < 8; i++)
       {
-         layer.bindToggle(ButtonId.solo(i), mCursorTrack.solo());
-         layer.bindToggle(ButtonId.mute(i), mCursorTrack.mute());
-         layer.bindToggle(ButtonId.recordArm(i), mCursorTrack.arm());
+         layer.bindToggle(ButtonId.solo(i), mTrackBank.getItemAt(i).solo());
+         layer.bindToggle(ButtonId.mute(i), mTrackBank.getItemAt(i).mute());
+         layer.bindToggle(ButtonId.recordArm(i), mTrackBank.getItemAt(i).arm());
       }
    }
 
