@@ -1,6 +1,5 @@
 package com.bitwig.extensions.controllers.arturia.keylab.mk2;
 
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.bitwig.extension.api.Color;
@@ -18,25 +17,17 @@ import com.bitwig.extension.controller.api.ClipLauncherSlot;
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
 import com.bitwig.extension.controller.api.ContinuousHardwareControl;
 import com.bitwig.extension.controller.api.ControllerHost;
-import com.bitwig.extension.controller.api.CursorBrowserFilterItem;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareControlType;
-import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.HardwareTextDisplay;
 import com.bitwig.extension.controller.api.MasterTrack;
-import com.bitwig.extension.controller.api.MidiExpressions;
-import com.bitwig.extension.controller.api.MidiIn;
-import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 import com.bitwig.extension.controller.api.NoteInput;
-import com.bitwig.extension.controller.api.OnOffHardwareLight;
-import com.bitwig.extension.controller.api.PianoKeyboard;
 import com.bitwig.extension.controller.api.PopupBrowser;
 import com.bitwig.extension.controller.api.RelativeHardwareControl;
-import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 import com.bitwig.extension.controller.api.Scene;
 import com.bitwig.extension.controller.api.SceneBank;
 import com.bitwig.extension.controller.api.Track;
@@ -55,8 +46,6 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
    private final Color ORANGE = Color.fromRGB(1.f, 0.5f, 0.f);
 
    private final Color BLUEY = Color.fromRGB(0.f, 0.5f, 1.f);
-
-   private final Color GREEN = Color.fromRGB(0.f, 1.0f, 0.f);
 
    private final Color RED = Color.fromRGB(1.f, 0.0f, 0.f);
 
@@ -111,6 +100,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
       mPopupBrowser = host.createPopupBrowser();
       mPopupBrowser.exists().markInterested();
+      mPopupBrowser.shouldAudition().markInterested();
 
       mBrowserResult = mPopupBrowser.resultsColumn().createCursorItem();
       mBrowserCategory = mPopupBrowser.categoryColumn().createCursorItem();
@@ -202,7 +192,10 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
       mPopupBrowser.exists().addValueObserver(exists -> {
          if (exists)
+         {
+            mPopupBrowser.shouldAudition().set(false);
             mBrowserLayer.activate();
+         }
          else
             mBrowserLayer.deactivate();
       });
@@ -210,41 +203,17 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
    private void initHardwareSurface()
    {
-      mHardwareSurface = getHost().createHardwareSurface();
-
-      final PianoKeyboard pianoKeyboard = mHardwareSurface.createPianoKeyboard("piano", mNumberOfKeys, 3, 0);
-      pianoKeyboard.setMidiIn(getHost().getMidiInPort(0));
-      pianoKeyboard.setIsVelocitySensitive(true);
-
-      createButtons();
+      mHardwareElements = new HardwareElements(getHost(), mNumberOfKeys);
+      mHardwareSurface = mHardwareElements.getSurface();
 
       for (int i = 0; i < 9; i++)
       {
-         mEncoders[i] = createEncoder("encoder" + (i + 1), 0x10 + i);
+         mEncoders[i] = mHardwareElements.getEncoder(i);
+         mFaders[i] = mHardwareElements.getFader(i);
       }
 
-      for (int i = 0; i < 9; i++)
-      {
-         mFaders[i] = createFader(i);
-      }
-
-      mWheel = createClickEncoder("wheel", 0x3C, 20);
-
-      mDisplay = mHardwareSurface.createHardwareTextDisplay("display", 2);
-      mDisplay.line(0).text().setMaxChars(16);
-      mDisplay.line(1).text().setMaxChars(16);
-
-      mDisplay.onUpdateHardware(() -> {
-         {
-            final String upper = mDisplay.line(0).text().currentValue();
-            final String lower = mDisplay.line(1).text().currentValue();
-
-            final byte[] data = SysexBuilder.fromHex("F0 00 20 6B 7F 42 04 00 60 01 ").addString(upper, 16)
-               .addHex("00 02").addString(lower, 16).addHex(" 00").terminate();
-
-            getMidiOutPort(0).sendSysex(data);
-         }
-      });
+      mWheel = mHardwareElements.getWheel();
+      mDisplay = mHardwareElements.getDisplay();
 
       initHardwareLayout(mHardwareSurface);
    }
@@ -298,7 +267,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
       initBaseLayer();
       initDAWLayer();
-      initBrowserLayer();
+      new BrowserLayer(mBrowserLayer, this);
       initMultiLayer();
       initAdjustingContinuousHardwareControlNotificationLayer();
 
@@ -389,7 +358,8 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          layer.bind(mEncoders[i], mRemoteControls.getParameter(i));
       }
 
-      layer.bind(mWheel, mCursorTrack);
+      layer.bind(mWheel, getHost().createAction(() -> mCursorTrack.selectPrevious(), () -> "-"),
+         getHost().createAction(() -> mCursorTrack.selectNext(), () -> "+"));
 
       for (int i = 0; i < 9; i++)
       {
@@ -400,48 +370,6 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
          () -> mCursorTrack.exists().get()
             ? mDevice.exists().get() ? (mDevice.name().getLimited(16)) : "No Device"
             : "");
-   }
-
-   private void initBrowserLayer()
-   {
-      final Layer layer = mBrowserLayer;
-      layer.bindPressed(ButtonId.SELECT_MULTI, mPopupBrowser::cancel);
-      layer.bind(WHITE, ButtonId.SELECT_MULTI);
-
-      for (int i = 0; i < 4; i++)
-      {
-         final int number = i;
-         final ButtonId selectId = ButtonId.select(i);
-
-         layer.bindPressed(selectId, () -> mPopupBrowser.selectedContentTypeIndex().set(number));
-         layer.bind(ORANGE, selectId);
-      }
-
-      final CursorBrowserFilterItem categories = (CursorBrowserFilterItem)mPopupBrowser.categoryColumn()
-         .createCursorItem();
-      final CursorBrowserFilterItem creators = (CursorBrowserFilterItem)mPopupBrowser.creatorColumn()
-         .createCursorItem();
-
-      layer.bindPressed(ButtonId.SELECT5, categories.selectPreviousAction());
-      layer.bind(GREEN, ButtonId.SELECT5);
-
-      layer.bindPressed(ButtonId.SELECT6, categories.selectNextAction());
-      layer.bind(GREEN, ButtonId.SELECT6);
-
-      layer.bindPressed(ButtonId.SELECT7, creators.selectPreviousAction());
-      layer.bind(RED, ButtonId.SELECT7);
-
-      layer.bindPressed(ButtonId.SELECT8, creators.selectNextAction());
-      layer.bind(RED, ButtonId.SELECT8);
-
-      layer.bindPressed(ButtonId.PRESET_PREVIOUS, mPopupBrowser.cancelAction());
-      layer.bindPressed(ButtonId.PRESET_NEXT, mPopupBrowser.commitAction());
-
-      layer.bindToggle(ButtonId.WHEEL_CLICK, mPopupBrowser.commitAction(),
-         mCursorTrack.hasPrevious());
-      layer.bind(mWheel, mPopupBrowser);
-
-      layer.showText(mBrowserCategory.name(), mBrowserResult.name());
    }
 
    private void initMultiLayer()
@@ -781,118 +709,9 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
    private Layer mMultiLayer;
 
-   private RelativeHardwareControl createEncoder(final String id, final int cc)
-   {
-      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
-
-      encoder.setAdjustValueMatcher(getMidiInPort(1).createRelativeSignedBitCCValueMatcher(0, cc, 100));
-
-      return encoder;
-   }
-
-   private RelativeHardwareControl createClickEncoder(
-      final String id,
-      final int cc,
-      final int clicksForOneRotation)
-   {
-      final RelativeHardwareKnob encoder = mHardwareSurface.createRelativeHardwareKnob(id);
-
-      encoder.setAdjustValueMatcher(
-         getMidiInPort(1).createRelativeSignedBitCCValueMatcher(0, cc, clicksForOneRotation));
-      encoder.setStepSize(1.0 / clicksForOneRotation);
-
-      return encoder;
-   }
-
-   private AbsoluteHardwareControl createFader(final int index)
-   {
-      final HardwareSlider fader = mHardwareSurface.createHardwareSlider("fader" + (index + 1));
-
-      fader.setAdjustValueMatcher(getMidiInPort(1).createAbsolutePitchBendValueMatcher(index));
-
-      return fader;
-   }
-
-   private void createButtons()
-   {
-      for (final ButtonId id : ButtonId.values())
-      {
-         mButtons[id.ordinal()] = createButton(id);
-      }
-   }
-
    HardwareButton getButton(final ButtonId id)
    {
-      return mButtons[id.ordinal()];
-   }
-
-   private HardwareButton createButton(final ButtonId id)
-   {
-      final MidiIn midiIn = getHost().getMidiInPort(1);
-      final HardwareButton button = mHardwareSurface.createHardwareButton(id.name());
-      final MidiExpressions expressions = getHost().midiExpressions();
-
-      final String isNoteOn = expressions.createIsNoteOnExpression(id.getChannel(), id.getKey());
-      final String pressedExpression = isNoteOn + " && data2 >= 64";
-      final String releasedExpression = "(" + isNoteOn + " && data2 < 64) || "
-         + expressions.createIsNoteOffExpression(id.getChannel(), id.getKey());
-      button.pressedAction().setActionMatcher(midiIn.createActionMatcher(pressedExpression));
-      button.releasedAction().setActionMatcher(midiIn.createActionMatcher(releasedExpression));
-
-      if (id.isRGB())
-      {
-         final MultiStateHardwareLight light = mHardwareSurface.createMultiStateHardwareLight(id + "_light");
-
-         light.setColorToStateFunction(color -> new RGBLightState(color));
-
-         button.setBackgroundLight(light);
-
-         final Consumer<RGBLightState> sendColor = new Consumer<RGBLightState>()
-         {
-
-            @Override
-            public void accept(final RGBLightState state)
-            {
-               final int red = state != null ? state.getRed() : 0;
-               final int green = state != null ? state.getGreen() : 0;
-               final int blue = state != null ? state.getBlue() : 0;
-
-               final byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 16")
-                  .addByte(id.getSysexID()).addByte(red).addByte(green).addByte(blue).terminate();
-
-               getMidiOutPort(0).sendSysex(sysex);
-            }
-         };
-
-         light.state().onUpdateHardware(sendColor);
-      }
-      else
-      {
-         final OnOffHardwareLight light = mHardwareSurface.createOnOffHardwareLight(id + "_light");
-
-         button.setBackgroundLight(light);
-
-         final Consumer<Boolean> sendOnOff = new Consumer<Boolean>()
-         {
-
-            @Override
-            public void accept(final Boolean v)
-            {
-               final boolean isOn = v.booleanValue();
-
-               final int intensity = isOn ? 0x7f : 0x04;
-
-               final byte[] sysex = SysexBuilder.fromHex("F0 00 20 6B 7F 42 02 00 10")
-                  .addByte(id.getSysexID()).addByte(intensity).terminate();
-
-               getMidiOutPort(0).sendSysex(sysex);
-            }
-         };
-
-         light.isOn().onUpdateHardware(sendOnOff);
-      }
-
-      return button;
+      return mHardwareElements.getButton(id);
    }
 
    private void clearDisplay()
@@ -907,7 +726,7 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
    private Transport mTransport;
 
-   private CursorTrack mCursorTrack;
+   CursorTrack mCursorTrack;
 
    private CursorDevice mDevice;
 
@@ -915,11 +734,11 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
    private CursorRemoteControlsPage mDeviceEnvelopes;
 
-   private PopupBrowser mPopupBrowser;
+   PopupBrowser mPopupBrowser;
 
-   private BrowserResultsItem mBrowserResult;
+   BrowserResultsItem mBrowserResult;
 
-   private BrowserFilterItem mBrowserCategory;
+   BrowserFilterItem mBrowserCategory;
 
    private BrowserFilterItem mBrowserCreator;
 
@@ -953,13 +772,13 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
 
    private HardwareSurface mHardwareSurface;
 
-   private final HardwareButton[] mButtons = new HardwareButton[ButtonId.values().length];
+   private HardwareElements mHardwareElements;
 
    private final RelativeHardwareControl[] mEncoders = new RelativeHardwareControl[9];
 
    private final AbsoluteHardwareControl[] mFaders = new AbsoluteHardwareControl[9];
 
-   private RelativeHardwareControl mWheel;
+   RelativeHardwareControl mWheel;
 
    HardwareTextDisplay mDisplay;
 
