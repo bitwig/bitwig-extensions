@@ -143,6 +143,9 @@ public abstract class ArturiaKeylabMkII extends ControllerExtension
       {
          final Track track = mTrackBank.getItemAt(i);
          track.color().markInterested();
+         track.solo().markInterested();
+         track.mute().markInterested();
+         track.arm().markInterested();
       }
 
       for (int s = 0; s < LAUNCHER_SCENES; s++)
